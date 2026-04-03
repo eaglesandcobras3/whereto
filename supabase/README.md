@@ -4,7 +4,7 @@
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. Enable extensions **cube** and **earthdistance** (SQL: already in migration via `CREATE EXTENSION`).
-3. Run the migration in `migrations/20260402120000_init.sql` (SQL Editor → paste, or Supabase CLI below).
+3. Run migrations in `migrations/` in timestamp order (initial schema `20260402120000_init.sql`, then `20260403140000_insert_discovery_business_with_tags.sql` for atomic discovery inserts) — SQL Editor or Supabase CLI below.
 4. Run `seed.sql` once to load towns, categories, tags, sample businesses, and discovery jobs.
 5. **First admin:** after you sign up, run in SQL Editor:
    ```sql

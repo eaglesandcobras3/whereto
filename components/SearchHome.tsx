@@ -148,6 +148,24 @@ export function SearchHome() {
     }
   }
 
+  function logClick(
+    businessId: string,
+    kind: "directions" | "website",
+    queryHash: string | undefined,
+  ) {
+    void fetch("/api/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        business_id: businessId,
+        interaction_type: "click",
+        query_hash: queryHash ?? null,
+        session_id: sessionKey(),
+        metadata: { kind },
+      }),
+    });
+  }
+
   async function sendFeedback(
     businessId: string,
     type: string,
@@ -178,12 +196,15 @@ export function SearchHome() {
         <p className="text-zinc-600">
           Natural-language search over curated local listings — AI picks from real data only.
         </p>
-        <nav className="flex gap-4 text-sm">
+        <nav className="flex flex-wrap gap-4 text-sm">
           <Link href="/login" className="text-teal-700 hover:underline">
             Sign in
           </Link>
           <Link href="/saved" className="text-teal-700 hover:underline">
             Saved
+          </Link>
+          <Link href="/admin" className="text-zinc-500 hover:text-teal-700 hover:underline">
+            Admin
           </Link>
         </nav>
       </header>
@@ -260,6 +281,9 @@ export function SearchHome() {
                               target="_blank"
                               rel="noreferrer"
                               className="block px-3 py-2 text-sm hover:bg-zinc-50"
+                              onClick={() =>
+                                logClick(r.business_id, "directions", data?.query_hash)
+                              }
                             >
                               Directions
                             </a>
@@ -270,6 +294,9 @@ export function SearchHome() {
                               target="_blank"
                               rel="noreferrer"
                               className="block px-3 py-2 text-sm hover:bg-zinc-50"
+                              onClick={() =>
+                                logClick(r.business_id, "website", data?.query_hash)
+                              }
                             >
                               Website
                             </a>

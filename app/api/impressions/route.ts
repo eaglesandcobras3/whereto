@@ -25,6 +25,25 @@ export async function POST(request: NextRequest) {
 
     const { error } = await supabase.from("impressions").insert(rows);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const seen = new Set<string>();
+    for (const i of body.items) {
+      if (seen.has(i.business_id)) continue;
+      seen.add(i.business_id);
+      const { data: b } = await supabase
+        .from("businesses")
+        .select("total_impressions")
+        .eq("id", i.business_id)
+        .maybeSingle();
+      if (b) {
+        const n = (b.total_impressions as number) ?? 0;
+        await supabase
+          .from("businesses")
+          .update({ total_impressions: n + 1 })
+          .eq("id", i.business_id);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed";

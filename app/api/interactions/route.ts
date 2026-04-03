@@ -29,6 +29,34 @@ export async function POST(request: NextRequest) {
       metadata: body.metadata ?? null,
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (body.interaction_type === "click") {
+      const { data: b } = await supabase
+        .from("businesses")
+        .select("total_clicks")
+        .eq("id", body.business_id)
+        .single();
+      const n = (b?.total_clicks as number) ?? 0;
+      await supabase
+        .from("businesses")
+        .update({ total_clicks: n + 1 })
+        .eq("id", body.business_id);
+    }
+    if (body.interaction_type === "share") {
+      const { data: b } = await supabase
+        .from("businesses")
+        .select("total_shares")
+        .eq("id", body.business_id)
+        .maybeSingle();
+      if (b) {
+        const n = (b.total_shares as number) ?? 0;
+        await supabase
+          .from("businesses")
+          .update({ total_shares: n + 1 })
+          .eq("id", body.business_id);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed";

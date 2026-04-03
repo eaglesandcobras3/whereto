@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isSearchRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
 import { runSearch } from "@/lib/search/run-search";
 
 export async function POST(request: NextRequest) {
   try {
+    const ipKey = rateLimitKeyFromRequest(request);
+    if (isSearchRateLimited(ipKey)) {
+      return NextResponse.json(
+        { error: "Too many searches. Try again shortly." },
+        { status: 429 },
+      );
+    }
+
     const body = (await request.json()) as { query?: string };
     const q = typeof body.query === "string" ? body.query : "";
     if (!q.trim()) {

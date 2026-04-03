@@ -824,10 +824,10 @@ alt_terms pulled from categories.google_types
 │  ┌───────────────────────────────────────────────────────────────────────┐ │
 │  │ STAGE 2: Database Query (NO AI)                                       │ │
 │  │                                                                        │ │
-│  │ Convert structured intent → SQL query                                  │ │
+│  │ Convert structured intent → DB fetch + Section 11 pipeline           │ │
 │  │ Filter by: town, category, tags, status='active'                      │ │
-│  │ Order by: rating DESC, review_count DESC                              │ │
-│  │ Limit: 15 candidates                                                  │ │
+│  │ Rank: hard eligibility → composite score (NOT rating-only sort)       │ │
+│  │ Limit: 15 candidates after scoring + diversity pass                  │ │
 │  │                                                                        │ │
 │  │ Returns: Full business objects with all metadata                      │ │
 │  └───────────────────────────────────────────────────────────────────────┘ │

@@ -36,6 +36,10 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const svc = getServiceSupabase();
+  void svc
+    .from("businesses")
+    .update({ refresh_priority: 1 })
+    .eq("id", body.business_id);
   void svc.from("interactions").insert({
     business_id: body.business_id,
     user_id: user.id,
