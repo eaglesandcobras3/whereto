@@ -1,4 +1,4 @@
--- 30A platform — initial schema (see docs/30A-IMPLEMENTATION-PLAN.md §2)
+-- WhereTo30A (whereto30a) — initial schema (see docs/whereto30a-implementation-plan.md §2)
 -- Run via Supabase CLI or SQL editor after enabling extensions.
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

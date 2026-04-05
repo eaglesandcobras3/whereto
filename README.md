@@ -1,6 +1,6 @@
-# 30A Insider (Next.js)
+# WhereTo30A (`whereto30a`)
 
-AI-assisted local discovery for Florida’s 30A corridor. See [docs/PRD.md](docs/PRD.md) and [docs/30A-IMPLEMENTATION-PLAN.md](docs/30A-IMPLEMENTATION-PLAN.md).
+AI-assisted local discovery for Florida’s 30A corridor. See [docs/PRD.md](docs/PRD.md) and [docs/whereto30a-implementation-plan.md](docs/whereto30a-implementation-plan.md).
 
 **Human setup checklist:** [docs/OPERATOR-TODO.md](docs/OPERATOR-TODO.md) (keep this updated when onboarding or changing infra).
 

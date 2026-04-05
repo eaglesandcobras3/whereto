@@ -1,6 +1,6 @@
-# 30A Platform — Full Task List
+# WhereTo30A — Full task list
 
-Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [30A-IMPLEMENTATION-PLAN.md](./30A-IMPLEMENTATION-PLAN.md) (engineering spec). Use `- [ ]` / `- [x]` in your tracker or import into an issue system.
+Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [whereto30a-implementation-plan.md](./whereto30a-implementation-plan.md) (engineering spec). Use `- [ ]` / `- [x]` in your tracker or import into an issue system.
 
 **Estimates:** Section 10 of the implementation plan totals **137 points** for MVP engineering tickets; tasks below decompose those tickets plus Phase 2/3 and operational work.
 
@@ -94,7 +94,7 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [30A-IMP
 ### 1.8 Engagement and feedback (~17 pts combined with sections above)
 
 - [x] Impression logging when recommendations render
-- [x] Interaction logging: click (maps/site), save, share — [`components/SearchHome.tsx`](../components/SearchHome.tsx) + [`app/api/interactions/route.ts`](../app/api/interactions/route.ts) (click increments `total_clicks`)
+- [x] Interaction logging: click (maps/site), save, share — [`components/home/HomePage.tsx`](../components/home/HomePage.tsx) + [`app/api/interactions/route.ts`](../app/api/interactions/route.ts) (click increments `total_clicks`)
 - [x] Feedback API: `not_relevant`, `had_bad_experience`, `hide_for_me`, `inaccurate_info` (per Section 12)
 - [x] Feedback UI: overflow menu on cards; bad-experience reason chips — simplified menu (one preset bad-experience reason)
 - [x] User suppressions: session + authenticated user linkage — suppressions for **signed-in** users via `user_suppressions`; session-only hide uses feedback row only
@@ -134,20 +134,60 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [30A-IMP
 
 ---
 
-## Phase 2 — After MVP (product + engineering)
+## Phase 2 — SEO & town discovery ([PRD-SEO-TOWNS](./PRD-SEO-TOWNS.md), [TDD-SEO-TOWNS](./TDD-SEO-TOWNS.md))
 
-### 2.1 Product (per PRD Phase 2)
+### 2.1 Data model & migrations
+
+- [x] `regions` table; `towns.region_id`; seed 30A region and link towns — `supabase/migrations/20260404120000_seo_town_architecture.sql`
+- [x] `town_adjacency` for nearby towns + seed pairs
+- [x] Extend `query_cache` with `query_key`, scope, `seo_eligible`, `seo_slug`, `filters`, `scores_snapshot`, etc.
+- [x] `seo_pages` table + RLS policies
+- [x] `businesses.slug` unique + backfill strategy in migration
+
+### 2.2 Single ranking pipeline
+
+- [x] Location scope multipliers (same town / adjacent / region) in [`lib/scoring.ts`](../lib/scoring.ts)
+- [x] [`lib/search/recommendation-set.ts`](../lib/search/recommendation-set.ts) — `buildRecommendationSet` shared by search + crons
+- [x] [`lib/search/run-search.ts`](../lib/search/run-search.ts) refactored to use shared ranking path
+
+### 2.3 Crons & SEO generation
+
+- [x] `/api/cron/recommendation-precompute` — all `towns` with `region_id` × category + intent templates; upsert `query_cache` by stable `query_key` (see [`lib/seo/query-cache-keys.ts`](../lib/seo/query-cache-keys.ts))
+- [x] `/api/cron/seo-publish` — insert/update `seo_pages` by town slug + `seo_slug`; human-readable titles
+- [x] `/api/cron/popular-cache` — weekly extra precompute pass (stale-first refresh)
+- [x] [`vercel.json`](../vercel.json) schedules
+
+### 2.4 Routes & UI
+
+- [x] `/[townSlug]` hub (town or region slug); **cache-first** sections via [`lib/data/town-hub-cache.ts`](../lib/data/town-hub-cache.ts) with live AI fallback
+- [x] `/[townSlug]/[intentSlug]` SEO page + `generateMetadata` + ISR `revalidate` + `generateStaticParams` (empty when no DB at build)
+- [x] `/business/[slug]` business detail + Open Graph + `LocalBusiness` JSON-LD
+- [x] [`app/sitemap.ts`](../app/sitemap.ts) + [`app/robots.ts`](../app/robots.ts); [`getSiteUrl()`](../lib/site-url.ts) + optional `NEXT_PUBLIC_SITE_URL`
+- [x] `generateStaticParams` for town + intent uses [`getServiceSupabaseOrNull()`](../lib/supabase/service-role.ts) so `next build` / CI succeeds without Supabase env
+- [x] Reserved slug guard — [`lib/routes/reserved-slugs.ts`](../lib/routes/reserved-slugs.ts)
+- [x] Discovery components: SearchBar, BusinessCard (hide ratings on consumer), carousels, grids — [`components/discovery/`](../components/discovery/)
+- [x] Homepage uses hub sections + components
+
+### 2.5 Product alignment
+
+- [x] Consumer surfaces hide prominent Google stars per [PRD-SEO-TOWNS §9](./PRD-SEO-TOWNS.md)
+
+---
+
+## Phase 3 — After MVP (product + engineering)
+
+### 3.1 Product (per PRD Phase 2)
 
 - [ ] Iterate on AI ranking weights and relevance tuning (A/B or offline eval)
 - [ ] **Collections** (group saved businesses beyond flat list)
 - [ ] **Business claims** workflow (ownership verification, edit requests)
 
-### 2.2 Sharing polish
+### 3.2 Sharing polish
 
 - [ ] Open Graph meta tags for share URLs
 - [ ] Richer share analytics (funnels, sources)
 
-### 2.3 Admin and data quality
+### 3.3 Admin and data quality
 
 - [ ] Bulk tag assignment / management
 - [ ] Cache admin: view entries, invalidate, optional warm list
@@ -157,33 +197,33 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [30A-IMP
 
 ---
 
-## Phase 3 — Scale, social, monetization, expansion
+## Phase 4 — Scale, social, monetization, expansion
 
-### 3.1 Enhanced AI / UX
+### 4.1 Enhanced AI / UX
 
 - [ ] Multi-turn conversation / follow-up queries
 - [ ] “Plan my day” itinerary-style flow
 - [ ] Personalization using history (queries, saves) — privacy reviewed
 
-### 3.2 Social
+### 4.2 Social
 
 - [ ] Rich social preview cards (image + description)
 - [ ] User reviews/tips (moderated)
 - [ ] “Recommended by” or similar badges
 
-### 3.3 Performance
+### 4.3 Performance
 
 - [ ] Redis or edge cache layer if Postgres cache is insufficient
 - [ ] Edge caching for popular share/search responses
 - [ ] Response streaming for long syntheses (if needed)
 
-### 3.4 Monetization (PRD future)
+### 4.4 Monetization (PRD future)
 
 - [ ] Featured listings / sponsored placement (policy + disclosure in UI)
 - [ ] Business dashboard post-claim
 - [ ] Premium user features (define scope)
 
-### 3.5 Expansion
+### 4.5 Expansion
 
 - [ ] Additional towns / markets
 - [ ] More categories (services, rentals, etc.)
@@ -207,7 +247,8 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [30A-IMP
 | Phase | Focus |
 |-------|--------|
 | **§0–1** | Full MVP per PRD + plan (~137 ticket points decomposed above) |
-| **§2** | Engagement, claims, collections, ops depth |
-| **§3** | Scale, social, revenue, new markets |
+| **§2** | SEO & town architecture (programmatic pages, shared ranker) |
+| **§3** | Engagement, claims, collections, ops depth |
+| **§4** | Scale, social, revenue, new markets |
 
-For ticket-to-issue mapping, keep the **Engineering Ticket Breakdown** table in [30A-IMPLEMENTATION-PLAN.md](./30A-IMPLEMENTATION-PLAN.md) Section 10 as the authoritative point rollup; this document expands it into shippable tasks.
+For ticket-to-issue mapping, keep the **Engineering Ticket Breakdown** table in [whereto30a-implementation-plan.md](./whereto30a-implementation-plan.md) Section 10 as the authoritative point rollup; this document expands it into shippable tasks.

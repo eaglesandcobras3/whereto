@@ -23,6 +23,14 @@
     {
       "path": "/api/cron/scores",
       "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/cron/recommendation-precompute",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/seo-publish",
+      "schedule": "45 6 * * *"
     }
   ]
 }

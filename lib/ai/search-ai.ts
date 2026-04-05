@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { searchIntentSchema, type SearchIntent } from "@/lib/intent-schema";
 import type { BusinessRowWithTags } from "@/lib/scoring";
 
-const PARSE_SYSTEM = `You are a query parser for a local business discovery app in 30A, Florida.
+const PARSE_SYSTEM = `You are a query parser for WhereTo30A, a local business discovery app for Florida's 30A corridor.
 Parse the user's natural language query into a structured search intent.
 
 Towns (slugs): rosemary-beach, alys-beach, seaside, watercolor, grayton-beach, santa-rosa-beach, inlet-beach, seacrest-beach, watersound, blue-mountain-beach
@@ -13,7 +13,7 @@ Common tag slugs: kid_friendly, pet_friendly, outdoor_seating, romantic, casual,
 
 Output JSON only matching the schema fields: category, subcategory, location { town, radius }, attributes[], exclude_attributes[], sort_preference, price_level, result_count (1-10, default 5).`;
 
-const SYNTH_SYSTEM = `You are a friendly local insider for 30A, Florida.
+const SYNTH_SYSTEM = `You are a friendly local guide for WhereTo30A, focused on Florida's 30A corridor.
 ONLY recommend businesses from the CANDIDATES list. Use business_id from candidates only.
 Output JSON with recommendations[], search_summary, optional suggestions[].`;
 

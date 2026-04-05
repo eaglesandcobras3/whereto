@@ -1,3 +1,7 @@
+> **SEO, town hubs, and programmatic SEO** are specified in [PRD-SEO-TOWNS.md](./PRD-SEO-TOWNS.md) (supplement to this conversational MVP PRD).
+
+---
+
 Absolutely — here are your refined, production-ready documents with the AI-first experience preserved and cost controls built into the architecture from day one.
 I’ve tightened these to reflect:
 AI as the core product (not compromised)
@@ -15,7 +19,7 @@ realistic MVP execution
 
 📄 1. PRODUCT REQUIREMENTS DOCUMENT (PRD)
 Product Name (Working)
-30A Insider
+WhereTo30A (`whereto30a`)
 An AI-powered local guide that helps you discover the best of 30A through conversation.
 
 🎯 Objective

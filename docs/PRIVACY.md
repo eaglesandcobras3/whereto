@@ -1,6 +1,6 @@
 # Privacy — user feedback
 
-**30A Insider** collects **private, internal-only** feedback when users report a bad fit, a bad experience, inaccurate info, or “don’t show again.” That data is used to improve ranking and quality; it is **not** shown publicly on business pages or to other end users.
+**WhereTo30A** collects **private, internal-only** feedback when users report a bad fit, a bad experience, inaccurate info, or “don’t show again.” That data is used to improve ranking and quality; it is **not** shown publicly on business pages or to other end users.
 
 Operators should:
 

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "30A Insider — AI local discovery",
-  description: "Discover restaurants, cafés, and more along 30A with curated AI recommendations.",
+  title: "WhereTo30A — AI local discovery",
+  description: "Discover restaurants, cafés, and more along 30A with WhereTo30A’s curated AI recommendations.",
 };
 
 export default function RootLayout({

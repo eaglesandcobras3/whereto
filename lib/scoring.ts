@@ -18,6 +18,7 @@ export type BusinessForScore = {
 };
 
 export type BusinessRowWithTags = BusinessForScore & {
+  slug?: string;
   tag_slugs: string[];
   name?: string;
   address?: string | null;
@@ -28,6 +29,30 @@ export type BusinessRowWithTags = BusinessForScore & {
   price_level?: number | null;
   ai_summary?: string | null;
 };
+
+/** Optional anchor town for SEO/town hubs (TDD-SEO-TOWNS §7). */
+export type LocationRankingScope = {
+  anchorTownId: number;
+  adjacentTownIds: Set<number>;
+  /** Towns in same region (excluding anchor); used for 0.70 tier. */
+  regionTownIds: Set<number>;
+};
+
+/**
+ * Relevance multiplier vs anchor town: same 1.0, adjacent 0.85, same region 0.70, else 0.45.
+ * When scope is null (default AI search), returns 1.
+ */
+export function locationProximityMultiplier(
+  businessTownId: number | null,
+  scope: LocationRankingScope | null,
+): number {
+  if (!scope) return 1;
+  if (businessTownId == null) return 0.5;
+  if (businessTownId === scope.anchorTownId) return 1;
+  if (scope.adjacentTownIds.has(businessTownId)) return 0.85;
+  if (scope.regionTownIds.has(businessTownId)) return 0.7;
+  return 0.45;
+}
 
 export function passesEligibility(
   b: BusinessForScore,
@@ -90,18 +115,21 @@ export function scoreAndRankCandidates(
   categorySlugToId: Map<string, number>,
   suppressedIds: Set<string>,
   limit = 15,
+  locationScope: LocationRankingScope | null = null,
 ): BusinessRowWithTags[] {
   const ranked = rows
     .filter((row) => passesEligibility(row, suppressedIds))
     .map((row) => {
       const { tag_slugs, ...b } = row;
-      const rel = relevanceForIntent(
+      let rel = relevanceForIntent(
         intent,
         b,
         new Set(tag_slugs),
         townSlugToId,
         categorySlugToId,
       );
+      rel *= locationProximityMultiplier(b.town_id ?? null, locationScope);
+      rel = Math.min(1, rel);
       return { row, composite: compositeScore(rel, b) };
     })
     .sort((a, b) => b.composite - a.composite);

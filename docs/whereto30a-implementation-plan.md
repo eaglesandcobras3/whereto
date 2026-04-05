@@ -1,4 +1,4 @@
-# 30A AI-Powered Discovery Platform — Implementation Plan
+# WhereTo30A — AI-powered local discovery (implementation plan)
 
 **Product source of truth:** [PRD.md](./PRD.md) defines scope, MVP features, and priorities. This document is the engineering specification. If anything conflicts, implement the PRD and correct this file.
 
@@ -2982,6 +2982,22 @@ export function FeedbackMenu({ businessId, queryContext, onFeedbackSubmitted }: 
   );
 }
 ```
+
+---
+
+## 13. SEO & town discovery (Phase 2)
+
+**Product:** [PRD-SEO-TOWNS.md](./PRD-SEO-TOWNS.md) · **Technical:** [TDD-SEO-TOWNS.md](./TDD-SEO-TOWNS.md) · **UX:** [UX-BRIEF-TOWNS-SEO.md](./UX-BRIEF-TOWNS-SEO.md)
+
+**Goal:** One **recommendation pipeline** (`buildRecommendationSet` + `scoreAndRankCandidates` + location multipliers) backs AI search, precomputed sets, town hubs, SEO pages, and shares. Extend `query_cache` as the recommendation-set store; add `regions`, `towns.region_id`, `town_adjacency`, `businesses.slug`, `seo_pages`.
+
+**Schema:** see migration `supabase/migrations/*_seo_town_architecture.sql`.
+
+**Routes:** `/[townSlug]` (town or region hub), `/[townSlug]/[intentSlug]` (SEO), `/business/[slug]`; reserved slugs in `lib/routes/reserved-slugs.ts`.
+
+**Crons:** `/api/cron/recommendation-precompute`, `/api/cron/seo-publish` (see `vercel.json`).
+
+**Task checklist:** [whereto30a-full-task-list.md](./whereto30a-full-task-list.md) — Phase 2.
 
 ---
 

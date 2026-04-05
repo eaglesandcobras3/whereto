@@ -10,7 +10,7 @@
 
 - [ ] Copy [`.env.example`](../.env.example) → `.env.local` and fill values (see below).
 - [ ] Create a **Supabase** project at [supabase.com](https://supabase.com).
-- [ ] In Supabase **SQL Editor**, run **all** migration files in [supabase/migrations/](../supabase/migrations/) in timestamp order (initial schema plus `20260403140000_insert_discovery_business_with_tags.sql` for atomic discovery inserts), then [supabase/seed.sql](../supabase/seed.sql). Details: [supabase/README.md](../supabase/README.md).
+- [ ] In Supabase **SQL Editor**, run **all** migration files in [supabase/migrations/](../supabase/migrations/) in timestamp order (including `20260404120000_seo_town_architecture.sql` for regions, SEO tables, and `businesses.slug`), then [supabase/seed.sql](../supabase/seed.sql). Details: [supabase/README.md](../supabase/README.md).
 - [ ] If the `on_auth_user_created` trigger on `auth.users` fails in SQL Editor, create it via Dashboard → **Authentication** / **Database** hooks per Supabase docs, or run the trigger block from the migration when you have sufficient privileges.
 - [ ] From the repo: `npm install` and `npm run dev`.
 - [ ] Sign up once via `/login` (magic link). In Supabase SQL Editor, promote yourself to admin:
@@ -30,6 +30,7 @@
 | `OPENAI_API_KEY` | OpenAI | Optional for local; without it, search uses keyword + template fallbacks |
 | `GOOGLE_PLACES_API_KEY` | Google Cloud → Places API (New) | Optional; without it, discovery cron skips jobs (leaves them pending) |
 | `CRON_SECRET` | Generate a long random string | Required in **production** for `/api/cron/*`; omitted in `NODE_ENV=development` the app allows cron without secret |
+| `NEXT_PUBLIC_SITE_URL` | Your canonical origin (e.g. `https://yoursite.com`) | Optional; improves sitemap, robots, and Open Graph URLs. Vercel sets `VERCEL_URL` as a server fallback if unset |
 
 ---
 
@@ -67,6 +68,8 @@
 |------|----------------|
 | 2026-04-03 | Initial checklist; then: `/admin` UI, expanded runbook, `npm test`, [PRIVACY.md](./PRIVACY.md). |
 | 2026-04-03 | Phase 1 wrap: run **both** SQL migrations (adds `insert_discovery_business_with_tags`); CI runs lint, Vitest, build, Playwright; in-memory `/api/search` rate limit in code. |
+| 2026-04-04 | Phase 2 SEO/towns: apply `20260404120000_seo_town_architecture.sql`; new crons `recommendation-precompute` + `seo-publish` in [vercel.json](../vercel.json). |
+| 2026-04-06 | Phase 2 completion: optional `NEXT_PUBLIC_SITE_URL`; `/sitemap.xml` + `/robots.txt`; expanded precompute (all region towns × category/intent rows), town hubs read cache first; `popular-cache` cron runs a precompute pass; `generateStaticParams` skips DB when env missing so CI/`next build` works without Supabase. |
 
 ---
 
@@ -74,5 +77,5 @@
 
 - [supabase/README.md](../supabase/README.md) — applying migration + seed
 - [PRIVACY.md](./PRIVACY.md) — feedback data (internal-only)
-- [30A-FULL-TASK-LIST.md](./30A-FULL-TASK-LIST.md) — full engineering checklist (human + code)
+- [whereto30a-full-task-list.md](./whereto30a-full-task-list.md) — full engineering checklist (human + code)
 - [PRD.md](./PRD.md) — product source of truth

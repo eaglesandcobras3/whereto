@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  locationProximityMultiplier,
   passesEligibility,
   scoreAndRankCandidates,
   type BusinessRowWithTags,
+  type LocationRankingScope,
 } from "@/lib/scoring";
 import {
   distanceMeters,
@@ -28,6 +30,29 @@ describe("nameSimilarity", () => {
   });
   it("is high for typos", () => {
     expect(nameSimilarity("Seaside Cafe", "Seaside Caffe")).toBeGreaterThan(0.5);
+  });
+});
+
+describe("locationProximityMultiplier", () => {
+  const scope: LocationRankingScope = {
+    anchorTownId: 1,
+    adjacentTownIds: new Set([2]),
+    regionTownIds: new Set([3, 4]),
+  };
+  it("returns 1 without scope", () => {
+    expect(locationProximityMultiplier(1, null)).toBe(1);
+  });
+  it("same town is 1", () => {
+    expect(locationProximityMultiplier(1, scope)).toBe(1);
+  });
+  it("adjacent is 0.85", () => {
+    expect(locationProximityMultiplier(2, scope)).toBe(0.85);
+  });
+  it("region non-adjacent is 0.7", () => {
+    expect(locationProximityMultiplier(3, scope)).toBe(0.7);
+  });
+  it("outside region is 0.45", () => {
+    expect(locationProximityMultiplier(99, scope)).toBe(0.45);
   });
 });
 
