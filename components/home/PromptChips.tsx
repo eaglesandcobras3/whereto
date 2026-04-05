@@ -13,7 +13,16 @@ export function PromptChips({ prompts, onPick }: Props) {
           key={p}
           type="button"
           onClick={() => onPick(p)}
-          className="rounded-full border border-zinc-200/90 bg-white px-4 py-2 text-left text-sm text-zinc-700 shadow-sm transition hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30"
+          className="
+            rounded-full border border-[var(--color-border-strong)]
+            bg-[var(--color-surface)] px-4 py-2
+            text-left text-sm text-[var(--color-text-secondary)]
+            shadow-premium-sm
+            transition-premium-fast
+            hover:border-[var(--color-primary)]/50
+            hover:bg-[var(--accent-soft)]
+            hover:text-[var(--color-text-primary)]
+          "
         >
           {p}
         </button>

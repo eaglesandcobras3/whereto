@@ -10,14 +10,17 @@ import {
   getTownHubExpandedSections,
   getTownsInRegion,
 } from "@/lib/data/town-hub";
-import { getTownDescriptor } from "@/lib/data/town-descriptors";
+import { getTownDescriptor, getRegionDescriptor } from "@/lib/data/town-descriptors";
+import { Navbar } from "@/components/Navbar";
 import { SectionBlock } from "@/components/discovery/SectionBlock";
 import { RecommendationCarousel } from "@/components/discovery/RecommendationCarousel";
 import { TownRecList } from "@/components/discovery/TownRecList";
+import { TownCard } from "@/components/discovery/TownCard";
 import { CategoryGrid } from "@/components/discovery/CategoryGrid";
 import { TownHubSearch } from "@/components/TownHubSearch";
 import { TownHubPrompts } from "@/components/TownHubPrompts";
 import { AdjacentBusinessCarousel } from "@/components/discovery/AdjacentBusinessCarousel";
+import { SiteFooter } from "@/components/home/SiteFooter";
 
 export const revalidate = 3600;
 
@@ -44,50 +47,91 @@ export async function generateStaticParams() {
     .map((townSlug) => ({ townSlug }));
 }
 
+/** Intent pills for quick navigation */
+const INTENT_PILLS = [
+  { name: "Brunch", slug: "brunch" },
+  { name: "Lunch", slug: "lunch" },
+  { name: "Dinner", slug: "dinner" },
+  { name: "Coffee", slug: "coffee" },
+  { name: "Date Night", slug: "date-night" },
+  { name: "Kid-Friendly", slug: "kid-friendly" },
+  { name: "Quick Bites", slug: "quick-bites" },
+  { name: "Bars", slug: "bars" },
+];
+
 export default async function TownOrRegionPage({ params }: Props) {
   const { townSlug } = await params;
   if (isReservedRootSlug(townSlug)) notFound();
 
+  // Check if this is a region
   const region = await getRegionBySlug(townSlug);
   if (region) {
     const towns = await getTownsInRegion(region.id);
     return (
-      <div className="mx-auto max-w-4xl space-y-10 px-4 py-12">
-        <header className="space-y-2 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-            Region
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-            {region.name}
-          </h1>
-          <p className="text-lg text-zinc-600">
-            Pick a town for a curated local guide, or ask our AI from the home page.
-          </p>
-          <Link
-            href="/"
-            className="inline-block text-sm font-medium text-[var(--accent)] hover:underline"
-          >
-            AI search
-          </Link>
-        </header>
-        <SectionBlock title="Towns along 30A">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {towns.map((t) => (
-              <Link
-                key={t.slug}
-                href={`/${t.slug}`}
-                className="rounded-2xl border border-zinc-200/80 bg-[var(--surface-elevated)] p-5 shadow-sm transition hover:border-[var(--accent)]/40"
-              >
-                <p className="font-semibold text-zinc-900">{t.name}</p>
-                <p className="text-sm text-zinc-500">Town guide</p>
-              </Link>
-            ))}
+      <div className="min-h-screen bg-[var(--color-background)]">
+        <Navbar />
+
+        {/* Hero */}
+        <div className="coastal-hero border-b border-[var(--color-border)]">
+          <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
+            <header className="space-y-4 text-center">
+              <p className="text-eyebrow">Region</p>
+              <h1 className="text-hero text-[var(--color-text-primary)]">
+                {region.name}
+              </h1>
+              <p className="mx-auto max-w-xl text-lg text-[var(--color-text-secondary)]">
+                {getRegionDescriptor(region.slug)}
+              </p>
+              <div className="flex justify-center gap-4 pt-2">
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] transition-colors"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  AI Search
+                </Link>
+              </div>
+            </header>
           </div>
-        </SectionBlock>
+        </div>
+
+        {/* Content */}
+        <div className="mx-auto max-w-6xl space-y-12 px-4 py-12">
+          <SectionBlock
+            title={`Towns in ${region.name}`}
+            subtitle="Pick a town for a curated local guide"
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {towns.map((t) => (
+                <TownCard
+                  key={t.slug}
+                  name={t.name}
+                  slug={t.slug}
+                  subtitle={getTownDescriptor(t.slug)}
+                />
+              ))}
+            </div>
+          </SectionBlock>
+        </div>
+
+        <SiteFooter />
       </div>
     );
   }
 
+  // This is a town page
   const town = await getTownBySlug(townSlug);
   if (!town) notFound();
 
@@ -128,106 +172,218 @@ export default async function TownOrRegionPage({ params }: Props) {
   const vibe = getTownDescriptor(town.slug);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-12 px-4 py-12">
-      <header className="space-y-4 border-b border-zinc-200/80 pb-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-          Town guide
-        </p>
-        <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-          {town.name}
-        </h1>
-        <p className="max-w-2xl text-lg leading-relaxed text-zinc-600">{vibe}</p>
-        <TownHubSearch townName={town.name} />
-      </header>
+    <div className="min-h-screen bg-[var(--color-background)]">
+      <Navbar />
 
-      {expanded.topPicks?.recommendations?.length ? (
-        <RecommendationCarousel title="Top picks" subtitle="Strongest overall dining recommendations">
-          <TownRecList enriched={expanded.topPicks} />
-        </RecommendationCarousel>
-      ) : null}
+      {/* Hero Section */}
+      <div className="coastal-hero border-b border-[var(--color-border)]">
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
+          <header className="space-y-4 text-center">
+            <p className="text-eyebrow">Town Guide</p>
+            <h1 className="text-hero text-[var(--color-text-primary)]">
+              {town.name}
+            </h1>
+            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
+              {vibe}
+            </p>
+          </header>
 
-      {expanded.coffee?.recommendations?.length ? (
-        <RecommendationCarousel title="Best coffee">
-          <TownRecList enriched={expanded.coffee} />
-        </RecommendationCarousel>
-      ) : null}
+          {/* Search */}
+          <div className="mt-8">
+            <TownHubSearch townName={town.name} />
+          </div>
 
-      {expanded.casualLunch?.recommendations?.length ? (
-        <RecommendationCarousel title="Casual lunch">
-          <TownRecList enriched={expanded.casualLunch} />
-        </RecommendationCarousel>
-      ) : null}
+          {/* Intent Pills */}
+          <div className="mt-8 flex flex-wrap justify-center gap-2">
+            {INTENT_PILLS.map((intent) => (
+              <Link
+                key={intent.slug}
+                href={`/${townSlug}/${intent.slug}`}
+                className="
+                  rounded-full border border-[var(--color-border-strong)]
+                  bg-[var(--color-surface)] px-4 py-2
+                  text-sm font-medium text-[var(--color-text-primary)]
+                  shadow-premium-sm
+                  transition-premium-fast
+                  hover:border-[var(--color-primary)]/40
+                  hover:bg-[var(--color-surface-secondary)]
+                  hover:text-[var(--color-primary)]
+                "
+              >
+                {intent.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      {expanded.dateNight?.recommendations?.length ? (
-        <RecommendationCarousel title="Date night">
-          <TownRecList enriched={expanded.dateNight} />
-        </RecommendationCarousel>
-      ) : null}
+      {/* Main Content */}
+      <div className="mx-auto max-w-6xl space-y-16 px-4 py-12">
+        {/* Top Picks */}
+        {expanded.topPicks?.recommendations?.length ? (
+          <RecommendationCarousel
+            title="Top picks"
+            subtitle="Strongest overall dining recommendations"
+            seeAllHref={`/${townSlug}/restaurants`}
+          >
+            <TownRecList enriched={expanded.topPicks} />
+          </RecommendationCarousel>
+        ) : null}
 
-      {expanded.kidFriendly?.recommendations?.length ? (
-        <RecommendationCarousel title="Kid-friendly">
-          <TownRecList enriched={expanded.kidFriendly} />
-        </RecommendationCarousel>
-      ) : null}
+        {/* Coffee */}
+        {expanded.coffee?.recommendations?.length ? (
+          <RecommendationCarousel
+            title="Best coffee"
+            subtitle="Espresso, cold brew, and morning vibes"
+            seeAllHref={`/${townSlug}/coffee`}
+          >
+            <TownRecList enriched={expanded.coffee} />
+          </RecommendationCarousel>
+        ) : null}
 
-      {expanded.quickBites?.recommendations?.length ? (
-        <RecommendationCarousel title="Quick bites">
-          <TownRecList enriched={expanded.quickBites} />
-        </RecommendationCarousel>
-      ) : null}
+        {/* Casual Lunch */}
+        {expanded.casualLunch?.recommendations?.length ? (
+          <RecommendationCarousel
+            title="Casual lunch"
+            subtitle="Perfect for midday bites"
+            seeAllHref={`/${townSlug}/lunch`}
+          >
+            <TownRecList enriched={expanded.casualLunch} />
+          </RecommendationCarousel>
+        ) : null}
 
-      <AdjacentBusinessCarousel businesses={nearbyBiz} />
+        {/* Date Night */}
+        {expanded.dateNight?.recommendations?.length ? (
+          <RecommendationCarousel
+            title="Date night"
+            subtitle="Romantic spots for special evenings"
+            seeAllHref={`/${townSlug}/date-night`}
+          >
+            <TownRecList enriched={expanded.dateNight} />
+          </RecommendationCarousel>
+        ) : null}
 
-      {adjacent.length ? (
-        <SectionBlock
-          title="Nearby towns"
-          subtitle="Jump to another local guide"
-        >
-          <ul className="flex flex-wrap gap-3">
-            {adjacent.map((t) => (
-              <li key={t.slug}>
+        {/* Kid-Friendly */}
+        {expanded.kidFriendly?.recommendations?.length ? (
+          <RecommendationCarousel
+            title="Kid-friendly"
+            subtitle="Family-approved dining"
+            seeAllHref={`/${townSlug}/kid-friendly`}
+          >
+            <TownRecList enriched={expanded.kidFriendly} />
+          </RecommendationCarousel>
+        ) : null}
+
+        {/* Quick Bites */}
+        {expanded.quickBites?.recommendations?.length ? (
+          <RecommendationCarousel
+            title="Quick bites"
+            subtitle="Grab and go options"
+            seeAllHref={`/${townSlug}/quick-bites`}
+          >
+            <TownRecList enriched={expanded.quickBites} />
+          </RecommendationCarousel>
+        ) : null}
+
+        {/* Worth the Drive - Adjacent Businesses */}
+        <AdjacentBusinessCarousel businesses={nearbyBiz} />
+
+        {/* Nearby Towns */}
+        {adjacent.length ? (
+          <SectionBlock
+            title="Nearby towns"
+            subtitle="More guides just a short drive away"
+          >
+            <div className="flex flex-wrap gap-3">
+              {adjacent.map((t) => (
                 <Link
+                  key={t.slug}
                   href={`/${t.slug}`}
-                  className="rounded-full border border-zinc-200/90 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:border-[var(--accent)]/40"
+                  className="
+                    rounded-full border border-[var(--color-border-strong)]
+                    bg-[var(--color-surface)] px-5 py-2.5
+                    text-sm font-medium text-[var(--color-text-primary)]
+                    shadow-premium-sm
+                    transition-premium hover-lift
+                    hover:border-[var(--color-primary)]/40
+                  "
                 >
                   {t.name}
                 </Link>
-              </li>
-            ))}
-          </ul>
+              ))}
+            </div>
+          </SectionBlock>
+        ) : null}
+
+        {/* Browse by Category */}
+        <SectionBlock
+          title="Browse by category"
+          subtitle="Opens AI search with this town in mind"
+        >
+          <CategoryGrid categories={categoryLinks} />
         </SectionBlock>
-      ) : null}
 
-      <SectionBlock title="Browse by category" subtitle="Opens AI search with this town in mind">
-        <CategoryGrid categories={categoryLinks} />
-      </SectionBlock>
+        {/* AI Search Section */}
+        <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-premium-sm sm:p-8">
+          <h2 className="text-section text-[var(--color-text-primary)]">
+            Ask anything about {town.name}
+          </h2>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Go deeper with natural language — same engine as the home search.
+          </p>
+          <div className="mt-4">
+            <TownHubPrompts townName={town.name} />
+          </div>
+        </section>
 
-      <section className="rounded-2xl border border-zinc-200/80 bg-[var(--surface-elevated)] p-6 shadow-sm sm:p-8">
-        <h2 className="text-lg font-semibold text-zinc-900">Ask anything about {town.name}</h2>
-        <p className="mt-1 text-sm text-zinc-600">
-          Go deeper with natural language — same engine as the home search.
-        </p>
-        <div className="mt-4">
-          <TownHubPrompts townName={town.name} />
+        {/* Town Vibe Section */}
+        <SectionBlock
+          title={`The ${town.name} vibe`}
+          subtitle="Quick context from our editors"
+        >
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-6">
+            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              {vibe}
+            </p>
+            <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-[var(--color-text-secondary)]">
+              <li>Start with Top picks, then narrow by intent rows above.</li>
+              <li>
+                Save places from search results on the home page after you sign
+                in.
+              </li>
+              <li>
+                Nearby cards show what&apos;s a short drive — still part of the
+                coastal story.
+              </li>
+            </ul>
+          </div>
+        </SectionBlock>
+
+        {/* Back to Home */}
+        <div className="text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            WhereTo30A home
+          </Link>
         </div>
-      </section>
+      </div>
 
-      <SectionBlock title={`The ${town.name} vibe`} subtitle="Quick context from our editors">
-        <p className="text-sm leading-relaxed text-zinc-600">{vibe}</p>
-        <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-zinc-600">
-          <li>Start with Top picks, then narrow by intent rows above.</li>
-          <li>
-            Save places from search results on the home page after you sign in.
-          </li>
-          <li>Nearby cards show what&apos;s a short drive — still part of the 30A story.</li>
-        </ul>
-      </SectionBlock>
-
-      <p className="text-center text-sm text-zinc-500">
-        <Link href="/" className="font-medium text-[var(--accent)] hover:underline">
-          ← WhereTo30A home
-        </Link>
-      </p>
+      <SiteFooter />
     </div>
   );
 }

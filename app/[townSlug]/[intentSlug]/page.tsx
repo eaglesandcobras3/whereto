@@ -6,7 +6,9 @@ import {
   getServiceSupabaseOrNull,
 } from "@/lib/supabase/service-role";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
+import { Navbar } from "@/components/Navbar";
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
 export const revalidate = 3600;
@@ -61,7 +63,9 @@ async function loadSeoPage(fullSlug: string) {
       .select("response_json")
       .eq("id", row.recommendation_set_id)
       .maybeSingle();
-    const response = cache?.response_json as EnrichedRecommendationPayload | undefined;
+    const response = cache?.response_json as
+      | EnrichedRecommendationPayload
+      | undefined;
 
     let related: { slug: string; title: string }[] = [];
     if (row.town_id != null) {
@@ -109,88 +113,197 @@ export default async function SeoIntentPage({ params }: Props) {
   const row = await loadSeoPage(fullSlug);
   if (!row?.enriched) notFound();
 
-  const townLabel = townSlug.replace(/-/g, " ");
+  const townLabel = townSlug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+  const intentLabel = intentSlug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 
   return (
-    <article className="mx-auto max-w-3xl space-y-10 px-4 py-12">
-      <header className="space-y-3 border-b border-zinc-200/80 pb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-          <Link href={`/${townSlug}`} className="hover:underline">
-            {townLabel}
-          </Link>
-          <span className="font-normal text-zinc-400"> · </span>
-          <span className="font-normal text-zinc-500">
-            {intentSlug.replace(/-/g, " ")}
-          </span>
-        </p>
-        <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-          {row.title}
-        </h1>
-        {row.intro ? (
-          <p className="text-lg leading-relaxed text-zinc-600">{row.intro}</p>
-        ) : null}
-      </header>
+    <div className="min-h-screen bg-[var(--color-background)]">
+      <Navbar />
 
-      <section>
-        <h2 className="sr-only">Top recommendations</h2>
-        <TownRecListVertical enriched={row.enriched} />
-      </section>
-
-      <section className="rounded-2xl border border-zinc-200/80 bg-[var(--surface-elevated)] p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-900">Tips</h2>
-        <ul className="mt-3 list-inside list-disc space-y-2 text-sm text-zinc-600">
-          <li>
-            Use{" "}
-            <Link href="/" className="text-[var(--accent)] hover:underline">
-              AI search
-            </Link>{" "}
-            to refine by vibe, dietary needs, or time of day.
-          </li>
-          <li>
-            Town guides cover broader picks — see the{" "}
-            <Link href={`/${townSlug}`} className="text-[var(--accent)] hover:underline">
-              {townLabel} guide
+      {/* Hero */}
+      <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="mx-auto max-w-4xl px-4 py-10 sm:py-12">
+          {/* Breadcrumb */}
+          <nav className="mb-6 flex items-center gap-2 text-sm">
+            <Link
+              href="/"
+              className="text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+            >
+              Home
             </Link>
-            .
-          </li>
-          <li>Save places after signing in to build your own shortlist.</li>
-        </ul>
-      </section>
+            <svg
+              className="h-4 w-4 text-[var(--color-text-tertiary)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+            <Link
+              href={`/${townSlug}`}
+              className="text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+            >
+              {townLabel}
+            </Link>
+            <svg
+              className="h-4 w-4 text-[var(--color-text-tertiary)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+            <span className="font-medium text-[var(--color-text-primary)]">
+              {intentLabel}
+            </span>
+          </nav>
 
-      {row.related.length ? (
+          <header className="space-y-4">
+            <p className="text-eyebrow">{townLabel}</p>
+            <h1 className="text-page-title text-[var(--color-text-primary)]">
+              {row.title}
+            </h1>
+            {row.intro ? (
+              <p className="max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
+                {row.intro}
+              </p>
+            ) : null}
+          </header>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="mx-auto max-w-4xl space-y-12 px-4 py-10">
+        {/* Results */}
         <section>
-          <h2 className="text-base font-semibold text-zinc-900">
-            Related guides
+          <h2 className="sr-only">Top recommendations</h2>
+          <TownRecListVertical enriched={row.enriched} />
+        </section>
+
+        {/* Tips Card */}
+        <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-premium-sm">
+          <h2 className="text-section text-[var(--color-text-primary)]">
+            Tips for {intentLabel}
           </h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            More curated intents in this area.
-          </p>
-          <ul className="mt-4 flex flex-col gap-2">
-            {row.related.map((r) => (
-              <li key={r.slug}>
-                <Link
-                  href={`/${r.slug}`}
-                  className="text-[var(--accent)] hover:underline"
-                >
-                  {r.title}
-                </Link>
-              </li>
-            ))}
+          <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-[var(--color-text-secondary)]">
+            <li>
+              Use{" "}
+              <Link href="/" className="text-[var(--color-primary)] hover:underline">
+                AI search
+              </Link>{" "}
+              to refine by vibe, dietary needs, or time of day.
+            </li>
+            <li>
+              Town guides cover broader picks — see the{" "}
+              <Link
+                href={`/${townSlug}`}
+                className="text-[var(--color-primary)] hover:underline"
+              >
+                {townLabel} guide
+              </Link>
+              .
+            </li>
+            <li>Save places after signing in to build your own shortlist.</li>
           </ul>
         </section>
-      ) : null}
 
-      <footer className="flex flex-wrap gap-4 border-t border-zinc-200/80 pt-8 text-sm">
-        <Link href={`/${townSlug}`} className="text-[var(--accent)] hover:underline">
-          ← {townLabel} guide
-        </Link>
-        <Link href="/" className="text-[var(--accent)] hover:underline">
-          Ask AI
-        </Link>
-        <Link href="/30a" className="text-[var(--accent)] hover:underline">
-          Region overview
-        </Link>
-      </footer>
-    </article>
+        {/* Related Guides */}
+        {row.related.length ? (
+          <section>
+            <h2 className="text-section text-[var(--color-text-primary)]">
+              Related guides in {townLabel}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              More curated intents for this area.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {row.related.map((r) => (
+                <Link
+                  key={r.slug}
+                  href={`/${r.slug}`}
+                  className="
+                    rounded-xl border border-[var(--color-border)]
+                    bg-[var(--color-surface)] p-4
+                    shadow-premium-sm
+                    transition-premium hover-lift
+                    hover:border-[var(--color-primary)]/30
+                  "
+                >
+                  <span className="font-medium text-[var(--color-text-primary)]">
+                    {r.title}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Navigation Footer */}
+        <footer className="flex flex-wrap items-center justify-center gap-6 border-t border-[var(--color-border)] pt-8">
+          <Link
+            href={`/${townSlug}`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            {townLabel} guide
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            Ask AI
+          </Link>
+          <Link
+            href="/30a"
+            className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+          >
+            Region overview
+          </Link>
+        </footer>
+      </div>
+
+      <SiteFooter />
+    </div>
   );
 }

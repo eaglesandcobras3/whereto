@@ -6,8 +6,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const nav = [
     { href: "/admin", label: "Overview" },
     { href: "/admin/businesses", label: "Businesses" },
+    { href: "/admin/bulk-tags", label: "Bulk tags" },
     { href: "/admin/jobs", label: "Jobs" },
     { href: "/admin/ingestion", label: "Ingestion" },
+    { href: "/admin/cache", label: "Cache" },
+    { href: "/admin/claims", label: "Claims" },
+    { href: "/admin/topic-mining", label: "Topic mining" },
     { href: "/admin/scores", label: "Scores" },
     { href: "/admin/duplicates", label: "Duplicates" },
   ];
@@ -16,7 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-zinc-100">
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
-          <Link href="/admin" className="font-semibold text-teal-800">
+          <Link href="/admin" prefetch={false} className="font-semibold text-teal-800">
             Admin
           </Link>
           <nav className="flex flex-wrap gap-3 text-sm">
@@ -24,6 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className="text-zinc-600 hover:text-teal-700 hover:underline"
               >
                 {item.label}

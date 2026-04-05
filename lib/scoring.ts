@@ -1,4 +1,5 @@
 import type { SearchIntent } from "@/lib/intent-schema";
+import { getCompositeWeights } from "@/lib/scoring-weights";
 
 export type BusinessForScore = {
   id: string;
@@ -96,14 +97,15 @@ function compositeScore(
   rel: number,
   b: BusinessForScore,
 ): number {
+  const w = getCompositeWeights();
   return (
-    0.45 * rel +
-    0.2 * b.confidence_score +
-    0.15 * b.freshness_score +
-    0.12 * b.engagement_score +
-    0.08 * b.completeness_score +
+    w.relevance * rel +
+    w.confidence * b.confidence_score +
+    w.freshness * b.freshness_score +
+    w.engagement * b.engagement_score +
+    w.completeness * b.completeness_score +
     b.exploration_score +
-    ((b.google_rating ?? 0) / 5) * 0.05
+    ((b.google_rating ?? 0) / 5) * w.ratingTiebreak
   );
 }
 

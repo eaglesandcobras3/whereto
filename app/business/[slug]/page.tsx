@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
 import { TagPills } from "@/components/discovery/TagPills";
+import { ClaimListingForm } from "@/components/ClaimListingForm";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -17,6 +19,7 @@ async function loadBusiness(slug: string) {
     const sel = `
         id, slug, name, address, town_id, category_id, lat, lng, phone, website,
         ai_summary, google_rating, google_review_count,
+        claim_status, claimed_by_user_id,
         business_tags(tags(name, slug)),
         towns(name, slug)
       `;
@@ -53,6 +56,11 @@ export default async function BusinessPage({ params }: Props) {
   const { slug } = await params;
   const b = await loadBusiness(slug);
   if (!b) notFound();
+
+  const auth = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await auth.auth.getUser();
 
   const town = b.towns as { name?: string; slug?: string } | null;
   const tagRows = b.business_tags as
@@ -134,6 +142,15 @@ export default async function BusinessPage({ params }: Props) {
           </a>
         ) : null}
       </div>
+
+      <section className="border-t border-zinc-200 pt-8">
+        <ClaimListingForm
+          businessId={b.id as string}
+          claimStatus={(b.claim_status as string) ?? "unclaimed"}
+          userId={user?.id ?? null}
+          claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
+        />
+      </section>
     </div>
   );
 }

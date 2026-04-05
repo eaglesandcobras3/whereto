@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "WhereTo30A — AI local discovery",
-  description: "Discover restaurants, cafés, and more along 30A with WhereTo30A’s curated AI recommendations.",
+  description:
+    "Discover restaurants, cafes, and more along 30A and the Emerald Coast with WhereTo30A's curated AI recommendations.",
 };
 
 export default function RootLayout({
@@ -26,8 +29,31 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        {/* Inline script to prevent flash of wrong theme */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('whereto30a-theme');
+                  var resolved = theme;
+                  if (!theme || theme === 'system') {
+                    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  }
+                  document.documentElement.classList.add(resolved);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-text-primary)]">
+        <ThemeProvider>{children}</ThemeProvider>
+        <Analytics />
+      </body>
     </html>
   );
 }

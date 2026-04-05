@@ -67,9 +67,6 @@ export default function SharePage() {
             <p className="font-medium text-zinc-900">{r.business?.name}</p>
             <p className="text-sm text-teal-800">{r.headline}</p>
             <p className="mt-1 text-sm text-zinc-700">{r.explanation}</p>
-            {r.business?.google_rating != null ? (
-              <p className="mt-2 text-sm text-amber-700">★ {r.business.google_rating}</p>
-            ) : null}
           </li>
         ))}
       </ul>

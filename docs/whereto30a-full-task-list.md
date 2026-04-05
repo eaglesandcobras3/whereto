@@ -178,21 +178,21 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [whereto
 
 ### 3.1 Product (per PRD Phase 2)
 
-- [ ] Iterate on AI ranking weights and relevance tuning (A/B or offline eval)
-- [ ] **Collections** (group saved businesses beyond flat list)
-- [ ] **Business claims** workflow (ownership verification, edit requests)
+- [x] **Ranking weight tuning (MVP):** env-tunable composite weights — [`lib/scoring-weights.ts`](../lib/scoring-weights.ts), `SCORING_WEIGHT_*` in [`.env.example`](../.env.example) (no A/B framework yet)
+- [x] **Collections** — `user_collections` + `user_saves.collection_id`; [`/saved`](../app/saved/page.tsx), [`/api/collections`](../app/api/collections/route.ts), PATCH [`/api/saves`](../app/api/saves/route.ts)
+- [x] **Business claims (MVP)** — `business_claim_requests`, `businesses.claim_status` / `claimed_by_user_id`; user form on business detail, admin [`/admin/claims`](../app/admin/claims/page.tsx) (manual review only, not legal verification)
 
 ### 3.2 Sharing polish
 
-- [ ] Open Graph meta tags for share URLs
-- [ ] Richer share analytics (funnels, sources)
+- [x] Open Graph + Twitter card metadata for share URLs — [`app/share/[id]/layout.tsx`](../app/share/[id]/layout.tsx), [`lib/data/share-meta.ts`](../lib/data/share-meta.ts)
+- [x] Coarse share analytics — `shares.last_referrer_host` (hostname only) on view — [`app/api/share/[id]/route.ts`](../app/api/share/[id]/route.ts) (no funnel/product analytics yet)
 
 ### 3.3 Admin and data quality
 
-- [ ] Bulk tag assignment / management
-- [ ] Cache admin: view entries, invalidate, optional warm list
+- [x] Bulk tag assignment — [`/admin/bulk-tags`](../app/admin/bulk-tags/page.tsx)
+- [x] Cache admin: list + delete — [`/admin/cache`](../app/admin/cache/page.tsx)
 - [ ] Stronger duplicate automation (batch scans, confidence scores beyond MVP manual review)
-- [ ] Automated refresh scheduling UI + **freshness monitoring** dashboard
+- [ ] Automated refresh scheduling UI + **freshness monitoring** dashboard (MVP: **stale 90d+** count on admin overview)
 - [ ] Data quality scoring surface for operators
 
 ---

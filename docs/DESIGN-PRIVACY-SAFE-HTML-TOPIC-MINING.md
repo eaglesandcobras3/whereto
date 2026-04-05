@@ -1,7 +1,7 @@
 # Design: Privacy-Safe Local HTML Topic Mining & Category Queue Guardrails
 
 **ID:** 18 — Local HTML topic mining for category/intent discovery  
-**Status:** Design (not implemented)  
+**Status:** Implemented (MVP): migration `20260407120000_topic_mining_privacy.sql`, pipeline in `lib/topic-mining/`, admin UI `/admin/topic-mining`.  
 **Principle:** *Ephemeral processing, permanent aggregation only.*
 
 This system lets **admins** submit **temporary** local/community HTML so the product can infer **abstract** category and intent demand signals. It must **not** archive user-generated content (UGC), identities, or reconstructable source material.

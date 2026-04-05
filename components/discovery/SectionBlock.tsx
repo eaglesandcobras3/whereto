@@ -8,11 +8,15 @@ type Props = {
 
 export function SectionBlock({ title, subtitle, children }: Props) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+        <h2 className="text-section text-[var(--color-text-primary)]">
+          {title}
+        </h2>
         {subtitle ? (
-          <p className="mt-1 text-sm text-zinc-600">{subtitle}</p>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            {subtitle}
+          </p>
         ) : null}
       </div>
       {children}

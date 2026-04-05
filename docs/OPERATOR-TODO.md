@@ -10,7 +10,7 @@
 
 - [ ] Copy [`.env.example`](../.env.example) → `.env.local` and fill values (see below).
 - [ ] Create a **Supabase** project at [supabase.com](https://supabase.com).
-- [ ] In Supabase **SQL Editor**, run **all** migration files in [supabase/migrations/](../supabase/migrations/) in timestamp order (including `20260404120000_seo_town_architecture.sql` for regions, SEO tables, and `businesses.slug`), then [supabase/seed.sql](../supabase/seed.sql). Details: [supabase/README.md](../supabase/README.md).
+- [ ] In Supabase **SQL Editor**, run **all** migration files in [supabase/migrations/](../supabase/migrations/) in timestamp order (including `20260404120000_seo_town_architecture.sql`, `20260407120000_topic_mining_privacy.sql`, `20260408120000_phase3_collections_claims_cache.sql` for Phase 3 collections/claims, and `20260409000000_add_expanded_coastal_towns.sql` for expanded coastal coverage), then [supabase/seed.sql](../supabase/seed.sql). Details: [supabase/README.md](../supabase/README.md).
 - [ ] If the `on_auth_user_created` trigger on `auth.users` fails in SQL Editor, create it via Dashboard → **Authentication** / **Database** hooks per Supabase docs, or run the trigger block from the migration when you have sufficient privileges.
 - [ ] From the repo: `npm install` and `npm run dev`.
 - [ ] Sign up once via `/login` (magic link). In Supabase SQL Editor, promote yourself to admin:
@@ -55,6 +55,19 @@
 
 ---
 
+## Premium Redesign: Post-deployment tasks
+
+After deploying the premium redesign code, complete these steps to enable new towns and content:
+
+- [ ] **Apply expanded towns migration:** Run `20260409000000_add_expanded_coastal_towns.sql` in Supabase SQL Editor. This adds Destin, Miramar Beach, Sandestin, Dune Allen Beach, Gulf Place, Seagrove Beach, Prominence, and Panama City Beach.
+- [ ] **Run discovery cron for new towns:** Trigger `/api/cron/discovery` to populate businesses for the new towns (Destin, Miramar Beach, Sandestin, etc.). The migration creates pending jobs automatically.
+- [ ] **Run precompute cron:** Trigger `/api/cron/recommendation-precompute` to populate `query_cache` with recommendations for all towns (including new ones) and the 11 new intent types (brunch, breakfast, dinner, bars, live-music, shopping, outdoor-activities, wellness, water-sports, pet-friendly, romantic).
+- [ ] **Run SEO publish cron:** Trigger `/api/cron/seo-publish` to create `seo_pages` entries from the precomputed cache rows.
+- [ ] **Verify dark mode:** Test the site in both light and dark modes. The theme toggle is in the navbar.
+- [ ] **Verify new towns:** Confirm `/destin`, `/miramar-beach`, `/sandestin`, `/panama-city-beach` and other new town pages render correctly.
+
+---
+
 ## Not done in code yet (optional follow-ups)
 
 - **Stricter rate limits:** move from in-memory per instance to Vercel KV / edge if you need global quotas.
@@ -70,6 +83,9 @@
 | 2026-04-03 | Phase 1 wrap: run **both** SQL migrations (adds `insert_discovery_business_with_tags`); CI runs lint, Vitest, build, Playwright; in-memory `/api/search` rate limit in code. |
 | 2026-04-04 | Phase 2 SEO/towns: apply `20260404120000_seo_town_architecture.sql`; new crons `recommendation-precompute` + `seo-publish` in [vercel.json](../vercel.json). |
 | 2026-04-06 | Phase 2 completion: optional `NEXT_PUBLIC_SITE_URL`; `/sitemap.xml` + `/robots.txt`; expanded precompute (all region towns × category/intent rows), town hubs read cache first; `popular-cache` cron runs a precompute pass; `generateStaticParams` skips DB when env missing so CI/`next build` works without Supabase. |
+| 2026-04-06 | Privacy-safe topic mining: apply `20260407120000_topic_mining_privacy.sql`; admin **`/admin/topic-mining`** (paste HTML → aggregates only; candidates → build queue). See [DESIGN-PRIVACY-SAFE-HTML-TOPIC-MINING.md](./DESIGN-PRIVACY-SAFE-HTML-TOPIC-MINING.md). |
+| 2026-04-06 | Phase 3 (MVP slice): apply `20260408120000_phase3_collections_claims_cache.sql` — saved **collections**, **listing claims** (`/admin/claims`, business page form), **share** Open Graph + coarse referrer host, **cache admin**, **bulk tags**, optional **SCORING_WEIGHT_*** env tuning. |
+| 2026-04-05 | **Premium Redesign:** apply `20260409000000_add_expanded_coastal_towns.sql` — adds Destin, Miramar Beach, Sandestin, Panama City Beach, and 4 additional 30A communities. New design system with dark mode, upgraded components (Navbar, SearchBar, BusinessCard, TownCard, etc.), 11 new intent templates. Run discovery + precompute + SEO crons for new content. |
 
 ---
 
