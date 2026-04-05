@@ -14,6 +14,7 @@ import { PromptChips } from "@/components/home/PromptChips";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { SaveButton } from "@/components/discovery/SaveButton";
 import { TagPills } from "@/components/discovery/TagPills";
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 import type { HomeFeaturedBusiness } from "@/lib/data/home-features";
 import { HOME_TOWN_SPOTLIGHT_SLUGS } from "@/lib/data/home-features";
 import type { TownRef, CategoryRef } from "@/lib/data/home-explorer";
@@ -37,6 +38,7 @@ type Rec = {
     slug?: string;
     tags?: string[];
     ai_summary?: string | null;
+    image_url?: string | null;
   };
 };
 
@@ -459,33 +461,54 @@ export function HomePage({ explorer, featured }: Props) {
                 return (
                   <li
                     key={r.business_id}
-                    className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-premium-sm transition-premium hover-lift"
+                    className="group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-premium-sm transition-premium hover-lift"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        {b.slug ? (
-                          <Link
-                            href={`/business/${b.slug}`}
-                            className="text-lg font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors"
-                          >
-                            {b.name ?? "Business"}
-                          </Link>
-                        ) : (
-                          <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-                            {b.name ?? "Business"}
-                          </p>
-                        )}
-                        <p className="text-sm font-medium text-[var(--color-primary)]">
-                          {r.headline}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 shrink-0">
-                        <SaveButton
-                          businessId={r.business_id}
-                          onSave={saveBusiness}
-                          size="sm"
+                    {b.slug ? (
+                      <Link
+                        href={`/business/${b.slug}`}
+                        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                      >
+                        <ListingThumbnail
+                          slug={b.slug}
+                          imageUrl={b.image_url}
+                          className="aspect-[5/4] min-h-[160px] rounded-none"
+                          rounded="none"
                         />
-                        <details className="relative">
+                      </Link>
+                    ) : (
+                      <ListingThumbnail
+                        slug={r.business_id}
+                        imageUrl={b.image_url}
+                        className="aspect-[5/4] min-h-[160px] rounded-none"
+                        rounded="none"
+                      />
+                    )}
+                    <div className="space-y-3 p-5 pt-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          {b.slug ? (
+                            <Link
+                              href={`/business/${b.slug}`}
+                              className="text-lg font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors"
+                            >
+                              {b.name ?? "Business"}
+                            </Link>
+                          ) : (
+                            <p className="text-lg font-semibold text-[var(--color-text-primary)]">
+                              {b.name ?? "Business"}
+                            </p>
+                          )}
+                          <p className="text-sm font-medium text-[var(--color-primary)]">
+                            {r.headline}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <SaveButton
+                            businessId={r.business_id}
+                            onSave={saveBusiness}
+                            size="sm"
+                          />
+                          <details className="relative">
                           <summary className="cursor-pointer list-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-2 text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] transition-colors">
                             <svg
                               className="h-4 w-4"
@@ -568,29 +591,30 @@ export function HomePage({ explorer, featured }: Props) {
                               Don&apos;t show again
                             </button>
                           </div>
-                        </details>
+                          </details>
+                        </div>
                       </div>
-                    </div>
-                    <p className="mt-2 text-sm text-[var(--color-text-secondary)] line-clamp-2">
-                      {r.explanation}
-                    </p>
-                    <TagPills
-                      tags={[
-                        ...(r.highlighted_tags ?? []),
-                        ...(b.tags ?? []),
-                      ].slice(0, 6)}
-                      colored
-                    />
-                    {b.slug ? (
-                      <p className="mt-3">
-                        <Link
-                          href={`/business/${b.slug}`}
-                          className="text-sm font-medium text-[var(--color-primary)] hover:underline"
-                        >
-                          View details
-                        </Link>
+                      <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2">
+                        {r.explanation}
                       </p>
-                    ) : null}
+                      <TagPills
+                        tags={[
+                          ...(r.highlighted_tags ?? []),
+                          ...(b.tags ?? []),
+                        ].slice(0, 6)}
+                        colored
+                      />
+                      {b.slug ? (
+                        <p>
+                          <Link
+                            href={`/business/${b.slug}`}
+                            className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                          >
+                            View details
+                          </Link>
+                        </p>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}

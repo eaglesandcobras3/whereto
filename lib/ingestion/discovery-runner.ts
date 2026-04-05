@@ -159,6 +159,12 @@ export async function processDiscoveryJob(
         ? JSON.parse(JSON.stringify(details.regularOpeningHours))
         : null;
 
+      const photoNames =
+        details.photos
+          ?.map((ph) => ph.name)
+          .filter((n): n is string => typeof n === "string" && n.length > 0)
+          .slice(0, 8) ?? null;
+
       const { data: newId, error: insErr } = await supabase.rpc(
         "insert_discovery_business_with_tags",
         {
@@ -178,6 +184,7 @@ export async function processDiscoveryJob(
           p_status:
             details.businessStatus === "CLOSED_PERMANENTLY" ? "closed" : "active",
           p_tag_ids: tagIds,
+          p_google_photos: photoNames?.length ? photoNames : null,
         },
       );
 

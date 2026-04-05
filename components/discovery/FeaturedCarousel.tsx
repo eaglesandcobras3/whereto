@@ -5,20 +5,7 @@ import Link from "next/link";
 import type { HomeFeaturedBusiness } from "@/lib/data/home-features";
 import { SectionBlock } from "@/components/discovery/SectionBlock";
 import { TagPills } from "@/components/discovery/TagPills";
-
-function gradientForSlug(slug: string): string {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) h = (h + slug.charCodeAt(i) * (i + 1)) % 360;
-  const palettes = [
-    "from-sky-200/90 via-cyan-100/80 to-teal-200/70",
-    "from-amber-100/90 via-orange-100/70 to-rose-200/60",
-    "from-emerald-100/90 via-teal-100/70 to-cyan-200/60",
-    "from-violet-100/80 via-slate-100/70 to-sky-200/60",
-    "from-rose-100/80 via-pink-100/70 to-fuchsia-200/60",
-    "from-lime-100/80 via-green-100/70 to-emerald-200/60",
-  ];
-  return palettes[h % palettes.length];
-}
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 
 type Props = {
   title: string;
@@ -195,14 +182,12 @@ export function FeaturedCarousel({
                   transition-premium hover-lift
                 "
               >
-                {/* Image / Gradient header */}
-                <div
-                  className={`relative h-28 overflow-hidden bg-gradient-to-br ${gradientForSlug(b.slug)}`}
-                  aria-hidden
-                >
-                  <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                </div>
+                <ListingThumbnail
+                  slug={b.slug}
+                  imageUrl={b.image_url}
+                  className="aspect-[5/4] min-h-[160px] rounded-none"
+                  rounded="none"
+                />
 
                 {/* Content */}
                 <div className="space-y-2 p-4">

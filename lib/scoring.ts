@@ -29,6 +29,8 @@ export type BusinessRowWithTags = BusinessForScore & {
   website?: string | null;
   price_level?: number | null;
   ai_summary?: string | null;
+  /** Google Places photo resource names; proxied for display. */
+  google_photos?: string[] | null;
 };
 
 /** Optional anchor town for SEO/town hubs (TDD-SEO-TOWNS §7). */

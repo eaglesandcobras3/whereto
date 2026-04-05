@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { TagPills } from "@/components/discovery/TagPills";
 import { SaveButton } from "@/components/discovery/SaveButton";
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 
 export type BusinessCardBusiness = {
   id?: string;
@@ -38,20 +39,6 @@ type Props = {
   onWebsiteClick?: (businessId: string) => void;
 };
 
-function generateGradient(slug: string): string {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) h = (h + slug.charCodeAt(i) * (i + 1)) % 360;
-  const gradients = [
-    "from-sky-100/90 via-cyan-50/80 to-teal-100/70",
-    "from-amber-50/90 via-orange-50/70 to-rose-100/60",
-    "from-emerald-50/90 via-teal-50/70 to-cyan-100/60",
-    "from-violet-50/80 via-slate-50/70 to-sky-100/60",
-    "from-rose-50/80 via-pink-50/70 to-fuchsia-100/60",
-    "from-lime-50/80 via-green-50/70 to-emerald-100/60",
-  ];
-  return gradients[h % gradients.length];
-}
-
 export function BusinessCard({
   rec,
   variant = "consumer",
@@ -75,22 +62,15 @@ export function BusinessCard({
         ${isCompact ? "min-w-[260px] max-w-[280px]" : "min-w-[280px] max-w-sm sm:min-w-[300px]"}
       `}
     >
-      {/* Image / Gradient Header */}
-      {!isCompact && (
-        <div
-          className={`relative h-24 bg-gradient-to-br ${generateGradient(slug)}`}
-          aria-hidden
-        >
-          {b.image_url ? (
-            <img
-              src={b.image_url}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        </div>
-      )}
+      {!isCompact ? (
+        b.slug ? (
+          <Link href={`/business/${b.slug}`} className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2">
+            <ListingThumbnail slug={slug} imageUrl={b.image_url} />
+          </Link>
+        ) : (
+          <ListingThumbnail slug={slug} imageUrl={b.image_url} />
+        )
+      ) : null}
 
       <div className={isCompact ? "p-4" : "p-5"}>
         <div className="flex flex-wrap items-start justify-between gap-2">

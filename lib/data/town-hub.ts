@@ -1,4 +1,5 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { firstPlacePhotoProxyUrl } from "@/lib/media/place-photo";
 import { searchIntentSchema } from "@/lib/intent-schema";
 import { buildRecommendationSet } from "@/lib/search/recommendation-set";
 import { loadLocationRankingScope } from "@/lib/search/location-scope";
@@ -125,6 +126,7 @@ export type AdjacentBusinessPreview = {
   townName: string;
   townSlug: string;
   tagSlugs: string[];
+  image_url: string | null;
 };
 
 function tagsFromBusinessRow(
@@ -174,6 +176,7 @@ export async function getAdjacentTownBusinessPreviews(
         slug,
         name,
         ai_summary,
+        google_photos,
         engagement_score,
         towns(name, slug),
         business_tags(tags(slug))
@@ -205,6 +208,7 @@ export async function getAdjacentTownBusinessPreviews(
         tagSlugs: tagsFromBusinessRow(
           row.business_tags as Parameters<typeof tagsFromBusinessRow>[0],
         ),
+        image_url: firstPlacePhotoProxyUrl(row.google_photos as string[] | null),
       });
     }
     return out;

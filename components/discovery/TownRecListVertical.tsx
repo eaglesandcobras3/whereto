@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 import { TagPills } from "@/components/discovery/TagPills";
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 
 type Props = { enriched: EnrichedRecommendationPayload };
 
@@ -23,99 +24,123 @@ export function TownRecListVertical({ enriched }: Props) {
           lng?: number;
           website?: string | null;
           tags?: string[];
+          image_url?: string | null;
         };
         const m = b.lat != null && b.lng != null;
+        const seed = b.slug ?? r.business_id;
         return (
           <li
             key={r.business_id}
-            className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-premium-sm transition-premium hover-lift"
+            className="group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-premium-sm transition-premium hover-lift"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-1">
+            {b.slug ? (
+              <Link
+                href={`/business/${b.slug}`}
+                className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+              >
+                <ListingThumbnail
+                  slug={seed}
+                  imageUrl={b.image_url}
+                  rounded="none"
+                  className="aspect-[21/9] min-h-[140px] max-h-[220px] rounded-none sm:aspect-[3/1]"
+                />
+              </Link>
+            ) : (
+              <ListingThumbnail
+                slug={seed}
+                imageUrl={b.image_url}
+                rounded="none"
+                className="aspect-[21/9] min-h-[140px] max-h-[220px] rounded-none sm:aspect-[3/1]"
+              />
+            )}
+            <div className="space-y-3 p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-1">
+                  {b.slug ? (
+                    <Link
+                      href={`/business/${b.slug}`}
+                      className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors"
+                    >
+                      {b.name ?? "Business"}
+                    </Link>
+                  ) : (
+                    <p className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)]">
+                      {b.name ?? "Business"}
+                    </p>
+                  )}
+                  <p className="text-sm font-medium text-[var(--color-primary)]">
+                    {r.headline}
+                  </p>
+                </div>
                 {b.slug ? (
                   <Link
                     href={`/business/${b.slug}`}
-                    className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors"
+                    className="shrink-0 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-secondary)] transition-colors"
                   >
-                    {b.name ?? "Business"}
+                    View
                   </Link>
-                ) : (
-                  <p className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)]">
-                    {b.name ?? "Business"}
-                  </p>
-                )}
-                <p className="text-sm font-medium text-[var(--color-primary)]">
-                  {r.headline}
-                </p>
+                ) : null}
               </div>
-              {b.slug ? (
-                <Link
-                  href={`/business/${b.slug}`}
-                  className="shrink-0 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-secondary)] transition-colors"
-                >
-                  View
-                </Link>
-              ) : null}
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-              {r.explanation}
-            </p>
-            <TagPills
-              tags={[...(r.highlighted_tags ?? []), ...(b.tags ?? [])]}
-              colored
-            />
-            <div className="mt-4 flex flex-wrap gap-4 text-sm">
-              {m ? (
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+              <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                {r.explanation}
+              </p>
+              <TagPills
+                tags={[...(r.highlighted_tags ?? []), ...(b.tags ?? [])]}
+                colored
+              />
+              <div className="flex flex-wrap gap-4 text-sm">
+                {m ? (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  Directions
-                </a>
-              ) : null}
-              {b.website ? (
-                <a
-                  href={b.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    Directions
+                  </a>
+                ) : null}
+                {b.website ? (
+                  <a
+                    href={b.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                    />
-                  </svg>
-                  Website
-                </a>
-              ) : null}
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                      />
+                    </svg>
+                    Website
+                  </a>
+                ) : null}
+              </div>
             </div>
           </li>
         );

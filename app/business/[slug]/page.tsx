@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
+import { firstPlacePhotoProxyUrl } from "@/lib/media/place-photo";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 
@@ -18,7 +19,7 @@ async function loadBusiness(slug: string) {
     const isUuid = UUID_RE.test(slug);
     const sel = `
         id, slug, name, address, town_id, category_id, lat, lng, phone, website,
-        ai_summary, google_rating, google_review_count,
+        ai_summary, google_rating, google_review_count, google_photos,
         claim_status, claimed_by_user_id,
         business_tags(tags(name, slug)),
         towns(name, slug)
@@ -46,9 +47,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const b = await loadBusiness(slug);
   if (!b) return { title: "Business" };
+  const desc = (b.ai_summary as string)?.slice(0, 160) ?? undefined;
+  const hero = firstPlacePhotoProxyUrl(b.google_photos as string[] | null);
+  const ogUrl = hero ? `${getSiteUrl()}${hero}` : undefined;
   return {
     title: `${b.name as string} — WhereTo30A`,
-    description: (b.ai_summary as string)?.slice(0, 160) ?? undefined,
+    description: desc,
+    openGraph: ogUrl
+      ? { title: `${b.name as string} — WhereTo30A`, description: desc, images: [{ url: ogUrl }] }
+      : { title: `${b.name as string} — WhereTo30A`, description: desc },
+    twitter: ogUrl
+      ? { card: "summary_large_image", description: desc, images: [ogUrl] }
+      : { card: "summary", description: desc },
   };
 }
 
@@ -72,6 +82,8 @@ export default async function BusinessPage({ params }: Props) {
     if (t && typeof t === "object" && "slug" in t && t.slug) tagSlugs.push(t.slug);
   }
 
+  const heroImage = firstPlacePhotoProxyUrl(b.google_photos as string[] | null);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -87,10 +99,13 @@ export default async function BusinessPage({ params }: Props) {
           }
         : undefined,
     url: `${getSiteUrl()}/business/${b.slug as string}`,
+    ...(heroImage
+      ? { image: [`${getSiteUrl()}${heroImage}`] }
+      : {}),
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-12">
+    <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:py-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -108,8 +123,31 @@ export default async function BusinessPage({ params }: Props) {
           </>
         ) : null}
       </nav>
+      {heroImage ? (
+        <div className="space-y-2">
+          <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-100 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.25)]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- proxied Places bytes; avoid optimizer coupling */}
+            <img
+              src={heroImage}
+              alt=""
+              className="aspect-[21/9] max-h-[min(42vw,340px)] w-full object-cover sm:aspect-[2.4/1]"
+            />
+          </div>
+          <p className="text-center text-[11px] text-zinc-400">
+            Photo from{" "}
+            <a
+              href="https://developers.google.com/maps/documentation/places/web-service/policies#photo-attribution"
+              className="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-600"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Google Places
+            </a>
+          </p>
+        </div>
+      ) : null}
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
           {b.name as string}
         </h1>
         {b.address ? (

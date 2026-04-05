@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 import { TagPills } from "@/components/discovery/TagPills";
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 
 type Props = { enriched: EnrichedRecommendationPayload };
 
@@ -23,64 +24,78 @@ export function TownRecList({ enriched }: Props) {
           lng?: number;
           website?: string | null;
           tags?: string[];
+          image_url?: string | null;
         };
         const m = b.lat != null && b.lng != null;
+        const seed = b.slug ?? r.business_id;
         return (
           <li
             key={r.business_id}
-            className="min-w-[280px] max-w-sm shrink-0 snap-start rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-premium-sm transition-premium hover-lift sm:min-w-[300px]"
+            className="group min-w-[280px] max-w-sm shrink-0 snap-start overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-premium-sm transition-premium hover-lift sm:min-w-[300px]"
           >
             {b.slug ? (
               <Link
                 href={`/business/${b.slug}`}
-                className="text-lg font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors"
+                className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
               >
-                {b.name ?? "Business"}
+                <ListingThumbnail slug={seed} imageUrl={b.image_url} rounded="none" className="aspect-[5/4] min-h-[156px] rounded-none" />
               </Link>
             ) : (
-              <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-                {b.name ?? "Business"}
-              </p>
+              <ListingThumbnail slug={seed} imageUrl={b.image_url} rounded="none" className="aspect-[5/4] min-h-[156px] rounded-none" />
             )}
-            <p className="text-sm font-medium text-[var(--color-primary)]">
-              {r.headline}
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)] line-clamp-2">
-              {r.explanation}
-            </p>
-            <TagPills
-              tags={[...(r.highlighted_tags ?? []), ...(b.tags ?? [])]}
-              max={5}
-            />
-            <div className="mt-3 flex flex-wrap gap-3 text-sm">
-              {m ? (
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[var(--color-primary)] hover:underline"
-                >
-                  Directions
-                </a>
-              ) : null}
-              {b.website ? (
-                <a
-                  href={b.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[var(--color-primary)] hover:underline"
-                >
-                  Website
-                </a>
-              ) : null}
+            <div className="space-y-2 p-5">
               {b.slug ? (
                 <Link
                   href={`/business/${b.slug}`}
-                  className="text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] hover:underline"
+                  className="text-lg font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors"
                 >
-                  Details
+                  {b.name ?? "Business"}
                 </Link>
-              ) : null}
+              ) : (
+                <p className="text-lg font-semibold text-[var(--color-text-primary)]">
+                  {b.name ?? "Business"}
+                </p>
+              )}
+              <p className="text-sm font-medium text-[var(--color-primary)]">
+                {r.headline}
+              </p>
+              <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2">
+                {r.explanation}
+              </p>
+              <TagPills
+                tags={[...(r.highlighted_tags ?? []), ...(b.tags ?? [])]}
+                max={5}
+              />
+              <div className="flex flex-wrap gap-3 text-sm pt-1">
+                {m ? (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--color-primary)] hover:underline"
+                  >
+                    Directions
+                  </a>
+                ) : null}
+                {b.website ? (
+                  <a
+                    href={b.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--color-primary)] hover:underline"
+                  >
+                    Website
+                  </a>
+                ) : null}
+                {b.slug ? (
+                  <Link
+                    href={`/business/${b.slug}`}
+                    className="text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] hover:underline"
+                  >
+                    Details
+                  </Link>
+                ) : null}
+              </div>
             </div>
           </li>
         );

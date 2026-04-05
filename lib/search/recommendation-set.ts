@@ -15,6 +15,7 @@ import {
   synthesizeWithOpenAI,
 } from "@/lib/ai/search-ai";
 import { loadLocationRankingScope } from "@/lib/search/location-scope";
+import { firstPlacePhotoProxyUrl } from "@/lib/media/place-photo";
 
 type DbBusinessRow = {
   id: string;
@@ -40,6 +41,7 @@ type DbBusinessRow = {
   bad_experience_unique_users: number;
   google_rating: number | null;
   google_review_count: number | null;
+  google_photos?: string[] | null;
   business_tags: { tags: { slug: string } | { slug: string }[] | null }[] | null;
 };
 
@@ -89,6 +91,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
     bad_experience_unique_users,
     google_rating,
     google_review_count,
+    google_photos: rowPhotos,
   } = row;
   return {
     id,
@@ -114,6 +117,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
     bad_experience_unique_users,
     google_rating,
     google_review_count,
+    google_photos: rowPhotos ?? null,
     tag_slugs,
   };
 }
@@ -144,7 +148,7 @@ export async function fetchActiveBusinessesWithTags(
       id, slug, name, address, town_id, category_id, lat, lng, phone, website, price_level, ai_summary,
       status, suspected_closed, admin_suppressed,
       confidence_score, freshness_score, engagement_score, exploration_score, completeness_score,
-      bad_experience_unique_users, google_rating, google_review_count,
+      bad_experience_unique_users, google_rating, google_review_count, google_photos,
       business_tags(tags(slug))
     `,
     )
@@ -310,6 +314,7 @@ export async function buildRecommendationSet(options: {
                 google_review_count: b.google_review_count,
                 tags: b.tag_slugs,
                 ai_summary: b.ai_summary,
+                image_url: firstPlacePhotoProxyUrl(b.google_photos ?? null),
               }
             : {},
         };
