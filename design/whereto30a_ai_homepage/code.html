@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-nav {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#6c6150",
+                        "outline": "#707979",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#1a1c1c",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004e59",
+                        "surface-variant": "#e3e2e1",
+                        "on-secondary-fixed-variant": "#504536",
+                        "surface-container-low": "#f4f3f2",
+                        "inverse-on-surface": "#f1f0f0",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "secondary": "#685d4c",
+                        "tertiary-fixed-dim": "#accbdd",
+                        "primary-fixed-dim": "#8bd2df",
+                        "on-tertiary-fixed-variant": "#2d4a5a",
+                        "surface-container-high": "#e9e8e7",
+                        "primary-fixed": "#a7eefc",
+                        "primary-container": "#004b54",
+                        "on-tertiary-container": "#96b5c7",
+                        "on-error": "#ffffff",
+                        "surface": "#faf9f8",
+                        "tertiary-container": "#294756",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#221a0d",
+                        "tertiary-fixed": "#c8e7fa",
+                        "on-primary-fixed": "#001f24",
+                        "on-primary-container": "#74bbc8",
+                        "inverse-primary": "#8bd2df",
+                        "secondary-fixed-dim": "#d4c4b0",
+                        "secondary-container": "#eeddc8",
+                        "surface-dim": "#dadad9",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#bfc8c9",
+                        "on-background": "#1a1c1c",
+                        "inverse-surface": "#2f3130",
+                        "tertiary": "#10313f",
+                        "secondary-fixed": "#f0e0cb",
+                        "on-surface-variant": "#404849",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#faf9f8",
+                        "surface-container": "#eeeeed",
+                        "surface-tint": "#156874",
+                        "on-tertiary-fixed": "#001e2b",
+                        "primary": "#003239",
+                        "background": "#faf9f8",
+                        "surface-container-highest": "#e3e2e1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-stone-50/70 dark:bg-stone-900/70 backdrop-blur-xl shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)]">
+<div class="flex justify-between items-center px-12 py-6 max-w-screen-2xl mx-auto">
+<div class="text-2xl font-extrabold tracking-tighter text-[#004B50] dark:text-stone-50 cursor-pointer">WhereTo30A</div>
+<div class="hidden md:flex items-center space-x-10 font-['Manrope'] tracking-tight text-sm font-semibold">
+<a class="text-stone-500 dark:text-stone-400 hover:text-[#004B50] transition-all duration-300 ease-in-out hover:opacity-80" href="#">Towns</a>
+<a class="text-stone-500 dark:text-stone-400 hover:text-[#004B50] transition-all duration-300 ease-in-out hover:opacity-80" href="#">Eat &amp; Drink</a>
+<a class="text-stone-500 dark:text-stone-400 hover:text-[#004B50] transition-all duration-300 ease-in-out hover:opacity-80" href="#">Experiences</a>
+<a class="text-[#004B50] dark:text-stone-50 border-b-2 border-[#004B50] pb-1 transition-all duration-300 ease-in-out hover:opacity-80" href="#">My Curator</a>
+</div>
+<div class="flex items-center space-x-6">
+<button class="material-symbols-outlined text-stone-600 hover:text-[#004B50] transition-all" data-icon="person">person</button>
+<button class="bg-primary text-white px-8 py-3 rounded-full font-semibold text-sm hover:opacity-90 transition-all scale-95 active:duration-100">Plan Trip</button>
+</div>
+</div>
+</nav>
+<main class="pt-32">
+<!-- Hero Search Section -->
+<section class="max-w-screen-xl mx-auto px-6 mb-24">
+<div class="text-center mb-16">
+<h1 class="font-headline text-6xl md:text-8xl font-extrabold tracking-tight text-primary mb-8">
+                    Discover your <span class="text-[#004B50]">coastal soul.</span>
+</h1>
+<div class="relative max-w-3xl mx-auto group">
+<div class="absolute -inset-1 bg-gradient-to-r from-primary/10 to-primary-container/10 rounded-full blur opacity-25 group-focus-within:opacity-100 transition duration-1000 group-focus-within:duration-200"></div>
+<div class="relative flex items-center bg-surface-container-highest rounded-full px-8 py-6 shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)] ring-1 ring-outline-variant/10">
+<span class="material-symbols-outlined text-primary/40 mr-4" data-icon="auto_awesome">auto_awesome</span>
+<input class="w-full bg-transparent border-none focus:ring-0 text-xl font-medium placeholder-stone-400" placeholder="I'm looking for a quiet dinner in Alys Beach..." type="text"/>
+<div class="w-[2px] h-8 bg-primary animate-pulse ml-1 opacity-60"></div>
+</div>
+</div>
+</div>
+<!-- Stripe-inspired Category Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Stays -->
+<div class="group relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer bg-surface-container-low transition-all duration-500 hover:-translate-y-2">
+<img class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" data-alt="luxury white architectural villa with private pool and palm trees in seaside florida aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8Z1VZ20tgTER9UR3bBM6r06j-d-5Z1Gq8MylsrXApJHgJBYPiZe8c6PMMszvZuug3Crfjhzoho8B6d_Ii8vNlwpUgJ7QHVrUJ5QQyQ9tr_iSm1eoaqA6-85Rw_xRlzLQfRIVWaKUtiX1uM7V_S_rH3kQaXzgMjD50T0ki0pig6XfAU-xo1zCeab91CmiuCnxL7AurN2HYzF4dlPXGJL9DDpoxW2aJsYrLBacPuNOJjEfxvgV60fDlRVVicOpJ83SmkGmjXhHHRPE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-8 left-8 right-8">
+<p class="text-xs font-bold tracking-widest text-white/70 mb-2 uppercase">EXPERIENCE</p>
+<h3 class="font-headline text-3xl font-bold text-white mb-2">Curated Stays</h3>
+<p class="text-white/80 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">From iconic white villas to hidden dune escapes.</p>
+</div>
+</div>
+<!-- Dining -->
+<div class="group relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer bg-surface-container-low transition-all duration-500 hover:-translate-y-2">
+<img class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" data-alt="upscale outdoor dining table at sunset with emerald water background and white linen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAT6b8gXLzWiWyA9Ys8PGd61JZWwGjZYthaJ1S9oPM-7kMcI5OsG8M9mcwnAYTk_TJa2ZjB1_p77pt75EsmUsCDaGWi8OVsMjgfbfH-UMWtMBjjttHG--qvOf0esVZe8c4Go6wuw3tRscx1Uxe0_KYms0c3H_X6JLh7cEuGHNpjSYnisSmQf600LsuOm6HaROOGt3Q7DHJHb08YrRGrEUZwRLYin8CH0bQLAWHwq-Je-1f4OgYHRE1-czZ9Ot5BVPGAd2uh0nODpc0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-8 left-8 right-8">
+<p class="text-xs font-bold tracking-widest text-white/70 mb-2 uppercase">FLAVORS</p>
+<h3 class="font-headline text-3xl font-bold text-white mb-2">Eat &amp; Drink</h3>
+<p class="text-white/80 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">Reserve the best tables on the Gulf coast.</p>
+</div>
+</div>
+<!-- Experiences -->
+<div class="group relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer bg-surface-container-low transition-all duration-500 hover:-translate-y-2">
+<img class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" data-alt="luxury yacht on emerald blue water during bright sunny day with crystal clear waves" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4IBxa5JtWkiUhNB3vfCbO3zlfx4aEDLtqkHlHAuX_VUACY25a2xwu5DjBEFWAyrhvlnQwE3JNoV66xsv9KrdvMy8LWDPixhBWQ49VcWSLhr1xRzi5_uduWad-X68qp9u2BGtIGQ8i3ABxhELvV3lDHe0woGkcYRbDrNLIcQlcxrqShvxUZQTcSE5rt0vxSMihJ_hjihB9jWi9-MrcS1DNR-iMMwwtSqD08KzK8BZaxNrMVpT669CBB6rLohLROLGlX6hQah_Nfzk"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-8 left-8 right-8">
+<p class="text-xs font-bold tracking-widest text-white/70 mb-2 uppercase">LIFESTYLE</p>
+<h3 class="font-headline text-3xl font-bold text-white mb-2">Experiences</h3>
+<p class="text-white/80 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">Private boat charters, bonfire nights, and dune tours.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Towns Masonry Section -->
+<section class="bg-surface-container-low py-32">
+<div class="max-w-screen-xl mx-auto px-6">
+<div class="flex justify-between items-end mb-16">
+<div>
+<span class="text-xs font-bold tracking-[0.2em] text-primary/50 uppercase">The Neighborhoods</span>
+<h2 class="font-headline text-5xl font-extrabold text-primary mt-2">Icons of 30A</h2>
+</div>
+<button class="text-primary font-semibold border-b-2 border-primary pb-1 hover:opacity-70 transition-all">Explore all Towns</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Seaside -->
+<div class="md:col-span-8 group relative h-[500px] rounded-xl overflow-hidden cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" data-alt="scenic view of iconic white beach pavilion at seaside florida with boardwalk and dunes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBl2jpZmUuveB4onwYrkKMpxNkFpLvrYOGCS1o-MontRKuchdeQUgtS70hIWo_kyZbpSkSn1ozqN-uCgQG2YpI6xvJvtDD0EzvhE1c5tJrffE8pcNOdTeiRpyv3Q8tkLUjgCeuVK7qb5vh7BxmeA0iAIai06S6Cn17PgIyOlZXhnEwZ8Ma56ct6eKsFLWPZ_sK6h0IIHeLBgu0WSrTrlvaIBpoerCnGq3z6L2wNp0U1uu3R8XSyWrut0PQjyaLkt-UeJk2vP8ak4C4"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-500"></div>
+<div class="absolute inset-0 p-12 flex flex-col justify-end">
+<h3 class="font-headline text-5xl font-extrabold text-white tracking-tighter">Seaside</h3>
+<p class="text-white/90 max-w-md mt-4 font-medium">The birthplace of New Urbanism. Iconic pavilions, white picket fences, and the spirit of summer.</p>
+</div>
+</div>
+<!-- Alys Beach -->
+<div class="md:col-span-4 group relative h-[500px] rounded-xl overflow-hidden cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" data-alt="minimalist stark white architecture of alys beach with courtyard and palm trees" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_VzAJhGmAdDQUlhuouuBfJQ5rJfCAd5sS-8xNAvCqPC7BNVOQoGRmBnUZIcedk-mjflEc0PgayAxG9bn0uk1MSyYVHY5sMUVn29EIHTOpOIbMHO1ti9D6u0Ts3fVdjQgNfoplDqXTFVWFpKhQ7ItLmI-h0QwpwnKnt0InneV_eJ0u1r4oiVStTv8Cp7H3gibz8OodsSMeTYddKQqDIHEv9S4NDLCR8V-dQ85394-2uZMllj6vyaMVb4uDT5Jfel1guvU5bOKSULQ"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-500"></div>
+<div class="absolute inset-0 p-12 flex flex-col justify-end">
+<h3 class="font-headline text-4xl font-extrabold text-white tracking-tighter">Alys Beach</h3>
+<p class="text-white/90 mt-4 font-medium">Bermudan elegance meets modern luxury.</p>
+</div>
+</div>
+<!-- Rosemary Beach -->
+<div class="md:col-span-4 group relative h-[500px] rounded-xl overflow-hidden cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" data-alt="rosemary beach cobblestone street with european style architecture and hanging flower baskets" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0U-BfohSaGYnILu4WO0mZsVaEEPpzxfj2vgG9m6eQ8FAR5gYQrfynDCoi9lkk-dtldDcdSgYO4PLK8M6p1L7pA2Y1hP1gUX-O8PYG1z_GHtZyuaWwcVlkCU57Y-VB1qyD2S8G4OhMmK8Y6dtwzYVr68rkzYx_KlC6C6VdPizF3FxD1q4nJ72Esc8tsFIWXD2Hj0w7WweQqcPytPgtX1HaFs5neMmTK3wKw2PXofQwg4WF5rAxRBcYtGjbtQPafeX8MM0JI_4AfUg"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-500"></div>
+<div class="absolute inset-0 p-12 flex flex-col justify-end">
+<h3 class="font-headline text-4xl font-extrabold text-white tracking-tighter">Rosemary</h3>
+<p class="text-white/90 mt-4 font-medium">European charm on the Gulf coast.</p>
+</div>
+</div>
+<!-- Grayton Beach -->
+<div class="md:col-span-8 group relative h-[500px] rounded-xl overflow-hidden cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" data-alt="rustic wooden beach boardwalk through high dunes at grayton beach state park florida" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHY82ur2HneaSAHqilQS1abVSxBAKq3Cv8JmIdVkTUiKGnHfth8KUD8auXhyPaWzO96i27GPqnRRd8bH8WVqAB20YIjQ70eR7oxG4n_WI4gP7uLgtdfm-pnaC3gRTgT-ymeZsTOITo6EpfixAG2Bi9l80WPQtrPZdJ2F5hq55ryYjkm5TZx4BpqfzWM1mV_4AKKvXvy2F8MZTQIINrsknMEnE74lWw07fh_XbX8cjGZbcAdEKqNjnb_K-H-__iiRhYtzFPI0cmsdw"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-500"></div>
+<div class="absolute inset-0 p-12 flex flex-col justify-end">
+<h3 class="font-headline text-5xl font-extrabold text-white tracking-tighter">Grayton</h3>
+<p class="text-white/90 max-w-md mt-4 font-medium">Nice dogs, strange people. The soulful, artsy heart of the Emerald Coast.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- AI Recommendations Section -->
+<section class="py-32 bg-surface overflow-hidden">
+<div class="max-w-screen-xl mx-auto px-6">
+<div class="flex items-center space-x-3 mb-4">
+<div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<span class="text-xs font-bold tracking-[0.2em] text-primary uppercase">My Curator Recommendations</span>
+</div>
+<h2 class="font-headline text-5xl font-extrabold text-primary mb-16">Curated for You</h2>
+<div class="flex space-x-8 overflow-x-auto pb-12 hide-scrollbar">
+<!-- Recommendation 1 -->
+<div class="min-w-[450px] bg-white rounded-xl shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)] overflow-hidden transition-transform duration-500 hover:scale-[1.02]">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover" data-alt="gourmet seafood dish with fresh shrimp and scallops on a white plate in an elegant restaurant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3MZ7VIQ6AKoMetZk_0Piq6Kfbb1o0WgP66XvRwgNNmQsTCShkIlF39ea-HCTRiKDmEy9UCbSmoewmrVymj4aGOK-TEME4vLQJi3Kg2mYE07KtrgsEnpXWLfTc64NxgX_G5SCvnUzohQfxvrAQUkH3t3nYAJR7PeohFN97Cus7BAN1sq7dVMt37Gq4EJlTDe8MIyTbfwp4yA3NZ4P-N2ZaWJW1VBYCZuzipCEn5M-UnQLyiv3Zqf0zbx9d8biT0Ds4eCtqkoiZpO8"/>
+<div class="absolute top-6 left-6 px-4 py-1 bg-white/90 backdrop-blur-md rounded-full text-xs font-bold text-primary">RESTAURANT</div>
+</div>
+<div class="p-10">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-headline text-2xl font-bold text-primary">The Citizen</h3>
+<p class="text-stone-500 text-sm">Alys Beach • Modern Coastal</p>
+</div>
+<div class="flex items-center space-x-1">
+<span class="material-symbols-outlined text-amber-400 text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-primary">4.9</span>
+</div>
+</div>
+<div class="bg-primary/5 rounded-lg p-6 border-l-4 border-primary/20">
+<p class="text-xs font-bold text-primary uppercase tracking-wider mb-2">Why our AI recommends this</p>
+<p class="text-stone-700 text-sm leading-relaxed italic">"Based on your interest in minimalist design and craft cocktails, The Citizen's atmosphere perfectly matches your aesthetic. It's the highest-rated spot for 'clean eating' in Alys Beach."</p>
+</div>
+<button class="w-full mt-8 py-4 bg-primary text-white font-bold rounded-full hover:opacity-90 transition-all">Book Reservation</button>
+</div>
+</div>
+<!-- Recommendation 2 -->
+<div class="min-w-[450px] bg-white rounded-xl shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)] overflow-hidden transition-transform duration-500 hover:scale-[1.02]">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover" data-alt="luxury private yoga session on a white sand beach at sunrise with turquoise water" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0gdiF22dhhvVxfDp3vJX14yaKA_hNHnVKisHnlXvbArm71cSx2JMl_UJuWSS3KFfgQ4jMD6_7Dhe2QRr0jaUqAu1mAKPMZxiV1xqfAy51DjPjLuZrvsWpSYLoyfuoh3M9le8pKIUglSzuRrSviOxn-HhpbMWicaPMAUI5OGG9JTW0NbKOUx2Q6SbEnRmKEZZ_QIRgvhUXjWGChUIsJXzcrkv4o46ZtNOntMM1ZghB4YejPNnniL_bTjLaAfW_t1gHQtsOR5arlG0"/>
+<div class="absolute top-6 left-6 px-4 py-1 bg-white/90 backdrop-blur-md rounded-full text-xs font-bold text-primary">EXPERIENCE</div>
+</div>
+<div class="p-10">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-headline text-2xl font-bold text-primary">Sunrise Dune Yoga</h3>
+<p class="text-stone-500 text-sm">Grayton Beach • Wellness</p>
+</div>
+<div class="flex items-center space-x-1">
+<span class="material-symbols-outlined text-amber-400 text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-primary">5.0</span>
+</div>
+</div>
+<div class="bg-primary/5 rounded-lg p-6 border-l-4 border-primary/20">
+<p class="text-xs font-bold text-primary uppercase tracking-wider mb-2">Why our AI recommends this</p>
+<p class="text-stone-700 text-sm leading-relaxed italic">"You previously looked for 'quiet morning activities'. This session is limited to 4 guests and takes place in a secluded dune area far from the main crowds."</p>
+</div>
+<button class="w-full mt-8 py-4 bg-primary text-white font-bold rounded-full hover:opacity-90 transition-all">Check Availability</button>
+</div>
+</div>
+<!-- Recommendation 3 -->
+<div class="min-w-[450px] bg-white rounded-xl shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)] overflow-hidden transition-transform duration-500 hover:scale-[1.02]">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover" data-alt="modern beach house terrace with white sofas and view of sunset over the ocean" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIDuncMR9xcoWqFTjXXW2T40dTZtW_oRc6n0OmMmQ9US43lBOjnlTyzHKnqEF0AKHlQWjl1XG9EQoKadFs9fCeukYrRLQU-0HA0jdScWJGwDOVTj_FTkMUQ7xUaumtuMJ-AwIEWKbcsyVLxcbexfd-boU-lxHA810HjdRYThnUz26cPSm3ZUzofQV9ob8z672SGi7jiWJ460iiY-y3_grlBTKtaUNfWdFRp8tpS-zQye2KOIWiWH34bfuzrRhosbbTVyE4Tj615BA"/>
+<div class="absolute top-6 left-6 px-4 py-1 bg-white/90 backdrop-blur-md rounded-full text-xs font-bold text-primary">STAY</div>
+</div>
+<div class="p-10">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-headline text-2xl font-bold text-primary">The White House</h3>
+<p class="text-stone-500 text-sm">Seaside • Luxury Villa</p>
+</div>
+<div class="flex items-center space-x-1">
+<span class="material-symbols-outlined text-amber-400 text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold text-primary">4.8</span>
+</div>
+</div>
+<div class="bg-primary/5 rounded-lg p-6 border-l-4 border-primary/20">
+<p class="text-xs font-bold text-primary uppercase tracking-wider mb-2">Why our AI recommends this</p>
+<p class="text-stone-700 text-sm leading-relaxed italic">"This property has a rooftop deck similar to the one you saved last week. It's also within a 3-minute walk of Bud &amp; Alley's."</p>
+</div>
+<button class="w-full mt-8 py-4 bg-primary text-white font-bold rounded-full hover:opacity-90 transition-all">View Property</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-20 mt-32 bg-stone-100 dark:bg-stone-950">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12 px-12 max-w-screen-xl mx-auto font-['Manrope'] font-light text-base">
+<div>
+<div class="text-xl font-bold text-stone-900 dark:text-stone-100 mb-6">WhereTo30A</div>
+<p class="text-stone-600 dark:text-stone-400 max-w-xs">The premier digital concierge for Florida's Emerald Coast. Curating the best of 30A with artificial intelligence.</p>
+</div>
+<div>
+<h4 class="font-bold text-[#004B50] dark:text-[#00B4BD] mb-6 uppercase tracking-widest text-xs">Destinations</h4>
+<div class="grid grid-cols-2 gap-4">
+<a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] dark:hover:text-[#00B4BD] underline-offset-8 hover:underline transition-colors" href="#">Seaside</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] dark:hover:text-[#00B4BD] underline-offset-8 hover:underline transition-colors" href="#">Rosemary Beach</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] dark:hover:text-[#00B4BD] underline-offset-8 hover:underline transition-colors" href="#">Alys Beach</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] dark:hover:text-[#00B4BD] underline-offset-8 hover:underline transition-colors" href="#">Grayton Beach</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] dark:hover:text-[#00B4BD] underline-offset-8 hover:underline transition-colors" href="#">WaterColor</a>
+</div>
+</div>
+<div>
+<h4 class="font-bold text-[#004B50] dark:text-[#00B4BD] mb-6 uppercase tracking-widest text-xs">Stay Connected</h4>
+<a class="block text-stone-600 dark:text-stone-400 hover:text-[#004B50] dark:hover:text-[#00B4BD] underline-offset-8 hover:underline mb-4 transition-colors" href="#">Coastal Pulse Newsletter</a>
+<p class="text-stone-500 text-sm mt-8">© 2024 WhereTo30A Coastal Concierge. All Rights Reserved.</p>
+</div>
+</div>
+</footer>
+</body></html>

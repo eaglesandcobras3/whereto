@@ -40,7 +40,7 @@ export function FeaturedCarousel({
 
     // Calculate active index for dots
     const cardWidth = el.querySelector("li")?.offsetWidth ?? 300;
-    const gap = 16; // gap-4
+    const gap = 20; // gap-5
     const index = Math.round(el.scrollLeft / (cardWidth + gap));
     setActiveIndex(Math.min(index, businesses.length - 1));
   }
@@ -64,7 +64,7 @@ export function FeaturedCarousel({
     if (!el) return;
 
     const cardWidth = el.querySelector("li")?.offsetWidth ?? 300;
-    const scrollAmount = cardWidth + 16; // card width + gap
+    const scrollAmount = cardWidth + 20; // card width + gap
 
     el.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
@@ -77,7 +77,7 @@ export function FeaturedCarousel({
     if (!el) return;
 
     const cardWidth = el.querySelector("li")?.offsetWidth ?? 300;
-    const gap = 16;
+    const gap = 20;
 
     el.scrollTo({
       left: index * (cardWidth + gap),
@@ -166,7 +166,7 @@ export function FeaturedCarousel({
         {/* Carousel */}
         <ul
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scrollbar-hide"
+          className="flex gap-5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-hide"
         >
           {businesses.map((b) => (
             <li
@@ -176,7 +176,7 @@ export function FeaturedCarousel({
               <Link
                 href={`/business/${b.slug}`}
                 className="
-                  group block overflow-hidden rounded-2xl
+                  group block overflow-hidden rounded-[var(--radius-listing)]
                   border border-[var(--color-border)] bg-[var(--color-surface)]
                   shadow-premium-sm
                   transition-premium hover-lift
@@ -185,15 +185,13 @@ export function FeaturedCarousel({
                 <ListingThumbnail
                   slug={b.slug}
                   imageUrl={b.image_url}
-                  className="aspect-[5/4] min-h-[160px] rounded-none"
+                  className="aspect-[4/3] min-h-[168px] rounded-none"
                   rounded="none"
                 />
 
                 {/* Content */}
-                <div className="space-y-2 p-4">
-                  <p className="text-base font-semibold tracking-tight text-[var(--color-text-primary)] line-clamp-1">
-                    {b.name}
-                  </p>
+                <div className="space-y-3 p-5">
+                  <p className="text-listing-title line-clamp-1">{b.name}</p>
                   <p className="line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                     {b.ai_summary?.trim() || "A local favorite along 30A."}
                   </p>

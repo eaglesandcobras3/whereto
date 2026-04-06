@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bud &amp; Alley's | WhereTo30A</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#8bd2df",
+                    "surface-container": "#eeeeed",
+                    "on-primary-fixed": "#001f24",
+                    "on-primary-fixed-variant": "#004e59",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#d4c4b0",
+                    "secondary-fixed": "#f0e0cb",
+                    "on-secondary-container": "#6c6150",
+                    "surface-container-highest": "#e3e2e1",
+                    "surface-variant": "#e3e2e1",
+                    "on-primary-container": "#74bbc8",
+                    "inverse-on-surface": "#f1f0f0",
+                    "on-tertiary-fixed": "#001e2b",
+                    "secondary-container": "#eeddc8",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#221a0d",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#accbdd",
+                    "tertiary-fixed": "#c8e7fa",
+                    "on-error": "#ffffff",
+                    "tertiary": "#10313f",
+                    "surface-container-high": "#e9e8e7",
+                    "on-surface": "#1a1c1c",
+                    "surface-tint": "#156874",
+                    "primary-container": "#004b54",
+                    "on-tertiary-container": "#96b5c7",
+                    "surface-dim": "#dadad9",
+                    "inverse-surface": "#2f3130",
+                    "on-tertiary-fixed-variant": "#2d4a5a",
+                    "surface-bright": "#faf9f8",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#404849",
+                    "primary": "#003239",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f4f3f2",
+                    "outline": "#707979",
+                    "surface": "#faf9f8",
+                    "tertiary-container": "#294756",
+                    "primary-fixed": "#a7eefc",
+                    "secondary": "#685d4c",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#504536",
+                    "outline-variant": "#bfc8c9",
+                    "on-background": "#1a1c1c",
+                    "primary-fixed-dim": "#8bd2df",
+                    "background": "#faf9f8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "1rem",
+                    "xl": "1.5rem",
+                    "2xl": "2rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-fixed selection:text-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-[0_40px_40px_rgba(0,50,57,0.06)] flex justify-between items-center w-full px-8 py-4 max-w-full">
+<div class="text-2xl font-bold tracking-tighter text-teal-950 dark:text-white font-headline">WhereTo30A</div>
+<div class="hidden md:flex items-center gap-8 font-headline tracking-tight font-medium text-sm">
+<a class="text-teal-800/60 dark:text-teal-100/60 hover:text-teal-950 dark:hover:text-white transition-colors duration-300" href="#">Towns</a>
+<a class="text-teal-900 dark:text-white font-bold border-b-2 border-teal-800 dark:border-teal-400 pb-1" href="#">Eat &amp; Drink</a>
+<a class="text-teal-800/60 dark:text-teal-100/60 hover:text-teal-950 dark:hover:text-white transition-colors duration-300" href="#">Things to Do</a>
+<a class="text-teal-800/60 dark:text-teal-100/60 hover:text-teal-950 dark:hover:text-white transition-colors duration-300" href="#">AI Concierge</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-teal-900">search</button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-headline text-sm font-bold tracking-tight hover:scale-95 transition-all">Sign In</button>
+</div>
+</nav>
+<main class="pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+<!-- Hero Gallery Section -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12 h-[500px] md:h-[600px]">
+<div class="md:col-span-2 relative group overflow-hidden rounded-xl">
+<img alt="Bud &amp; Alley's Main View" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Cinematic wide shot of a luxury waterfront restaurant deck at sunset with white umbrellas and emerald ocean views" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8IJKXvAbaZDSptPmuj9Vy0CvZ9Yt7eNmM1m9Snb4R_aB4TtESfxQkyFbNYKUH-Y6a-sVpTT2eel2GH5GC6_LnY-ljIp31ZV_UvYUxi7W0-LN87vOP0pQ-6lDi3KrNkoVdaHBagozuuJ7kAVl-ogiCkga7kFv4F8AWc-49CS4uqp1hhwLarb55QcRq_Wohn0ny9FcIT9i_QUe9bgDd3rVPVKiCYIS5D62KuJaHxKj32Ce6pOAkn5hpDjgwvCm2HtVPqHGnPANiBS0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+</div>
+<div class="hidden md:grid grid-rows-2 gap-4">
+<div class="relative group overflow-hidden rounded-xl">
+<img alt="Gourmet Seafood Plate" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Exquisite plating of grilled gulf shrimp with vibrant citrus garnish on a high-end white ceramic plate with soft side lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1IoLRNpxInxKGyoPMBuM4Lih8O9mIW-0qftcd-vyeFEHOYkKJ195lOWc8qoMhzh6UJb2_9-SGPy8sKSl-_8P1mkrGOYDuCWmFiMz2S1IYKhCqX9ciJEVZZzuatxraLjzHGkLz8Xz9atUGXUgJm_B1pSv-ZZdx6NrUqWQfAoYOsgF0XaSWiI7kjW8TSiIZyJ3KXdjY2bdKW3vKrpptOt3OHtTojlzGgjfFFvL_6WRMAgyfzBN4GqeMJHPvdjAqKWegGJaPKEXjq3o"/>
+</div>
+<div class="relative group overflow-hidden rounded-xl">
+<img alt="Signature Cocktails" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Two crystal glasses of craft cocktails with fresh rosemary and grapefruit garnishes on a marble bar top during golden hour" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbfwcnoybQJuIscxV4JTEu2dcUVZwOnFj6s8PhuSkNHRSjxyvxlycqXc-0myqFruZNbESlRFgmAnjabCGdIZ7tfvZo4_zRm5_CjqC-KjYqC0_iJwHoU7drA3IxQ_D8m292Tp6QFU38JdSRNk2058xL_pVLAgwzFNlLT2myU9jHs4ijHAXQP8bRgKl9g3w9W3KKjDNvHz7t4PcCvExNIar7XpnPlQy6-L1YQ4BiPrUkmu0VBvNL0USe0tCn6X_NL0mD63BFTsC4u8A"/>
+</div>
+</div>
+<div class="hidden md:block relative group overflow-hidden rounded-xl">
+<img alt="Restaurant Interior" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Modern upscale restaurant interior featuring light wood accents, white linen tables, and floor-to-ceiling windows overlooking a coastal dunes landscape" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFBwz58o-4aU5h4c6l03eZiEKCj3q3c7gmlrYSPxjLNZj8BMRyB1fI0gemIk282To4veRdFAyzdvkEo4Q_EpFD9Ivcvbnl25Hwx8DDNUwnylnMP_vkhDgI0389VPYKLvQp_A8jQGD5WabKjizGVJidn6p1hjjMO7wDFcHpS0SGsYOijMQlhMXeBYtnaDAGzy9XGBvQ2-bWqK0B_pkt-fR90oxrJbCkR8pICAEc-UGYaDEuR66PeH6JlzPeextMArrUrQGUuu61tzg"/>
+<button class="absolute bottom-6 right-6 glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-primary shadow-lg">
+<span class="material-symbols-outlined text-sm">grid_view</span> View All Photos
+                </button>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+<!-- Main Content Area -->
+<div class="lg:col-span-2 space-y-16">
+<!-- Headline & Header Info -->
+<header>
+<div class="flex items-center gap-2 mb-4">
+<span class="bg-surface-container-low text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Iconic Seaside Location</span>
+<div class="flex items-center text-primary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold ml-1">4.9</span>
+</div>
+</div>
+<h1 class="text-6xl md:text-7xl font-extrabold font-headline tracking-tighter text-primary mb-6 leading-[0.9]">Bud &amp; Alley's</h1>
+<p class="text-xl text-on-surface-variant font-light leading-relaxed max-w-2xl">
+                        A seaside tradition since 1986. Experience the soul of 30A with award-winning coastal cuisine, stunning sunset views, and a sophisticated beachside atmosphere.
+                    </p>
+</header>
+<!-- About Module -->
+<section class="p-8 md:p-10 bg-surface-container-lowest rounded-2xl">
+<h3 class="text-xs font-bold tracking-[0.2em] uppercase text-on-surface-variant mb-8">The Experience</h3>
+<div class="grid md:grid-cols-2 gap-8">
+<div>
+<p class="text-on-surface leading-relaxed">
+                                Founded on the belief that good food and good people belong together, Bud &amp; Alley's has become a landmark of Seaside. From the rooftop bar's famous sunset bell to the elegant dining room, every detail is curated for a refined yet relaxed coastal escape.
+                            </p>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">Farm-to-Table</h4>
+<p class="text-xs text-on-surface-variant">Locally sourced gulf seafood and seasonal produce.</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">landscape</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">Ocean Views</h4>
+<p class="text-xs text-on-surface-variant">Panoramic vistas of the Emerald Coast and white sand dunes.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Menu/Offerings Module (Bento Style) -->
+<section>
+<div class="flex justify-between items-end mb-8">
+<h3 class="text-xs font-bold tracking-[0.2em] uppercase text-on-surface-variant">Signature Offerings</h3>
+<a class="text-sm font-bold text-primary underline underline-offset-8 decoration-primary-fixed decoration-2 hover:decoration-primary transition-all" href="#">Full Dinner Menu</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-low p-6 rounded-2xl flex flex-col justify-between h-48 hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary-container">dinner_dining</span>
+<div>
+<h4 class="font-bold text-lg">Crab Cakes</h4>
+<p class="text-xs text-on-surface-variant mt-1">Jumbo lump crab, lemon butter sauce.</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-2xl flex flex-col justify-between h-48 hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary-container">local_bar</span>
+<div>
+<h4 class="font-bold text-lg">Seaside Mule</h4>
+<p class="text-xs text-on-surface-variant mt-1">House ginger beer, fresh lime, copper mug.</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-2xl flex flex-col justify-between h-48 hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary-container">soup_kitchen</span>
+<div>
+<h4 class="font-bold text-lg">Gumbo</h4>
+<p class="text-xs text-on-surface-variant mt-1">Traditional dark roux with gulf shrimp.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- AI Review Summary -->
+<section class="glass-panel p-8 rounded-2xl border border-outline-variant/10 shadow-sm relative overflow-hidden">
+<div class="absolute -right-12 -top-12 w-48 h-48 bg-primary-fixed/20 blur-[100px] rounded-full"></div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-sm" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<h3 class="text-sm font-bold tracking-tight text-primary">AI Insights Summary</h3>
+</div>
+<div class="space-y-6 relative z-10">
+<p class="text-on-surface italic font-medium leading-relaxed">
+                            "Reviewers consistently highlight the **unbeatable sunset views** from the rooftop bar and the **exceptional quality of the crab cakes**. While the atmosphere is upscale, it remains **family-friendly**. Note: Weekend evenings can be quite busy, so reservations are highly recommended for the main dining room."
+                        </p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold border border-outline-variant/20">#SunsetViews</span>
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold border border-outline-variant/20">#RomanticDinner</span>
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold border border-outline-variant/20">#FreshSeafood</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Action Column -->
+<div class="lg:col-span-1">
+<div class="sticky top-32 space-y-8">
+<!-- Primary Booking Card -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_40px_40px_rgba(0,50,57,0.06)]">
+<div class="mb-6">
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Price Range</span>
+<span class="text-primary font-bold">$$$</span>
+</div>
+<div class="h-[1px] bg-surface-container w-full"></div>
+</div>
+<div class="space-y-4 mb-8">
+<button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-full font-headline font-bold text-sm hover:scale-[0.98] transition-transform">
+                                Book a Table
+                            </button>
+<button class="w-full bg-surface-container-low text-primary py-4 rounded-full font-headline font-bold text-sm hover:bg-surface-container transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">shopping_bag</span> Order Online
+                            </button>
+</div>
+<div class="space-y-4 pt-6 border-t border-surface-container">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-lg">location_on</span>
+<div>
+<p class="text-xs font-bold">2236 E Co Hwy 30A</p>
+<p class="text-[10px] text-on-surface-variant">Santa Rosa Beach, FL 32459</p>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-lg">schedule</span>
+<div>
+<p class="text-xs font-bold">Open Daily</p>
+<p class="text-[10px] text-on-surface-variant">Lunch: 11am - 3pm | Dinner: 5pm - 9pm</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Map/Location Module -->
+<div class="bg-surface-container-lowest overflow-hidden rounded-xl h-64 relative group">
+<img alt="Location Map" class="w-full h-full object-cover" data-alt="Abstract map illustration of the Florida coastal road Scenic Highway 30A with high contrast teal and white colors" data-location="Seaside, FL" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcn3vEkF3UQ4sWNN4BEY7mnm4QzFqb1cJHYBOXU2-hS830h3p5P9yM8HNwH6ExTbZ7_m8ZspIAZpkQl_SYvxfqw77WMBwsJeon3WuKelNEkBkWrBskZPqzHtnbImNUtx89kIs0iaGfzrUT3W8trnvnv0B2difP54dxlS-WUjOXYZ1vdrOe_GfQWvhmjd-rsfWkEsfJDXjySg09ZqZtlPU3QIWlrdVWnmA-RltASIDElQoc2j7Mrf_sunAlaTwjgFAV3_8frxitz3E"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<button class="glass-panel px-6 py-3 rounded-full font-headline font-bold text-xs tracking-widest uppercase text-primary shadow-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                                Open Directions
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-[#f4f3f2] dark:bg-slate-950 w-full rounded-t-[2rem] mt-20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 py-16 max-w-7xl mx-auto font-['Inter'] text-sm tracking-wide text-teal-900 dark:text-teal-100">
+<div class="space-y-4">
+<div class="text-xl font-black text-teal-900 dark:text-teal-50">WhereTo30A</div>
+<p class="text-teal-800/70 dark:text-teal-100/70 leading-relaxed italic">
+                    The Digital Concierge for the Emerald Coast.
+                </p>
+</div>
+<div class="space-y-4">
+<h4 class="text-teal-950 dark:text-white font-semibold">Towns</h4>
+<ul class="space-y-2">
+<li><a class="text-teal-800/70 dark:text-teal-100/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Seaside</a></li>
+<li><a class="text-teal-800/70 dark:text-teal-100/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Rosemary Beach</a></li>
+<li><a class="text-teal-800/70 dark:text-teal-100/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Alys Beach</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h4 class="text-teal-950 dark:text-white font-semibold">Community</h4>
+<ul class="space-y-2">
+<li><a class="text-teal-800/70 dark:text-teal-100/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Coastal Insider</a></li>
+<li><a class="text-teal-800/70 dark:text-teal-100/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Grayton Beach</a></li>
+<li><a class="text-teal-800/70 dark:text-teal-100/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Company Info</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h4 class="text-teal-950 dark:text-white font-semibold">Contact</h4>
+<div class="text-teal-800/70 dark:text-teal-100/70 space-y-2">
+<p>hello@whereto30a.com</p>
+<div class="flex gap-4 mt-4">
+<span class="material-symbols-outlined text-lg">public</span>
+<span class="material-symbols-outlined text-lg">camera_alt</span>
+<span class="material-symbols-outlined text-lg">chat_bubble</span>
+</div>
+</div>
+</div>
+</div>
+<div class="w-full text-center py-8 border-t border-teal-900/10 text-[10px] font-bold tracking-widest uppercase text-teal-800/50">
+            © 2024 WhereTo30A. The Digital Concierge for the Emerald Coast.
+        </div>
+</footer>
+</body></html>

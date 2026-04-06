@@ -36,7 +36,11 @@ export function ListingThumbnail({
   const [failed, setFailed] = useState(false);
   const show = Boolean(imageUrl && !failed);
   const round =
-    rounded === "top" ? "rounded-t-2xl" : rounded === "all" ? "rounded-2xl" : "";
+    rounded === "top"
+      ? "rounded-t-[var(--radius-listing)]"
+      : rounded === "all"
+        ? "rounded-[var(--radius-listing)]"
+        : "";
 
   return (
     <div
@@ -53,7 +57,7 @@ export function ListingThumbnail({
           onError={() => setFailed(true)}
         />
       ) : null}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-white/[0.07]" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/[0.18] via-transparent to-white/[0.06]" />
     </div>
   );
 }

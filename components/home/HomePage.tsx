@@ -274,7 +274,7 @@ export function HomePage({ explorer, featured }: Props) {
             <h1 className="text-hero text-[var(--color-text-primary)]">
               Discover the best of 30A
             </h1>
-            <p className="mx-auto max-w-xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
+            <p className="mx-auto max-w-lg text-[17px] leading-[1.6] text-[var(--color-text-secondary)] sm:max-w-xl sm:text-lg">
               Your AI-powered local insider — curated places, natural-language
               search, and guides for every beach town along the Emerald Coast.
             </p>
@@ -300,11 +300,12 @@ export function HomePage({ explorer, featured }: Props) {
       </div>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-6xl space-y-16 px-4 py-12">
+      <div className="mx-auto max-w-6xl space-y-20 px-4 py-14 sm:space-y-24 sm:py-16">
         {/* Category Quick Links */}
         <SectionBlock
+          eyebrow="Browse"
           title="Explore by category"
-          subtitle="Jump in with a curated starting point"
+          subtitle="Pick a lane, then describe what you want — the ease of browsing neighborhoods with the precision of search."
         >
           <CategoryGrid categories={categoryQuickLinks} columns={4} />
         </SectionBlock>
@@ -361,8 +362,9 @@ export function HomePage({ explorer, featured }: Props) {
         {/* Towns Grid */}
         {explorer.towns.length ? (
           <SectionBlock
+            eyebrow="Places"
             title="Towns along the coast"
-            subtitle="Deep guides with picks for each neighborhood"
+            subtitle="Each hub is a structured guide: highlights, dining rows, and AI search scoped to that town."
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[...spotlightTowns, ...otherTowns].slice(0, 9).map((t) => (
@@ -625,8 +627,9 @@ export function HomePage({ explorer, featured }: Props) {
         {/* All Categories */}
         {explorer.categories.length ? (
           <SectionBlock
+            eyebrow="Directory"
             title="All categories"
-            subtitle="Pre-filled searches across every listing type"
+            subtitle="Pre-filled searches for every listing type — skim, tap, and go."
           >
             <CategoryGrid
               categories={explorer.categories.map((c) => ({

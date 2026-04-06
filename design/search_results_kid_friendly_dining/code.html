@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#6c6150",
+                        "outline": "#707979",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#1a1c1c",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004e59",
+                        "surface-variant": "#e3e2e1",
+                        "on-secondary-fixed-variant": "#504536",
+                        "surface-container-low": "#f4f3f2",
+                        "inverse-on-surface": "#f1f0f0",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "secondary": "#685d4c",
+                        "tertiary-fixed-dim": "#accbdd",
+                        "primary-fixed-dim": "#8bd2df",
+                        "on-tertiary-fixed-variant": "#2d4a5a",
+                        "surface-container-high": "#e9e8e7",
+                        "primary-fixed": "#a7eefc",
+                        "primary-container": "#004b54",
+                        "on-tertiary-container": "#96b5c7",
+                        "on-error": "#ffffff",
+                        "surface": "#faf9f8",
+                        "tertiary-container": "#294756",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#221a0d",
+                        "tertiary-fixed": "#c8e7fa",
+                        "on-primary-fixed": "#001f24",
+                        "on-primary-container": "#74bbc8",
+                        "inverse-primary": "#8bd2df",
+                        "secondary-fixed-dim": "#d4c4b0",
+                        "secondary-container": "#eeddc8",
+                        "surface-dim": "#dadad9",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#bfc8c9",
+                        "on-background": "#1a1c1c",
+                        "inverse-surface": "#2f3130",
+                        "tertiary": "#10313f",
+                        "secondary-fixed": "#f0e0cb",
+                        "on-surface-variant": "#404849",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#faf9f8",
+                        "surface-container": "#eeeeed",
+                        "surface-tint": "#156874",
+                        "on-tertiary-fixed": "#001e2b",
+                        "primary": "#003239",
+                        "background": "#faf9f8",
+                        "surface-container-highest": "#e3e2e1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-nav {
+            background: rgba(250, 249, 248, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 glass-nav shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)]">
+<div class="flex justify-between items-center px-12 py-6 max-w-screen-2xl mx-auto">
+<div class="text-2xl font-extrabold tracking-tighter text-[#004B50] dark:text-stone-50">WhereTo30A</div>
+<!-- Desktop Navigation -->
+<nav class="hidden md:flex items-center gap-8 font-headline tracking-tight text-sm font-semibold">
+<a class="text-stone-500 hover:text-[#004B50] transition-all duration-300" href="#">Towns</a>
+<a class="text-[#004B50] border-b-2 border-[#004B50] pb-1" href="#">Eat &amp; Drink</a>
+<a class="text-stone-500 hover:text-[#004B50] transition-all duration-300" href="#">Experiences</a>
+<a class="text-stone-500 hover:text-[#004B50] transition-all duration-300" href="#">My Curator</a>
+</nav>
+<div class="flex items-center gap-6">
+<!-- Search Interface in Header -->
+<div class="relative hidden lg:block">
+<input class="h-[48px] w-[320px] bg-surface-container-highest border-none rounded-full px-6 text-sm font-medium focus:ring-2 focus:ring-primary/10 transition-all outline-none" type="text" value="Kid-friendly restaurants in Seaside"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-primary" data-icon="search">search</span>
+</div>
+<button class="bg-gradient-to-r from-primary to-primary-container text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95">Plan Trip</button>
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="person">person</span>
+</div>
+</div>
+</header>
+<main class="pt-32 pb-20 px-12 max-w-screen-2xl mx-auto">
+<div class="flex flex-col md:flex-row gap-12">
+<!-- Sidebar/Filters -->
+<aside class="w-full md:w-64 flex-shrink-0">
+<div class="sticky top-32 space-y-8">
+<div>
+<h3 class="font-headline text-xs font-extrabold tracking-widest text-on-surface-variant uppercase mb-6">Filters</h3>
+<div class="space-y-8">
+<!-- Atmosphere -->
+<div>
+<label class="block text-xs font-bold text-primary tracking-wide mb-3">ATMOSPHERE</label>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-medium cursor-pointer">Casual</span>
+<span class="px-4 py-2 rounded-full bg-surface-container-low text-on-surface-variant text-xs font-medium hover:bg-surface-container-high transition-colors cursor-pointer">Lively</span>
+<span class="px-4 py-2 rounded-full bg-surface-container-low text-on-surface-variant text-xs font-medium hover:bg-surface-container-high transition-colors cursor-pointer">Quiet</span>
+</div>
+</div>
+<!-- Price -->
+<div>
+<label class="block text-xs font-bold text-primary tracking-wide mb-3">PRICE</label>
+<div class="flex gap-2">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-low text-xs font-semibold">$</button>
+<button class="flex-1 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold">$$</button>
+<button class="flex-1 py-2 rounded-lg bg-surface-container-low text-xs font-semibold">$$$</button>
+</div>
+</div>
+<!-- Wait Time -->
+<div>
+<label class="block text-xs font-bold text-primary tracking-wide mb-3">WAIT TIME</label>
+<select class="w-full bg-transparent border-none border-b border-outline-variant/30 text-sm focus:ring-0 px-0 pb-2">
+<option>Any wait time</option>
+<option>&lt; 15 mins</option>
+<option>15 - 30 mins</option>
+<option>30+ mins</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Subtle AI Prompt Card -->
+<div class="p-6 rounded-xl bg-primary-container text-on-primary-container space-y-3">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<p class="text-xs font-medium leading-relaxed">Refine results by telling me about your kids' ages or dietary needs.</p>
+</div>
+</div>
+</aside>
+<!-- Results List -->
+<section class="flex-grow">
+<div class="flex justify-between items-end mb-10">
+<div>
+<h1 class="font-headline text-4xl font-extrabold tracking-tight text-primary mb-2">Seaside Essentials</h1>
+<p class="text-on-surface-variant font-light">3 curated matches for your family dinner</p>
+</div>
+<div class="flex items-center gap-2 text-xs font-bold text-primary tracking-wide">
+<span>SORT BY: RELEVANCE</span>
+<span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="space-y-12">
+<!-- Result Card 1 -->
+<div class="group flex flex-col lg:flex-row gap-8 bg-surface-container-lowest p-6 rounded-xl transition-all duration-500 hover:shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)]">
+<div class="w-full lg:w-72 h-64 flex-shrink-0 overflow-hidden rounded-lg">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Modern upscale restaurant exterior with white wooden architecture and warm evening lights in Seaside Florida coastal town" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuyOE08re9rUYYZIm1NjMF7nPD3_sz5s0S3cbeNtdr39C6MmIstQ7f3BvPr1-FXoLokwPvDriQR43mWKVfCr2JEYlRIzRalF_oTNWgVrzMpEjQ1PYSMXDZY7Pb5wAbn9-ayTWQTvV7hJG8XHLwQpq12i2pfR_eU0fDLBhXL0xoD0OfIS-XoqtgXXwoJdkD5-DcOMpomGtWq781KBf5gmBA9VWkUjVbtG7GOBEAuUaHT4O_dVIMvjQiunhkLafdCdOqHQgV8ehYlHI"/>
+</div>
+<div class="flex-grow flex flex-col">
+<div class="flex justify-between items-start mb-2">
+<h2 class="font-headline text-2xl font-bold text-primary">Bud &amp; Alley's</h2>
+<span class="material-symbols-outlined text-primary-container" data-icon="favorite">favorite</span>
+</div>
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold tracking-widest text-on-surface-variant">$$ • SEASIDE</span>
+<div class="flex gap-2">
+<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-outline-variant/30">Outdoor</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-outline-variant/30">Beachfront</span>
+</div>
+</div>
+<!-- AI Reasoning Section -->
+<div class="bg-surface-container-low p-5 rounded-lg border-l-4 border-primary/20 mb-6">
+<div class="flex items-center gap-2 mb-2 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="text-xs font-extrabold tracking-widest uppercase">Why it fits</span>
+</div>
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                                    The legendary roof deck offers the best sunset views, but the ground-level patio is the real winner for families. <strong class="text-primary font-semibold">Open-air seating allows for easy movement</strong> and the nearby beach access is perfect for restless toddlers before the food arrives.
+                                </p>
+</div>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">20 min wait</span>
+</div>
+<button class="text-primary text-sm font-bold underline underline-offset-8 decoration-2 hover:opacity-70 transition-opacity">View Menu &amp; Table</button>
+</div>
+</div>
+</div>
+<!-- Result Card 2 -->
+<div class="group flex flex-col lg:flex-row gap-8 bg-surface-container-lowest p-6 rounded-xl transition-all duration-500 hover:shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)]">
+<div class="w-full lg:w-72 h-64 flex-shrink-0 overflow-hidden rounded-lg">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Colorful street food taco stand with outdoor communal wooden tables and vibrant decor under string lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUReN-fCL84lJ-ZsG2DABgJnmd22plBlrxr_gcDHuUVyjsxVXLMv80Tx3Z53iZ_i8YUbkdAal2GEfBLjmNHDqxVv7U5PApj5wBVWH6eQCTJj5VTrt--Q2httqoOoTkAMAWpdd4m8iZ7sNvtrsTUMIeXfVhDvIGqWZMeveaxfJotHmm6RS23vd0QcQdXxEpvkuiFUMLe84SqK66j86IGzWA1vb0TU3qyX7hKC0txa5h-Sb9rWeCMbyARV0B6R_HlImHZ60JrMFFdf4"/>
+</div>
+<div class="flex-grow flex flex-col">
+<div class="flex justify-between items-start mb-2">
+<h2 class="font-headline text-2xl font-bold text-primary">Bud &amp; Alley's Taco Bar</h2>
+<span class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors" data-icon="favorite">favorite</span>
+</div>
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold tracking-widest text-on-surface-variant">$ • SEASIDE</span>
+<div class="flex gap-2">
+<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-outline-variant/30">Casual</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-outline-variant/30">Quick Bite</span>
+</div>
+</div>
+<!-- AI Reasoning Section -->
+<div class="bg-surface-container-low p-5 rounded-lg border-l-4 border-primary/20 mb-6">
+<div class="flex items-center gap-2 mb-2 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="text-xs font-extrabold tracking-widest uppercase">Why it fits</span>
+</div>
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                                    Maximum casual vibes for a stress-free meal. <strong class="text-primary font-semibold">Self-service ordering</strong> means no waiting for a check while kids get cranky. The outdoor picnic tables are practically designed for spills and lively chatter.
+                                </p>
+</div>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">5 min wait</span>
+</div>
+<button class="text-primary text-sm font-bold underline underline-offset-8 decoration-2 hover:opacity-70 transition-opacity">View Menu &amp; Table</button>
+</div>
+</div>
+</div>
+<!-- Result Card 3 -->
+<div class="group flex flex-col lg:flex-row gap-8 bg-surface-container-lowest p-6 rounded-xl transition-all duration-500 hover:shadow-[0_40px_40px_-15px_rgba(0,50,57,0.06)]">
+<div class="w-full lg:w-72 h-64 flex-shrink-0 overflow-hidden rounded-lg">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Elegant southern bistro interior with large windows looking out over a green town square with casual families dining" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoc9-94_Oab0Z3rIr2ZUUR2aPMCjCYxCUoL1fA-8GoZoOVgkz2-44jX8V_iI-ZzhGBSrrgWK1dTflky53EynNNgY_J5tG1itQmnjCPdeVJKdEIE4X4Xn8dPwpVM06VIH5GNRLUULnSfnrSo1yP0N0_TkWd2IqhtcOeGSTEW0IVeebemWvCIjJerazMCKEjDU05remPXlBiwmiABH-h0cAKpPX2v2dUbM0G0ggbwQGgehc7UCdLnpsHBkl1aCQrtyHXq5dh92sUexk"/>
+</div>
+<div class="flex-grow flex flex-col">
+<div class="flex justify-between items-start mb-2">
+<h2 class="font-headline text-2xl font-bold text-primary">Great Southern Café</h2>
+<span class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors" data-icon="favorite">favorite</span>
+</div>
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold tracking-widest text-on-surface-variant">$$ • SEASIDE</span>
+<div class="flex gap-2">
+<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-outline-variant/30">Southern</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-outline-variant/30">Local</span>
+</div>
+</div>
+<!-- AI Reasoning Section -->
+<div class="bg-surface-container-low p-5 rounded-lg border-l-4 border-primary/20 mb-6">
+<div class="flex items-center gap-2 mb-2 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="text-xs font-extrabold tracking-widest uppercase">Why it fits</span>
+</div>
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                                    Offers a <strong class="text-primary font-semibold">dedicated kid's menu with locally sourced ingredients</strong>. Their famous mac &amp; cheese is a consistent hit, and the central location in Seaside circle means kids can watch the activity of the town square while you dine.
+                                </p>
+</div>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">45 min wait</span>
+</div>
+<button class="text-primary text-sm font-bold underline underline-offset-8 decoration-2 hover:opacity-70 transition-opacity">View Menu &amp; Table</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-20 mt-32 bg-stone-100 dark:bg-stone-950">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12 px-12 max-w-screen-xl mx-auto font-['Manrope'] font-light text-base">
+<div>
+<div class="text-xl font-bold text-stone-900 dark:text-stone-100 mb-6">WhereTo30A</div>
+<p class="text-stone-600 dark:text-stone-400 max-w-xs leading-relaxed">Your digital concierge for Florida's most beautiful coastal highway.</p>
+</div>
+<div>
+<h4 class="font-bold text-[#004B50] mb-6">Destinations</h4>
+<ul class="space-y-4">
+<li><a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] underline-offset-8 hover:underline transition-colors" href="#">Seaside</a></li>
+<li><a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] underline-offset-8 hover:underline transition-colors" href="#">Rosemary Beach</a></li>
+<li><a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] underline-offset-8 hover:underline transition-colors" href="#">Alys Beach</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-[#004B50] mb-6">Connect</h4>
+<ul class="space-y-4">
+<li><a class="text-stone-600 dark:text-stone-400 hover:text-[#004B50] underline-offset-8 hover:underline transition-colors" href="#">Coastal Pulse Newsletter</a></li>
+<li class="text-xs font-medium text-[#004B50] mt-8 opacity-60">© 2024 WhereTo30A Coastal Concierge. All Rights Reserved.</li>
+</ul>
+</div>
+</div>
+</footer>
+</body></html>

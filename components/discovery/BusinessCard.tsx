@@ -47,6 +47,7 @@ export function BusinessCard({
   onWebsiteClick,
 }: Props) {
   const b = rec.business;
+  const mergedTags = [...(rec.highlighted_tags ?? []), ...(b.tags ?? [])];
   const m = b.lat != null && b.lng != null;
   const showStars = variant === "admin" && b.google_rating != null && !b.hideRatings;
   const isCompact = variant === "compact";
@@ -55,7 +56,7 @@ export function BusinessCard({
   return (
     <li
       className={`
-        group shrink-0 snap-start overflow-hidden rounded-2xl
+        group shrink-0 snap-start overflow-hidden rounded-[var(--radius-listing)]
         border border-[var(--color-border)] bg-[var(--color-surface)]
         shadow-premium-sm
         transition-premium hover-lift
@@ -72,24 +73,25 @@ export function BusinessCard({
         )
       ) : null}
 
-      <div className={isCompact ? "p-4" : "p-5"}>
+      <div className={isCompact ? "space-y-3 p-4" : "space-y-3 p-5"}>
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             {b.slug ? (
               <Link
                 href={`/business/${b.slug}`}
-                className="block text-lg font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors truncate"
+                className="text-listing-title block truncate hover:text-[var(--color-primary)] transition-colors"
               >
                 {b.name ?? "Business"}
               </Link>
             ) : (
-              <p className="text-lg font-semibold text-[var(--color-text-primary)] truncate">
-                {b.name ?? "Business"}
-              </p>
+              <p className="text-listing-title truncate">{b.name ?? "Business"}</p>
             )}
-            <p className="text-sm font-medium text-[var(--color-primary)] line-clamp-1">
+            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)] line-clamp-1">
               {rec.headline}
             </p>
+            {b.address ? (
+              <p className="text-listing-meta mt-2 line-clamp-1">{b.address}</p>
+            ) : null}
           </div>
           <div className="flex gap-2 shrink-0">
             {onSave ? (
@@ -99,7 +101,7 @@ export function BusinessCard({
         </div>
 
         <p
-          className={`mt-2 text-sm text-[var(--color-text-secondary)] ${
+          className={`text-sm leading-relaxed text-[var(--color-text-secondary)] ${
             isCompact ? "line-clamp-2" : "line-clamp-3"
           }`}
         >
@@ -107,7 +109,7 @@ export function BusinessCard({
         </p>
 
         {showStars ? (
-          <p className="mt-2 flex items-center gap-1 text-sm text-amber-600">
+          <p className="flex items-center gap-1 text-sm text-amber-600">
             <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
@@ -115,12 +117,17 @@ export function BusinessCard({
           </p>
         ) : null}
 
-        <TagPills
-          tags={[...(rec.highlighted_tags ?? []), ...(b.tags ?? [])]}
-          max={isCompact ? 4 : 6}
-        />
+        {mergedTags.length > 0 ? (
+          <div className="divider-listing">
+            <TagPills
+              tags={mergedTags}
+              max={isCompact ? 4 : 6}
+              className="!mt-0"
+            />
+          </div>
+        ) : null}
 
-        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {m ? (
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}

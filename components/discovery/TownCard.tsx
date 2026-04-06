@@ -29,22 +29,26 @@ export function TownCard({ name, slug, subtitle, imageUrl, compact = false }: Pr
     <Link
       href={`/${slug}`}
       className={`
-        group block overflow-hidden rounded-2xl
+        group block overflow-hidden rounded-[var(--radius-listing)]
         border border-[var(--color-border)] bg-[var(--color-surface)]
         shadow-premium-sm
         transition-premium hover-lift
       `}
     >
-      {/* Image / Gradient Header with parallax hover effect */}
+      {/* Photo-first tile (Airbnb): clean image, no type on the glass */}
       <div
-        className={`relative overflow-hidden ${compact ? "h-28" : "h-36"}`}
+        className={
+          compact
+            ? "relative h-28 overflow-hidden sm:h-32"
+            : "relative aspect-[5/4] overflow-hidden sm:aspect-[4/3]"
+        }
         aria-hidden
       >
         <div
           className={`
             absolute inset-0 bg-gradient-to-br ${heroGradient(slug)}
-            transition-transform duration-500 ease-out
-            group-hover:scale-105
+            transition-transform duration-700 ease-out
+            group-hover:scale-[1.03]
           `}
         >
           {imageUrl ? (
@@ -55,44 +59,35 @@ export function TownCard({ name, slug, subtitle, imageUrl, compact = false }: Pr
             />
           ) : null}
         </div>
-
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-
-        {/* Town name overlay */}
-        <p
-          className={`
-            absolute bottom-3 left-4 font-semibold tracking-tight text-white
-            drop-shadow-md transition-transform duration-300
-            group-hover:translate-x-1
-            ${compact ? "text-lg" : "text-xl"}
-          `}
-        >
-          {name}
-        </p>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
       </div>
 
-      {/* Content */}
-      <div className={compact ? "p-4" : "p-5"}>
+      {/* Structured body (Apartments-style): title → description → action */}
+      <div className={compact ? "space-y-2 p-4" : "space-y-3 p-5"}>
+        <h3
+          className={`font-headline font-bold tracking-tight text-[var(--color-text-primary)] ${compact ? "text-base" : "text-lg sm:text-xl"}`}
+        >
+          {name}
+        </h3>
         {subtitle ? (
-          <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] line-clamp-2">
+          <p className="text-listing-meta line-clamp-2">
             {subtitle}
           </p>
         ) : (
-          <p className="text-sm text-[var(--color-text-tertiary)]">
-            Explore the guide
+          <p className="text-listing-meta text-[var(--color-text-tertiary)]">
+            Full guide &amp; curated picks
           </p>
         )}
         <p
           className={`
-            mt-3 inline-flex items-center gap-1 text-sm font-medium
+            inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider
             text-[var(--color-primary)]
             transition-colors group-hover:text-[var(--color-primary-light)]
           `}
         >
-          Open town guide
+          View town guide
           <svg
-            className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

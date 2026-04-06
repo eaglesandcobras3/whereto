@@ -32,13 +32,17 @@ export function SearchBar({
     <div className={wrapperClasses}>
       <form
         onSubmit={onSubmit}
-        className={`flex flex-col gap-3 sm:flex-row ${isHero ? "sm:items-stretch" : "sm:items-center"}`}
+        className={
+          isHero
+            ? "flex flex-col gap-3 rounded-2xl bg-[var(--color-surface-container-highest)] p-2 ring-1 ring-[var(--color-outline-variant)]/20 shadow-premium-elevated sm:flex-row sm:items-center sm:gap-2 sm:rounded-full sm:pl-5 sm:pr-2 sm:pt-2 sm:pb-2"
+            : `flex flex-col gap-3 sm:flex-row ${isCompact ? "sm:items-center" : "sm:items-center"}`
+        }
       >
-        <div className="relative flex-1">
+        <div className={`relative min-w-0 flex-1 ${isHero ? "" : ""}`}>
           {/* Search icon */}
           <svg
             className={`absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] ${
-              isHero ? "h-5 w-5" : "h-4 w-4"
+              isHero ? "h-5 w-5 sm:left-5" : "h-4 w-4"
             }`}
             fill="none"
             viewBox="0 0 24 24"
@@ -57,17 +61,15 @@ export function SearchBar({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             className={`
-              w-full rounded-2xl border bg-[var(--color-surface)]
-              text-[var(--color-text-primary)]
+              w-full bg-[var(--color-surface)] text-[var(--color-text-primary)]
               placeholder:text-[var(--color-text-tertiary)]
-              focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20
               transition-premium-fast
               ${
                 isHero
-                  ? "min-h-14 border-[var(--color-border-strong)] pl-12 pr-5 py-4 text-base shadow-premium-sm sm:text-lg"
+                  ? "min-h-12 rounded-xl border-0 bg-transparent pl-12 pr-4 text-base focus:outline-none focus:ring-0 sm:min-h-14 sm:rounded-full sm:pl-14 sm:pr-5 sm:text-lg"
                   : isCompact
-                    ? "min-h-10 border-[var(--color-border)] pl-10 pr-4 py-2 text-sm"
-                    : "min-h-12 border-[var(--color-border-strong)] pl-11 pr-4 py-3 text-base"
+                    ? "min-h-10 rounded-2xl border border-[var(--color-border)] pl-10 pr-4 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                    : "min-h-12 rounded-2xl border border-[var(--color-border-strong)] pl-11 pr-4 py-3 text-base focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
               }
             `}
           />
@@ -77,17 +79,17 @@ export function SearchBar({
           type="submit"
           disabled={loading}
           className={`
-            shrink-0 rounded-2xl bg-[var(--color-primary)] font-semibold text-white
-            hover:bg-[var(--color-primary-light)]
+            shrink-0 bg-[var(--color-primary)] font-semibold text-white
+            hover:opacity-90
             active:scale-[0.98]
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-premium-fast
             ${
               isHero
-                ? "min-h-14 px-8 py-4 text-base sm:text-lg"
+                ? "min-h-12 rounded-xl px-8 py-3 text-base sm:min-h-12 sm:rounded-full sm:px-8 sm:py-3 sm:text-sm"
                 : isCompact
-                  ? "min-h-10 px-5 py-2 text-sm font-medium"
-                  : "min-h-12 px-6 py-3 text-base"
+                  ? "min-h-10 rounded-2xl px-5 py-2 text-sm font-medium hover:bg-[var(--color-primary-light)]"
+                  : "min-h-12 rounded-2xl px-6 py-3 text-base hover:bg-[var(--color-primary-light)]"
             }
           `}
         >

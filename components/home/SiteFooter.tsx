@@ -34,10 +34,7 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white font-bold text-sm">
-                W
-              </div>
-              <span className="font-semibold text-[var(--color-text-primary)]">
+              <span className="font-headline text-lg font-extrabold tracking-tighter text-[var(--color-brand-wordmark)] md:text-xl">
                 WhereTo30A
               </span>
             </div>

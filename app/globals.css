@@ -1,38 +1,47 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   Design System: WhereTo30A Premium
-   "Airbnb meets Apple" - refined, warm, and elegant
+   Design System: WhereTo30A
+   Coastal M3 palette + product posture: 30A-native “Airbnb × Apple × Apartments.com”
+   — big honest photography, calm whitespace, listing-style hierarchy (title / meta / actions).
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
    Color Tokens - Light Mode (default)
    -------------------------------------------------------------------------- */
 :root {
-  /* Primary accent */
-  --color-primary: #0f766e;
-  --color-primary-light: #14b8a6;
-  --color-primary-dark: #0d6560;
+  /* Primary — design HTML primary / teal-950 family */
+  --color-primary: #003239;
+  --color-primary-light: #004b54;
+  --color-primary-dark: #001f24;
+  --color-brand-wordmark: #004b50;
 
-  /* Backgrounds */
-  --color-background: #fafaf8;
+  /* Backgrounds — warm shell (Airbnb-adjacent) on cool teal accents */
+  --color-background: #f8f6f3;
   --color-surface: #ffffff;
-  --color-surface-secondary: #f5f5f4;
+  --color-surface-secondary: #f4f3f2;
+  --color-surface-container-low: #f4f3f2;
+  --color-surface-container: #eeeeed;
+  --color-surface-container-high: #e9e8e7;
+  --color-surface-container-highest: #e3e2e1;
 
   /* Borders */
-  --color-border: rgba(0, 0, 0, 0.06);
-  --color-border-strong: rgba(0, 0, 0, 0.12);
+  --color-border: rgba(0, 50, 57, 0.06);
+  --color-border-strong: rgba(0, 50, 57, 0.12);
+  --color-outline-variant: #bfc8c9;
 
-  /* Text */
-  --color-text-primary: #18181b;
-  --color-text-secondary: #52525b;
-  --color-text-tertiary: #a1a1aa;
+  /* Text (on-surface / on-surface-variant) */
+  --color-text-primary: #1a1c1c;
+  --color-text-secondary: #404849;
+  --color-text-tertiary: #707979;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+  /* Shadows (coastal lift from design mocks) */
+  --shadow-sm: 0 1px 3px rgba(0, 50, 57, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 50, 57, 0.07);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 50, 57, 0.08);
+  --shadow-hover: 0 12px 24px -8px rgba(0, 50, 57, 0.12);
+  --shadow-elevated: 0 40px 40px -15px rgba(0, 50, 57, 0.06);
+  --shadow-nav: 0 40px 40px -15px rgba(0, 50, 57, 0.06);
 
   /* Timing */
   --duration-fast: 150ms;
@@ -40,43 +49,54 @@
   --duration-slow: 300ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* Listing tiles — shared radius across cards (between Apple 12px and Airbnb ~16px) */
+  --radius-listing: 1.125rem;
+
   /* Legacy aliases for backward compatibility */
   --background: var(--color-background);
   --foreground: var(--color-text-primary);
   --surface: var(--color-background);
   --surface-elevated: var(--color-surface);
   --accent: var(--color-primary);
-  --accent-soft: #ccfbf1;
+  --accent-soft: rgba(0, 50, 57, 0.08);
 }
 
 /* --------------------------------------------------------------------------
    Color Tokens - Dark Mode
    -------------------------------------------------------------------------- */
 :root.dark {
-  /* Primary accent - brighter for dark backgrounds */
-  --color-primary: #2dd4bf;
-  --color-primary-light: #5eead4;
-  --color-primary-dark: #14b8a6;
+  /* Accent — inverse primary from design */
+  --color-primary: #8bd2df;
+  --color-primary-light: #a7eefc;
+  --color-primary-dark: #74bbc8;
+  --color-brand-wordmark: #e2f8fc;
 
   /* Backgrounds */
-  --color-background: #0a0a0a;
-  --color-surface: #171717;
-  --color-surface-secondary: #262626;
+  --color-background: #1a1c1c;
+  --color-surface: #222524;
+  --color-surface-secondary: #2f3130;
+  --color-surface-container-low: #2a2c2b;
+  --color-surface-container: #333534;
+  --color-surface-container-high: #3d3f3e;
+  --color-surface-container-highest: #484a49;
 
   /* Borders */
   --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-outline-variant: rgba(255, 255, 255, 0.12);
 
   /* Text */
-  --color-text-primary: #fafafa;
-  --color-text-secondary: #a1a1aa;
-  --color-text-tertiary: #71717a;
+  --color-text-primary: #f1f0f0;
+  --color-text-secondary: #bfc8c9;
+  --color-text-tertiary: #8a9192;
 
-  /* Shadows - subtle in dark mode */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --shadow-hover: 0 12px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-hover: 0 12px 24px -8px rgba(0, 0, 0, 0.55);
+  --shadow-elevated: 0 40px 40px -15px rgba(0, 0, 0, 0.45);
+  --shadow-nav: 0 40px 40px -15px rgba(0, 0, 0, 0.4);
 
   /* Legacy aliases */
   --background: var(--color-background);
@@ -84,7 +104,7 @@
   --surface: var(--color-background);
   --surface-elevated: var(--color-surface);
   --accent: var(--color-primary);
-  --accent-soft: rgba(45, 212, 191, 0.15);
+  --accent-soft: rgba(139, 210, 223, 0.12);
 }
 
 /* --------------------------------------------------------------------------
@@ -93,8 +113,9 @@
 @theme inline {
   --color-background: var(--color-background);
   --color-foreground: var(--color-text-primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-headline: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 /* --------------------------------------------------------------------------
@@ -111,7 +132,7 @@ html.dark {
 body {
   background: var(--color-background);
   color: var(--color-text-primary);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -120,37 +141,80 @@ body {
    Typography Utilities (Apple-like)
    -------------------------------------------------------------------------- */
 .text-hero {
-  font-size: 2.25rem; /* text-4xl */
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
 }
 
 @media (min-width: 640px) {
   .text-hero {
-    font-size: 3rem; /* sm:text-5xl */
+    font-size: 3rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .text-hero {
+    font-size: 3.75rem;
   }
 }
 
 .text-page-title {
-  font-size: 1.875rem; /* text-3xl */
-  font-weight: 600;
-  letter-spacing: -0.025em;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1.2;
 }
 
 .text-section {
-  font-size: 1.25rem; /* text-xl */
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .text-eyebrow {
-  font-size: 0.75rem; /* text-xs */
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-primary);
+  letter-spacing: 0.2em;
+  color: rgba(0, 50, 57, 0.55);
+}
+
+:root.dark .text-eyebrow {
+  color: color-mix(in srgb, var(--color-primary) 72%, transparent);
+}
+
+/* Listing title — Apple-forward weight + Manrope */
+.text-listing-title {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .text-listing-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Secondary line under title (address, neighborhood) — Apartments.com-style scan */
+.text-listing-meta {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+/* Hairline between photo block and details / tags */
+.divider-listing {
+  border-top: 1px solid var(--color-border);
+  margin-top: 1rem;
+  padding-top: 1rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -170,6 +234,10 @@ body {
 
 .shadow-premium-hover {
   box-shadow: var(--shadow-hover);
+}
+
+.shadow-premium-elevated {
+  box-shadow: var(--shadow-elevated);
 }
 
 /* --------------------------------------------------------------------------
@@ -227,13 +295,25 @@ body {
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
 :root.dark .glass-strong {
-  background: rgba(23, 23, 23, 0.9);
+  background: rgba(34, 37, 36, 0.88);
+}
+
+/* Nav bar — matches /design frosted strip */
+.glass-nav {
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-nav);
+}
+
+:root.dark .glass-nav {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
 
 /* --------------------------------------------------------------------------
@@ -242,7 +322,7 @@ body {
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: var(--radius-listing);
   box-shadow: var(--shadow-sm);
   transition: border-color var(--duration-normal) var(--ease-out),
     box-shadow var(--duration-normal) var(--ease-out),
@@ -257,7 +337,7 @@ body {
 .card-interactive:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
-  border-color: rgba(var(--color-primary), 0.3);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
 /* --------------------------------------------------------------------------
@@ -274,7 +354,11 @@ body {
 }
 
 .btn-primary:hover {
-  background: var(--color-primary-light);
+  background: color-mix(in srgb, var(--color-primary) 88%, white);
+}
+
+:root.dark .btn-primary:hover {
+  background: color-mix(in srgb, var(--color-primary) 85%, var(--color-surface));
 }
 
 .btn-primary:active {
@@ -318,11 +402,11 @@ body {
 .input-premium:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
 :root.dark .input-premium:focus {
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 /* --------------------------------------------------------------------------
@@ -430,10 +514,10 @@ body {
 .coastal-hero {
   background: linear-gradient(
     125deg,
-    #f8fafc 0%,
-    #ecfeff 32%,
-    #fff7ed 58%,
-    #f0fdfa 100%
+    #f5f2ed 0%,
+    #eef8f7 28%,
+    #faf6f0 52%,
+    #edf6f5 100%
   );
   background-size: 220% 220%;
   animation: coastal-shift 22s ease-in-out infinite;

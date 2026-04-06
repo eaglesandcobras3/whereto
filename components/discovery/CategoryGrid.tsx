@@ -55,7 +55,7 @@ export function CategoryGrid({ categories, columns = 3 }: Props) {
         : "grid-cols-2 sm:grid-cols-3";
 
   return (
-    <div className={`grid gap-3 ${gridCols}`}>
+    <div className={`grid gap-3 sm:gap-4 ${gridCols}`}>
       {categories.map((c) => {
         const icon = c.icon ?? categoryIcons[c.slug];
 
@@ -64,20 +64,20 @@ export function CategoryGrid({ categories, columns = 3 }: Props) {
             key={c.slug}
             href={c.href}
             className="
-              group flex items-center gap-3
-              rounded-xl border border-[var(--color-border)]
-              bg-[var(--color-surface)] px-4 py-3
+              group flex items-center gap-3.5
+              rounded-[var(--radius-listing)] border border-[var(--color-border)]
+              bg-[var(--color-surface)] px-4 py-3.5 sm:px-5 sm:py-4
               shadow-premium-sm
               transition-premium hover-lift
-              hover:border-[var(--color-primary)]/30
+              hover:border-[var(--color-primary)]/25
             "
           >
             {icon ? (
-              <span className="text-[var(--color-primary)] transition-transform duration-200 group-hover:scale-110">
+              <span className="shrink-0 text-[var(--color-primary)] transition-transform duration-300 group-hover:scale-105">
                 {icon}
               </span>
             ) : null}
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
+            <span className="font-headline text-sm font-semibold tracking-tight text-[var(--color-text-primary)]">
               {c.name}
             </span>
           </Link>

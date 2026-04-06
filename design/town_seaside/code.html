@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seaside - Town Explorer | WhereTo30A</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#8bd2df",
+                    "surface-container": "#eeeeed",
+                    "on-primary-fixed": "#001f24",
+                    "on-primary-fixed-variant": "#004e59",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#d4c4b0",
+                    "secondary-fixed": "#f0e0cb",
+                    "on-secondary-container": "#6c6150",
+                    "surface-container-highest": "#e3e2e1",
+                    "surface-variant": "#e3e2e1",
+                    "on-primary-container": "#74bbc8",
+                    "inverse-on-surface": "#f1f0f0",
+                    "on-tertiary-fixed": "#001e2b",
+                    "secondary-container": "#eeddc8",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#221a0d",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#accbdd",
+                    "tertiary-fixed": "#c8e7fa",
+                    "on-error": "#ffffff",
+                    "tertiary": "#10313f",
+                    "surface-container-high": "#e9e8e7",
+                    "on-surface": "#1a1c1c",
+                    "surface-tint": "#156874",
+                    "primary-container": "#004b54",
+                    "on-tertiary-container": "#96b5c7",
+                    "surface-dim": "#dadad9",
+                    "inverse-surface": "#2f3130",
+                    "on-tertiary-fixed-variant": "#2d4a5a",
+                    "surface-bright": "#faf9f8",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#404849",
+                    "primary": "#003239",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f4f3f2",
+                    "outline": "#707979",
+                    "surface": "#faf9f8",
+                    "tertiary-container": "#294756",
+                    "primary-fixed": "#a7eefc",
+                    "secondary": "#685d4c",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#504536",
+                    "outline-variant": "#bfc8c9",
+                    "on-background": "#1a1c1c",
+                    "primary-fixed-dim": "#8bd2df",
+                    "background": "#faf9f8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "1rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(0, 50, 57, 0.4) 0%, rgba(250, 249, 248, 0) 40%, rgba(250, 249, 248, 1) 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<nav class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-[0_40px_40px_rgba(0,50,57,0.06)] flex justify-between items-center w-full px-8 py-4 max-w-full font-['Manrope'] tracking-tight font-medium text-sm">
+<div class="text-2xl font-bold tracking-tighter text-teal-950">WhereTo30A</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-teal-900 font-bold border-b-2 border-teal-800 pb-1 hover:text-teal-950 transition-colors duration-300" href="#">Towns</a>
+<a class="text-teal-800/60 hover:text-teal-950 transition-colors duration-300" href="#">Eat &amp; Drink</a>
+<a class="text-teal-800/60 hover:text-teal-950 transition-colors duration-300" href="#">Things to Do</a>
+<a class="text-teal-800/60 hover:text-teal-950 transition-colors duration-300" href="#">AI Concierge</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-teal-900 p-2 rounded-full hover:bg-surface-container-high transition-colors">search</button>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold hover:opacity-90 active:scale-95 transition-all">Sign In</button>
+</div>
+</nav>
+<main>
+<section class="relative h-[870px] w-full flex items-end">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover" data-alt="Panoramic aerial view of Seaside, Florida architecture with white pastel houses and turquoise gulf water under a soft morning sun." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi-cnyQjmLaLiFZoH73ABB69EWiqAD5dkyMfEXBDlwZUnSNNfeHRWOgxJtoWLtWhthYM8nvc9ZpAYdAhBHADc3EkcWww_sQhPYW08FHI7g5r5BEHtLBZrCrzq00_vXD3hYmMqsRRLArm2dhNMe8dgVhY9J9Ykyon6rSMzOXlVyz9jDkbdxXBVClKoiDJCAimglJ_6-f0nK1He60ldsMkDaiubn8mJn8iebbPM8ZB48_LWt1qeKXhfdFO8ovlaDvoUm0JTx9x2rV0M"/>
+<div class="absolute inset-0 hero-gradient"></div>
+</div>
+<div class="relative z-10 w-full max-w-7xl mx-auto px-8 pb-16">
+<div class="max-w-2xl">
+<span class="inline-block bg-primary text-on-primary px-4 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-6">TOWN EXPLORER</span>
+<h1 class="font-headline text-7xl md:text-8xl font-extrabold tracking-tighter text-primary mb-6">Seaside</h1>
+<p class="text-xl text-on-surface-variant leading-relaxed max-w-lg">
+                        The birthplace of New Urbanism. A pastel-hued dream defined by white picket fences, iconic pavilions, and a timeless coastal spirit.
+                    </p>
+</div>
+</div>
+</section>
+<section class="max-w-7xl mx-auto px-8 py-24">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<div class="lg:col-span-7">
+<h2 class="font-headline text-4xl font-bold tracking-tight text-primary mb-8">Town Highlights</h2>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-8 bg-surface-container-lowest rounded-xl">
+<span class="material-symbols-outlined text-primary mb-4" style="font-variation-settings: 'FILL' 1;">architecture</span>
+<h4 class="font-bold text-lg mb-2">New Urbanism</h4>
+<p class="text-sm text-on-surface-variant">Walkable streetscapes designed for community connection.</p>
+</div>
+<div class="p-8 bg-surface-container-lowest rounded-xl">
+<span class="material-symbols-outlined text-primary mb-4" style="font-variation-settings: 'FILL' 1;">beach_access</span>
+<h4 class="font-bold text-lg mb-2">Private Access</h4>
+<p class="text-sm text-on-surface-variant">Unique architectural pavilions leading to white sands.</p>
+</div>
+</div>
+</div>
+<div class="lg:col-span-5">
+<div class="aspect-square bg-surface-container rounded-xl overflow-hidden shadow-[0_40px_40px_rgba(0,50,57,0.06)] relative">
+<img class="w-full h-full object-cover" data-alt="Minimalist artistic map of Seaside Florida layout highlighting Central Square and the beach pavilions." data-location="Seaside, Florida" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwotD2HqbF23uRUKL1jMRcffZL-rFVHNMKDVDJ08ruNeKh5RVqk_N61U2_kOyVRRM0V9FzBd9t-2WYKMtX2wOA2SmBnvhkfSEFAvjeOujdSArA_EU2TLM5tyYuIkQFaw6mVsmij6g5VvlHSWjOtzkN9jXRIJJOyiDjymPSMb2eEhFN1OwiDu7rXahaV1_72aEopOIZz24xt1DXUdS0uW6_u2eSLAk2zbUR__kaFstH_ZkqReUjTuMAKnVdie8RYWsbwZX1TZV37CI"/>
+<div class="absolute inset-0 bg-primary/10 pointer-events-none"></div>
+<div class="absolute bottom-6 left-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-between">
+<div>
+<p class="text-xs font-bold text-primary uppercase tracking-widest">Location Overview</p>
+<p class="text-sm font-medium">Scenic Highway 30A</p>
+</div>
+<span class="material-symbols-outlined text-primary">explore</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-7xl mx-auto px-8 mb-12 flex justify-between items-end">
+<div>
+<h2 class="font-headline text-4xl font-bold tracking-tight text-primary mb-2">Signature Dining</h2>
+<p class="text-on-surface-variant">From Airstream Row to Gulf-front elegance.</p>
+</div>
+<button class="text-primary font-bold flex items-center gap-2 group">
+                    View All <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar gap-8 px-8 pb-8">
+<div class="flex-none w-80 group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden mb-4">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Rooftop bar at Bud and Alleys overlooking the Gulf of Mexico at sunset with orange and teal sky." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJ1_j25lcqkofV7WDXnnlomvlO4bCAOVIm9JoD_CpbP1VubwscEMY2oE_U0AharWzqmITT1GovHBuvLzl1rmuaydTDaT8Pqm2kWWOD6Sg0ClzpWjx9BwHwe01tqGOJpRUlDO_BbuKjTzZL69IQlTUdmzi8uQh9DMvcETijspHJnWOR5ZAWSQMFIQae7Kp8eHMGeM9fNO66eVQPxgOyiRDrqFZ6dBajcTFbY1_dQXoL85cKinpSgJoZ2ZbrCs2zjFdn5M6nKUDnVy0"/>
+</div>
+<h3 class="font-bold text-xl mb-1">Bud &amp; Alley's</h3>
+<p class="text-sm text-on-surface-variant mb-3">Gulf-front dining &amp; rooftop bar</p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Seafood</span>
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Iconic</span>
+</div>
+</div>
+<div class="flex-none w-80 group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden mb-4">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Vintage silver Airstream food trailers in a row with string lights and people ordering food in Seaside." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAibIQJNZSFNniGNC95l2XXdsLDarMpLwkwRedIrCauvODV3UaLICPQlrvUbp659gSnUtnOmC4RO4gUQurcCvruCtV37cIYhP4yWCa5LNHlu0NT9ps1G4DM25U5sFkbtRvfTPjUCko85oeGWOxztbmeI7rWhwxDKpw-C5P8yI2_jmfU0s41a9ey2XCEiRTl9JaBnbdlUgKjiZNuj6Lz9zvl743-A4nw_2Nubi-9nKfSsgk4BOaeH9-f7Ljg1BHgFjsazsZAvcnzkIs"/>
+</div>
+<h3 class="font-bold text-xl mb-1">Airstream Row</h3>
+<p class="text-sm text-on-surface-variant mb-3">Gourmet casual food trucks</p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Casual</span>
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Family</span>
+</div>
+</div>
+<div class="flex-none w-80 group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden mb-4">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A plate of Grits à Ya Ya with shrimp and vegetables on a white tablecloth in a bright restaurant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeMDDjhqL5Nj4fZjzURfd0lQpKOfrU20ti2TeEZZ8Czo458Z6nhpAHwT1X2CsRBqKC_bcsUlGqeRlvddBIiHvPp_4Ri_B5Oe407vlgM1Z-yTQ5Wci1FCEQtkakvLqaTJJjGCXOx-Rt0h8G560F0bZVBKIBSQv_GEQPfS3ocP9e9snI54txg2boV8yEWZzpEZOUcIHT3A9R3bIqwzGOFU9KWE5DFxOLOQXJeiuLynMZrjfqMupwQSZ4THgMd9jDE7j0w4YZeuGkRrY"/>
+</div>
+<h3 class="font-bold text-xl mb-1">Great Southern</h3>
+<p class="text-sm text-on-surface-variant mb-3">Modern Southern favorites</p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Southern</span>
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Bistro</span>
+</div>
+</div>
+<div class="flex-none w-80 group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden mb-4">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Artisanal coffee being poured in a bright white modern cafe with minimalist coastal decor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAv9UIucw3rqoXiFxoN7_0SEa5VTd_HayZLV--4hdS3A6rUwbDKzXkxqTv85K7_UQORx13iGSbAcrVjnupQg6boS0KsGtN47_Yy54-nw1Pe2Z85-B5XOjd6N-DjTLgK6oj2j0eRU6k-E2sqk7NX73TaH0XCIAM7g-22ASow0h__NM9_eE45AvON-clqGtoTQLY-VVnzhpuXJhqQMuhcDpdKtQK7sehEN-w7qEjWW2BtyA05t1brxIGIZbc3tgPHhXO4VUOvuTlzzgM"/>
+</div>
+<h3 class="font-bold text-xl mb-1">Amavida Coffee</h3>
+<p class="text-sm text-on-surface-variant mb-3">Sustainable local roasts</p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Cafe</span>
+<span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Organic</span>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24">
+<div class="max-w-7xl mx-auto px-8">
+<div class="flex justify-between items-end mb-12">
+<h2 class="font-headline text-4xl font-bold tracking-tight text-primary">Local Shops &amp; Events</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<div class="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col md:flex-row shadow-[0_40px_40px_rgba(0,50,57,0.06)]">
+<div class="md:w-1/2 p-12 flex flex-col justify-center">
+<span class="text-xs font-bold text-primary tracking-[0.2em] uppercase mb-4">Featured Venue</span>
+<h3 class="text-3xl font-bold mb-4">Sundog Books</h3>
+<p class="text-on-surface-variant mb-8 leading-relaxed">The legendary independent bookstore that has anchored the Central Square for decades.</p>
+<button class="bg-primary text-on-primary w-fit px-8 py-3 rounded-full text-sm font-bold">Shop Local</button>
+</div>
+<div class="md:w-1/2 h-80 md:h-auto">
+<img class="w-full h-full object-cover" data-alt="The colorful exterior of Sundog Books in Seaside with wooden siding and beach-themed window displays." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc_r7Vkh2RbNJCXe5IfEaS_Ji0NllOKoxMNNmVZGz1xDmnOkBU_PgMqARs4Hmy3aGlEgIyna4YvmAAh_6j-V2OHyg3JxLQmGf8BukAkgzEnCkXs7FGz7GPCuc_rDmwxzhaGq4QTMX5h__u-lXfzyroBrVc0a8h9rD9zd0By5MtnBLhtEv-C9AGnu8ZqD6oruuLrD35Zf8PFZmmTOi9EkrsyZV0lyNtgSd9fk_hzcdg_F3gacpv4t1kLyXTvcMgZ07hcZAQr9nMWkA"/>
+</div>
+</div>
+<div class="md:col-span-4 grid grid-rows-2 gap-8">
+<div class="bg-surface-container rounded-xl p-8 flex flex-col justify-between">
+<div>
+<h4 class="font-bold text-xl mb-2">Farmers Market</h4>
+<p class="text-sm text-on-surface-variant">Every Saturday morning in the amphitheater.</p>
+</div>
+<span class="material-symbols-outlined text-4xl text-primary/30">eco</span>
+</div>
+<div class="bg-primary text-on-primary rounded-xl p-8 flex flex-col justify-between">
+<div>
+<h4 class="font-bold text-xl mb-2">Cinema Under the Stars</h4>
+<p class="text-sm text-on-primary/70">Weekly family movies on the giant lawn.</p>
+</div>
+<span class="material-symbols-outlined text-4xl text-on-primary/30">movie</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 bg-surface-container-high overflow-hidden">
+<div class="max-w-7xl mx-auto px-8 mb-12">
+<h2 class="font-headline text-4xl font-bold tracking-tight text-primary mb-2">Public Beach Access</h2>
+<p class="text-on-surface-variant">Architectural gateways to the world's most beautiful beaches.</p>
+</div>
+<div class="flex gap-8 px-8 overflow-x-auto hide-scrollbar">
+<div class="flex-none w-[450px]">
+<div class="bg-white p-4 rounded-2xl shadow-lg">
+<img class="w-full aspect-square object-cover rounded-xl mb-6" data-alt="The tall pyramid-shaped Coleman Beach Pavilion in Seaside Florida against a bright blue sky." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBC1lx6MFJLfN6z7cyazcA5oitkKN4bJAVECI5WfUk6lGiVD1SB0ceqFbakR3odwY_ZDuaJf7QGLIdQGkOABuxTVEUFeq_V1lkdPSYq3YWp5DtMw0gxAoSOStFq0cmLLnwLLgO67N3LR6vlJY-y_uTHqG_aPnoJ6iHJa942Q_m0x_PRT2LibSSZ5lehfvNQ2GFtjpH-drr7ckcgrPl37MY016Pofpis0CbLUqMW-ESuKN8LqadNyjj90ggWlw44QYtwuyh_peNCqYE"/>
+<div class="px-2 pb-2">
+<h4 class="text-2xl font-bold mb-1">Coleman Pavilion</h4>
+<p class="text-on-surface-variant text-sm">Designed by David Coleman</p>
+</div>
+</div>
+</div>
+<div class="flex-none w-[450px]">
+<div class="bg-white p-4 rounded-2xl shadow-lg translate-y-12">
+<img class="w-full aspect-square object-cover rounded-xl mb-6" data-alt="Modern architectural beach pavilion in Seaside with vertical wooden slats and a minimalist gate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJ5iUG85zoIfPME8GUhJSE3uTjQzYBLaoeknmKL3HPZ0-EkHCyRu-ublrLC2xB-VLx6IF84UV8OdrGNCLqh_kk_6EEtGAAnIvVkal47fcLCc-LlyGMHdbEhrbwM74pwBMa2UBZduxmuhTyDDtREzL6x_2lPgAdI9zSZHZmmtgcNzj3MlCPu1pxf96XBP1AVDLbT06KI0Ro8IbyIFNhF2hhJUV_lj4NzUbkD0TqiznNG3q8Ipoq7HzVcEGw-qgSo8yz-aEdwf15BHI"/>
+<div class="px-2 pb-2">
+<h4 class="text-2xl font-bold mb-1">Natchez Pavilion</h4>
+<p class="text-on-surface-variant text-sm">Designed by Jersey Devil</p>
+</div>
+</div>
+</div>
+<div class="flex-none w-[450px]">
+<div class="bg-white p-4 rounded-2xl shadow-lg">
+<img class="w-full aspect-square object-cover rounded-xl mb-6" data-alt="Beach access pavilion with a wide roof and white railings leading down to the sand dunes in Seaside." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiVTxXn6brWtuwn7dOYCIiwXiHsdj4RaWc2cB8Ktj0Qe2nnQPXTcKXvgIHitkbCGjdgmul-VFEEID4FESrJujYWjiqdma8Z3F0T_0XOU-FgPOSOSrFSdVilqLZvcAbYPd7LKJQ7atATC3Qp9QIw5lVmt_dqlsgGW0AWxuez7UBFAEGXndU5l7nPhmadvuJAe1RIc8MV8GBwXvrGjJL5wWTz5hEjY_uMVp0TLFIc7podATszjJz-kSjk7NuDmhBt46_gcI2p2oA3Jw"/>
+<div class="px-2 pb-2">
+<h4 class="text-2xl font-bold mb-1">Odessa Pavilion</h4>
+<p class="text-on-surface-variant text-sm">Designed by Roger Ferri</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="max-w-7xl mx-auto px-8 py-32 text-center">
+<h2 class="font-headline text-5xl font-extrabold tracking-tighter text-primary mb-6">Experience Seaside</h2>
+<p class="text-on-surface-variant max-w-xl mx-auto mb-12 text-lg">Let our AI Concierge curate your perfect day in the town that changed how the world thinks about community.</p>
+<div class="flex flex-col md:flex-row gap-4 justify-center">
+<button class="bg-primary text-on-primary px-10 py-4 rounded-full font-bold text-lg hover:shadow-xl transition-all">Ask the AI Concierge</button>
+<button class="bg-surface-container-highest text-primary px-10 py-4 rounded-full font-bold text-lg">Browse Rentals</button>
+</div>
+</section>
+</main>
+<footer class="bg-[#f4f3f2] w-full rounded-t-[2rem] mt-20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 py-16 max-w-7xl mx-auto font-['Inter'] text-sm tracking-wide text-teal-900">
+<div class="col-span-1 md:col-span-1">
+<div class="text-xl font-black text-teal-900 mb-6">WhereTo30A</div>
+<p class="text-teal-800/70 leading-relaxed">
+                    © 2024 WhereTo30A. The Digital Concierge for the Emerald Coast.
+                </p>
+</div>
+<div>
+<h4 class="font-semibold text-teal-950 mb-6 uppercase tracking-[0.1em] text-xs">Explore Towns</h4>
+<ul class="space-y-4">
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Seaside</a></li>
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Rosemary Beach</a></li>
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Alys Beach</a></li>
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Grayton Beach</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-semibold text-teal-950 mb-6 uppercase tracking-[0.1em] text-xs">Company</h4>
+<ul class="space-y-4">
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Company Info</a></li>
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Coastal Insider</a></li>
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Contact Us</a></li>
+<li><a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-semibold text-teal-950 mb-6 uppercase tracking-[0.1em] text-xs">Newsletter</h4>
+<p class="text-teal-800/70 mb-4">Stay updated on the best of 30A.</p>
+<div class="relative">
+<input class="w-full bg-white border-none rounded-full px-6 py-3 text-sm focus:ring-2 focus:ring-primary/20" placeholder="Email Address" type="email"/>
+<button class="absolute right-2 top-2 bg-primary text-white p-1.5 rounded-full">
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

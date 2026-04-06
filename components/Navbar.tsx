@@ -15,6 +15,14 @@ type Props = {
   searchLoading?: boolean;
 };
 
+function navLinkClass(active: boolean) {
+  const base =
+    "inline-flex items-center px-3 py-2 text-sm font-semibold tracking-tight font-headline border-b-2 transition-premium-fast";
+  return active
+    ? `${base} text-[var(--color-primary)] border-[var(--color-primary)]`
+    : `${base} text-[var(--color-text-secondary)] border-transparent hover:border-[var(--color-outline-variant)] hover:text-[var(--color-primary)]`;
+}
+
 export function Navbar({
   compact = false,
   showSearch = false,
@@ -25,29 +33,30 @@ export function Navbar({
 }: Props) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isTowns = pathname === "/30a" || pathname.startsWith("/30a/");
+  const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b border-[var(--color-border)] glass-strong ${
-        compact ? "py-3" : "py-4"
+      className={`sticky top-0 z-50 w-full glass-nav ${
+        compact ? "py-3" : "py-4 md:py-5"
       }`}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4">
-        {/* Logo / Brand */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white font-bold text-sm">
-            W
-          </div>
-          <div className="hidden sm:block">
-            <span className="text-base font-semibold text-[var(--color-text-primary)]">
-              WhereTo30A
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 md:px-10">
+        {/* Logo / Brand — /design wordmark */}
+        <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2">
+          <span
+            className={`font-headline font-extrabold tracking-tighter text-[var(--color-brand-wordmark)] ${
+              compact ? "text-lg" : "text-xl md:text-2xl"
+            }`}
+          >
+            WhereTo30A
+          </span>
+          {!compact && (
+            <span className="hidden lg:inline text-sm font-medium text-[var(--color-text-tertiary)]">
+              Discover the coast
             </span>
-            {!compact && (
-              <span className="ml-2 text-sm text-[var(--color-text-tertiary)]">
-                Discover the coast
-              </span>
-            )}
-          </div>
+          )}
         </Link>
 
         {/* Center: Search (optional) */}
@@ -89,25 +98,19 @@ export function Navbar({
         ) : null}
 
         {/* Right: Navigation + Theme Toggle */}
-        <nav className="flex items-center gap-1 sm:gap-2">
+        <nav className="flex items-center gap-0.5 sm:gap-1">
           {!isHome && (
-            <Link
-              href="/"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-premium-fast"
-            >
+            <Link href="/" className={navLinkClass(false)}>
               Home
             </Link>
           )}
           <Link
             href="/30a"
-            className="hidden sm:block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-premium-fast"
+            className={`hidden sm:inline-flex ${navLinkClass(isTowns)}`}
           >
             Towns
           </Link>
-          <Link
-            href="/saved"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-premium-fast"
-          >
+          <Link href="/saved" className={navLinkClass(isSaved)}>
             Saved
           </Link>
           <div className="ml-1 sm:ml-2">

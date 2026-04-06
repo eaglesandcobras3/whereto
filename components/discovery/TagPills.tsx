@@ -3,6 +3,8 @@ type Props = {
   max?: number;
   /** Show category-colored variants based on tag type */
   colored?: boolean;
+  /** Root wrapper; default includes top margin for standalone use */
+  className?: string;
 };
 
 const tagCategoryMap: Record<string, string> = {
@@ -55,14 +57,14 @@ function getTagColor(tag: string, colored: boolean): string {
   return categoryColors[category] ?? categoryColors.default;
 }
 
-export function TagPills({ tags, max = 8, colored = false }: Props) {
+export function TagPills({ tags, max = 8, colored = false, className }: Props) {
   const uniqueTags = [...new Set(tags)];
   const slice = uniqueTags.slice(0, max);
 
   if (!slice.length) return null;
 
   return (
-    <div className="mt-2 flex flex-wrap gap-1.5">
+    <div className={`mt-2 flex flex-wrap gap-1.5 ${className ?? ""}`}>
       {slice.map((t) => (
         <span
           key={t}

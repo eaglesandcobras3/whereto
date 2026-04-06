@@ -1,0 +1,252 @@
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#8bd2df",
+                    "surface-container": "#eeeeed",
+                    "on-primary-fixed": "#001f24",
+                    "on-primary-fixed-variant": "#004e59",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#d4c4b0",
+                    "secondary-fixed": "#f0e0cb",
+                    "on-secondary-container": "#6c6150",
+                    "surface-container-highest": "#e3e2e1",
+                    "surface-variant": "#e3e2e1",
+                    "on-primary-container": "#74bbc8",
+                    "inverse-on-surface": "#f1f0f0",
+                    "on-tertiary-fixed": "#001e2b",
+                    "secondary-container": "#eeddc8",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#221a0d",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#accbdd",
+                    "tertiary-fixed": "#c8e7fa",
+                    "on-error": "#ffffff",
+                    "tertiary": "#10313f",
+                    "surface-container-high": "#e9e8e7",
+                    "on-surface": "#1a1c1c",
+                    "surface-tint": "#156874",
+                    "primary-container": "#004b54",
+                    "on-tertiary-container": "#96b5c7",
+                    "surface-dim": "#dadad9",
+                    "inverse-surface": "#2f3130",
+                    "on-tertiary-fixed-variant": "#2d4a5a",
+                    "surface-bright": "#faf9f8",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#404849",
+                    "primary": "#003239",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f4f3f2",
+                    "outline": "#707979",
+                    "surface": "#faf9f8",
+                    "tertiary-container": "#294756",
+                    "primary-fixed": "#a7eefc",
+                    "secondary": "#685d4c",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#504536",
+                    "outline-variant": "#bfc8c9",
+                    "on-background": "#1a1c1c",
+                    "primary-fixed-dim": "#8bd2df",
+                    "background": "#faf9f8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .hero-gradient {
+            background: linear-gradient(180deg, rgba(250, 249, 248, 0) 0%, rgba(250, 249, 248, 1) 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 40px 40px rgba(0, 50, 57, 0.06);
+        }
+        .ghost-border {
+            border: 1px solid rgba(191, 200, 201, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-4 glass-nav shadow-[0_40px_40px_rgba(0,50,57,0.06)] font-headline tracking-tight font-medium text-sm">
+<div class="text-2xl font-bold tracking-tighter text-teal-950 dark:text-white">WhereTo30A</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-teal-800/60 hover:text-teal-950 transition-colors duration-300" href="#">Towns</a>
+<a class="text-teal-800/60 hover:text-teal-950 transition-colors duration-300" href="#">Eat &amp; Drink</a>
+<a class="text-teal-800/60 hover:text-teal-950 transition-colors duration-300" href="#">Things to Do</a>
+<a class="text-teal-900 font-bold border-b-2 border-teal-800 pb-1" href="#">AI Concierge</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-gradient-to-r from-primary to-primary-container text-white px-6 py-2.5 rounded-full font-semibold transition-all active:scale-95">Sign In</button>
+</div>
+</nav>
+<main class="pt-24 pb-20">
+<!-- AI Prompt Section -->
+<section class="max-w-4xl mx-auto px-6 py-12 text-center">
+<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-fixed/30 text-primary mb-6">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="text-xs font-bold tracking-widest uppercase">Intelligent Discovery</span>
+</div>
+<h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter text-primary mb-8">
+                I'm looking for...
+            </h1>
+<div class="relative max-w-2xl mx-auto group">
+<input class="w-full h-16 px-8 rounded-full bg-surface-container-highest border-none focus:ring-2 focus:ring-primary/10 text-lg shadow-sm transition-all placeholder:text-on-surface-variant/50" placeholder="e.g. A romantic dinner with sunset views in Alys Beach" type="text"/>
+<button class="absolute right-2 top-2 bottom-2 aspect-square bg-primary rounded-full flex items-center justify-center text-white hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Chips / Filters -->
+<div class="flex flex-wrap justify-center gap-3 mt-10">
+<span class="text-xs font-bold text-on-surface-variant/60 uppercase tracking-widest w-full mb-2">Popular Vibes</span>
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary text-sm font-medium transition-all">Relaxed</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant text-sm font-medium hover:bg-surface-container-high transition-all">Active</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant text-sm font-medium hover:bg-surface-container-high transition-all">Romantic</button>
+<div class="w-px h-8 bg-outline-variant/30 self-center mx-2"></div>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant text-sm font-medium hover:bg-surface-container-high transition-all">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">schedule</span>
+                        Time of Day
+                    </span>
+</button>
+</div>
+</section>
+<!-- Recommendations Grid -->
+<section class="max-w-7xl mx-auto px-6 mt-12">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12">
+<!-- Large Featured Card -->
+<div class="lg:col-span-8 group cursor-pointer">
+<div class="relative overflow-hidden rounded-[2rem] aspect-[16/10] card-shadow bg-surface-container-lowest transition-transform duration-500 hover:-translate-y-2">
+<img alt="" class="w-full h-full object-cover" data-alt="luxury outdoor dining terrace at sunset with white table linens and views of teal coastal waters" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxERMAjxYIksXmiiDPjaPcTH0VWMpUkLNOwduSqXXHRaf23bRwrhRWt-zVoUN53DiDWQSe7uY9Z3ZO3VGqV678-nCVUq7YVV4MHxNCconTChvoPdQ6AJSybKL7TlTtmSCOHSWLMc27x37JN-yowI43sr_RB6sr3AOrrxlgVzW2H2CNPB6bs_Y6qpfqe-4MD0nzV45sNUiKYsOQrnH5wqCfYwf5MOF26HbP8_dVGYKvBMuwXBkR67GnR3sC7-QaItMzKfWl6JITM68"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute bottom-0 left-0 p-10 text-white">
+<div class="flex items-center gap-3 mb-4">
+<span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Seaside</span>
+<span class="flex items-center gap-1 text-[10px] font-bold">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                    4.9 (120+ REVIEWS)
+                                </span>
+</div>
+<h2 class="font-headline text-4xl font-bold tracking-tight mb-2">A Quiet Sunset Dinner in Seaside</h2>
+<p class="text-white/80 max-w-lg text-lg font-light leading-relaxed">Experience a curated escape where the sound of the Gulf meets world-class gastronomy.</p>
+</div>
+</div>
+<div class="mt-8 flex gap-6 p-6 rounded-[1.5rem] bg-surface-container-low ghost-border">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div>
+<p class="text-xs font-bold text-primary tracking-widest uppercase mb-1">AI-Curated Reason</p>
+<p class="text-on-surface-variant text-sm leading-relaxed">"Based on your preference for quiet atmospheres, this terrace offers secluded seating after 7 PM, perfectly timed for the low-horizon sun over the Western Lake inlet."</p>
+</div>
+</div>
+</div>
+<!-- Vertical Secondary Card -->
+<div class="lg:col-span-4 group cursor-pointer flex flex-col h-full">
+<div class="relative overflow-hidden rounded-[2rem] flex-grow card-shadow bg-surface-container-lowest transition-transform duration-500 hover:-translate-y-2">
+<img alt="" class="w-full h-full object-cover" data-alt="Modern architectural white beach club with turquoise swimming pool and palm trees in Alys Beach Florida" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLJKK1oBjHw318GTX_y1-m2wK7IuoXhFqfDH6vI-9ZAFhhoXcRHsRwN-atUHj8350VcnLKxCEoV1mUasxlkbKjSvB-xkX_gCIzTOpho-g_VVKm8H9H7T1ffRFJJp6NMzY76WR5pExy9B3MOXFfIcQPbCqKV5QdsBdK38_d4twjgXLVc4HhNCUm4cUdkckN731qMmo8VLqVhmX8w5n1hl89ZRNSUMN29vM0TYrbPAa6ooP65PbnoeMt_gi9GyYeXpo2VD5Oby_Rr14"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute bottom-0 left-0 p-8 text-white">
+<span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4 inline-block">Alys Beach</span>
+<h3 class="font-headline text-2xl font-bold tracking-tight mb-2">Caliza: Modern Serenity</h3>
+<p class="text-white/70 text-sm font-light">Architectural brilliance meets coastal calm at the iconic pool-side lounge.</p>
+</div>
+</div>
+<div class="mt-6 p-6 rounded-[1.5rem] bg-white ghost-border">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<p class="text-[10px] font-bold text-primary tracking-widest uppercase">Matching Intent</p>
+</div>
+<p class="text-on-surface-variant text-xs leading-relaxed italic">"Ideal for your requested 'Romantic' vibe; the evening lighting here is widely regarded as the most intimate on 30A."</p>
+</div>
+</div>
+<!-- Asymmetric Row -->
+<div class="lg:col-span-5 group cursor-pointer mt-8">
+<div class="relative overflow-hidden rounded-[2rem] aspect-square card-shadow bg-surface-container-lowest transition-transform duration-500 hover:-translate-y-2">
+<img alt="" class="w-full h-full object-cover" data-alt="Crystal clear emerald green water of a coastal dune lake with white sand dunes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB48g94ZxR1eS9Nzw2bMOKrWoEODCc0-cYhjsphX5VwGTyalZCoNsUBT5uCIz4IQTdJLbaK-mYuKVPA3cweZoDKNonSdvBh3OSsl33DPMS1E5lVKlAvDEUqyfD6kn0LWFQXudmz5cNlJpwxP_Q25wV2QS3_pLe-_7LK0qsT_py5-G6Cqjn21lAkcG-GJVVlAkhvklwWhIMzd_3GMzYJLM6qEYbYf2S_XnOdQUw59hXq1GvRkLSEP-VuImCsIcx_NTJ5YqGe-n6iQrc"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute bottom-0 left-0 p-8 text-white">
+<span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4 inline-block">Grayton Beach</span>
+<h3 class="font-headline text-2xl font-bold tracking-tight mb-1">Coastal Dune Lake Paddle</h3>
+<p class="text-white/70 text-sm">A rare ecological treasure waiting for a sunrise adventure.</p>
+</div>
+</div>
+</div>
+<div class="lg:col-span-7 group cursor-pointer mt-8">
+<div class="relative overflow-hidden rounded-[2rem] aspect-[16/9] card-shadow bg-surface-container-lowest transition-transform duration-500 hover:-translate-y-2">
+<img alt="" class="w-full h-full object-cover" data-alt="Wide white sand beach at golden hour with rows of blue and white striped umbrellas" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDi4sjlcYRu4yQagteBDXmtuJGWpwjtZ1XF2xrQWIAqlaGQCkTCL4QjH5W8hbSWLJgLWJxwbhdpT7Xc8PJDWR_tUI2X6gpqkN8iSWBEuThYAtxrw151gR1kaqPE4JWE5C1N9k6NglfR3timwTUcmY8hQKAqx-TkRLfeMe6IP0eCuNG97Cvg6u_jIxBoo0hVLbASrlFz77WTMzF8f0IOcpl-CpuY6odi0xF99iRM1J75BTcaeUsu7TcEgowQyAppls4IIIifwGe3aN0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute bottom-0 left-0 p-10 text-white">
+<span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4 inline-block">Rosemary Beach</span>
+<h2 class="font-headline text-3xl font-bold tracking-tight mb-2">Morning Walk at Inlet Beach</h2>
+<p class="text-white/80 max-w-sm text-base font-light">Soft sand and dramatic dunes for an active morning start.</p>
+</div>
+</div>
+<div class="mt-6 flex items-center gap-4 p-4 rounded-[1.2rem] bg-surface-container-high/50 self-start inline-flex">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="text-sm font-medium text-primary-container">AI Note: Pair with 'Amavida Coffee' (2 min walk)</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#f4f3f2] dark:bg-slate-950 w-full rounded-t-[2rem] mt-20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 py-16 max-w-7xl mx-auto font-['Inter'] text-sm tracking-wide text-teal-900">
+<div class="col-span-1 md:col-span-1">
+<div class="text-xl font-black text-teal-900 mb-6">WhereTo30A</div>
+<p class="text-teal-800/70 leading-relaxed mb-8">© 2024 WhereTo30A. The Digital Concierge for the Emerald Coast.</p>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-bold text-teal-950 mb-2 uppercase tracking-widest text-xs">Explore Towns</span>
+<a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Seaside</a>
+<a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Rosemary Beach</a>
+<a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Alys Beach</a>
+<a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Grayton Beach</a>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-bold text-teal-950 mb-2 uppercase tracking-widest text-xs">Resources</span>
+<a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Coastal Insider</a>
+<a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Company Info</a>
+<a class="text-teal-800/70 hover:underline decoration-teal-500/30 underline-offset-4" href="#">Contact</a>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl flex flex-col gap-4 shadow-sm border border-black/[0.03]">
+<span class="font-bold text-primary mb-1">Coastal Pulse</span>
+<p class="text-xs text-on-surface-variant leading-relaxed">Weekly AI-curated guides delivered to your inbox.</p>
+<div class="flex gap-2">
+<input class="bg-surface-container text-xs px-4 py-2 rounded-full border-none w-full focus:ring-1 focus:ring-primary/20" placeholder="Email" type="email"/>
+<button class="bg-primary text-white p-2 rounded-full aspect-square flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">east</span>
+</button>
+</div>
+</div>
+</div>
+</footer>
+</body></html>
