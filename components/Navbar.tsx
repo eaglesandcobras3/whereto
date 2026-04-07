@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 
 type Props = {
   /** Show compact variant (no tagline, smaller padding) */
@@ -33,7 +34,9 @@ export function Navbar({
 }: Props) {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const isTowns = pathname === "/30a" || pathname.startsWith("/30a/");
+  const isTowns =
+    pathname === PRIMARY_REGION_HUB_PATH ||
+    pathname.startsWith(`${PRIMARY_REGION_HUB_PATH}/`);
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
 
   return (
@@ -105,7 +108,7 @@ export function Navbar({
             </Link>
           )}
           <Link
-            href="/30a"
+            href={PRIMARY_REGION_HUB_PATH}
             className={`hidden sm:inline-flex ${navLinkClass(isTowns)}`}
           >
             Towns

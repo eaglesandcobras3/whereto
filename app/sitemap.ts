@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
+import {
+  PRIMARY_REGION_DB_SLUG,
+  PRIMARY_REGION_HUB_PATH,
+} from "@/lib/routes/primary-region";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
@@ -41,6 +45,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 1,
     },
+    {
+      url: `${base}${PRIMARY_REGION_HUB_PATH}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.88,
+    },
   ];
 
   for (const t of towns ?? []) {
@@ -57,6 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const r of regions ?? []) {
     const slug = r.slug as string;
     if (!slug || isReservedRootSlug(slug)) continue;
+    if (slug === PRIMARY_REGION_DB_SLUG) continue;
     entries.push({
       url: `${base}/${slug}`,
       lastModified: now,

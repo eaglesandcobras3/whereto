@@ -10,6 +10,7 @@ export const RESERVED_ROOT_SLUGS = new Set([
   "share",
   "auth",
   "business",
+  "towns",
   "_next",
   "favicon.ico",
 ]);

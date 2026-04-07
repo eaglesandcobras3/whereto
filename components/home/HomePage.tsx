@@ -19,6 +19,7 @@ import type { HomeFeaturedBusiness } from "@/lib/data/home-features";
 import { HOME_TOWN_SPOTLIGHT_SLUGS } from "@/lib/data/home-features";
 import type { TownRef, CategoryRef } from "@/lib/data/home-explorer";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
+import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 
 type Rec = {
   business_id: string;
@@ -266,25 +267,44 @@ export function HomePage({ explorer, featured }: Props) {
     <div className="min-h-screen bg-[var(--color-background)]">
       <Navbar />
 
-      {/* Hero Section */}
+      {/* Hero — design/ai_recommendations intent search */}
       <div className="coastal-hero border-b border-[var(--color-border)]">
-        <div className="mx-auto max-w-4xl px-4 pb-12 pt-12 sm:pt-16">
-          <header className="space-y-4 text-center">
-            <p className="text-eyebrow">WhereTo30A</p>
-            <h1 className="text-hero text-[var(--color-text-primary)]">
-              Discover the best of 30A
-            </h1>
-            <p className="mx-auto max-w-lg text-[17px] leading-[1.6] text-[var(--color-text-secondary)] sm:max-w-xl sm:text-lg">
-              Your AI-powered local insider — curated places, natural-language
-              search, and guides for every beach town along the Emerald Coast.
-            </p>
-          </header>
+        <div
+          className={`mx-auto max-w-4xl px-6 ${data ? "pb-8 pt-8" : "py-12 text-center"}`}
+        >
+          {!data ? (
+            <>
+              <div
+                className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary-fixed)_30%,transparent)]"
+                role="note"
+              >
+                <svg
+                  className="size-3.5 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813a3.75 3.75 0 002.576-2.576l.813-2.846A.75.75 0 019 4.5zm10.5 0a.75.75 0 01.712.513l.424 1.365a5.764 5.764 0 003.825 3.825l1.365.424a.75.75 0 010 1.438l-1.365.424a5.764 5.764 0 00-3.825 3.825l-.424 1.365a.75.75 0 01-1.438 0l-.424-1.365a5.764 5.764 0 00-3.825-3.825l-1.365-.424a.75.75 0 010-1.438l1.365-.424a5.764 5.764 0 003.825-3.825l.424-1.365a.75.75 0 01.726-.513z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Intelligent Discovery
+                </span>
+              </div>
+              <h1 className="mb-8 font-headline text-5xl font-extrabold tracking-tighter text-[var(--color-primary)] md:text-7xl">
+                I&apos;m looking for&hellip;
+              </h1>
+            </>
+          ) : null}
 
           <div
             className={
               data
-                ? "sticky top-16 z-30 mt-8 rounded-2xl border border-[var(--color-border)] glass-strong p-4 shadow-premium-md"
-                : "mt-10"
+                ? "sticky top-16 z-30 mt-6 rounded-2xl border border-[var(--color-border)] glass-strong p-4 shadow-premium-md"
+                : ""
             }
           >
             <SearchBar
@@ -292,8 +312,12 @@ export function HomePage({ explorer, featured }: Props) {
               onChange={onChangeInput}
               onSubmit={onSubmit}
               loading={loading}
-              placeholder="Ask anything about 30A..."
-              variant={data ? "default" : "hero"}
+              placeholder={
+                data
+                  ? "Ask anything about 30A..."
+                  : "e.g. A romantic dinner with sunset views in Alys Beach"
+              }
+              variant={data ? "default" : "hero-intent"}
             />
           </div>
         </div>
@@ -379,7 +403,7 @@ export function HomePage({ explorer, featured }: Props) {
             {explorer.towns.length > 9 && (
               <div className="mt-6 text-center">
                 <Link
-                  href="/30a"
+                  href={PRIMARY_REGION_HUB_PATH}
                   className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   View all towns

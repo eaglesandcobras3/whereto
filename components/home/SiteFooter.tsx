@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 
 const townLinks = [
   { name: "Rosemary Beach", href: "/rosemary-beach" },
@@ -12,7 +13,7 @@ const townLinks = [
 ];
 
 const exploreLinks = [
-  { name: "All towns", href: "/30a" },
+  { name: "All towns", href: PRIMARY_REGION_HUB_PATH },
   { name: "Restaurants", href: "/?q=best+restaurants+on+30A" },
   { name: "Coffee", href: "/?q=best+coffee+on+30A" },
   { name: "Things to do", href: "/?q=things+to+do+on+30A" },

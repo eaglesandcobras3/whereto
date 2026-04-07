@@ -6,6 +6,7 @@ import {
   getServiceSupabaseOrNull,
 } from "@/lib/supabase/service-role";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
+import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { Navbar } from "@/components/Navbar";
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
 import { SiteFooter } from "@/components/home/SiteFooter";
@@ -295,7 +296,7 @@ export default async function SeoIntentPage({ params }: Props) {
             Ask AI
           </Link>
           <Link
-            href="/30a"
+            href={PRIMARY_REGION_HUB_PATH}
             className="text-sm font-medium text-[var(--color-primary)] hover:underline"
           >
             Region overview

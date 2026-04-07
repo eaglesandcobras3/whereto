@@ -7,7 +7,7 @@ type Props = {
   loading?: boolean;
   placeholder?: string;
   /** Larger typography and padding for the home hero. */
-  variant?: "default" | "hero" | "compact";
+  variant?: "default" | "hero" | "hero-intent" | "compact";
   /** Enable glassmorphism sticky styling */
   sticky?: boolean;
 };
@@ -22,11 +22,74 @@ export function SearchBar({
   sticky = false,
 }: Props) {
   const isHero = variant === "hero";
+  const isHeroIntent = variant === "hero-intent";
   const isCompact = variant === "compact";
 
   const wrapperClasses = sticky
     ? "sticky top-16 z-30 rounded-2xl border border-[var(--color-border)] glass-strong p-4 shadow-premium-md"
     : "";
+
+  if (isHeroIntent) {
+    return (
+      <div className={wrapperClasses}>
+        <form
+          onSubmit={onSubmit}
+          className="group relative mx-auto w-full max-w-2xl"
+        >
+          <input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="h-16 w-full rounded-full border-0 bg-[var(--color-surface-container-highest)] pl-8 pr-[4.25rem] text-lg text-[var(--color-text-primary)] shadow-premium-sm placeholder:text-[var(--color-text-secondary)]/50 transition-premium-fast focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/10"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            title="Search"
+            className="absolute right-2 top-2 bottom-2 flex aspect-square items-center justify-center rounded-full bg-[var(--color-primary)] text-white transition-colors hover:bg-[var(--color-primary-light)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? (
+              <svg
+                className="size-5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="size-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                />
+              </svg>
+            )}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className={wrapperClasses}>
