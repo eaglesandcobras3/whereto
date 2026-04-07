@@ -20,19 +20,22 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "whereto30a-theme";
 
-function getSystemTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+/**
+ * App visual design (design/homepage.html) is light-only. We always apply the
+ * light token set on <html> so CSS variables match the design; dark preference
+ * is not applied until a dark design exists.
+ */
+function applyLightDocumentClass() {
+  const root = document.documentElement;
+  root.classList.remove("dark");
+  root.classList.add("light");
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
     if (stored && ["light", "dark", "system"].includes(stored)) {
@@ -41,25 +44,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Update resolved theme and apply to document
   useEffect(() => {
-    const resolved = theme === "system" ? getSystemTheme() : theme;
-    setResolvedTheme(resolved);
-
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(resolved);
+    applyLightDocumentClass();
+    setResolvedTheme("light");
   }, [theme]);
 
-  // Listen for system theme changes
   useEffect(() => {
     if (theme !== "system") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => {
-      setResolvedTheme(e.matches ? "dark" : "light");
-      document.documentElement.classList.remove("light", "dark");
-      document.documentElement.classList.add(e.matches ? "dark" : "light");
+    const handler = () => {
+      applyLightDocumentClass();
+      setResolvedTheme("light");
     };
 
     mediaQuery.addEventListener("change", handler);
@@ -71,11 +67,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORAGE_KEY, newTheme);
   }, []);
 
-  // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
     return (
       <ThemeContext.Provider
-        value={{ theme: "system", resolvedTheme: "light", setTheme }}
+        value={{ theme: "light", resolvedTheme: "light", setTheme }}
       >
         {children}
       </ThemeContext.Provider>

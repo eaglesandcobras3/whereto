@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+import { getSupabasePublishableKey } from "@/lib/supabase/env-keys";
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -10,9 +12,9 @@ export async function GET(request: Request) {
   if (code) {
     const cookieStore = await cookies();
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (url && anon) {
-      const supabase = createServerClient(url, anon, {
+    const publishable = getSupabasePublishableKey();
+    if (url && publishable) {
+      const supabase = createServerClient(url, publishable, {
         cookies: {
           getAll() {
             return cookieStore.getAll();

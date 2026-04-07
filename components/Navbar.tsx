@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 
 type Props = {
@@ -100,7 +99,7 @@ export function Navbar({
           </form>
         ) : null}
 
-        {/* Right: Navigation + Theme Toggle */}
+        {/* Right: Navigation */}
         <nav className="flex items-center gap-0.5 sm:gap-1">
           {!isHome && (
             <Link href="/" className={navLinkClass(false)}>
@@ -116,9 +115,6 @@ export function Navbar({
           <Link href="/saved" className={navLinkClass(isSaved)}>
             Saved
           </Link>
-          <div className="ml-1 sm:ml-2">
-            <ThemeToggle />
-          </div>
         </nav>
       </div>
     </header>

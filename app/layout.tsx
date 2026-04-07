@@ -35,29 +35,30 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
+      className={`light ${inter.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
-        {/* Inline script to prevent flash of wrong theme */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=swap"
+          rel="stylesheet"
+        />
+        {/* Product theme: design/homepage.html is light-only; keep html.class in sync before paint */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('whereto30a-theme');
-                  var resolved = theme;
-                  if (!theme || theme === 'system') {
-                    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  }
-                  document.documentElement.classList.add(resolved);
+                  var root = document.documentElement;
+                  root.classList.remove('dark');
+                  root.classList.add('light');
                 } catch (e) {}
               })();
             `,
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-text-primary)]">
+      <body className="flex min-h-full flex-col bg-background font-body text-on-surface">
         <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
       </body>

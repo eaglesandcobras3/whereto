@@ -25,8 +25,10 @@
 | Variable | Where | Notes |
 |----------|--------|--------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API | Public |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API | Public (RLS applies) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API | **Server only** — never expose to browser |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → Settings → API → **Publishable** key (`sb_publishable_…`) | Public (RLS applies); replaces legacy anon JWT |
+| `SUPABASE_SECRET_KEY` | Supabase → Settings → API → **Secret** key (`sb_secret_…`) | **Server only** — never expose to browser; replaces legacy `service_role` JWT |
+| *(legacy)* `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page, legacy section | Still accepted if publishable is unset |
+| *(legacy)* `SUPABASE_SERVICE_ROLE_KEY` | Same page, legacy section | Still accepted if secret is unset |
 | `OPENAI_API_KEY` | OpenAI | Optional for local; without it, search uses keyword + template fallbacks |
 | `GOOGLE_PLACES_API_KEY` | Google Cloud → Places API (New) | Optional; without it, discovery cron skips jobs (leaves them pending) |
 | `CRON_SECRET` | Generate a long random string | Required in **production** for `/api/cron/*`; omitted in `NODE_ENV=development` the app allows cron without secret |
@@ -86,6 +88,8 @@ After deploying the premium redesign code, complete these steps to enable new to
 | 2026-04-06 | Privacy-safe topic mining: apply `20260407120000_topic_mining_privacy.sql`; admin **`/admin/topic-mining`** (paste HTML → aggregates only; candidates → build queue). See [DESIGN-PRIVACY-SAFE-HTML-TOPIC-MINING.md](./DESIGN-PRIVACY-SAFE-HTML-TOPIC-MINING.md). |
 | 2026-04-06 | Phase 3 (MVP slice): apply `20260408120000_phase3_collections_claims_cache.sql` — saved **collections**, **listing claims** (`/admin/claims`, business page form), **share** Open Graph + coarse referrer host, **cache admin**, **bulk tags**, optional **SCORING_WEIGHT_*** env tuning. |
 | 2026-04-05 | **Premium Redesign:** apply `20260409000000_add_expanded_coastal_towns.sql` — adds Destin, Miramar Beach, Sandestin, Panama City Beach, and 4 additional 30A communities. New design system with dark mode, upgraded components (Navbar, SearchBar, BusinessCard, TownCard, etc.), 11 new intent templates. Run discovery + precompute + SEO crons for new content. |
+| 2026-04-07 | **Supabase API keys:** Prefer `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` + `SUPABASE_SECRET_KEY` (`sb_publishable_…` / `sb_secret_…`). Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` still work until you remove them. Update Vercel and `.env.local`. |
+| 2026-04-07 | **Visual theme:** Product UI matches [design/homepage.html](../design/homepage.html) (Material 3 light palette in `app/globals.css`). `<html>` is always `light` (no dark theme in product chrome); the header **theme toggle was removed**. Users’ stored `whereto30a-theme` value is ignored for document class until a dark design exists. |
 
 ---
 

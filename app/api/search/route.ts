@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     const message = e instanceof Error ? e.message : "Search failed";
     const status =
       message.includes("Missing NEXT_PUBLIC_SUPABASE") ||
+      message.includes("SUPABASE_SECRET_KEY") ||
       message.includes("SUPABASE_SERVICE_ROLE_KEY")
         ? 503
         : 500;
