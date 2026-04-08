@@ -11,7 +11,7 @@ type Snapshot = {
     business_id: string;
     headline: string;
     explanation: string;
-    business?: { name?: string; address?: string | null; google_rating?: number | null };
+    business?: { name?: string; address?: string | null; listing_rating?: number | null };
   }>;
 };
 

@@ -7,7 +7,7 @@ const schema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   SUPABASE_SECRET_KEY: z.string().min(1),
   OPENAI_API_KEY: z.string().optional(),
-  GOOGLE_PLACES_API_KEY: z.string().optional(),
+  GEOAPIFY_API_KEY: z.string().optional(),
   CRON_SECRET: z.string().optional(),
   OPENAI_MODEL: z.string().optional().default("gpt-4o-mini"),
 });
@@ -35,7 +35,7 @@ export function getOptionalEnv(): Partial<Env> & { OPENAI_MODEL: string } {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: getSupabasePublishableKey(),
     SUPABASE_SECRET_KEY: getSupabaseSecretKey(),
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
+    GEOAPIFY_API_KEY: process.env.GEOAPIFY_API_KEY,
     CRON_SECRET: process.env.CRON_SECRET,
     OPENAI_MODEL: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
   };

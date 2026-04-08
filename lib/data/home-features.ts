@@ -1,5 +1,5 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { firstPlacePhotoProxyUrl } from "@/lib/media/place-photo";
+import { businessListingImageUrl } from "@/lib/media/place-photo";
 
 export type HomeFeaturedBusiness = {
   id: string;
@@ -7,7 +7,7 @@ export type HomeFeaturedBusiness = {
   name: string;
   ai_summary: string | null;
   tagSlugs: string[];
-  /** Proxied Places photo URL or null. */
+  /** Supabase Storage hero URL (cron-synced) or null. */
   image_url: string | null;
 };
 
@@ -37,7 +37,7 @@ function mapRow(row: {
   slug: string;
   name: string;
   ai_summary: string | null;
-  google_photos?: string[] | null;
+  hero_image_url?: string | null;
   business_tags?: Parameters<typeof tagSlugsFromRow>[0];
 }): HomeFeaturedBusiness {
   return {
@@ -46,7 +46,7 @@ function mapRow(row: {
     name: row.name,
     ai_summary: row.ai_summary,
     tagSlugs: tagSlugsFromRow(row.business_tags),
-    image_url: firstPlacePhotoProxyUrl(row.google_photos ?? null),
+    image_url: businessListingImageUrl(row.hero_image_url ?? null),
   };
 }
 
@@ -55,7 +55,7 @@ const selectCols = `
   slug,
   name,
   ai_summary,
-  google_photos,
+  hero_image_url,
   business_tags(tags(slug))
 `;
 

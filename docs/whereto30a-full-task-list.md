@@ -4,15 +4,15 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [whereto
 
 **Estimates:** Section 10 of the implementation plan totals **137 points** for MVP engineering tickets; tasks below decompose those tickets plus Phase 2/3 and operational work.
 
-**Implementation status (in-repo, 2026-04):** Phase **1** engineering checklist below is treated as **complete** in-repo (apply the newer discovery migration on your Supabase project). **Still operator-owned (§0):** creating cloud projects and production env (Supabase/Vercel/Google/OpenAI). Cross-cutting items like Sentry, backups, legal, and a11y remain ongoing unless marked below.
+**Implementation status (in-repo, 2026-04):** Phase **1** engineering checklist below is treated as **complete** in-repo (apply the newer discovery migration on your Supabase project). **Still operator-owned (§0):** creating cloud projects and production env (Supabase/Vercel/OpenAI + directory API vendor). Cross-cutting items like Sentry, backups, legal, and a11y remain ongoing unless marked below.
 
 ---
 
 ## 0. Prerequisites and project bootstrap
 
 - [ ] Create Supabase project; enable **PostGIS** (required for spatial queries in the plan)
-- [ ] Create Vercel project; link repo; configure environment variables (Supabase URL/keys, OpenAI, Google Places)
-- [ ] Register Google Cloud project; enable Places API (New); create API key with HTTP restrictions
+- [ ] Create Vercel project; link repo; configure environment variables (Supabase URL/keys, OpenAI, Geoapify directory key)
+- [ ] Register Geoapify project; create API key with HTTP / IP restrictions as needed
 - [ ] Add OpenAI API key to Vercel env (server-side only)
 - [x] Document local `.env.example` for contributors (no secrets committed)
 - [x] Configure `vercel.json` cron routes per plan Section 4 (`/api/cron/discovery`, `refresh`, `ai-summaries`, `cache-prune`, `popular-cache`) + `/api/cron/scores`
@@ -34,11 +34,11 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [whereto
 
 ### 1.2 Ingestion pipeline (~15 pts)
 
-- [x] Google Places **Text Search** client (location bias from `towns`) — `lib/ingestion/google-places.ts`
-- [x] Google Places **Place Details** client with field mask; rate limiting (~10 QPS)
+- [x] Directory **Places** client (Geoapify, circle + categories from `towns` / `categories`) — [`lib/ingestion/geoapify-places.ts`](../lib/ingestion/geoapify-places.ts)
+- [x] Directory **Place Details** client; rate limiting (~10 QPS budget)
 - [x] Discovery job processor: poll `search_jobs`, claim with `FOR UPDATE SKIP LOCKED`, status transitions — **note:** claim uses status updates (no `SKIP LOCKED` SQL yet)
-- [x] Deduplicate by `google_place_id` before insert
-- [x] Map Google types → `category_id` / tags; map lat/lng → `town_id`
+- [x] Deduplicate by `listing_external_key` before insert
+- [x] Map taxonomy hints / directory categories → `category_id` / tags; map lat/lng → `town_id`
 - [x] Insert businesses + `business_tags` in a transaction — `insert_discovery_business_with_tags` RPC in `supabase/migrations/20260403140000_insert_discovery_business_with_tags.sql`; discovery calls it from [`lib/ingestion/discovery-runner.ts`](../lib/ingestion/discovery-runner.ts)
 - [x] Query expansion for category+town (plan Section 3) — [`lib/ingestion/query-expansion.ts`](../lib/ingestion/query-expansion.ts) + admin ingestion checkbox [`app/admin/ingestion/actions.ts`](../app/admin/ingestion/actions.ts)
 - [x] Refresh pipeline: select stale businesses by `refresh_interval_days`, update fields, handle `permanently_closed`
@@ -111,7 +111,7 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [whereto
 
 - [x] Protect `/admin/*` with admin role
 - [x] Business list + search/filter
-- [x] Business edit form (fields per plan Section 8); regenerate summary; refresh from Google
+- [x] Business edit form (fields per plan Section 8); regenerate summary; queue directory refresh
 - [x] Ingestion trigger: create `search_jobs`, optional immediate run
 - [x] Job queue status / history view
 - [x] Scoring dashboard (inspect scores, distributions — plan Section 11 wireframes)
@@ -170,7 +170,7 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [whereto
 
 ### 2.5 Product alignment
 
-- [x] Consumer surfaces hide prominent Google stars per [PRD-SEO-TOWNS §9](./PRD-SEO-TOWNS.md)
+- [x] Consumer surfaces hide prominent third-party star ratings per [PRD-SEO-TOWNS §9](./PRD-SEO-TOWNS.md)
 
 ---
 
@@ -236,7 +236,7 @@ Checklist derived from [PRD.md](./PRD.md) (product source of truth) and [whereto
 - [x] Rate limiting for public `/api/search` (plan Appendix: in-memory MVP → Vercel KV later) — [`lib/rate-limit.ts`](../lib/rate-limit.ts), [`app/api/search/route.ts`](../app/api/search/route.ts)
 - [ ] Structured application logging and error reporting (Sentry or similar)
 - [ ] Backup strategy for Supabase; PITR if production
-- [ ] Google Places and OpenAI **cost dashboards** and alerts
+- [ ] Directory API and OpenAI **cost dashboards** and alerts
 - [ ] Accessibility pass on search and admin
 - [ ] Legal: ToS, privacy policy, cookie/consent if needed for analytics
 

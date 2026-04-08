@@ -14,7 +14,7 @@ export default async function AdminBusinessesPage({
 
   let query = supabase
     .from("businesses")
-    .select("id, name, status, town_id, category_id, google_rating, confidence_score")
+    .select("id, name, status, town_id, category_id, listing_rating, confidence_score")
     .order("updated_at", { ascending: false })
     .limit(100);
 
@@ -68,7 +68,7 @@ export default async function AdminBusinessesPage({
                 </td>
                 <td className="px-4 py-3 text-zinc-600">{b.status as string}</td>
                 <td className="px-4 py-3 text-zinc-600">
-                  {b.google_rating != null ? String(b.google_rating) : "—"}
+                  {b.listing_rating != null ? String(b.listing_rating) : "—"}
                 </td>
                 <td className="px-4 py-3 text-zinc-600">
                   {b.confidence_score != null ? String(b.confidence_score) : "—"}

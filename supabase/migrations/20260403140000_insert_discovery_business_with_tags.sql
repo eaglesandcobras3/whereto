@@ -1,4 +1,4 @@
--- Atomic insert: one business row + google-linked business_tags (Phase 1 ingestion).
+-- Atomic insert: one business row + taxonomy-linked business_tags (Phase 1 ingestion; superseded by later migrations).
 CREATE OR REPLACE FUNCTION public.insert_discovery_business_with_tags(
   p_google_place_id VARCHAR(255),
   p_name VARCHAR(255),

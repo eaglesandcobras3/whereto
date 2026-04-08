@@ -101,7 +101,7 @@ test.describe("Share and save (mocked API)", () => {
               business_id: "44444444-4444-4444-4444-444444444444",
               headline: "Top",
               explanation: "On the sand.",
-              business: { name: "Shack", google_rating: 4.2 },
+              business: { name: "Shack", listing_rating: 4.2 },
             },
           ],
         }),

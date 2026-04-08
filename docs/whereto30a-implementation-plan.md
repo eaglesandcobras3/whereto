@@ -46,7 +46,7 @@
 │                                      │                                       │
 │                                      ▼                                       │
 │                         ┌──────────────────────┐                            │
-│                         │   Google Places API  │                            │
+│                         │   directory API  │                            │
 │                         │   • Text Search      │                            │
 │                         │   • Place Details    │                            │
 │                         └──────────────────────┘                            │
@@ -59,7 +59,7 @@
 |-----------|----------------------|
 | AI is experience layer only | AI receives structured DB results, never searches externally |
 | No hallucinated businesses | Prompt includes ONLY business data from DB; strict output schema |
-| Controlled ingestion | All Google Places calls via queue-based cron jobs |
+| Controlled ingestion | All directory API calls via queue-based cron jobs |
 | Cost awareness | Cache-first strategy; AI calls minimized to synthesis only |
 
 ### Key Data Flows
@@ -72,8 +72,8 @@ User Input → API Route → Cache Check → [HIT: Return cached]
 
 **Flow 2: Data Ingestion**
 ```
-Cron Trigger → Pull from search_jobs queue → Google Places Text Search
-            → Dedupe by place_id → Google Places Details → Insert to DB
+Cron Trigger → Pull from search_jobs queue → directory Places query
+            → Dedupe by source id → Place Details → Insert to DB
             → Generate AI Summary → Mark job complete
 ```
 
@@ -95,7 +95,7 @@ User clicks share → Generate short UUID → Store in shares table (FK to cache
 ├─────────────────┤     ├─────────────────────┤     ├─────────────────┤
 │ id (PK)         │     │ id (PK, UUID)       │     │ id (PK)         │
 │ name            │────<│ town_id (FK)        │>────│ name            │
-│ slug            │     │ google_place_id (U) │     │ slug            │
+│ slug            │     │ listing_external_key (U) │     │ slug            │
 │ lat/lng center  │     │ name                │     │ category        │
 └─────────────────┘     │ address             │     └─────────────────┘
                         │ lat, lng            │              │
@@ -103,8 +103,8 @@ User clicks share → Generate short UUID → Store in shares table (FK to cache
 │   categories    │     │ website             │     │ business_tags   │
 ├─────────────────┤     │ price_level         │     ├─────────────────┤
 │ id (PK)         │────<│ category_id (FK)    │     │ business_id(FK) │
-│ name            │     │ google_rating       │>────│ tag_id (FK)     │
-│ slug            │     │ google_review_count │     │ source (enum)   │
+│ name            │     │ listing_rating       │>────│ tag_id (FK)     │
+│ slug            │     │ listing_review_count │     │ source (enum)   │
 │ discovery_prio  │     │ hours_json          │     │ confidence      │
 └─────────────────┘     │ ai_summary          │     └─────────────────┘
                         │ ai_summary_updated  │
@@ -161,7 +161,7 @@ CREATE TABLE categories (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   slug VARCHAR(100) UNIQUE NOT NULL,
-  google_types TEXT[] NOT NULL,  -- maps to Google Places types
+  taxonomy_type_hints TEXT[] NOT NULL,  -- hints for tag / category mapping
   discovery_priority INT DEFAULT 5,  -- 1=highest priority for discovery
   refresh_interval_days INT DEFAULT 30,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -174,7 +174,7 @@ CREATE TABLE categories (
 ```sql
 CREATE TABLE businesses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  google_place_id VARCHAR(255) UNIQUE NOT NULL,
+  listing_external_key VARCHAR(255) UNIQUE NOT NULL,
 
   -- Core info
   name VARCHAR(255) NOT NULL,
@@ -189,12 +189,12 @@ CREATE TABLE businesses (
   phone VARCHAR(50),
   website VARCHAR(500),
 
-  -- Google data
-  google_rating DECIMAL(2, 1),
-  google_review_count INT DEFAULT 0,
+  -- Optional listing metrics (legacy / imports)
+  listing_rating DECIMAL(2, 1),
+  listing_review_count INT DEFAULT 0,
   price_level INT,  -- 1-4
   hours_json JSONB,
-  google_photos TEXT[],  -- photo references
+  legacy_photo_refs TEXT[],  -- photo references
 
   -- AI-generated content
   ai_summary TEXT,
@@ -242,7 +242,7 @@ CREATE INDEX idx_businesses_location ON businesses USING GIST (
 );
 CREATE INDEX idx_businesses_refresh ON businesses(last_refreshed_at)
   WHERE status = 'active';
-CREATE INDEX idx_businesses_rating ON businesses(google_rating DESC NULLS LAST);
+CREATE INDEX idx_businesses_rating ON businesses(listing_rating DESC NULLS LAST);
 CREATE INDEX idx_businesses_confidence ON businesses(confidence_score DESC)
   WHERE status = 'active';
 CREATE INDEX idx_businesses_eligible ON businesses(status, suspected_closed, admin_suppressed, confidence_score)
@@ -288,7 +288,7 @@ CREATE TABLE tags (
 CREATE TABLE business_tags (
   business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
   tag_id INT REFERENCES tags(id) ON DELETE CASCADE,
-  source VARCHAR(20) NOT NULL,  -- google, ai_inferred, admin_set
+  source VARCHAR(20) NOT NULL,  -- taxonomy_hint, directory, ai_inferred, admin_set
   confidence DECIMAL(3, 2) DEFAULT 1.0,  -- 0.00-1.00
   created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (business_id, tag_id)
@@ -522,7 +522,7 @@ Both are queue-driven and budget-limited.
 │ Output: search_jobs records                                                 │
 │                                                                             │
 │ Logic:                                                                      │
-│ 1. Load category.google_types (e.g., ["cafe", "coffee_shop"])              │
+│ 1. Load category.taxonomy_type_hints (e.g., ["cafe", "coffee_shop"])              │
 │ 2. Load town.name and nearby variants                                       │
 │ 3. Generate query strings:                                                  │
 │    - "coffee shops in Seaside FL"                                          │
@@ -548,24 +548,15 @@ Both are queue-driven and budget-limited.
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 3: Execute Google Places Text Search                                  │
+│ STEP 3: Execute directory Places query (Geoapify GET)                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ For each job:                                                               │
 │                                                                             │
-│ API Call:                                                                   │
-│   POST https://places.googleapis.com/v1/places:searchText                  │
-│   {                                                                         │
-│     "textQuery": job.query_string,                                         │
-│     "locationBias": {                                                       │
-│       "circle": {                                                           │
-│         "center": { "lat": town.center_lat, "lng": town.center_lng },      │
-│         "radius": town.search_radius_meters                                │
-│       }                                                                     │
-│     },                                                                      │
-│     "maxResultCount": 20                                                   │
-│   }                                                                         │
+│ API Call (example):                                                         │
+│   GET https://api.geoapify.com/v2/places?categories=…&filter=circle:lon,lat,│
+│   radiusMeters&limit=…&apiKey=…                                             │
 │                                                                             │
-│ Response: Array of { place_id, name, location, ... }                       │
+│ Response: GeoJSON FeatureCollection (place_id, name, lat/lon, categories) │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
@@ -574,7 +565,7 @@ Both are queue-driven and budget-limited.
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ For each place_id in results:                                               │
 │                                                                             │
-│ 1. SELECT id FROM businesses WHERE google_place_id = {place_id}            │
+│ 1. SELECT id FROM businesses WHERE listing_external_key = {place_id}            │
 │ 2. If exists → skip (already known)                                        │
 │ 3. If not exists → add to new_places queue                                 │
 │                                                                             │
@@ -587,24 +578,22 @@ Both are queue-driven and budget-limited.
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ For each new place_id:                                                      │
 │                                                                             │
-│ API Call:                                                                   │
-│   GET https://places.googleapis.com/v1/places/{place_id}                   │
-│   Fields: displayName, formattedAddress, location, rating,                 │
-│           userRatingCount, priceLevel, regularOpeningHours,                │
-│           websiteUri, nationalPhoneNumber, photos                          │
+│ API Call (example):                                                         │
+│   GET https://api.geoapify.com/v2/place-details?id={place_id}&apiKey=…     │
+│   Returns: contact, website, opening_hours text, geometry, etc.            │
 │                                                                             │
-│ Rate limiting: 1 request per 100ms (10 QPS max)                            │
+│ Rate limiting: stay within provider credits; ~100–200ms between calls    │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 6: Transform & Insert                                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ Transform Google response → businesses table schema                        │
+│ Transform API response → businesses table schema                           │
 │                                                                             │
 │ 1. Map town_id via lat/lng proximity to town centers                       │
-│ 2. Map category_id from Google types                                       │
-│ 3. Extract tags from Google types → business_tags                          │
+│ 2. Map category_id from taxonomy / directory categories                     │
+│ 3. Extract tags from category codes → business_tags                        │
 │ 4. INSERT INTO businesses with status='active'                             │
 │                                                                             │
 │ Transaction: Wrap insert + tags in single transaction                      │
@@ -659,7 +648,7 @@ Logic:
    LIMIT {REFRESH_BUDGET}  -- e.g., 20 per night
 
 2. For each business:
-   a. Fetch Place Details from Google
+   a. Fetch place details from directory API
    b. Compare key fields (rating, hours, status)
    c. If permanently_closed → status = 'closed'
    d. UPDATE business record
@@ -682,7 +671,7 @@ Expansions:
 4. "best {category} {town}"            → "best coffee shops Seaside"
 5. "{alt_term} in {town}"              → "cafe in Seaside FL"
 
-alt_terms pulled from categories.google_types
+alt_terms pulled from categories.taxonomy_type_hints
 ```
 
 ---
@@ -701,7 +690,7 @@ alt_terms pulled from categories.google_types
 
 ### Budget Calculation
 
-**Google Places API (Monthly)**
+**directory API (Monthly)**
 - Discovery: 10 searches/night × 30 days = 300 Text Search calls
 - Details per search: ~5 new businesses avg = 1,500 Place Details calls
 - Refresh: 20/night × 30 days = 600 Place Details calls
@@ -1183,7 +1172,7 @@ async function preGeneratePopularCache() {
 │                                                                             │
 │    BEFORE (full object):                                                    │
 │    {                                                                        │
-│      "id": "...", "google_place_id": "...", "name": "...",                 │
+│      "id": "...", "listing_external_key": "...", "name": "...",                 │
 │      "address": "...", "phone": "...", "website": "...",                   │
 │      "lat": "...", "lng": "...", "hours_json": {...},                      │
 │      "created_at": "...", "updated_at": "...", ...                         │
@@ -1317,7 +1306,7 @@ async function preGeneratePopularCache() {
 │                                                                             │
 │ Ranking (required — Section 11): apply hard eligibility, then composite     │
 │ score (precomputed components + query-time relevance). Do not send        │
-│ candidates ranked only by google_rating / review_count to the AI layer.     │
+│ candidates ranked only by listing_rating / review_count to the AI layer.     │
 │ ORDER BY final_composite_score DESC LIMIT 15;                               │
 │                                                                             │
 │ Latency: ~20-80ms depending on score joins/materialization                  │
@@ -1333,8 +1322,8 @@ async function preGeneratePopularCache() {
 │   id: b.id,                                                                 │
 │   name: b.name,                                                             │
 │   town: b.town_name,                                                        │
-│   rating: b.google_rating,                                                  │
-│   reviews: b.google_review_count,                                          │
+│   rating: b.listing_rating,                                                  │
+│   reviews: b.listing_review_count,                                          │
 │   price: b.price_level,                                                     │
 │   tags: b.tags,                                                             │
 │   summary: b.ai_summary                                                     │
@@ -1509,9 +1498,9 @@ interface BusinessEditForm {
   category_id: number;
   status: 'active' | 'hidden' | 'closed' | 'flagged';
 
-  // Google data (read-only, display only)
-  google_rating: number;
-  google_review_count: number;
+  // Listing metrics (read-only, display where allowed)
+  listing_rating: number;
+  listing_review_count: number;
 
   // Tags (multi-select)
   tags: TagId[];
@@ -1523,7 +1512,7 @@ interface BusinessEditForm {
   admin_notes: string;
 
   // Actions
-  refresh_now: button;      // Trigger immediate refresh from Google
+  refresh_now: button;      // Queue directory refresh (cron)
   regenerate_summary: button;
   invalidate_cache: button; // Clear all cache entries with this business
 }
@@ -1803,7 +1792,7 @@ const rateLimiter = {
 | | Seed towns, categories, tags | 2 |
 | | Create RLS policies | 2 |
 | | Create scoring & engagement tables | 3 |
-| **Ingestion** | Google Places API integration | 5 |
+| **Ingestion** | directory API integration | 5 |
 | | Discovery job processor | 5 |
 | | AI summary generation | 3 |
 | | Nightly cron setup (Vercel) | 2 |
@@ -2029,7 +2018,7 @@ function computeCompleteness(business: Business): number {
     business.website,
     business.phone,
     business.ai_summary,
-    business.google_rating,
+    business.listing_rating,
     (business.tags?.length > 0),
     (business.best_for?.length > 0),
   ];
@@ -2039,7 +2028,7 @@ function computeCompleteness(business: Business): number {
 ```
 
 **Source Quality Score:**
-- Google Places verified: 1.0
+- Directory listing verified: 1.0
 - Admin-verified: 1.0
 - User-submitted (unverified): 0.5
 - Scraped (unconfirmed): 0.3
@@ -2059,8 +2048,8 @@ freshness_integrity = max(0, 1 - (days_since_refresh / expected_refresh_interval
 function computePositiveTrust(business: Business): number {
   let score = 0.5;  // base
   if (business.total_saves > 10) score += 0.2;
-  if (business.google_rating >= 4.0) score += 0.15;
-  if (business.google_review_count >= 50) score += 0.15;
+  if (business.listing_rating >= 4.0) score += 0.15;
+  if (business.listing_review_count >= 50) score += 0.15;
   // Future: claimed business status
   return Math.min(1.0, score);
 }

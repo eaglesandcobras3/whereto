@@ -22,7 +22,7 @@ test.describe("Search (mocked API)", () => {
                 name: "Test Cafe",
                 lat: 30.32,
                 lng: -86.13,
-                google_rating: 4.5,
+                listing_rating: 4.5,
               },
             },
           ],

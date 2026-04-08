@@ -168,7 +168,7 @@ temporary HTML (ephemeral)
 ### 6.1 Tables (conceptual)
 
 - **`category_candidates`:** Rows as in §4; created/updated by mining jobs only.
-- **`category_build_queue`:** Work items created **only** when an admin approves a candidate (or bulk approves with audit). Fields might include: `candidate_id`, `priority`, `suggested_slug`, `payload_for_taxonomist` (structured JSON **without** source text — e.g. suggested `google_types`, copy hints **generated**, not copied).
+- **`category_build_queue`:** Work items created **only** when an admin approves a candidate (or bulk approves with audit). Fields might include: `candidate_id`, `priority`, `suggested_slug`, `payload_for_taxonomist` (structured JSON **without** source text — e.g. suggested `taxonomy_type_hints`, copy hints **generated**, not copied).
 
 ### 6.2 Hard guardrails
 

@@ -70,8 +70,8 @@ describe("passesEligibility", () => {
     exploration_score: 0,
     completeness_score: 0.5,
     bad_experience_unique_users: 0,
-    google_rating: 4.2,
-    google_review_count: 10,
+    listing_rating: 4.2,
+    listing_review_count: 10,
     tag_slugs: [] as string[],
   };
   it("rejects low confidence", () => {
@@ -114,8 +114,8 @@ describe("scoreAndRankCandidates", () => {
           exploration_score: 0,
           completeness_score: 0.8,
           bad_experience_unique_users: 0,
-          google_rating: 4.5,
-          google_review_count: 100,
+          listing_rating: 4.5,
+          listing_review_count: 100,
         },
         tag_slugs: [],
       },
@@ -134,8 +134,8 @@ describe("scoreAndRankCandidates", () => {
           exploration_score: 0,
           completeness_score: 0.5,
           bad_experience_unique_users: 0,
-          google_rating: 3,
-          google_review_count: 5,
+          listing_rating: 3,
+          listing_review_count: 5,
         },
         tag_slugs: [],
       },
@@ -177,8 +177,8 @@ describe("scoreAndRankCandidates", () => {
       exploration_score: 0.1,
       completeness_score: 0.5,
       bad_experience_unique_users: 0,
-      google_rating: 4.0,
-      google_review_count: 20,
+      listing_rating: 4.0,
+      listing_review_count: 20,
       tag_slugs: [] as string[],
     };
     const rows: BusinessRowWithTags[] = Array.from({ length: 300 }, (_, i) => ({

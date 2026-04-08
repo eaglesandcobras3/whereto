@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
-import { firstPlacePhotoProxyUrl } from "@/lib/media/place-photo";
+import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 
@@ -19,7 +19,7 @@ async function loadBusiness(slug: string) {
     const isUuid = UUID_RE.test(slug);
     const sel = `
         id, slug, name, address, town_id, category_id, lat, lng, phone, website,
-        ai_summary, google_rating, google_review_count, google_photos,
+        ai_summary, listing_rating, listing_review_count, legacy_photo_refs, hero_image_url,
         claim_status, claimed_by_user_id,
         business_tags(tags(name, slug)),
         towns(name, slug)
@@ -48,8 +48,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const b = await loadBusiness(slug);
   if (!b) return { title: "Business" };
   const desc = (b.ai_summary as string)?.slice(0, 160) ?? undefined;
-  const hero = firstPlacePhotoProxyUrl(b.google_photos as string[] | null);
-  const ogUrl = hero ? `${getSiteUrl()}${hero}` : undefined;
+  const hero = businessListingImageUrl(b.hero_image_url as string | null);
+  const ogUrl = hero ?? undefined;
   return {
     title: `${b.name as string} — WhereTo30A`,
     description: desc,
@@ -82,7 +82,7 @@ export default async function BusinessPage({ params }: Props) {
     if (t && typeof t === "object" && "slug" in t && t.slug) tagSlugs.push(t.slug);
   }
 
-  const heroImage = firstPlacePhotoProxyUrl(b.google_photos as string[] | null);
+  const heroImage = businessListingImageUrl(b.hero_image_url as string | null);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -99,9 +99,7 @@ export default async function BusinessPage({ params }: Props) {
           }
         : undefined,
     url: `${getSiteUrl()}/business/${b.slug as string}`,
-    ...(heroImage
-      ? { image: [`${getSiteUrl()}${heroImage}`] }
-      : {}),
+    ...(heroImage ? { image: [heroImage] } : {}),
   };
 
   return (
@@ -134,15 +132,7 @@ export default async function BusinessPage({ params }: Props) {
             />
           </div>
           <p className="text-center text-[11px] text-zinc-400">
-            Photo from{" "}
-            <a
-              href="https://developers.google.com/maps/documentation/places/web-service/policies#photo-attribution"
-              className="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-600"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Google Places
-            </a>
+            Listing image from your site catalog (e.g. owner upload or licensed asset in Storage).
           </p>
         </div>
       ) : null}
@@ -161,7 +151,7 @@ export default async function BusinessPage({ params }: Props) {
       <div className="flex flex-wrap gap-3 text-sm">
         {b.lat != null && b.lng != null ? (
           <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
+            href={`https://www.openstreetmap.org/?mlat=${b.lat}&mlon=${b.lng}#map=16/${b.lat}/${b.lng}`}
             className="rounded-xl border border-zinc-200/90 px-4 py-2 font-medium text-[var(--accent)] hover:bg-zinc-50"
             target="_blank"
             rel="noreferrer"

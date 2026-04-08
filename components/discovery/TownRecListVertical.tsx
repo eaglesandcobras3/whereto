@@ -91,7 +91,7 @@ export function TownRecListVertical({ enriched }: Props) {
               <div className="flex flex-wrap gap-4 text-sm">
                 {m ? (
                   <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
+                    href={`https://www.openstreetmap.org/?mlat=${b.lat}&mlon=${b.lng}#map=16/${b.lat}/${b.lng}`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"

@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { expandDiscoveryQueries } from "@/lib/ingestion/query-expansion";
-import { runDiscoveryJobById } from "@/lib/ingestion/discovery-runner";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 export async function createDiscoveryJobAction(formData: FormData): Promise<void> {
@@ -11,7 +10,7 @@ export async function createDiscoveryJobAction(formData: FormData): Promise<void
   const category_id = Number(formData.get("category_id"));
   const town_id = Number(formData.get("town_id"));
   const query_string = String(formData.get("query_string") ?? "").trim();
-  const run_now = formData.get("run_now") === "on";
+  const prioritize_cron = formData.get("prioritize_cron") === "on";
   const expand_variants = formData.get("expand_variants") === "on";
 
   if (!Number.isFinite(category_id) || !Number.isFinite(town_id)) {
@@ -33,12 +32,11 @@ export async function createDiscoveryJobAction(formData: FormData): Promise<void
     queries.unshift(query_string);
   }
   const unique = [...new Set(queries.map((q) => q.trim()).filter(Boolean))];
-  if (!unique.length) return;
+  const toInsert: (string | null)[] = unique.length > 0 ? unique : [null];
 
-  let firstJobId: number | undefined;
-  for (let i = 0; i < unique.length; i++) {
-    const qs = unique[i]!;
-    const { data: inserted, error } = await supabase
+  for (let i = 0; i < toInsert.length; i++) {
+    const qs = toInsert[i];
+    const { error } = await supabase
       .from("search_jobs")
       .insert({
         job_type: "discovery",
@@ -46,7 +44,7 @@ export async function createDiscoveryJobAction(formData: FormData): Promise<void
         town_id,
         query_string: qs,
         status: "pending",
-        priority: i === 0 ? 1 : 2,
+        priority: prioritize_cron && i === 0 ? 0 : i === 0 ? 1 : 2,
         next_run_after: new Date().toISOString(),
         max_runs: 5,
         run_count: 0,
@@ -55,11 +53,6 @@ export async function createDiscoveryJobAction(formData: FormData): Promise<void
       .single();
 
     if (error) continue;
-    if (firstJobId == null) firstJobId = inserted?.id as number;
-  }
-
-  if (run_now && firstJobId != null) {
-    await runDiscoveryJobById(firstJobId);
   }
 
   revalidatePath("/admin/jobs");

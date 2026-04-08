@@ -61,7 +61,7 @@ export async function runScoreComputation() {
   const { data: rows, error } = await supabase
     .from("businesses")
     .select(
-      "id, total_impressions, total_clicks, total_saves, total_shares, last_refreshed_at, google_review_count, ai_summary, admin_suppressed, suspected_closed, bad_experience_unique_users, not_relevant_count",
+      "id, total_impressions, total_clicks, total_saves, total_shares, last_refreshed_at, listing_review_count, ai_summary, admin_suppressed, suspected_closed, bad_experience_unique_users, not_relevant_count",
     )
     .eq("status", "active");
 
@@ -81,7 +81,7 @@ export async function runScoreComputation() {
     const days = (now - last) / 86400000;
     const freshness = Math.max(0, Math.min(1, 1 - days / 90));
 
-    const reviews = (b.google_review_count as number) || 0;
+    const reviews = (b.listing_review_count as number) || 0;
     const hasSummary = Boolean(b.ai_summary);
     let confidence = Math.min(
       1,

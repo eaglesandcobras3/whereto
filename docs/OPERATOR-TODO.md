@@ -10,7 +10,7 @@
 
 - [ ] Copy [`.env.example`](../.env.example) → `.env.local` and fill values (see below).
 - [ ] Create a **Supabase** project at [supabase.com](https://supabase.com).
-- [ ] In Supabase **SQL Editor**, run **all** migration files in [supabase/migrations/](../supabase/migrations/) in timestamp order (including `20260404120000_seo_town_architecture.sql`, `20260407120000_topic_mining_privacy.sql`, `20260408120000_phase3_collections_claims_cache.sql` for Phase 3 collections/claims, and `20260409000000_add_expanded_coastal_towns.sql` for expanded coastal coverage), then [supabase/seed.sql](../supabase/seed.sql). Details: [supabase/README.md](../supabase/README.md).
+- [ ] In Supabase **SQL Editor**, run **all** migration files in [supabase/migrations/](../supabase/migrations/) in timestamp order (including `20260404120000_seo_town_architecture.sql`, `20260407120000_topic_mining_privacy.sql`, `20260408120000_phase3_collections_claims_cache.sql` for Phase 3 collections/claims, `20260409000000_add_expanded_coastal_towns.sql` for expanded coastal coverage, `20260410130000_business_hero_image_storage.sql` for Storage bucket `business-images` + `hero_image_url`, `20260410140000_business_places_refresh_request.sql` for admin refresh queue, **`20260411120000_geoapify_directory_sources.sql`**, and **`20260411210000_neutral_directory_column_names.sql`** — renames listing columns and `categories.taxonomy_type_hints`), then [supabase/seed.sql](../supabase/seed.sql). Details: [supabase/README.md](../supabase/README.md).
 - [ ] If the `on_auth_user_created` trigger on `auth.users` fails in SQL Editor, create it via Dashboard → **Authentication** / **Database** hooks per Supabase docs, or run the trigger block from the migration when you have sufficient privileges.
 - [ ] From the repo: `npm install` and `npm run dev`.
 - [ ] Sign up once via `/login` (magic link). In Supabase SQL Editor, promote yourself to admin:
@@ -30,7 +30,7 @@
 | *(legacy)* `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page, legacy section | Still accepted if publishable is unset |
 | *(legacy)* `SUPABASE_SERVICE_ROLE_KEY` | Same page, legacy section | Still accepted if secret is unset |
 | `OPENAI_API_KEY` | OpenAI | Optional for local; without it, search uses keyword + template fallbacks |
-| `GOOGLE_PLACES_API_KEY` | Google Cloud → Places API (New) | Optional; without it, discovery cron skips jobs (leaves them pending) |
+| `GEOAPIFY_API_KEY` | [Geoapify MyProjects](https://myprojects.geoapify.com/) | Optional; without it, discovery and directory refresh crons skip external calls (discovery leaves jobs pending). Places + Place Details use OSM-derived data under Geoapify’s and ODbL terms — keep attribution (see `business_sources`). |
 | `CRON_SECRET` | Generate a long random string | Required in **production** for `/api/cron/*`; omitted in `NODE_ENV=development` the app allows cron without secret |
 | `NEXT_PUBLIC_SITE_URL` | Your canonical origin (e.g. `https://yoursite.com`) | Optional; improves sitemap, robots, and Open Graph URLs. Vercel sets `VERCEL_URL` as a server fallback if unset |
 
@@ -39,7 +39,7 @@
 ## One-time: production (e.g. Vercel)
 
 - [ ] Create **Vercel** project, connect repo, set the same env vars as above (use Vercel **Environment Variables** for Production/Preview).
-- [ ] In **Google Cloud**, enable **Places API (New)**, create an API key, restrict by HTTP referrer / IP as appropriate.
+- [ ] In **Geoapify**, create a project and API key; restrict by IP if you call crons from fixed hosts (e.g. Vercel).
 - [ ] Confirm [vercel.json](../vercel.json) **Cron** jobs are enabled on your Vercel plan (Crons require a compatible plan).
 - [ ] Set `CRON_SECRET` in Vercel; Vercel Cron will send `Authorization: Bearer <CRON_SECRET>` to your routes.
 - [ ] In Supabase, set **Auth** → **URL configuration** (site URL, redirect URLs) to your production domain so magic links work (include `/auth/callback` path if required by your setup).
@@ -48,11 +48,12 @@
 
 ## Runbook (operations)
 
-- [ ] **Rotate keys** if leaked: Supabase service role, OpenAI, Google Places, `CRON_SECRET`. Update Vercel + local `.env.local`; revoke old keys in each provider.
+- [ ] **Rotate keys** if leaked: Supabase secret key, OpenAI, Geoapify, `CRON_SECRET`. Update Vercel + local `.env.local`; revoke old keys in each provider.
 - [ ] **Re-run failed discovery jobs:** in Supabase Table Editor, set `search_jobs.status` to `pending`, clear `error_message`, set `next_run_after` to `now()` for rows to retry; wait for cron or call `GET /api/cron/discovery` with `Authorization: Bearer $CRON_SECRET` (or local dev without secret).
 - [ ] **Clear bad cache:** delete affected rows from `query_cache` or run cache-prune cron; optional full truncate during incidents.
 - [ ] **Duplicate hygiene:** review **`/admin/duplicates`** periodically; merge pairs so one listing stays `active` and the duplicate is `hidden` + suppressed.
-- [ ] **Cost sanity:** watch OpenAI and Google Cloud billing dashboards; lower cron budgets in code if needed.
+- [ ] **Cost sanity:** watch OpenAI and Geoapify credit usage; lower cron budgets in code if needed.
+- [ ] **Listing hero images:** No third-party map photo sync. Set `hero_image_url` (and future `business_images` rows) from **owner uploads** or other licensed assets in Storage. The **`/api/cron/business-images`** route remains as a no-op placeholder. After bulk image changes, run **`/api/cron/recommendation-precompute`** so `query_cache` stays fresh.
 - [ ] **Run tests locally:** `npm test` (Vitest); optional `npm run test:e2e` (Playwright; mocks APIs, starts dev server).
 
 ---
@@ -89,6 +90,10 @@ After deploying the premium redesign code, complete these steps to enable new to
 | 2026-04-06 | Phase 3 (MVP slice): apply `20260408120000_phase3_collections_claims_cache.sql` — saved **collections**, **listing claims** (`/admin/claims`, business page form), **share** Open Graph + coarse referrer host, **cache admin**, **bulk tags**, optional **SCORING_WEIGHT_*** env tuning. |
 | 2026-04-05 | **Premium Redesign:** apply `20260409000000_add_expanded_coastal_towns.sql` — adds Destin, Miramar Beach, Sandestin, Panama City Beach, and 4 additional 30A communities. New design system with dark mode, upgraded components (Navbar, SearchBar, BusinessCard, TownCard, etc.), 11 new intent templates. Run discovery + precompute + SEO crons for new content. |
 | 2026-04-07 | **Supabase API keys:** Prefer `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` + `SUPABASE_SECRET_KEY` (`sb_publishable_…` / `sb_secret_…`). Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` still work until you remove them. Update Vercel and `.env.local`. |
+| 2026-04-07 | **Listing images:** Apply `20260410130000_business_hero_image_storage.sql`. Historical note: older stacks synced map photos into Storage; current code uses first-party / licensed images only. `/api/place-photo` returns 410. |
+| 2026-04-07 | **Directory API cron-only:** (historical) External directory calls run only from authorized cron routes. |
+| 2026-04-11 | **Geoapify directory:** Apply `20260411120000_geoapify_directory_sources.sql`. Set **`GEOAPIFY_API_KEY`**. Discovery uses Geoapify Places + `categories.geoapify_categories`; new listings get `business_sources` (`source_name=geoapify`). Refresh cron uses Place Details for Geoapify-linked rows. **`/api/cron/business-images`** cron removed from Vercel (route is a no-op). |
+| 2026-04-11 | **Neutral column names:** Apply **`20260411210000_neutral_directory_column_names.sql`** — `listing_external_key`, `listing_rating`, `listing_review_count`, `legacy_photo_refs`, `directory_refresh_requested_at`, `taxonomy_type_hints`; `business_sources.source_name` uses `legacy_import` instead of a vendor-specific legacy label. |
 | 2026-04-07 | **Visual theme:** Product UI matches [design/homepage.html](../design/homepage.html) (Material 3 light palette in `app/globals.css`). `<html>` is always `light` (no dark theme in product chrome); the header **theme toggle was removed**. Users’ stored `whereto30a-theme` value is ignored for document class until a dark design exists. |
 
 ---

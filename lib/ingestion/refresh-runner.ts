@@ -1,99 +1,180 @@
 import OpenAI from "openai";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { googlePlaceDetails, placeIdToResource } from "@/lib/ingestion/google-places";
+import {
+  geoapifyPlaceDetails,
+  normalizeGeoapifyPlaceDetails,
+} from "@/lib/ingestion/geoapify-places";
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function priceLevelFromGoogle(level?: string): number | null {
-  if (!level) return null;
-  const map: Record<string, number> = {
-    PRICE_LEVEL_FREE: 0,
-    PRICE_LEVEL_INEXPENSIVE: 1,
-    PRICE_LEVEL_MODERATE: 2,
-    PRICE_LEVEL_EXPENSIVE: 3,
-    PRICE_LEVEL_VERY_EXPENSIVE: 4,
-  };
-  return map[level] ?? null;
+type RefreshRow = {
+  id: string;
+  lat: number;
+  lng: number;
+  category_id: number | null;
+  last_refreshed_at: string;
+  legacy_photo_refs: string[] | null;
+  directory_refresh_requested_at: string | null;
+  geoapify_place_id: string;
+};
+
+async function loadGeoapifyPlaceIdByBusiness(
+  supabase: SupabaseClient,
+): Promise<Map<string, string>> {
+  const { data } = await supabase
+    .from("business_sources")
+    .select("business_id, source_record_id")
+    .eq("source_name", "geoapify");
+  const m = new Map<string, string>();
+  for (const r of data ?? []) {
+    m.set(r.business_id as string, r.source_record_id as string);
+  }
+  return m;
+}
+
+async function refreshOneBusiness(
+  supabase: SupabaseClient,
+  apiKey: string,
+  b: RefreshRow,
+): Promise<void> {
+  const fc = await geoapifyPlaceDetails(apiKey, b.geoapify_place_id);
+  const n = normalizeGeoapifyPlaceDetails(fc, b.lat, b.lng);
+
+  await supabase
+    .from("businesses")
+    .update({
+      ...(n.name ? { name: n.name } : {}),
+      address: n.address,
+      lat: n.lat,
+      lng: n.lng,
+      phone: n.phone,
+      website: n.website,
+      hours_json: n.hours_json,
+      last_refreshed_at: new Date().toISOString(),
+      directory_refresh_requested_at: null,
+    })
+    .eq("id", b.id);
+
+  await supabase
+    .from("business_sources")
+    .update({ last_verified_at: new Date().toISOString() })
+    .eq("business_id", b.id)
+    .eq("source_name", "geoapify");
+
+  const { data: caches } = await supabase.from("query_cache").select("id, business_ids");
+  const hitIds =
+    caches
+      ?.filter((row) => (row.business_ids as string[])?.includes(b.id as string))
+      .map((r) => r.id) ?? [];
+  if (hitIds.length) {
+    await supabase.from("query_cache").delete().in("id", hitIds);
+  }
 }
 
 export async function runRefreshBatch(budget: number) {
-  const key = process.env.GOOGLE_PLACES_API_KEY;
+  const key = process.env.GEOAPIFY_API_KEY?.trim();
   const supabase = getServiceSupabase();
 
-  const { data: cats } = await supabase.from("categories").select("id, refresh_interval_days");
+  const { data: cats } = await supabase
+    .from("categories")
+    .select("id, refresh_interval_days");
   const intervalByCat = new Map(
-    (cats ?? []).map((c) => [c.id as number, (c.refresh_interval_days as number) ?? 30]),
+    (cats ?? []).map((c) => [
+      c.id as number,
+      (c.refresh_interval_days as number) ?? 30,
+    ]),
   );
-
-  const { data: stale, error } = await supabase
-    .from("businesses")
-    .select("id, google_place_id, category_id, last_refreshed_at")
-    .eq("status", "active")
-    .not("google_place_id", "like", "seed:%")
-    .order("refresh_priority", { ascending: true })
-    .order("last_refreshed_at", { ascending: true })
-    .limit(budget * 3);
-
-  if (error) throw error;
-
-  const now = Date.now();
-  const toRefresh =
-    stale?.filter((b) => {
-      const days = intervalByCat.get(b.category_id as number) ?? 30;
-      const last = new Date(b.last_refreshed_at as string).getTime();
-      return now - last > days * 86400000;
-    }) ?? [];
-
-  const slice = toRefresh.slice(0, budget);
 
   if (!key) {
     return {
       processed: 0,
-      message: "GOOGLE_PLACES_API_KEY not set — refresh skipped",
+      message: "GEOAPIFY_API_KEY not set — directory refresh skipped",
     };
   }
 
+  const geoPlaceByBusiness = await loadGeoapifyPlaceIdByBusiness(supabase);
+  if (!geoPlaceByBusiness.size) {
+    return {
+      processed: 0,
+      message: "No Geoapify-linked listings to refresh",
+    };
+  }
+
+  const { data: requested, error: reqErr } = await supabase
+    .from("businesses")
+    .select(
+      "id, lat, lng, category_id, last_refreshed_at, legacy_photo_refs, directory_refresh_requested_at",
+    )
+    .eq("status", "active")
+    .not("directory_refresh_requested_at", "is", null)
+    .order("directory_refresh_requested_at", { ascending: true })
+    .limit(budget * 3);
+
+  if (reqErr) throw reqErr;
+
+  const requestedRows: RefreshRow[] = (requested ?? [])
+    .filter((row) => geoPlaceByBusiness.has(row.id as string))
+    .map((row) => ({
+      id: row.id as string,
+      lat: row.lat as number,
+      lng: row.lng as number,
+      category_id: row.category_id as number | null,
+      last_refreshed_at: row.last_refreshed_at as string,
+      legacy_photo_refs: row.legacy_photo_refs as string[] | null,
+      directory_refresh_requested_at: row.directory_refresh_requested_at as string | null,
+      geoapify_place_id: geoPlaceByBusiness.get(row.id as string)!,
+    }))
+    .slice(0, budget);
+
+  let remaining = budget - requestedRows.length;
+
+  const staleSlice: RefreshRow[] = [];
+  if (remaining > 0) {
+    const { data: stale, error } = await supabase
+      .from("businesses")
+      .select(
+        "id, lat, lng, category_id, last_refreshed_at, legacy_photo_refs, directory_refresh_requested_at",
+      )
+      .eq("status", "active")
+      .is("directory_refresh_requested_at", null)
+      .order("refresh_priority", { ascending: true })
+      .order("last_refreshed_at", { ascending: true })
+      .limit(remaining * 5);
+
+    if (error) throw error;
+
+    const now = Date.now();
+    const toRefresh =
+      (stale ?? []).filter((b) => {
+        if (!geoPlaceByBusiness.has(b.id as string)) return false;
+        const days = intervalByCat.get(b.category_id as number) ?? 30;
+        const last = new Date(b.last_refreshed_at as string).getTime();
+        return now - last > days * 86400000;
+      }) ?? [];
+
+    staleSlice.push(
+      ...toRefresh.slice(0, remaining).map((row) => ({
+        id: row.id as string,
+        lat: row.lat as number,
+        lng: row.lng as number,
+        category_id: row.category_id as number | null,
+        last_refreshed_at: row.last_refreshed_at as string,
+        legacy_photo_refs: row.legacy_photo_refs as string[] | null,
+        directory_refresh_requested_at: row.directory_refresh_requested_at as string | null,
+        geoapify_place_id: geoPlaceByBusiness.get(row.id as string)!,
+      })),
+    );
+  }
+
+  const slice = [...requestedRows, ...staleSlice];
+
   for (const b of slice) {
-    await sleep(100);
+    await sleep(120);
     try {
-      const details = await googlePlaceDetails(
-        key,
-        placeIdToResource(b.google_place_id as string),
-      );
-      const lat = details.location?.latitude;
-      const lng = details.location?.longitude;
-
-      await supabase
-        .from("businesses")
-        .update({
-          name: details.displayName?.text ?? undefined,
-          address: details.formattedAddress ?? null,
-          lat: lat ?? undefined,
-          lng: lng ?? undefined,
-          phone: details.nationalPhoneNumber ?? null,
-          website: details.websiteUri ?? null,
-          google_rating: details.rating ?? null,
-          google_review_count: details.userRatingCount ?? 0,
-          price_level: priceLevelFromGoogle(details.priceLevel),
-          hours_json: details.regularOpeningHours
-            ? JSON.parse(JSON.stringify(details.regularOpeningHours))
-            : null,
-          status:
-            details.businessStatus === "CLOSED_PERMANENTLY" ? "closed" : "active",
-          last_refreshed_at: new Date().toISOString(),
-        })
-        .eq("id", b.id);
-
-      const { data: caches } = await supabase.from("query_cache").select("id, business_ids");
-      const hitIds =
-        caches
-          ?.filter((row) => (row.business_ids as string[])?.includes(b.id as string))
-          .map((r) => r.id) ?? [];
-      if (hitIds.length) {
-        await supabase.from("query_cache").delete().in("id", hitIds);
-      }
+      await refreshOneBusiness(supabase, key, b);
     } catch (e) {
       console.error("refresh", b.id, e);
     }
@@ -111,7 +192,7 @@ export async function runAiSummaryBatch(budget: number) {
 
   const { data: rows, error } = await supabase
     .from("businesses")
-    .select("id, name, google_rating, google_review_count, price_level, ai_summary")
+    .select("id, name, listing_rating, listing_review_count, price_level, ai_summary")
     .eq("status", "active")
     .is("ai_summary", null)
     .limit(budget);
@@ -138,8 +219,8 @@ export async function runAiSummaryBatch(budget: number) {
             role: "user",
             content: JSON.stringify({
               name: b.name,
-              rating: b.google_rating,
-              reviews: b.google_review_count,
+              rating: b.listing_rating,
+              reviews: b.listing_review_count,
               price_level: b.price_level,
             }),
           },

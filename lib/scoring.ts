@@ -14,8 +14,8 @@ export type BusinessForScore = {
   exploration_score: number;
   completeness_score: number;
   bad_experience_unique_users: number;
-  google_rating: number | null;
-  google_review_count: number | null;
+  listing_rating: number | null;
+  listing_review_count: number | null;
 };
 
 export type BusinessRowWithTags = BusinessForScore & {
@@ -29,8 +29,10 @@ export type BusinessRowWithTags = BusinessForScore & {
   website?: string | null;
   price_level?: number | null;
   ai_summary?: string | null;
-  /** Google Places photo resource names; proxied for display. */
-  google_photos?: string[] | null;
+  /** Legacy field; map API photos are not used for new listings. */
+  legacy_photo_refs?: string[] | null;
+  /** Public Storage URL for listing hero (from `/api/cron/business-images`). */
+  hero_image_url?: string | null;
 };
 
 /** Optional anchor town for SEO/town hubs (TDD-SEO-TOWNS §7). */
@@ -107,7 +109,7 @@ function compositeScore(
     w.engagement * b.engagement_score +
     w.completeness * b.completeness_score +
     b.exploration_score +
-    ((b.google_rating ?? 0) / 5) * w.ratingTiebreak
+    ((b.listing_rating ?? 0) / 5) * w.ratingTiebreak
   );
 }
 

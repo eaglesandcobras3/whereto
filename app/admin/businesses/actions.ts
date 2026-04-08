@@ -4,10 +4,6 @@ import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import {
-  googlePlaceDetails,
-  placeIdToResource,
-} from "@/lib/ingestion/google-places";
 
 export async function updateBusinessAction(
   businessId: string,
@@ -72,7 +68,7 @@ export async function regenerateAiSummaryAction(businessId: string) {
 
   const { data: b, error } = await supabase
     .from("businesses")
-    .select("name, google_rating, google_review_count, price_level")
+    .select("name, listing_rating, listing_review_count, price_level")
     .eq("id", businessId)
     .single();
   if (error || !b) return { error: "Business not found" };
@@ -92,8 +88,8 @@ export async function regenerateAiSummaryAction(businessId: string) {
         role: "user",
         content: JSON.stringify({
           name: b.name,
-          rating: b.google_rating,
-          reviews: b.google_review_count,
+          rating: b.listing_rating,
+          reviews: b.listing_review_count,
           price_level: b.price_level,
         }),
       },
@@ -116,10 +112,10 @@ export async function regenerateAiSummaryAction(businessId: string) {
   return { ok: true as const };
 }
 
-export async function refreshFromGoogleFormAction(formData: FormData): Promise<void> {
+export async function refreshFromDirectoryFormAction(formData: FormData): Promise<void> {
   const id = String(formData.get("business_id") ?? "");
   if (!id) return;
-  await refreshFromGoogleAction(id);
+  await refreshFromDirectoryAction(id);
 }
 
 export async function regenerateAiSummaryFormAction(formData: FormData): Promise<void> {
@@ -128,57 +124,34 @@ export async function regenerateAiSummaryFormAction(formData: FormData): Promise
   await regenerateAiSummaryAction(id);
 }
 
-export async function refreshFromGoogleAction(businessId: string) {
+/**
+ * Queues Geoapify Place Details refresh for the daily cron only (no live API from this action).
+ */
+export async function refreshFromDirectoryAction(businessId: string) {
   await requireAdmin();
-  const gkey = process.env.GOOGLE_PLACES_API_KEY;
-  if (!gkey) return { error: "GOOGLE_PLACES_API_KEY not set" };
   const supabase = getServiceSupabase();
 
-  const { data: b, error } = await supabase
+  const { data: src, error } = await supabase
+    .from("business_sources")
+    .select("id")
+    .eq("business_id", businessId)
+    .eq("source_name", "geoapify")
+    .maybeSingle();
+
+  if (error || !src) {
+    return {
+      error:
+        "No Geoapify source on this listing — refresh applies to directory-ingested rows only.",
+    };
+  }
+
+  const { error: upErr } = await supabase
     .from("businesses")
-    .select("google_place_id")
-    .eq("id", businessId)
-    .single();
-  if (error || !b?.google_place_id) return { error: "Business or place id missing" };
-
-  const details = await googlePlaceDetails(
-    gkey,
-    placeIdToResource(b.google_place_id as string),
-  );
-  const lat = details.location?.latitude;
-  const lng = details.location?.longitude;
-
-  const priceMap: Record<string, number> = {
-    PRICE_LEVEL_FREE: 0,
-    PRICE_LEVEL_INEXPENSIVE: 1,
-    PRICE_LEVEL_MODERATE: 2,
-    PRICE_LEVEL_EXPENSIVE: 3,
-    PRICE_LEVEL_VERY_EXPENSIVE: 4,
-  };
-
-  await supabase
-    .from("businesses")
-    .update({
-      name: details.displayName?.text ?? undefined,
-      address: details.formattedAddress ?? null,
-      lat: lat ?? undefined,
-      lng: lng ?? undefined,
-      phone: details.nationalPhoneNumber ?? null,
-      website: details.websiteUri ?? null,
-      google_rating: details.rating ?? null,
-      google_review_count: details.userRatingCount ?? 0,
-      price_level: details.priceLevel
-        ? (priceMap[details.priceLevel] ?? null)
-        : null,
-      hours_json: details.regularOpeningHours
-        ? JSON.parse(JSON.stringify(details.regularOpeningHours))
-        : null,
-      status:
-        details.businessStatus === "CLOSED_PERMANENTLY" ? "closed" : "active",
-      last_refreshed_at: new Date().toISOString(),
-    })
+    .update({ directory_refresh_requested_at: new Date().toISOString() })
     .eq("id", businessId);
 
+  if (upErr) return { error: upErr.message };
+
   revalidatePath(`/admin/businesses/${businessId}`);
-  return { ok: true as const };
+  return { ok: true as const, queued: true as const };
 }

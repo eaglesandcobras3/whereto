@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/admin/require-admin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
   regenerateAiSummaryFormAction,
-  refreshFromGoogleFormAction,
+  refreshFromDirectoryFormAction,
   updateBusinessAction,
 } from "@/app/admin/businesses/actions";
 import { BusinessEditForm } from "@/app/admin/businesses/edit-form";
@@ -18,24 +18,37 @@ export default async function AdminBusinessEditPage({
   const { id } = await params;
   const supabase = getServiceSupabase();
 
-  const [{ data: business, error }, { data: towns }, { data: categories }, { data: tags }] =
-    await Promise.all([
-      supabase
-        .from("businesses")
-        .select(
-          `
+  const [
+    { data: business, error },
+    { data: towns },
+    { data: categories },
+    { data: tags },
+    { data: sources },
+  ] = await Promise.all([
+    supabase
+      .from("businesses")
+      .select(
+        `
         id, name, address, status, admin_suppressed, suspected_closed,
-        town_id, category_id, google_place_id, phone, website,
-        google_rating, google_review_count, price_level, ai_summary,
-        confidence_score, freshness_score, engagement_score
+        town_id, category_id, listing_external_key, phone, website,
+        listing_rating, listing_review_count, price_level, ai_summary,
+        confidence_score, freshness_score, engagement_score,
+        directory_refresh_requested_at
       `,
-        )
-        .eq("id", id)
-        .single(),
-      supabase.from("towns").select("id, name, slug").order("name"),
-      supabase.from("categories").select("id, name, slug").order("name"),
-      supabase.from("tags").select("id, name, slug, category").order("display_order"),
-    ]);
+      )
+      .eq("id", id)
+      .single(),
+    supabase.from("towns").select("id, name, slug").order("name"),
+    supabase.from("categories").select("id, name, slug").order("name"),
+    supabase.from("tags").select("id, name, slug, category").order("display_order"),
+    supabase
+      .from("business_sources")
+      .select(
+        "source_name, source_record_id, source_url, attribution_required, last_verified_at, confidence_score",
+      )
+      .eq("business_id", id)
+      .order("source_name"),
+  ]);
 
   if (error || !business) notFound();
 
@@ -56,19 +69,48 @@ export default async function AdminBusinessEditPage({
       <h1 className="text-2xl font-semibold text-zinc-900">
         Edit: {business.name as string}
       </h1>
-      <p className="text-xs text-zinc-500">
-        Place ID: <code>{business.google_place_id as string}</code>
-      </p>
-      <div className="flex flex-wrap gap-2 text-sm">
-        <form action={refreshFromGoogleFormAction} className="inline">
+      <div className="rounded-lg border border-zinc-200 bg-white p-3 text-xs text-zinc-600">
+        <p className="font-medium text-zinc-800">Data sources</p>
+        {(sources ?? []).length ? (
+          <ul className="mt-2 list-inside list-disc space-y-1">
+            {(sources ?? []).map((s) => (
+              <li key={`${s.source_name}-${s.source_record_id}`}>
+                <code>{s.source_name as string}</code> ·{" "}
+                <code className="break-all">{s.source_record_id as string}</code>
+                {s.attribution_required ? (
+                  <span className="text-amber-800"> · attribution required</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-1 text-zinc-500">No rows in business_sources.</p>
+        )}
+        {business.listing_external_key ? (
+          <p className="mt-2 text-zinc-500">
+            External key <code className="break-all">{business.listing_external_key as string}</code>
+          </p>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <form action={refreshFromDirectoryFormAction} className="inline">
           <input type="hidden" name="business_id" value={id} />
           <button
             type="submit"
             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 hover:bg-zinc-50"
           >
-            Refresh from Google
+            Queue directory refresh
           </button>
         </form>
+        <span className="text-xs text-zinc-500">
+          Geoapify-backed listings only; runs on the daily refresh cron.
+          {business.directory_refresh_requested_at ? (
+            <span className="ml-2 font-medium text-amber-800">
+              Queued since{" "}
+              {new Date(business.directory_refresh_requested_at as string).toLocaleString()}
+            </span>
+          ) : null}
+        </span>
         <form action={regenerateAiSummaryFormAction} className="inline">
           <input type="hidden" name="business_id" value={id} />
           <button

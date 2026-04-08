@@ -1,25 +1,13 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { resolveTagIdsForGoogleTypes } from "@/lib/ingestion/business-tags-from-google";
 import {
-  googlePlaceDetails,
-  googleTextSearch,
-  placeIdToResource,
-} from "@/lib/ingestion/google-places";
+  geoapifyPlacesInCircle,
+  geoapifyPropsFromPlaceFeature,
+  type GeoapifyPointFeature,
+} from "@/lib/ingestion/geoapify-places";
+import { resolveTagIdsForGeoapifyCategories } from "@/lib/ingestion/geoapify-tags";
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-function priceLevelFromGoogle(level?: string): number | null {
-  if (!level) return null;
-  const map: Record<string, number> = {
-    PRICE_LEVEL_FREE: 0,
-    PRICE_LEVEL_INEXPENSIVE: 1,
-    PRICE_LEVEL_MODERATE: 2,
-    PRICE_LEVEL_EXPENSIVE: 3,
-    PRICE_LEVEL_VERY_EXPENSIVE: 4,
-  };
-  return map[level] ?? null;
 }
 
 async function nearestTownId(
@@ -38,19 +26,18 @@ async function nearestTownId(
   return best?.id ?? null;
 }
 
-async function categoryFromTypes(
+async function categoryGeoapifyCodes(
   supabase: ReturnType<typeof getServiceSupabase>,
-  types: string[] | undefined,
   jobCategoryId: number | null,
-): Promise<number | null> {
-  if (jobCategoryId) return jobCategoryId;
-  if (!types?.length) return null;
-  const { data: cats } = await supabase.from("categories").select("id, google_types");
-  for (const c of cats ?? []) {
-    const gt = (c.google_types as string[]) ?? [];
-    if (types.some((t) => gt.includes(t))) return c.id as number;
-  }
-  return null;
+): Promise<string[]> {
+  if (!jobCategoryId) return [];
+  const { data: row } = await supabase
+    .from("categories")
+    .select("geoapify_categories")
+    .eq("id", jobCategoryId)
+    .single();
+  const arr = row?.geoapify_categories as string[] | undefined;
+  return (arr ?? []).filter(Boolean);
 }
 
 export type DiscoveryJobRow = {
@@ -63,6 +50,8 @@ export type DiscoveryJobRow = {
 };
 
 const RETRY_DELAY_MS = 60 * 60 * 1000;
+const PAGE_SIZE = 100;
+const MAX_PLACES_PER_JOB = 400;
 
 async function markDiscoveryJobFailure(
   supabase: ReturnType<typeof getServiceSupabase>,
@@ -95,9 +84,71 @@ async function markDiscoveryJobFailure(
   }
 }
 
+async function geoapifyPlaceAlreadyIngested(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  placeId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("business_sources")
+    .select("id")
+    .eq("source_name", "geoapify")
+    .eq("source_record_id", placeId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+async function insertFromPlaceFeature(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  f: GeoapifyPointFeature,
+  job: DiscoveryJobRow,
+): Promise<boolean> {
+  const props = geoapifyPropsFromPlaceFeature(f);
+  if (!props.placeId) return false;
+  if (!Number.isFinite(props.lat) || !Number.isFinite(props.lng)) return false;
+
+  if (await geoapifyPlaceAlreadyIngested(supabase, props.placeId)) return false;
+
+  const townId =
+    (await nearestTownId(supabase, props.lat, props.lng)) ??
+    (job.town_id as number) ??
+    null;
+  if (townId == null) return false;
+
+  const categoryId = job.category_id ?? null;
+  const tagIds = await resolveTagIdsForGeoapifyCategories(
+    supabase,
+    props.categories,
+  );
+
+  const { data: newId, error: insErr } = await supabase.rpc(
+    "insert_directory_listing_with_tags",
+    {
+      p_name: props.name,
+      p_address: props.address,
+      p_town_id: townId,
+      p_category_id: categoryId,
+      p_lat: props.lat,
+      p_lng: props.lng,
+      p_phone: null,
+      p_website: null,
+      p_hours_json: null,
+      p_status: "active",
+      p_tag_ids: tagIds.length ? tagIds : [],
+      p_source_name: "geoapify",
+      p_source_record_id: props.placeId,
+      p_source_url: "https://www.openstreetmap.org/copyright",
+      p_attribution_required: true,
+      p_listing_confidence: 0.55,
+    },
+  );
+
+  if (insErr || !newId) return false;
+  return true;
+}
+
 export async function processDiscoveryJob(
   supabase: ReturnType<typeof getServiceSupabase>,
-  key: string,
+  apiKey: string,
   job: DiscoveryJobRow,
 ): Promise<{ newBusinesses: number; results: number }> {
   const runCount = job.run_count ?? 0;
@@ -115,96 +166,63 @@ export async function processDiscoveryJob(
       .eq("id", job.town_id as number)
       .single();
 
-    if (!town || !job.query_string) {
-      throw new Error("Missing town or query");
+    if (!town) {
+      throw new Error("Missing town");
     }
 
-    const search = await googleTextSearch(
-      key,
-      job.query_string,
-      Number(town.center_lat),
-      Number(town.center_lng),
-      (town.search_radius_meters as number) ?? 5000,
-    );
+    const geoCats = await categoryGeoapifyCodes(supabase, job.category_id ?? null);
+    if (!geoCats.length) {
+      throw new Error(
+        "Category has no geoapify_categories — run migration 20260411120000 or set categories in SQL",
+      );
+    }
 
-    const places = search.places ?? [];
+    const lat = Number(town.center_lat);
+    const lng = Number(town.center_lng);
+    const radius = (town.search_radius_meters as number) ?? 5000;
+
     let inserted = 0;
+    let totalResults = 0;
+    let offset = 0;
 
-    for (const p of places) {
-      const pid = p.id?.replace(/^places\//, "");
-      if (!pid) continue;
-      const { data: existing } = await supabase
-        .from("businesses")
-        .select("id")
-        .eq("google_place_id", pid)
-        .maybeSingle();
-      if (existing) continue;
+    while (offset < MAX_PLACES_PER_JOB) {
+      const features = await geoapifyPlacesInCircle(apiKey, {
+        lon: lng,
+        lat,
+        radiusMeters: radius,
+        categories: geoCats,
+        limit: PAGE_SIZE,
+        offset,
+        lang: "en",
+      });
 
-      await sleep(100);
-      const details = await googlePlaceDetails(key, placeIdToResource(pid));
-      const lat = details.location?.latitude;
-      const lng = details.location?.longitude;
-      if (lat == null || lng == null) continue;
+      if (!features.length) break;
 
-      const townId = await nearestTownId(supabase, lat, lng);
-      const categoryId = await categoryFromTypes(
-        supabase,
-        details.types ?? p.types,
-        job.category_id,
-      );
+      totalResults += features.length;
 
-      const allTypes = [...(details.types ?? []), ...(p.types ?? [])];
-      const tagIds = await resolveTagIdsForGoogleTypes(supabase, allTypes);
-      const hoursJson = details.regularOpeningHours
-        ? JSON.parse(JSON.stringify(details.regularOpeningHours))
-        : null;
+      for (const f of features) {
+        await sleep(50);
+        const ok = await insertFromPlaceFeature(supabase, f, job);
+        if (ok) inserted += 1;
+      }
 
-      const photoNames =
-        details.photos
-          ?.map((ph) => ph.name)
-          .filter((n): n is string => typeof n === "string" && n.length > 0)
-          .slice(0, 8) ?? null;
-
-      const { data: newId, error: insErr } = await supabase.rpc(
-        "insert_discovery_business_with_tags",
-        {
-          p_google_place_id: pid,
-          p_name: details.displayName?.text ?? p.displayName?.text ?? "Unknown",
-          p_address: details.formattedAddress ?? p.formattedAddress ?? null,
-          p_town_id: townId,
-          p_category_id: categoryId,
-          p_lat: lat,
-          p_lng: lng,
-          p_phone: details.nationalPhoneNumber ?? null,
-          p_website: details.websiteUri ?? null,
-          p_google_rating: details.rating ?? null,
-          p_google_review_count: details.userRatingCount ?? 0,
-          p_price_level: priceLevelFromGoogle(details.priceLevel),
-          p_hours_json: hoursJson,
-          p_status:
-            details.businessStatus === "CLOSED_PERMANENTLY" ? "closed" : "active",
-          p_tag_ids: tagIds,
-          p_google_photos: photoNames?.length ? photoNames : null,
-        },
-      );
-
-      if (insErr || !newId) continue;
-
-      inserted += 1;
+      if (features.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+      await sleep(150);
     }
 
     await supabase
       .from("search_jobs")
       .update({
         status: "completed",
-        results_count: places.length,
+        results_count: totalResults,
         new_businesses_count: inserted,
         run_count: runCount + 1,
         error_message: null,
       })
       .eq("id", job.id);
 
-    return { newBusinesses: inserted, results: places.length };
+    return { newBusinesses: inserted, results: totalResults };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await markDiscoveryJobFailure(supabase, job.id, msg, runCount, maxRuns);
@@ -212,36 +230,8 @@ export async function processDiscoveryJob(
   }
 }
 
-/** Run one pending discovery job by id (for admin “run now”). */
-export async function runDiscoveryJobById(jobId: number) {
-  const key = process.env.GOOGLE_PLACES_API_KEY;
-  if (!key) {
-    return { ok: false as const, message: "GOOGLE_PLACES_API_KEY not set" };
-  }
-  const supabase = getServiceSupabase();
-  const { data: job, error } = await supabase
-    .from("search_jobs")
-    .select(
-      "id, query_string, category_id, town_id, status, job_type, run_count, max_runs",
-    )
-    .eq("id", jobId)
-    .single();
-  if (error || !job || job.job_type !== "discovery") {
-    return { ok: false as const, message: "Job not found" };
-  }
-  if (job.status !== "pending") {
-    return { ok: false as const, message: `Job is ${job.status}, not pending` };
-  }
-  try {
-    const r = await processDiscoveryJob(supabase, key, job as DiscoveryJobRow);
-    return { ok: true as const, ...r };
-  } catch {
-    return { ok: false as const, message: "Discovery failed (see job row)" };
-  }
-}
-
 export async function runDiscoveryBatch(budget: number) {
-  const key = process.env.GOOGLE_PLACES_API_KEY;
+  const key = process.env.GEOAPIFY_API_KEY?.trim();
   const supabase = getServiceSupabase();
 
   const { data: jobs, error } = await supabase
@@ -257,17 +247,15 @@ export async function runDiscoveryBatch(budget: number) {
 
   if (error) throw error;
   if (!jobs?.length) {
-    return {
-      processed: 0,
-      message: key ? "No pending jobs" : "No pending jobs (Places key optional)",
-    };
+    return { processed: 0, message: "No pending jobs" };
   }
 
   if (!key) {
     return {
       processed: 0,
       skipped: jobs.length,
-      message: "GOOGLE_PLACES_API_KEY not set — discovery skipped (jobs left pending)",
+      message:
+        "GEOAPIFY_API_KEY not set — discovery skipped (jobs left pending)",
     };
   }
 

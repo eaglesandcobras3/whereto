@@ -25,7 +25,7 @@ type Props = {
 };
 
 /**
- * Listing hero thumb: Places photo (proxied) or soft gradient; subtle bottom vignette for depth.
+ * Listing hero thumb: Storage URL (`hero_image_url`) or soft gradient; subtle bottom vignette for depth.
  */
 export function ListingThumbnail({
   slug,

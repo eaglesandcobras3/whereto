@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveTagIdsForGoogleTypes } from "./business-tags-from-google";
+import { resolveTagIdsForTaxonomyHints } from "./business-tags-from-taxonomy";
 
 function mockSupabase(rows: { id: number }[]) {
   const inFn = vi.fn().mockResolvedValue({ data: rows, error: null });
@@ -9,10 +9,10 @@ function mockSupabase(rows: { id: number }[]) {
   return { from, inFn, selectFn } as const;
 }
 
-describe("resolveTagIdsForGoogleTypes", () => {
+describe("resolveTagIdsForTaxonomyHints", () => {
   it("returns empty for missing types", async () => {
     const { from } = mockSupabase([]);
-    const ids = await resolveTagIdsForGoogleTypes(
+    const ids = await resolveTagIdsForTaxonomyHints(
       { from } as unknown as SupabaseClient,
       undefined,
     );
@@ -22,7 +22,7 @@ describe("resolveTagIdsForGoogleTypes", () => {
 
   it("dedupes case and queries slugs", async () => {
     const { from, inFn } = mockSupabase([{ id: 3 }, { id: 7 }]);
-    const ids = await resolveTagIdsForGoogleTypes(
+    const ids = await resolveTagIdsForTaxonomyHints(
       { from } as unknown as SupabaseClient,
       ["Cafe", "cafe", "restaurant"],
     );

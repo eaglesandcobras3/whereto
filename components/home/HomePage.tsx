@@ -24,7 +24,7 @@ type Rec = {
     lng?: number;
     phone?: string | null;
     website?: string | null;
-    google_rating?: number | null;
+    listing_rating?: number | null;
     slug?: string;
     tags?: string[];
     ai_summary?: string | null;
@@ -564,7 +564,7 @@ export function HomePage() {
                               <div className="absolute right-0 z-10 mt-1 w-52 rounded-xl border border-outline-variant/40 bg-surface-elevated py-1 shadow-lg">
                                 {m ? (
                                   <a
-                                    href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
+                                    href={`https://www.openstreetmap.org/?mlat=${b.lat}&mlon=${b.lng}#map=16/${b.lat}/${b.lng}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="block px-4 py-2 text-sm hover:bg-surface-container-low"

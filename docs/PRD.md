@@ -369,8 +369,8 @@ admin review queue
 
 
 
-3. Google Places usage limits
-Risk: exceeding free tier
+3. Directory API usage limits
+Risk: exceeding free tier or credits
 Mitigation:
 slow cron ingestion
 
@@ -408,7 +408,7 @@ cron jobs (Cloudflare/Vercel)
 
 
 Low cost:
-Google Places (if controlled)
+Licensed directory data (Geoapify / OSM-backed, if controlled)
 
 
 OpenAI (primary variable cost)
@@ -479,7 +479,7 @@ Vercel Cron or Cloudflare Workers
 
 
 Data Sources
-Google Places API
+Directory APIs (e.g. Geoapify, OSM-derived) and first-party listings
 
 
 
@@ -597,7 +597,7 @@ Discovery Flow
 cron selects 1–2 search_jobs
 
 
-query Google Places
+query directory API
 
 
 collect place_ids

@@ -13,14 +13,24 @@ INSERT INTO public.towns (name, slug, center_lat, center_lng, search_radius_mete
   ('Blue Mountain Beach', 'blue-mountain-beach', 30.3080, -86.0950, 5000)
 ON CONFLICT (slug) DO NOTHING;
 
-INSERT INTO public.categories (name, slug, google_types, discovery_priority, refresh_interval_days) VALUES
-  ('Restaurants', 'restaurants', ARRAY['restaurant', 'meal_takeaway', 'food'], 1, 60),
-  ('Coffee shops', 'coffee_shops', ARRAY['cafe', 'coffee_shop'], 2, 45),
-  ('Bars', 'bars', ARRAY['bar', 'night_club'], 3, 60),
-  ('Activities', 'activities', ARRAY['tourist_attraction', 'park', 'gym'], 4, 90),
-  ('Shopping', 'shopping', ARRAY['shopping_mall', 'store', 'clothing_store'], 5, 120),
-  ('Services', 'services', ARRAY['spa', 'beauty_salon', 'hair_care'], 6, 120)
-ON CONFLICT (slug) DO NOTHING;
+INSERT INTO public.categories (
+  name, slug, taxonomy_type_hints, geoapify_categories, discovery_priority, refresh_interval_days
+) VALUES
+  ('Restaurants', 'restaurants', ARRAY['restaurant', 'meal_takeaway', 'food'],
+    ARRAY['catering.restaurant', 'catering.fast_food', 'catering.food_court'], 1, 60),
+  ('Coffee shops', 'coffee_shops', ARRAY['cafe', 'coffee_shop'],
+    ARRAY['catering.cafe', 'commercial.cafe'], 2, 45),
+  ('Bars', 'bars', ARRAY['bar', 'night_club'],
+    ARRAY['catering.bar', 'catering.pub'], 3, 60),
+  ('Activities', 'activities', ARRAY['tourist_attraction', 'park', 'gym'],
+    ARRAY['entertainment.tourism', 'leisure.park', 'sport.fitness'], 4, 90),
+  ('Shopping', 'shopping', ARRAY['shopping_mall', 'store', 'clothing_store'],
+    ARRAY['commercial.shopping_mall', 'commercial.clothing', 'commercial.gift_and_souvenir', 'commercial.department_store'], 5, 120),
+  ('Services', 'services', ARRAY['spa', 'beauty_salon', 'hair_care'],
+    ARRAY['commercial.beauty', 'healthcare.clinic_or_praxis', 'service.beauty', 'service.photography'], 6, 120)
+ON CONFLICT (slug) DO UPDATE SET
+  geoapify_categories = EXCLUDED.geoapify_categories,
+  taxonomy_type_hints = EXCLUDED.taxonomy_type_hints;
 
 INSERT INTO public.tags (name, slug, category, display_order) VALUES
   ('Kid-friendly', 'kid_friendly', 'audience', 10),
@@ -50,10 +60,10 @@ INSERT INTO public.tags (name, slug, category, display_order) VALUES
   ('Sunset views', 'sunset_views', 'vibe', 250)
 ON CONFLICT (slug) DO NOTHING;
 
--- Sample businesses (synthetic place_ids for local dev without Google)
+-- Sample businesses (synthetic listing_external_key for local dev)
 INSERT INTO public.businesses (
-  google_place_id, name, address, town_id, category_id, lat, lng,
-  google_rating, google_review_count, price_level, status,
+  listing_external_key, name, address, town_id, category_id, lat, lng,
+  listing_rating, listing_review_count, price_level, status,
   confidence_score, freshness_score, engagement_score, ai_summary
 ) VALUES
   (
@@ -78,22 +88,22 @@ INSERT INTO public.businesses (
     0.80, 0.95, 0.28,
     'Architecturally stunning café with specialty espresso and light pastries. Quiet mornings and date-friendly.'
   )
-ON CONFLICT (google_place_id) DO NOTHING;
+ON CONFLICT (listing_external_key) DO NOTHING;
 
--- Idempotent re-run: sample businesses use fixed google_place_id keys above.
+-- Idempotent re-run: sample businesses use fixed listing_external_key values above.
 
 INSERT INTO public.business_tags (business_id, tag_id, source, confidence)
 SELECT b.id, t.id, 'admin_set', 1.0
 FROM public.businesses b
 CROSS JOIN public.tags t
-WHERE b.google_place_id = 'seed:seaside-shack' AND t.slug IN ('seafood', 'family', 'kid_friendly', 'sunset_views', 'outdoor_seating')
+WHERE b.listing_external_key = 'seed:seaside-shack' AND t.slug IN ('seafood', 'family', 'kid_friendly', 'sunset_views', 'outdoor_seating')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.business_tags (business_id, tag_id, source, confidence)
 SELECT b.id, t.id, 'admin_set', 1.0
 FROM public.businesses b
 CROSS JOIN public.tags t
-WHERE b.google_place_id = 'seed:alys-espresso' AND t.slug IN ('coffee', 'romantic', 'date_night', 'outdoor_seating')
+WHERE b.listing_external_key = 'seed:alys-espresso' AND t.slug IN ('coffee', 'romantic', 'date_night', 'outdoor_seating')
 ON CONFLICT DO NOTHING;
 
 -- 50 discovery jobs: each town × first 5 categories (idempotent)

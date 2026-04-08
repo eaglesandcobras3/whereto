@@ -15,7 +15,9 @@ export default async function AdminIngestionPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Ingestion</h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Queue a Google Places discovery job. Optional “run now” uses your server Places key.
+          Queue a discovery job here. Geoapify Places (OpenStreetMap-derived) runs only when the
+          discovery cron executes (or when you call the cron route with your secret), not when you
+          submit this form.
         </p>
       </div>
       <form
@@ -54,7 +56,7 @@ export default async function AdminIngestionPage() {
           <label className="block text-sm font-medium text-zinc-700">Query string</label>
           <input
             name="query_string"
-            placeholder="e.g. sushi in Seaside FL (optional if variants below)"
+            placeholder="Optional note (discovery uses category Geoapify codes + town radius)"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
           />
         </div>
@@ -63,8 +65,8 @@ export default async function AdminIngestionPage() {
           Add multi-query variants (category + town templates from the plan)
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="run_now" />
-          Run first queued job immediately (Places API key required)
+          <input type="checkbox" name="prioritize_cron" />
+          Highest priority on next discovery cron (Geoapify runs on cron only)
         </label>
         <button
           type="submit"

@@ -16,7 +16,7 @@ export function getCompositeWeights() {
     freshness: num("SCORING_WEIGHT_FRESHNESS", 0.15),
     engagement: num("SCORING_WEIGHT_ENGAGEMENT", 0.12),
     completeness: num("SCORING_WEIGHT_COMPLETENESS", 0.08),
-    /** Scaled: (google_rating/5) * this */
+    /** Scaled: (listing_rating / 5) * this */
     ratingTiebreak: num("SCORING_WEIGHT_RATING_TIEBREAK", 0.05),
   };
 }

@@ -31,7 +31,7 @@
 
 ## 4. Experience
 
-- **Entry:** Google (SEO), direct town URLs, AI search
+- **Entry:** Organic search (SEO), direct town URLs, AI search
 - **Town hub:** Intro, top categories, intent sections, featured + nearby (“worth the short drive”), AI entry
 - **SEO pages:** e.g. “Best coffee in Rosemary Beach”, “Kid-friendly restaurants in 30A” — intro, ranked list, internal links
 - **AI:** Natural language → same normalization and ranking path as other surfaces
@@ -67,7 +67,7 @@
 
 ## 9. Display policy (ratings)
 
-**UX brief** prefers an editorial, low-noise surface without prominent star ratings. **Decision for Phase 2:** On consumer-facing pages (home AI results, town hubs, SEO pages, business detail), **do not show Google star ratings prominently**; rely on summaries, tags, and saves. Admin and internal tools may still show ratings for ops. Designers may propose a muted secondary treatment later; any change updates this section.
+**UX brief** prefers an editorial, low-noise surface without prominent star ratings. **Decision for Phase 2:** On consumer-facing pages (home AI results, town hubs, SEO pages, business detail), **do not show third-party star ratings prominently**; rely on summaries, tags, and saves. Admin and internal tools may still show ratings for ops. Designers may propose a muted secondary treatment later; any change updates this section.
 
 ---
 

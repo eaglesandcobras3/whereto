@@ -1,4 +1,4 @@
--- Persist Google Places photo resource names on discovery; UI proxies via /api/place-photo.
+-- Historical: persist third-party photo refs on discovery (superseded; filename kept for migration order).
 DROP FUNCTION IF EXISTS public.insert_discovery_business_with_tags(
   VARCHAR(255), VARCHAR(255), VARCHAR(500), INT, INT,
   DOUBLE PRECISION, DOUBLE PRECISION, VARCHAR(50), VARCHAR(500),
