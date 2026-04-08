@@ -97,14 +97,14 @@ SELECT b.id, t.id, 'admin_set', 1.0
 FROM public.businesses b
 CROSS JOIN public.tags t
 WHERE b.listing_external_key = 'seed:seaside-shack' AND t.slug IN ('seafood', 'family', 'kid_friendly', 'sunset_views', 'outdoor_seating')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (business_id, tag_id) DO NOTHING;
 
 INSERT INTO public.business_tags (business_id, tag_id, source, confidence)
 SELECT b.id, t.id, 'admin_set', 1.0
 FROM public.businesses b
 CROSS JOIN public.tags t
 WHERE b.listing_external_key = 'seed:alys-espresso' AND t.slug IN ('coffee', 'romantic', 'date_night', 'outdoor_seating')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (business_id, tag_id) DO NOTHING;
 
 -- 50 discovery jobs: each town × first 5 categories (idempotent)
 INSERT INTO public.search_jobs (job_type, category_id, town_id, query_string, status, priority, next_run_after, max_runs)
