@@ -1058,8 +1058,8 @@ export function HomePage({
       </main>
 
       <footer className="mt-20 w-full rounded-t-[2rem] bg-surface-container-low">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-8 py-16 md:grid-cols-4 md:px-12">
-          <div className="md:col-span-1">
+        <div className={`mx-auto grid max-w-7xl grid-cols-1 gap-12 px-8 py-16 md:px-12 ${featureFlags["towns"] ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+          <div>
             <div className="mb-6 font-headline text-xl font-black text-primary">
               WhereTo30A
             </div>
@@ -1068,72 +1068,39 @@ export function HomePage({
               local with curated stays and insider insights.
             </p>
           </div>
-          <div className="space-y-4">
-            <h4 className="font-headline text-xs font-semibold uppercase tracking-widest text-teal-950">
-              The Towns
-            </h4>
-            <nav className="flex flex-col gap-3">
-              <Link
-                href="/seaside"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Seaside
-              </Link>
-              <Link
-                href="/rosemary-beach"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Rosemary Beach
-              </Link>
-              <Link
-                href="/alys-beach"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Alys Beach
-              </Link>
-              <Link
-                href="/grayton-beach"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Grayton Beach
-              </Link>
-            </nav>
-          </div>
-          <div className="space-y-4">
-            <h4 className="font-headline text-xs font-semibold uppercase tracking-widest text-teal-950">
-              Resources
-            </h4>
-            <nav className="flex flex-col gap-3">
-              <a
-                href="#"
-                data-footer-link="company"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Company Info
-              </a>
-              <a
-                href="#"
-                data-footer-link="insider"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Coastal Insider
-              </a>
-              <a
-                href="#"
-                data-footer-link="partners"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Partner with Us
-              </a>
-              <a
-                href="#"
-                data-footer-link="privacy"
-                className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
-              >
-                Privacy Policy
-              </a>
-            </nav>
-          </div>
+          {featureFlags["towns"] && (
+            <div className="space-y-4">
+              <h4 className="font-headline text-xs font-semibold uppercase tracking-widest text-teal-950">
+                The Towns
+              </h4>
+              <nav className="flex flex-col gap-3">
+                <Link
+                  href="/seaside"
+                  className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
+                >
+                  Seaside
+                </Link>
+                <Link
+                  href="/rosemary-beach"
+                  className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
+                >
+                  Rosemary Beach
+                </Link>
+                <Link
+                  href="/alys-beach"
+                  className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
+                >
+                  Alys Beach
+                </Link>
+                <Link
+                  href="/grayton-beach"
+                  className="text-sm text-teal-800/70 decoration-teal-500/30 underline-offset-4 hover:underline"
+                >
+                  Grayton Beach
+                </Link>
+              </nav>
+            </div>
+          )}
           {featureFlags["newsletter"] !== false && (
             <div className="space-y-4">
               <h4 className="font-headline text-xs font-semibold uppercase tracking-widest text-teal-950">
@@ -1169,7 +1136,7 @@ export function HomePage({
         </div>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 border-t border-primary/5 px-8 py-8 text-xs font-medium text-outline/50 md:flex-row md:px-12">
           <p>
-            © 2024 WhereTo30A. The Digital Concierge for the Emerald Coast.
+            © {new Date().getFullYear()} WhereTo30A. The Digital Concierge for the Emerald Coast.
           </p>
         </div>
       </footer>
