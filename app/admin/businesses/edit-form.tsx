@@ -252,7 +252,7 @@ export function BusinessEditForm({
           </form>
         </section>
 
-        {business.hero_image_url && (
+        {!!business.hero_image_url && (
           <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
             <p className="p-4 text-sm font-medium border-b border-zinc-200">Current Hero Image</p>
             <div className="relative aspect-video w-full">

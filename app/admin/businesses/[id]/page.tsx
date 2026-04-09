@@ -26,6 +26,7 @@ export default async function AdminBusinessEditPage({
     { data: categories },
     { data: tags },
     { data: sources },
+    { data: images },
   ] = await Promise.all([
     supabase
       .from("businesses")

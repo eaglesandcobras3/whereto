@@ -13,7 +13,7 @@ export default async function AdminHomePage() {
 
   const staleBefore = new Date(Date.now() - 90 * 864e5).toISOString();
 
-  const [biz, jobs, cache, feedback, stale, claims, candidates] = await Promise.all([
+  const [biz, jobs, cache, feedback, stale, claims, candidates, flags] = await Promise.all([
     supabase.from("businesses").select("id", { count: "exact", head: true }),
     supabase
       .from("search_jobs")
@@ -34,6 +34,7 @@ export default async function AdminHomePage() {
       .from("category_candidates")
       .select("id", { count: "exact", head: true })
       .eq("approval_status", "pending"),
+    supabase.from("feature_flags").select("id", { count: "exact", head: true }),
   ]);
 
   const stats = [
@@ -43,6 +44,7 @@ export default async function AdminHomePage() {
     { label: "Cached queries", value: countOr0(cache), href: "/admin/cache" },
     { label: "Pending claims", value: countOr0(claims), href: "/admin/claims" },
     { label: "Categories & Queue", value: countOr0(candidates), href: "/admin/categories" },
+    { label: "Feature Flags", value: countOr0(flags), href: "/admin/feature-flags" },
     { label: "Topic candidates", value: countOr0(candidates), href: "/admin/topic-mining" },
     { label: "Feedback rows", value: countOr0(feedback), href: "/admin/scores" },
   ];

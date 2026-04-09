@@ -61,21 +61,10 @@ export async function createDiscoveryJobAction(formData: FormData): Promise<void
   revalidatePath("/admin/ingestion");
 }
 
-export async function runDiscoveryNowAction(): Promise<{ processed: number; newBusinesses: number; error?: string }> {
+export async function runDiscoveryNowAction(): Promise<void> {
   await requireAdmin();
-  try {
-    const report = await withDirectoryIngestionCronContext(() =>
-      runDiscoveryBatch(5),
-    );
-    revalidatePath("/admin/jobs");
-    revalidatePath("/admin/businesses");
-    revalidatePath("/admin/ingestion");
-    return report;
-  } catch (e) {
-    return {
-      processed: 0,
-      newBusinesses: 0,
-      error: e instanceof Error ? e.message : "Discovery failed",
-    };
-  }
+  await withDirectoryIngestionCronContext(() => runDiscoveryBatch(5));
+  revalidatePath("/admin/jobs");
+  revalidatePath("/admin/businesses");
+  revalidatePath("/admin/ingestion");
 }

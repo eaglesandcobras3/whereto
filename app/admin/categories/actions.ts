@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
-export async function addCategoryAction(formData: FormData) {
+export async function addCategoryAction(formData: FormData): Promise<void> {
   await requireAdmin();
   const supabase = getServiceSupabase();
 
@@ -16,24 +16,19 @@ export async function addCategoryAction(formData: FormData) {
     .filter(Boolean);
 
   if (!name || !slug) {
-    return { error: "Name and slug are required" };
+    return;
   }
 
-  const { error } = await supabase.from("categories").insert({
+  await supabase.from("categories").insert({
     name,
     slug,
     google_types: googleTypes,
   });
 
-  if (error) {
-    return { error: error.message };
-  }
-
   revalidatePath("/admin/categories");
-  return { ok: true };
 }
 
-export async function addToQueueAction(formData: FormData) {
+export async function addToQueueAction(formData: FormData): Promise<void> {
   const { user } = await requireAdmin();
   const supabase = getServiceSupabase();
 
@@ -41,10 +36,10 @@ export async function addToQueueAction(formData: FormData) {
   const slug = String(formData.get("slug") ?? "").trim();
 
   if (!name || !slug) {
-    return { error: "Name and slug are required" };
+    return;
   }
 
-  const { error } = await supabase.from("category_build_queue").insert({
+  await supabase.from("category_build_queue").insert({
     suggested_slug: slug,
     status: "queued",
     payload_json: {
@@ -54,44 +49,29 @@ export async function addToQueueAction(formData: FormData) {
     created_by: user.id,
   });
 
-  if (error) {
-    return { error: error.message };
-  }
-
   revalidatePath("/admin/categories");
-  return { ok: true };
 }
 
-export async function completeQueueItemAction(queueId: number) {
+export async function completeQueueItemAction(queueId: number): Promise<void> {
   await requireAdmin();
   const supabase = getServiceSupabase();
 
-  const { error } = await supabase
+  await supabase
     .from("category_build_queue")
     .update({ status: "completed" })
     .eq("id", queueId);
 
-  if (error) {
-    return { error: error.message };
-  }
-
   revalidatePath("/admin/categories");
-  return { ok: true };
 }
 
-export async function deleteQueueItemAction(queueId: number) {
+export async function deleteQueueItemAction(queueId: number): Promise<void> {
   await requireAdmin();
   const supabase = getServiceSupabase();
 
-  const { error } = await supabase
+  await supabase
     .from("category_build_queue")
     .delete()
     .eq("id", queueId);
 
-  if (error) {
-    return { error: error.message };
-  }
-
   revalidatePath("/admin/categories");
-  return { ok: true };
 }
