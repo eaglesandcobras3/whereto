@@ -12,11 +12,15 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Profile fetch error:", profileError);
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
