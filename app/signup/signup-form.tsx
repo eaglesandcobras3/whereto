@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
+export function SignupForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -16,9 +17,22 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     e.preventDefault();
     setStatus("loading");
     setMessage("");
+
+    if (password !== confirmPassword) {
+      setStatus("error");
+      setMessage("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setStatus("error");
+      setMessage("Password must be at least 6 characters");
+      return;
+    }
+
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -28,7 +42,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       router.refresh();
     } catch (err) {
       setStatus("error");
-      setMessage(err instanceof Error ? err.message : "Could not sign in");
+      setMessage(err instanceof Error ? err.message : "Could not create account");
     }
   }
 
@@ -51,21 +65,29 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           placeholder="Password"
           className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
         />
+        <input
+          type="password"
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirm password"
+          className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
+        />
         <button
           type="submit"
           disabled={status === "loading"}
           className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-50"
         >
-          {status === "loading" ? "Signing in..." : "Sign in"}
+          {status === "loading" ? "Creating account..." : "Create account"}
         </button>
       </form>
       {message ? (
         <p className="mt-4 text-sm text-red-600">{message}</p>
       ) : null}
       <p className="mt-4 text-sm text-zinc-600">
-        Don&apos;t have an account?{" "}
-        <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="text-teal-700 hover:underline">
-          Sign up
+        Already have an account?{" "}
+        <Link href={`/login?next=${encodeURIComponent(nextPath)}`} className="text-teal-700 hover:underline">
+          Sign in
         </Link>
       </p>
       <Link href="/" className="mt-4 text-sm text-teal-700 hover:underline">

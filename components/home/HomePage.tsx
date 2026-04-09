@@ -179,7 +179,7 @@ function DesignImg({
   );
 }
 
-export function HomePage() {
+export function HomePage({ featureFlags = {} }: { featureFlags?: Record<string, boolean> }) {
   const searchParams = useSearchParams();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
@@ -348,24 +348,28 @@ export function HomePage() {
             WhereTo30A
           </Link>
           <div className="hidden items-center space-x-10 font-headline text-sm font-semibold tracking-tight md:flex">
-            <Link
-              href="/#section-neighborhoods"
-              className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
-            >
-              Towns
-            </Link>
+            {featureFlags["towns"] !== false && (
+              <Link
+                href="/#section-neighborhoods"
+                className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
+              >
+                Towns
+              </Link>
+            )}
             <Link
               href="/#section-categories"
               className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
             >
               Eat & Drink
             </Link>
-            <Link
-              href="/#section-curator"
-              className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
-            >
-              Experiences
-            </Link>
+            {featureFlags["curator"] !== false && (
+              <Link
+                href="/#section-curator"
+                className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
+              >
+                Experiences
+              </Link>
+            )}
           </div>
           <div className="flex items-center space-x-4 md:space-x-6">
             <Link
@@ -666,191 +670,195 @@ export function HomePage() {
           </section>
         ) : null}
 
-        <section
-          id="section-curator"
-          className="overflow-hidden bg-background py-32"
-        >
-          <div className="mx-auto max-w-screen-xl px-6">
-            <div className="mb-4 flex items-center space-x-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <MsIcon
-                  name="auto_awesome"
-                  className="!text-lg text-primary"
-                />
+        {featureFlags["curator"] !== false && (
+          <section
+            id="section-curator"
+            className="overflow-hidden bg-background py-32"
+          >
+            <div className="mx-auto max-w-screen-xl px-6">
+              <div className="mb-4 flex items-center space-x-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <MsIcon
+                    name="auto_awesome"
+                    className="!text-lg text-primary"
+                  />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+                  My Curator Recommendations
+                </span>
               </div>
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
-                My Curator Recommendations
-              </span>
-            </div>
-            <h2 className="mb-16 font-headline text-5xl font-extrabold text-primary">
-              Curated for You
-            </h2>
-            <div className="hide-scrollbar flex space-x-8 overflow-x-auto pb-12">
-              {CURATOR_CARDS.map((card) => (
-                <article
-                  key={card.title}
-                  className="min-w-[450px] overflow-hidden rounded-xl bg-surface-elevated shadow-design-card transition-transform duration-500 hover:scale-[1.02]"
-                >
-                  <div className="relative h-64">
-                    <DesignImg
-                      src={card.image}
-                      alt={card.alt}
-                      className="object-cover"
-                      sizes="450px"
-                    />
-                    <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-1 text-xs font-bold text-primary backdrop-blur-md">
-                      {card.badge}
+              <h2 className="mb-16 font-headline text-5xl font-extrabold text-primary">
+                Curated for You
+              </h2>
+              <div className="hide-scrollbar flex space-x-8 overflow-x-auto pb-12">
+                {CURATOR_CARDS.map((card) => (
+                  <article
+                    key={card.title}
+                    className="min-w-[450px] overflow-hidden rounded-xl bg-surface-elevated shadow-design-card transition-transform duration-500 hover:scale-[1.02]"
+                  >
+                    <div className="relative h-64">
+                      <DesignImg
+                        src={card.image}
+                        alt={card.alt}
+                        className="object-cover"
+                        sizes="450px"
+                      />
+                      <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-1 text-xs font-bold text-primary backdrop-blur-md">
+                        {card.badge}
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-10">
-                    <div className="mb-6 flex items-start justify-between">
-                      <div>
-                        <h3 className="font-headline text-2xl font-bold text-primary">
-                          {card.title}
-                        </h3>
-                        <p className="text-sm text-on-surface-variant">
-                          {card.meta}
+                    <div className="p-10">
+                      <div className="mb-6 flex items-start justify-between">
+                        <div>
+                          <h3 className="font-headline text-2xl font-bold text-primary">
+                            {card.title}
+                          </h3>
+                          <p className="text-sm text-on-surface-variant">
+                            {card.meta}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <MsIcon
+                            name="star"
+                            className="!text-sm text-amber-400"
+                            filled
+                          />
+                          <span className="text-sm font-bold text-primary">
+                            {card.rating}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-[186px] rounded-lg border-l-4 border-primary/20 bg-primary/5 p-6">
+                        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">
+                          Why our AI recommends this
+                        </p>
+                        <p className="text-sm italic leading-relaxed text-on-surface-variant">
+                          &ldquo;{card.blurb}&rdquo;
                         </p>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <MsIcon
-                          name="star"
-                          className="!text-sm text-amber-400"
-                          filled
-                        />
-                        <span className="text-sm font-bold text-primary">
-                          {card.rating}
-                        </span>
-                      </div>
+                      <Link
+                        href={card.ctaHref}
+                        className="mt-8 flex w-full items-center justify-center rounded-full bg-primary py-4 font-bold text-on-primary transition-all hover:opacity-90"
+                      >
+                        {card.cta}
+                      </Link>
                     </div>
-                    <div className="h-[186px] rounded-lg border-l-4 border-primary/20 bg-primary/5 p-6">
-                      <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">
-                        Why our AI recommends this
-                      </p>
-                      <p className="text-sm italic leading-relaxed text-on-surface-variant">
-                        &ldquo;{card.blurb}&rdquo;
-                      </p>
-                    </div>
-                    <Link
-                      href={card.ctaHref}
-                      className="mt-8 flex w-full items-center justify-center rounded-full bg-primary py-4 font-bold text-on-primary transition-all hover:opacity-90"
-                    >
-                      {card.cta}
-                    </Link>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="section-neighborhoods"
-          className="bg-surface-container-low py-32"
-        >
-          <div className="mx-auto max-w-screen-xl px-6">
-            <div className="mb-16 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary/50">
-                  The Neighborhoods
-                </span>
-                <h2 className="mt-2 font-headline text-5xl font-extrabold text-primary">
-                  Icons of 30A
-                </h2>
+                  </article>
+                ))}
               </div>
-              <Link
-                href={PRIMARY_REGION_HUB_PATH}
-                className="border-b-2 border-primary pb-1 font-semibold text-primary transition-all hover:opacity-70"
-              >
-                Explore all Towns
-              </Link>
             </div>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-              <Link
-                href="/seaside"
-                className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-8"
-              >
-                <DesignImg
-                  src={IMG.townSeaside}
-                  alt="scenic view of iconic white beach pavilion at seaside florida with boardwalk and dunes"
-                  className="transition duration-700 group-hover:scale-105"
-                  sizes="(min-width: 768px) 66vw, 100vw"
-                />
-                <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                <div className="absolute inset-0 flex flex-col justify-end p-12">
-                  <h3 className="font-headline text-5xl font-extrabold tracking-tighter text-white">
-                    Seaside
-                  </h3>
-                  <p className="mt-4 max-w-md font-medium text-white/90">
-                    The birthplace of New Urbanism. Iconic pavilions, white
-                    picket fences, and the spirit of summer.
-                  </p>
+          </section>
+        )}
+
+        {featureFlags["towns"] !== false && (
+          <section
+            id="section-neighborhoods"
+            className="bg-surface-container-low py-32"
+          >
+            <div className="mx-auto max-w-screen-xl px-6">
+              <div className="mb-16 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary/50">
+                    The Neighborhoods
+                  </span>
+                  <h2 className="mt-2 font-headline text-5xl font-extrabold text-primary">
+                    Icons of 30A
+                  </h2>
                 </div>
-              </Link>
-              <Link
-                href="/alys-beach"
-                className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-4"
-              >
-                <DesignImg
-                  src={IMG.townAlys}
-                  alt="minimalist stark white architecture of alys beach with courtyard and palm trees"
-                  className="transition duration-700 group-hover:scale-105"
-                  sizes="(min-width: 768px) 33vw, 100vw"
-                />
-                <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                <div className="absolute inset-0 flex flex-col justify-end p-12">
-                  <h3 className="font-headline text-4xl font-extrabold tracking-tighter text-white">
-                    Alys Beach
-                  </h3>
-                  <p className="mt-4 font-medium text-white/90">
-                    Bermudan elegance meets modern luxury.
-                  </p>
-                </div>
-              </Link>
-              <Link
-                href="/rosemary-beach"
-                className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-4"
-              >
-                <DesignImg
-                  src={IMG.townRosemary}
-                  alt="rosemary beach cobblestone street with european style architecture and hanging flower baskets"
-                  className="transition duration-700 group-hover:scale-105"
-                  sizes="(min-width: 768px) 33vw, 100vw"
-                />
-                <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                <div className="absolute inset-0 flex flex-col justify-end p-12">
-                  <h3 className="font-headline text-4xl font-extrabold tracking-tighter text-white">
-                    Rosemary
-                  </h3>
-                  <p className="mt-4 font-medium text-white/90">
-                    European charm on the Gulf coast.
-                  </p>
-                </div>
-              </Link>
-              <Link
-                href="/grayton-beach"
-                className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-8"
-              >
-                <DesignImg
-                  src={IMG.townGrayton}
-                  alt="rustic wooden beach boardwalk through high dunes at grayton beach state park florida"
-                  className="transition duration-700 group-hover:scale-105"
-                  sizes="(min-width: 768px) 66vw, 100vw"
-                />
-                <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                <div className="absolute inset-0 flex flex-col justify-end p-12">
-                  <h3 className="font-headline text-5xl font-extrabold tracking-tighter text-white">
-                    Grayton
-                  </h3>
-                  <p className="mt-4 max-w-md font-medium text-white/90">
-                    Nice dogs, strange people. The soulful, artsy heart of the
-                    Emerald Coast.
-                  </p>
-                </div>
-              </Link>
+                <Link
+                  href={PRIMARY_REGION_HUB_PATH}
+                  className="border-b-2 border-primary pb-1 font-semibold text-primary transition-all hover:opacity-70"
+                >
+                  Explore all Towns
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+                <Link
+                  href="/seaside"
+                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-8"
+                >
+                  <DesignImg
+                    src={IMG.townSeaside}
+                    alt="scenic view of iconic white beach pavilion at seaside florida with boardwalk and dunes"
+                    className="transition duration-700 group-hover:scale-105"
+                    sizes="(min-width: 768px) 66vw, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-12">
+                    <h3 className="font-headline text-5xl font-extrabold tracking-tighter text-white">
+                      Seaside
+                    </h3>
+                    <p className="mt-4 max-w-md font-medium text-white/90">
+                      The birthplace of New Urbanism. Iconic pavilions, white
+                      picket fences, and the spirit of summer.
+                    </p>
+                  </div>
+                </Link>
+                <Link
+                  href="/alys-beach"
+                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-4"
+                >
+                  <DesignImg
+                    src={IMG.townAlys}
+                    alt="minimalist stark white architecture of alys beach with courtyard and palm trees"
+                    className="transition duration-700 group-hover:scale-105"
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-12">
+                    <h3 className="font-headline text-4xl font-extrabold tracking-tighter text-white">
+                      Alys Beach
+                    </h3>
+                    <p className="mt-4 font-medium text-white/90">
+                      Bermudan elegance meets modern luxury.
+                    </p>
+                  </div>
+                </Link>
+                <Link
+                  href="/rosemary-beach"
+                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-4"
+                >
+                  <DesignImg
+                    src={IMG.townRosemary}
+                    alt="rosemary beach cobblestone street with european style architecture and hanging flower baskets"
+                    className="transition duration-700 group-hover:scale-105"
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-12">
+                    <h3 className="font-headline text-4xl font-extrabold tracking-tighter text-white">
+                      Rosemary
+                    </h3>
+                    <p className="mt-4 font-medium text-white/90">
+                      European charm on the Gulf coast.
+                    </p>
+                  </div>
+                </Link>
+                <Link
+                  href="/grayton-beach"
+                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-8"
+                >
+                  <DesignImg
+                    src={IMG.townGrayton}
+                    alt="rustic wooden beach boardwalk through high dunes at grayton beach state park florida"
+                    className="transition duration-700 group-hover:scale-105"
+                    sizes="(min-width: 768px) 66vw, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-12">
+                    <h3 className="font-headline text-5xl font-extrabold tracking-tighter text-white">
+                      Grayton
+                    </h3>
+                    <p className="mt-4 max-w-md font-medium text-white/90">
+                      Nice dogs, strange people. The soulful, artsy heart of the
+                      Emerald Coast.
+                    </p>
+                  </div>
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <section
           id="section-categories"
@@ -957,44 +965,46 @@ export function HomePage() {
           </div>
         </section>
 
-        <section
-          id="section-plan-ai"
-          className="mx-auto max-w-5xl px-8 py-24 text-center"
-        >
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-primary-container p-16 text-on-primary">
-            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal-400/20 blur-[100px]" />
-            <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-teal-400/10 blur-[100px]" />
-            <div className="relative z-10">
-              <MsIcon
-                name="auto_awesome"
-                className="mb-6 !block !text-5xl text-on-primary-container"
-              />
-              <h2 className="mb-6 font-headline text-4xl font-extrabold tracking-tighter">
-                Plan your trip with AI
-              </h2>
-              <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-on-primary-container">
-                &ldquo;Find me a dog-friendly beachfront cottage in Grayton
-                Beach for a family of four, near a great seafood spot.&rdquo; Our
-                Digital Concierge understands the nuance of the coast.
-              </p>
-              <div className="flex flex-col justify-center gap-4 md:flex-row">
-                <button
-                  type="button"
-                  onClick={scrollToHero}
-                  className="rounded-full bg-surface-elevated px-8 py-4 text-lg font-bold text-primary transition-all hover:shadow-xl"
-                >
-                  Start Chatting
-                </button>
-                <Link
-                  href={PRIMARY_REGION_HUB_PATH}
-                  className="rounded-full border border-on-primary/20 bg-transparent px-8 py-4 text-lg font-bold text-on-primary transition-all hover:bg-on-primary/10"
-                >
-                  Browse Map
-                </Link>
+        {featureFlags["plan-your-trip"] !== false && (
+          <section
+            id="section-plan-ai"
+            className="mx-auto max-w-5xl px-8 py-24 text-center"
+          >
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-primary-container p-16 text-on-primary">
+              <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal-400/20 blur-[100px]" />
+              <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-teal-400/10 blur-[100px]" />
+              <div className="relative z-10">
+                <MsIcon
+                  name="auto_awesome"
+                  className="mb-6 !block !text-5xl text-on-primary-container"
+                />
+                <h2 className="mb-6 font-headline text-4xl font-extrabold tracking-tighter">
+                  Plan your trip with AI
+                </h2>
+                <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-on-primary-container">
+                  &ldquo;Find me a dog-friendly beachfront cottage in Grayton
+                  Beach for a family of four, near a great seafood spot.&rdquo; Our
+                  Digital Concierge understands the nuance of the coast.
+                </p>
+                <div className="flex flex-col justify-center gap-4 md:flex-row">
+                  <button
+                    type="button"
+                    onClick={scrollToHero}
+                    className="rounded-full bg-surface-elevated px-8 py-4 text-lg font-bold text-primary transition-all hover:shadow-xl"
+                  >
+                    Start Chatting
+                  </button>
+                  <Link
+                    href={PRIMARY_REGION_HUB_PATH}
+                    className="rounded-full border border-on-primary/20 bg-transparent px-8 py-4 text-lg font-bold text-on-primary transition-all hover:bg-on-primary/10"
+                  >
+                    Browse Map
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       <footer className="mt-20 w-full rounded-t-[2rem] bg-surface-container-low">
