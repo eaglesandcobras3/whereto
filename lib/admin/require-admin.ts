@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { User } from "@supabase/supabase-js";
 
 export type AdminContext = {
@@ -28,15 +29,25 @@ export async function requireAdmin(): Promise<AdminContext> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
+    console.log("requireAdmin: No user found");
     const nextPath = await adminLoginNextPath();
     redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
-  const { data: profile } = await supabase
+
+  // Use Service Role to bypass RLS recursion on the profiles table
+  const serviceSupabase = getServiceSupabase();
+  const { data: profile, error } = await serviceSupabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (error) {
+    console.error("requireAdmin: Profile fetch error", error);
+  }
+
   if (!profile?.is_admin) {
+    console.log(`requireAdmin: User ${user.email} (${user.id}) is not an admin (is_admin: ${profile?.is_admin})`);
     redirect("/");
   }
   return { supabase, user };

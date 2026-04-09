@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
@@ -12,7 +13,9 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const { data: profile, error: profileError } = await supabase
+  // Use Service Role to bypass RLS recursion on the profiles table
+  const serviceSupabase = getServiceSupabase();
+  const { data: profile, error: profileError } = await serviceSupabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
