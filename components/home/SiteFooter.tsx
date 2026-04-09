@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 
 const townLinks = [
   { name: "Rosemary Beach", href: "/rosemary-beach" },
@@ -12,26 +12,21 @@ const townLinks = [
   { name: "Panama City Beach", href: "/panama-city-beach" },
 ];
 
-const exploreLinks = [
-  { name: "All towns", href: PRIMARY_REGION_HUB_PATH },
-  { name: "Restaurants", href: "/?q=best+restaurants+on+30A" },
-  { name: "Coffee", href: "/?q=best+coffee+on+30A" },
-  { name: "Things to do", href: "/?q=things+to+do+on+30A" },
-  { name: "Saved places", href: "/saved" },
-];
-
 const companyLinks = [
   { name: "About", href: "/about" },
   { name: "Privacy", href: "/privacy" },
   { name: "Terms", href: "/terms" },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const flags = await getAllFeatureFlags();
+  const showTowns = flags["towns"] === true;
+
   return (
     <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
         {/* Main footer content */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid gap-8 sm:grid-cols-2 ${showTowns ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -45,39 +40,24 @@ export function SiteFooter() {
             </p>
           </div>
 
-          {/* Towns */}
-          <div>
-            <h3 className="text-eyebrow mb-4">Towns</h3>
-            <ul className="space-y-2">
-              {townLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Explore */}
-          <div>
-            <h3 className="text-eyebrow mb-4">Explore</h3>
-            <ul className="space-y-2">
-              {exploreLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Towns - conditionally shown based on feature flag */}
+          {showTowns && (
+            <div>
+              <h3 className="text-eyebrow mb-4">Towns</h3>
+              <ul className="space-y-2">
+                {townLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Newsletter / Company */}
           <div className="space-y-6">

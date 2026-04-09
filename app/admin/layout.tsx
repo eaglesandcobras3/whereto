@@ -17,6 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/topic-mining", label: "Topic mining" },
     { href: "/admin/scores", label: "Scores" },
     { href: "/admin/duplicates", label: "Duplicates" },
+    { href: "/admin/ai-enrichment", label: "AI Enrichment" },
   ];
 
   return (
