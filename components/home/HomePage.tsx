@@ -179,7 +179,13 @@ function DesignImg({
   );
 }
 
-export function HomePage({ featureFlags = {} }: { featureFlags?: Record<string, boolean> }) {
+export function HomePage({ 
+  featureFlags = {}, 
+  featuredBusinesses = [] 
+}: { 
+  featureFlags?: Record<string, boolean>;
+  featuredBusinesses?: any[];
+}) {
   const searchParams = useSearchParams();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
@@ -348,7 +354,7 @@ export function HomePage({ featureFlags = {} }: { featureFlags?: Record<string, 
             WhereTo30A
           </Link>
           <div className="hidden items-center space-x-10 font-headline text-sm font-semibold tracking-tight md:flex">
-            {featureFlags["towns"] !== false && (
+            {featureFlags["towns"] === true && (
               <Link
                 href="/#section-neighborhoods"
                 className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
@@ -362,7 +368,7 @@ export function HomePage({ featureFlags = {} }: { featureFlags?: Record<string, 
             >
               Eat & Drink
             </Link>
-            {featureFlags["curator"] !== false && (
+            {featureFlags["curator"] === true && (
               <Link
                 href="/#section-curator"
                 className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
@@ -379,94 +385,142 @@ export function HomePage({ featureFlags = {} }: { featureFlags?: Record<string, 
             >
               person
             </Link>
-            <button
-              type="button"
-              onClick={scrollToHero}
-              className="scale-95 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-on-primary transition-all hover:opacity-90 active:duration-100 md:px-8"
-            >
-              Plan Trip
-            </button>
+            {featureFlags["plan-your-trip"] === true && (
+              <button
+                type="button"
+                onClick={scrollToHero}
+                className="scale-95 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-on-primary transition-all hover:opacity-90 active:duration-100 md:px-8"
+              >
+                Plan Trip
+              </button>
+            )}
           </div>
         </div>
       </nav>
 
       <main className="pt-20">
-        <section
-          id="hero"
-          className="relative flex h-[700px] w-full flex-col items-center justify-center"
-        >
-          <div className="absolute inset-0 z-0">
-            <DesignImg
-              src={IMG.hero}
-              alt="Cinematic wide shot of 30A beach with sugar-white sand and turquoise gulf water under a soft pastel sunset sky"
-              className="object-cover"
-              sizes="100vw"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-background" />
-          </div>
-          <div className="relative z-10 flex flex-col items-center justify-center text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-fixed/30 px-4 py-1.5 text-primary">
-              <MsIcon name="auto_awesome" className="!text-sm" filled />
-              <span className="text-xs font-bold uppercase tracking-widest">
-                Intelligent Discovery
-              </span>
-            </div>
-            <h1 className="mb-8 font-headline text-5xl font-extrabold tracking-tighter text-primary md:text-7xl">
-              I&apos;m looking for&hellip;
-            </h1>
-            <form
-              onSubmit={onSubmit}
-              className="group relative mx-auto w-full max-w-[800px] px-4"
-            >
-              <input
-                ref={heroInputRef}
-                name="q"
-                value={q}
-                onChange={(e) => onChangeInput(e.target.value)}
-                className="h-16 w-full rounded-full border-none bg-surface-container-highest px-8 text-lg text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/10"
-                placeholder="e.g. A dinner with sunset views in Alys Beach"
-                type="search"
-                autoComplete="off"
+        {featureFlags["search"] === true && (
+          <section
+            id="hero"
+            className="relative flex h-[700px] w-full flex-col items-center justify-center"
+          >
+            <div className="absolute inset-0 z-0">
+              <DesignImg
+                src={IMG.hero}
+                alt="Cinematic wide shot of 30A beach with sugar-white sand and turquoise gulf water under a soft pastel sunset sky"
+                className="object-cover"
+                sizes="100vw"
+                priority
               />
-              <button
-                type="submit"
-                disabled={loading}
-                className="absolute bottom-2 right-2 top-2 flex aspect-square items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-container disabled:opacity-60"
-                aria-label="Search"
-              >
-                <MsIcon name="arrow_forward" className="!text-xl" />
-              </button>
-            </form>
-            <div
-              className="mt-10 flex flex-wrap justify-center gap-3 px-4"
-              role="group"
-              aria-label="Trip mood"
-            >
-              {MOOD_CHIPS.map(({ label, hint }) => {
-                const on = activeMood === label;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    data-mood={label.toLowerCase()}
-                    onClick={() => {
-                      setActiveMood(label);
-                      setQ(hint);
-                    }}
-                    className={
-                      on
-                        ? "rounded-full bg-primary px-6 py-2 text-sm font-medium text-on-primary transition-all"
-                        : "rounded-full bg-surface-container-low px-6 py-2 text-sm font-medium text-on-surface-variant transition-all hover:bg-surface-container-high"
-                    }
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-background" />
             </div>
-          </div>
-        </section>
+            <div className="relative z-10 flex flex-col items-center justify-center text-center">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-fixed/30 px-4 py-1.5 text-primary">
+                <MsIcon name="auto_awesome" className="!text-sm" filled />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Intelligent Discovery
+                </span>
+              </div>
+              <h1 className="mb-8 font-headline text-5xl font-extrabold tracking-tighter text-primary md:text-7xl">
+                I&apos;m looking for&hellip;
+              </h1>
+              <form
+                onSubmit={onSubmit}
+                className="group relative mx-auto w-full max-w-[800px] px-4"
+              >
+                <input
+                  ref={heroInputRef}
+                  name="q"
+                  value={q}
+                  onChange={(e) => onChangeInput(e.target.value)}
+                  className="h-16 w-full rounded-full border-none bg-surface-container-highest px-8 text-lg text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/10"
+                  placeholder="e.g. A dinner with sunset views in Alys Beach"
+                  type="search"
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="absolute bottom-2 right-2 top-2 flex aspect-square items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-container disabled:opacity-60"
+                  aria-label="Search"
+                >
+                  <MsIcon name="arrow_forward" className="!text-xl" />
+                </button>
+              </form>
+              <div
+                className="mt-10 flex flex-wrap justify-center gap-3 px-4"
+                role="group"
+                aria-label="Trip mood"
+              >
+                {MOOD_CHIPS.map(({ label, hint }) => {
+                  const on = activeMood === label;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      data-mood={label.toLowerCase()}
+                      onClick={() => {
+                        setActiveMood(label);
+                        setQ(hint);
+                      }}
+                      className={
+                        on
+                          ? "rounded-full bg-primary px-6 py-2 text-sm font-medium text-on-primary transition-all"
+                          : "rounded-full bg-surface-container-low px-6 py-2 text-sm font-medium text-on-surface-variant transition-all hover:bg-surface-container-high"
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {featureFlags["featured_business"] === true && (
+          <section id="section-featured" className="py-20 bg-background">
+            <div className="mx-auto max-w-screen-xl px-6">
+              <div className="mb-12">
+                <h2 className="font-headline text-4xl font-extrabold tracking-tighter text-primary">
+                  Featured Businesses
+                </h2>
+                <p className="mt-2 text-zinc-500">Hand-picked highlights of the Emerald Coast.</p>
+              </div>
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {featuredBusinesses.map((b) => (
+                  <Link 
+                    key={b.id} 
+                    href={`/business/${b.slug}`}
+                    className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:shadow-md"
+                  >
+                    <div className="relative aspect-video">
+                      <Image
+                        src={b.hero_image_url || IMG.hero}
+                        alt={b.name}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="p-6">
+                      <h3 className="font-headline text-xl font-bold text-zinc-900 group-hover:text-primary transition-colors">
+                        {b.name}
+                      </h3>
+                      <p className="mt-2 line-clamp-2 text-sm text-zinc-600 leading-relaxed">
+                        {b.ai_summary || "Explore more about this local favorite."}
+                      </p>
+                      <div className="mt-4 flex items-center text-sm font-bold text-primary">
+                        View details
+                        <MsIcon name="chevron_right" className="!text-lg" />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {err ? (
           <div className="mx-auto max-w-screen-xl px-6 py-4">

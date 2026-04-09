@@ -31,7 +31,9 @@ INSERT INTO public.feature_flags (name, enabled, description) VALUES
   ('towns', TRUE, 'Neighborhoods/Towns section on homepage'),
   ('events', FALSE, 'Events section (upcoming)'),
   ('newsletter', TRUE, 'Newsletter signup in footer'),
-  ('curator', TRUE, 'My Curator Recommendations section on homepage');
+  ('curator', TRUE, 'My Curator Recommendations section on homepage'),
+  ('search', TRUE, 'Search/Hero section on homepage'),
+  ('featured_business', TRUE, 'Featured businesses section on homepage');
 
 -- Grants
 GRANT SELECT ON public.feature_flags TO anon, authenticated;
