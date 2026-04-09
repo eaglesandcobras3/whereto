@@ -37,7 +37,7 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
         password,
       });
       if (error) throw error;
-      const next = nextPath.startsWith("/") ? nextPath : "/";
+      const next = nextPath.startsWith("/") ? nextPath : "/profile";
       router.push(next);
       router.refresh();
     } catch (err) {

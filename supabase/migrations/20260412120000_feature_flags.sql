@@ -30,6 +30,7 @@ INSERT INTO public.feature_flags (name, enabled, description) VALUES
   ('plan-your-trip', TRUE, 'AI-powered trip planning section on homepage'),
   ('towns', TRUE, 'Neighborhoods/Towns section on homepage'),
   ('events', FALSE, 'Events section (upcoming)'),
+  ('newsletter', TRUE, 'Newsletter signup in footer'),
   ('curator', TRUE, 'My Curator Recommendations section on homepage');
 
 -- Grants

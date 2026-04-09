@@ -6,7 +6,7 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
-  const nextPath = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const nextPath = next && next.startsWith("/") && !next.startsWith("//") ? next : "/profile";
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center px-4">
