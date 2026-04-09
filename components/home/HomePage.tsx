@@ -724,7 +724,7 @@ export function HomePage({
           </section>
         ) : null}
 
-        {featureFlags["curator"] !== false && (
+        {featureFlags["curator"] === true && (
           <section
             id="section-curator"
             className="overflow-hidden bg-background py-32"
@@ -804,7 +804,7 @@ export function HomePage({
           </section>
         )}
 
-        {featureFlags["towns"] !== false && (
+        {featureFlags["towns"] === true && (
           <section
             id="section-neighborhoods"
             className="bg-surface-container-low py-32"
@@ -1019,7 +1019,7 @@ export function HomePage({
           </div>
         </section>
 
-        {featureFlags["plan-your-trip"] !== false && (
+        {featureFlags["plan-your-trip"] === true && (
           <section
             id="section-plan-ai"
             className="mx-auto max-w-5xl px-8 py-24 text-center"
