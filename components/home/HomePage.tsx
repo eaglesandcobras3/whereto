@@ -362,12 +362,6 @@ export function HomePage({
                 Towns
               </Link>
             )}
-            <Link
-              href="/#section-categories"
-              className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
-            >
-              Eat & Drink
-            </Link>
             {featureFlags["curator"] === true && (
               <Link
                 href="/#section-curator"
@@ -914,10 +908,11 @@ export function HomePage({
           </section>
         )}
 
-        <section
-          id="section-categories"
-          className="mx-auto max-w-7xl px-8 py-24"
-        >
+        {featureFlags["categories"] === true && (
+          <section
+            id="section-categories"
+            className="mx-auto max-w-7xl px-8 py-24"
+          >
           <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
@@ -1018,6 +1013,7 @@ export function HomePage({
             </Link>
           </div>
         </section>
+        )}
 
         {featureFlags["plan-your-trip"] === true && (
           <section

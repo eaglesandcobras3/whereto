@@ -8,6 +8,7 @@ import {
   updateBusinessAction,
   addBusinessImageAction,
   deleteBusinessImageAction,
+  deleteBusinessAction,
 } from "@/app/admin/businesses/actions";
 import { BusinessEditForm } from "@/app/admin/businesses/edit-form";
 
@@ -155,6 +156,7 @@ export default async function AdminBusinessEditPage({
         updateAction={updateBusinessAction.bind(null, id)}
         addImageAction={addBusinessImageAction.bind(null, id)}
         deleteImageAction={deleteBusinessImageAction.bind(null, id)}
+        deleteAction={deleteBusinessAction.bind(null, id)}
       />
     </div>
   );

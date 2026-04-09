@@ -203,3 +203,18 @@ export async function deleteBusinessImageAction(
   revalidatePath(`/admin/businesses/${businessId}`);
   return { ok: true };
 }
+
+export async function deleteBusinessAction(businessId: string) {
+  await requireAdmin();
+  const supabase = getServiceSupabase();
+
+  const { error } = await supabase
+    .from("businesses")
+    .delete()
+    .eq("id", businessId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/businesses");
+  return { ok: true, deleted: true };
+}

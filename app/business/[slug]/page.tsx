@@ -7,6 +7,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -72,6 +73,8 @@ export default async function BusinessPage({ params }: Props) {
     data: { user },
   } = await auth.auth.getUser();
 
+  const flags = await getAllFeatureFlags();
+
   const town = b.towns as { name?: string; slug?: string } | null;
   const tagRows = b.business_tags as
     | { tags: { slug?: string } | null }[]
@@ -112,7 +115,7 @@ export default async function BusinessPage({ params }: Props) {
         <Link href="/" className="hover:underline">
           Home
         </Link>
-        {town?.slug ? (
+        {town?.slug && flags["towns"] === true ? (
           <>
             {" · "}
             <Link href={`/${town.slug}`} className="hover:underline">
@@ -171,14 +174,16 @@ export default async function BusinessPage({ params }: Props) {
         ) : null}
       </div>
 
-      <section className="border-t border-zinc-200 pt-8">
-        <ClaimListingForm
-          businessId={b.id as string}
-          claimStatus={(b.claim_status as string) ?? "unclaimed"}
-          userId={user?.id ?? null}
-          claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
-        />
-      </section>
+      {flags["claims"] === true && (
+        <section className="border-t border-zinc-200 pt-8">
+          <ClaimListingForm
+            businessId={b.id as string}
+            claimStatus={(b.claim_status as string) ?? "unclaimed"}
+            userId={user?.id ?? null}
+            claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
+          />
+        </section>
+      )}
     </div>
   );
 }

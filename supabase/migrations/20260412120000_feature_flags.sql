@@ -33,6 +33,8 @@ INSERT INTO public.feature_flags (name, enabled, description) VALUES
   ('newsletter', TRUE, 'Newsletter signup in footer'),
   ('curator', TRUE, 'My Curator Recommendations section on homepage'),
   ('search', TRUE, 'Search/Hero section on homepage'),
+  ('categories', TRUE, 'Explore by Category section on homepage'),
+  ('claims', TRUE, 'Business claim functionality'),
   ('featured_business', TRUE, 'Featured businesses section on homepage');
 
 -- Grants

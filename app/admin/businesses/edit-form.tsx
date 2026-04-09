@@ -16,6 +16,7 @@ export function BusinessEditForm({
   updateAction,
   addImageAction,
   deleteImageAction,
+  deleteAction,
 }: {
   businessId: string;
   business: Record<string, unknown>;
@@ -27,6 +28,7 @@ export function BusinessEditForm({
   updateAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
   addImageAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
   deleteImageAction: (imageId: string) => Promise<{ error?: string; ok?: boolean }>;
+  deleteAction: () => Promise<{ error?: string; ok?: boolean; deleted?: boolean }>;
 }) {
   const [state, formAction] = useActionState(
     async (_prev: { error?: string; ok?: boolean } | null, formData: FormData) => {
@@ -52,12 +54,30 @@ export function BusinessEditForm({
         >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-zinc-900">General Information</h2>
-            <button
-              type="submit"
-              className="rounded-lg bg-teal-700 px-5 py-2 text-sm font-medium text-white hover:bg-teal-800"
-            >
-              Save changes
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (confirm("Are you sure you want to delete this business?")) {
+                    const res = await deleteAction();
+                    if (res.deleted) {
+                      window.location.href = "/admin/businesses";
+                    } else if (res.error) {
+                      alert(res.error);
+                    }
+                  }
+                }}
+                className="rounded-lg bg-red-50 px-5 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+              >
+                Delete Business
+              </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-teal-700 px-5 py-2 text-sm font-medium text-white hover:bg-teal-800"
+              >
+                Save changes
+              </button>
+            </div>
           </div>
 
           {state?.error ? (

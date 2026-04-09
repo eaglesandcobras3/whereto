@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 
 export default async function AdminBusinessesPage({
   searchParams,
@@ -9,12 +10,13 @@ export default async function AdminBusinessesPage({
 }) {
   await requireAdmin();
   const { q, category_id, town_id } = await searchParams;
+  const flags = await getAllFeatureFlags();
   const supabase = getServiceSupabase();
   const term = (q ?? "").trim();
 
   let query = supabase
     .from("businesses")
-    .select("id, name, status, town_id, category_id, listing_rating, confidence_score")
+    .select("id, name, status, town_id, category_id, listing_rating, confidence_score, towns(name)")
     .order("updated_at", { ascending: false })
     .limit(100);
 
@@ -68,6 +70,7 @@ export default async function AdminBusinessesPage({
           <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="px-4 py-3">Name</th>
+              {flags["towns"] === true && <th className="px-4 py-3">Town</th>}
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Rating</th>
               <th className="px-4 py-3">Confidence</th>
@@ -81,6 +84,11 @@ export default async function AdminBusinessesPage({
                   <td className="px-4 py-3 font-medium text-zinc-900">
                     {b.name as string}
                   </td>
+                  {flags["towns"] === true && (
+                    <td className="px-4 py-3 text-zinc-600">
+                      {(b.towns as any)?.name ?? "—"}
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-zinc-600">{b.status as string}</td>
                   <td className="px-4 py-3 text-zinc-600">
                     {b.listing_rating != null ? String(b.listing_rating) : "—"}
@@ -100,7 +108,7 @@ export default async function AdminBusinessesPage({
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={flags["towns"] === true ? 6 : 5} className="px-4 py-8 text-center text-zinc-500">
                   No businesses found.
                 </td>
               </tr>
