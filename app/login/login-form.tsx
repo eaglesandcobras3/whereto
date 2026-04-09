@@ -62,12 +62,17 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       {message ? (
         <p className="mt-4 text-sm text-red-600">{message}</p>
       ) : null}
-      <p className="mt-4 text-sm text-zinc-600">
-        Don&apos;t have an account?{" "}
-        <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="text-teal-700 hover:underline">
-          Sign up
+      <div className="mt-4 flex flex-col gap-2 text-sm">
+        <Link href="/forgot-password" className="text-teal-700 hover:underline">
+          Forgot password?
         </Link>
-      </p>
+        <p className="text-zinc-600">
+          Don&apos;t have an account?{" "}
+          <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="text-teal-700 hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </div>
       <Link href="/" className="mt-4 text-sm text-teal-700 hover:underline">
         ← Back to search
       </Link>

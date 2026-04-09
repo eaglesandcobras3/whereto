@@ -1017,24 +1017,6 @@ export function HomePage({ featureFlags = {} }: { featureFlags?: Record<string, 
               The Digital Concierge for the Emerald Coast. Experience 30A like a
               local with curated stays and insider insights.
             </p>
-            <div className="flex gap-4 text-primary">
-              <button
-                type="button"
-                data-footer-action="share"
-                className="material-symbols-outlined cursor-pointer bg-transparent"
-                aria-label="Share"
-              >
-                share
-              </button>
-              <button
-                type="button"
-                data-footer-action="mail"
-                className="material-symbols-outlined cursor-pointer bg-transparent"
-                aria-label="Email"
-              >
-                mail
-              </button>
-            </div>
           </div>
           <div className="space-y-4">
             <h4 className="font-headline text-xs font-semibold uppercase tracking-widest text-teal-950">
@@ -1102,52 +1084,43 @@ export function HomePage({ featureFlags = {} }: { featureFlags?: Record<string, 
               </a>
             </nav>
           </div>
-          <div className="space-y-4">
-            <h4 className="font-headline text-xs font-semibold uppercase tracking-widest text-teal-950">
-              Newsletter
-            </h4>
-            <p className="text-sm text-teal-800/70">
-              Join 15,000+ coastal enthusiasts.
-            </p>
-            <form
-              className="flex rounded-full border border-teal-100 bg-white p-1"
-              onSubmit={(e) => {
-                e.preventDefault();
-              }}
-              action="#"
-            >
-              <input
-                name="email"
-                className="flex-1 border-none bg-transparent px-4 text-sm text-on-surface focus:ring-0"
-                placeholder="Your email"
-                type="email"
-                autoComplete="email"
-              />
-              <button
-                type="submit"
-                className="rounded-full bg-primary p-2 text-on-primary"
-                aria-label="Subscribe"
+          {featureFlags["newsletter"] !== false && (
+            <div className="space-y-4">
+              <h4 className="font-headline text-xs font-semibold uppercase tracking-widest text-teal-950">
+                Newsletter
+              </h4>
+              <p className="text-sm text-teal-800/70">
+                Join 15,000+ coastal enthusiasts.
+              </p>
+              <form
+                className="flex rounded-full border border-teal-100 bg-white p-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                }}
+                action="#"
               >
-                <MsIcon name="arrow_forward" className="!text-sm" />
-              </button>
-            </form>
-          </div>
+                <input
+                  name="email"
+                  className="flex-1 border-none bg-transparent px-4 text-sm text-on-surface focus:ring-0"
+                  placeholder="Your email"
+                  type="email"
+                  autoComplete="email"
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-primary p-2 text-on-primary"
+                  aria-label="Subscribe"
+                >
+                  <MsIcon name="arrow_forward" className="!text-sm" />
+                </button>
+              </form>
+            </div>
+          )}
         </div>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 border-t border-primary/5 px-8 py-8 text-xs font-medium text-outline/50 md:flex-row md:px-12">
           <p>
             © 2024 WhereTo30A. The Digital Concierge for the Emerald Coast.
           </p>
-          <div className="flex gap-6">
-            <a href="https://instagram.com" className="hover:underline">
-              Instagram
-            </a>
-            <a href="https://tiktok.com" className="hover:underline">
-              TikTok
-            </a>
-            <a href="https://facebook.com" className="hover:underline">
-              Facebook
-            </a>
-          </div>
         </div>
       </footer>
     </div>
