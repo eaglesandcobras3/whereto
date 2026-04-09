@@ -42,6 +42,7 @@ export default async function AdminHomePage() {
     { label: "Pending jobs", value: countOr0(jobs), href: "/admin/jobs" },
     { label: "Cached queries", value: countOr0(cache), href: "/admin/cache" },
     { label: "Pending claims", value: countOr0(claims), href: "/admin/claims" },
+    { label: "Categories & Queue", value: countOr0(candidates), href: "/admin/categories" },
     { label: "Topic candidates", value: countOr0(candidates), href: "/admin/topic-mining" },
     { label: "Feedback rows", value: countOr0(feedback), href: "/admin/scores" },
   ];

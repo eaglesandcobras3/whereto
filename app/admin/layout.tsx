@@ -6,9 +6,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const nav = [
     { href: "/admin", label: "Overview" },
     { href: "/admin/businesses", label: "Businesses" },
+    { href: "/admin/categories", label: "Categories" },
     { href: "/admin/bulk-tags", label: "Bulk tags" },
     { href: "/admin/jobs", label: "Jobs" },
     { href: "/admin/ingestion", label: "Ingestion" },
+    { href: "/admin/feature-flags", label: "Feature flags" },
     { href: "/admin/cache", label: "Cache" },
     { href: "/admin/claims", label: "Claims" },
     { href: "/admin/topic-mining", label: "Topic mining" },

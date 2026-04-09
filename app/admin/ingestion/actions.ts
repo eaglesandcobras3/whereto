@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { expandDiscoveryQueries } from "@/lib/ingestion/query-expansion";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { runDiscoveryBatch } from "@/lib/ingestion/discovery-runner";
+import { withDirectoryIngestionCronContext } from "@/lib/ingestion/directory-cron-context";
 
 export async function createDiscoveryJobAction(formData: FormData): Promise<void> {
   await requireAdmin();
@@ -57,4 +59,23 @@ export async function createDiscoveryJobAction(formData: FormData): Promise<void
 
   revalidatePath("/admin/jobs");
   revalidatePath("/admin/ingestion");
+}
+
+export async function runDiscoveryNowAction(): Promise<{ processed: number; newBusinesses: number; error?: string }> {
+  await requireAdmin();
+  try {
+    const report = await withDirectoryIngestionCronContext(() =>
+      runDiscoveryBatch(5),
+    );
+    revalidatePath("/admin/jobs");
+    revalidatePath("/admin/businesses");
+    revalidatePath("/admin/ingestion");
+    return report;
+  } catch (e) {
+    return {
+      processed: 0,
+      newBusinesses: 0,
+      error: e instanceof Error ? e.message : "Discovery failed",
+    };
+  }
 }

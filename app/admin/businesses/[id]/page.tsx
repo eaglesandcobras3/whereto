@@ -6,6 +6,8 @@ import {
   regenerateAiSummaryFormAction,
   refreshFromDirectoryFormAction,
   updateBusinessAction,
+  addBusinessImageAction,
+  deleteBusinessImageAction,
 } from "@/app/admin/businesses/actions";
 import { BusinessEditForm } from "@/app/admin/businesses/edit-form";
 
@@ -33,7 +35,7 @@ export default async function AdminBusinessEditPage({
         town_id, category_id, listing_external_key, phone, website,
         listing_rating, listing_review_count, price_level, ai_summary,
         confidence_score, freshness_score, engagement_score,
-        directory_refresh_requested_at
+        directory_refresh_requested_at, hero_image_url
       `,
       )
       .eq("id", id)
@@ -48,6 +50,11 @@ export default async function AdminBusinessEditPage({
       )
       .eq("business_id", id)
       .order("source_name"),
+    supabase
+      .from("business_images")
+      .select("*")
+      .eq("business_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   if (error || !business) notFound();
@@ -58,6 +65,7 @@ export default async function AdminBusinessEditPage({
     .eq("business_id", id);
 
   const selectedTagIds = new Set((bt ?? []).map((r) => String(r.tag_id)));
+  const businessImages = (images ?? []) as any[];
 
   return (
     <div className="space-y-6">
@@ -142,7 +150,10 @@ export default async function AdminBusinessEditPage({
         categories={categories ?? []}
         tags={tags ?? []}
         selectedTagIds={selectedTagIds}
+        businessImages={businessImages}
         updateAction={updateBusinessAction.bind(null, id)}
+        addImageAction={addBusinessImageAction.bind(null, id)}
+        deleteImageAction={deleteBusinessImageAction.bind(null, id)}
       />
     </div>
   );

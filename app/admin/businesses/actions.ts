@@ -24,6 +24,7 @@ export async function updateBusinessAction(
     ? Number(formData.get("category_id"))
     : null;
   const ai_summary = String(formData.get("ai_summary") ?? "").trim() || null;
+  const hero_image_url = String(formData.get("hero_image_url") ?? "").trim() || null;
 
   const { error } = await supabase
     .from("businesses")
@@ -36,6 +37,7 @@ export async function updateBusinessAction(
       category_id: Number.isFinite(category_id as number) ? category_id : null,
       ai_summary,
       ai_summary_updated_at: ai_summary ? new Date().toISOString() : undefined,
+      hero_image_url,
     })
     .eq("id", businessId);
 
@@ -154,4 +156,50 @@ export async function refreshFromDirectoryAction(businessId: string) {
 
   revalidatePath(`/admin/businesses/${businessId}`);
   return { ok: true as const, queued: true as const };
+}
+
+export async function addBusinessImageAction(
+  businessId: string,
+  formData: FormData,
+) {
+  await requireAdmin();
+  const supabase = getServiceSupabase();
+
+  const public_url = String(formData.get("public_url") ?? "").trim();
+  const image_type = String(formData.get("image_type") ?? "owner");
+  const attribution_text = String(formData.get("attribution_text") ?? "").trim();
+
+  if (!public_url) return { error: "URL is required" };
+
+  const { error } = await supabase.from("business_images").insert({
+    business_id: businessId,
+    public_url,
+    image_type,
+    attribution_text: attribution_text || null,
+    approved_for_display: true,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/admin/businesses/${businessId}`);
+  return { ok: true };
+}
+
+export async function deleteBusinessImageAction(
+  businessId: string,
+  imageId: string,
+) {
+  await requireAdmin();
+  const supabase = getServiceSupabase();
+
+  const { error } = await supabase
+    .from("business_images")
+    .delete()
+    .eq("id", imageId)
+    .eq("business_id", businessId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/admin/businesses/${businessId}`);
+  return { ok: true };
 }

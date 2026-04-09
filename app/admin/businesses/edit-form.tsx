@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import Image from "next/image";
 
 type Row = { id: number; name: string; slug?: string; category?: string };
 
@@ -11,7 +12,10 @@ export function BusinessEditForm({
   categories,
   tags,
   selectedTagIds,
+  businessImages,
   updateAction,
+  addImageAction,
+  deleteImageAction,
 }: {
   businessId: string;
   business: Record<string, unknown>;
@@ -19,7 +23,10 @@ export function BusinessEditForm({
   categories: Row[];
   tags: Row[];
   selectedTagIds: Set<string>;
+  businessImages: any[];
   updateAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
+  addImageAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
+  deleteImageAction: (imageId: string) => Promise<{ error?: string; ok?: boolean }>;
 }) {
   const [state, formAction] = useActionState(
     async (_prev: { error?: string; ok?: boolean } | null, formData: FormData) => {
@@ -28,133 +35,238 @@ export function BusinessEditForm({
     null,
   );
 
+  const [addImageState, addImageFormAction] = useActionState(
+    async (_prev: { error?: string; ok?: boolean } | null, formData: FormData) => {
+      return addImageAction(formData);
+    },
+    null,
+  );
+
   return (
-    <form
-      key={businessId}
-      action={formAction}
-      className="max-w-2xl space-y-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
-    >
-      {state?.error ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
-      ) : null}
-      {state?.ok ? (
-        <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-800">Saved.</p>
-      ) : null}
-
-      <div>
-        <label className="block text-sm font-medium text-zinc-700">Name</label>
-        <input
-          name="name"
-          defaultValue={String(business.name ?? "")}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">Town</label>
-          <select
-            name="town_id"
-            defaultValue={business.town_id != null ? String(business.town_id) : ""}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">—</option>
-            {towns.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">Category</label>
-          <select
-            name="category_id"
-            defaultValue={business.category_id != null ? String(business.category_id) : ""}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-          >
-            <option value="">—</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-zinc-700">Status</label>
-        <select
-          name="status"
-          defaultValue={String(business.status ?? "active")}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+    <div className="grid gap-8 lg:grid-cols-3">
+      <div className="lg:col-span-2">
+        <form
+          key={businessId}
+          action={formAction}
+          className="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
         >
-          {["active", "hidden", "closed", "flagged"].map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-900">General Information</h2>
+            <button
+              type="submit"
+              className="rounded-lg bg-teal-700 px-5 py-2 text-sm font-medium text-white hover:bg-teal-800"
+            >
+              Save changes
+            </button>
+          </div>
+
+          {state?.error ? (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+          ) : null}
+          {state?.ok ? (
+            <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-800">Saved.</p>
+          ) : null}
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700">Name</label>
+            <input
+              name="name"
+              defaultValue={String(business.name ?? "")}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700">Town</label>
+              <select
+                name="town_id"
+                defaultValue={business.town_id != null ? String(business.town_id) : ""}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              >
+                <option value="">—</option>
+                {towns.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700">Category</label>
+              <select
+                name="category_id"
+                defaultValue={business.category_id != null ? String(business.category_id) : ""}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              >
+                <option value="">—</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700">Hero Image URL</label>
+            <input
+              name="hero_image_url"
+              defaultValue={String(business.hero_image_url ?? "")}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              placeholder="https://..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700">Status</label>
+            <select
+              name="status"
+              defaultValue={String(business.status ?? "active")}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+            >
+              {["active", "hidden", "closed", "flagged"].map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-wrap gap-6">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="admin_suppressed"
+                defaultChecked={Boolean(business.admin_suppressed)}
+              />
+              Admin suppressed
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="suspected_closed"
+                defaultChecked={Boolean(business.suspected_closed)}
+              />
+              Suspected closed
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700">AI summary</label>
+            <textarea
+              name="ai_summary"
+              rows={5}
+              defaultValue={String(business.ai_summary ?? "")}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 font-sans text-sm"
+            />
+          </div>
+
+          <fieldset>
+            <legend className="text-sm font-medium text-zinc-700">Tags</legend>
+            <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 p-3">
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {tags.map((t) => (
+                  <li key={t.id}>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        name="tag_ids"
+                        value={t.id}
+                        defaultChecked={selectedTagIds.has(String(t.id))}
+                      />
+                      <span>{t.name}</span>
+                      <span className="text-zinc-400">({t.category})</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </fieldset>
+        </form>
       </div>
 
-      <div className="flex flex-wrap gap-6">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="admin_suppressed"
-            defaultChecked={Boolean(business.admin_suppressed)}
-          />
-          Admin suppressed
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="suspected_closed"
-            defaultChecked={Boolean(business.suspected_closed)}
-          />
-          Suspected closed
-        </label>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-zinc-700">AI summary</label>
-        <textarea
-          name="ai_summary"
-          rows={5}
-          defaultValue={String(business.ai_summary ?? "")}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 font-sans text-sm"
-        />
-      </div>
-
-      <fieldset>
-        <legend className="text-sm font-medium text-zinc-700">Tags</legend>
-        <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 p-3">
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {tags.map((t) => (
-              <li key={t.id}>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    name="tag_ids"
-                    value={t.id}
-                    defaultChecked={selectedTagIds.has(String(t.id))}
+      <div className="space-y-6">
+        <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-zinc-900">Photos</h2>
+          
+          <div className="grid gap-4">
+            {businessImages.map((img) => (
+              <div key={img.id} className="group relative flex items-start gap-4 rounded-lg border border-zinc-100 p-2">
+                <div className="relative h-16 w-16 overflow-hidden rounded">
+                  <Image
+                    src={img.public_url}
+                    alt={img.attribution_text || "Business image"}
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
-                  <span>{t.name}</span>
-                  <span className="text-zinc-400">({t.category})</span>
-                </label>
-              </li>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-xs text-zinc-500">{img.public_url}</p>
+                  <p className="text-xs font-medium">{img.image_type}</p>
+                  <button
+                    onClick={() => deleteImageAction(img.id)}
+                    className="mt-1 text-xs text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             ))}
-          </ul>
-        </div>
-      </fieldset>
+          </div>
 
-      <button
-        type="submit"
-        className="rounded-lg bg-teal-700 px-5 py-2 text-sm font-medium text-white hover:bg-teal-800"
-      >
-        Save changes
-      </button>
-    </form>
+          <form action={addImageFormAction} className="space-y-3 pt-4 border-t border-zinc-100">
+            <p className="text-sm font-medium text-zinc-700">Add Photo</p>
+            {addImageState?.error ? (
+              <p className="text-xs text-red-600">{addImageState.error}</p>
+            ) : null}
+            <input
+              name="public_url"
+              placeholder="Public URL (https://...)"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
+              required
+            />
+            <select
+              name="image_type"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
+              defaultValue="owner"
+            >
+              <option value="owner">Owner</option>
+              <option value="licensed">Licensed</option>
+              <option value="commons">Commons</option>
+              <option value="mapillary">Mapillary</option>
+            </select>
+            <input
+              name="attribution_text"
+              placeholder="Attribution (optional)"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900"
+            >
+              Add Photo
+            </button>
+          </form>
+        </section>
+
+        {business.hero_image_url && (
+          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+            <p className="p-4 text-sm font-medium border-b border-zinc-200">Current Hero Image</p>
+            <div className="relative aspect-video w-full">
+              <Image
+                src={String(business.hero_image_url)}
+                alt="Hero"
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
   );
 }

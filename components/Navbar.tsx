@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 
 type Props = {
@@ -32,11 +34,20 @@ export function Navbar({
   searchLoading,
 }: Props) {
   const pathname = usePathname();
+  const [user, setUser] = useState<any>(null);
   const isHome = pathname === "/";
   const isTowns =
     pathname === PRIMARY_REGION_HUB_PATH ||
     pathname.startsWith(`${PRIMARY_REGION_HUB_PATH}/`);
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
+  const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+  }, []);
 
   return (
     <header
@@ -115,6 +126,15 @@ export function Navbar({
           <Link href="/saved" className={navLinkClass(isSaved)}>
             Saved
           </Link>
+          {user ? (
+            <Link href="/profile" className={navLinkClass(isProfile)}>
+              Profile
+            </Link>
+          ) : (
+            <Link href="/login" className={navLinkClass(pathname === "/login")}>
+              Login
+            </Link>
+          )}
         </nav>
       </div>
     </header>

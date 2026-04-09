@@ -5,10 +5,10 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 export default async function AdminBusinessesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; category_id?: string; town_id?: string }>;
 }) {
   await requireAdmin();
-  const { q } = await searchParams;
+  const { q, category_id, town_id } = await searchParams;
   const supabase = getServiceSupabase();
   const term = (q ?? "").trim();
 
@@ -21,6 +21,12 @@ export default async function AdminBusinessesPage({
   if (term) {
     query = query.ilike("name", `%${term}%`);
   }
+  if (category_id) {
+    query = query.eq("category_id", Number(category_id));
+  }
+  if (town_id) {
+    query = query.eq("town_id", Number(town_id));
+  }
 
   const { data: rows, error } = await query;
   if (error) {
@@ -32,7 +38,15 @@ export default async function AdminBusinessesPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Businesses</h1>
-          <p className="text-sm text-zinc-600">Up to 100 results. Use search to narrow.</p>
+          <p className="text-sm text-zinc-600">
+            {category_id || town_id ? "Filtered results. " : "Up to 100 results. "}
+            Use search to narrow.
+          </p>
+          {(category_id || town_id) && (
+            <Link href="/admin/businesses" className="text-xs text-teal-700 hover:underline">
+              Clear filters
+            </Link>
+          )}
         </div>
         <form className="flex gap-2" action="/admin/businesses" method="get">
           <input
@@ -61,28 +75,36 @@ export default async function AdminBusinessesPage({
             </tr>
           </thead>
           <tbody>
-            {(rows ?? []).map((b) => (
-              <tr key={b.id as string} className="border-b border-zinc-100">
-                <td className="px-4 py-3 font-medium text-zinc-900">
-                  {b.name as string}
-                </td>
-                <td className="px-4 py-3 text-zinc-600">{b.status as string}</td>
-                <td className="px-4 py-3 text-zinc-600">
-                  {b.listing_rating != null ? String(b.listing_rating) : "—"}
-                </td>
-                <td className="px-4 py-3 text-zinc-600">
-                  {b.confidence_score != null ? String(b.confidence_score) : "—"}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/admin/businesses/${b.id}`}
-                    className="text-teal-700 hover:underline"
-                  >
-                    Edit
-                  </Link>
+            {(rows ?? []).length > 0 ? (
+              (rows ?? []).map((b) => (
+                <tr key={b.id as string} className="border-b border-zinc-100">
+                  <td className="px-4 py-3 font-medium text-zinc-900">
+                    {b.name as string}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-600">{b.status as string}</td>
+                  <td className="px-4 py-3 text-zinc-600">
+                    {b.listing_rating != null ? String(b.listing_rating) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-600">
+                    {b.confidence_score != null ? String(b.confidence_score) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/admin/businesses/${b.id}`}
+                      className="text-teal-700 hover:underline"
+                    >
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                  No businesses found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
