@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/require-admin";
-import { processEnrichmentBatch } from "@/lib/ai/enrich-business";
+import { saveManualEnrichmentResults } from "@/lib/ai/enrich-business";
 
-export async function runEnrichmentBatchAction(formData: FormData): Promise<void> {
+export async function saveEnrichmentAction(jsonString: string) {
   await requireAdmin();
 
-  const batchSize = Number(formData.get("batchSize")) || 50;
-
-  await processEnrichmentBatch(batchSize);
+  const result = await saveManualEnrichmentResults(jsonString);
 
   revalidatePath("/admin/ai-enrichment");
+
+  return result;
 }
