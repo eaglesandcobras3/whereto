@@ -4,12 +4,10 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { saveManualEnrichmentResults } from "@/lib/ai/enrich-business";
 
-export async function saveEnrichmentAction(jsonString: string) {
+export async function saveBusinessEnrichmentAction(jsonString: string) {
   await requireAdmin();
-
   const result = await saveManualEnrichmentResults(jsonString);
-
-  revalidatePath("/admin/ai-enrichment");
-
+  revalidatePath("/admin/data-pipeline/business-enrichment");
+  revalidatePath("/admin/data-pipeline");
   return result;
 }

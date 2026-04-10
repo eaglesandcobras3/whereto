@@ -2,17 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generateManualPrompt, type BusinessForPrompt } from "@/lib/ai/enrich-business";
-import { saveEnrichmentAction } from "./actions";
 
-export function ManualEnrichmentForm({ businesses }: { businesses: BusinessForPrompt[] }) {
+type PromptWorkflowProps = {
+  title: string;
+  description: string;
+  prompt: string;
+  itemCount: number;
+  saveAction: (json: string) => Promise<{ saved: number; failed: number; errors: string[] }>;
+};
+
+export function PromptWorkflow({ title, description, prompt, itemCount, saveAction }: PromptWorkflowProps) {
   const router = useRouter();
   const [jsonResponse, setJsonResponse] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [copied, setCopied] = useState(false);
-
-  const prompt = generateManualPrompt(businesses);
 
   async function copyPrompt() {
     await navigator.clipboard.writeText(prompt);
@@ -31,13 +35,13 @@ export function ManualEnrichmentForm({ businesses }: { businesses: BusinessForPr
     setMessage("");
 
     try {
-      const result = await saveEnrichmentAction(jsonResponse);
+      const result = await saveAction(jsonResponse);
       if (result.errors.length > 0) {
         setStatus("error");
         setMessage(`Saved ${result.saved}, failed ${result.failed}: ${result.errors.slice(0, 3).join(", ")}`);
       } else {
         setStatus("success");
-        setMessage(`Successfully saved ${result.saved} businesses!`);
+        setMessage(`Successfully saved ${result.saved} items!`);
         setJsonResponse("");
         router.refresh();
       }
@@ -47,11 +51,11 @@ export function ManualEnrichmentForm({ businesses }: { businesses: BusinessForPr
     }
   }
 
-  if (businesses.length === 0) {
+  if (itemCount === 0) {
     return (
       <div className="rounded-xl border border-teal-200 bg-teal-50 p-6">
         <p className="text-sm font-medium text-teal-800">
-          All businesses have been enriched!
+          All items have been processed! Move to the next step.
         </p>
       </div>
     );
@@ -65,17 +69,17 @@ export function ManualEnrichmentForm({ businesses }: { businesses: BusinessForPr
           Step 1: Copy this prompt
         </h2>
         <p className="text-sm text-zinc-600 mb-4">
-          {businesses.length} businesses ready for enrichment. Copy and paste into ChatGPT.
+          {itemCount} items ready. Copy and paste into ChatGPT.
         </p>
         <div className="relative">
-          <pre className="max-h-64 overflow-auto rounded-lg bg-zinc-50 p-4 text-xs text-zinc-700 border border-zinc-200">
+          <pre className="max-h-80 overflow-auto rounded-lg bg-zinc-50 p-4 text-xs text-zinc-700 border border-zinc-200 whitespace-pre-wrap">
             {prompt}
           </pre>
           <button
             onClick={copyPrompt}
             className="absolute top-2 right-2 rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-800"
           >
-            {copied ? "Copied!" : "Copy"}
+            {copied ? "Copied!" : "Copy Prompt"}
           </button>
         </div>
       </div>
@@ -86,13 +90,13 @@ export function ManualEnrichmentForm({ businesses }: { businesses: BusinessForPr
           Step 2: Paste ChatGPT response
         </h2>
         <p className="text-sm text-zinc-600 mb-4">
-          Paste the JSON that ChatGPT gives you back.
+          Paste the JSON that ChatGPT gives you.
         </p>
         <textarea
           value={jsonResponse}
           onChange={(e) => setJsonResponse(e.target.value)}
-          placeholder='{"uuid-1": {"vibe": [...], "goodFor": [...], "nearbyContext": "..."}, ...}'
-          rows={10}
+          placeholder="Paste the JSON response here..."
+          rows={12}
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono"
         />
       </div>
@@ -116,5 +120,28 @@ export function ManualEnrichmentForm({ businesses }: { businesses: BusinessForPr
         )}
       </div>
     </div>
+  );
+}
+
+export function StatsBar({ stats }: { stats: { label: string; value: number; highlight?: boolean }[] }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      {stats.map((stat) => (
+        <div key={stat.label} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <p className={`text-2xl font-bold ${stat.highlight ? "text-teal-700" : "text-zinc-900"}`}>
+            {stat.value.toLocaleString()}
+          </p>
+          <p className="text-xs text-zinc-500">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a href={href} className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-teal-700 mb-6">
+      ← {label}
+    </a>
   );
 }
