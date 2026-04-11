@@ -3,6 +3,7 @@ import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { SearchPageClient } from "./search-page-client";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import type { Metadata } from "next";
 
 type Props = {
@@ -51,10 +52,11 @@ export default async function SearchPage({ searchParams }: Props) {
   });
 
   return (
-    <SearchPageClient 
-      initialQuery={q} 
-      results={searchResult} 
+    <SearchPageClient
+      initialQuery={q}
+      results={searchResult}
       townName={townName}
+      footer={<SiteFooter />}
     />
   );
 }

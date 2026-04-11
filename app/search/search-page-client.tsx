@@ -5,16 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { SearchBar } from "@/components/discovery/SearchBar";
 import { BusinessCard } from "@/components/discovery/BusinessCard";
-import { SiteFooter } from "@/components/home/SiteFooter";
 import type { SearchResultPayload } from "@/lib/search/types";
 
 type Props = {
   initialQuery: string;
   results: SearchResultPayload;
   townName?: string;
+  footer?: React.ReactNode;
 };
 
-export function SearchPageClient({ initialQuery, results, townName }: Props) {
+export function SearchPageClient({ initialQuery, results, townName, footer }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [q, setQ] = useState(initialQuery);
@@ -138,8 +138,8 @@ export function SearchPageClient({ initialQuery, results, townName }: Props) {
                 </div>
               )}
             </div>
-            
-            <SiteFooter />
+
+            {footer}
           </div>
 
           {/* Map Side (Placeholder) */}
