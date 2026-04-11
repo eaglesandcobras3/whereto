@@ -46,12 +46,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
+      url: `${base}/guide`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.95,
+    },
+    {
       url: `${base}${PRIMARY_REGION_HUB_PATH}`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.88,
     },
   ];
+
+  // Guide pages for each town (high SEO value)
+  for (const t of towns ?? []) {
+    const slug = t.slug as string;
+    if (!slug) continue;
+    entries.push({
+      url: `${base}/guide/${slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.92,
+    });
+  }
 
   for (const t of towns ?? []) {
     const slug = t.slug as string;

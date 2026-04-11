@@ -28,6 +28,46 @@ export async function getTownBySlug(slug: string) {
   }
 }
 
+export type TownGuidePreview = {
+  ai_tagline: string | null;
+  ai_description: string | null;
+  ai_vibe: string[] | null;
+  ai_known_for: string[] | null;
+  ai_best_for: string[] | null;
+  ai_family_score: number | null;
+  ai_romance_score: number | null;
+  ai_nightlife_score: number | null;
+  ai_budget_score: number | null;
+  ai_must_see: string[] | null;
+  ai_local_tips: string[] | null;
+};
+
+export async function getTownGuidePreview(slug: string): Promise<TownGuidePreview | null> {
+  try {
+    const supabase = getServiceSupabase();
+    const { data } = await supabase
+      .from("towns")
+      .select(`
+        ai_tagline,
+        ai_description,
+        ai_vibe,
+        ai_known_for,
+        ai_best_for,
+        ai_family_score,
+        ai_romance_score,
+        ai_nightlife_score,
+        ai_budget_score,
+        ai_must_see,
+        ai_local_tips
+      `)
+      .eq("slug", slug)
+      .maybeSingle();
+    return data as TownGuidePreview | null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getRegionBySlug(slug: string) {
   try {
     const supabase = getServiceSupabase();

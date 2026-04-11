@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { 
-  getTownBySlug, 
-  getTownsInRegion, 
-  getRegionBySlug, 
+import {
+  getTownBySlug,
+  getTownsInRegion,
+  getRegionBySlug,
   getAdjacentTownNames,
   getAdjacentTownBusinessPreviews,
-  getTownHubExpandedSections
+  getTownHubExpandedSections,
+  getTownGuidePreview
 } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -50,10 +51,11 @@ export default async function TownPage({ params }: Props) {
   if (!town) notFound();
 
   // Parallel fetch town data
-  const [adjacent, expanded, nearbyBiz] = await Promise.all([
+  const [adjacent, expanded, nearbyBiz, guidePreview] = await Promise.all([
     getAdjacentTownNames(town.id),
     getTownHubExpandedSections(town.slug, town.name),
     getAdjacentTownBusinessPreviews(town.id, 10),
+    getTownGuidePreview(town.slug),
   ]);
 
   const descriptor = getTownDescriptor(town.slug);
@@ -115,6 +117,126 @@ export default async function TownPage({ params }: Props) {
                 ))}
               </ul>
             </SectionBlock>
+          )}
+
+          {/* Town Guide Preview */}
+          {guidePreview && (guidePreview.ai_description || guidePreview.ai_tagline) && (
+            <section className="rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+              <div className="grid md:grid-cols-2">
+                {/* Left: Content */}
+                <div className="p-8 md:p-12 flex flex-col justify-center">
+                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--color-primary)] mb-4">
+                    <span className="material-symbols-outlined !text-sm">menu_book</span>
+                    Local Guide
+                  </span>
+                  <h2 className="font-headline text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] mb-4">
+                    {town.name} Vacation Guide
+                  </h2>
+                  {guidePreview.ai_tagline && (
+                    <p className="text-lg text-[var(--color-primary)] font-medium mb-4">
+                      {guidePreview.ai_tagline}
+                    </p>
+                  )}
+                  {guidePreview.ai_description && (
+                    <p className="text-[var(--color-text-secondary)] leading-relaxed mb-6 line-clamp-4">
+                      {guidePreview.ai_description}
+                    </p>
+                  )}
+
+                  {/* Quick scores */}
+                  {(guidePreview.ai_family_score || guidePreview.ai_romance_score) && (
+                    <div className="flex flex-wrap gap-4 mb-6">
+                      {guidePreview.ai_family_score && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="material-symbols-outlined !text-base text-blue-500">family_restroom</span>
+                          <span className="text-[var(--color-text-secondary)]">Family:</span>
+                          <span className="font-bold text-[var(--color-text-primary)]">{guidePreview.ai_family_score}/10</span>
+                        </div>
+                      )}
+                      {guidePreview.ai_romance_score && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="material-symbols-outlined !text-base text-rose-500">favorite</span>
+                          <span className="text-[var(--color-text-secondary)]">Romance:</span>
+                          <span className="font-bold text-[var(--color-text-primary)]">{guidePreview.ai_romance_score}/10</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Vibe tags */}
+                  {guidePreview.ai_vibe && guidePreview.ai_vibe.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {guidePreview.ai_vibe.slice(0, 4).map((v) => (
+                        <span
+                          key={v}
+                          className="rounded-full bg-[var(--color-surface-container-high)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)]"
+                        >
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <Link
+                    href={`/guide/${town.slug}`}
+                    className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-3 text-sm font-bold text-white hover:opacity-90 transition-all w-fit"
+                  >
+                    Read Full Guide
+                    <span className="material-symbols-outlined !text-sm">arrow_forward</span>
+                  </Link>
+                </div>
+
+                {/* Right: Highlights */}
+                <div className="bg-[var(--color-surface-container-low)] p-8 md:p-12">
+                  {guidePreview.ai_must_see && guidePreview.ai_must_see.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="flex items-center gap-2 font-headline text-lg font-bold text-[var(--color-text-primary)] mb-4">
+                        <span className="material-symbols-outlined text-[var(--color-primary)]">place</span>
+                        Must-See Spots
+                      </h3>
+                      <ul className="space-y-2">
+                        {guidePreview.ai_must_see.slice(0, 3).map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {guidePreview.ai_local_tips && guidePreview.ai_local_tips.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <h3 className="flex items-center gap-2 font-headline text-sm font-bold text-amber-900 mb-3">
+                        <span className="material-symbols-outlined !text-base">tips_and_updates</span>
+                        Local Tip
+                      </h3>
+                      <p className="text-sm text-amber-800">
+                        {guidePreview.ai_local_tips[0]}
+                      </p>
+                    </div>
+                  )}
+
+                  {guidePreview.ai_best_for && guidePreview.ai_best_for.length > 0 && (
+                    <div className="mt-8">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
+                        Best For
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {guidePreview.ai_best_for.slice(0, 4).map((item) => (
+                          <span
+                            key={item}
+                            className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)]"
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           )}
 
           {/* Worth the short drive */}

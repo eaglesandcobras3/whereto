@@ -37,6 +37,7 @@ export function Navbar({
   const [user, setUser] = useState<any>(null);
   const [internalSearch, setInternalSearch] = useState("");
   const isHome = pathname === "/";
+  const isGuide = pathname === "/guide" || pathname.startsWith("/guide/");
   const isTowns =
     pathname === PRIMARY_REGION_HUB_PATH ||
     pathname.startsWith(`${PRIMARY_REGION_HUB_PATH}/`);
@@ -133,8 +134,14 @@ export function Navbar({
             </Link>
           )}
           <Link
+            href="/guide"
+            className={`hidden sm:inline-flex ${navLinkClass(isGuide)}`}
+          >
+            Guide
+          </Link>
+          <Link
             href={PRIMARY_REGION_HUB_PATH}
-            className={`hidden sm:inline-flex ${navLinkClass(isTowns)}`}
+            className={`hidden md:inline-flex ${navLinkClass(isTowns)}`}
           >
             Towns
           </Link>

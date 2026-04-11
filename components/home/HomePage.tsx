@@ -458,8 +458,8 @@ export function HomePage({
               </div>
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {featuredBusinesses.map((b) => (
-                  <Link 
-                    key={b.id} 
+                  <Link
+                    key={b.id}
                     href={`/business/${b.slug}`}
                     className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:shadow-md"
                   >
@@ -471,13 +471,18 @@ export function HomePage({
                         unoptimized
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
+                      {b.badge && (
+                        <div className="absolute top-3 left-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-md">
+                          {b.badge}
+                        </div>
+                      )}
                     </div>
                     <div className="p-6">
                       <h3 className="font-headline text-xl font-bold text-zinc-900 group-hover:text-primary transition-colors">
                         {b.name}
                       </h3>
                       <p className="mt-2 line-clamp-2 text-sm text-zinc-600 leading-relaxed">
-                        {b.ai_summary || "Explore more about this local favorite."}
+                        {b.featured_description || b.ai_summary || "Explore more about this local favorite."}
                       </p>
                       <div className="mt-4 flex items-center text-sm font-bold text-primary">
                         View details
