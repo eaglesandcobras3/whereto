@@ -1,3 +1,23 @@
+export type BusinessPayload = {
+  id: string;
+  name: string;
+  slug?: string;
+  address?: string | null;
+  town_id?: number | null;
+  category_id?: number | null;
+  category_name?: string;
+  lat?: number;
+  lng?: number;
+  phone?: string | null;
+  website?: string | null;
+  price_level?: number | null;
+  listing_rating?: number | null;
+  listing_review_count?: number | null;
+  tags?: string[];
+  ai_summary?: string | null;
+  image_url?: string | null;
+};
+
 export type SearchResultPayload = {
   query: string;
   query_hash: string;
@@ -9,7 +29,7 @@ export type SearchResultPayload = {
     headline: string;
     explanation: string;
     highlighted_tags: string[];
-    business: Record<string, unknown>;
+    business: BusinessPayload;
   }>;
   suggestions?: string[];
   cached: boolean;

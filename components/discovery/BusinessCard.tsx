@@ -4,24 +4,26 @@ import Link from "next/link";
 import { TagPills } from "@/components/discovery/TagPills";
 import { SaveButton } from "@/components/discovery/SaveButton";
 import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
+import type { BusinessPayload } from "@/lib/search/types";
 
-export type BusinessCardBusiness = {
-  id?: string;
-  slug?: string;
-  name?: string;
-  address?: string | null;
-  lat?: number;
-  lng?: number;
-  website?: string | null;
-  tags?: string[];
-  ai_summary?: string | null;
+export type BusinessCardBusiness = BusinessPayload & {
   /** When true, omit listing rating stars on consumer surfaces (policy). */
   hideRatings?: boolean;
-  listing_rating?: number | null;
-  /** Optional image URL */
-  image_url?: string | null;
-  /** Parent category name for icon selection */
-  category_name?: string;
+};
+
+type Props = {
+  rec: {
+    business_id: string;
+    rank: number;
+    headline: string;
+    explanation: string;
+    highlighted_tags: string[];
+    business: BusinessCardBusiness;
+  };
+  variant?: "consumer" | "admin" | "compact";
+  onSave?: (id: string) => Promise<void>;
+  onDirectionsClick?: (id: string) => void;
+  onWebsiteClick?: (id: string) => void;
 };
 
 const ICON_MAP: Record<string, string> = {

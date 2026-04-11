@@ -24,6 +24,7 @@ type DbBusinessRow = {
   address: string | null;
   town_id: number | null;
   category_id: number | null;
+  categories: { name: string } | null;
   lat: number;
   lng: number;
   phone: string | null;
@@ -55,6 +56,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
   website: string | null;
   price_level: number | null;
   ai_summary: string | null;
+  category_name?: string;
 } {
   const tag_slugs: string[] = [];
   for (const bt of row.business_tags ?? []) {
@@ -75,6 +77,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
     address,
     town_id,
     category_id,
+    categories,
     lat,
     lng,
     phone,
@@ -102,6 +105,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
     address,
     town_id,
     category_id,
+    category_name: categories?.name,
     lat,
     lng,
     phone,
@@ -152,7 +156,8 @@ export async function fetchActiveBusinessesWithTags(
       status, suspected_closed, admin_suppressed,
       confidence_score, freshness_score, engagement_score, exploration_score, completeness_score,
       bad_experience_unique_users, listing_rating, listing_review_count, legacy_photo_refs, hero_image_url,
-      business_tags(tags(slug))
+      business_tags(tags(slug)),
+      categories(name)
     `,
     )
     .eq("status", "active")
@@ -226,6 +231,7 @@ export async function buildRecommendationSet(options: {
   openaiKey: string | undefined;
   locationScope: LocationRankingScope | null;
   limit?: number;
+  priceLevel?: number;
 }): Promise<{
   ranked: BusinessRowWithTags[];
   enriched: EnrichedRecommendationPayload;
@@ -238,7 +244,7 @@ export async function buildRecommendationSet(options: {
   );
   const rows = await fetchActiveBusinessesWithTags(options.supabase);
   const limit = options.limit ?? 15;
-  const ranked = scoreAndRankCandidates(
+  let ranked = scoreAndRankCandidates(
     rows,
     options.intent,
     townSlugToId,
@@ -247,6 +253,10 @@ export async function buildRecommendationSet(options: {
     limit,
     options.locationScope,
   );
+
+  if (options.priceLevel) {
+    ranked = ranked.filter((r) => r.price_level === options.priceLevel);
+  }
 
   const candidateIds = new Set(ranked.map((r) => r.id));
 
@@ -317,9 +327,13 @@ export async function buildRecommendationSet(options: {
                 listing_review_count: b.listing_review_count,
                 tags: b.tag_slugs,
                 ai_summary: b.ai_summary,
+                category_name: b.category_name,
                 image_url: businessListingImageUrl(b.hero_image_url ?? null),
               }
-            : {},
+            : {
+                id: rec.business_id,
+                name: "Unknown",
+              },
         };
       }),
     suggestions: validated.data.suggestions,

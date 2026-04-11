@@ -14,6 +14,7 @@ export async function runSearch(options: {
   userId: string | null;
   model: string;
   openaiKey: string | undefined;
+  priceLevel?: number;
 }): Promise<SearchResultPayload> {
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
@@ -62,6 +63,7 @@ export async function runSearch(options: {
     model: options.model,
     openaiKey: options.openaiKey,
     locationScope,
+    priceLevel: options.priceLevel,
   });
 
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();

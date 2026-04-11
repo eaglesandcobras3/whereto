@@ -6,7 +6,7 @@ import { SearchPageClient } from "./search-page-client";
 import type { Metadata } from "next";
 
 type Props = {
-  searchParams: Promise<{ q?: string; town_id?: string }>;
+  searchParams: Promise<{ q?: string; town_id?: string; price?: string }>;
 };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
@@ -19,7 +19,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function SearchPage({ searchParams }: Props) {
-  const { q, town_id } = await searchParams;
+  const { q, town_id, price } = await searchParams;
 
   if (!q) {
     redirect("/");
@@ -47,6 +47,7 @@ export default async function SearchPage({ searchParams }: Props) {
     userId: user?.id ?? null,
     model,
     openaiKey: process.env.OPENAI_API_KEY,
+    priceLevel: price ? parseInt(price) : undefined,
   });
 
   return (

@@ -28,6 +28,7 @@ export type BusinessRowWithTags = BusinessForScore & {
   phone?: string | null;
   website?: string | null;
   price_level?: number | null;
+  category_name?: string;
   ai_summary?: string | null;
   /** Legacy field; map API photos are not used for new listings. */
   legacy_photo_refs?: string[] | null;
