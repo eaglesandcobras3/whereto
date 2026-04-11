@@ -23,7 +23,14 @@ import type { Metadata } from "next";
 type Props = { params: Promise<{ townSlug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-...
+  const { townSlug } = await params;
+  const town = await getTownBySlug(townSlug);
+  if (!town) return { title: "Town Guide" };
+  return {
+    title: `${town.name} Local Guide — WhereTo30A`,
+    description: `Discover the best restaurants, shops, and things to do in ${town.name}, FL. Curated local insights.`,
+  };
+}
 export default async function TownPage({ params }: Props) {
   const { townSlug } = await params;
   if (isReservedRootSlug(townSlug)) notFound();
