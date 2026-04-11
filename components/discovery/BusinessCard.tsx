@@ -20,24 +20,27 @@ export type BusinessCardBusiness = {
   listing_rating?: number | null;
   /** Optional image URL */
   image_url?: string | null;
+  /** Parent category name for icon selection */
+  category_name?: string;
 };
 
-type Rec = {
-  business_id: string;
-  rank: number;
-  headline: string;
-  explanation: string;
-  highlighted_tags: string[];
-  business: BusinessCardBusiness;
+const ICON_MAP: Record<string, string> = {
+  Restaurants: "restaurant",
+  Stores: "shopping_bag",
+  Services: "home_repair_service",
+  Activities: "sailing",
+  Events: "event",
+  Beyond: "explore",
 };
 
-type Props = {
-  rec: Rec;
-  variant?: "consumer" | "admin" | "compact";
-  onSave?: (id: string) => void;
-  onDirectionsClick?: (businessId: string) => void;
-  onWebsiteClick?: (businessId: string) => void;
-};
+function CategoryIcon({ category, className }: { category?: string; className?: string }) {
+  const iconName = category ? (ICON_MAP[category] || "storefront") : "storefront";
+  return (
+    <div className={`flex items-center justify-center bg-primary/5 text-primary/40 ${className}`}>
+      <span className="material-symbols-outlined !text-5xl">{iconName}</span>
+    </div>
+  );
+}
 
 export function BusinessCard({
   rec,
@@ -53,6 +56,8 @@ export function BusinessCard({
   const isCompact = variant === "compact";
   const slug = b.slug ?? b.id ?? rec.business_id;
 
+  const hasImage = !!b.image_url;
+
   return (
     <li
       className={`
@@ -63,15 +68,23 @@ export function BusinessCard({
         ${isCompact ? "min-w-[260px] max-w-[280px]" : "min-w-[280px] max-w-sm sm:min-w-[300px]"}
       `}
     >
-      {!isCompact ? (
-        b.slug ? (
-          <Link href={`/business/${b.slug}`} className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2">
-            <ListingThumbnail slug={slug} imageUrl={b.image_url} />
-          </Link>
-        ) : (
-          <ListingThumbnail slug={slug} imageUrl={b.image_url} />
-        )
-      ) : null}
+      {!isCompact && (
+        <div className="relative aspect-video overflow-hidden">
+          {b.slug ? (
+            <Link href={`/business/${b.slug}`} className="group block h-full w-full focus:outline-none">
+              {hasImage ? (
+                <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
+              ) : (
+                <CategoryIcon category={b.category_name} className="h-full w-full" />
+              )}
+            </Link>
+          ) : hasImage ? (
+            <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
+          ) : (
+            <CategoryIcon category={b.category_name} className="h-full w-full" />
+          )}
+        </div>
+      )}
 
       <div className={isCompact ? "space-y-3 p-4" : "space-y-3 p-5"}>
         <div className="flex flex-wrap items-start justify-between gap-2">

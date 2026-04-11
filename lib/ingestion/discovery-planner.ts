@@ -31,13 +31,19 @@ ${townList}
 INPUT CATEGORIES:
 ${catList}
 
-For each category, generate 10-15 highly specific search tasks that will maximize our coverage of unique businesses in this area.
-Avoid generic searches that will just return the same results. Use subcategories, intent-based searches (e.g. "brunch", "beachfront"), and synonyms.
+For each input category, generate 10-15 highly specific search tasks. 
+Use subcategories, intent-based searches (e.g. "brunch", "beachfront"), and synonyms.
 
-Return a JSON object with a "tasks" array. Each task must have:
-- "query": The exact search string (e.g. "fine dining in Rosemary Beach")
-- "strategy": One of "town_expansion", "subcategory", "synonym", "intent"
-- "town_id": The numeric ID of the town this task covers.
+Return a JSON object with this exact structure:
+{
+  "tasks": [
+    {
+      "query": "exact search string",
+      "strategy": "town_expansion | subcategory | synonym | intent",
+      "town_id": number
+    }
+  ]
+}
 
 JSON ONLY. No prose.
   `;

@@ -35,6 +35,7 @@ export function Navbar({
 }: Props) {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
+  const [internalSearch, setInternalSearch] = useState("");
   const isHome = pathname === "/";
   const isTowns =
     pathname === PRIMARY_REGION_HUB_PATH ||
@@ -48,6 +49,17 @@ export function Navbar({
       setUser(data.user);
     });
   }, []);
+
+  const internalSubmit = (e: React.FormEvent) => {
+    if (onSearchSubmit) {
+      onSearchSubmit(e);
+    } else {
+      e.preventDefault();
+      const q = searchValue || internalSearch;
+      if (!q.trim()) return;
+      window.location.href = `/search?q=${encodeURIComponent(q)}`;
+    }
+  };
 
   return (
     <header
@@ -73,9 +85,9 @@ export function Navbar({
         </Link>
 
         {/* Center: Search (optional) */}
-        {showSearch && onSearchChange && onSearchSubmit ? (
+        {showSearch ? (
           <form
-            onSubmit={onSearchSubmit}
+            onSubmit={internalSubmit}
             className="flex-1 max-w-xl hidden md:flex items-center gap-2"
           >
             <div className="relative flex-1">
@@ -94,8 +106,11 @@ export function Navbar({
               </svg>
               <input
                 type="text"
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
+                value={searchValue || internalSearch}
+                onChange={(e) => {
+                  if (onSearchChange) onSearchChange(e.target.value);
+                  else setInternalSearch(e.target.value);
+                }}
                 placeholder="Search places, restaurants, activities..."
                 className="w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] py-2.5 pl-10 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-premium-fast"
               />

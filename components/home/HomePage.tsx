@@ -248,15 +248,12 @@ export function HomePage({
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    void runSearch(q);
+    if (!q.trim()) return;
+    window.location.href = `/search?q=${encodeURIComponent(q)}`;
   }
 
   function onChangeInput(v: string) {
     setQ(v);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (v.trim().length >= 4) void runSearch(v);
-    }, 400);
   }
 
   async function shareResult() {
@@ -420,54 +417,32 @@ export function HomePage({
               </h1>
               <form
                 onSubmit={onSubmit}
-                className="group relative mx-auto w-full max-w-[800px] px-4"
+                className="mx-auto flex w-full max-w-[700px] gap-2 px-4"
               >
-                <input
-                  ref={heroInputRef}
-                  name="q"
-                  value={q}
-                  onChange={(e) => onChangeInput(e.target.value)}
-                  className="h-16 w-full rounded-full border-none bg-surface-container-highest px-8 text-lg text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/10"
-                  placeholder="e.g. A dinner with sunset views in Alys Beach"
-                  type="search"
-                  autoComplete="off"
-                />
+                <div className="relative flex-1">
+                  <MsIcon 
+                    name="search" 
+                    className="absolute left-5 top-1/2 -translate-y-1/2 text-primary/40" 
+                  />
+                  <input
+                    ref={heroInputRef}
+                    name="q"
+                    value={q}
+                    onChange={(e) => onChangeInput(e.target.value)}
+                    className="h-16 w-full rounded-2xl border-none bg-surface-container-highest pl-14 pr-8 text-lg text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/10"
+                    placeholder="Search anything on 30A..."
+                    type="search"
+                    autoComplete="off"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="absolute bottom-2 right-2 top-2 flex aspect-square items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-container disabled:opacity-60"
-                  aria-label="Search"
+                  className="h-16 rounded-2xl bg-primary px-8 font-bold text-on-primary transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
                 >
-                  <MsIcon name="arrow_forward" className="!text-xl" />
+                  Search
                 </button>
               </form>
-              <div
-                className="mt-10 flex flex-wrap justify-center gap-3 px-4"
-                role="group"
-                aria-label="Trip mood"
-              >
-                {MOOD_CHIPS.map(({ label, hint }) => {
-                  const on = activeMood === label;
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      data-mood={label.toLowerCase()}
-                      onClick={() => {
-                        setActiveMood(label);
-                        setQ(hint);
-                      }}
-                      className={
-                        on
-                          ? "rounded-full bg-primary px-6 py-2 text-sm font-medium text-on-primary transition-all"
-                          : "rounded-full bg-surface-container-low px-6 py-2 text-sm font-medium text-on-surface-variant transition-all hover:bg-surface-container-high"
-                      }
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
           </section>
         )}
@@ -522,200 +497,6 @@ export function HomePage({
               {err}
             </div>
           </div>
-        ) : null}
-
-        {data ? (
-          <section
-            id="section-search-results"
-            className="border-b border-surface-container-highest bg-surface-elevated py-16"
-          >
-            <div className="mx-auto max-w-screen-xl px-6">
-              <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-headline text-3xl font-extrabold text-primary">
-                    Results
-                  </h2>
-                  <p className="mt-1 text-sm text-on-surface-variant">
-                    {data.summary}
-                  </p>
-                </div>
-                {data.cache_id ? (
-                  <button
-                    type="button"
-                    onClick={() => void shareResult()}
-                    className="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-background px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-high"
-                  >
-                    Share
-                  </button>
-                ) : null}
-              </div>
-              {shareMsg ? (
-                <p className="mb-4 text-xs text-outline">{shareMsg}</p>
-              ) : null}
-              {data.cached ? (
-                <p className="mb-4 text-xs text-outline">Served from cache</p>
-              ) : null}
-              <ul className="grid gap-6 sm:grid-cols-2">
-                {data.recommendations.map((r) => {
-                  const b = r.business;
-                  const m = b.lat != null && b.lng != null;
-                  return (
-                    <li
-                      key={r.business_id}
-                      className="overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-elevated shadow-design-card"
-                    >
-                      {b.slug ? (
-                        <Link
-                          href={`/business/${b.slug}`}
-                          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        >
-                          <ListingThumbnail
-                            slug={b.slug}
-                            imageUrl={b.image_url}
-                            className="aspect-[5/4] min-h-[160px] rounded-none"
-                            rounded="none"
-                          />
-                        </Link>
-                      ) : (
-                        <ListingThumbnail
-                          slug={r.business_id}
-                          imageUrl={b.image_url}
-                          className="aspect-[5/4] min-h-[160px] rounded-none"
-                          rounded="none"
-                        />
-                      )}
-                      <div className="space-y-3 p-5 pt-4">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            {b.slug ? (
-                              <Link
-                                href={`/business/${b.slug}`}
-                                className="text-lg font-semibold text-on-surface transition-colors hover:text-primary"
-                              >
-                                {b.name ?? "Business"}
-                              </Link>
-                            ) : (
-                              <p className="text-lg font-semibold text-on-surface">
-                                {b.name ?? "Business"}
-                              </p>
-                            )}
-                            <p className="text-sm font-medium text-primary">
-                              {r.headline}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 gap-2">
-                            <SaveButton
-                              businessId={r.business_id}
-                              onSave={saveBusiness}
-                              size="sm"
-                            />
-                            <details className="relative">
-                              <summary className="cursor-pointer list-none rounded-lg border border-outline-variant/40 bg-surface-elevated p-2 text-on-surface-variant hover:bg-surface-container-low">
-                                <MsIcon name="more_vert" className="!text-lg" />
-                              </summary>
-                              <div className="absolute right-0 z-10 mt-1 w-52 rounded-xl border border-outline-variant/40 bg-surface-elevated py-1 shadow-lg">
-                                {m ? (
-                                  <a
-                                    href={`https://www.openstreetmap.org/?mlat=${b.lat}&mlon=${b.lng}#map=16/${b.lat}/${b.lng}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="block px-4 py-2 text-sm hover:bg-surface-container-low"
-                                    onClick={() =>
-                                      logClick(
-                                        r.business_id,
-                                        "directions",
-                                        data?.query_hash,
-                                      )
-                                    }
-                                  >
-                                    Directions
-                                  </a>
-                                ) : null}
-                                {b.website ? (
-                                  <a
-                                    href={b.website}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="block px-4 py-2 text-sm hover:bg-surface-container-low"
-                                    onClick={() =>
-                                      logClick(
-                                        r.business_id,
-                                        "website",
-                                        data?.query_hash,
-                                      )
-                                    }
-                                  >
-                                    Website
-                                  </a>
-                                ) : null}
-                                <button
-                                  type="button"
-                                  className="block w-full px-4 py-2 text-left text-sm hover:bg-surface-container-low"
-                                  onClick={() =>
-                                    void sendFeedback(
-                                      r.business_id,
-                                      "not_relevant",
-                                    )
-                                  }
-                                >
-                                  Not a good fit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="block w-full px-4 py-2 text-left text-sm hover:bg-surface-container-low"
-                                  onClick={() =>
-                                    void sendFeedback(
-                                      r.business_id,
-                                      "had_bad_experience",
-                                      "poor_service",
-                                    )
-                                  }
-                                >
-                                  Bad experience
-                                </button>
-                                <button
-                                  type="button"
-                                  className="block w-full px-4 py-2 text-left text-sm hover:bg-surface-container-low"
-                                  onClick={() =>
-                                    void sendFeedback(
-                                      r.business_id,
-                                      "hide_for_me",
-                                    )
-                                  }
-                                >
-                                  Don&apos;t show again
-                                </button>
-                              </div>
-                            </details>
-                          </div>
-                        </div>
-                        <p className="line-clamp-2 text-sm text-on-surface-variant">
-                          {r.explanation}
-                        </p>
-                        <TagPills
-                          tags={[
-                            ...(r.highlighted_tags ?? []),
-                            ...(b.tags ?? []),
-                          ].slice(0, 6)}
-                          colored
-                        />
-                        {b.slug ? (
-                          <p>
-                            <Link
-                              href={`/business/${b.slug}`}
-                              className="text-sm font-medium text-primary hover:underline"
-                            >
-                              View details
-                            </Link>
-                          </p>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </section>
         ) : null}
 
         {featureFlags["curator"] === true && (
