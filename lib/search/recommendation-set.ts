@@ -213,7 +213,25 @@ export type EnrichedRecommendationPayload = {
     headline: string;
     explanation: string;
     highlighted_tags: string[];
-    business: Record<string, unknown>;
+    business: {
+      id: string;
+      name: string;
+      slug?: string;
+      address?: string | null;
+      town_id?: number | null;
+      category_id?: number | null;
+      category_name?: string;
+      lat?: number;
+      lng?: number;
+      phone?: string | null;
+      website?: string | null;
+      price_level?: number | null;
+      listing_rating?: number | null;
+      listing_review_count?: number | null;
+      tags?: string[];
+      ai_summary?: string | null;
+      image_url?: string | null;
+    };
   }>;
   suggestions?: string[];
 };
@@ -313,20 +331,20 @@ export async function buildRecommendationSet(options: {
           business: b
             ? {
                 id: b.id,
-                name: b.name,
-                address: b.address,
+                name: b.name ?? "Unknown",
+                address: b.address ?? null,
                 town_id: b.town_id,
                 category_id: b.category_id,
                 lat: b.lat,
                 lng: b.lng,
-                phone: b.phone,
-                website: b.website,
-                price_level: b.price_level,
+                phone: b.phone ?? null,
+                website: b.website ?? null,
+                price_level: b.price_level ?? null,
                 slug: b.slug,
                 listing_rating: b.listing_rating,
                 listing_review_count: b.listing_review_count,
                 tags: b.tag_slugs,
-                ai_summary: b.ai_summary,
+                ai_summary: b.ai_summary ?? null,
                 category_name: b.category_name,
                 image_url: businessListingImageUrl(b.hero_image_url ?? null),
               }

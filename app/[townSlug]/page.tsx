@@ -89,9 +89,9 @@ export default async function TownPage({ params }: Props) {
 
         <div className="mx-auto max-w-7xl px-6 py-20 space-y-32 md:px-10">
           {/* Main sections from AI Curations */}
-          {expanded.topPicks?.recommendations?.length > 0 && (
-            <SectionBlock 
-              title="Signature Dining" 
+          {(expanded.topPicks?.recommendations?.length ?? 0) > 0 && expanded.topPicks && (
+            <SectionBlock
+              title="Signature Dining"
               subtitle={`From gourmet seafood to casual beach bites in ${town.name}.`}
             >
               <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-x-auto hide-scrollbar sm:grid">
@@ -102,9 +102,9 @@ export default async function TownPage({ params }: Props) {
             </SectionBlock>
           )}
 
-          {expanded.coffee?.recommendations?.length > 0 && (
-            <SectionBlock 
-              title="Coffee & Sweets" 
+          {(expanded.coffee?.recommendations?.length ?? 0) > 0 && expanded.coffee && (
+            <SectionBlock
+              title="Coffee & Sweets"
               subtitle="The best local roasts and afternoon treats."
             >
               <ul className="flex gap-6 overflow-x-auto pb-4 hide-scrollbar snap-x snap-mandatory">
