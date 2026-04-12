@@ -1,4 +1,5 @@
 ---
+id: "cb7bb87e-748a-4fc4-9505-1ebb8d334271"
 title: "Grayton Central"
 type: business
 entity_type: restaurant

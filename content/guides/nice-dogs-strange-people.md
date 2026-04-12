@@ -1,7 +1,7 @@
 ---
 title: "Nice Dogs, Strange People Sign"
-type: place
-entity_type: point_of_interest
+type: guide
+entity_type: guide
 slug: nice-dogs-strange-people-sign-grayton-beach
 status: published
 
@@ -11,9 +11,9 @@ town: grayton-beach
 state: florida
 country: usa
 
-# Place classification
+# Guide classification
 category: landmark
-place_type: cultural-landmark
+guide_type: editorial
 
 # Identity / positioning
 vibe: quirky

@@ -1,7 +1,7 @@
 ---
 title: "Grayton Beach State Park"
-type: place
-entity_type: point_of_interest
+type: beach
+entity_type: beach
 slug: grayton-beach-state-park
 status: published
 

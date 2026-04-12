@@ -1,4 +1,5 @@
 ---
+id: "e90cb7e1-b2ab-4cb4-9a3b-c1b6d3003347"
 title: "Chiringo"
 type: business
 entity_type: restaurant

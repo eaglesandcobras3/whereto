@@ -14,7 +14,7 @@ export async function getTownBySlug(slug: string) {
     const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("towns")
-      .select("id, name, slug, region_id")
+      .select("id, name, slug, region_id, pages(body_markdown)")
       .eq("slug", slug)
       .maybeSingle();
     return data as {
@@ -22,6 +22,7 @@ export async function getTownBySlug(slug: string) {
       name: string;
       slug: string;
       region_id: number | null;
+      pages?: { body_markdown: string } | { body_markdown: string }[];
     } | null;
   } catch {
     return null;
@@ -40,14 +41,18 @@ export type TownGuidePreview = {
   ai_budget_score: number | null;
   ai_must_see: string[] | null;
   ai_local_tips: string[] | null;
+  related_guides?: Array<{ title: string; slug: string }>;
 };
 
 export async function getTownGuidePreview(slug: string): Promise<TownGuidePreview | null> {
   try {
     const supabase = getServiceSupabase();
-    const { data } = await supabase
+    
+    // 1. Get town meta
+    const { data: town } = await supabase
       .from("towns")
       .select(`
+        id,
         ai_tagline,
         ai_description,
         ai_vibe,
@@ -62,7 +67,20 @@ export async function getTownGuidePreview(slug: string): Promise<TownGuidePrevie
       `)
       .eq("slug", slug)
       .maybeSingle();
-    return data as TownGuidePreview | null;
+      
+    if (!town) return null;
+
+    // 2. Get related guides
+    const { data: guides } = await supabase
+      .from("guides")
+      .select("title, slug")
+      .eq("primary_town_id", town.id)
+      .limit(5);
+
+    return {
+      ...town,
+      related_guides: guides ?? [],
+    } as TownGuidePreview;
   } catch {
     return null;
   }

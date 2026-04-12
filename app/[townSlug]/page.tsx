@@ -19,6 +19,7 @@ import { SectionBlock } from "@/components/discovery/SectionBlock";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { RegionHubView } from "@/components/region/RegionHubView";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ townSlug: string }> };
@@ -59,6 +60,7 @@ export default async function TownPage({ params }: Props) {
   ]);
 
   const descriptor = getTownDescriptor(town.slug);
+  const townPage = Array.isArray(town.pages) ? (town.pages[0] as { body_markdown: string } | undefined) : (town.pages as { body_markdown: string } | undefined);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -90,6 +92,12 @@ export default async function TownPage({ params }: Props) {
         </section>
 
         <div className="mx-auto max-w-7xl px-6 py-20 space-y-32 md:px-10">
+          {/* Rich Markdown Content */}
+          {townPage?.body_markdown && (
+            <section className="mx-auto max-w-4xl">
+              <MarkdownRenderer content={townPage.body_markdown} />
+            </section>
+          )}
           {/* Main sections from AI Curations */}
           {(expanded.topPicks?.recommendations?.length ?? 0) > 0 && expanded.topPicks && (
             <SectionBlock
@@ -232,6 +240,28 @@ export default async function TownPage({ params }: Props) {
                           </span>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Related Resources / Guides */}
+                  {guidePreview.related_guides && guidePreview.related_guides.length > 0 && (
+                    <div className="mt-8 pt-8 border-t border-[var(--color-border)]">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-4">
+                        Local Resources
+                      </h3>
+                      <ul className="grid grid-cols-1 gap-3">
+                        {guidePreview.related_guides.map((g) => (
+                          <li key={g.slug}>
+                            <Link 
+                              href={`/guide/${g.slug}`}
+                              className="flex items-center gap-2 text-sm font-bold text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors group"
+                            >
+                              <span className="material-symbols-outlined !text-base text-zinc-300 group-hover:text-[var(--color-primary)]">description</span>
+                              {g.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>

@@ -13,7 +13,7 @@ country: usa
 
 # Guide classification
 category: beach-access
-guide_type: permits-and-parking
+guide_type: editorial
 
 # SEO
 seo_title: "Grayton Beach Permit (2026) | Parking & Beach Driving Rules on 30A"

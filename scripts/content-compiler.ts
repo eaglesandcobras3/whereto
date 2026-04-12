@@ -53,6 +53,7 @@ const TYPE_FOLDERS: Record<string, string> = {
 
 // Types
 interface FrontmatterData {
+  id?: string;
   title: string;
   type: "town" | "business" | "beach" | "area" | "guide" | "seasonal";
   entity_type: string;
@@ -124,6 +125,38 @@ const WIKI_LINK_REGEX = /\[\[([^\]]+)\]\]/g;
  */
 function hashFile(content: string): string {
   return crypto.createHash("md5").update(content).digest("hex");
+}
+
+/**
+ * Inject ID into markdown frontmatter if it was found in DB but missing in file
+ */
+function injectIdToFile(filePath: string, id: string): void {
+  try {
+    const fileContent = fs.readFileSync(filePath, "utf-8");
+    const lines = fileContent.split("\n");
+    
+    // Find the second ---
+    let dashCount = 0;
+    let insertIndex = -1;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim() === "---") {
+        dashCount++;
+        if (dashCount === 1) {
+          insertIndex = i + 1;
+          break;
+        }
+      }
+    }
+    
+    if (insertIndex !== -1) {
+      lines.splice(insertIndex, 0, `id: "${id}"`);
+      fs.writeFileSync(filePath, lines.join("\n"));
+      console.log(`  ✎ Injected id: ${id} into ${path.basename(filePath)}`);
+    }
+  } catch (error) {
+    console.error(`  ✗ Failed to inject ID into ${filePath}`, error);
+  }
 }
 
 /**
@@ -221,12 +254,33 @@ async function syncTown(parsed: ParsedContent): Promise<number | null> {
   const { frontmatter, content } = parsed;
   const regionId = await getRegionId(frontmatter.region);
 
+  // Try to find existing town by name to prevent duplicates
+  let activeId = frontmatter.id;
+  let activeSlug = frontmatter.slug;
+
+  const { data: existing } = await supabase
+    .from("towns")
+    .select("id, slug")
+    .eq("name", frontmatter.title)
+    .maybeSingle();
+  
+  if (existing) {
+    activeId = existing.id.toString();
+    activeSlug = existing.slug;
+    
+    // Write ID back to frontmatter if missing
+    if (!frontmatter.id) {
+      injectIdToFile(parsed.filePath, activeId);
+    }
+  }
+
   const { data, error } = await supabase
     .from("towns")
     .upsert(
       {
+        ...(activeId ? { id: parseInt(activeId) } : {}),
         name: frontmatter.title,
-        slug: frontmatter.slug,
+        slug: activeSlug,
         region_id: regionId,
         center_lat: frontmatter.latitude || frontmatter.map_center?.lat || frontmatter.map_location?.lat || 30.3, 
         center_lng: frontmatter.longitude || frontmatter.map_center?.lng || frontmatter.map_location?.lng || -86.1,
@@ -239,7 +293,7 @@ async function syncTown(parsed: ParsedContent): Promise<number | null> {
         ai_budget_score: frontmatter.budget_score,
         ai_vibe: frontmatter.tags,
       },
-      { onConflict: "slug" }
+      { onConflict: activeId ? "id" : "slug" }
     )
     .select("id")
     .single();
@@ -258,12 +312,36 @@ async function syncBusiness(parsed: ParsedContent): Promise<string | null> {
   const { frontmatter, content } = parsed;
   const townId = await getTownId(frontmatter.town);
 
+  // 1. Resolve ID and Slug
+  let activeId = frontmatter.id;
+  let activeSlug = frontmatter.slug;
+
+  if (townId) {
+    const { data: existing } = await supabase
+      .from("businesses")
+      .select("id, slug")
+      .eq("name", frontmatter.title)
+      .eq("town_id", townId)
+      .maybeSingle();
+    
+    if (existing) {
+      activeId = existing.id;
+      activeSlug = existing.slug;
+
+      // Write ID back to frontmatter if missing
+      if (!frontmatter.id) {
+        injectIdToFile(parsed.filePath, activeId);
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from("businesses")
     .upsert(
       {
+        ...(activeId ? { id: activeId } : {}),
         name: frontmatter.title,
-        slug: frontmatter.slug,
+        slug: activeSlug,
         town_id: townId,
         address: frontmatter.address,
         phone: frontmatter.phone,
@@ -275,7 +353,7 @@ async function syncBusiness(parsed: ParsedContent): Promise<string | null> {
         hero_image_url: frontmatter.hero_image,
         ai_summary: frontmatter.seo_description || content.slice(0, 200),
       },
-      { onConflict: "slug" }
+      { onConflict: activeId ? "id" : "slug" }
     )
     .select("id")
     .single();
