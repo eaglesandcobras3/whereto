@@ -11,6 +11,7 @@ import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { OpenStreetMap } from "@/components/OpenStreetMap";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -345,29 +346,14 @@ export default async function BusinessPage({ params }: Props) {
 
             {/* Sidebar */}
             <div className="space-y-8">
-              {/* Google Map */}
+              {/* Map */}
               {hasCoords && (
-                <div className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-premium-sm">
-                  <iframe
-                    title="Map"
-                    width="100%"
-                    height="300"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${b.lat},${b.lng}&zoom=15`}
-                  />
-                  <div className="p-4">
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block w-full rounded-full bg-zinc-900 py-3 text-center text-sm font-bold text-white hover:bg-zinc-800 transition-all"
-                    >
-                      Get Directions
-                    </a>
-                  </div>
-                </div>
+                <OpenStreetMap 
+                  lat={b.lat as number} 
+                  lng={b.lng as number} 
+                  title={b.name as string}
+                  className="h-[350px]"
+                />
               )}
 
               {/* Website Link (Simplified Contact) */}

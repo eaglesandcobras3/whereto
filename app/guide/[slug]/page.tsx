@@ -11,7 +11,8 @@ type Props = { params: Promise<{ slug: string }> };
 async function loadGuide(slug: string) {
   try {
     const supabase = getServiceSupabase();
-    const { data } = await supabase
+    // 1. Fetch Page
+    const { data: page, error: pageErr } = await supabase
       .from("pages")
       .select(`
         title,
@@ -20,12 +21,26 @@ async function loadGuide(slug: string) {
         seo_description,
         og_image_url,
         page_type,
-        entities(id, title, primary_town_id, towns(name, slug))
+        entity_id
       `)
       .eq("slug", slug)
       .eq("status", "published")
       .maybeSingle();
-    return data;
+    
+    if (pageErr || !page) return null;
+
+    // 2. Fetch Entity context if available
+    let entityData = null;
+    if (page.entity_id) {
+      const { data: entity } = await supabase
+        .from("entities")
+        .select(`id, title, primary_town_id, towns(name, slug)`)
+        .eq("id", page.entity_id)
+        .maybeSingle();
+      entityData = entity;
+    }
+
+    return { ...page, entities: entityData };
   } catch {
     return null;
   }
