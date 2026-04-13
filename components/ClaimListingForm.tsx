@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 type Props = {
   businessId: string;
@@ -22,9 +23,9 @@ export function ClaimListingForm({
   if (!userId) {
     return (
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-        <a href="/login" className="font-medium text-[var(--accent)] hover:underline">
+        <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
           Sign in
-        </a>{" "}
+        </Link>{" "}
         to submit a listing ownership request (reviewed by operators).
       </div>
     );

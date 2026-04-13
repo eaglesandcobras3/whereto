@@ -112,7 +112,7 @@ export default async function CategoriesAdminPage() {
                       <td className="px-4 py-3">
                         <div className="font-medium text-zinc-900">{q.suggested_slug}</div>
                         <div className="text-xs text-zinc-500">
-                          {(q.payload_json as any)?.normalized_category || "—"}
+                          {(q.payload_json as { normalized_category?: string } | null)?.normalized_category || "—"}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-zinc-600">

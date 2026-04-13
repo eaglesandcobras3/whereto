@@ -7,11 +7,15 @@ function countOr0(res: { count?: number | null; error?: { message?: string } | n
   return res.count ?? 0;
 }
 
+function getStaleBeforeDate() {
+  return new Date(Date.now() - 90 * 864e5).toISOString();
+}
+
 export default async function AdminHomePage() {
   await requireAdmin();
   const supabase = getServiceSupabase();
 
-  const staleBefore = new Date(Date.now() - 90 * 864e5).toISOString();
+  const staleBefore = getStaleBeforeDate();
 
   const [biz, jobs, cache, feedback, stale, claims, candidates, flags, featured] = await Promise.all([
     supabase.from("businesses").select("id", { count: "exact", head: true }),

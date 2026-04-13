@@ -3,6 +3,14 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { planDiscoveryAction } from "./actions";
 import Link from "next/link";
 
+interface CoverageStat {
+  parent_category_name: string;
+  completed_passes: number;
+  total_passes: number;
+  total_unique: number;
+  yield_ratio: number;
+}
+
 export default async function AdminDiscoveryPage() {
   await requireAdmin();
   const supabase = getServiceSupabase();
@@ -77,7 +85,7 @@ export default async function AdminDiscoveryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {(stats ?? []).map((s: any) => (
+                {(stats as unknown as CoverageStat[] ?? []).map((s) => (
                   <tr key={s.parent_category_name}>
                     <td className="px-4 py-3 font-medium text-zinc-900">{s.parent_category_name}</td>
                     <td className="px-4 py-3 text-zinc-600">

@@ -16,6 +16,7 @@ export type BusinessPayload = {
   tags?: string[];
   ai_summary?: string | null;
   image_url?: string | null;
+  hero_image_url?: string | null;
 };
 
 export type SearchResultPayload = {

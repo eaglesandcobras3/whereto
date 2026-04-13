@@ -5,10 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { nanoid } from "nanoid";
-import { SaveButton } from "@/components/discovery/SaveButton";
-import { TagPills } from "@/components/discovery/TagPills";
-import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
+import { BusinessPayload } from "@/lib/search/types";
 
 type Rec = {
   business_id: string;
@@ -120,14 +118,14 @@ const CURATOR_CARDS = [
   },
 ] as const;
 
-const MOOD_CHIPS = [
+const MOOD_CHIPS_DATA = [
   { label: "Relaxed" as const, hint: "relaxed day on 30A" },
   { label: "Active" as const, hint: "active outdoor things to do on 30A" },
   { label: "Family" as const, hint: "family-friendly activities on 30A" },
   { label: "Romantic" as const, hint: "romantic dinner sunset views 30A" },
 ] as const;
 
-type Mood = (typeof MOOD_CHIPS)[number]["label"];
+type Mood = (typeof MOOD_CHIPS_DATA)[number]["label"];
 
 function MsIcon({
   name,
@@ -179,21 +177,23 @@ function DesignImg({
   );
 }
 
+type Props = {
+  featureFlags?: Record<string, boolean>;
+  featuredBusinesses?: (BusinessPayload & { 
+    featured_title?: string | null; 
+    featured_description?: string | null; 
+    badge?: string | null;
+  })[];
+};
+
 export function HomePage({ 
   featureFlags = {}, 
   featuredBusinesses = [] 
-}: { 
-  featureFlags?: Record<string, boolean>;
-  featuredBusinesses?: any[];
-}) {
+}: Props) {
   const searchParams = useSearchParams();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<SearchJson | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [shareMsg, setShareMsg] = useState<string | null>(null);
-  const [activeMood, setActiveMood] = useState<Mood | null>("Relaxed");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heroInputRef = useRef<HTMLInputElement>(null);
 
   const logImpressions = useCallback(async (payload: SearchJson) => {
@@ -212,39 +212,14 @@ export function HomePage({
     });
   }, []);
 
-  const runSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim()) return;
-      setLoading(true);
-      setErr(null);
-      setShareMsg(null);
-      try {
-        const res = await fetch("/api/search", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
-        });
-        const j = (await res.json()) as SearchJson & { error?: string };
-        if (!res.ok) throw new Error(j.error ?? "Search failed");
-        setData(j);
-        void logImpressions(j);
-      } catch (e) {
-        setData(null);
-        setErr(e instanceof Error ? e.message : "Error");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [logImpressions],
-  );
-
   useEffect(() => {
     const initial = searchParams.get("q");
     if (initial?.trim()) {
       setQ(initial);
-      void runSearch(initial);
+      // Redirect to search page if there's a query
+      window.location.href = `/search?q=${encodeURIComponent(initial)}`;
     }
-  }, [searchParams, runSearch]);
+  }, [searchParams]);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -254,85 +229,6 @@ export function HomePage({
 
   function onChangeInput(v: string) {
     setQ(v);
-  }
-
-  async function shareResult() {
-    if (!data?.cache_id) return;
-    const res = await fetch("/api/shares", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cache_id: data.cache_id }),
-    });
-    const j = (await res.json()) as { url?: string; error?: string };
-    if (!res.ok) {
-      setShareMsg(j.error ?? "Could not create share");
-      return;
-    }
-    const full = `${window.location.origin}${j.url}`;
-    await navigator.clipboard.writeText(full);
-    setShareMsg(`Link copied: ${full}`);
-    void fetch("/api/interactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        business_id: data.recommendations[0]?.business_id,
-        interaction_type: "share",
-        query_hash: data.query_hash,
-        session_id: sessionKey(),
-      }),
-    });
-  }
-
-  async function saveBusiness(id: string) {
-    const res = await fetch("/api/saves", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ business_id: id }),
-    });
-    if (res.status === 401) {
-      window.location.href = "/login";
-      return;
-    }
-    if (!res.ok) {
-      const j = await res.json();
-      alert(j.error ?? "Save failed");
-    }
-  }
-
-  function logClick(
-    businessId: string,
-    kind: "directions" | "website",
-    queryHash: string | undefined,
-  ) {
-    void fetch("/api/interactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        business_id: businessId,
-        interaction_type: "click",
-        query_hash: queryHash ?? null,
-        session_id: sessionKey(),
-        metadata: { kind },
-      }),
-    });
-  }
-
-  async function sendFeedback(
-    businessId: string,
-    type: string,
-    reason?: string,
-  ) {
-    await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        business_id: businessId,
-        feedback_type: type,
-        feedback_reason: reason ?? null,
-        query_context: data?.query ?? null,
-        session_id: sessionKey(),
-      }),
-    });
   }
 
   function scrollToHero() {

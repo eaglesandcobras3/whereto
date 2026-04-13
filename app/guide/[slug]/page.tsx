@@ -68,8 +68,8 @@ export default async function GuidePage({ params }: Props) {
   
   if (!page) notFound();
 
-  const entity = page.entities as any;
-  const town = entity?.towns as { name: string; slug: string } | null;
+  const entity = page.entities as { towns: { name: string; slug: string } | null } | null;
+  const town = entity?.towns;
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">

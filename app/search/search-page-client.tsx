@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { SearchBar } from "@/components/discovery/SearchBar";
 import { BusinessCard } from "@/components/discovery/BusinessCard";
+import { OpenStreetMap } from "@/components/OpenStreetMap";
 import type { SearchResultPayload } from "@/lib/search/types";
 
 type Props = {
@@ -142,36 +143,23 @@ export function SearchPageClient({ initialQuery, results, townName, footer }: Pr
             {footer}
           </div>
 
-          {/* Map Side (Placeholder) */}
-          <div className="sticky top-[137px] hidden h-[calc(100vh-137px)] flex-1 overflow-hidden lg:block bg-[var(--color-surface-container-low)]">
-            <div className="relative h-full w-full">
-              {/* Map background pattern */}
-              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, var(--color-primary) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-              
-              <div className="flex h-full w-full flex-col items-center justify-center space-y-4 p-12 text-center">
-                <div className="rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-8 shadow-premium-lg">
-                  <span className="material-symbols-outlined mb-4 !text-4xl text-[var(--color-primary)]">map</span>
-                  <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Interactive Map</h3>
-                  <p className="mt-2 text-sm text-[var(--color-text-secondary)] max-w-xs">
-                    View these {results.recommendations.length} places on our immersive coastal map.
-                  </p>
-                  <button className="mt-6 w-full rounded-full bg-[var(--color-primary)] py-3 text-sm font-bold text-white hover:opacity-90">
-                    Enable Map View
-                  </button>
+          {/* Map Side */}
+          <div className="sticky top-[137px] hidden h-[calc(100vh-137px)] flex-1 overflow-hidden lg:block border-l border-[var(--color-border-strong)]">
+            {results.recommendations.length > 0 ? (
+              <OpenStreetMap 
+                lat={results.recommendations[0].business.lat ?? 30.3249} 
+                lng={results.recommendations[0].business.lng ?? -86.1560}
+                className="h-full rounded-none border-none shadow-none"
+                title="Search Results Map"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-[var(--color-surface-container-low)] text-[var(--color-text-tertiary)]">
+                <div className="text-center p-8">
+                  <span className="material-symbols-outlined !text-6xl opacity-20 mb-4">map</span>
+                  <p className="text-sm font-medium">No results to show on map</p>
                 </div>
               </div>
-
-              {/* Mock map pins */}
-              <div className="absolute left-[30%] top-[40%] rounded-full bg-[var(--color-primary)] p-1.5 shadow-premium-md">
-                <div className="h-2 w-2 rounded-full bg-white" />
-              </div>
-              <div className="absolute left-[50%] top-[25%] rounded-full bg-[var(--color-primary)] p-1.5 shadow-premium-md">
-                <div className="h-2 w-2 rounded-full bg-white" />
-              </div>
-              <div className="absolute left-[65%] top-[60%] rounded-full bg-[var(--color-primary)] p-1.5 shadow-premium-md">
-                <div className="h-2 w-2 rounded-full bg-white" />
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </main>

@@ -223,7 +223,7 @@ export function AddBusinessForm({
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="">No badge</option>
-            <option value="EDITOR'S PICK">Editor's Pick</option>
+            <option value="EDITOR'S PICK">Editor&apos;s Pick</option>
             <option value="LOCAL FAVORITE">Local Favorite</option>
             <option value="BEST VALUE">Best Value</option>
             <option value="ROMANTIC">Romantic</option>

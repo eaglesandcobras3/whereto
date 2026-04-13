@@ -38,15 +38,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (stored && ["light", "dark", "system"].includes(stored)) {
-      setThemeState(stored);
-    }
-    setMounted(true);
+    queueMicrotask(() => {
+      if (stored && ["light", "dark", "system"].includes(stored)) {
+        setThemeState(stored);
+      }
+      setMounted(true);
+    });
   }, []);
 
   useEffect(() => {
     applyLightDocumentClass();
-    setResolvedTheme("light");
+    queueMicrotask(() => {
+      setResolvedTheme("light");
+    });
   }, [theme]);
 
   useEffect(() => {

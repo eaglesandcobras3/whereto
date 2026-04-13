@@ -1,9 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import Image from "next/image";
 
 type Row = { id: number; name: string; slug?: string; category?: string };
+
+export type BusinessImage = {
+  id: string;
+  public_url: string;
+  image_type: string;
+  attribution_text?: string | null;
+};
 
 export function BusinessEditForm({
   businessId,
@@ -24,7 +31,7 @@ export function BusinessEditForm({
   categories: Row[];
   tags: Row[];
   selectedTagIds: Set<string>;
-  businessImages: any[];
+  businessImages: BusinessImage[];
   updateAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
   addImageAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
   deleteImageAction: (imageId: string) => Promise<{ error?: string; ok?: boolean }>;

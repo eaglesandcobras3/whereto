@@ -114,7 +114,7 @@ export default async function GuidePage() {
               30A Florida Vacation Guide
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-white/90">
-              Your insider's guide to the Emerald Coast's most beautiful beach
+              Your insider&apos;s guide to the Emerald Coast&apos;s most beautiful beach
               communities. From Inlet Beach to Rosemary Beach, discover the
               magic of South Walton.
             </p>
@@ -170,8 +170,8 @@ export default async function GuidePage() {
                 Highway 30A
               </strong>{" "}
               is a scenic coastal road that runs for 24 miles along the Gulf of
-              Mexico in South Walton County, Florida. Often called the "Emerald
-              Coast" for its stunning turquoise waters and sugar-white sand
+              Mexico in South Walton County, Florida. Often called the &ldquo;Emerald
+              Coast&rdquo; for its stunning turquoise waters and sugar-white sand
               beaches, 30A has become one of the most sought-after vacation
               destinations in the United States.
             </p>
@@ -179,11 +179,11 @@ export default async function GuidePage() {
               The 30A corridor is home to a collection of unique beach
               communities, each with its own distinct personality. From the
               European elegance of Rosemary Beach to the bohemian spirit of
-              Grayton Beach, there's a perfect town for every type of traveler.
+              Grayton Beach, there&apos;s a perfect town for every type of traveler.
             </p>
             <p>
-              Whether you're planning a romantic getaway, a family vacation, or
-              a girls' trip, this guide will help you discover the best of 30A —
+              Whether you&apos;re planning a romantic getaway, a family vacation, or
+              a girls&apos; trip, this guide will help you discover the best of 30A &mdash;
               from hidden local restaurants to the most photogenic spots along
               the coast.
             </p>
@@ -234,7 +234,7 @@ export default async function GuidePage() {
                       </p>
                     ) : (
                       <p className="text-sm text-[var(--color-text-secondary)]">
-                        Discover the charm of {town.name} on Florida's Emerald
+                        Discover the charm of {town.name} on Florida&apos;s Emerald
                         Coast.
                       </p>
                     )}
@@ -435,7 +435,7 @@ export default async function GuidePage() {
               Ready to Explore?
             </h2>
             <p className="mt-4 text-lg text-white/80">
-              Use our AI-powered search to find exactly what you're looking for
+              Use our AI-powered search to find exactly what you&apos;re looking for
               on 30A.
             </p>
             <Link

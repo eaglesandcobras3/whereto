@@ -132,14 +132,14 @@ export default async function FeaturedPage() {
           <div>• Featured business picks with badges</div>
           <div>• Featured category highlights</div>
           <div>• Town spotlight sections</div>
-          <div>• Curated collections (e.g., "Date Night on 30A")</div>
+          <div>• Curated collections (e.g., &ldquo;Date Night on 30A&rdquo;)</div>
         </div>
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
         <p className="text-sm text-amber-800">
           <strong>Note:</strong> This creates/updates records in a <code>featured_content</code> table.
-          Make sure to run the migration first if the table doesn't exist.
+          Make sure to run the migration first if the table doesn&apos;t exist.
         </p>
       </div>
     </div>

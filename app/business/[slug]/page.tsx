@@ -106,14 +106,6 @@ function ScoreBadge({ score, label }: { score: number | null; label: string }) {
   );
 }
 
-function InfoPill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
-      {children}
-    </span>
-  );
-}
-
 export default async function BusinessPage({ params }: Props) {
   const { slug } = await params;
   const b = await loadBusiness(slug);
@@ -150,11 +142,9 @@ export default async function BusinessPage({ params }: Props) {
   const waitTime = b.ai_wait_time as string | null;
   const goodFor = b.ai_good_for as string[] | null;
   const notIdealFor = b.ai_not_ideal_for as string[] | null;
-  const pairsWith = b.ai_pairs_with as string[] | null;
   const oneLiner = b.ai_one_liner as string | null;
   const localTip = b.ai_local_tip as string | null;
   const highlights = b.ai_highlights as string[] | null;
-  const nearbyContext = b.ai_nearby_context as string | null;
   const familyScore = b.ai_family_score as number | null;
   const dateScore = b.ai_date_score as number | null;
   const valueScore = b.ai_value_score as number | null;
@@ -255,8 +245,8 @@ export default async function BusinessPage({ params }: Props) {
               ) : null}
 
               {/* Full Markdown Content (from Pages table) */}
-              {(b.pages as any)?.body_markdown ? (
-                <MarkdownRenderer content={(b.pages as any).body_markdown} />
+              {(b.pages as { body_markdown?: string } | null)?.body_markdown ? (
+                <MarkdownRenderer content={(b.pages as { body_markdown?: string }).body_markdown!} />
               ) : (
                 /* Fallback to simple description if no rich page exists */
                 b.ai_summary && (

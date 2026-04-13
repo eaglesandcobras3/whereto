@@ -2,12 +2,17 @@ import { Suspense } from "react";
 import { HomePage } from "@/components/home/HomePage";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import type { BusinessPayload } from "@/lib/search/types";
 
 export default async function Home() {
   const flags = await getAllFeatureFlags();
   const supabase = getServiceSupabase();
 
-  let featuredBusinesses: any[] = [];
+  let featuredBusinesses: (BusinessPayload & { 
+    featured_title?: string | null; 
+    featured_description?: string | null; 
+    badge?: string | null;
+  })[] = [];
   if (flags["featured_business"]) {
     // First try to get from featured_content table
     const { data: featured } = await supabase
@@ -38,7 +43,7 @@ export default async function Home() {
             badge: f.badge,
           };
         })
-        .filter(Boolean);
+        .filter((x): x is NonNullable<typeof x> => x !== null);
     }
 
     // Fallback: if no featured content, get top businesses by score

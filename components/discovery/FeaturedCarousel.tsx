@@ -29,25 +29,23 @@ export function FeaturedCarousel({
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  if (!businesses.length) return null;
-
-  function updateScrollState() {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    setCanScrollLeft(el.scrollLeft > 10);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
-
-    // Calculate active index for dots
-    const cardWidth = el.querySelector("li")?.offsetWidth ?? 300;
-    const gap = 20; // gap-5
-    const index = Math.round(el.scrollLeft / (cardWidth + gap));
-    setActiveIndex(Math.min(index, businesses.length - 1));
-  }
-
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+
+    function updateScrollState() {
+      const el = scrollRef.current;
+      if (!el) return;
+
+      setCanScrollLeft(el.scrollLeft > 10);
+      setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+
+      // Calculate active index for dots
+      const cardWidth = el.querySelector("li")?.offsetWidth ?? 300;
+      const gap = 20; // gap-5
+      const index = Math.round(el.scrollLeft / (cardWidth + gap));
+      setActiveIndex(Math.min(index, businesses.length - 1));
+    }
 
     updateScrollState();
     el.addEventListener("scroll", updateScrollState, { passive: true });
@@ -57,7 +55,9 @@ export function FeaturedCarousel({
       el.removeEventListener("scroll", updateScrollState);
       window.removeEventListener("resize", updateScrollState);
     };
-  }, []);
+  }, [businesses.length]);
+
+  if (!businesses.length) return null;
 
   function scroll(direction: "left" | "right") {
     const el = scrollRef.current;

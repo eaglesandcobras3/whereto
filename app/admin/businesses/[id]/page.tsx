@@ -10,7 +10,7 @@ import {
   deleteBusinessImageAction,
   deleteBusinessAction,
 } from "@/app/admin/businesses/actions";
-import { BusinessEditForm } from "@/app/admin/businesses/edit-form";
+import { BusinessEditForm, BusinessImage } from "@/app/admin/businesses/edit-form";
 
 export default async function AdminBusinessEditPage({
   params,
@@ -67,7 +67,7 @@ export default async function AdminBusinessEditPage({
     .eq("business_id", id);
 
   const selectedTagIds = new Set((bt ?? []).map((r) => String(r.tag_id)));
-  const businessImages = (images ?? []) as any[];
+  const businessImages = (images ?? []) as BusinessImage[];
 
   return (
     <div className="space-y-6">

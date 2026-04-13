@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "tailwindcss/typography";
+@plugin "@tailwindcss/typography";
 
 /* ==========================================================================
    Design System: WhereTo30A

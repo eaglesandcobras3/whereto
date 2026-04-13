@@ -37,9 +37,6 @@ export default async function TownPage({ params }: Props) {
   const { townSlug } = await params;
   if (isReservedRootSlug(townSlug)) notFound();
 
-  const flags = await getAllFeatureFlags();
-  const supabase = getServiceSupabase();
-
   // Check if this is a region
   const region = await getRegionBySlug(townSlug);
   if (region) {

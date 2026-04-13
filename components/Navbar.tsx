@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
+import type { User } from "@supabase/supabase-js";
 
 type Props = {
   /** Show compact variant (no tagline, smaller padding) */
@@ -34,7 +35,7 @@ export function Navbar({
   searchLoading,
 }: Props) {
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [internalSearch, setInternalSearch] = useState("");
   const isHome = pathname === "/";
   const isGuide = pathname === "/guide" || pathname.startsWith("/guide/");

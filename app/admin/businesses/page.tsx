@@ -107,7 +107,12 @@ export default async function AdminBusinessesPage({
                   </td>
                   {flags["towns"] === true && (
                     <td className="px-4 py-3 text-zinc-600">
-                      {(b.towns as any)?.name ?? "—"}
+                      {(() => {
+                        const towns = b.towns as { name: string } | { name: string }[] | null;
+                        if (!towns) return "—";
+                        if (Array.isArray(towns)) return towns[0]?.name ?? "—";
+                        return towns.name;
+                      })()}
                     </td>
                   )}
                   <td className="px-4 py-3 text-zinc-600">{b.status as string}</td>
