@@ -1,23 +1,21 @@
 /**
- * Content Compiler (Inbox-based)
+ * Content Compiler (Status-based)
  *
- * Drop markdown files into /content/inbox and run this script.
- * Files are parsed, synced to Supabase, and moved to the correct folder.
+ * Only processes markdown files with status: NEW or status: UPDATED
+ * After successful sync, updates status to "published"
  *
  * Usage:
- *   npm run content:compile          # Process inbox + changed files
- *   npm run content:compile -- --all # Full recompile (all files)
+ *   npm run content:compile          # Process NEW/UPDATED files only
+ *   npm run content:compile -- --all # Force recompile all published files
  *
  * Workflow:
- *   1. Drop .md files into content/inbox/
+ *   1. Create/edit .md file, set status: NEW or status: UPDATED
  *   2. Run npm run content:compile
- *   3. Files are parsed, validated, synced to DB
- *   4. Files are moved to correct folder based on type
+ *   3. File syncs to DB, status changes to "published"
  */
 
 import * as fs from "fs";
 import * as path from "path";
-import * as crypto from "crypto";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const matter = require("gray-matter");
 import { createClient } from "@supabase/supabase-js";
@@ -39,8 +37,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Paths
 const CONTENT_DIR = path.join(process.cwd(), "content");
-const INBOX_DIR = path.join(CONTENT_DIR, "inbox");
-const PROCESSED_MANIFEST = path.join(CONTENT_DIR, ".processed.json");
 
 // Type to folder mapping
 const TYPE_FOLDERS: Record<string, string> = {
@@ -52,6 +48,9 @@ const TYPE_FOLDERS: Record<string, string> = {
   seasonal: "seasonal",
 };
 
+// Statuses that trigger processing
+const PROCESS_STATUSES = ["NEW", "UPDATED", "new", "updated"];
+
 // Types
 interface FrontmatterData {
   id?: string;
@@ -59,30 +58,24 @@ interface FrontmatterData {
   type: "town" | "business" | "beach" | "area" | "guide" | "seasonal";
   entity_type: string;
   slug: string;
-  status: "draft" | "published" | "archived";
+  status: string;
   seo_title?: string;
   seo_description?: string;
   seo_keywords?: string[];
   town?: string;
   area?: string;
   region?: string;
-  state?: string;
-  country?: string;
   tags?: string[];
   categories?: string[];
-  search_intent?: string[];
   entities?: Array<{ type: string; slug: string; relationship: string }>;
   related_entities?: string[];
   related_pages?: string[];
   featured?: boolean;
   hero_image?: string;
-  gallery?: string[];
   map_center?: { lat: number; lng: number };
   map_location?: { lat: number; lng: number };
   latitude?: number;
   longitude?: number;
-  reading_time?: number;
-  last_updated?: string;
   guide_type?: string;
   season?: string;
   price_range?: string;
@@ -103,103 +96,45 @@ interface ParsedContent {
   frontmatter: FrontmatterData;
   content: string;
   filePath: string;
-  hash: string;
-  links: string[];
-}
-
-interface ProcessedManifest {
-  files: Record<string, { hash: string; processedAt: string }>;
+  rawContent: string;
 }
 
 interface CompileStats {
+  scanned: number;
   processed: number;
   skipped: number;
-  moved: number;
   errors: string[];
 }
 
-// Regex for wiki-style links
-const WIKI_LINK_REGEX = /\[\[([^\]]+)\]\]/g;
-
 /**
- * Calculate file hash for change detection
+ * Update status in the markdown file from NEW/UPDATED to published
  */
-function hashFile(content: string): string {
-  return crypto.createHash("md5").update(content).digest("hex");
-}
-
-/**
- * Inject ID into markdown frontmatter if it was found in DB but missing in file
- */
-function injectIdToFile(filePath: string, id: string): void {
+function updateStatusInFile(filePath: string, newStatus: string = "published"): void {
   try {
     const fileContent = fs.readFileSync(filePath, "utf-8");
-    const lines = fileContent.split("\n");
-    
-    // Find the second ---
-    let dashCount = 0;
-    let insertIndex = -1;
-    
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim() === "---") {
-        dashCount++;
-        if (dashCount === 1) {
-          insertIndex = i + 1;
-          break;
-        }
-      }
-    }
-    
-    if (insertIndex !== -1) {
-      lines.splice(insertIndex, 0, `id: "${id}"`);
-      fs.writeFileSync(filePath, lines.join("\n"));
-      console.log(`  ✎ Injected id: ${id} into ${path.basename(filePath)}`);
-    }
+    // Replace status line - handles both NEW and UPDATED (case insensitive)
+    const updated = fileContent.replace(
+      /^status:\s*(NEW|UPDATED|new|updated)\s*$/m,
+      `status: ${newStatus}`
+    );
+    fs.writeFileSync(filePath, updated);
   } catch (error) {
-    console.error(`  ✗ Failed to inject ID into ${filePath}`, error);
+    console.error(`  ✗ Failed to update status in ${filePath}`, error);
   }
 }
 
 /**
- * Load processed manifest
- */
-function loadManifest(): ProcessedManifest {
-  try {
-    if (fs.existsSync(PROCESSED_MANIFEST)) {
-      return JSON.parse(fs.readFileSync(PROCESSED_MANIFEST, "utf-8"));
-    }
-  } catch {}
-  return { files: {} };
-}
-
-/**
- * Save processed manifest
- */
-function saveManifest(manifest: ProcessedManifest): void {
-  fs.writeFileSync(PROCESSED_MANIFEST, JSON.stringify(manifest, null, 2));
-}
-
-/**
- * Parse a markdown file
+ * Parse a markdown file and check if it needs processing
  */
 function parseMarkdownFile(filePath: string): ParsedContent | null {
   try {
-    const fileContent = fs.readFileSync(filePath, "utf-8");
-    const { data, content } = matter(fileContent);
-
-    // Extract wiki-style links
-    const links: string[] = [];
-    let match;
-    while ((match = WIKI_LINK_REGEX.exec(content)) !== null) {
-      links.push(match[1]);
-    }
-
+    const rawContent = fs.readFileSync(filePath, "utf-8");
+    const { data, content } = matter(rawContent);
     return {
       frontmatter: data as FrontmatterData,
       content,
       filePath,
-      hash: hashFile(fileContent),
-      links,
+      rawContent,
     };
   } catch (error) {
     console.error(`  ✗ Parse error: ${filePath}`, error);
@@ -208,22 +143,39 @@ function parseMarkdownFile(filePath: string): ParsedContent | null {
 }
 
 /**
- * Validate frontmatter has required fields
+ * Find all markdown files in content directories
  */
-function validateFrontmatter(fm: FrontmatterData, filePath: string): string[] {
-  const errors: string[] = [];
-  if (!fm.title) errors.push("Missing required field: title");
-  if (!fm.type) errors.push("Missing required field: type");
-  if (!fm.slug) errors.push("Missing required field: slug");
-  if (!fm.status) errors.push("Missing required field: status");
-  if (fm.type && !TYPE_FOLDERS[fm.type]) {
-    errors.push(`Unknown type: ${fm.type}. Must be one of: ${Object.keys(TYPE_FOLDERS).join(", ")}`);
+function findMarkdownFiles(): string[] {
+  const files: string[] = [];
+
+  for (const folder of Object.values(TYPE_FOLDERS)) {
+    const folderPath = path.join(CONTENT_DIR, folder);
+    if (!fs.existsSync(folderPath)) continue;
+
+    const entries = fs.readdirSync(folderPath);
+    for (const entry of entries) {
+      if (entry.endsWith(".md") && entry !== "README.md") {
+        files.push(path.join(folderPath, entry));
+      }
+    }
   }
-  return errors;
+
+  // Also check inbox
+  const inboxPath = path.join(CONTENT_DIR, "inbox");
+  if (fs.existsSync(inboxPath)) {
+    const entries = fs.readdirSync(inboxPath);
+    for (const entry of entries) {
+      if (entry.endsWith(".md")) {
+        files.push(path.join(inboxPath, entry));
+      }
+    }
+  }
+
+  return files;
 }
 
 /**
- * Get or create region ID
+ * Get region ID by slug
  */
 async function getRegionId(regionSlug: string | undefined): Promise<number | null> {
   if (!regionSlug) return null;
@@ -249,377 +201,208 @@ async function getTownId(townSlug: string | undefined): Promise<number | null> {
 }
 
 /**
- * Sync TOWN to existing towns table
+ * Sync TOWN to towns table
  */
-async function syncTown(parsed: ParsedContent): Promise<number | null> {
+async function syncTown(parsed: ParsedContent): Promise<boolean> {
   const { frontmatter, content } = parsed;
   const regionId = await getRegionId(frontmatter.region);
 
-  // Try to find existing town by name to prevent duplicates
-  let activeId = frontmatter.id;
-  let activeSlug = frontmatter.slug;
-
-  const { data: existing } = await supabase
-    .from("towns")
-    .select("id, slug")
-    .eq("name", frontmatter.title)
-    .maybeSingle();
-  
-  if (existing) {
-    activeId = existing.id.toString();
-    activeSlug = existing.slug;
-
-    // Write ID back to frontmatter if missing
-    if (!frontmatter.id && activeId) {
-      injectIdToFile(parsed.filePath, activeId);
-    }
-  }
-
-  const { data, error } = await supabase
-    .from("towns")
-    .upsert(
-      {
-        ...(activeId ? { id: parseInt(activeId) } : {}),
-        name: frontmatter.title,
-        slug: activeSlug,
-        region_id: regionId,
-        center_lat: frontmatter.latitude || frontmatter.map_center?.lat || frontmatter.map_location?.lat || 30.3, 
-        center_lng: frontmatter.longitude || frontmatter.map_center?.lng || frontmatter.map_location?.lng || -86.1,
-        search_radius_meters: 5000,
-        ai_tagline: frontmatter.seo_description?.slice(0, 100),
-        ai_description: content.slice(0, 500).replace(/[#*\[\]`]/g, ""),
-        ai_family_score: frontmatter.family_friendly_score,
-        ai_romance_score: frontmatter.romance_score,
-        ai_nightlife_score: frontmatter.nightlife_score,
-        ai_budget_score: frontmatter.budget_score,
-        ai_vibe: frontmatter.tags,
-      },
-      { onConflict: activeId ? "id" : "slug" }
-    )
-    .select("id")
-    .single();
+  const { error } = await supabase.from("towns").upsert(
+    {
+      name: frontmatter.title,
+      slug: frontmatter.slug,
+      region_id: regionId,
+      center_lat:
+        frontmatter.latitude ||
+        frontmatter.map_center?.lat ||
+        frontmatter.map_location?.lat ||
+        30.3,
+      center_lng:
+        frontmatter.longitude ||
+        frontmatter.map_center?.lng ||
+        frontmatter.map_location?.lng ||
+        -86.1,
+      search_radius_meters: 5000,
+      ai_tagline: frontmatter.seo_description?.slice(0, 100),
+      ai_description: content.slice(0, 500).replace(/[#*\[\]`]/g, ""),
+      ai_family_score: frontmatter.family_friendly_score,
+      ai_romance_score: frontmatter.romance_score,
+      ai_nightlife_score: frontmatter.nightlife_score,
+      ai_budget_score: frontmatter.budget_score,
+      ai_vibe: frontmatter.tags,
+    },
+    { onConflict: "slug" }
+  );
 
   if (error) {
     console.error(`  ✗ Town sync failed: ${error.message}`);
-    return null;
+    return false;
   }
-  return data?.id || null;
+  return true;
 }
 
 /**
- * Sync BUSINESS to existing businesses table
+ * Sync BUSINESS to businesses table
  */
-async function syncBusiness(parsed: ParsedContent): Promise<string | null> {
+async function syncBusiness(parsed: ParsedContent): Promise<boolean> {
   const { frontmatter, content } = parsed;
   const townId = await getTownId(frontmatter.town);
 
-  // 1. Resolve ID and Slug
-  let activeId = frontmatter.id;
-  let activeSlug = frontmatter.slug;
-
-  if (townId) {
-    const { data: existing } = await supabase
-      .from("businesses")
-      .select("id, slug")
-      .eq("name", frontmatter.title)
-      .eq("town_id", townId)
-      .maybeSingle();
-    
-    if (existing) {
-      activeId = existing.id;
-      activeSlug = existing.slug;
-
-      // Write ID back to frontmatter if missing
-      if (!frontmatter.id && activeId) {
-        injectIdToFile(parsed.filePath, activeId);
-      }
-    }
-  }
-
-  const { data, error } = await supabase
-    .from("businesses")
-    .upsert(
-      {
-        ...(activeId ? { id: activeId } : {}),
-        name: frontmatter.title,
-        slug: activeSlug,
-        town_id: townId,
-        address: frontmatter.address,
-        phone: frontmatter.phone,
-        website: frontmatter.website,
-        // Removed 'hours' which doesn't exist in businesses table
-        price_level: frontmatter.price_range ? frontmatter.price_range.length : null, 
-        lat: frontmatter.latitude || frontmatter.map_center?.lat || frontmatter.map_location?.lat,
-        lng: frontmatter.longitude || frontmatter.map_center?.lng || frontmatter.map_location?.lng,
-        hero_image_url: frontmatter.hero_image,
-        ai_summary: frontmatter.seo_description || content.slice(0, 200),
-      },
-      { onConflict: activeId ? "id" : "slug" }
-    )
-    .select("id")
-    .single();
+  const { error } = await supabase.from("businesses").upsert(
+    {
+      name: frontmatter.title,
+      slug: frontmatter.slug,
+      town_id: townId,
+      address: frontmatter.address,
+      phone: frontmatter.phone,
+      website: frontmatter.website,
+      price_level: frontmatter.price_range ? frontmatter.price_range.length : null,
+      lat:
+        frontmatter.latitude ||
+        frontmatter.map_center?.lat ||
+        frontmatter.map_location?.lat,
+      lng:
+        frontmatter.longitude ||
+        frontmatter.map_center?.lng ||
+        frontmatter.map_location?.lng,
+      hero_image_url: frontmatter.hero_image,
+      ai_summary: frontmatter.seo_description || content.slice(0, 200),
+    },
+    { onConflict: "slug" }
+  );
 
   if (error) {
     console.error(`  ✗ Business sync failed: ${error.message}`);
-    return null;
+    return false;
   }
-  return data?.id || null;
+  return true;
 }
 
 /**
  * Sync BEACH to beaches table
  */
-async function syncBeach(parsed: ParsedContent): Promise<number | null> {
-  const { frontmatter, content } = parsed;
+async function syncBeach(parsed: ParsedContent): Promise<boolean> {
+  const { frontmatter } = parsed;
   const townId = await getTownId(frontmatter.town);
 
-  const { data, error } = await supabase
-    .from("beaches")
-    .upsert(
-      {
-        name: frontmatter.title,
-        slug: frontmatter.slug,
-        town_id: townId,
-        latitude: frontmatter.latitude || frontmatter.map_center?.lat || frontmatter.map_location?.lat,
-        longitude: frontmatter.longitude || frontmatter.map_center?.lng || frontmatter.map_location?.lng,
-        access_notes: frontmatter.access_notes,
-        parking_notes: frontmatter.parking_notes,
-        amenities: frontmatter.amenities,
-        family_friendly_score: frontmatter.family_friendly_score,
-      },
-      { onConflict: "slug" }
-    )
-    .select("id")
-    .single();
+  const { error } = await supabase.from("beaches").upsert(
+    {
+      name: frontmatter.title,
+      slug: frontmatter.slug,
+      town_id: townId,
+      latitude:
+        frontmatter.latitude ||
+        frontmatter.map_center?.lat ||
+        frontmatter.map_location?.lat,
+      longitude:
+        frontmatter.longitude ||
+        frontmatter.map_center?.lng ||
+        frontmatter.map_location?.lng,
+      access_notes: frontmatter.access_notes,
+      parking_notes: frontmatter.parking_notes,
+      amenities: frontmatter.amenities,
+      family_friendly_score: frontmatter.family_friendly_score,
+    },
+    { onConflict: "slug" }
+  );
 
   if (error) {
     console.error(`  ✗ Beach sync failed: ${error.message}`);
-    return null;
+    return false;
   }
-  return data?.id || null;
+  return true;
 }
 
 /**
  * Sync AREA to areas table
  */
-async function syncArea(parsed: ParsedContent): Promise<number | null> {
+async function syncArea(parsed: ParsedContent): Promise<boolean> {
   const { frontmatter } = parsed;
   const townId = await getTownId(frontmatter.town);
 
-  const { data, error } = await supabase
-    .from("areas")
-    .upsert(
-      {
-        name: frontmatter.title,
-        slug: frontmatter.slug,
-        town_id: townId,
-        area_type: "shopping_area",
-        description_short: frontmatter.seo_description,
-        parking_notes: frontmatter.parking_notes,
-      },
-      { onConflict: "slug" }
-    )
-    .select("id")
-    .single();
+  const { error } = await supabase.from("areas").upsert(
+    {
+      name: frontmatter.title,
+      slug: frontmatter.slug,
+      town_id: townId,
+      area_type: "shopping_area",
+      description_short: frontmatter.seo_description,
+      parking_notes: frontmatter.parking_notes,
+    },
+    { onConflict: "slug" }
+  );
 
   if (error) {
     console.error(`  ✗ Area sync failed: ${error.message}`);
-    return null;
+    return false;
   }
-  return data?.id || null;
+  return true;
 }
 
 /**
  * Sync GUIDE to guides table
  */
-async function syncGuide(parsed: ParsedContent): Promise<number | null> {
-  const { frontmatter } = parsed;
+async function syncGuide(parsed: ParsedContent): Promise<boolean> {
+  const { frontmatter, content } = parsed;
   const townId = await getTownId(frontmatter.town);
 
-  const { data, error } = await supabase
-    .from("guides")
-    .upsert(
-      {
-        slug: frontmatter.slug,
-        title: frontmatter.title,
-        guide_type: frontmatter.guide_type || "editorial",
-        primary_town_id: townId,
-        season: frontmatter.season,
-        featured: frontmatter.featured || false,
-      },
-      { onConflict: "slug" }
-    )
-    .select("id")
-    .single();
+  // First sync to guides table
+  const { error: guideError } = await supabase.from("guides").upsert(
+    {
+      slug: frontmatter.slug,
+      title: frontmatter.title,
+      guide_type: frontmatter.guide_type || "editorial",
+      primary_town_id: townId,
+      season: frontmatter.season,
+      featured: frontmatter.featured || false,
+    },
+    { onConflict: "slug" }
+  );
 
-  if (error) {
-    console.error(`  ✗ Guide sync failed: ${error.message}`);
-    return null;
-  }
-  return data?.id || null;
-}
-
-/**
- * Sync a parsed file to Supabase (both legacy tables and new tables)
- */
-async function syncToDatabase(parsed: ParsedContent): Promise<boolean> {
-  const { frontmatter, content } = parsed;
-
-  try {
-    // 1. Sync to legacy/existing tables based on type
-    let legacyId: string | number | null = null;
-
-    switch (frontmatter.type) {
-      case "town":
-        legacyId = await syncTown(parsed);
-        break;
-      case "business":
-        legacyId = await syncBusiness(parsed);
-        break;
-      case "beach":
-        legacyId = await syncBeach(parsed);
-        break;
-      case "area":
-        legacyId = await syncArea(parsed);
-        break;
-      case "guide":
-        legacyId = await syncGuide(parsed);
-        break;
-    }
-
-    if (!legacyId && frontmatter.type !== "seasonal") {
-      return false;
-    }
-
-    // 2. Also sync to new entities table (for future migration)
-    const { data: entity } = await supabase
-      .from("entities")
-      .upsert(
-        {
-          slug: frontmatter.slug,
-          entity_type: frontmatter.entity_type || frontmatter.type,
-          title: frontmatter.title,
-          status: frontmatter.status,
-          excerpt: frontmatter.seo_description,
-        },
-        { onConflict: "slug" }
-      )
-      .select("id")
-      .single();
-
-    // 3. Sync to pages table
-    let canonicalUrl = `/${frontmatter.slug}`;
-    if (frontmatter.type === "business") canonicalUrl = `/business/${frontmatter.slug}`;
-    else if (frontmatter.type === "guide") canonicalUrl = `/guide/${frontmatter.slug}`;
-    else if (frontmatter.type === "beach") canonicalUrl = `/beach/${frontmatter.slug}`;
-
-    const { data: page } = await supabase
-      .from("pages")
-      .upsert(
-        {
-          slug: frontmatter.slug,
-          entity_id: entity?.id,
-          page_type: frontmatter.type,
-          title: frontmatter.title,
-          markdown_path: parsed.filePath.replace(process.cwd(), ""),
-          body_markdown: content,
-          excerpt: frontmatter.seo_description,
-          seo_title: frontmatter.seo_title,
-          seo_description: frontmatter.seo_description,
-          seo_keywords: frontmatter.seo_keywords,
-          og_image_url: frontmatter.hero_image,
-          status: frontmatter.status,
-          content_hash: parsed.hash,
-        },
-        { onConflict: "slug" }
-      )
-      .select("id")
-      .single();
-
-    // 4. Sync search document
-    const searchableText = [
-      frontmatter.title,
-      frontmatter.seo_title,
-      frontmatter.seo_description,
-      ...(frontmatter.tags || []),
-      ...(frontmatter.categories || []),
-      content.replace(/[#*\[\]`]/g, "").slice(0, 5000),
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    if (page) {
-      await supabase.from("search_documents").upsert(
-        {
-          source_type: frontmatter.type === "business" ? "business" : "page",
-          source_id: page.id,
-          entity_id: entity?.id,
-          page_id: page.id,
-          title: frontmatter.title,
-          slug: frontmatter.slug,
-          town_slug: frontmatter.town,
-          page_type: frontmatter.type,
-          entity_type: frontmatter.entity_type || frontmatter.type,
-          tags: frontmatter.tags || [],
-          categories: frontmatter.categories || [],
-          searchable_text: searchableText,
-          excerpt: frontmatter.seo_description || content.slice(0, 200),
-          boost_score: frontmatter.featured ? 1.5 : 1.0,
-        },
-        { onConflict: "page_id" }
-      );
-    }
-
-    // 5. Process wiki links
-    for (const targetSlug of parsed.links) {
-      const { data: targetPage } = await supabase
-        .from("pages")
-        .select("id")
-        .eq("slug", targetSlug)
-        .single();
-
-      if (targetPage && page) {
-        await supabase.from("page_links").upsert(
-          {
-            source_page_id: page.id,
-            target_page_id: targetPage.id,
-            link_type: "body_link",
-            anchor_text: targetSlug,
-          },
-          { onConflict: "source_page_id,target_page_id,link_type" }
-        );
-      } else if (!targetPage) {
-        await supabase.from("content_opportunities").upsert(
-          {
-            source_page_id: page?.id,
-            suggested_slug: targetSlug,
-            suggested_type: "unknown",
-            reason: `Referenced in [[${frontmatter.slug}]]`,
-            status: "pending",
-          },
-          { onConflict: "suggested_slug" }
-        );
-      }
-    }
-
-    return true;
-  } catch (error) {
-    console.error(`  ✗ Database sync error:`, error);
+  if (guideError) {
+    console.error(`  ✗ Guide sync failed: ${guideError.message}`);
     return false;
   }
+
+  // Also sync to pages table for rendering
+  const { error: pageError } = await supabase.from("pages").upsert(
+    {
+      slug: frontmatter.slug,
+      page_type: "guide",
+      title: frontmatter.title,
+      body_markdown: content,
+      seo_title: frontmatter.seo_title,
+      seo_description: frontmatter.seo_description,
+      seo_keywords: frontmatter.seo_keywords,
+      og_image_url: frontmatter.hero_image,
+      status: "published",
+    },
+    { onConflict: "slug" }
+  );
+
+  if (pageError) {
+    console.error(`  ✗ Page sync failed: ${pageError.message}`);
+    return false;
+  }
+
+  return true;
 }
 
 /**
- * Move file from inbox to correct folder
+ * Move file from inbox to correct folder based on type
  */
-function moveToFolder(parsed: ParsedContent): string | null {
+function moveFromInbox(parsed: ParsedContent): string {
   const { frontmatter, filePath } = parsed;
-  const folder = TYPE_FOLDERS[frontmatter.type];
-
-  if (!folder) return null;
 
   // Only move if in inbox
-  if (!filePath.includes("/inbox/")) return filePath;
+  if (!filePath.includes("/inbox/")) {
+    return filePath;
+  }
+
+  const folder = TYPE_FOLDERS[frontmatter.type];
+  if (!folder) {
+    return filePath;
+  }
 
   const targetDir = path.join(CONTENT_DIR, folder);
   const targetPath = path.join(targetDir, `${frontmatter.slug}.md`);
@@ -633,129 +416,99 @@ function moveToFolder(parsed: ParsedContent): string | null {
 }
 
 /**
- * Process inbox files
+ * Sync a file to the database based on its type
  */
-async function processInbox(stats: CompileStats, manifest: ProcessedManifest): Promise<void> {
-  if (!fs.existsSync(INBOX_DIR)) {
-    fs.mkdirSync(INBOX_DIR, { recursive: true });
-    console.log("📥 Created inbox folder: content/inbox/");
-    return;
-  }
+async function syncToDatabase(parsed: ParsedContent): Promise<boolean> {
+  const { frontmatter } = parsed;
 
-  const files = fs.readdirSync(INBOX_DIR).filter((f) => f.endsWith(".md"));
-
-  if (files.length === 0) {
-    console.log("📥 Inbox is empty\n");
-    return;
-  }
-
-  console.log(`📥 Processing ${files.length} file(s) from inbox...\n`);
-
-  for (const file of files) {
-    const filePath = path.join(INBOX_DIR, file);
-    console.log(`→ ${file}`);
-
-    const parsed = parseMarkdownFile(filePath);
-    if (!parsed) {
-      stats.errors.push(`Failed to parse: ${file}`);
-      continue;
-    }
-
-    const validationErrors = validateFrontmatter(parsed.frontmatter, filePath);
-    if (validationErrors.length > 0) {
-      console.log(`  ✗ Validation failed:`);
-      validationErrors.forEach((e) => console.log(`    - ${e}`));
-      stats.errors.push(`Validation failed: ${file}`);
-      continue;
-    }
-
-    const synced = await syncToDatabase(parsed);
-    if (!synced) {
-      stats.errors.push(`Sync failed: ${file}`);
-      continue;
-    }
-
-    const newPath = moveToFolder(parsed);
-    if (newPath) {
-      console.log(`  ✓ Synced → moved to ${newPath.replace(CONTENT_DIR, "content")}`);
-      manifest.files[parsed.frontmatter.slug] = {
-        hash: parsed.hash,
-        processedAt: new Date().toISOString(),
-      };
-      stats.processed++;
-      stats.moved++;
-    }
+  switch (frontmatter.type) {
+    case "town":
+      return syncTown(parsed);
+    case "business":
+      return syncBusiness(parsed);
+    case "beach":
+      return syncBeach(parsed);
+    case "area":
+      return syncArea(parsed);
+    case "guide":
+      return syncGuide(parsed);
+    case "seasonal":
+      return syncGuide(parsed); // Treat seasonal as guide
+    default:
+      console.error(`  ✗ Unknown type: ${frontmatter.type}`);
+      return false;
   }
 }
 
 /**
- * Process all files (for --all flag or detecting changes)
- */
-async function processAll(stats: CompileStats, manifest: ProcessedManifest): Promise<void> {
-  console.log("📂 Scanning all content folders for changes...\n");
-
-  for (const [type, folder] of Object.entries(TYPE_FOLDERS)) {
-    const folderPath = path.join(CONTENT_DIR, folder);
-    if (!fs.existsSync(folderPath)) continue;
-
-    const files = fs.readdirSync(folderPath).filter((f) => f.endsWith(".md") && f !== "README.md");
-
-    for (const file of files) {
-      const filePath = path.join(folderPath, file);
-      const parsed = parseMarkdownFile(filePath);
-      if (!parsed) continue;
-
-      const slug = parsed.frontmatter.slug;
-      const existing = manifest.files[slug];
-
-      if (existing && existing.hash === parsed.hash) {
-        stats.skipped++;
-        continue;
-      }
-
-      console.log(`→ ${folder}/${file}${existing ? " (changed)" : " (new)"}`);
-
-      const synced = await syncToDatabase(parsed);
-      if (synced) {
-        manifest.files[slug] = {
-          hash: parsed.hash,
-          processedAt: new Date().toISOString(),
-        };
-        stats.processed++;
-        console.log(`  ✓ Synced`);
-      } else {
-        stats.errors.push(`Sync failed: ${folder}/${file}`);
-      }
-    }
-  }
-}
-
-/**
- * Main
+ * Main compiler
  */
 async function main() {
   const args = process.argv.slice(2);
-  const fullRecompile = args.includes("--all");
+  const forceAll = args.includes("--all");
 
-  console.log("\n🚀 Content Compiler\n" + "=".repeat(40) + "\n");
+  console.log("\n🚀 Content Compiler\n" + "=".repeat(40));
+  console.log(forceAll ? "Mode: Full recompile (--all)\n" : "Mode: NEW/UPDATED only\n");
 
-  const stats: CompileStats = { processed: 0, skipped: 0, moved: 0, errors: [] };
-  const manifest = loadManifest();
+  const stats: CompileStats = { scanned: 0, processed: 0, skipped: 0, errors: [] };
 
-  await processInbox(stats, manifest);
+  const allFiles = findMarkdownFiles();
+  stats.scanned = allFiles.length;
 
-  if (fullRecompile || stats.processed === 0) {
-    await processAll(stats, manifest);
+  console.log(`📂 Found ${allFiles.length} markdown files\n`);
+
+  for (const filePath of allFiles) {
+    const parsed = parseMarkdownFile(filePath);
+    if (!parsed) {
+      stats.errors.push(`Parse failed: ${path.basename(filePath)}`);
+      continue;
+    }
+
+    const { frontmatter } = parsed;
+    const fileName = path.basename(filePath);
+    const shouldProcess = forceAll || PROCESS_STATUSES.includes(frontmatter.status);
+
+    if (!shouldProcess) {
+      stats.skipped++;
+      continue;
+    }
+
+    // Validate required fields
+    if (!frontmatter.title || !frontmatter.type || !frontmatter.slug) {
+      console.log(`⚠ ${fileName} - missing required fields (title, type, or slug)`);
+      stats.errors.push(`Invalid: ${fileName}`);
+      continue;
+    }
+
+    console.log(`→ ${fileName} [${frontmatter.status.toUpperCase()}]`);
+
+    // Move from inbox if needed
+    const finalPath = moveFromInbox(parsed);
+    if (finalPath !== filePath) {
+      parsed.filePath = finalPath;
+      console.log(`  ↳ Moved to ${path.basename(path.dirname(finalPath))}/`);
+    }
+
+    // Sync to database
+    const success = await syncToDatabase(parsed);
+
+    if (success) {
+      // Update status in file to published
+      updateStatusInFile(parsed.filePath, "published");
+      console.log(`  ✓ Synced → status: published`);
+      stats.processed++;
+    } else {
+      stats.errors.push(`Sync failed: ${fileName}`);
+    }
   }
 
-  saveManifest(manifest);
-
+  // Summary
   console.log("\n" + "=".repeat(40));
   console.log("📊 Summary");
   console.log("=".repeat(40));
+  console.log(`📄 Scanned:   ${stats.scanned}`);
   console.log(`✓ Processed: ${stats.processed}`);
-  console.log(`→ Moved:     ${stats.moved}`);
-  console.log(`⊘ Skipped:   ${stats.skipped} (unchanged)`);
+  console.log(`⊘ Skipped:   ${stats.skipped} (already published)`);
 
   if (stats.errors.length > 0) {
     console.log(`✗ Errors:    ${stats.errors.length}`);

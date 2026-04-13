@@ -2,6 +2,23 @@
 
 This is the markdown-first content source for WhereTo30A.
 
+## Quick Start
+
+1. Create or edit a markdown file
+2. Set `status: NEW` (new file) or `status: UPDATED` (edited file)
+3. Run `npm run content:compile`
+4. Status automatically changes to `published` after sync
+
+## Status Values
+
+| Status | Meaning |
+|--------|---------|
+| `NEW` | New file, needs to be synced |
+| `UPDATED` | Existing file was edited, needs re-sync |
+| `published` | Synced to database, no action needed |
+| `draft` | Work in progress, won't be synced |
+| `archived` | Removed from site, won't be synced |
+
 ## Folder Structure
 
 ```
