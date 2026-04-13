@@ -32,10 +32,11 @@ async function loadBusiness(slug: string) {
         ai_family_score, ai_date_score, ai_value_score,
         business_tags(tags(name, slug)),
         towns(name, slug),
-        categories(name),
-        pages(body_markdown)
+        categories(name)
       `;
-    const { data } = isUuid
+    
+    // 1. Fetch Business
+    const { data: business, error: bizErr } = isUuid
       ? await supabase
           .from("businesses")
           .select(sel)
@@ -48,8 +49,20 @@ async function loadBusiness(slug: string) {
           .eq("status", "active")
           .eq("slug", slug)
           .maybeSingle();
-    return data;
-  } catch {
+
+    if (bizErr || !business) return null;
+
+    // 2. Fetch Page content by slug
+    const { data: page } = await supabase
+      .from("pages")
+      .select("body_markdown")
+      .eq("slug", business.slug)
+      .eq("status", "published")
+      .maybeSingle();
+
+    return { ...business, pages: page };
+  } catch (e) {
+    console.error("loadBusiness error:", e);
     return null;
   }
 }

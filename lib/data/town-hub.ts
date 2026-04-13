@@ -12,18 +12,27 @@ export type AdjacentTown = { name: string; slug: string };
 export async function getTownBySlug(slug: string) {
   try {
     const supabase = getServiceSupabase();
-    const { data } = await supabase
+    // 1. Fetch Town
+    const { data: town, error: townErr } = await supabase
       .from("towns")
-      .select("id, name, slug, region_id, pages(body_markdown)")
+      .select("id, name, slug, region_id")
       .eq("slug", slug)
       .maybeSingle();
-    return data as {
-      id: number;
-      name: string;
-      slug: string;
-      region_id: number | null;
-      pages?: { body_markdown: string } | { body_markdown: string }[];
-    } | null;
+    
+    if (townErr || !town) return null;
+
+    // 2. Fetch Page content by slug
+    const { data: page } = await supabase
+      .from("pages")
+      .select("body_markdown")
+      .eq("slug", town.slug)
+      .eq("status", "published")
+      .maybeSingle();
+
+    return {
+      ...town,
+      pages: page,
+    };
   } catch {
     return null;
   }
