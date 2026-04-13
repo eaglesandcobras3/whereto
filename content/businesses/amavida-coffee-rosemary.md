@@ -4,7 +4,6 @@ type: business
 entity_type: cafe
 slug: amavida-coffee-rosemary-beach
 status: published
-
 # Location / hierarchy
 region: 30a
 town: rosemary-beach

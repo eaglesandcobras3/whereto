@@ -4,7 +4,6 @@ type: business
 entity_type: retail
 slug: tribe-kelley-surf-post-grayton-beach
 status: published
-
 # Location / hierarchy
 region: 30a
 town: grayton-beach

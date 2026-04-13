@@ -4,7 +4,6 @@ type: business
 entity_type: cafe
 slug: hotz-coffee-grayton-beach
 status: published
-
 # Location / hierarchy
 region: 30a
 town: grayton-beach

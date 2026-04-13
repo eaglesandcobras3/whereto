@@ -5,7 +5,6 @@ type: town
 entity_type: town
 slug: rosemary-beach
 status: published
-
 # Location / hierarchy
 region: 30a
 state: florida

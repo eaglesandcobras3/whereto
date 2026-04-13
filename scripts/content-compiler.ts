@@ -252,6 +252,7 @@ async function syncBusiness(parsed: ParsedContent): Promise<boolean> {
     {
       name: frontmatter.title,
       slug: frontmatter.slug,
+      status: "active",
       town_id: townId,
       address: frontmatter.address,
       phone: frontmatter.phone,

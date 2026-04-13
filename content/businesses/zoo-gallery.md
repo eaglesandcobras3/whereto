@@ -5,7 +5,6 @@ type: business
 entity_type: retail
 slug: zoo-gallery-grayton-beach
 status: published
-
 # Location / hierarchy
 region: 30a
 town: grayton-beach
