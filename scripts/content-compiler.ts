@@ -18,7 +18,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
-import matter from "gray-matter";
+import * as matter from "gray-matter";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 
