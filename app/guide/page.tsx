@@ -76,43 +76,6 @@ export default async function GuidePage() {
     getBusinessCount(),
     getOtherGuides(),
   ]);
-...
-        {/* Other Guides Section */}
-        {otherGuides.length > 0 && (
-          <section className="mx-auto max-w-5xl px-6 py-20 border-t border-[var(--color-border)]">
-            <h2 className="mb-12 text-center font-headline text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
-              Traveler Resources
-            </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {otherGuides.map((guide) => (
-                <Link
-                  key={guide.slug}
-                  href={`/guide/${guide.slug}`}
-                  className="group flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:shadow-md hover:border-[var(--color-primary)]"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-50 text-teal-600">
-                      <span className="material-symbols-outlined">description</span>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors">
-                        {guide.title}
-                      </h3>
-                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-widest mt-1">
-                        {guide.guide_type?.replace('_', ' ')}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-zinc-300 group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all">
-                    arrow_forward
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* CTA */}
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -429,6 +392,41 @@ export default async function GuidePage() {
             </div>
           </div>
         </section>
+
+        {/* Other Guides Section */}
+        {otherGuides.length > 0 && (
+          <section className="mx-auto max-w-5xl px-6 py-20 border-t border-[var(--color-border)]">
+            <h2 className="mb-12 text-center font-headline text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
+              Traveler Resources
+            </h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {otherGuides.map((guide) => (
+                <Link
+                  key={guide.slug}
+                  href={`/guide/${guide.slug}`}
+                  className="group flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:shadow-md hover:border-[var(--color-primary)]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+                      <span className="material-symbols-outlined">description</span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors">
+                        {guide.title}
+                      </h3>
+                      <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-widest mt-1">
+                        {guide.guide_type?.replace('_', ' ')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-zinc-300 group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all">
+                    arrow_forward
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* CTA */}
         <section className="bg-[var(--color-primary)] py-16">

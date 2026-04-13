@@ -18,7 +18,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
-import * as matter from "gray-matter";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const matter = require("gray-matter");
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 
@@ -267,9 +268,9 @@ async function syncTown(parsed: ParsedContent): Promise<number | null> {
   if (existing) {
     activeId = existing.id.toString();
     activeSlug = existing.slug;
-    
+
     // Write ID back to frontmatter if missing
-    if (!frontmatter.id) {
+    if (!frontmatter.id && activeId) {
       injectIdToFile(parsed.filePath, activeId);
     }
   }
@@ -329,7 +330,7 @@ async function syncBusiness(parsed: ParsedContent): Promise<string | null> {
       activeSlug = existing.slug;
 
       // Write ID back to frontmatter if missing
-      if (!frontmatter.id) {
+      if (!frontmatter.id && activeId) {
         injectIdToFile(parsed.filePath, activeId);
       }
     }
