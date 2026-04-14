@@ -132,6 +132,14 @@ export function scoreAndRankCandidates(
     }
   }
 
+  /** Town hub / SEO: only listings whose `businesses.town_id` matches the page town (not neighbors). */
+  if (intent.location.town && intent.location.radius === "exact") {
+    const anchorTid = townSlugToId.get(intent.location.town);
+    if (anchorTid != null) {
+      eligible = eligible.filter((row) => row.town_id === anchorTid);
+    }
+  }
+
   const ranked = eligible
     .map((row) => {
       const { tag_slugs, ...b } = row;

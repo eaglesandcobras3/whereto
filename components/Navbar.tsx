@@ -94,7 +94,13 @@ export function Navbar({
     } else {
       const q = searchValue || internalSearch;
       if (!q.trim()) return;
-      window.location.href = `/search?q=${encodeURIComponent(q)}`;
+      if (pathname === "/search" && typeof window !== "undefined") {
+        const next = new URLSearchParams(window.location.search);
+        next.set("q", q.trim());
+        window.location.href = `/search?${next.toString()}`;
+      } else {
+        window.location.href = `/search?q=${encodeURIComponent(q)}`;
+      }
     }
     setSearchOpen(false);
   };

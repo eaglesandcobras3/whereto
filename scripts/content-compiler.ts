@@ -88,6 +88,8 @@ interface FrontmatterData {
   access_notes?: string;
   /** When `type` is `area`: DB `areas.area_type` (see `point_of_interest` and other area migrations). */
   area_type?: string;
+  /** When `type` is `area`: if false, excluded from /search area browse; still on town page. Default true. */
+  include_in_site_browse?: boolean;
   amenities?: string[];
   family_friendly_score?: number;
   romance_score?: number;
@@ -96,6 +98,10 @@ interface FrontmatterData {
   // Event-specific fields
   event_date?: string; // YYYY-MM-DD
   end_date?: string; // YYYY-MM-DD (optional, for multi-day events)
+  /** `weekly` with `recurrence_weekday`: repeats each week through the season (`event_date` … `end_date`). */
+  recurrence_frequency?: "weekly";
+  /** 0 = Sunday … 6 = Saturday (same as JavaScript `Date.getDay()`). */
+  recurrence_weekday?: number;
   venue_name?: string;
   price?: string; // "Free", "$25", etc.
 }
@@ -360,6 +366,7 @@ async function syncArea(parsed: ParsedContent): Promise<boolean> {
       parking_notes: frontmatter.parking_notes,
       latitude_center: lat ?? null,
       longitude_center: lng ?? null,
+      include_in_site_browse: frontmatter.include_in_site_browse !== false,
     },
     { onConflict: "slug" }
   );
@@ -433,6 +440,22 @@ async function syncEvent(parsed: ParsedContent): Promise<boolean> {
     return false;
   }
 
+  const rf = frontmatter.recurrence_frequency;
+  const rw = frontmatter.recurrence_weekday;
+  if ((rf != null) !== (rw != null)) {
+    console.error(`  ✗ Event ${frontmatter.slug}: set both recurrence_frequency and recurrence_weekday, or neither`);
+    return false;
+  }
+  if (rf === "weekly") {
+    if (typeof rw !== "number" || !Number.isInteger(rw) || rw < 0 || rw > 6) {
+      console.error(`  ✗ Event ${frontmatter.slug}: recurrence_weekday must be an integer 0–6`);
+      return false;
+    }
+  } else if (rf != null) {
+    console.error(`  ✗ Event ${frontmatter.slug}: unsupported recurrence_frequency (use weekly or omit)`);
+    return false;
+  }
+
   const { error } = await supabase.from("events").upsert(
     {
       slug: frontmatter.slug,
@@ -441,6 +464,8 @@ async function syncEvent(parsed: ParsedContent): Promise<boolean> {
       hero_image_url: frontmatter.hero_image,
       event_date: frontmatter.event_date,
       end_date: frontmatter.end_date || null,
+      recurrence_frequency: rf ?? null,
+      recurrence_weekday: rw ?? null,
       town_id: townId,
       venue_name: frontmatter.venue_name,
       address: frontmatter.address,

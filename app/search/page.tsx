@@ -129,9 +129,9 @@ export default async function SearchPage({ searchParams }: Props) {
     let evQuery = serviceSupabase
       .from("upcoming_events")
       .select(
-        "id, slug, title, description, hero_image_url, event_date, end_date, town_name, town_slug, venue_name, price, website, tags"
+        "id, slug, title, description, hero_image_url, event_date, end_date, town_name, town_slug, venue_name, price, website, tags, recurrence_frequency, recurrence_weekday, next_list_date"
       )
-      .order("event_date", { ascending: true })
+      .order("next_list_date", { ascending: true })
       .limit(100);
 
     if (town_id && !Number.isNaN(Number(town_id))) {
@@ -202,6 +202,7 @@ export default async function SearchPage({ searchParams }: Props) {
     let aq = serviceSupabase
       .from("areas")
       .select("id, name, slug, description_short, area_type, town_id, towns(slug, name)")
+      .eq("include_in_site_browse", true)
       .order("name")
       .limit(100);
 

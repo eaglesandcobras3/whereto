@@ -50,7 +50,7 @@ async function upsertPrecomputedSet(
   const intent = searchIntentSchema.parse({
     category: template.categorySlug,
     subcategory: null,
-    location: { town: town.slug, radius: "near" as const },
+    location: { town: town.slug, radius: "exact" as const },
     attributes: template.attributes,
     exclude_attributes: [],
     sort_preference: "quality",

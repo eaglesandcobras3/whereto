@@ -151,6 +151,75 @@ describe("scoreAndRankCandidates", () => {
     expect(out[0]?.id).toBe("a");
   });
 
+  it("with radius exact, excludes businesses outside the anchor town", () => {
+    const intent = {
+      category: "restaurants",
+      subcategory: null,
+      location: { town: "rosemary-beach", radius: "exact" as const },
+      attributes: [] as string[],
+      exclude_attributes: [] as string[],
+      sort_preference: "quality" as const,
+      price_level: null,
+      result_count: 5,
+    };
+    const townSlugToId = new Map([
+      ["rosemary-beach", 10],
+      ["grayton-beach", 20],
+    ]);
+    const categorySlugToId = new Map([["restaurants", 1]]);
+    const rows: BusinessRowWithTags[] = [
+      {
+        ...{
+          id: "in-town",
+          name: "Local",
+          town_id: 10,
+          category_id: 1,
+          status: "active",
+          suspected_closed: false,
+          admin_suppressed: false,
+          confidence_score: 0.5,
+          freshness_score: 0.5,
+          engagement_score: 0.9,
+          exploration_score: 0,
+          completeness_score: 0.5,
+          bad_experience_unique_users: 0,
+          listing_rating: 4,
+          listing_review_count: 10,
+        },
+        tag_slugs: [],
+      },
+      {
+        ...{
+          id: "neighbor",
+          name: "Next Door Hit",
+          town_id: 20,
+          category_id: 1,
+          status: "active",
+          suspected_closed: false,
+          admin_suppressed: false,
+          confidence_score: 0.99,
+          freshness_score: 1,
+          engagement_score: 1,
+          exploration_score: 0,
+          completeness_score: 1,
+          bad_experience_unique_users: 0,
+          listing_rating: 5,
+          listing_review_count: 500,
+        },
+        tag_slugs: [],
+      },
+    ];
+    const out = scoreAndRankCandidates(
+      rows,
+      intent,
+      townSlugToId,
+      categorySlugToId,
+      new Set(),
+      15,
+    );
+    expect(out.map((r) => r.id)).toEqual(["in-town"]);
+  });
+
   it("ranks 300 candidates within a small time budget (sanity)", () => {
     const intent = {
       category: "restaurants",

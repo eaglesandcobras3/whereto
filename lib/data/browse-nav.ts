@@ -9,7 +9,8 @@ export async function hasPointOfInterestAreas(): Promise<boolean> {
     const { count, error } = await supabase
       .from("areas")
       .select("id", { count: "exact", head: true })
-      .eq("area_type", "point_of_interest");
+      .eq("area_type", "point_of_interest")
+      .eq("include_in_site_browse", true);
     if (error) return false;
     return (count ?? 0) > 0;
   } catch {

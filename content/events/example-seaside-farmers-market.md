@@ -6,8 +6,11 @@ slug: seaside-farmers-market-spring-2026
 status: draft
 
 # Event timing (required)
+# Season window + weekly recurrence (Saturday = 6). Omit recurrence_* for one-day or multi-day blocks.
 event_date: 2026-05-01
 end_date: 2026-05-31
+recurrence_frequency: weekly
+recurrence_weekday: 6
 
 # Location
 town: seaside

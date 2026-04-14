@@ -1,12 +1,6 @@
 export default function SearchLoading() {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      <div className="sticky top-[var(--site-header-offset)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="h-10 w-full max-w-2xl animate-pulse rounded-2xl bg-[var(--color-surface-container-high)]" />
-        </div>
-      </div>
-
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-8">
           <div className="flex flex-col gap-8 lg:flex-row">

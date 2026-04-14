@@ -16,6 +16,7 @@ export const BROWSE_NAV_ITEMS: BrowseNavItem[] = [
   },
   { label: "Services", href: "/search?type=services", activeTypes: ["services"] },
   { label: "Events", href: "/search?type=events", activeTypes: ["events"] },
+  { label: "Guides", href: "/search?type=guides", activeTypes: ["guides"] },
 ];
 
 export function isBrowseNavActive(type: string | null, item: BrowseNavItem): boolean {

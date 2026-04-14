@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { weekdayLongName } from "@/lib/events/recurrence";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -11,6 +12,10 @@ type EventRow = {
   hero_image_url: string | null;
   event_date: string;
   end_date: string | null;
+  recurrence_frequency: string | null;
+  recurrence_weekday: number | null;
+  /** From `upcoming_events` when the series still has a future occurrence. */
+  next_list_date: string | null;
   venue_name: string | null;
   address: string | null;
   price: string | null;
@@ -25,13 +30,19 @@ async function loadEvent(slug: string): Promise<EventRow | null> {
   const { data, error } = await supabase
     .from("events")
     .select(
-      "title, description, hero_image_url, event_date, end_date, venue_name, address, price, website, tags, town_id"
+      "title, description, hero_image_url, event_date, end_date, recurrence_frequency, recurrence_weekday, venue_name, address, price, website, tags, town_id"
     )
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();
 
   if (error || !data) return null;
+
+  const { data: upcoming } = await supabase
+    .from("upcoming_events")
+    .select("next_list_date")
+    .eq("slug", slug)
+    .maybeSingle();
 
   let town_name: string | null = null;
   let town_slug: string | null = null;
@@ -54,6 +65,9 @@ async function loadEvent(slug: string): Promise<EventRow | null> {
     hero_image_url: data.hero_image_url as string | null,
     event_date: data.event_date as string,
     end_date: data.end_date as string | null,
+    recurrence_frequency: (data.recurrence_frequency as string | null) ?? null,
+    recurrence_weekday: (data.recurrence_weekday as number | null) ?? null,
+    next_list_date: (upcoming?.next_list_date as string | null) ?? null,
     venue_name: data.venue_name as string | null,
     address: data.address as string | null,
     price: data.price as string | null,
@@ -81,6 +95,15 @@ function formatDateRange(eventDate: string, endDate: string | null): string {
     return `${start.toLocaleDateString("en-US", { month: "long", day: "numeric" })} – ${end.toLocaleDateString("en-US", { day: "numeric", year: "numeric" })}`;
   }
   return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+}
+
+function formatSeasonLine(eventDate: string, endDate: string | null): string {
+  const start = new Date(eventDate + "T12:00:00");
+  if (!endDate || endDate === eventDate) {
+    return start.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  }
+  const end = new Date(endDate + "T12:00:00");
+  return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -125,9 +148,34 @@ export default async function EventDetailPage({ params }: Props) {
       ) : null}
 
       <header className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-primary)]">
-          {formatDateRange(event.event_date, event.end_date)}
-        </p>
+        {event.recurrence_frequency === "weekly" &&
+        event.recurrence_weekday != null &&
+        event.recurrence_weekday >= 0 &&
+        event.recurrence_weekday <= 6 ? (
+          <div className="space-y-1">
+            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+              Every {weekdayLongName(event.recurrence_weekday)}
+            </p>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Season {formatSeasonLine(event.event_date, event.end_date)}
+            </p>
+            {event.next_list_date ? (
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                Next date:{" "}
+                {new Date(event.next_list_date + "T12:00:00").toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+            {formatDateRange(event.event_date, event.end_date)}
+          </p>
+        )}
         <h1 className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-4xl">
           {event.title}
         </h1>

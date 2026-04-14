@@ -29,6 +29,10 @@ export type BrowseEventRow = {
   hero_image_url: string | null;
   event_date: string;
   end_date: string | null;
+  /** Present on `upcoming_events`: next occurrence (weekly) or `event_date` for one-off rows. */
+  next_list_date?: string | null;
+  recurrence_frequency?: string | null;
+  recurrence_weekday?: number | null;
   town_name: string | null;
   town_slug: string | null;
   venue_name: string | null;
@@ -90,6 +94,26 @@ function shortEventDates(eventDate: string, endDate: string | null): string {
   }
   const end = new Date(endDate + "T12:00:00");
   return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+}
+
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+function formatEventBrowseWhen(ev: BrowseEventRow): string {
+  if (
+    ev.recurrence_frequency === "weekly" &&
+    ev.recurrence_weekday != null &&
+    ev.recurrence_weekday >= 0 &&
+    ev.recurrence_weekday <= 6
+  ) {
+    const day = WEEKDAY_SHORT[ev.recurrence_weekday];
+    if (ev.next_list_date) {
+      const next = new Date(ev.next_list_date + "T12:00:00");
+      const nextStr = next.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      return `Every ${day} · Next ${nextStr}`;
+    }
+    return `Every ${day}`;
+  }
+  return shortEventDates(ev.event_date, ev.end_date);
 }
 
 export function SearchPageClient({
@@ -205,32 +229,20 @@ export function SearchPageClient({
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      <div className="sticky top-[var(--site-header-offset)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="flex-1">
-              <SearchBar
-                value={q}
-                onChange={setQ}
-                onSubmit={handleSearch}
-                loading={isSearching}
-                variant="compact"
-                placeholder={
-                  browseMode === "events"
-                    ? "Search events by name or description…"
-                    : browseMode === "towns"
-                      ? "Filter towns by name…"
-                      : browseMode === "guides"
-                        ? "Search guides…"
-                        : browseMode === "areas"
-                          ? "Search areas and districts…"
-                          : browseMode === "access"
-                            ? "Search parks, landmarks, and trailheads…"
-                            : "Search anything on 30A…"
-                }
-              />
-            </div>
-            {browseMode === "business" ? (
+      {browseMode === "business" ? (
+        <div className="sticky top-[var(--site-header-offset)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
+          <div className="mx-auto max-w-5xl px-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex-1">
+                <SearchBar
+                  value={q}
+                  onChange={setQ}
+                  onSubmit={handleSearch}
+                  loading={isSearching}
+                  variant="compact"
+                  placeholder="Search anything on 30A…"
+                />
+              </div>
               <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
                 <div className="flex items-center gap-1 rounded-full bg-[var(--color-surface-secondary)] p-1">
                   {[1, 2, 3, 4].map((p) => (
@@ -249,10 +261,10 @@ export function SearchPageClient({
                   ))}
                 </div>
               </div>
-            ) : null}
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-8">
@@ -365,7 +377,7 @@ export function SearchPageClient({
                             </div>
                             <div className="flex flex-1 flex-col">
                               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
-                                {shortEventDates(ev.event_date, ev.end_date)}
+                                {formatEventBrowseWhen(ev)}
                               </p>
                               <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
                                 {ev.title}

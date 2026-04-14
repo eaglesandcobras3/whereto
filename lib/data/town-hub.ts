@@ -9,6 +9,23 @@ import { loadLocationRankingScope } from "@/lib/search/location-scope";
 import { fetchCachedEnrichedByQueryKey } from "@/lib/data/town-hub-cache";
 import { townHubSectionKeys } from "@/lib/seo/query-cache-keys";
 
+/** Keep town hub carousels aligned with `businesses.town_id` (excludes adjacent-town matches from ranking). */
+function filterEnrichedToAnchorTown(
+  payload: EnrichedRecommendationPayload | null,
+  anchorTownId: number,
+): EnrichedRecommendationPayload | null {
+  if (!payload?.recommendations?.length) return payload;
+  const filtered = payload.recommendations.filter((rec) => {
+    const tid = rec.business?.town_id;
+    return typeof tid === "number" && tid === anchorTownId;
+  });
+  if (filtered.length === payload.recommendations.length) return payload;
+  return {
+    ...payload,
+    recommendations: filtered.map((rec, i) => ({ ...rec, rank: i + 1 })),
+  };
+}
+
 export type AdjacentTown = { name: string; slug: string };
 
 export async function getTownBySlug(slug: string) {
@@ -198,6 +215,37 @@ export async function getFeaturedGuidesForTown(townId: number): Promise<TownFeat
   }
 }
 
+const AREA_TYPE_POINT_OF_INTEREST = "point_of_interest";
+
+export type TownAreaBrowseRow = {
+  id: number;
+  name: string;
+  slug: string;
+  area_type: string;
+  description_short: string | null;
+};
+
+/** Areas in this town: districts / shopping areas vs landmarks & parks (`point_of_interest`). */
+export async function getTownAreasForLocalGuide(townId: number): Promise<{
+  districts: TownAreaBrowseRow[];
+  pointsOfInterest: TownAreaBrowseRow[];
+}> {
+  try {
+    const supabase = getServiceSupabase();
+    const { data } = await supabase
+      .from("areas")
+      .select("id, name, slug, area_type, description_short")
+      .eq("town_id", townId)
+      .order("name");
+    const rows = (data ?? []) as TownAreaBrowseRow[];
+    const districts = rows.filter((r) => r.area_type !== AREA_TYPE_POINT_OF_INTEREST);
+    const pointsOfInterest = rows.filter((r) => r.area_type === AREA_TYPE_POINT_OF_INTEREST);
+    return { districts, pointsOfInterest };
+  } catch {
+    return { districts: [], pointsOfInterest: [] };
+  }
+}
+
 export async function getAdjacentTownNames(townId: number): Promise<AdjacentTown[]> {
   try {
     const supabase = getServiceSupabase();
@@ -241,7 +289,7 @@ async function picksForIntent(
     const intent = searchIntentSchema.parse({
       category: categorySlug,
       subcategory: null,
-      location: { town: townSlug, radius: "near" as const },
+      location: { town: townSlug, radius: "exact" as const },
       attributes: options?.attributes ?? [],
       exclude_attributes: [],
       sort_preference: "quality",
@@ -376,6 +424,13 @@ export async function getAdjacentTownBusinessPreviews(
 /** Rich town hub: prefer precomputed `query_cache` rows, then live AI fallback. */
 export async function getTownHubExpandedSections(townSlug: string, townName: string) {
   const supabase = getServiceSupabase();
+  const { data: anchorRow } = await supabase
+    .from("towns")
+    .select("id")
+    .eq("slug", townSlug)
+    .maybeSingle();
+  const anchorTownId = anchorRow?.id as number | undefined;
+
   const keys = townHubSectionKeys(townSlug);
 
   async function fromCacheOrLive(
@@ -444,14 +499,17 @@ export async function getTownHubExpandedSections(townSlug: string, townName: str
     ),
   ]);
 
+  const scopeToAnchor = (p: EnrichedRecommendationPayload | null) =>
+    anchorTownId != null ? filterEnrichedToAnchorTown(p, anchorTownId) : p;
+
   return {
-    topPicks,
-    coffee,
-    shopping,
-    casualLunch,
-    dateNight,
-    kidFriendly,
-    quickBites,
+    topPicks: scopeToAnchor(topPicks),
+    coffee: scopeToAnchor(coffee),
+    shopping: scopeToAnchor(shopping),
+    casualLunch: scopeToAnchor(casualLunch),
+    dateNight: scopeToAnchor(dateNight),
+    kidFriendly: scopeToAnchor(kidFriendly),
+    quickBites: scopeToAnchor(quickBites),
   };
 }
 
