@@ -6,7 +6,6 @@ import {
   type EnrichedRecommendationPayload,
 } from "@/lib/search/recommendation-set";
 import { loadLocationRankingScope } from "@/lib/search/location-scope";
-import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 import { fetchCachedEnrichedByQueryKey } from "@/lib/data/town-hub-cache";
 import { townHubSectionKeys } from "@/lib/seo/query-cache-keys";
 
