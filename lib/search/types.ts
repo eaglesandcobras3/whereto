@@ -4,6 +4,7 @@ export type BusinessPayload = {
   slug?: string;
   address?: string | null;
   town_id?: number | null;
+  town_name?: string | null;
   category_id?: number | null;
   category_name?: string;
   lat?: number;

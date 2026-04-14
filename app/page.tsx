@@ -8,9 +8,16 @@ export default async function Home() {
   const flags = await getAllFeatureFlags();
   const supabase = getServiceSupabase();
 
-  let featuredBusinesses: (BusinessPayload & { 
-    featured_title?: string | null; 
-    featured_description?: string | null; 
+  // Fetch towns for "Icons of 30A" section
+  const { data: towns } = await supabase
+    .from("towns")
+    .select("name, slug, ai_tagline, hero_image_url")
+    .order("name")
+    .limit(6);
+
+  let featuredBusinesses: (BusinessPayload & {
+    featured_title?: string | null;
+    featured_description?: string | null;
     badge?: string | null;
   })[] = [];
   if (flags["featured_business"]) {
@@ -62,7 +69,7 @@ export default async function Home() {
     <Suspense
       fallback={<div className="min-h-screen bg-background" aria-hidden />}
     >
-      <HomePage featureFlags={flags} featuredBusinesses={featuredBusinesses} />
+      <HomePage featureFlags={flags} featuredBusinesses={featuredBusinesses} towns={towns ?? []} />
     </Suspense>
   );
 }

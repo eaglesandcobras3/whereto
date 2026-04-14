@@ -29,6 +29,7 @@ This is the markdown-first content source for WhereTo30A.
   /businesses     # Business pages (amavida-coffee-rosemary.md)
   /guides         # Editorial guides (best-coffee-rosemary-beach.md)
   /seasonal       # Seasonal guides (summer-2026-30a.md)
+  /events         # Time-limited events (farmers-market-seaside.md)
 ```
 
 ## Frontmatter Schema
@@ -40,8 +41,8 @@ Every markdown file must include frontmatter with required and optional fields.
 ```yaml
 ---
 title: "Page Title"
-type: guide | business | town | beach | area | seasonal
-entity_type: guide | business | town | beach | area
+type: guide | business | town | beach | area | seasonal | event
+entity_type: guide | business | town | beach | area | event
 slug: unique-url-slug
 status: draft | published | archived
 ---
@@ -97,6 +98,12 @@ gallery:
 
 ```yaml
 ---
+# Event-specific (required for type: event)
+event_date: 2026-05-15 # YYYY-MM-DD format (required)
+end_date: 2026-05-17   # YYYY-MM-DD for multi-day events (optional)
+venue_name: "Central Square"
+price: "Free" # or "$25", "Varies", etc.
+
 # Guide-specific
 guide_type: town | intent | category | seasonal | editorial | best_of | itinerary
 season: spring | summer | fall | winter | year_round

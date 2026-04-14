@@ -46,6 +46,7 @@ const TYPE_FOLDERS: Record<string, string> = {
   area: "areas",
   guide: "guides",
   seasonal: "seasonal",
+  event: "events",
 };
 
 // Statuses that trigger processing
@@ -55,7 +56,7 @@ const PROCESS_STATUSES = ["NEW", "UPDATED", "new", "updated"];
 interface FrontmatterData {
   id?: string;
   title: string;
-  type: "town" | "business" | "beach" | "area" | "guide" | "seasonal";
+  type: "town" | "business" | "beach" | "area" | "guide" | "seasonal" | "event";
   entity_type: string;
   slug: string;
   status: string;
@@ -90,6 +91,11 @@ interface FrontmatterData {
   romance_score?: number;
   nightlife_score?: number;
   budget_score?: number;
+  // Event-specific fields
+  event_date?: string; // YYYY-MM-DD
+  end_date?: string; // YYYY-MM-DD (optional, for multi-day events)
+  venue_name?: string;
+  price?: string; // "Free", "$25", etc.
 }
 
 interface ParsedContent {
@@ -390,6 +396,53 @@ async function syncGuide(parsed: ParsedContent): Promise<boolean> {
 }
 
 /**
+ * Sync EVENT to events table
+ */
+async function syncEvent(parsed: ParsedContent): Promise<boolean> {
+  const { frontmatter, content } = parsed;
+  const townId = await getTownId(frontmatter.town);
+
+  // Validate event_date is required
+  if (!frontmatter.event_date) {
+    console.error(`  ✗ Event requires event_date field`);
+    return false;
+  }
+
+  const { error } = await supabase.from("events").upsert(
+    {
+      slug: frontmatter.slug,
+      title: frontmatter.title,
+      description: frontmatter.seo_description || content.slice(0, 500).replace(/[#*\[\]`]/g, ""),
+      hero_image_url: frontmatter.hero_image,
+      event_date: frontmatter.event_date,
+      end_date: frontmatter.end_date || null,
+      town_id: townId,
+      venue_name: frontmatter.venue_name,
+      address: frontmatter.address,
+      lat:
+        frontmatter.latitude ||
+        frontmatter.map_center?.lat ||
+        frontmatter.map_location?.lat,
+      lng:
+        frontmatter.longitude ||
+        frontmatter.map_center?.lng ||
+        frontmatter.map_location?.lng,
+      price: frontmatter.price,
+      website: frontmatter.website,
+      tags: frontmatter.tags,
+      status: "active",
+    },
+    { onConflict: "slug" }
+  );
+
+  if (error) {
+    console.error(`  ✗ Event sync failed: ${error.message}`);
+    return false;
+  }
+  return true;
+}
+
+/**
  * Move file from inbox to correct folder based on type
  */
 function moveFromInbox(parsed: ParsedContent): string {
@@ -435,6 +488,8 @@ async function syncToDatabase(parsed: ParsedContent): Promise<boolean> {
       return syncGuide(parsed);
     case "seasonal":
       return syncGuide(parsed); // Treat seasonal as guide
+    case "event":
+      return syncEvent(parsed);
     default:
       console.error(`  ✗ Unknown type: ${frontmatter.type}`);
       return false;

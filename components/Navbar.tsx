@@ -48,6 +48,16 @@ export function Navbar({
     pathname.startsWith(`${PRIMARY_REGION_HUB_PATH}/`);
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
+  const isSearch = pathname === "/search";
+
+  // Category filter links for navigation
+  const categoryLinks = [
+    { label: "Towns", href: PRIMARY_REGION_HUB_PATH, isActive: isTowns },
+    { label: "Stores", href: "/search?type=stores", isActive: isSearch && pathname.includes("type=stores") },
+    { label: "Services", href: "/search?type=services", isActive: isSearch && pathname.includes("type=services") },
+    { label: "Events", href: "/search?type=events", isActive: isSearch && pathname.includes("type=events") },
+    { label: "Guide", href: "/guide", isActive: isGuide },
+  ];
 
   // Feature flags
   const showUserFeatures = featureFlags["user_features"] === true;
@@ -141,18 +151,15 @@ export function Navbar({
               Home
             </Link>
           )}
-          <Link
-            href="/guide"
-            className={`hidden sm:inline-flex ${navLinkClass(isGuide)}`}
-          >
-            Guide
-          </Link>
-          <Link
-            href={PRIMARY_REGION_HUB_PATH}
-            className={`hidden md:inline-flex ${navLinkClass(isTowns)}`}
-          >
-            Towns
-          </Link>
+          {categoryLinks.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className={`hidden sm:inline-flex ${navLinkClass(link.isActive)}`}
+            >
+              {link.label}
+            </Link>
+          ))}
           {showUserFeatures && (
             <Link href="/saved" className={navLinkClass(isSaved)}>
               Saved

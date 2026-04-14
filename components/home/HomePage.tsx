@@ -177,18 +177,27 @@ function DesignImg({
   );
 }
 
-type Props = {
-  featureFlags?: Record<string, boolean>;
-  featuredBusinesses?: (BusinessPayload & { 
-    featured_title?: string | null; 
-    featured_description?: string | null; 
-    badge?: string | null;
-  })[];
+type TownPayload = {
+  name: string;
+  slug: string;
+  ai_tagline?: string | null;
+  hero_image_url?: string | null;
 };
 
-export function HomePage({ 
-  featureFlags = {}, 
-  featuredBusinesses = [] 
+type Props = {
+  featureFlags?: Record<string, boolean>;
+  featuredBusinesses?: (BusinessPayload & {
+    featured_title?: string | null;
+    featured_description?: string | null;
+    badge?: string | null;
+  })[];
+  towns?: TownPayload[];
+};
+
+export function HomePage({
+  featureFlags = {},
+  featuredBusinesses = [],
+  towns = [],
 }: Props) {
   const searchParams = useSearchParams();
   const [q, setQ] = useState("");
@@ -480,7 +489,7 @@ export function HomePage({
           </section>
         )}
 
-        {featureFlags["towns"] === true && (
+        {featureFlags["towns"] === true && towns.length > 0 && (
           <section
             id="section-neighborhoods"
             className="bg-surface-container-low py-32"
@@ -502,89 +511,36 @@ export function HomePage({
                   Explore all Towns
                 </Link>
               </div>
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-                <Link
-                  href="/seaside"
-                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-8"
-                >
-                  <DesignImg
-                    src={IMG.townSeaside}
-                    alt="scenic view of iconic white beach pavilion at seaside florida with boardwalk and dunes"
-                    className="transition duration-700 group-hover:scale-105"
-                    sizes="(min-width: 768px) 66vw, 100vw"
-                  />
-                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-12">
-                    <h3 className="font-headline text-5xl font-extrabold tracking-tighter text-white">
-                      Seaside
-                    </h3>
-                    <p className="mt-4 max-w-md font-medium text-white/90">
-                      The birthplace of New Urbanism. Iconic pavilions, white
-                      picket fences, and the spirit of summer.
-                    </p>
-                  </div>
-                </Link>
-                <Link
-                  href="/alys-beach"
-                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-4"
-                >
-                  <DesignImg
-                    src={IMG.townAlys}
-                    alt="minimalist stark white architecture of alys beach with courtyard and palm trees"
-                    className="transition duration-700 group-hover:scale-105"
-                    sizes="(min-width: 768px) 33vw, 100vw"
-                  />
-                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-12">
-                    <h3 className="font-headline text-4xl font-extrabold tracking-tighter text-white">
-                      Alys Beach
-                    </h3>
-                    <p className="mt-4 font-medium text-white/90">
-                      Bermudan elegance meets modern luxury.
-                    </p>
-                  </div>
-                </Link>
-                <Link
-                  href="/rosemary-beach"
-                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-4"
-                >
-                  <DesignImg
-                    src={IMG.townRosemary}
-                    alt="rosemary beach cobblestone street with european style architecture and hanging flower baskets"
-                    className="transition duration-700 group-hover:scale-105"
-                    sizes="(min-width: 768px) 33vw, 100vw"
-                  />
-                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-12">
-                    <h3 className="font-headline text-4xl font-extrabold tracking-tighter text-white">
-                      Rosemary
-                    </h3>
-                    <p className="mt-4 font-medium text-white/90">
-                      European charm on the Gulf coast.
-                    </p>
-                  </div>
-                </Link>
-                <Link
-                  href="/grayton-beach"
-                  className="group relative h-[500px] cursor-pointer overflow-hidden rounded-xl md:col-span-8"
-                >
-                  <DesignImg
-                    src={IMG.townGrayton}
-                    alt="rustic wooden beach boardwalk through high dunes at grayton beach state park florida"
-                    className="transition duration-700 group-hover:scale-105"
-                    sizes="(min-width: 768px) 66vw, 100vw"
-                  />
-                  <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/10" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-12">
-                    <h3 className="font-headline text-5xl font-extrabold tracking-tighter text-white">
-                      Grayton
-                    </h3>
-                    <p className="mt-4 max-w-md font-medium text-white/90">
-                      Nice dogs, strange people. The soulful, artsy heart of the
-                      Emerald Coast.
-                    </p>
-                  </div>
-                </Link>
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {towns.slice(0, 6).map((town) => (
+                  <Link
+                    key={town.slug}
+                    href={`/${town.slug}`}
+                    className="group relative h-[400px] cursor-pointer overflow-hidden rounded-xl"
+                  >
+                    {town.hero_image_url ? (
+                      <DesignImg
+                        src={town.hero_image_url}
+                        alt={town.name}
+                        className="transition duration-700 group-hover:scale-105"
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
+                    )}
+                    <div className="absolute inset-0 bg-black/30 transition-all duration-500 group-hover:bg-black/20" />
+                    <div className="absolute inset-0 flex flex-col justify-end p-8">
+                      <h3 className="font-headline text-3xl font-extrabold tracking-tighter text-white">
+                        {town.name}
+                      </h3>
+                      {town.ai_tagline && (
+                        <p className="mt-3 font-medium text-white/90 line-clamp-2">
+                          {town.ai_tagline}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           </section>

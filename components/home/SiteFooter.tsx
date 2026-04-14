@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 
-const townLinks = [
-  { name: "Rosemary Beach", href: "/rosemary-beach" },
-  { name: "Seaside", href: "/seaside" },
-  { name: "Alys Beach", href: "/alys-beach" },
-  { name: "Grayton Beach", href: "/grayton-beach" },
-  { name: "WaterColor", href: "/watercolor" },
-  { name: "Santa Rosa Beach", href: "/santa-rosa-beach" },
-  { name: "Destin", href: "/destin" },
-  { name: "Panama City Beach", href: "/panama-city-beach" },
-];
+async function getTowns() {
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from("towns")
+    .select("name, slug")
+    .order("name")
+    .limit(10);
+  return data ?? [];
+}
 
 const companyLinks = [
   { name: "About", href: "/about" },
@@ -19,7 +19,10 @@ const companyLinks = [
 ];
 
 export async function SiteFooter() {
-  const flags = await getAllFeatureFlags();
+  const [flags, townLinks] = await Promise.all([
+    getAllFeatureFlags(),
+    getTowns(),
+  ]);
   const showTowns = flags["towns"] === true;
 
   return (
@@ -45,13 +48,13 @@ export async function SiteFooter() {
             <div>
               <h3 className="text-eyebrow mb-4">Towns</h3>
               <ul className="space-y-2">
-                {townLinks.map((link) => (
-                  <li key={link.href}>
+                {townLinks.map((town) => (
+                  <li key={town.slug}>
                     <Link
-                      href={link.href}
+                      href={`/${town.slug}`}
                       className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
                     >
-                      {link.name}
+                      {town.name}
                     </Link>
                   </li>
                 ))}
@@ -61,25 +64,27 @@ export async function SiteFooter() {
 
           {/* Newsletter / Company */}
           <div className="space-y-6">
-            <div>
-              <h3 className="text-eyebrow mb-4">Stay updated</h3>
-              <p className="text-sm text-[var(--color-text-secondary)] mb-3">
-                Get the best local picks in your inbox.
-              </p>
-              <form className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  className="flex-1 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] transition-colors"
-                >
-                  Join
-                </button>
-              </form>
-            </div>
+            {flags["newsletter"] === true && (
+              <div>
+                <h3 className="text-eyebrow mb-4">Stay updated</h3>
+                <p className="text-sm text-[var(--color-text-secondary)] mb-3">
+                  Get the best local picks in your inbox.
+                </p>
+                <form className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="Email address"
+                    className="flex-1 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                  />
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] transition-colors"
+                  >
+                    Join
+                  </button>
+                </form>
+              </div>
+            )}
 
             <div>
               <h3 className="text-eyebrow mb-3">Company</h3>
@@ -100,16 +105,10 @@ export async function SiteFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[var(--color-border)] pt-8 sm:flex-row">
-          <p className="text-xs text-[var(--color-text-tertiary)]">
-            © {new Date().getFullYear()} WhereTo30A. Discover the Emerald Coast
-            with one search.
+        <div className="mt-12 border-t border-[var(--color-border)] pt-8">
+          <p className="text-xs text-[var(--color-text-tertiary)] text-center sm:text-left">
+            © {new Date().getFullYear()} WhereTo30A. Discover the Emerald Coast.
           </p>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-[var(--color-text-tertiary)]">
-              Built with AI
-            </span>
-          </div>
         </div>
       </div>
     </footer>
