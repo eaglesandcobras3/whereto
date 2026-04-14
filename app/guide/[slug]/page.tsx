@@ -2,8 +2,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { SiteFooter } from "@/components/home/SiteFooter";
-import { Navbar } from "@/components/Navbar";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -73,8 +71,6 @@ export default async function GuidePage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      <Navbar compact />
-
       <main className="flex-1">
         <article className="mx-auto max-w-4xl px-6 py-16 md:px-10 md:py-24">
           {/* Breadcrumb */}
@@ -115,8 +111,6 @@ export default async function GuidePage({ params }: Props) {
           <MarkdownRenderer content={page.body_markdown || ""} />
         </article>
       </main>
-
-      <SiteFooter />
     </div>
   );
 }

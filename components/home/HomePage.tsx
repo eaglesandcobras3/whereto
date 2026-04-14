@@ -272,13 +272,15 @@ export function HomePage({
             )}
           </div>
           <div className="flex items-center space-x-4 md:space-x-6">
-            <Link
-              href="/login"
-              className="material-symbols-outlined text-outline transition-all hover:text-brand-wordmark"
-              aria-label="Account"
-            >
-              person
-            </Link>
+            {featureFlags["user_features"] === true ? (
+              <Link
+                href="/login"
+                className="material-symbols-outlined text-outline transition-all hover:text-brand-wordmark"
+                aria-label="Account"
+              >
+                person
+              </Link>
+            ) : null}
             {featureFlags["plan-your-trip"] === true && (
               <button
                 type="button"

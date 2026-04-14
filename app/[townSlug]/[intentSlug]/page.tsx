@@ -7,9 +7,7 @@ import {
 } from "@/lib/supabase/service-role";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
-import { Navbar } from "@/components/Navbar";
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
-import { SiteFooter } from "@/components/home/SiteFooter";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
 export const revalidate = 3600;
@@ -125,8 +123,6 @@ export default async function SeoIntentPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      <Navbar />
-
       {/* Hero */}
       <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="mx-auto max-w-4xl px-4 py-10 sm:py-12">
@@ -303,8 +299,6 @@ export default async function SeoIntentPage({ params }: Props) {
           </Link>
         </footer>
       </div>
-
-      <SiteFooter />
     </div>
   );
 }

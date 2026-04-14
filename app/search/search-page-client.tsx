@@ -52,13 +52,24 @@ export type BrowseGuideRow = {
   og_image_url: string | null;
 };
 
-type BrowseMode = "business" | "events" | "towns" | "guides";
+export type BrowseAreaRow = {
+  id: number;
+  name: string;
+  slug: string;
+  description_short: string | null;
+  area_type: string;
+  town_slug: string | null;
+  town_name: string | null;
+};
+
+type BrowseMode = "business" | "events" | "towns" | "guides" | "areas";
 
 type Props = {
   browseMode?: BrowseMode;
   browseEvents?: BrowseEventRow[];
   browseTowns?: BrowseTownRow[];
   browseGuides?: BrowseGuideRow[];
+  browseAreas?: BrowseAreaRow[];
   initialQuery: string;
   results: SearchResultPayload;
   townName?: string;
@@ -85,6 +96,7 @@ export function SearchPageClient({
   browseEvents = [],
   browseTowns = [],
   browseGuides = [],
+  browseAreas = [],
   initialQuery,
   results,
   townName,
@@ -141,7 +153,9 @@ export function SearchPageClient({
         ? browseTowns.length
         : browseMode === "guides"
           ? browseGuides.length
-          : results.recommendations.length;
+          : browseMode === "areas"
+            ? browseAreas.length
+            : results.recommendations.length;
 
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -151,6 +165,7 @@ export function SearchPageClient({
   const paginatedEvents = browseEvents.slice(startIndex, endIndex);
   const paginatedTowns = browseTowns.slice(startIndex, endIndex);
   const paginatedGuides = browseGuides.slice(startIndex, endIndex);
+  const paginatedAreas = browseAreas.slice(startIndex, endIndex);
 
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -169,7 +184,9 @@ export function SearchPageClient({
         ? `${totalResults} upcoming events`
         : browseMode === "towns"
           ? `${totalResults} towns`
-          : `${totalResults} guides`;
+          : browseMode === "areas"
+            ? `${totalResults} areas`
+            : `${totalResults} guides`;
 
   const hasRows =
     browseMode === "events"
@@ -178,11 +195,13 @@ export function SearchPageClient({
         ? paginatedTowns.length > 0
         : browseMode === "guides"
           ? paginatedGuides.length > 0
-          : paginatedBusiness.length > 0;
+          : browseMode === "areas"
+            ? paginatedAreas.length > 0
+            : paginatedBusiness.length > 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      <div className="sticky top-16 z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
+      <div className="sticky top-[var(--site-header-offset)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
         <div className="mx-auto max-w-5xl px-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="flex-1">
@@ -199,7 +218,9 @@ export function SearchPageClient({
                       ? "Filter towns by name…"
                       : browseMode === "guides"
                         ? "Search guides…"
-                        : "Search anything on 30A…"
+                        : browseMode === "areas"
+                          ? "Search areas and districts…"
+                          : "Search anything on 30A…"
                 }
               />
             </div>
@@ -402,6 +423,55 @@ export function SearchPageClient({
                           </Link>
                         </article>
                       ))
+                    : null}
+
+                  {browseMode === "areas"
+                    ? paginatedAreas.map((a) => {
+                        const inner = (
+                          <>
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-secondary)] text-[var(--color-primary)]">
+                              <span className="material-symbols-outlined text-3xl">explore</span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                                {a.area_type.replace(/_/g, " ")}
+                              </p>
+                              <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+                                {a.name}
+                              </h2>
+                              <div className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                                {a.town_name ? <span>{a.town_name}</span> : null}
+                              </div>
+                              {a.description_short ? (
+                                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                                  {a.description_short}
+                                </p>
+                              ) : (
+                                <p className="mt-2 text-sm text-[var(--color-text-tertiary)]">
+                                  Named place or district on 30A.
+                                </p>
+                              )}
+                            </div>
+                          </>
+                        );
+                        return (
+                          <article
+                            key={a.id}
+                            className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
+                          >
+                            {a.town_slug ? (
+                              <Link
+                                href={`/${a.town_slug}`}
+                                className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6"
+                              >
+                                {inner}
+                              </Link>
+                            ) : (
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">{inner}</div>
+                            )}
+                          </article>
+                        );
+                      })
                     : null}
 
                   {browseMode === "guides"

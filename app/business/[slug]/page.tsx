@@ -8,8 +8,6 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
-import { Navbar } from "@/components/Navbar";
-import { SiteFooter } from "@/components/home/SiteFooter";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { OpenStreetMap } from "@/components/OpenStreetMap";
 
@@ -164,8 +162,6 @@ export default async function BusinessPage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      <Navbar compact />
-
       <main className="flex-1">
         <div className="mx-auto max-w-4xl px-4 py-10 sm:py-12 md:px-10">
           <script
@@ -418,8 +414,6 @@ export default async function BusinessPage({ params }: Props) {
           </div>
         </div>
       </main>
-
-      <SiteFooter />
     </div>
   );
 }

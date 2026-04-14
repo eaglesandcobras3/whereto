@@ -8,10 +8,11 @@ export default async function Home() {
   const flags = await getAllFeatureFlags();
   const supabase = getServiceSupabase();
 
-  // Fetch towns for "Icons of 30A" section
+  // Fetch towns for "Icons of 30A" section (only columns that exist on `towns`;
+  // `hero_image_url` lives on businesses — selecting it here fails the query and returned no towns).
   const { data: towns } = await supabase
     .from("towns")
-    .select("name, slug, ai_tagline, hero_image_url")
+    .select("name, slug, ai_tagline")
     .order("name")
     .limit(6);
 

@@ -72,6 +72,9 @@
   --surface-elevated: var(--color-surface);
   --accent: var(--color-primary);
   --accent-soft: rgba(0, 50, 57, 0.08);
+
+  /* Sticky site header: keep in sync with Navbar compact row height */
+  --site-header-offset: 3.5rem;
 }
 
 /* --------------------------------------------------------------------------

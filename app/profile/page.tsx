@@ -2,8 +2,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
-import { SiteFooter } from "@/components/home/SiteFooter";
 
 export default async function ProfilePage() {
   const supabase = await createSupabaseServerClient();
@@ -27,8 +25,6 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <Navbar compact />
-      
       <main className="flex-1 py-12">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -94,8 +90,6 @@ export default async function ProfilePage() {
           </div>
         </div>
       </main>
-      
-      <SiteFooter />
     </div>
   );
 }

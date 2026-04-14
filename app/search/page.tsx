@@ -19,14 +19,24 @@ type Props = {
 
 // Type filter labels and default queries (used when `q` is empty)
 const TYPE_FILTERS: Record<string, { label: string; query: string }> = {
-  stores: { label: "Stores", query: "shopping stores retail" },
+  towns: { label: "Towns", query: "30A beach towns neighborhoods" },
+  areas: { label: "Areas", query: "districts shopping areas neighborhoods 30A" },
+  businesses: {
+    label: "Businesses",
+    query: "restaurants cafes shops retail services local businesses",
+  },
   services: { label: "Services", query: "services spa salon wellness" },
   events: { label: "Events", query: "events activities things to do" },
-  towns: { label: "Towns", query: "30A beach towns neighborhoods" },
   guides: { label: "Guides", query: "local guides itineraries travel tips" },
 };
 
-const BROWSE_TYPES = new Set(["events", "towns", "guides"]);
+const BROWSE_TYPES = new Set(["events", "towns", "guides", "areas"]);
+
+function normalizeSearchType(type: string | undefined): string | undefined {
+  if (!type) return undefined;
+  if (type === "stores") return "businesses";
+  return type;
+}
 
 /** Strip characters that break PostgREST `.or(...)` / `ilike` filters. */
 function sanitizeSearchToken(raw: string): string {
@@ -45,7 +55,8 @@ function emptySearchResult(displayQuery: string, summary: string): SearchResultP
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const { q, type } = await searchParams;
+  const { q, type: rawType } = await searchParams;
+  const type = normalizeSearchType(rawType);
   if (type && TYPE_FILTERS[type]) {
     return {
       title: `${TYPE_FILTERS[type].label} — WhereTo30A`,
@@ -60,7 +71,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function SearchPage({ searchParams }: Props) {
-  const { q, town_id, price, type } = await searchParams;
+  const { q, town_id, price, type: rawType } = await searchParams;
+  const type = normalizeSearchType(rawType);
 
   const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
   const trimmedQ = q?.trim() ?? "";
@@ -99,7 +111,10 @@ export default async function SearchPage({ searchParams }: Props) {
       .limit(5),
   ]);
 
-  const browseMode = type && BROWSE_TYPES.has(type) ? (type as "events" | "towns" | "guides") : "business";
+  const browseMode =
+    type && BROWSE_TYPES.has(type)
+      ? (type as "events" | "towns" | "guides" | "areas")
+      : "business";
 
   if (browseMode === "events") {
     let evQuery = serviceSupabase
@@ -164,6 +179,52 @@ export default async function SearchPage({ searchParams }: Props) {
         results={emptySearchResult(
           displayQuery,
           "Beach towns and neighborhoods along Florida's Scenic Highway 30A.",
+        )}
+        townName={townName}
+        footer={<SiteFooter />}
+        towns={townsResult.data ?? []}
+        recentPosts={recentPostsResult.data ?? []}
+      />
+    );
+  }
+
+  if (browseMode === "areas") {
+    let aq = serviceSupabase
+      .from("areas")
+      .select("id, name, slug, description_short, area_type, town_id, towns(slug, name)")
+      .order("name")
+      .limit(100);
+
+    if (town_id && !Number.isNaN(Number(town_id))) {
+      aq = aq.eq("town_id", Number(town_id));
+    }
+    const safeA = sanitizeSearchToken(trimmedQ);
+    if (safeA) {
+      aq = aq.or(`name.ilike.%${safeA}%,slug.ilike.%${safeA}%,description_short.ilike.%${safeA}%`);
+    }
+
+    const { data: rawAreas } = await aq;
+    const browseAreas = (rawAreas ?? []).map((row: Record<string, unknown>) => {
+      const towns = row.towns as { slug: string; name: string } | null | undefined;
+      return {
+        id: row.id as number,
+        name: row.name as string,
+        slug: row.slug as string,
+        description_short: row.description_short as string | null,
+        area_type: row.area_type as string,
+        town_slug: towns?.slug ?? null,
+        town_name: towns?.name ?? null,
+      };
+    });
+
+    return (
+      <SearchPageClient
+        browseMode="areas"
+        browseAreas={browseAreas}
+        initialQuery={displayQuery}
+        results={emptySearchResult(
+          displayQuery,
+          "Shopping districts, squares, and named neighborhoods along 30A.",
         )}
         townName={townName}
         footer={<SiteFooter />}

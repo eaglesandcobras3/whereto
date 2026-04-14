@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
 import { SectionBlock } from "@/components/discovery/SectionBlock";
 import { TownCard } from "@/components/discovery/TownCard";
-import { SiteFooter } from "@/components/home/SiteFooter";
 import { getRegionDescriptor, getTownDescriptor } from "@/lib/data/town-descriptors";
 import type { AdjacentTown } from "@/lib/data/town-hub";
 
@@ -17,8 +15,6 @@ export function RegionHubView({
 }) {
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      <Navbar />
-
       <div className="coastal-hero border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <header className="space-y-4 text-center">
@@ -71,8 +67,6 @@ export function RegionHubView({
           </div>
         </SectionBlock>
       </div>
-
-      <SiteFooter />
     </div>
   );
 }
