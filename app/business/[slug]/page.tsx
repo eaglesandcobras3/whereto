@@ -8,8 +8,9 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
+import Image from "next/image";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-import { OpenStreetMap } from "@/components/OpenStreetMap";
+import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -115,6 +116,70 @@ export default async function BusinessPage({ params }: Props) {
   } = await auth.auth.getUser();
 
   const flags = await getAllFeatureFlags();
+  const supabase = getServiceSupabase();
+  const townId = b.town_id as number | null;
+  const businessId = b.id as string;
+
+  type RelatedBusinessRow = {
+    id: string;
+    name: string;
+    slug: string;
+    hero_image_url: string | null;
+    ai_one_liner: string | null;
+    ai_summary: string | null;
+  };
+
+  type GuideCardRow = {
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    og_image_url: string | null;
+  };
+
+  let relatedBusinesses: RelatedBusinessRow[] = [];
+  if (townId != null) {
+    const { data } = await supabase
+      .from("businesses")
+      .select("id, name, slug, hero_image_url, ai_one_liner, ai_summary")
+      .eq("town_id", townId)
+      .neq("id", businessId)
+      .eq("status", "active")
+      .order("confidence_score", { ascending: false })
+      .limit(5);
+    relatedBusinesses = (data as RelatedBusinessRow[] | null) ?? [];
+  }
+
+  let townGuides: GuideCardRow[] = [];
+  if (townId != null) {
+    const { data: ents } = await supabase
+      .from("entities")
+      .select("id")
+      .eq("primary_town_id", townId)
+      .eq("status", "published")
+      .in("entity_type", ["guide", "seasonal_guide"])
+      .limit(24);
+    const entityIds = (ents ?? []).map((e) => e.id as string).filter(Boolean);
+    if (entityIds.length > 0) {
+      const { data: g } = await supabase
+        .from("pages")
+        .select("slug, title, excerpt, og_image_url")
+        .eq("page_type", "guide")
+        .eq("status", "published")
+        .in("entity_id", entityIds)
+        .limit(6);
+      townGuides = (g as GuideCardRow[] | null) ?? [];
+    }
+  }
+  if (townGuides.length === 0) {
+    const { data: g2 } = await supabase
+      .from("pages")
+      .select("slug, title, excerpt, og_image_url")
+      .eq("page_type", "guide")
+      .eq("status", "published")
+      .order("updated_at", { ascending: false })
+      .limit(5);
+    townGuides = (g2 as GuideCardRow[] | null) ?? [];
+  }
 
   const town = b.towns as { name?: string; slug?: string } | null;
   const category = b.categories as { name?: string } | null;
@@ -160,10 +225,16 @@ export default async function BusinessPage({ params }: Props) {
     ...(heroImage ? { image: [heroImage] } : {}),
   };
 
+  const rawMarkdown = (b.pages as { body_markdown?: string } | null)?.body_markdown?.trim() ?? "";
+  const cleanedMarkdown = rawMarkdown
+    ? stripLeadingH1MatchingTitle(rawMarkdown, b.name as string).trim()
+    : "";
+  const hasMarkdown = cleanedMarkdown.length > 0;
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-4 py-10 sm:py-12 md:px-10">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -201,21 +272,40 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-12 lg:grid-cols-3">
             {/* Main Content */}
             <div className="space-y-12 lg:col-span-2">
-              {/* Header */}
+              {/* Header — avoid duplicating an H1 when markdown carries the title */}
               <header>
-                <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-zinc-900 sm:text-5xl">
-                  {b.name as string}
-                </h1>
-                {oneLiner && (
-                  <p className="mt-4 text-xl text-teal-700 font-medium leading-tight">{oneLiner}</p>
-                )}
-                {b.address && (
-                  <p className="mt-3 text-zinc-600 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined !text-base text-zinc-400">place</span>
-                    {b.address as string}
-                  </p>
+                {hasMarkdown ? (
+                  <>
+                    <h1 className="sr-only">{b.name as string}</h1>
+                    {oneLiner && (
+                      <p className="text-xl font-medium leading-tight text-teal-700">{oneLiner}</p>
+                    )}
+                    {b.address && (
+                      <p className="mt-3 flex items-center gap-1.5 text-zinc-600">
+                        <span className="material-symbols-outlined !text-base text-zinc-400">place</span>
+                        {b.address as string}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-zinc-900 sm:text-5xl">
+                      {b.name as string}
+                    </h1>
+                    {oneLiner && (
+                      <p className="mt-4 text-xl font-medium leading-tight text-teal-700">{oneLiner}</p>
+                    )}
+                    {b.address && (
+                      <p className="mt-3 flex items-center gap-1.5 text-zinc-600">
+                        <span className="material-symbols-outlined !text-base text-zinc-400">place</span>
+                        {b.address as string}
+                      </p>
+                    )}
+                  </>
                 )}
               </header>
+
+              {hasMarkdown ? <MarkdownRenderer content={cleanedMarkdown} /> : null}
 
               {/* Scores */}
               {(familyScore || dateScore || valueScore) && (
@@ -240,18 +330,12 @@ export default async function BusinessPage({ params }: Props) {
                 </div>
               ) : null}
 
-              {/* Full Markdown Content (from Pages table) */}
-              {(b.pages as { body_markdown?: string } | null)?.body_markdown ? (
-                <MarkdownRenderer content={(b.pages as { body_markdown?: string }).body_markdown!} />
-              ) : (
-                /* Fallback to simple description if no rich page exists */
-                b.ai_summary && (
-                  <div>
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">About</h2>
-                    <p className="text-lg leading-relaxed text-zinc-700">{b.ai_summary as string}</p>
-                  </div>
-                )
-              )}
+              {!hasMarkdown && b.ai_summary ? (
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">About</h2>
+                  <p className="text-lg leading-relaxed text-zinc-700">{b.ai_summary as string}</p>
+                </div>
+              ) : null}
 
               {/* Highlights */}
               {highlights?.length ? (
@@ -330,87 +414,148 @@ export default async function BusinessPage({ params }: Props) {
               )}
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-8">
-              {/* Map */}
-              {hasCoords && (
-                <OpenStreetMap 
-                  lat={b.lat as number} 
-                  lng={b.lng as number} 
-                  title={b.name as string}
-                  className="h-[350px]"
-                />
-              )}
-
-              {/* Website Link (Simplified Contact) */}
+            {/* Sidebar — blog-style discovery, not a map */}
+            <aside className="space-y-10 lg:sticky lg:top-24 lg:self-start">
               {b.website && (
-                <div className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-premium-sm">
+                <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-premium-sm">
                   <a
                     href={b.website as string}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between group"
+                    className="group flex items-center justify-between"
                   >
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Official Site</p>
-                      <p className="font-bold text-zinc-900 truncate max-w-[180px]">Visit Website</p>
+                      <p className="mb-1 text-xs font-bold uppercase tracking-widest text-zinc-400">Official site</p>
+                      <p className="max-w-[200px] truncate font-bold text-zinc-900">Visit website</p>
                     </div>
-                    <span className="material-symbols-outlined text-zinc-300 group-hover:text-teal-600 group-hover:translate-x-1 transition-all">arrow_forward</span>
+                    <span className="material-symbols-outlined text-zinc-300 transition-all group-hover:translate-x-1 group-hover:text-teal-600">
+                      arrow_forward
+                    </span>
                   </a>
                 </div>
               )}
 
-              {/* Practical Info */}
-              {(reservations || parking || waitTime || noiseLevel || bestTime?.length || crowd?.length) && (
-                <div className="rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-premium-sm space-y-6">
-                  <h2 className="font-headline text-xl font-bold text-zinc-900">Know Before You Go</h2>
-
-                  <div className="space-y-4">
-                    {reservations && (
+              {(reservations || parking || waitTime || noiseLevel || bestTime?.length || crowd?.length) ? (
+                <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-premium-sm">
+                  <h2 className="font-headline text-lg font-bold text-zinc-900">Know before you go</h2>
+                  <div className="space-y-3 text-sm">
+                    {reservations ? (
                       <div>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Reservations</span>
-                        <p className="text-sm font-medium text-zinc-700 capitalize">{reservations}</p>
-                      </div>
-                    )}
-
-                    {waitTime && (
-                      <div>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Wait Time</span>
-                        <p className="text-sm font-medium text-zinc-700">{waitTime}</p>
-                      </div>
-                    )}
-
-                    {parking && (
-                      <div>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Parking</span>
-                        <p className="text-sm font-medium text-zinc-700 capitalize">{parking}</p>
-                      </div>
-                    )}
-
-                    {noiseLevel && (
-                      <div>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Noise Level</span>
-                        <p className="text-sm font-medium text-zinc-700 capitalize">{noiseLevel}</p>
-                      </div>
-                    )}
-
-                    {bestTime?.length ? (
-                      <div>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Best Time to Visit</span>
-                        <p className="text-sm font-medium text-zinc-700">{bestTime.join(", ")}</p>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Reservations</span>
+                        <p className="font-medium capitalize text-zinc-700">{reservations}</p>
                       </div>
                     ) : null}
-
+                    {waitTime ? (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Wait time</span>
+                        <p className="font-medium text-zinc-700">{waitTime}</p>
+                      </div>
+                    ) : null}
+                    {parking ? (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Parking</span>
+                        <p className="font-medium capitalize text-zinc-700">{parking}</p>
+                      </div>
+                    ) : null}
+                    {noiseLevel ? (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Noise</span>
+                        <p className="font-medium capitalize text-zinc-700">{noiseLevel}</p>
+                      </div>
+                    ) : null}
+                    {bestTime?.length ? (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Best time</span>
+                        <p className="font-medium text-zinc-700">{bestTime.join(", ")}</p>
+                      </div>
+                    ) : null}
                     {crowd?.length ? (
                       <div>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Typical Crowd</span>
-                        <p className="text-sm font-medium text-zinc-700">{crowd.join(", ")}</p>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Crowd</span>
+                        <p className="font-medium text-zinc-700">{crowd.join(", ")}</p>
                       </div>
                     ) : null}
                   </div>
                 </div>
-              )}
-            </div>
+              ) : null}
+
+              {relatedBusinesses.length > 0 ? (
+                <section>
+                  <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-zinc-400">
+                    {town?.name ? `More in ${town.name}` : "More nearby"}
+                  </h2>
+                  <ul className="space-y-5">
+                    {relatedBusinesses.map((rb) => {
+                      const thumb = businessListingImageUrl(rb.hero_image_url);
+                      const blurb =
+                        (rb.ai_one_liner && rb.ai_one_liner.trim()) ||
+                        (rb.ai_summary && rb.ai_summary.slice(0, 140).trim()) ||
+                        null;
+                      return (
+                        <li key={rb.id}>
+                          <Link
+                            href={`/business/${rb.slug}`}
+                            className="group flex gap-3 rounded-xl border border-transparent p-1 transition-colors hover:border-zinc-200 hover:bg-zinc-50/80"
+                          >
+                            {thumb ? (
+                              <Image
+                                src={thumb}
+                                alt={rb.name}
+                                width={72}
+                                height={72}
+                                className="size-[4.5rem] shrink-0 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="flex size-[4.5rem] shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400">
+                                <span className="material-symbols-outlined !text-2xl">storefront</span>
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-headline font-bold leading-snug text-zinc-900 group-hover:text-teal-800">
+                                {rb.name}
+                              </p>
+                              {blurb ? (
+                                <p className="mt-1 line-clamp-2 text-sm leading-snug text-zinc-600">{blurb}</p>
+                              ) : null}
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ) : null}
+
+              {townGuides.length > 0 ? (
+                <section>
+                  <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Guides &amp; stories</h2>
+                  <ul className="space-y-6">
+                    {townGuides.map((g) => (
+                      <li key={g.slug}>
+                        <Link href={`/guide/${g.slug}`} className="group block">
+                          {g.og_image_url?.startsWith("http") ? (
+                            <div className="mb-3 overflow-hidden rounded-xl border border-zinc-100">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={g.og_image_url}
+                                alt=""
+                                className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                              />
+                            </div>
+                          ) : null}
+                          <p className="font-headline text-base font-bold leading-snug text-zinc-900 group-hover:text-teal-800">
+                            {g.title}
+                          </p>
+                          {g.excerpt ? (
+                            <p className="mt-1 line-clamp-2 text-sm text-zinc-600">{g.excerpt}</p>
+                          ) : null}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </aside>
           </div>
         </div>
       </main>

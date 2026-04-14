@@ -190,6 +190,7 @@ export const townHubSectionKeys = (townSlug: string) =>
   ({
     topPicks: categoryTownKey("restaurants", townSlug),
     coffee: categoryTownKey("coffee_shops", townSlug),
+    shopping: categoryTownKey("shopping", townSlug),
     casualLunch: intentTownKey("lunch", townSlug),
     dateNight: intentTownKey("date_night", townSlug),
     kidFriendly: intentTownKey("kid_friendly", townSlug),

@@ -62,7 +62,7 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col bg-background font-body text-on-surface">
         <ThemeProvider>
-          <NavbarServer compact />
+          <NavbarServer compact showSearch />
           <main className="flex-1">{children}</main>
           <SiteFooter />
         </ThemeProvider>

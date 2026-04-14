@@ -8,13 +8,13 @@ import {
   getAdjacentTownNames,
   getAdjacentTownBusinessPreviews,
   getTownHubExpandedSections,
-  getTownGuidePreview
+  getTownGuidePreview,
+  mergeTownFeaturedBusinessRecommendations,
+  getFeaturedGuidesForTown,
 } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BusinessCard } from "@/components/discovery/BusinessCard";
 import { SectionBlock } from "@/components/discovery/SectionBlock";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { RegionHubView } from "@/components/region/RegionHubView";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
@@ -47,12 +47,18 @@ export default async function TownPage({ params }: Props) {
   if (!town) notFound();
 
   // Parallel fetch town data
-  const [adjacent, expanded, nearbyBiz, guidePreview] = await Promise.all([
+  const [adjacent, expanded, nearbyBiz, guidePreview, featuredGuides] = await Promise.all([
     getAdjacentTownNames(town.id),
     getTownHubExpandedSections(town.slug, town.name),
     getAdjacentTownBusinessPreviews(town.id, 10),
     getTownGuidePreview(town.slug),
+    getFeaturedGuidesForTown(town.id),
   ]);
+
+  const featuredBusinessRecs = mergeTownFeaturedBusinessRecommendations(
+    [expanded.topPicks, expanded.coffee, expanded.shopping],
+    12,
+  );
 
   const descriptor = getTownDescriptor(town.slug);
   const townPage = Array.isArray(town.pages) ? (town.pages[0] as { body_markdown: string } | undefined) : (town.pages as { body_markdown: string } | undefined);
@@ -90,29 +96,63 @@ export default async function TownPage({ params }: Props) {
               <MarkdownRenderer content={townPage.body_markdown} />
             </section>
           )}
-          {/* Main sections from AI Curations */}
-          {(expanded.topPicks?.recommendations?.length ?? 0) > 0 && expanded.topPicks && (
+          {/* Curated picks: dining, coffee, and shopping in one lane */}
+          {featuredBusinessRecs.length > 0 && (
             <SectionBlock
-              title="Signature Dining"
-              subtitle={`From gourmet seafood to casual beach bites in ${town.name}.`}
+              title="Featured businesses"
+              subtitle={`Hand-picked restaurants, coffee, and shopping in ${town.name}.`}
             >
               <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-x-auto hide-scrollbar sm:grid">
-                {expanded.topPicks.recommendations.slice(0, 4).map((rec) => (
+                {featuredBusinessRecs.map((rec) => (
                   <BusinessCard key={rec.business_id} rec={rec} variant="consumer" />
                 ))}
               </ul>
             </SectionBlock>
           )}
 
-          {(expanded.coffee?.recommendations?.length ?? 0) > 0 && expanded.coffee && (
+          {featuredGuides.length > 0 && (
             <SectionBlock
-              title="Coffee & Sweets"
-              subtitle="The best local roasts and afternoon treats."
+              title="Featured guides"
+              subtitle={`Stories and roundups focused on ${town.name} and the nearby coast.`}
             >
               <ul className="flex gap-6 overflow-x-auto pb-4 hide-scrollbar snap-x snap-mandatory">
-                {expanded.coffee.recommendations.map((rec) => (
-                  <li key={rec.business_id} className="min-w-[320px] snap-start">
-                    <BusinessCard rec={rec} variant="consumer" />
+                {featuredGuides.map((g) => (
+                  <li
+                    key={g.slug}
+                    className="min-w-[280px] max-w-[320px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-premium-sm transition-shadow hover:shadow-md"
+                  >
+                    <Link href={`/guide/${g.slug}`} className="group block">
+                      {g.og_image_url?.startsWith("http") ? (
+                        <div className="relative aspect-[16/10] w-full overflow-hidden border-b border-[var(--color-border)]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={g.og_image_url}
+                            alt={g.title}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex aspect-[16/10] w-full items-center justify-center bg-[var(--color-surface-container-high)] text-[var(--color-text-tertiary)]">
+                          <span className="material-symbols-outlined !text-4xl opacity-40">menu_book</span>
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <h3 className="font-headline text-lg font-bold leading-snug text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">
+                          {g.title}
+                        </h3>
+                        {g.excerpt ? (
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                            {g.excerpt}
+                          </p>
+                        ) : null}
+                        <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-primary)]">
+                          Read guide
+                          <span className="material-symbols-outlined !text-base transition-transform group-hover:translate-x-0.5">
+                            arrow_forward
+                          </span>
+                        </span>
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ul>

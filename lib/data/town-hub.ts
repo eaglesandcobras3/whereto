@@ -1,7 +1,10 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { searchIntentSchema } from "@/lib/intent-schema";
-import { buildRecommendationSet } from "@/lib/search/recommendation-set";
+import {
+  buildRecommendationSet,
+  type EnrichedRecommendationPayload,
+} from "@/lib/search/recommendation-set";
 import { loadLocationRankingScope } from "@/lib/search/location-scope";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 import { fetchCachedEnrichedByQueryKey } from "@/lib/data/town-hub-cache";
@@ -106,6 +109,93 @@ export async function getRegionBySlug(slug: string) {
     return data as { id: number; name: string; slug: string } | null;
   } catch {
     return null;
+  }
+}
+
+export type TownHubFeaturedRecommendation =
+  EnrichedRecommendationPayload["recommendations"][number];
+
+/** Merge category carousels into one ordered, de-duped list (restaurants → coffee → shopping). */
+export function mergeTownFeaturedBusinessRecommendations(
+  buckets: (EnrichedRecommendationPayload | null | undefined)[],
+  maxItems = 12,
+): TownHubFeaturedRecommendation[] {
+  const seen = new Set<string>();
+  const out: TownHubFeaturedRecommendation[] = [];
+  for (const bucket of buckets) {
+    if (!bucket?.recommendations?.length) continue;
+    for (const rec of bucket.recommendations) {
+      if (seen.has(rec.business_id)) continue;
+      seen.add(rec.business_id);
+      out.push(rec);
+      if (out.length >= maxItems) return out;
+    }
+  }
+  return out;
+}
+
+export type TownFeaturedGuide = {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  og_image_url: string | null;
+};
+
+/** Published guides tied to this town (entity graph first, then legacy `guides` + `pages`). */
+export async function getFeaturedGuidesForTown(townId: number): Promise<TownFeaturedGuide[]> {
+  try {
+    const supabase = getServiceSupabase();
+
+    const { data: ents } = await supabase
+      .from("entities")
+      .select("id")
+      .eq("primary_town_id", townId)
+      .eq("status", "published")
+      .in("entity_type", ["guide", "seasonal_guide"])
+      .limit(40);
+    const entityIds = (ents ?? []).map((e) => e.id as string).filter(Boolean);
+    if (entityIds.length > 0) {
+      const { data: pages } = await supabase
+        .from("pages")
+        .select("slug, title, excerpt, og_image_url")
+        .eq("page_type", "guide")
+        .eq("status", "published")
+        .in("entity_id", entityIds)
+        .order("updated_at", { ascending: false })
+        .limit(8);
+      if (pages?.length) return pages as TownFeaturedGuide[];
+    }
+
+    const { data: guideRows } = await supabase
+      .from("guides")
+      .select("slug, title, featured, seo_priority")
+      .eq("primary_town_id", townId)
+      .order("featured", { ascending: false })
+      .order("seo_priority", { ascending: false })
+      .limit(16);
+    if (!guideRows?.length) return [];
+
+    const slugs = [...new Set(guideRows.map((g) => g.slug as string).filter(Boolean))];
+    const { data: pages } = await supabase
+      .from("pages")
+      .select("slug, title, excerpt, og_image_url")
+      .eq("page_type", "guide")
+      .eq("status", "published")
+      .in("slug", slugs);
+    const pageBySlug = new Map(
+      (pages ?? []).map((p) => [p.slug as string, p as TownFeaturedGuide]),
+    );
+
+    const out: TownFeaturedGuide[] = [];
+    for (const g of guideRows) {
+      const slug = g.slug as string;
+      const row = pageBySlug.get(slug);
+      if (row) out.push(row);
+      if (out.length >= 8) break;
+    }
+    return out;
+  } catch {
+    return [];
   }
 }
 
@@ -301,6 +391,7 @@ export async function getTownHubExpandedSections(townSlug: string, townName: str
   const [
     topPicks,
     coffee,
+    shopping,
     casualLunch,
     dateNight,
     kidFriendly,
@@ -314,6 +405,12 @@ export async function getTownHubExpandedSections(townSlug: string, townName: str
     ),
     fromCacheOrLive(keys.coffee, () =>
       picksForIntent(townSlug, "coffee_shops", `best coffee in ${townName}`, {
+        resultCount: 8,
+        limit: 8,
+      }),
+    ),
+    fromCacheOrLive(keys.shopping, () =>
+      picksForIntent(townSlug, "shopping", `shopping in ${townName}`, {
         resultCount: 8,
         limit: 8,
       }),
@@ -351,6 +448,7 @@ export async function getTownHubExpandedSections(townSlug: string, townName: str
   return {
     topPicks,
     coffee,
+    shopping,
     casualLunch,
     dateNight,
     kidFriendly,

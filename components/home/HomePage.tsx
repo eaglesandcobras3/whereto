@@ -245,56 +245,7 @@ export function HomePage({
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface antialiased">
-      <nav className="fixed top-0 z-50 w-full bg-background/70 shadow-design-card backdrop-blur-xl">
-        <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-6 md:px-12">
-          <Link
-            href="/"
-            className="cursor-pointer text-2xl font-extrabold tracking-tighter text-brand-wordmark"
-          >
-            WhereTo30A
-          </Link>
-          <div className="hidden items-center space-x-10 font-headline text-sm font-semibold tracking-tight md:flex">
-            {featureFlags["towns"] === true && (
-              <Link
-                href="/#section-neighborhoods"
-                className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
-              >
-                Towns
-              </Link>
-            )}
-            {featureFlags["curator"] === true && (
-              <Link
-                href="/#section-curator"
-                className="text-outline transition-all duration-300 ease-in-out hover:text-brand-wordmark hover:opacity-80"
-              >
-                Experiences
-              </Link>
-            )}
-          </div>
-          <div className="flex items-center space-x-4 md:space-x-6">
-            {featureFlags["user_features"] === true ? (
-              <Link
-                href="/login"
-                className="material-symbols-outlined text-outline transition-all hover:text-brand-wordmark"
-                aria-label="Account"
-              >
-                person
-              </Link>
-            ) : null}
-            {featureFlags["plan-your-trip"] === true && (
-              <button
-                type="button"
-                onClick={scrollToHero}
-                className="scale-95 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-on-primary transition-all hover:opacity-90 active:duration-100 md:px-8"
-              >
-                Plan Trip
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <main className="pt-20">
+      <div>
         {featureFlags["search"] === true && (
           <section
             id="hero"
@@ -348,6 +299,33 @@ export function HomePage({
                   Search
                 </button>
               </form>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-2 px-4 text-sm font-semibold">
+                {featureFlags["towns"] === true ? (
+                  <a
+                    href="#section-neighborhoods"
+                    className="rounded-full border border-white/40 bg-white/15 px-4 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/25"
+                  >
+                    Towns
+                  </a>
+                ) : null}
+                {featureFlags["curator"] === true ? (
+                  <a
+                    href="#section-curator"
+                    className="rounded-full border border-white/40 bg-white/15 px-4 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/25"
+                  >
+                    Experiences
+                  </a>
+                ) : null}
+                {featureFlags["plan-your-trip"] === true ? (
+                  <button
+                    type="button"
+                    onClick={scrollToHero}
+                    className="rounded-full bg-primary px-5 py-2 text-on-primary shadow-md transition-all hover:opacity-90"
+                  >
+                    Plan trip
+                  </button>
+                ) : null}
+              </div>
             </div>
           </section>
         )}
@@ -693,7 +671,7 @@ export function HomePage({
             </div>
           </section>
         )}
-      </main>
+      </div>
     </div>
   );
 }
