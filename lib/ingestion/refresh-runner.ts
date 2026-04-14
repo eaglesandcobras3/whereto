@@ -129,7 +129,7 @@ export async function runRefreshBatch(budget: number) {
     }))
     .slice(0, budget);
 
-  let remaining = budget - requestedRows.length;
+  const remaining = budget - requestedRows.length;
 
   const staleSlice: RefreshRow[] = [];
   if (remaining > 0) {

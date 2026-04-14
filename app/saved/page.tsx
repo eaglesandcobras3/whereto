@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 type Collection = { id: number; name: string; sort_order: number };
@@ -43,7 +43,9 @@ export default function SavedPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    startTransition(() => {
+      void load();
+    });
   }, [load]);
 
   const filtered = useMemo(() => {

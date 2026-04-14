@@ -5,17 +5,44 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { SearchPageClient } from "./search-page-client";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import type { Metadata } from "next";
+import type { SearchResultPayload } from "@/lib/search/types";
 
 type Props = {
-  searchParams: Promise<{ q?: string; town_id?: string; price?: string; page?: string; type?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    town_id?: string;
+    price?: string;
+    page?: string;
+    type?: string;
+  }>;
 };
 
-// Type filter labels and default queries
+// Type filter labels and default queries (used when `q` is empty)
 const TYPE_FILTERS: Record<string, { label: string; query: string }> = {
   stores: { label: "Stores", query: "shopping stores retail" },
   services: { label: "Services", query: "services spa salon wellness" },
   events: { label: "Events", query: "events activities things to do" },
+  towns: { label: "Towns", query: "30A beach towns neighborhoods" },
+  guides: { label: "Guides", query: "local guides itineraries travel tips" },
 };
+
+const BROWSE_TYPES = new Set(["events", "towns", "guides"]);
+
+/** Strip characters that break PostgREST `.or(...)` / `ilike` filters. */
+function sanitizeSearchToken(raw: string): string {
+  return raw.replace(/[%_,\\]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function emptySearchResult(displayQuery: string, summary: string): SearchResultPayload {
+  return {
+    query: displayQuery,
+    query_hash: "",
+    normalized_query: "",
+    summary,
+    recommendations: [],
+    cached: false,
+  };
+}
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const { q, type } = await searchParams;
@@ -35,8 +62,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function SearchPage({ searchParams }: Props) {
   const { q, town_id, price, type } = await searchParams;
 
-  // Allow browsing by type without a query
-  const effectiveQuery = q || (type && TYPE_FILTERS[type]?.query) || "";
+  const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
+  const trimmedQ = q?.trim() ?? "";
+  const effectiveQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey].query : "") || "";
 
   if (!effectiveQuery) {
     redirect("/");
@@ -44,10 +72,11 @@ export default async function SearchPage({ searchParams }: Props) {
 
   const supabase = await createSupabaseServerClient();
   const serviceSupabase = getServiceSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-  // Fetch town name if town_id is provided
   let townName = "";
   if (town_id) {
     const { data: town } = await serviceSupabase
@@ -58,22 +87,10 @@ export default async function SearchPage({ searchParams }: Props) {
     if (town) townName = town.name;
   }
 
-  // Optimize search for town if provided
-  const searchResult = await runSearch({
-    rawQuery: townName ? `${effectiveQuery} in ${townName}` : effectiveQuery,
-    userId: user?.id ?? null,
-    model,
-    openaiKey: process.env.OPENAI_API_KEY,
-    priceLevel: price ? parseInt(price) : undefined,
-  });
+  const displayQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey]!.label : "") || effectiveQuery;
 
-  // Fetch sidebar data in parallel
   const [townsResult, recentPostsResult] = await Promise.all([
-    serviceSupabase
-      .from("towns")
-      .select("name, slug")
-      .order("name")
-      .limit(10),
+    serviceSupabase.from("towns").select("name, slug").order("name").limit(10),
     serviceSupabase
       .from("businesses")
       .select("id, name, slug, hero_image_url")
@@ -82,18 +99,132 @@ export default async function SearchPage({ searchParams }: Props) {
       .limit(5),
   ]);
 
-  // Determine display query (user's query or type filter label)
-  const displayQuery = q || (type && TYPE_FILTERS[type]?.label) || effectiveQuery;
+  const browseMode = type && BROWSE_TYPES.has(type) ? (type as "events" | "towns" | "guides") : "business";
+
+  if (browseMode === "events") {
+    let evQuery = serviceSupabase
+      .from("upcoming_events")
+      .select(
+        "id, slug, title, description, hero_image_url, event_date, end_date, town_name, town_slug, venue_name, price, website, tags"
+      )
+      .order("event_date", { ascending: true })
+      .limit(100);
+
+    if (town_id && !Number.isNaN(Number(town_id))) {
+      evQuery = evQuery.eq("town_id", Number(town_id));
+    }
+    const safeEv = sanitizeSearchToken(trimmedQ);
+    if (safeEv) {
+      evQuery = evQuery.or(`title.ilike.%${safeEv}%,description.ilike.%${safeEv}%`);
+    }
+
+    const { data: browseEvents } = await evQuery;
+
+    return (
+      <SearchPageClient
+        browseMode="events"
+        browseEvents={browseEvents ?? []}
+        initialQuery={displayQuery}
+        results={emptySearchResult(
+          displayQuery,
+          townName
+            ? `Upcoming happenings in ${townName}.`
+            : "Festivals, markets, and happenings along 30A.",
+        )}
+        townName={townName}
+        footer={<SiteFooter />}
+        towns={townsResult.data ?? []}
+        recentPosts={recentPostsResult.data ?? []}
+      />
+    );
+  }
+
+  if (browseMode === "towns") {
+    let tq = serviceSupabase
+      .from("towns")
+      .select("id, name, slug, ai_tagline")
+      .order("name")
+      .limit(100);
+
+    if (town_id && !Number.isNaN(Number(town_id))) {
+      tq = tq.eq("id", Number(town_id));
+    }
+    const safeT = sanitizeSearchToken(trimmedQ);
+    if (safeT) {
+      tq = tq.or(`name.ilike.%${safeT}%,slug.ilike.%${safeT}%`);
+    }
+
+    const { data: browseTowns } = await tq;
+
+    return (
+      <SearchPageClient
+        browseMode="towns"
+        browseTowns={browseTowns ?? []}
+        initialQuery={displayQuery}
+        results={emptySearchResult(
+          displayQuery,
+          "Beach towns and neighborhoods along Florida's Scenic Highway 30A.",
+        )}
+        townName={townName}
+        footer={<SiteFooter />}
+        towns={townsResult.data ?? []}
+        recentPosts={recentPostsResult.data ?? []}
+      />
+    );
+  }
+
+  if (browseMode === "guides") {
+    let gq = serviceSupabase
+      .from("pages")
+      .select("slug, title, excerpt, seo_description, og_image_url")
+      .eq("page_type", "guide")
+      .eq("status", "published")
+      .order("title")
+      .limit(100);
+
+    const safeG = sanitizeSearchToken(trimmedQ);
+    if (safeG) {
+      gq = gq.or(
+        `title.ilike.%${safeG}%,seo_description.ilike.%${safeG}%,excerpt.ilike.%${safeG}%`,
+      );
+    }
+
+    const { data: browseGuides } = await gq;
+
+    return (
+      <SearchPageClient
+        browseMode="guides"
+        browseGuides={browseGuides ?? []}
+        initialQuery={displayQuery}
+        results={emptySearchResult(
+          displayQuery,
+          "Editorial guides for dining, beaches, and planning your Emerald Coast trip.",
+        )}
+        townName={townName}
+        footer={<SiteFooter />}
+        towns={townsResult.data ?? []}
+        recentPosts={recentPostsResult.data ?? []}
+      />
+    );
+  }
+
+  const searchResult = await runSearch({
+    rawQuery: townName ? `${effectiveQuery} in ${townName}` : effectiveQuery,
+    userId: user?.id ?? null,
+    model,
+    openaiKey: process.env.OPENAI_API_KEY,
+    priceLevel: price ? parseInt(price, 10) : undefined,
+  });
 
   return (
     <SearchPageClient
+      browseMode="business"
       initialQuery={displayQuery}
       results={searchResult}
       townName={townName}
       footer={<SiteFooter />}
       towns={townsResult.data ?? []}
       recentPosts={recentPostsResult.data ?? []}
-      activeType={type}
     />
   );
 }

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
+import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import type { User } from "@supabase/supabase-js";
 
 type Props = {
@@ -42,22 +42,8 @@ export function Navbar({
   const [internalSearch, setInternalSearch] = useState("");
   const isHome = pathname === "/";
   const showSearchInNavbar = showSearch || !isHome;
-  const isGuide = pathname === "/guide" || pathname.startsWith("/guide/");
-  const isTowns =
-    pathname === PRIMARY_REGION_HUB_PATH ||
-    pathname.startsWith(`${PRIMARY_REGION_HUB_PATH}/`);
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
-  const isSearch = pathname === "/search";
-
-  // Category filter links for navigation
-  const categoryLinks = [
-    { label: "Towns", href: PRIMARY_REGION_HUB_PATH, isActive: isTowns },
-    { label: "Stores", href: "/search?type=stores", isActive: isSearch && pathname.includes("type=stores") },
-    { label: "Services", href: "/search?type=services", isActive: isSearch && pathname.includes("type=services") },
-    { label: "Events", href: "/search?type=events", isActive: isSearch && pathname.includes("type=events") },
-    { label: "Guide", href: "/guide", isActive: isGuide },
-  ];
 
   // Feature flags
   const showUserFeatures = featureFlags["user_features"] === true;
@@ -151,15 +137,13 @@ export function Navbar({
               Home
             </Link>
           )}
-          {categoryLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className={`hidden sm:inline-flex ${navLinkClass(link.isActive)}`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          <Suspense
+            fallback={
+              <span className="hidden h-9 w-[280px] animate-pulse rounded-md bg-[var(--color-surface-secondary)] sm:inline-block" />
+            }
+          >
+            <NavbarCategoryLinks />
+          </Suspense>
           {showUserFeatures && (
             <Link href="/saved" className={navLinkClass(isSaved)}>
               Saved

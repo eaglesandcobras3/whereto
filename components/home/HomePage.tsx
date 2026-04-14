@@ -224,8 +224,6 @@ export function HomePage({
   useEffect(() => {
     const initial = searchParams.get("q");
     if (initial?.trim()) {
-      setQ(initial);
-      // Redirect to search page if there's a query
       window.location.href = `/search?q=${encodeURIComponent(initial)}`;
     }
   }, [searchParams]);
