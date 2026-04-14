@@ -86,6 +86,8 @@ interface FrontmatterData {
   address?: string;
   parking_notes?: string;
   access_notes?: string;
+  /** When `type` is `area`: DB `areas.area_type` (see `point_of_interest` and other area migrations). */
+  area_type?: string;
   amenities?: string[];
   family_friendly_score?: number;
   romance_score?: number;
@@ -323,18 +325,41 @@ async function syncBeach(parsed: ParsedContent): Promise<boolean> {
 /**
  * Sync AREA to areas table
  */
+const AREA_TYPES_DB = new Set([
+  "shopping_area",
+  "district",
+  "square",
+  "development",
+  "neighborhood",
+  "point_of_interest",
+]);
+
 async function syncArea(parsed: ParsedContent): Promise<boolean> {
   const { frontmatter } = parsed;
   const townId = await getTownId(frontmatter.town);
+  const rawType = frontmatter.area_type?.trim();
+  const areaType =
+    rawType && AREA_TYPES_DB.has(rawType) ? rawType : "neighborhood";
+
+  const lat =
+    frontmatter.latitude ??
+    frontmatter.map_center?.lat ??
+    frontmatter.map_location?.lat;
+  const lng =
+    frontmatter.longitude ??
+    frontmatter.map_center?.lng ??
+    frontmatter.map_location?.lng;
 
   const { error } = await supabase.from("areas").upsert(
     {
       name: frontmatter.title,
       slug: frontmatter.slug,
       town_id: townId,
-      area_type: "shopping_area",
+      area_type: areaType,
       description_short: frontmatter.seo_description,
       parking_notes: frontmatter.parking_notes,
+      latitude_center: lat ?? null,
+      longitude_center: lng ?? null,
     },
     { onConflict: "slug" }
   );

@@ -22,7 +22,6 @@ type Props = {
   };
   variant?: "consumer" | "admin" | "compact";
   onSave?: (id: string) => Promise<void>;
-  onDirectionsClick?: (id: string) => void;
   onWebsiteClick?: (id: string) => void;
 };
 
@@ -48,12 +47,10 @@ export function BusinessCard({
   rec,
   variant = "consumer",
   onSave,
-  onDirectionsClick,
   onWebsiteClick,
 }: Props) {
   const b = rec.business;
   const mergedTags = [...(rec.highlighted_tags ?? []), ...(b.tags ?? [])];
-  const m = b.lat != null && b.lng != null;
   const showStars = variant === "admin" && b.listing_rating != null && !b.hideRatings;
   const isCompact = variant === "compact";
   const slug = b.slug ?? b.id ?? rec.business_id;
@@ -143,21 +140,6 @@ export function BusinessCard({
         ) : null}
 
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          {m ? (
-            <a
-              href={`https://www.openstreetmap.org/?mlat=${b.lat}&mlon=${b.lng}#map=16/${b.lat}/${b.lng}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"
-              onClick={() => onDirectionsClick?.(rec.business_id)}
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Directions
-            </a>
-          ) : null}
           {b.website ? (
             <a
               href={b.website}

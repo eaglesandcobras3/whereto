@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { BROWSE_NAV_ITEMS, isBrowseNavActive } from "@/lib/nav/browse-links";
+import { BROWSE_NAV_ITEMS, isBrowseNavActive, type BrowseNavItem } from "@/lib/nav/browse-links";
 
 function navLinkClassMobile(active: boolean) {
   const base =
@@ -16,7 +16,7 @@ function navLinkClassMobile(active: boolean) {
 type Props = {
   open: boolean;
   onClose: () => void;
-  isHome: boolean;
+  browseNavItems?: BrowseNavItem[];
   isSaved: boolean;
   isProfile: boolean;
   showUserFeatures: boolean;
@@ -26,7 +26,7 @@ type Props = {
 export function NavbarMobileMenu({
   open,
   onClose,
-  isHome,
+  browseNavItems = BROWSE_NAV_ITEMS,
   isSaved,
   isProfile,
   showUserFeatures,
@@ -52,7 +52,7 @@ export function NavbarMobileMenu({
         className="relative z-[110] border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg md:hidden"
       >
         <div className="mx-auto max-w-7xl space-y-1 px-4 py-3">
-          {BROWSE_NAV_ITEMS.map((item) => (
+          {browseNavItems.map((item) => (
             <Link
               key={item.label}
               href={item.href}
@@ -62,11 +62,6 @@ export function NavbarMobileMenu({
               {item.label}
             </Link>
           ))}
-          {!isHome ? (
-            <Link href="/" onClick={onClose} className={navLinkClassMobile(false)}>
-              Home
-            </Link>
-          ) : null}
           {showUserFeatures ? (
             <Link href="/saved" onClick={onClose} className={navLinkClassMobile(isSaved)}>
               Saved

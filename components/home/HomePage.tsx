@@ -300,14 +300,6 @@ export function HomePage({
                 </button>
               </form>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-2 px-4 text-sm font-semibold">
-                {featureFlags["towns"] === true ? (
-                  <a
-                    href="#section-neighborhoods"
-                    className="rounded-full border border-white/40 bg-white/15 px-4 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/25"
-                  >
-                    Towns
-                  </a>
-                ) : null}
                 {featureFlags["curator"] === true ? (
                   <a
                     href="#section-curator"

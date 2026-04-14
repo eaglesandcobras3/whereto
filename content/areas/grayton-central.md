@@ -1,81 +1,50 @@
 ---
 id: "cb7bb87e-748a-4fc4-9505-1ebb8d334271"
 title: "Grayton Central"
-type: business
-entity_type: restaurant
+type: area
+entity_type: area
+area_type: point_of_interest
 slug: grayton-central
 status: published
 
-# Location / hierarchy
 region: 30a
 town: grayton-beach
 state: florida
 country: usa
 
-# Business details
-category: restaurant
-cuisine: american
-price_range: $$
-atmosphere:
-  - casual
-  - family-friendly
-  - laid-back
-  - indoor-outdoor
-
-# SEO
-seo_title: "Grayton Central Restaurant | Casual Dining in Grayton Beach 30A"
-seo_description: "Grayton Central is a laid-back restaurant in Grayton Beach serving burgers, seafood, and crowd-pleasing favorites. A go-to spot for casual dining on 30A."
+seo_title: "Grayton Central Parking & Shuttle | Grayton Beach 30A"
+seo_description: "Park at Grayton Central and take the free shuttle into Grayton Beach. Main public parking and transit hub north of Scenic 30A on Highway 283, with shops and cafes nearby."
 seo_keywords:
-  - grayton central
-  - grayton central restaurant
-  - grayton beach restaurants
-  - casual dining grayton beach
-  - where to eat grayton beach
-  - 30a restaurants
+  - grayton central parking
+  - grayton beach shuttle
+  - grayton beach parking
+  - grayton central lot
+  - 30a parking grayton
 
-# Discovery / search intent
 tags:
-  - casual
-  - family-friendly
-  - burgers
-  - seafood
-  - local-favorite
-  - easy-dining
+  - parking
+  - shuttle
+  - beach-access
 
-search_intent:
-  - where to eat
-  - lunch
-  - dinner
-  - family dining
-  - casual dining
-
-# Content relationships
 related_entities:
   - grayton-beach
-  - chiringo
-  - the-red-bar
-  - ajas-sushi
-  - grayton-beach-parking
-  - grayton-beach-shuttle
+  - black-bear-bread-co
 
-# UI helpers
 featured: false
 hero_image: "/images/grayton-central/hero.jpg"
-has_outdoor_seating: true
+parking_notes: "Public parking with shuttle service to the historic beach district."
 
-# Map
 map_location:
   lat: 30.3252
   lng: -86.1572
 
-# Content metadata
 reading_time: 3
 last_updated: 2026-04-12
 ---
 
 # Grayton Central
 
-While the historic district of Grayton Beach gets most of the attention, Grayton Central (located just north of 30A along Highway 283) has quietly become one of the most exciting creative and culinary hubs on the coast. 
+Grayton Central is best known as **the main parking and shuttle hub** for Grayton Beach—located just north of Scenic 30A along Highway 283—so you can leave the car here and ride into the historic district. Around the lot you will also find a cluster of shops and eateries, including the popular **Black Bear Bread Co.**
 
 ## The Culinary Anchor
 

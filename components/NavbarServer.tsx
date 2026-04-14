@@ -1,4 +1,5 @@
 import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { hasPointOfInterestAreas, mergeBrowseNavItems } from "@/lib/data/browse-nav";
 import { Navbar } from "./Navbar";
 
 type Props = {
@@ -11,13 +12,18 @@ type Props = {
  * Use this in page layouts instead of Navbar directly.
  */
 export async function NavbarServer({ compact, showSearch }: Props) {
-  const featureFlags = await getAllFeatureFlags();
+  const [featureFlags, showLandmarksParks] = await Promise.all([
+    getAllFeatureFlags(),
+    hasPointOfInterestAreas(),
+  ]);
+  const browseNavItems = mergeBrowseNavItems(showLandmarksParks);
 
   return (
     <Navbar
       compact={compact}
       showSearch={showSearch}
       featureFlags={featureFlags}
+      browseNavItems={browseNavItems}
     />
   );
 }

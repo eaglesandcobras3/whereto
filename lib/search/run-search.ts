@@ -1,5 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { hashQuery, normalizeQuery } from "@/lib/query-normalize";
+import { searchIntentSchema } from "@/lib/intent-schema";
 import {
   buildRecommendationSet,
   resolveIntent,
@@ -15,10 +16,15 @@ export async function runSearch(options: {
   model: string;
   openaiKey: string | undefined;
   priceLevel?: number;
+  /** When set, ranking and AI candidates are constrained to this category slug (e.g. \`services\` for /search?type=services). */
+  forcedCategorySlug?: string | null;
 }): Promise<SearchResultPayload> {
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
-  const queryHash = hashQuery(normalized);
+  const cacheBasis = options.forcedCategorySlug
+    ? `${normalized}::__forced_cat__:${options.forcedCategorySlug}`
+    : normalized;
+  const queryHash = hashQuery(cacheBasis);
 
   const { data: cached } = await supabase
     .from("query_cache")
@@ -46,12 +52,18 @@ export async function runSearch(options: {
     };
   }
 
-  const intent = await resolveIntent(
+  let intent = await resolveIntent(
     options.rawQuery,
     normalized,
     options.model,
     options.openaiKey,
   );
+  if (options.forcedCategorySlug) {
+    intent = searchIntentSchema.parse({
+      ...intent,
+      category: options.forcedCategorySlug,
+    });
+  }
   const locationScope = await resolveLocationScopeForIntent(supabase, intent);
 
   const { enriched, businessIds } = await buildRecommendationSet({
@@ -77,7 +89,7 @@ export async function runSearch(options: {
     .from("query_cache")
     .insert({
       query_hash: queryHash,
-      normalized_query: normalized,
+      normalized_query: cacheBasis,
       raw_queries: [options.rawQuery],
       response_json: fullPayload,
       business_ids: businessIds,

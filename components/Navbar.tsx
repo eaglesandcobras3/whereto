@@ -6,6 +6,7 @@ import { startTransition, Suspense, useCallback, useEffect, useRef, useState } f
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
+import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
 import type { User } from "@supabase/supabase-js";
 
 type Props = {
@@ -19,6 +20,8 @@ type Props = {
   searchLoading?: boolean;
   /** Feature flags passed from server */
   featureFlags?: Record<string, boolean>;
+  /** Browse links (server can inject conditional items, e.g. Landmarks & parks). */
+  browseNavItems?: BrowseNavItem[];
 };
 
 function navLinkClass(active: boolean) {
@@ -37,6 +40,7 @@ export function Navbar({
   onSearchSubmit,
   searchLoading,
   featureFlags = {},
+  browseNavItems = BROWSE_NAV_ITEMS,
 }: Props) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
@@ -127,7 +131,7 @@ export function Navbar({
               <span className="hidden h-9 w-48 animate-pulse rounded-md bg-[var(--color-surface-secondary)] md:block" />
             }
           >
-            <NavbarCategoryLinks />
+            <NavbarCategoryLinks items={browseNavItems} />
           </Suspense>
         </div>
 
@@ -169,11 +173,6 @@ export function Navbar({
           </button>
 
           <nav className="hidden items-center gap-0.5 md:flex sm:gap-1">
-            {!isHome && (
-              <Link href="/" className={navLinkClass(false)}>
-                Home
-              </Link>
-            )}
             {showUserFeatures && (
               <Link href="/saved" className={navLinkClass(isSaved)}>
                 Saved
@@ -241,7 +240,7 @@ export function Navbar({
         <NavbarMobileMenu
           open={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
-          isHome={isHome}
+          browseNavItems={browseNavItems}
           isSaved={isSaved}
           isProfile={isProfile}
           showUserFeatures={showUserFeatures}

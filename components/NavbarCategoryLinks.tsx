@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BROWSE_NAV_ITEMS, isBrowseNavActive } from "@/lib/nav/browse-links";
+import { BROWSE_NAV_ITEMS, isBrowseNavActive, type BrowseNavItem } from "@/lib/nav/browse-links";
 
 function navLinkClass(active: boolean) {
   const base =
@@ -12,7 +12,11 @@ function navLinkClass(active: boolean) {
     : `${base} text-[var(--color-text-secondary)] border-transparent hover:border-[var(--color-outline-variant)] hover:text-[var(--color-primary)]`;
 }
 
-export function NavbarCategoryLinks() {
+type Props = {
+  items?: BrowseNavItem[];
+};
+
+export function NavbarCategoryLinks({ items = BROWSE_NAV_ITEMS }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const type = searchParams.get("type");
@@ -20,7 +24,7 @@ export function NavbarCategoryLinks() {
 
   return (
     <div className="hidden min-w-0 shrink-0 flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-hide md:flex md:max-w-none md:gap-1">
-      {BROWSE_NAV_ITEMS.map((item) => (
+      {items.map((item) => (
         <Link
           key={item.label}
           href={item.href}

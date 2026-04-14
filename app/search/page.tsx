@@ -21,16 +21,25 @@ type Props = {
 const TYPE_FILTERS: Record<string, { label: string; query: string }> = {
   towns: { label: "Towns", query: "30A beach towns neighborhoods" },
   areas: { label: "Areas", query: "districts shopping areas neighborhoods 30A" },
+  access: {
+    label: "Landmarks & parks",
+    query:
+      "state parks national parks nature preserves trailheads scenic overlooks landmarks historic markers beach access parking shuttle 30A",
+  },
   businesses: {
     label: "Businesses",
     query: "restaurants cafes shops retail services local businesses",
   },
-  services: { label: "Services", query: "services spa salon wellness" },
+  services: {
+    label: "Services",
+    query:
+      "landscaping lawn care handyman painter painting plumber electrician home repair contractors trades cleaning pressure washing spa salon wellness 30A",
+  },
   events: { label: "Events", query: "events activities things to do" },
   guides: { label: "Guides", query: "local guides itineraries travel tips" },
 };
 
-const BROWSE_TYPES = new Set(["events", "towns", "guides", "areas"]);
+const BROWSE_TYPES = new Set(["events", "towns", "guides", "areas", "access"]);
 
 function normalizeSearchType(type: string | undefined): string | undefined {
   if (!type) return undefined;
@@ -113,7 +122,7 @@ export default async function SearchPage({ searchParams }: Props) {
 
   const browseMode =
     type && BROWSE_TYPES.has(type)
-      ? (type as "events" | "towns" | "guides" | "areas")
+      ? (type as "events" | "towns" | "guides" | "areas" | "access")
       : "business";
 
   if (browseMode === "events") {
@@ -188,7 +197,8 @@ export default async function SearchPage({ searchParams }: Props) {
     );
   }
 
-  if (browseMode === "areas") {
+  if (browseMode === "areas" || browseMode === "access") {
+    const accessOnly = browseMode === "access";
     let aq = serviceSupabase
       .from("areas")
       .select("id, name, slug, description_short, area_type, town_id, towns(slug, name)")
@@ -197,6 +207,11 @@ export default async function SearchPage({ searchParams }: Props) {
 
     if (town_id && !Number.isNaN(Number(town_id))) {
       aq = aq.eq("town_id", Number(town_id));
+    }
+    if (accessOnly) {
+      aq = aq.eq("area_type", "point_of_interest");
+    } else {
+      aq = aq.neq("area_type", "point_of_interest");
     }
     const safeA = sanitizeSearchToken(trimmedQ);
     if (safeA) {
@@ -219,12 +234,14 @@ export default async function SearchPage({ searchParams }: Props) {
 
     return (
       <SearchPageClient
-        browseMode="areas"
+        browseMode={browseMode}
         browseAreas={browseAreas}
         initialQuery={displayQuery}
         results={emptySearchResult(
           displayQuery,
-          "Shopping districts, squares, and named neighborhoods along 30A.",
+          accessOnly
+            ? "Parks, preserves, landmarks, trailheads, and other notable places along the Emerald Coast."
+            : "Shopping districts, squares, and named neighborhoods along 30A.",
         )}
         townName={townName}
         footer={<SiteFooter />}
@@ -275,6 +292,7 @@ export default async function SearchPage({ searchParams }: Props) {
     model,
     openaiKey: process.env.OPENAI_API_KEY,
     priceLevel: price ? parseInt(price, 10) : undefined,
+    forcedCategorySlug: type === "services" ? "services" : undefined,
   });
 
   return (

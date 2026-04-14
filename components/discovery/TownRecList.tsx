@@ -20,13 +20,10 @@ export function TownRecList({ enriched }: Props) {
         const b = r.business as {
           name?: string;
           slug?: string;
-          lat?: number;
-          lng?: number;
           website?: string | null;
           tags?: string[];
           image_url?: string | null;
         };
-        const m = b.lat != null && b.lng != null;
         const seed = b.slug ?? r.business_id;
         return (
           <li
@@ -67,16 +64,6 @@ export function TownRecList({ enriched }: Props) {
                 max={5}
               />
               <div className="flex flex-wrap gap-3 text-sm pt-1">
-                {m ? (
-                  <a
-                    href={`https://www.openstreetmap.org/?mlat=${b.lat}&mlon=${b.lng}#map=16/${b.lat}/${b.lng}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[var(--color-primary)] hover:underline"
-                  >
-                    Directions
-                  </a>
-                ) : null}
                 {b.website ? (
                   <a
                     href={b.website}

@@ -124,8 +124,15 @@ export function scoreAndRankCandidates(
   limit = 15,
   locationScope: LocationRankingScope | null = null,
 ): BusinessRowWithTags[] {
-  const ranked = rows
-    .filter((row) => passesEligibility(row, suppressedIds))
+  let eligible = rows.filter((row) => passesEligibility(row, suppressedIds));
+  if (intent.category) {
+    const cid = categorySlugToId.get(intent.category);
+    if (cid != null) {
+      eligible = eligible.filter((row) => row.category_id === cid);
+    }
+  }
+
+  const ranked = eligible
     .map((row) => {
       const { tag_slugs, ...b } = row;
       let rel = relevanceForIntent(

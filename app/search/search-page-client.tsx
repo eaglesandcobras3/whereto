@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import { SearchBar } from "@/components/discovery/SearchBar";
 import type { SearchResultPayload } from "@/lib/search/types";
 
@@ -62,7 +62,12 @@ export type BrowseAreaRow = {
   town_name: string | null;
 };
 
-type BrowseMode = "business" | "events" | "towns" | "guides" | "areas";
+type BrowseMode = "business" | "events" | "towns" | "guides" | "areas" | "access";
+
+function areaTypeLabel(areaType: string): string {
+  if (areaType === "point_of_interest") return "Landmark / park / access";
+  return areaType.replace(/_/g, " ");
+}
 
 type Props = {
   browseMode?: BrowseMode;
@@ -77,10 +82,6 @@ type Props = {
   towns?: Town[];
   recentPosts?: RecentPost[];
 };
-
-function isRemoteImage(url: string | null | undefined): boolean {
-  return !!url && (url.startsWith("https://") || url.startsWith("http://"));
-}
 
 function shortEventDates(eventDate: string, endDate: string | null): string {
   const start = new Date(eventDate + "T12:00:00");
@@ -104,6 +105,7 @@ export function SearchPageClient({
   towns = [],
   recentPosts = [],
 }: Props) {
+  const isAreasLike = browseMode === "areas" || browseMode === "access";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [q, setQ] = useState(() => searchParams.get("q") ?? "");
@@ -153,7 +155,7 @@ export function SearchPageClient({
         ? browseTowns.length
         : browseMode === "guides"
           ? browseGuides.length
-          : browseMode === "areas"
+          : isAreasLike
             ? browseAreas.length
             : results.recommendations.length;
 
@@ -184,9 +186,11 @@ export function SearchPageClient({
         ? `${totalResults} upcoming events`
         : browseMode === "towns"
           ? `${totalResults} towns`
-          : browseMode === "areas"
-            ? `${totalResults} areas`
-            : `${totalResults} guides`;
+          : browseMode === "access"
+            ? `${totalResults} landmarks & parks`
+            : browseMode === "areas"
+              ? `${totalResults} areas`
+              : `${totalResults} guides`;
 
   const hasRows =
     browseMode === "events"
@@ -195,7 +199,7 @@ export function SearchPageClient({
         ? paginatedTowns.length > 0
         : browseMode === "guides"
           ? paginatedGuides.length > 0
-          : browseMode === "areas"
+          : isAreasLike
             ? paginatedAreas.length > 0
             : paginatedBusiness.length > 0;
 
@@ -220,7 +224,9 @@ export function SearchPageClient({
                         ? "Search guides…"
                         : browseMode === "areas"
                           ? "Search areas and districts…"
-                          : "Search anything on 30A…"
+                          : browseMode === "access"
+                            ? "Search parks, landmarks, and trailheads…"
+                            : "Search anything on 30A…"
                 }
               />
             </div>
@@ -289,20 +295,13 @@ export function SearchPageClient({
                               className="flex flex-col gap-4 sm:flex-row sm:gap-6"
                             >
                               <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:aspect-[4/3] sm:w-40">
-                                {img && isRemoteImage(img) ? (
-                                  <Image
-                                    src={img}
-                                    alt={rec.business.name}
-                                    fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center">
-                                    <span className="material-symbols-outlined text-4xl text-[var(--color-text-tertiary)]">
-                                      storefront
-                                    </span>
-                                  </div>
-                                )}
+                                <RemoteCoverImage
+                                  src={img}
+                                  alt={rec.business.name}
+                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                  sizes="(max-width: 640px) 100vw, 160px"
+                                  placeholderIcon="storefront"
+                                />
                               </div>
                               <div className="flex flex-1 flex-col">
                                 <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
@@ -356,20 +355,13 @@ export function SearchPageClient({
                             className="flex flex-col gap-4 sm:flex-row sm:gap-6"
                           >
                             <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:aspect-[4/3] sm:w-40">
-                              {ev.hero_image_url && isRemoteImage(ev.hero_image_url) ? (
-                                <Image
-                                  src={ev.hero_image_url}
-                                  alt=""
-                                  fill
-                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center">
-                                  <span className="material-symbols-outlined text-4xl text-[var(--color-text-tertiary)]">
-                                    event
-                                  </span>
-                                </div>
-                              )}
+                              <RemoteCoverImage
+                                src={ev.hero_image_url}
+                                alt=""
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                sizes="(max-width: 640px) 100vw, 160px"
+                                placeholderIcon="event"
+                              />
                             </div>
                             <div className="flex flex-1 flex-col">
                               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
@@ -425,7 +417,7 @@ export function SearchPageClient({
                       ))
                     : null}
 
-                  {browseMode === "areas"
+                  {isAreasLike
                     ? paginatedAreas.map((a) => {
                         const inner = (
                           <>
@@ -434,7 +426,7 @@ export function SearchPageClient({
                             </div>
                             <div className="flex-1">
                               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                                {a.area_type.replace(/_/g, " ")}
+                                {areaTypeLabel(a.area_type)}
                               </p>
                               <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
                                 {a.name}
@@ -482,20 +474,13 @@ export function SearchPageClient({
                         >
                           <Link href={`/guide/${g.slug}`} className="flex flex-col gap-4 sm:flex-row sm:gap-6">
                             <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:aspect-[4/3] sm:w-40">
-                              {g.og_image_url && isRemoteImage(g.og_image_url) ? (
-                                <Image
-                                  src={g.og_image_url}
-                                  alt=""
-                                  fill
-                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center">
-                                  <span className="material-symbols-outlined text-4xl text-[var(--color-text-tertiary)]">
-                                    menu_book
-                                  </span>
-                                </div>
-                              )}
+                              <RemoteCoverImage
+                                src={g.og_image_url}
+                                alt=""
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                sizes="(max-width: 640px) 100vw, 160px"
+                                placeholderIcon="menu_book"
+                              />
                             </div>
                             <div className="flex flex-1 flex-col">
                               <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
@@ -602,20 +587,14 @@ export function SearchPageClient({
                         <li key={post.id}>
                           <Link href={`/business/${post.slug}`} className="group flex items-center gap-3">
                             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)]">
-                              {post.hero_image_url ? (
-                                <Image
-                                  src={post.hero_image_url}
-                                  alt={post.name}
-                                  fill
-                                  className="object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center">
-                                  <span className="material-symbols-outlined text-lg text-[var(--color-text-tertiary)]">
-                                    storefront
-                                  </span>
-                                </div>
-                              )}
+                              <RemoteCoverImage
+                                src={post.hero_image_url}
+                                alt={post.name}
+                                className="object-cover"
+                                sizes="48px"
+                                placeholderIcon="storefront"
+                                iconSize="sm"
+                              />
                             </div>
                             <span className="line-clamp-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
                               {post.name}

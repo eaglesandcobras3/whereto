@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
@@ -18,8 +17,7 @@ async function loadGuide(slug: string) {
         seo_title,
         seo_description,
         og_image_url,
-        page_type,
-        entity_id
+        page_type
       `)
       .eq("slug", slug)
       .eq("status", "published")
@@ -27,18 +25,7 @@ async function loadGuide(slug: string) {
     
     if (pageErr || !page) return null;
 
-    // 2. Fetch Entity context if available
-    let entityData = null;
-    if (page.entity_id) {
-      const { data: entity } = await supabase
-        .from("entities")
-        .select(`id, title, primary_town_id, towns(name, slug)`)
-        .eq("id", page.entity_id)
-        .maybeSingle();
-      entityData = entity;
-    }
-
-    return { ...page, entities: entityData };
+    return page;
   } catch {
     return null;
   }
@@ -66,26 +53,10 @@ export default async function GuidePage({ params }: Props) {
   
   if (!page) notFound();
 
-  const entity = page.entities as { towns: { name: string; slug: string } | null } | null;
-  const town = entity?.towns;
-
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
         <article className="mx-auto max-w-4xl px-6 py-16 md:px-10 md:py-24">
-          {/* Breadcrumb */}
-          <nav className="mb-12 flex items-center gap-2 text-sm font-medium text-[var(--color-text-tertiary)]">
-            <Link href="/" className="hover:text-[var(--color-primary)]">Home</Link>
-            <span className="material-symbols-outlined !text-xs opacity-30 text-zinc-300">chevron_right</span>
-            {town && (
-              <>
-                <Link href={`/${town.slug}`} className="hover:text-[var(--color-primary)]">{town.name}</Link>
-                <span className="material-symbols-outlined !text-xs opacity-30 text-zinc-300">chevron_right</span>
-              </>
-            )}
-            <span className="text-[var(--color-text-secondary)]">Guide</span>
-          </nav>
-
           <header className="mb-16">
             <h1 className="font-headline text-4xl md:text-6xl font-extrabold tracking-tighter text-[var(--color-text-primary)] mb-6">
               {page.title}

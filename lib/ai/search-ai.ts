@@ -107,6 +107,22 @@ export function fallbackIntentFromKeywords(
       result_count: 5,
     };
   }
+  if (
+    /\b(landscap|lawn care|handyman|painter|paint(ing)?|plumb|electric|contractor|hvac|cleaning|pressure wash|home repair|trades?|spa|salon|wellness|beauty)\b/.test(
+      normalized,
+    )
+  ) {
+    return {
+      category: "services",
+      subcategory: null,
+      location: { town: extractTown(normalized), radius: "near" },
+      attributes,
+      exclude_attributes: [],
+      sort_preference: "quality",
+      price_level: null,
+      result_count: 8,
+    };
+  }
   return {
     category: "restaurants",
     subcategory: null,
