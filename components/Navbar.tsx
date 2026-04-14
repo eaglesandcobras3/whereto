@@ -16,6 +16,8 @@ type Props = {
   onSearchChange?: (value: string) => void;
   onSearchSubmit?: (e: React.FormEvent) => void;
   searchLoading?: boolean;
+  /** Feature flags passed from server */
+  featureFlags?: Record<string, boolean>;
 };
 
 function navLinkClass(active: boolean) {
@@ -33,6 +35,7 @@ export function Navbar({
   onSearchChange,
   onSearchSubmit,
   searchLoading,
+  featureFlags = {},
 }: Props) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
@@ -45,6 +48,9 @@ export function Navbar({
     pathname.startsWith(`${PRIMARY_REGION_HUB_PATH}/`);
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
+
+  // Feature flags
+  const showUserFeatures = featureFlags["user_features"] === true;
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -147,18 +153,20 @@ export function Navbar({
           >
             Towns
           </Link>
-          <Link href="/saved" className={navLinkClass(isSaved)}>
-            Saved
-          </Link>
-          {user ? (
+          {showUserFeatures && (
+            <Link href="/saved" className={navLinkClass(isSaved)}>
+              Saved
+            </Link>
+          )}
+          {showUserFeatures && user ? (
             <Link href="/profile" className={navLinkClass(isProfile)}>
               Profile
             </Link>
-          ) : (
+          ) : showUserFeatures ? (
             <Link href="/login" className={navLinkClass(pathname === "/login")}>
               Login
             </Link>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

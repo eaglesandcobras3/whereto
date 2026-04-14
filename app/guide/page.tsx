@@ -1,7 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
-import { Navbar } from "@/components/Navbar";
-import { SiteFooter } from "@/components/home/SiteFooter";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { Metadata } from "next";
 
@@ -92,16 +89,12 @@ export default async function GuidePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      <Navbar compact />
-
+    <>
       {/* JSON-LD Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-
-      <main className="flex-1">
         {/* Hero Section */}
         <section className="relative h-[500px] w-full overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[var(--color-background)]" />
@@ -447,9 +440,6 @@ export default async function GuidePage() {
             </Link>
           </div>
         </section>
-      </main>
-
-      <SiteFooter />
-    </div>
+    </>
   );
 }

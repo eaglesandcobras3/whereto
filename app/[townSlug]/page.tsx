@@ -12,8 +12,6 @@ import {
 } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { Navbar } from "@/components/Navbar";
-import { SiteFooter } from "@/components/home/SiteFooter";
 import { BusinessCard } from "@/components/discovery/BusinessCard";
 import { SectionBlock } from "@/components/discovery/SectionBlock";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
@@ -60,7 +58,7 @@ export default async function TownPage({ params }: Props) {
   const townPage = Array.isArray(town.pages) ? (town.pages[0] as { body_markdown: string } | undefined) : (town.pages as { body_markdown: string } | undefined);
 
   return (
-    <main className="flex-1 pb-32">
+    <div className="pb-32">
       {/* Town Hero */}
         <section className="relative h-[650px] w-full flex items-end overflow-hidden">
           <div className="absolute inset-0 z-0">
@@ -349,9 +347,6 @@ export default async function TownPage({ params }: Props) {
             </div>
           )}
         </div>
-      </main>
-
-      <SiteFooter />
     </div>
   );
 }
