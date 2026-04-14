@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Manrope, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Navbar } from "@/components/Navbar";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import "./globals.css";
 
 const inter = Inter({
@@ -59,7 +61,11 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col bg-background font-body text-on-surface">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

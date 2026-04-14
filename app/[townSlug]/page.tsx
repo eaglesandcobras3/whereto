@@ -60,11 +60,8 @@ export default async function TownPage({ params }: Props) {
   const townPage = Array.isArray(town.pages) ? (town.pages[0] as { body_markdown: string } | undefined) : (town.pages as { body_markdown: string } | undefined);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      <Navbar compact />
-
-      <main className="flex-1 pb-32">
-        {/* Town Hero */}
+    <main className="flex-1 pb-32">
+      {/* Town Hero */}
         <section className="relative h-[650px] w-full flex items-end overflow-hidden">
           <div className="absolute inset-0 z-0">
             {/* Placeholder for real town image, wire to DB later */}

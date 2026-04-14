@@ -38,6 +38,7 @@ export function Navbar({
   const [user, setUser] = useState<User | null>(null);
   const [internalSearch, setInternalSearch] = useState("");
   const isHome = pathname === "/";
+  const showSearchInNavbar = showSearch || !isHome;
   const isGuide = pathname === "/guide" || pathname.startsWith("/guide/");
   const isTowns =
     pathname === PRIMARY_REGION_HUB_PATH ||
@@ -87,7 +88,7 @@ export function Navbar({
         </Link>
 
         {/* Center: Search (optional) */}
-        {showSearch ? (
+        {showSearchInNavbar ? (
           <form
             onSubmit={internalSubmit}
             className="flex-1 max-w-xl hidden md:flex items-center gap-2"
