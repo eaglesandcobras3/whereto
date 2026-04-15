@@ -40,14 +40,8 @@ const TYPE_FILTERS: Record<string, { label: string; query: string }> = {
 
 const BROWSE_TYPES = new Set(["events", "towns", "guides", "areas", "access"]);
 
-/** `type=areas` browse: districts and place-kinds only — never `point_of_interest` (those use `type=access`). */
-const AREA_TYPES_FOR_AREAS_SEARCH = [
-  "shopping_area",
-  "district",
-  "square",
-  "development",
-  "neighborhood",
-] as const;
+/** `type=areas` browse should only show shopping areas. */
+const AREA_TYPES_FOR_AREAS_SEARCH = ["shopping_area"] as const;
 
 function normalizeSearchType(type: string | undefined): string | undefined {
   if (!type) return undefined;
@@ -255,7 +249,7 @@ export default async function SearchPage({ searchParams }: Props) {
           displayQuery,
           accessOnly
             ? "Parks, preserves, landmarks, trailheads, and other notable places along the Emerald Coast."
-            : "Shopping districts, squares, and named neighborhoods along 30A.",
+            : "Shopping areas along 30A.",
         )}
         townName={townName}
         towns={townsResult.data ?? []}
