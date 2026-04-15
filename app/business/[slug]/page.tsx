@@ -272,36 +272,19 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-12 lg:grid-cols-3">
             {/* Main Content */}
             <div className="space-y-12 lg:col-span-2">
-              {/* Header — avoid duplicating an H1 when markdown carries the title */}
+              {/* Title always from shell; stripLeadingH1MatchingTitle drops duplicate # in body */}
               <header>
-                {hasMarkdown ? (
-                  <>
-                    <h1 className="sr-only">{b.name as string}</h1>
-                    {oneLiner && (
-                      <p className="text-xl font-medium leading-tight text-teal-700">{oneLiner}</p>
-                    )}
-                    {b.address && (
-                      <p className="mt-3 flex items-center gap-1.5 text-zinc-600">
-                        <span className="material-symbols-outlined !text-base text-zinc-400">place</span>
-                        {b.address as string}
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-zinc-900 sm:text-5xl">
-                      {b.name as string}
-                    </h1>
-                    {oneLiner && (
-                      <p className="mt-4 text-xl font-medium leading-tight text-teal-700">{oneLiner}</p>
-                    )}
-                    {b.address && (
-                      <p className="mt-3 flex items-center gap-1.5 text-zinc-600">
-                        <span className="material-symbols-outlined !text-base text-zinc-400">place</span>
-                        {b.address as string}
-                      </p>
-                    )}
-                  </>
+                <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-zinc-900 sm:text-5xl">
+                  {b.name as string}
+                </h1>
+                {oneLiner && (
+                  <p className="mt-4 text-xl font-medium leading-tight text-teal-700">{oneLiner}</p>
+                )}
+                {b.address && (
+                  <p className="mt-3 flex items-center gap-1.5 text-zinc-600">
+                    <span className="material-symbols-outlined !text-base text-zinc-400">place</span>
+                    {b.address as string}
+                  </p>
                 )}
               </header>
 

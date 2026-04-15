@@ -61,11 +61,14 @@ export default async function GuidePage({ params }: Props) {
             <h1 className="font-headline text-4xl md:text-6xl font-extrabold tracking-tighter text-[var(--color-text-primary)] mb-6">
               {page.title}
             </h1>
-            {page.seo_description && (
-              <p className="text-xl text-[var(--color-text-secondary)] leading-relaxed max-w-3xl">
-                {page.seo_description}
-              </p>
-            )}
+            {page.seo_description ? (
+              <div className="max-w-3xl">
+                <MarkdownRenderer
+                  content={page.seo_description}
+                  className="prose-p:text-xl prose-p:leading-relaxed prose-p:mb-3 prose-p:last:mb-0"
+                />
+              </div>
+            ) : null}
           </header>
 
           {page.og_image_url && (

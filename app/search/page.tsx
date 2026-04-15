@@ -3,7 +3,6 @@ import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { SearchPageClient } from "./search-page-client";
-import { SiteFooter } from "@/components/home/SiteFooter";
 import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
 
@@ -40,6 +39,15 @@ const TYPE_FILTERS: Record<string, { label: string; query: string }> = {
 };
 
 const BROWSE_TYPES = new Set(["events", "towns", "guides", "areas", "access"]);
+
+/** `type=areas` browse: districts and place-kinds only — never `point_of_interest` (those use `type=access`). */
+const AREA_TYPES_FOR_AREAS_SEARCH = [
+  "shopping_area",
+  "district",
+  "square",
+  "development",
+  "neighborhood",
+] as const;
 
 function normalizeSearchType(type: string | undefined): string | undefined {
   if (!type) return undefined;
@@ -156,7 +164,6 @@ export default async function SearchPage({ searchParams }: Props) {
             : "Festivals, markets, and happenings along 30A.",
         )}
         townName={townName}
-        footer={<SiteFooter />}
         towns={townsResult.data ?? []}
         recentPosts={recentPostsResult.data ?? []}
       />
@@ -190,7 +197,6 @@ export default async function SearchPage({ searchParams }: Props) {
           "Beach towns and neighborhoods along Florida's Scenic Highway 30A.",
         )}
         townName={townName}
-        footer={<SiteFooter />}
         towns={townsResult.data ?? []}
         recentPosts={recentPostsResult.data ?? []}
       />
@@ -212,7 +218,7 @@ export default async function SearchPage({ searchParams }: Props) {
     if (accessOnly) {
       aq = aq.eq("area_type", "point_of_interest");
     } else {
-      aq = aq.neq("area_type", "point_of_interest");
+      aq = aq.in("area_type", [...AREA_TYPES_FOR_AREAS_SEARCH]);
     }
     const safeA = sanitizeSearchToken(trimmedQ);
     if (safeA) {
@@ -220,18 +226,25 @@ export default async function SearchPage({ searchParams }: Props) {
     }
 
     const { data: rawAreas } = await aq;
-    const browseAreas = (rawAreas ?? []).map((row: Record<string, unknown>) => {
-      const towns = row.towns as { slug: string; name: string } | null | undefined;
-      return {
-        id: row.id as number,
-        name: row.name as string,
-        slug: row.slug as string,
-        description_short: row.description_short as string | null,
-        area_type: row.area_type as string,
-        town_slug: towns?.slug ?? null,
-        town_name: towns?.name ?? null,
-      };
-    });
+    const browseAreas = (rawAreas ?? [])
+      .filter((row) => {
+        const at = row.area_type as string;
+        return accessOnly
+          ? at === "point_of_interest"
+          : (AREA_TYPES_FOR_AREAS_SEARCH as readonly string[]).includes(at);
+      })
+      .map((row: Record<string, unknown>) => {
+        const towns = row.towns as { slug: string; name: string } | null | undefined;
+        return {
+          id: row.id as number,
+          name: row.name as string,
+          slug: row.slug as string,
+          description_short: row.description_short as string | null,
+          area_type: row.area_type as string,
+          town_slug: towns?.slug ?? null,
+          town_name: towns?.name ?? null,
+        };
+      });
 
     return (
       <SearchPageClient
@@ -245,7 +258,6 @@ export default async function SearchPage({ searchParams }: Props) {
             : "Shopping districts, squares, and named neighborhoods along 30A.",
         )}
         townName={townName}
-        footer={<SiteFooter />}
         towns={townsResult.data ?? []}
         recentPosts={recentPostsResult.data ?? []}
       />
@@ -280,7 +292,6 @@ export default async function SearchPage({ searchParams }: Props) {
           "Editorial guides for dining, beaches, and planning your Emerald Coast trip.",
         )}
         townName={townName}
-        footer={<SiteFooter />}
         towns={townsResult.data ?? []}
         recentPosts={recentPostsResult.data ?? []}
       />
@@ -302,7 +313,6 @@ export default async function SearchPage({ searchParams }: Props) {
       initialQuery={displayQuery}
       results={searchResult}
       townName={townName}
-      footer={<SiteFooter />}
       towns={townsResult.data ?? []}
       recentPosts={recentPostsResult.data ?? []}
     />

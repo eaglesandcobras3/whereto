@@ -82,7 +82,6 @@ type Props = {
   initialQuery: string;
   results: SearchResultPayload;
   townName?: string;
-  footer?: React.ReactNode;
   towns?: Town[];
   recentPosts?: RecentPost[];
 };
@@ -125,7 +124,6 @@ export function SearchPageClient({
   initialQuery,
   results,
   townName,
-  footer,
   towns = [],
   recentPosts = [],
 }: Props) {
@@ -643,8 +641,6 @@ export function SearchPageClient({
           </div>
         </div>
       </main>
-
-      {footer}
     </div>
   );
 }

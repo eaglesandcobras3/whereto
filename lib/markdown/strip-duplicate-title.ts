@@ -1,7 +1,6 @@
 /**
  * If markdown starts with a single H1 whose text matches `title` (case-insensitive),
- * remove it so the page shell can own the title — or omit the shell title and use this
- * to avoid duplicate headings when content was authored with a leading `# Title`.
+ * remove it so the business page shell `<h1>` stays the single visible title.
  */
 export function stripLeadingH1MatchingTitle(markdown: string, title: string): string {
   const t = title.trim().toLowerCase();

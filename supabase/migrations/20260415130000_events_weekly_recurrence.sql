@@ -24,7 +24,11 @@ ALTER TABLE public.events ADD CONSTRAINT events_recurrence_weekday_consistency C
   OR (recurrence_frequency = 'weekly' AND recurrence_weekday IS NOT NULL)
 );
 
-CREATE OR REPLACE VIEW public.upcoming_events AS
+-- Replace view: `CREATE OR REPLACE VIEW` cannot reorder/rename columns vs the old
+-- `SELECT e.*, town_name, town_slug` shape (would error: town_name → recurrence_frequency).
+DROP VIEW IF EXISTS public.upcoming_events CASCADE;
+
+CREATE VIEW public.upcoming_events AS
 WITH base AS (
   SELECT
     e.*,
