@@ -70,7 +70,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/red-bar/grayton.jpg"
 has_live_music: true
 serves_alcohol: true
 

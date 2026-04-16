@@ -33,7 +33,6 @@ related_entities:
   - black-bear-bread-co
 
 featured: false
-hero_image: "/images/grayton-central/hero.jpg"
 parking_notes: "Public parking with shuttle service to the historic beach district."
 
 map_location:

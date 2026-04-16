@@ -63,7 +63,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/chiringo/hero.jpg"
 has_outdoor_seating: true
 is_beachfront: true
 

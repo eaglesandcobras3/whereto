@@ -181,8 +181,42 @@ type TownPayload = {
   name: string;
   slug: string;
   ai_tagline?: string | null;
+  ai_description?: string | null;
   hero_image_url?: string | null;
 };
+
+function cleanTownBlurb(raw?: string | null): string {
+  if (!raw) return "";
+  return raw
+    .replace(/^a local'?s guide to [^.?!,]+[,.]?\s*/i, "")
+    .replace(/^discover\s+/i, "")
+    .trim();
+}
+
+function townBlurbFallback(townName: string): string {
+  const fallbackByTown: Record<string, string> = {
+    "Alys Beach":
+      "Whitewashed architecture, quiet lanes, and upscale dining make this one of 30A's most polished beach towns.",
+    "Rosemary Beach":
+      "Cobblestone lanes, boutique shopping, and lively greens give Rosemary a walkable, European-style center.",
+    "Grayton Beach":
+      "An artsy beach town with local character, live music, and easy access to Grayton Beach State Park.",
+    Seaside:
+      "Colorful cottages, iconic town squares, and family-friendly beaches make Seaside a 30A classic.",
+    WaterColor:
+      "Resort amenities, dune lake access, and quiet neighborhoods create a relaxed, upscale coastal base.",
+  };
+  return (
+    fallbackByTown[townName] ??
+    `${townName} offers its own mix of beaches, dining, and local spots along Florida's Scenic Highway 30A.`
+  );
+}
+
+function getTownCardBlurb(town: TownPayload): string {
+  const preferred = cleanTownBlurb(town.ai_description) || cleanTownBlurb(town.ai_tagline);
+  if (!preferred) return townBlurbFallback(town.name);
+  return preferred.charAt(0).toUpperCase() + preferred.slice(1);
+}
 
 type Props = {
   featureFlags?: Record<string, boolean>;
@@ -331,41 +365,51 @@ export function HomePage({
                 </h2>
                 <p className="mt-2 text-zinc-500">Hand-picked highlights of the Emerald Coast.</p>
               </div>
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {featuredBusinesses.map((b) => (
-                  <Link
-                    key={b.id}
-                    href={`/business/${b.slug}`}
-                    className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:shadow-md"
-                  >
-                    <div className="relative aspect-video">
-                      <Image
-                        src={b.hero_image_url || IMG.hero}
-                        alt={b.name}
-                        fill
-                        unoptimized
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      {b.badge && (
-                        <div className="absolute top-3 left-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-md">
-                          {b.badge}
+              <div className="columns-1 gap-8 sm:columns-2 lg:columns-3">
+                {featuredBusinesses.map((b, index) => {
+                  const imageHeightClass =
+                    index % 3 === 0
+                      ? "h-72"
+                      : index % 3 === 1
+                        ? "h-56"
+                        : "h-80";
+                  const copyClampClass = index % 2 === 0 ? "line-clamp-4" : "line-clamp-3";
+                  return (
+                    <div key={b.id} className="mb-8 break-inside-avoid">
+                      <Link
+                        href={`/business/${b.slug}`}
+                        className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                      >
+                        <div className={`relative ${imageHeightClass}`}>
+                          <Image
+                            src={b.hero_image_url || IMG.hero}
+                            alt={b.name}
+                            fill
+                            unoptimized
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          {b.badge && (
+                            <div className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-md">
+                              {b.badge}
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <div className="p-6">
+                          <h3 className="font-headline text-xl font-bold text-zinc-900 transition-colors group-hover:text-primary">
+                            {b.name}
+                          </h3>
+                          <p className={`mt-2 text-sm leading-relaxed text-zinc-600 ${copyClampClass}`}>
+                            {b.featured_description || b.ai_summary || "Explore more about this local favorite."}
+                          </p>
+                          <div className="mt-4 flex items-center text-sm font-bold text-primary">
+                            View details
+                            <MsIcon name="chevron_right" className="!text-lg" />
+                          </div>
+                        </div>
+                      </Link>
                     </div>
-                    <div className="p-6">
-                      <h3 className="font-headline text-xl font-bold text-zinc-900 group-hover:text-primary transition-colors">
-                        {b.name}
-                      </h3>
-                      <p className="mt-2 line-clamp-2 text-sm text-zinc-600 leading-relaxed">
-                        {b.featured_description || b.ai_summary || "Explore more about this local favorite."}
-                      </p>
-                      <div className="mt-4 flex items-center text-sm font-bold text-primary">
-                        View details
-                        <MsIcon name="chevron_right" className="!text-lg" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -461,28 +505,37 @@ export function HomePage({
 
         <section className="bg-background py-14">
           <div className="mx-auto max-w-screen-xl px-6">
-            <Link
-              href="/guide"
-              className="group block rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-sm transition-all hover:border-[var(--color-border-strong)] hover:shadow-md md:p-10"
-            >
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="max-w-3xl">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]/70">
-                    New to 30A?
-                  </p>
-                  <h2 className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-4xl">
-                    Start with the 30A Guide
-                  </h2>
-                  <p className="mt-3 text-base text-[var(--color-text-secondary)] md:text-lg">
-                    Local town breakdowns, where to eat, what to do, and how to plan your trip.
-                  </p>
-                </div>
-                <div className="inline-flex items-center gap-2 font-semibold text-[var(--color-primary)]">
-                  Explore guides
-                  <MsIcon name="arrow_forward" className="!text-base transition-transform group-hover:translate-x-0.5" />
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-primary-container p-10 text-center text-on-primary md:p-16">
+              <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal-400/20 blur-[100px]" />
+              <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-teal-400/10 blur-[100px]" />
+              <div className="relative z-10">
+                <MsIcon
+                  name="menu_book"
+                  className="mb-6 !block !text-5xl text-on-primary-container"
+                />
+                <h2 className="mb-6 font-headline text-4xl font-extrabold tracking-tighter">
+                  Start with the 30A Guide
+                </h2>
+                <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-on-primary-container">
+                  New to 30A? Explore town guides, trip ideas, where to eat, and the
+                  best local spots to know before you go.
+                </p>
+                <div className="flex flex-col justify-center gap-4 md:flex-row">
+                  <Link
+                    href="/guide"
+                    className="rounded-full bg-surface-elevated px-8 py-4 text-lg font-bold text-primary transition-all hover:shadow-xl"
+                  >
+                    Explore the Guide
+                  </Link>
+                  <Link
+                    href={PRIMARY_REGION_HUB_PATH}
+                    className="rounded-full border border-on-primary/20 bg-transparent px-8 py-4 text-lg font-bold text-on-primary transition-all hover:bg-on-primary/10"
+                  >
+                    Browse Towns
+                  </Link>
                 </div>
               </div>
-            </Link>
+            </div>
           </div>
         </section>
 
@@ -508,36 +561,56 @@ export function HomePage({
                   Explore all Towns
                 </Link>
               </div>
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                {towns.slice(0, 6).map((town) => (
-                  <Link
-                    key={town.slug}
-                    href={`/${town.slug}`}
-                    className="group relative h-[400px] cursor-pointer overflow-hidden rounded-xl"
-                  >
-                    {town.hero_image_url ? (
-                      <DesignImg
-                        src={town.hero_image_url}
-                        alt={town.name}
-                        className="transition duration-700 group-hover:scale-105"
-                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
-                    )}
-                    <div className="absolute inset-0 bg-black/30 transition-all duration-500 group-hover:bg-black/20" />
-                    <div className="absolute inset-0 flex flex-col justify-end p-8">
-                      <h3 className="font-headline text-3xl font-extrabold tracking-tighter text-white">
-                        {town.name}
-                      </h3>
-                      {town.ai_tagline && (
-                        <p className="mt-3 font-medium text-white/90 line-clamp-2">
-                          {town.ai_tagline}
-                        </p>
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-6">
+                {towns.slice(0, 6).map((town, index) => {
+                  const layoutClass =
+                    index === 0
+                      ? "md:col-span-2 lg:col-span-3 lg:row-span-2"
+                      : index === 1
+                        ? "md:col-span-2 lg:col-span-3"
+                        : index === 2 || index === 5
+                          ? "lg:col-span-2"
+                          : "lg:col-span-2";
+                  const heightClass =
+                    index === 0
+                      ? "h-[520px]"
+                      : index === 1
+                        ? "h-[280px]"
+                        : index === 2
+                          ? "h-[360px]"
+                          : index === 3
+                            ? "h-[420px]"
+                            : index === 4
+                              ? "h-[300px]"
+                              : "h-[360px]";
+                  return (
+                    <Link
+                      key={town.slug}
+                      href={`/${town.slug}`}
+                      className={`group relative ${heightClass} ${layoutClass} cursor-pointer overflow-hidden rounded-xl`}
+                    >
+                      {town.hero_image_url ? (
+                        <DesignImg
+                          src={town.hero_image_url}
+                          alt={town.name}
+                          className="transition duration-700 group-hover:scale-105"
+                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
                       )}
-                    </div>
-                  </Link>
-                ))}
+                      <div className="absolute inset-0 bg-black/30 transition-all duration-500 group-hover:bg-black/20" />
+                      <div className="absolute inset-0 flex flex-col justify-end p-8">
+                        <h3 className="font-headline text-3xl font-extrabold tracking-tighter text-white">
+                          {town.name}
+                        </h3>
+                        <p className="mt-3 max-w-md font-medium text-white/90 line-clamp-3">
+                          {getTownCardBlurb(town)}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </section>

@@ -4,7 +4,6 @@ type: guide
 entity_type: guide
 slug: grayton-beach-permit
 status: published
-
 # Location / hierarchy
 region: 30a
 town: grayton-beach
@@ -54,7 +53,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/grayton-beach/permit.jpg"
 
 # Structured details (for UI + snippets)
 permit_types:

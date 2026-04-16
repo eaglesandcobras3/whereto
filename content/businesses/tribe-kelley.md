@@ -73,7 +73,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/tribe-kelley/grayton.jpg"
 is_walkable: true
 
 # Map

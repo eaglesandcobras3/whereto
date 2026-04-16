@@ -4,7 +4,6 @@ type: guide
 entity_type: guide
 slug: nice-dogs-strange-people-sign-grayton-beach
 status: published
-
 # Location / hierarchy
 region: 30a
 town: grayton-beach
@@ -62,7 +61,6 @@ related_entities:
 
 # UI helpers
 featured: false
-hero_image: "/images/grayton-beach/nice-dogs-sign.jpg"
 is_walkable: true
 
 # Map (approximate placement)

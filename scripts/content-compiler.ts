@@ -72,7 +72,6 @@ interface FrontmatterData {
   related_entities?: string[];
   related_pages?: string[];
   featured?: boolean;
-  hero_image?: string;
   map_center?: { lat: number; lng: number };
   map_location?: { lat: number; lng: number };
   latitude?: number;
@@ -280,7 +279,6 @@ async function syncBusiness(parsed: ParsedContent): Promise<boolean> {
         frontmatter.longitude ||
         frontmatter.map_center?.lng ||
         frontmatter.map_location?.lng,
-      hero_image_url: frontmatter.hero_image,
       ai_summary: frontmatter.seo_description || content.slice(0, 200),
     },
     { onConflict: "slug" }
@@ -358,23 +356,34 @@ async function syncArea(parsed: ParsedContent): Promise<boolean> {
     frontmatter.map_center?.lng ??
     frontmatter.map_location?.lng;
 
-  const { error } = await supabase.from("areas").upsert(
-    {
-      name: frontmatter.title,
-      slug: frontmatter.slug,
-      town_id: townId,
-      area_type: areaType,
-      description_short: frontmatter.seo_description,
-      parking_notes: frontmatter.parking_notes,
-      latitude_center: lat ?? null,
-      longitude_center: lng ?? null,
-      include_in_site_browse: frontmatter.include_in_site_browse !== false,
-    },
-    { onConflict: "slug" }
-  );
+  const basePayload = {
+    name: frontmatter.title,
+    slug: frontmatter.slug,
+    town_id: townId,
+    area_type: areaType,
+    description_short: frontmatter.seo_description,
+    parking_notes: frontmatter.parking_notes,
+    latitude_center: lat ?? null,
+    longitude_center: lng ?? null,
+  } as const;
 
-  if (error) {
-    console.error(`  ✗ Area sync failed: ${error.message}`);
+  const withBrowseFlag = {
+    ...basePayload,
+    include_in_site_browse: frontmatter.include_in_site_browse !== false,
+  };
+
+  const first = await supabase.from("areas").upsert(withBrowseFlag, { onConflict: "slug" });
+  if (first.error) {
+    // Allow older DBs that haven't applied 20260415120000_areas_include_in_site_browse.sql yet.
+    if (first.error.message.includes("include_in_site_browse")) {
+      const retry = await supabase.from("areas").upsert(basePayload, { onConflict: "slug" });
+      if (retry.error) {
+        console.error(`  ✗ Area sync failed: ${retry.error.message}`);
+        return false;
+      }
+      return true;
+    }
+    console.error(`  ✗ Area sync failed: ${first.error.message}`);
     return false;
   }
   return true;
@@ -415,7 +424,6 @@ async function syncGuide(parsed: ParsedContent): Promise<boolean> {
       seo_title: frontmatter.seo_title,
       seo_description: frontmatter.seo_description,
       seo_keywords: frontmatter.seo_keywords,
-      og_image_url: frontmatter.hero_image,
       status: "published",
     },
     { onConflict: "slug" }
@@ -463,7 +471,6 @@ async function syncEvent(parsed: ParsedContent): Promise<boolean> {
       slug: frontmatter.slug,
       title: frontmatter.title,
       description: frontmatter.seo_description || content.slice(0, 500).replace(/[#*\[\]`]/g, ""),
-      hero_image_url: frontmatter.hero_image,
       event_date: frontmatter.event_date,
       end_date: frontmatter.end_date || null,
       recurrence_frequency: rf ?? null,

@@ -5,7 +5,6 @@ entity_type: area
 area_type: shopping_area
 slug: rosemary-beach-town-center
 status: published
-
 # Location / hierarchy
 region: 30a
 town: rosemary-beach
@@ -64,7 +63,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/rosemary-beach/town-center.jpg"
 
 # Map
 map_location:

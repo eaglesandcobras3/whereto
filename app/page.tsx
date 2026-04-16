@@ -12,7 +12,7 @@ export default async function Home() {
   // `hero_image_url` lives on businesses — selecting it here fails the query and returned no towns).
   const { data: towns } = await supabase
     .from("towns")
-    .select("name, slug, ai_tagline")
+    .select("name, slug, ai_tagline, ai_description")
     .order("name")
     .limit(6);
 

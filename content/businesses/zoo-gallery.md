@@ -75,7 +75,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/zoo-gallery/grayton.jpg"
 is_walkable: true
 
 # Map

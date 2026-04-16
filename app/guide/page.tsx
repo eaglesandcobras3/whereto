@@ -49,14 +49,6 @@ async function getTowns(): Promise<Town[]> {
   return (data ?? []) as Town[];
 }
 
-async function getBusinessCount(): Promise<number> {
-  const supabase = getServiceSupabase();
-  const { count } = await supabase
-    .from("businesses")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "active");
-  return count ?? 0;
-}
 async function getOtherGuides() {
   const supabase = getServiceSupabase();
   const { data } = await supabase
@@ -68,9 +60,8 @@ async function getOtherGuides() {
 }
 
 export default async function GuidePage() {
-  const [towns, businessCount, otherGuides] = await Promise.all([
+  const [towns, otherGuides] = await Promise.all([
     getTowns(),
-    getBusinessCount(),
     getOtherGuides(),
   ]);
 
@@ -108,47 +99,9 @@ export default async function GuidePage() {
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-white/90">
               Your insider&apos;s guide to the Emerald Coast&apos;s most beautiful beach
-              communities. From Inlet Beach to Rosemary Beach, discover the
+              communities. From Inlet Beach to Dune Allen Beach, discover the
               magic of South Walton.
             </p>
-          </div>
-        </section>
-
-        {/* Quick Stats */}
-        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
-            <div className="text-center">
-              <p className="font-headline text-3xl font-extrabold text-[var(--color-primary)]">
-                {towns.length}
-              </p>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Beach Communities
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="font-headline text-3xl font-extrabold text-[var(--color-primary)]">
-                24
-              </p>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Miles of Scenic Highway
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="font-headline text-3xl font-extrabold text-[var(--color-primary)]">
-                {businessCount.toLocaleString()}+
-              </p>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Local Businesses
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="font-headline text-3xl font-extrabold text-[var(--color-primary)]">
-                #1
-              </p>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Beach in the USA
-              </p>
-            </div>
           </div>
         </section>
 

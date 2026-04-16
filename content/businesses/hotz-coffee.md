@@ -66,7 +66,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/hotz-coffee/grayton.jpg"
 has_outdoor_seating: true
 is_walkable: true
 

@@ -69,7 +69,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/amavida/rosemary.jpg"
 has_outdoor_seating: true
 is_walkable: true
 

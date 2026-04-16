@@ -4,7 +4,6 @@ type: guide
 entity_type: guide
 slug: best-coffee-rosemary-beach
 status: published
-
 # Location / hierarchy
 region: 30a
 town: rosemary-beach
@@ -53,7 +52,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/rosemary-beach/coffee-guide.jpg"
 
 # Structured guide data (very important for your system)
 featured_entities:

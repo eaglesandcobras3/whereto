@@ -4,7 +4,6 @@ type: beach
 entity_type: beach
 slug: grayton-beach-state-park
 status: published
-
 # Location / hierarchy
 region: 30a
 town: grayton-beach
@@ -67,7 +66,6 @@ related_entities:
 
 # UI helpers
 featured: true
-hero_image: "/images/grayton-beach/state-park.jpg"
 has_parking: true
 has_restrooms: true
 has_trails: true
