@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "About | WhereTo30A",
     description:
-      "AI-assisted local discovery for 30A and the Emerald Coast — curated listings, search, and town guides.",
+    "Local discovery for 30A and the Emerald Coast with curated listings, search, and town guides.",
     type: "website",
     url: `${siteUrl}/about`,
   },

@@ -111,7 +111,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const event = await loadEvent(slug);
   if (!event) return { title: "Event" };
   return {
-    title: `${event.title} — WhereTo30A`,
+    title: `${event.title} | WhereTo30A`,
     description: event.description?.slice(0, 160) ?? `Event on 30A: ${event.title}`,
   };
 }

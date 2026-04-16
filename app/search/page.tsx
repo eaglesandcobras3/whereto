@@ -70,14 +70,14 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const type = normalizeSearchType(rawType);
   if (type && TYPE_FILTERS[type]) {
     return {
-      title: `${TYPE_FILTERS[type].label} — WhereTo30A`,
-      description: `Discover the best ${TYPE_FILTERS[type].label.toLowerCase()} on Florida's Emerald Coast.`,
+      title: `${TYPE_FILTERS[type].label} | WhereTo30A`,
+      description: `Explore ${TYPE_FILTERS[type].label.toLowerCase()} across 30A and Florida's Emerald Coast.`,
     };
   }
-  if (!q) return { title: "Search — WhereTo30A" };
+  if (!q) return { title: "Search | WhereTo30A" };
   return {
-    title: `Search results for "${q}" — WhereTo30A`,
-    description: `Discover the best of the Emerald Coast for "${q}". Curated local recommendations and hidden gems.`,
+    title: `Search results for "${q}" | WhereTo30A`,
+    description: `Find towns, businesses, events, guides, and local favorites on 30A for "${q}".`,
   };
 }
 

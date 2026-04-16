@@ -24,9 +24,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WhereTo30A — AI local discovery",
+  title: "WhereTo30A | Local Guide to 30A",
   description:
-    "Discover restaurants, cafes, and more along 30A and the Emerald Coast with WhereTo30A's curated AI recommendations.",
+    "Discover towns, restaurants, events, guides, and local favorites along 30A and Florida's Emerald Coast.",
 };
 
 export default function RootLayout({

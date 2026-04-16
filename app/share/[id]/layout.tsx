@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: MetaProps): Promise<Metadata>
   const url = `${base}/share/${id}`;
   if (!meta) {
     return {
-      title: "Shared results — WhereTo30A",
+      title: "Shared results | WhereTo30A",
       openGraph: { url, siteName: "WhereTo30A", type: "website" },
     };
   }

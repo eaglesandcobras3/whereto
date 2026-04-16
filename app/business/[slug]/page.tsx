@@ -75,11 +75,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const hero = businessListingImageUrl(b.hero_image_url as string | null);
   const ogUrl = hero ?? undefined;
   return {
-    title: `${b.name as string} — WhereTo30A`,
+    title: `${b.name as string} | WhereTo30A`,
     description: desc,
     openGraph: ogUrl
-      ? { title: `${b.name as string} — WhereTo30A`, description: desc, images: [{ url: ogUrl }] }
-      : { title: `${b.name as string} — WhereTo30A`, description: desc },
+      ? { title: `${b.name as string} | WhereTo30A`, description: desc, images: [{ url: ogUrl }] }
+      : { title: `${b.name as string} | WhereTo30A`, description: desc },
     twitter: ogUrl
       ? { card: "summary_large_image", description: desc, images: [ogUrl] }
       : { card: "summary", description: desc },

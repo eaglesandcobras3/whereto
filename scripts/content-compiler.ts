@@ -343,7 +343,9 @@ const AREA_TYPES_DB = new Set([
 async function syncArea(parsed: ParsedContent): Promise<boolean> {
   const { frontmatter } = parsed;
   const townId = await getTownId(frontmatter.town);
-  const rawType = frontmatter.area_type?.trim();
+  // Accept the canonical `area_type`, but fall back to legacy `entity_type`
+  // values like `shopping_area` so older content keeps syncing correctly.
+  const rawType = (frontmatter.area_type ?? frontmatter.entity_type)?.trim();
   const areaType =
     rawType && AREA_TYPES_DB.has(rawType) ? rawType : "neighborhood";
 

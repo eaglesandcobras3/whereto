@@ -21,7 +21,7 @@ export async function getShareSnapshotMeta(shareId: string): Promise<{
   const snap = data.query_snapshot as Snapshot;
   const summary = (snap.summary ?? "Shared WhereTo30A results").trim();
   const title =
-    summary.length > 58 ? `${summary.slice(0, 55)}… — WhereTo30A` : `${summary} — WhereTo30A`;
+    summary.length > 58 ? `${summary.slice(0, 55)}... | WhereTo30A` : `${summary} | WhereTo30A`;
   const description =
     summary.length > 155 ? `${summary.slice(0, 152)}…` : summary;
   return { title, description };

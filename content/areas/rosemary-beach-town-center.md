@@ -1,7 +1,8 @@
 ---
 title: "Rosemary Beach Town Center"
 type: area
-entity_type: shopping_area
+entity_type: area
+area_type: shopping_area
 slug: rosemary-beach-town-center
 status: published
 

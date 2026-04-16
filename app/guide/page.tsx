@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "30A Florida Vacation Guide 2026 | Complete Beach Town Directory",
+  title: "30A Florida Vacation Guide 2026 | Local Guide to 30A Towns",
   description:
     "Your ultimate guide to Florida's 30A corridor. Explore Seaside, Rosemary Beach, Alys Beach, Grayton Beach and more. Local tips, best restaurants, activities, and hidden gems along the Emerald Coast.",
   keywords: [
@@ -191,7 +191,7 @@ export default async function GuidePage() {
                 Explore the Beach Communities
               </h2>
               <p className="mt-3 text-[var(--color-text-secondary)]">
-                Click on any town to read our in-depth local guide
+              Click on any town to read our local guide
               </p>
             </div>
 
@@ -428,8 +428,7 @@ export default async function GuidePage() {
               Ready to Explore?
             </h2>
             <p className="mt-4 text-lg text-white/80">
-              Use our AI-powered search to find exactly what you&apos;re looking for
-              on 30A.
+              Search towns, restaurants, events, and local favorites across 30A.
             </p>
             <Link
               href="/"

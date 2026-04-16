@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) return { title: "Guide" };
   
   return {
-    title: page.seo_title || `${page.title} — WhereTo30A`,
+    title: page.seo_title || `${page.title} | WhereTo30A`,
     description: page.seo_description,
     openGraph: {
       title: page.seo_title || page.title,

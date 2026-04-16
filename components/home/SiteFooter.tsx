@@ -38,8 +38,8 @@ export async function SiteFooter() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-              Your AI-powered local guide for Florida&apos;s Emerald Coast.
-              Curated listings, natural-language search, and town-by-town picks.
+              Your local guide to 30A and Florida&apos;s Emerald Coast.
+              Curated listings, town guides, and hand-picked local favorites.
             </p>
           </div>
 

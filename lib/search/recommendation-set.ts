@@ -141,7 +141,7 @@ function templateResponse(candidates: BusinessRowWithTags[], intent: SearchInten
         `${c.name ?? "This spot"} is a listed 30A business that matches your search.`,
       highlighted_tags: c.tag_slugs.slice(0, 4),
     })),
-    search_summary: `Found ${top.length} curated matches for you along 30A with WhereTo30A.`,
+    search_summary: `Found ${top.length} local matches for you along 30A with WhereTo30A.`,
   };
 }
 

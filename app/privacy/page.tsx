@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "How WhereTo30A collects, uses, and shares information when you use our website and services.",
   openGraph: {
     title: "Privacy Policy | WhereTo30A",
-    description: "Privacy practices for WhereTo30A — accounts, analytics, and your choices.",
+  description: "Privacy practices for WhereTo30A covering accounts, analytics, and your choices.",
     type: "website",
     url: `${siteUrl}/privacy`,
   },

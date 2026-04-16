@@ -265,7 +265,7 @@ export function HomePage({
               <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-fixed/30 px-4 py-1.5 text-primary">
                 <MsIcon name="auto_awesome" className="!text-sm" filled />
                 <span className="text-xs font-bold uppercase tracking-widest">
-                  Intelligent Discovery
+                  Local Guide to 30A
                 </span>
               </div>
               <h1 className="mb-8 font-headline text-5xl font-extrabold tracking-tighter text-primary md:text-7xl">
@@ -439,7 +439,7 @@ export function HomePage({
                       </div>
                       <div className="h-[186px] rounded-lg border-l-4 border-primary/20 bg-primary/5 p-6">
                         <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">
-                          Why our AI recommends this
+                          Why we picked this
                         </p>
                         <p className="text-sm italic leading-relaxed text-on-surface-variant">
                           &ldquo;{card.blurb}&rdquo;
@@ -458,6 +458,33 @@ export function HomePage({
             </div>
           </section>
         )}
+
+        <section className="bg-background py-14">
+          <div className="mx-auto max-w-screen-xl px-6">
+            <Link
+              href="/guide"
+              className="group block rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-sm transition-all hover:border-[var(--color-border-strong)] hover:shadow-md md:p-10"
+            >
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]/70">
+                    New to 30A?
+                  </p>
+                  <h2 className="mt-2 font-headline text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-4xl">
+                    Start with the 30A Guide
+                  </h2>
+                  <p className="mt-3 text-base text-[var(--color-text-secondary)] md:text-lg">
+                    Local town breakdowns, where to eat, what to do, and how to plan your trip.
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-2 font-semibold text-[var(--color-primary)]">
+                  Explore guides
+                  <MsIcon name="arrow_forward" className="!text-base transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </div>
+            </Link>
+          </div>
+        </section>
 
         {featureFlags["towns"] === true && towns.length > 0 && (
           <section
@@ -637,12 +664,13 @@ export function HomePage({
                   className="mb-6 !block !text-5xl text-on-primary-container"
                 />
                 <h2 className="mb-6 font-headline text-4xl font-extrabold tracking-tighter">
-                  Plan your trip with AI
+                  Plan your 30A trip
                 </h2>
                 <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-on-primary-container">
                   &ldquo;Find me a dog-friendly beachfront cottage in Grayton
-                  Beach for a family of four, near a great seafood spot.&rdquo; Our
-                  Digital Concierge understands the nuance of the coast.
+                  Beach for a family of four, near a great seafood spot.&rdquo; Start
+                  with search, town guides, and local picks built around how people
+                  actually experience the coast.
                 </p>
                 <div className="flex flex-col justify-center gap-4 md:flex-row">
                   <button
@@ -650,7 +678,7 @@ export function HomePage({
                     onClick={scrollToHero}
                     className="rounded-full bg-surface-elevated px-8 py-4 text-lg font-bold text-primary transition-all hover:shadow-xl"
                   >
-                    Start Chatting
+                    Start Searching
                   </button>
                   <Link
                     href={PRIMARY_REGION_HUB_PATH}

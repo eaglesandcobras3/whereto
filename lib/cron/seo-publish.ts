@@ -61,7 +61,7 @@ export async function runSeoPublish(budget: number) {
     const body = row.response_json as { summary?: string };
     const normalized = (row.normalized_query as string) || "";
     const title = titleForRow(townName, seoSlug, normalized);
-    const metaDescription = (body.summary ?? `Curated ${townName} picks on WhereTo30A.`).slice(
+    const metaDescription = (body.summary ?? `Local guide to ${townName} on WhereTo30A.`).slice(
       0,
       160,
     );

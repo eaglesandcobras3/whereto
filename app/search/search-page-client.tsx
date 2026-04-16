@@ -497,7 +497,7 @@ export function SearchPageClient({
                                 {g.title}
                               </h2>
                               <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                                {g.excerpt || g.seo_description || "Local guide on WhereTo30A."}
+                                {g.excerpt || g.seo_description || "Local guide to 30A towns, favorites, and trip ideas."}
                               </p>
                             </div>
                           </Link>
