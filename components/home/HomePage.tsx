@@ -381,13 +381,21 @@ export function HomePage({
                         className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
                       >
                         <div className={`relative ${imageHeightClass}`}>
-                          <Image
-                            src={b.hero_image_url || IMG.hero}
-                            alt={b.name}
-                            fill
-                            unoptimized
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
+                          {b.hero_image_url ? (
+                            <Image
+                              src={b.hero_image_url}
+                              alt={b.name}
+                              fill
+                              unoptimized
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40">
+                              <div className="flex h-full items-center justify-center">
+                                <MsIcon name="storefront" className="!text-6xl text-primary/40" />
+                              </div>
+                            </div>
+                          )}
                           {b.badge && (
                             <div className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-md">
                               {b.badge}
