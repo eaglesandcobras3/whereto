@@ -75,13 +75,15 @@ export async function updateBusinessAction(
   }
 
   if (featured_on_home) {
-    const { data: existingFeatured } = await supabase
+    const { data: featuredRows, error: featuredReadError } = await supabase
       .from("featured_content")
       .select("id")
       .eq("content_type", "business")
-      .eq("reference_id", businessId)
-      .maybeSingle();
-    if (!existingFeatured?.id) {
+      .eq("reference_id", businessId);
+    if (featuredReadError) return { error: featuredReadError.message };
+    const existingIds = (featuredRows ?? []).map((r) => r.id).filter(Boolean);
+
+    if (existingIds.length === 0) {
       const { data: maxRow } = await supabase
         .from("featured_content")
         .select("sort_order")
@@ -89,7 +91,7 @@ export async function updateBusinessAction(
         .order("sort_order", { ascending: false })
         .limit(1)
         .maybeSingle();
-      await supabase.from("featured_content").insert({
+      const { error: insertFeaturedError } = await supabase.from("featured_content").insert({
         content_type: "business",
         reference_id: businessId,
         title: name,
@@ -97,18 +99,22 @@ export async function updateBusinessAction(
         sort_order: (maxRow?.sort_order ?? -1) + 1,
         is_active: true,
       });
+      if (insertFeaturedError) return { error: insertFeaturedError.message };
     } else {
-      await supabase
+      const { error: updateFeaturedError } = await supabase
         .from("featured_content")
         .update({ is_active: true, title: name, description: ai_summary })
-        .eq("id", existingFeatured.id);
+        .eq("content_type", "business")
+        .eq("reference_id", businessId);
+      if (updateFeaturedError) return { error: updateFeaturedError.message };
     }
   } else {
-    await supabase
+    const { error: deleteFeaturedError } = await supabase
       .from("featured_content")
       .delete()
       .eq("content_type", "business")
       .eq("reference_id", businessId);
+    if (deleteFeaturedError) return { error: deleteFeaturedError.message };
   }
 
   revalidatePath(`/admin/businesses/${businessId}`);

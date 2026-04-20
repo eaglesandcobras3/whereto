@@ -373,13 +373,15 @@ export function HomePage({
         )}
 
         {featureFlags["featured_business"] === true && (
-          <section id="section-featured" className="py-20 bg-background">
-            <div className="mx-auto max-w-screen-xl px-6">
-              <div className="mb-12">
-                <h2 className="font-headline text-4xl font-extrabold tracking-tighter text-primary">
+          <section id="section-featured" className="bg-background py-24 md:py-28">
+            <div className="mx-auto max-w-[1280px] px-5 sm:px-6 lg:px-8">
+              <div className="mb-10 md:mb-14">
+                <h2 className="font-headline text-3xl font-bold tracking-tight text-primary sm:text-4xl">
                   Featured Businesses
                 </h2>
-                <p className="mt-2 text-zinc-500">Hand-picked highlights of the Emerald Coast.</p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600 sm:text-base">
+                  Hand-picked highlights of the Emerald Coast.
+                </p>
               </div>
               <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
             </div>
@@ -532,52 +534,34 @@ export function HomePage({
                   Explore all Towns
                 </Link>
               </div>
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-6">
-                {towns.slice(0, 6).map((town, index) => {
-                  const layoutClass =
-                    index === 0
-                      ? "md:col-span-2 lg:col-span-3 lg:row-span-2"
-                      : index === 1
-                        ? "md:col-span-2 lg:col-span-3"
-                        : index === 2 || index === 5
-                          ? "lg:col-span-2"
-                          : "lg:col-span-2";
-                  const heightClass =
-                    index === 0
-                      ? "h-[520px]"
-                      : index === 1
-                        ? "h-[280px]"
-                        : index === 2
-                          ? "h-[360px]"
-                          : index === 3
-                            ? "h-[420px]"
-                            : index === 4
-                              ? "h-[300px]"
-                              : "h-[360px]";
+              <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+                {towns.slice(0, 8).map((town) => {
                   return (
                     <Link
                       key={town.slug}
                       href={`/${town.slug}`}
-                      className={`group relative ${heightClass} ${layoutClass} cursor-pointer overflow-hidden rounded-xl`}
+                      className="group relative overflow-hidden rounded-2xl"
                     >
-                      {town.hero_image_url ? (
-                        <DesignImg
-                          src={town.hero_image_url}
-                          alt={town.name}
-                          className="transition duration-700 group-hover:scale-105"
-                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
-                      )}
-                      <div className="absolute inset-0 bg-black/30 transition-all duration-500 group-hover:bg-black/20" />
-                      <div className="absolute inset-0 flex flex-col justify-end p-8">
-                        <h3 className="font-headline text-3xl font-extrabold tracking-tighter text-white">
-                          {town.name}
-                        </h3>
-                        <p className="mt-3 max-w-md font-medium text-white/90 line-clamp-3">
-                          {getTownCardBlurb(town)}
-                        </p>
+                      <div className="relative aspect-[2/3] w-full overflow-hidden">
+                        {town.hero_image_url ? (
+                          <DesignImg
+                            src={town.hero_image_url}
+                            alt={town.name}
+                            className="object-cover transition duration-700 group-hover:scale-[1.04]"
+                            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent transition-opacity duration-500 group-hover:from-black/50" />
+                        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                          <h3 className="font-headline text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                            {town.name}
+                          </h3>
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/90">
+                            {getTownCardBlurb(town)}
+                          </p>
+                        </div>
                       </div>
                     </Link>
                   );
@@ -614,7 +598,7 @@ export function HomePage({
               href="/?q=beachfront+stays+30A"
               className="group cursor-pointer"
             >
-              <div className="relative mb-6 aspect-[4/5] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
+              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
                 <DesignImg
                   src={IMG.catStays}
                   alt="Modern white architectural beach house with large glass windows reflecting the emerald coast at noon"
@@ -634,7 +618,7 @@ export function HomePage({
               href="/?q=seaside+dining+30A"
               className="group translate-y-12 cursor-pointer"
             >
-              <div className="relative mb-6 aspect-[4/5] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
+              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
                 <DesignImg
                   src={IMG.catDining}
                   alt="Upscale outdoor restaurant terrace overlooking the gulf with string lights and elegant wooden furniture"
@@ -654,7 +638,7 @@ export function HomePage({
               href="/?q=family+friendly+30A"
               className="group cursor-pointer"
             >
-              <div className="relative mb-6 aspect-[4/5] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
+              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
                 <DesignImg
                   src={IMG.catFamily}
                   alt="Happy family riding bicycles along a scenic bike path lined with dunes and white picket fences"
@@ -674,7 +658,7 @@ export function HomePage({
               href="/?q=town+tours+30A"
               className="group translate-y-12 cursor-pointer"
             >
-              <div className="relative mb-6 aspect-[4/5] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
+              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
                 <DesignImg
                   src={IMG.catTours}
                   alt="Aerial view of seaside architectural style with iconic white tower and green common spaces"

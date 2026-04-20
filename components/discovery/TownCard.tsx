@@ -35,12 +35,12 @@ export function TownCard({ name, slug, subtitle, imageUrl, compact = false }: Pr
         transition-premium hover-lift
       `}
     >
-      <div className={compact ? "space-y-2 p-4" : "flex items-stretch gap-4 p-5"}>
+      <div className={compact ? "space-y-3 p-4" : "flex items-start gap-3 p-4 sm:gap-4 sm:p-5"}>
         <div
           className={
             compact
-              ? "relative h-28 overflow-hidden rounded-xl sm:h-32"
-              : "relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-xl sm:w-32"
+              ? "relative aspect-[2/3] w-full overflow-hidden rounded-xl"
+              : "relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl sm:w-28 md:w-32"
           }
           aria-hidden
         >

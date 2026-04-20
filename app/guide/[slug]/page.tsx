@@ -68,31 +68,41 @@ export default async function GuidePage({ params }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
-        <article className="mx-auto max-w-4xl px-6 py-16 md:px-10 md:py-24">
-          <header className="mb-16">
-            <h1 className="font-headline text-4xl md:text-6xl font-extrabold tracking-tighter text-[var(--color-text-primary)] mb-6">
-              {page.title}
-            </h1>
-            {page.seo_description ? (
-              <div className="max-w-3xl">
-                <MarkdownRenderer
-                  content={page.seo_description}
-                  className="prose-p:text-xl prose-p:leading-relaxed prose-p:mb-3 prose-p:last:mb-0"
+        <article className="mx-auto max-w-6xl px-6 py-14 md:px-10 md:py-20">
+          <section className="mb-14 grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-stretch">
+            <div className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface-container-high)] shadow-premium-sm">
+              {page.og_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={page.og_image_url}
+                  alt={page.title}
+                  className="aspect-[2/3] h-full w-full object-cover"
                 />
-              </div>
-            ) : null}
-          </header>
-
-          {page.og_image_url && (
-            <div className="mb-16 aspect-[21/9] w-full overflow-hidden rounded-[2.5rem] border border-[var(--color-border)] shadow-premium-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src={page.og_image_url} 
-                alt={page.title}
-                className="h-full w-full object-cover"
-              />
+              ) : (
+                <div className="flex aspect-[2/3] items-center justify-center text-[var(--color-text-tertiary)]">
+                  <span className="material-symbols-outlined !text-5xl opacity-50" aria-hidden>
+                    menu_book
+                  </span>
+                </div>
+              )}
             </div>
-          )}
+            <header className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-premium-sm sm:p-8 lg:p-10">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
+                Guide
+              </p>
+              <h1 className="mt-4 font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
+                {page.title}
+              </h1>
+              {page.seo_description ? (
+                <div className="mt-5 max-w-2xl">
+                  <MarkdownRenderer
+                    content={page.seo_description}
+                    className="prose-p:text-lg prose-p:leading-relaxed prose-p:mb-3 prose-p:last:mb-0"
+                  />
+                </div>
+              ) : null}
+            </header>
+          </section>
 
           <MarkdownRenderer content={page.body_markdown || ""} />
         </article>

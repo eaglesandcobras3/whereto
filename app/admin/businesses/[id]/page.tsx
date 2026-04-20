@@ -52,11 +52,12 @@ export default async function AdminBusinessEditPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("featured_content")
-      .select("id")
+      .select("id, updated_at")
       .eq("content_type", "business")
       .eq("reference_id", id)
       .eq("is_active", true)
-      .maybeSingle(),
+      .order("updated_at", { ascending: false })
+      .limit(1),
   ]);
 
   if (error || !business) notFound();
@@ -152,7 +153,7 @@ ${bodyMarkdown}`.trim();
         tags={tags ?? []}
         selectedTagIds={selectedTagIds}
         businessImages={businessImages}
-        featuredOnHome={Boolean(featuredRow?.id)}
+        featuredOnHome={Boolean((featuredRow ?? [])[0]?.id)}
         updateAction={updateBusinessAction.bind(null, id)}
         addImageAction={addBusinessImageAction.bind(null, id)}
         deleteImageAction={deleteBusinessImageAction.bind(null, id)}

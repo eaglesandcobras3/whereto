@@ -88,31 +88,54 @@ export default async function TownPage({ params }: Props) {
 
   return (
     <div className="pb-32">
-      {/* Town Hero */}
-        <section className="relative h-[650px] w-full flex items-end overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            {/* Placeholder for real town image, wire to DB later */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-background)] via-transparent to-black/30" />
-            <div className="h-full w-full bg-[var(--color-surface-container-high)] flex items-center justify-center text-[var(--color-text-tertiary)]">
-               <span className="material-symbols-outlined !text-9xl opacity-10">beach_access</span>
+      <section className="mx-auto max-w-7xl px-6 pt-10 md:px-10 md:pt-14">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-stretch">
+          <div className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface-container-high)] shadow-premium-sm">
+            {"hero_image_url" in town && typeof town.hero_image_url === "string" && town.hero_image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={town.hero_image_url}
+                alt={town.name}
+                className="aspect-[2/3] h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex aspect-[2/3] items-center justify-center text-[var(--color-text-tertiary)]">
+                <span className="material-symbols-outlined !text-8xl opacity-20" aria-hidden>
+                  beach_access
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-premium-sm sm:p-8 lg:p-10">
+            <span className="inline-block rounded-full bg-[var(--color-primary)] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white">
+              Town explorer
+            </span>
+            <h1 className="mt-6 font-headline text-5xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-7xl">
+              {town.name}
+            </h1>
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--color-text-secondary)] md:text-xl">
+              {descriptor}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href={`/guide/${town.slug}`}
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90"
+              >
+                Town guide
+                <span className="material-symbols-outlined !text-sm">arrow_forward</span>
+              </Link>
+              <Link
+                href={`/search?town_id=${town.id}`}
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-surface-container-low)]"
+              >
+                Browse local results
+              </Link>
             </div>
           </div>
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-6 pb-16 md:px-10">
-            <div className="max-w-2xl">
-              <span className="inline-block bg-[var(--color-primary)] text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-6">
-                TOWN EXPLORER
-              </span>
-              <h1 className="font-headline text-6xl md:text-8xl font-extrabold tracking-tighter text-[var(--color-text-primary)] mb-6">
-                {town.name}
-              </h1>
-              <p className="text-lg md:text-xl text-[var(--color-text-secondary)] leading-relaxed max-w-lg">
-                {descriptor}
-              </p>
-            </div>
-          </div>
-        </section>
+        </div>
+      </section>
 
-        <div className="mx-auto max-w-7xl px-6 py-20 space-y-32 md:px-10">
+        <div className="mx-auto max-w-7xl px-6 py-16 space-y-28 md:px-10 md:py-20">
           {/* Rich Markdown Content */}
           {townBodyMarkdown && (
             <section className="mx-auto max-w-4xl">
@@ -382,7 +405,7 @@ export default async function TownPage({ params }: Props) {
                   >
                     <Link href={`/guide/${g.slug}`} className="group block">
                       {g.og_image_url?.startsWith("http") ? (
-                        <div className="relative aspect-[16/10] w-full overflow-hidden border-b border-[var(--color-border)]">
+                        <div className="relative aspect-[2/3] w-full overflow-hidden border-b border-[var(--color-border)]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={g.og_image_url}
@@ -391,7 +414,7 @@ export default async function TownPage({ params }: Props) {
                           />
                         </div>
                       ) : (
-                        <div className="flex aspect-[16/10] w-full items-center justify-center bg-[var(--color-surface-container-high)] text-[var(--color-text-tertiary)]">
+                        <div className="flex aspect-[2/3] w-full items-center justify-center bg-[var(--color-surface-container-high)] text-[var(--color-text-tertiary)]">
                           <span className="material-symbols-outlined !text-4xl opacity-40">menu_book</span>
                         </div>
                       )}
@@ -426,8 +449,8 @@ export default async function TownPage({ params }: Props) {
             >
               <ul className="flex gap-6 overflow-x-auto pb-4 hide-scrollbar snap-x snap-mandatory">
                 {nearbyBiz.map((b) => (
-                  <li key={b.id} className="min-w-[320px] snap-start group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-premium-sm transition-all hover:shadow-md">
-                    <Link href={`/business/${b.slug}`} className="block relative aspect-video overflow-hidden">
+                  <li key={b.id} className="min-w-[280px] max-w-[320px] snap-start group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-premium-sm transition-all hover:shadow-md">
+                    <Link href={`/business/${b.slug}`} className="block relative aspect-[2/3] overflow-hidden">
                       {b.image_url ? (
                         <Image src={b.image_url} alt={b.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
                       ) : (

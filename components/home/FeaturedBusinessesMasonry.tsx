@@ -43,9 +43,9 @@ export function FeaturedBusinessesMasonry({ businesses }: Props) {
   if (businesses.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+    <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
       {businesses.map((b, index) => {
-        const copyClampClass = index % 2 === 0 ? "line-clamp-4" : "line-clamp-3";
+        const copyClampClass = index % 3 === 0 ? "line-clamp-3" : "line-clamp-2";
         return (
           <div
             key={b.id}
@@ -53,9 +53,9 @@ export function FeaturedBusinessesMasonry({ businesses }: Props) {
           >
             <Link
               href={`/business/${b.slug}`}
-              className="group flex h-full gap-4 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:gap-5 sm:p-5"
+              className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-xl sm:w-32">
+              <div className="relative aspect-[2/3] w-full overflow-hidden">
                 {b.hero_image_url ? (
                   <Image
                     src={b.hero_image_url}
@@ -77,8 +77,8 @@ export function FeaturedBusinessesMasonry({ businesses }: Props) {
                   </div>
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-headline text-xl font-bold text-zinc-900 transition-colors group-hover:text-primary">
+              <div className="flex min-h-[168px] flex-col p-4 sm:p-5">
+                <h3 className="font-headline text-lg font-semibold tracking-tight text-zinc-900 transition-colors group-hover:text-primary sm:text-xl">
                   {b.name}
                 </h3>
                 <p
@@ -88,9 +88,9 @@ export function FeaturedBusinessesMasonry({ businesses }: Props) {
                     b.ai_summary ||
                     "Explore more about this local favorite."}
                 </p>
-                <div className="mt-4 flex items-center text-sm font-bold text-primary">
+                <div className="mt-auto pt-4 text-sm font-semibold text-primary">
                   View details
-                  <MsIcon name="chevron_right" className="!text-lg" />
+                  <MsIcon name="chevron_right" className="!text-lg inline-block align-middle" />
                 </div>
               </div>
             </Link>

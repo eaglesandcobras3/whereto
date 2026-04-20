@@ -265,7 +265,7 @@ export function SearchPageClient({
       ) : null}
 
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-8 lg:flex-row">
             <div className="flex-1 lg:w-2/3">
               <div className="mb-8">
@@ -298,23 +298,23 @@ export function SearchPageClient({
                         return (
                           <article
                             key={rec.business_id}
-                            className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
+                            className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-300 hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-4"
                           >
                             <Link
                               href={`/business/${rec.business.slug}`}
-                              className="flex items-stretch gap-4 sm:gap-6"
+                              className="flex items-start gap-3 sm:gap-4"
                             >
-                              <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:w-36">
+                              <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)] sm:w-32 md:w-36">
                                 <RemoteCoverImage
                                   src={img}
                                   alt={rec.business.name}
                                   className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                  sizes="(max-width: 640px) 112px, 144px"
+                                  sizes="(max-width: 640px) 96px, (max-width: 1024px) 128px, 144px"
                                   placeholderIcon="storefront"
                                 />
                               </div>
                               <div className="flex flex-1 flex-col">
-                                <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+                                <h2 className="text-base font-semibold tracking-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-lg">
                                   {rec.business.name}
                                 </h2>
                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
@@ -330,7 +330,7 @@ export function SearchPageClient({
                                     </>
                                   ) : null}
                                 </div>
-                                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                                   {rec.explanation ||
                                     rec.business.ai_summary ||
                                     "Discover this local gem on 30A."}
@@ -358,18 +358,18 @@ export function SearchPageClient({
                     ? paginatedEvents.map((ev) => (
                         <article
                           key={ev.id}
-                          className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
+                          className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-300 hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-4"
                         >
                           <Link
                             href={`/events/${ev.slug}`}
-                            className="flex items-stretch gap-4 sm:gap-6"
+                            className="flex items-start gap-3 sm:gap-4"
                           >
-                            <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:w-36">
+                            <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)] sm:w-32 md:w-36">
                               <RemoteCoverImage
                                 src={ev.hero_image_url}
                                 alt=""
                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="(max-width: 640px) 112px, 144px"
+                                sizes="(max-width: 640px) 96px, (max-width: 1024px) 128px, 144px"
                                 placeholderIcon="event"
                               />
                             </div>
@@ -480,15 +480,15 @@ export function SearchPageClient({
                     ? paginatedGuides.map((g) => (
                         <article
                           key={g.slug}
-                          className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
+                          className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-300 hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-4"
                         >
-                          <Link href={`/guide/${g.slug}`} className="flex items-stretch gap-4 sm:gap-6">
-                            <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:w-36">
+                          <Link href={`/guide/${g.slug}`} className="flex items-start gap-3 sm:gap-4">
+                            <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)] sm:w-32 md:w-36">
                               <RemoteCoverImage
                                 src={g.og_image_url}
                                 alt=""
                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="(max-width: 640px) 112px, 144px"
+                                sizes="(max-width: 640px) 96px, (max-width: 1024px) 128px, 144px"
                                 placeholderIcon="menu_book"
                               />
                             </div>

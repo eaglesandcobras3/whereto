@@ -60,16 +60,15 @@ export function BusinessCard({
   return (
     <li
       className={`
-        group shrink-0 snap-start overflow-hidden rounded-[var(--radius-listing)]
+        group shrink-0 snap-start overflow-hidden rounded-2xl
         border border-[var(--color-border)] bg-[var(--color-surface)]
-        shadow-premium-sm
-        transition-premium hover-lift
+        shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md
         ${isCompact ? "min-w-[260px] max-w-[280px]" : "min-w-[280px] max-w-sm sm:min-w-[300px]"}
       `}
     >
-      <div className={isCompact ? "space-y-3 p-4" : "flex items-stretch gap-4 p-5"}>
+      <div className={isCompact ? "space-y-3 p-4" : "flex items-start gap-3 p-4 sm:gap-4 sm:p-5"}>
         {!isCompact ? (
-          <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-xl sm:w-32">
+          <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl sm:w-28 md:w-32">
             {b.slug ? (
               <Link href={`/business/${b.slug}`} className="group block h-full w-full focus:outline-none">
                 {hasImage ? (
@@ -99,7 +98,7 @@ export function BusinessCard({
             ) : (
               <p className="text-listing-title truncate">{b.name ?? "Business"}</p>
             )}
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)] line-clamp-1">
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-primary)] line-clamp-1">
               {rec.headline}
             </p>
             {b.address ? (

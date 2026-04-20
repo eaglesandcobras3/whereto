@@ -23,6 +23,7 @@ async function loadBusiness(slug: string) {
     const isUuid = UUID_RE.test(slug);
     const sel = `
         id, slug, name, address, town_id, category_id, lat, lng, phone, website,
+        has_physical_location,
         ai_summary, listing_rating, listing_review_count, legacy_photo_refs, hero_image_url,
         claim_status, claimed_by_user_id,
         ai_vibe, ai_crowd, ai_noise_level,
@@ -183,6 +184,12 @@ export default async function BusinessPage({ params }: Props) {
 
   const town = b.towns as { name?: string; slug?: string } | null;
   const category = b.categories as { name?: string } | null;
+  const hasPhysicalLocation = Boolean(b.has_physical_location);
+  const normalizedCategoryName = (category?.name ?? "").trim().toLowerCase();
+  const breadcrumbCategoryLabel =
+    hasPhysicalLocation && normalizedCategoryName === "services"
+      ? "Businesses"
+      : category?.name ?? null;
   const tagRows = b.business_tags as
     | { tags: { slug?: string } | null }[]
     | null;
@@ -249,55 +256,68 @@ export default async function BusinessPage({ params }: Props) {
                 <Link href={`/${town.slug}`} className="hover:text-teal-700">{town.name}</Link>
               </>
             )}
-            {category?.name && (
+            {breadcrumbCategoryLabel && (
               <>
                 <span className="mx-1 text-zinc-300">/</span>
-                <span className="text-zinc-400">{category.name}</span>
+                <span className="text-zinc-400">{breadcrumbCategoryLabel}</span>
               </>
             )}
           </nav>
 
-          {/* Hero Image */}
-          {heroImage && (
-            <div className="mb-12 overflow-hidden rounded-[2rem] border border-[var(--color-border)] shadow-premium-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={heroImage}
-                alt={b.name as string}
-                className="aspect-[2.4/1] w-full object-cover"
-              />
-            </div>
-          )}
-
-          <div className="grid gap-12 lg:grid-cols-3">
-            {/* Main Content */}
-            <div className="space-y-12 lg:col-span-2">
-              {/* Title always from shell; stripLeadingH1MatchingTitle drops duplicate # in body */}
-              <header>
-                <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-zinc-900 sm:text-5xl">
-                  {b.name as string}
-                </h1>
-                {oneLiner && (
-                  <p className="mt-4 text-xl font-medium leading-tight text-teal-700">{oneLiner}</p>
-                )}
-                {b.address && (
-                  <p className="mt-3 flex items-center gap-1.5 text-zinc-600">
-                    <span className="material-symbols-outlined !text-base text-zinc-400">place</span>
-                    {b.address as string}
-                  </p>
-                )}
-              </header>
-
-              {hasMarkdown ? <MarkdownRenderer content={cleanedMarkdown} /> : null}
-
-              {/* Scores */}
-              {(familyScore || dateScore || valueScore) && (
-                <div className="flex gap-8 border-y border-zinc-100 py-6">
-                  <ScoreBadge score={familyScore} label="Family" />
-                  <ScoreBadge score={dateScore} label="Date Night" />
-                  <ScoreBadge score={valueScore} label="Value" />
+          {/* Intro section: portrait media + headline card */}
+          <section className="mb-12 grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-stretch">
+            <div className="overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-100 shadow-premium-sm">
+              {heroImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={heroImage}
+                  alt={b.name as string}
+                  className="aspect-[2/3] h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex aspect-[2/3] items-center justify-center text-zinc-400">
+                  <span className="material-symbols-outlined !text-4xl" aria-hidden>
+                    storefront
+                  </span>
                 </div>
               )}
+            </div>
+
+            <header className="rounded-[1.5rem] border border-zinc-200 bg-white p-6 shadow-premium-sm sm:p-8 lg:p-10">
+              <h1 className="font-headline text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl">
+                {b.name as string}
+              </h1>
+              {oneLiner && (
+                <p className="mt-4 text-xl font-medium leading-snug text-zinc-700">{oneLiner}</p>
+              )}
+              {b.address && (
+                <p className="mt-5 flex items-start gap-2 text-zinc-600">
+                  <span
+                    className="material-symbols-outlined mt-0.5 !text-base text-zinc-400"
+                    aria-hidden
+                  >
+                    place
+                  </span>
+                  <span>{b.address as string}</span>
+                </p>
+              )}
+              {(familyScore || dateScore || valueScore) && (
+                <div className="mt-8 border-t border-zinc-100 pt-6">
+                  <div className="flex gap-8">
+                    <ScoreBadge score={familyScore} label="Family" />
+                    <ScoreBadge score={dateScore} label="Date Night" />
+                    <ScoreBadge score={valueScore} label="Value" />
+                  </div>
+                </div>
+              )}
+            </header>
+          </section>
+
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)] lg:gap-12">
+            {/* Main Content */}
+            <div className="space-y-10">
+
+              {hasMarkdown ? <MarkdownRenderer content={cleanedMarkdown} /> : null}
 
               {/* Vibe Tags */}
               {vibe?.length ? (
@@ -398,7 +418,7 @@ export default async function BusinessPage({ params }: Props) {
             </div>
 
             {/* Sidebar — blog-style discovery, not a map */}
-            <aside className="space-y-10 lg:sticky lg:top-24 lg:self-start">
+            <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
               {b.website && (
                 <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-premium-sm">
                   <a
@@ -485,11 +505,11 @@ export default async function BusinessPage({ params }: Props) {
                                 src={thumb}
                                 alt={rb.name}
                                 width={72}
-                                height={72}
-                                className="size-[4.5rem] shrink-0 rounded-lg object-cover"
+                                height={108}
+                                className="h-[6.75rem] w-[4.5rem] shrink-0 rounded-lg object-cover"
                               />
                             ) : (
-                              <div className="flex size-[4.5rem] shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400">
+                              <div className="flex h-[6.75rem] w-[4.5rem] shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400">
                                 <span className="material-symbols-outlined !text-2xl">storefront</span>
                               </div>
                             )}

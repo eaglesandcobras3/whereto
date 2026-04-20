@@ -112,8 +112,24 @@ export default async function SearchPage({ searchParams }: Props) {
 
   const displayQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey]!.label : "") || effectiveQuery;
 
-  const [townsResult, recentPostsResult] = await Promise.all([
-    serviceSupabase.from("towns").select("name, slug").order("name").limit(10),
+  const townsForSidebarPromise = (async () => {
+    const { data: region30a } = await serviceSupabase
+      .from("regions")
+      .select("id")
+      .eq("slug", "30a")
+      .maybeSingle();
+
+    let townsQuery = serviceSupabase.from("towns").select("name, slug").order("name");
+    if (region30a?.id != null) {
+      townsQuery = townsQuery.eq("region_id", region30a.id);
+    }
+
+    const { data } = await townsQuery.limit(50);
+    return data ?? [];
+  })();
+
+  const [sidebarTowns, recentPostsResult] = await Promise.all([
+    townsForSidebarPromise,
     serviceSupabase
       .from("businesses")
       .select("id, name, slug, hero_image_url")
@@ -158,7 +174,7 @@ export default async function SearchPage({ searchParams }: Props) {
             : "Festivals, markets, and happenings along 30A.",
         )}
         townName={townName}
-        towns={townsResult.data ?? []}
+        towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
       />
     );
@@ -191,7 +207,7 @@ export default async function SearchPage({ searchParams }: Props) {
           "Beach towns and neighborhoods along Florida's Scenic Highway 30A.",
         )}
         townName={townName}
-        towns={townsResult.data ?? []}
+        towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
       />
     );
@@ -266,7 +282,7 @@ export default async function SearchPage({ searchParams }: Props) {
             : "Shopping areas along 30A.",
         )}
         townName={townName}
-        towns={townsResult.data ?? []}
+        towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
       />
     );
@@ -300,7 +316,7 @@ export default async function SearchPage({ searchParams }: Props) {
           "Editorial guides for dining, beaches, and planning your Emerald Coast trip.",
         )}
         townName={townName}
-        towns={townsResult.data ?? []}
+        towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
       />
     );
@@ -324,7 +340,7 @@ export default async function SearchPage({ searchParams }: Props) {
       initialQuery={displayQuery}
       results={searchResult}
       townName={townName}
-      towns={townsResult.data ?? []}
+      towns={sidebarTowns}
       recentPosts={recentPostsResult.data ?? []}
     />
   );
