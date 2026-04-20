@@ -27,6 +27,7 @@ export async function updateBusinessAction(
     : null;
   const ai_summary = String(formData.get("ai_summary") ?? "").trim() || null;
   const hero_image_url = String(formData.get("hero_image_url") ?? "").trim() || null;
+  const extra_tags_raw = String(formData.get("extra_tags") ?? "");
 
   const { error } = await supabase
     .from("businesses")
@@ -47,12 +48,25 @@ export async function updateBusinessAction(
   if (error) return { error: error.message };
 
   const tagIds = formData.getAll("tag_ids").map(String).filter(Boolean);
+  const extraTagSlugs = extra_tags_raw
+    .split(/[\n,]/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((t) => t.toLowerCase().replace(/\s+/g, "-"));
+  const createdTagIds = await resolveOrCreateTagIds(supabase, extraTagSlugs);
+  const allTagIds = Array.from(
+    new Set([
+      ...tagIds.map((id) => Number(id)).filter((id) => Number.isFinite(id)),
+      ...createdTagIds,
+    ]),
+  );
+
   await supabase.from("business_tags").delete().eq("business_id", businessId);
-  if (tagIds.length) {
+  if (allTagIds.length) {
     await supabase.from("business_tags").insert(
-      tagIds.map((tag_id) => ({
+      allTagIds.map((tag_id) => ({
         business_id: businessId,
-        tag_id: Number(tag_id),
+        tag_id,
         source: "admin_set",
         confidence: 1,
       })),

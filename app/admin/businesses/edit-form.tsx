@@ -238,6 +238,15 @@ export function BusinessEditForm({
 
           <fieldset>
             <legend className="text-sm font-medium text-zinc-700">Tags</legend>
+            <p className="mt-1 text-xs text-zinc-500">
+              Check existing tags below, and/or add new tags in slug format (comma or newline separated).
+            </p>
+            <textarea
+              name="extra_tags"
+              rows={2}
+              placeholder="e.g. date-night, live-music, dog-friendly"
+              className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
             <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 p-3">
               <ul className="grid gap-2 sm:grid-cols-2">
                 {tags.map((t) => (
