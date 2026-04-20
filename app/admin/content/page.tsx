@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { listContentEntries } from "@/lib/data/content-entries";
-import { deleteContentEntryAction } from "./actions";
+import { deleteContentEntryAction, ingestMarkdownContentAction } from "./actions";
+import { ContentMarkdownIngestForm } from "./markdown-ingest-form";
 
 export default async function AdminContentIndexPage() {
   await requireAdmin();
@@ -21,6 +22,8 @@ export default async function AdminContentIndexPage() {
           New Entry
         </Link>
       </div>
+
+      <ContentMarkdownIngestForm action={ingestMarkdownContentAction} />
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { ingestBusinessMarkdownAction } from "./actions";
+import { MarkdownIngestForm } from "./markdown-ingest-form";
 
 const PAGE_SIZE = 50;
 
@@ -85,6 +87,8 @@ export default async function AdminBusinessesPage({
           </button>
         </form>
       </div>
+
+      <MarkdownIngestForm action={ingestBusinessMarkdownAction} />
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
         <table className="w-full min-w-[640px] text-left text-sm">
