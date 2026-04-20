@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
-  regenerateAiSummaryFormAction,
-  refreshFromDirectoryFormAction,
   updateBusinessAction,
   updateBusinessFromMarkdownAction,
   addBusinessImageAction,
@@ -28,8 +26,8 @@ export default async function AdminBusinessEditPage({
     { data: towns },
     { data: categories },
     { data: tags },
-    { data: sources },
     { data: images },
+    { data: featuredRow },
   ] = await Promise.all([
     supabase
       .from("businesses")
@@ -48,17 +46,17 @@ export default async function AdminBusinessEditPage({
     supabase.from("categories").select("id, name, slug").order("name"),
     supabase.from("tags").select("id, name, slug, category").order("display_order"),
     supabase
-      .from("business_sources")
-      .select(
-        "source_name, source_record_id, source_url, attribution_required, last_verified_at, confidence_score",
-      )
-      .eq("business_id", id)
-      .order("source_name"),
-    supabase
       .from("business_images")
       .select("*")
       .eq("business_id", id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("featured_content")
+      .select("id")
+      .eq("content_type", "business")
+      .eq("reference_id", id)
+      .eq("is_active", true)
+      .maybeSingle(),
   ]);
 
   if (error || !business) notFound();
@@ -132,58 +130,6 @@ ${bodyMarkdown}`.trim();
       <h1 className="text-2xl font-semibold text-zinc-900">
         Edit: {business.name as string}
       </h1>
-      <div className="rounded-lg border border-zinc-200 bg-white p-3 text-xs text-zinc-600">
-        <p className="font-medium text-zinc-800">Data sources</p>
-        {(sources ?? []).length ? (
-          <ul className="mt-2 list-inside list-disc space-y-1">
-            {(sources ?? []).map((s) => (
-              <li key={`${s.source_name}-${s.source_record_id}`}>
-                <code>{s.source_name as string}</code> ·{" "}
-                <code className="break-all">{s.source_record_id as string}</code>
-                {s.attribution_required ? (
-                  <span className="text-amber-800"> · attribution required</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1 text-zinc-500">No rows in business_sources.</p>
-        )}
-        {business.listing_external_key ? (
-          <p className="mt-2 text-zinc-500">
-            External key <code className="break-all">{business.listing_external_key as string}</code>
-          </p>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <form action={refreshFromDirectoryFormAction} className="inline">
-          <input type="hidden" name="business_id" value={id} />
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 hover:bg-zinc-50"
-          >
-            Queue directory refresh
-          </button>
-        </form>
-        <span className="text-xs text-zinc-500">
-          Geoapify-backed listings only; runs on the daily refresh cron.
-          {business.directory_refresh_requested_at ? (
-            <span className="ml-2 font-medium text-amber-800">
-              Queued since{" "}
-              {new Date(business.directory_refresh_requested_at as string).toLocaleString()}
-            </span>
-          ) : null}
-        </span>
-        <form action={regenerateAiSummaryFormAction} className="inline">
-          <input type="hidden" name="business_id" value={id} />
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 hover:bg-zinc-50"
-          >
-            Regenerate AI summary
-          </button>
-        </form>
-      </div>
       <div className="grid gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm sm:grid-cols-3">
         <div>
           <p className="text-zinc-500">Confidence</p>
@@ -206,6 +152,7 @@ ${bodyMarkdown}`.trim();
         tags={tags ?? []}
         selectedTagIds={selectedTagIds}
         businessImages={businessImages}
+        featuredOnHome={Boolean(featuredRow?.id)}
         updateAction={updateBusinessAction.bind(null, id)}
         addImageAction={addBusinessImageAction.bind(null, id)}
         deleteImageAction={deleteBusinessImageAction.bind(null, id)}

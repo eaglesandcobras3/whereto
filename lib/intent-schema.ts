@@ -19,7 +19,7 @@ export const searchIntentSchema = z.object({
     .nullable()
     .default("quality"),
   price_level: z.number().int().min(1).max(4).nullable(),
-  result_count: z.number().int().min(1).max(10).default(5),
+  result_count: z.number().int().min(1).max(12).default(10),
 });
 
 export type SearchIntent = z.infer<typeof searchIntentSchema>;

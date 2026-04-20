@@ -75,6 +75,12 @@ export async function runSearch(options: {
       category: options.forcedCategorySlug,
     });
   }
+  if (intent.result_count < 10) {
+    intent = searchIntentSchema.parse({
+      ...intent,
+      result_count: 10,
+    });
+  }
   const locationScope = await resolveLocationScopeForIntent(supabase, intent);
 
   const { enriched, businessIds } = await buildRecommendationSet({

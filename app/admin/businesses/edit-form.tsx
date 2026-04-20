@@ -20,6 +20,7 @@ export function BusinessEditForm({
   tags,
   selectedTagIds,
   businessImages,
+  featuredOnHome,
   updateAction,
   addImageAction,
   deleteImageAction,
@@ -32,6 +33,7 @@ export function BusinessEditForm({
   tags: Row[];
   selectedTagIds: Set<string>;
   businessImages: BusinessImage[];
+  featuredOnHome: boolean;
   updateAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
   addImageAction: (formData: FormData) => Promise<{ error?: string; ok?: boolean }>;
   deleteImageAction: (imageId: string) => Promise<{ error?: string; ok?: boolean }>;
@@ -200,6 +202,14 @@ export function BusinessEditForm({
           </div>
 
           <div className="flex flex-wrap gap-6">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="featured_on_home"
+                defaultChecked={featuredOnHome}
+              />
+              Feature on homepage
+            </label>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

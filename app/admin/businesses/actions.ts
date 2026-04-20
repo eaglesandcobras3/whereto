@@ -28,6 +28,7 @@ export async function updateBusinessAction(
   const ai_summary = String(formData.get("ai_summary") ?? "").trim() || null;
   const hero_image_url = String(formData.get("hero_image_url") ?? "").trim() || null;
   const extra_tags_raw = String(formData.get("extra_tags") ?? "");
+  const featured_on_home = formData.get("featured_on_home") === "on";
 
   const { error } = await supabase
     .from("businesses")
@@ -71,6 +72,43 @@ export async function updateBusinessAction(
         confidence: 1,
       })),
     );
+  }
+
+  if (featured_on_home) {
+    const { data: existingFeatured } = await supabase
+      .from("featured_content")
+      .select("id")
+      .eq("content_type", "business")
+      .eq("reference_id", businessId)
+      .maybeSingle();
+    if (!existingFeatured?.id) {
+      const { data: maxRow } = await supabase
+        .from("featured_content")
+        .select("sort_order")
+        .eq("content_type", "business")
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      await supabase.from("featured_content").insert({
+        content_type: "business",
+        reference_id: businessId,
+        title: name,
+        description: ai_summary,
+        sort_order: (maxRow?.sort_order ?? -1) + 1,
+        is_active: true,
+      });
+    } else {
+      await supabase
+        .from("featured_content")
+        .update({ is_active: true, title: name, description: ai_summary })
+        .eq("id", existingFeatured.id);
+    }
+  } else {
+    await supabase
+      .from("featured_content")
+      .delete()
+      .eq("content_type", "business")
+      .eq("reference_id", businessId);
   }
 
   revalidatePath(`/admin/businesses/${businessId}`);
@@ -198,7 +236,16 @@ export async function addBusinessImageAction(
 
   if (error) return { error: error.message };
 
+  // Keep public cards in sync: business cards read businesses.hero_image_url.
+  await supabase
+    .from("businesses")
+    .update({ hero_image_url: public_url })
+    .eq("id", businessId);
+
   revalidatePath(`/admin/businesses/${businessId}`);
+  revalidatePath("/");
+  revalidatePath("/search");
+  revalidatePath(`/business/${businessId}`);
   return { ok: true };
 }
 

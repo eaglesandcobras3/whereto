@@ -11,7 +11,7 @@ Categories (slugs): restaurants, coffee_shops, bars, activities, shopping, servi
 
 Common tag slugs: kid_friendly, pet_friendly, outdoor_seating, romantic, casual, upscale, waterfront, live_music, gluten_free, vegan, vegetarian, seafood, mexican, italian, breakfast, lunch, dinner, brunch, coffee, date_night, groups, family, sunset_views
 
-Output JSON only matching the schema fields: category, subcategory, location { town, radius }, attributes[], exclude_attributes[], sort_preference, price_level, result_count (1-10, default 5).`;
+Output JSON only matching the schema fields: category, subcategory, location { town, radius }, attributes[], exclude_attributes[], sort_preference, price_level, result_count (1-12, default 10).`;
 
 const SYNTH_SYSTEM = `You are a friendly local guide for WhereTo30A, focused on Florida's 30A corridor.
 ONLY recommend businesses from the CANDIDATES list. Use business_id from candidates only.
@@ -92,7 +92,7 @@ export function fallbackIntentFromKeywords(
       exclude_attributes: [],
       sort_preference: "quality",
       price_level: null,
-      result_count: 5,
+      result_count: 10,
     };
   }
   if (/\bbrunch|breakfast|lunch|dinner|restaurant|eat|dining\b/.test(normalized)) {
@@ -104,7 +104,7 @@ export function fallbackIntentFromKeywords(
       exclude_attributes: [],
       sort_preference: "quality",
       price_level: null,
-      result_count: 5,
+      result_count: 10,
     };
   }
   if (
@@ -120,7 +120,7 @@ export function fallbackIntentFromKeywords(
       exclude_attributes: [],
       sort_preference: "quality",
       price_level: null,
-      result_count: 8,
+      result_count: 10,
     };
   }
   return {
@@ -131,7 +131,7 @@ export function fallbackIntentFromKeywords(
     exclude_attributes: [],
     sort_preference: "quality",
     price_level: null,
-    result_count: 5,
+    result_count: 10,
   };
 }
 
