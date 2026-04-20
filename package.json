@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "content:compile": "npx tsx scripts/content-compiler.ts"
+    "content:compile": "npx tsx scripts/content-compiler.ts",
+    "content:migrate:db": "npx tsx scripts/migrate-pages-to-content-entries.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.0",
@@ -28,6 +29,7 @@
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "server-only": "^0.0.1",
+    "sharp": "^0.34.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {

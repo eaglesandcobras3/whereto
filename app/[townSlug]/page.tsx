@@ -20,6 +20,7 @@ import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { RegionHubView } from "@/components/region/RegionHubView";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import type { Metadata } from "next";
+import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
 
 type Props = { params: Promise<{ townSlug: string }> };
 
@@ -63,7 +64,11 @@ export default async function TownPage({ params }: Props) {
   );
 
   const descriptor = getTownDescriptor(town.slug);
-  const townPage = Array.isArray(town.pages) ? (town.pages[0] as { body_markdown: string } | undefined) : (town.pages as { body_markdown: string } | undefined);
+  const townEntry = await getPublishedContentEntryBySlug("town", town.slug);
+  const townPage = Array.isArray(town.pages)
+    ? (town.pages[0] as { body_markdown: string } | undefined)
+    : (town.pages as { body_markdown: string } | undefined);
+  const townBodyMarkdown = townEntry?.body_markdown || townPage?.body_markdown;
 
   const { districts: townDistricts, pointsOfInterest: townPois } = townAreas;
   const showLocalGuideSection =
@@ -109,9 +114,9 @@ export default async function TownPage({ params }: Props) {
 
         <div className="mx-auto max-w-7xl px-6 py-20 space-y-32 md:px-10">
           {/* Rich Markdown Content */}
-          {townPage?.body_markdown && (
+          {townBodyMarkdown && (
             <section className="mx-auto max-w-4xl">
-              <MarkdownRenderer content={townPage.body_markdown} />
+              <MarkdownRenderer content={townBodyMarkdown} />
             </section>
           )}
           {/* Curated picks: dining, coffee, and shopping in one lane */}

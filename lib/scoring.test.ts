@@ -74,9 +74,9 @@ describe("passesEligibility", () => {
     listing_review_count: 10,
     tag_slugs: [] as string[],
   };
-  it("rejects low confidence", () => {
+  it("rejects zero confidence", () => {
     expect(
-      passesEligibility({ ...base, confidence_score: 0.2 }, new Set()),
+      passesEligibility({ ...base, confidence_score: 0 }, new Set()),
     ).toBe(false);
   });
   it("rejects suppressed id", () => {

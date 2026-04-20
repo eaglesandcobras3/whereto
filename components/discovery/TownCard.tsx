@@ -35,67 +35,68 @@ export function TownCard({ name, slug, subtitle, imageUrl, compact = false }: Pr
         transition-premium hover-lift
       `}
     >
-      {/* Photo-first tile (Airbnb): clean image, no type on the glass */}
-      <div
-        className={
-          compact
-            ? "relative h-28 overflow-hidden sm:h-32"
-            : "relative aspect-[5/4] overflow-hidden sm:aspect-[4/3]"
-        }
-        aria-hidden
-      >
+      <div className={compact ? "space-y-2 p-4" : "flex items-stretch gap-4 p-5"}>
         <div
-          className={`
-            absolute inset-0 bg-gradient-to-br ${heroGradient(slug)}
-            transition-transform duration-700 ease-out
-            group-hover:scale-[1.03]
-          `}
+          className={
+            compact
+              ? "relative h-28 overflow-hidden rounded-xl sm:h-32"
+              : "relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-xl sm:w-32"
+          }
+          aria-hidden
         >
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : null}
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
-      </div>
-
-      {/* Structured body (Apartments-style): title → description → action */}
-      <div className={compact ? "space-y-2 p-4" : "space-y-3 p-5"}>
-        <h3
-          className={`font-headline font-bold tracking-tight text-[var(--color-text-primary)] ${compact ? "text-base" : "text-lg sm:text-xl"}`}
-        >
-          {name}
-        </h3>
-        {subtitle ? (
-          <p className="text-listing-meta line-clamp-2">
-            {subtitle}
-          </p>
-        ) : (
-          <p className="text-listing-meta text-[var(--color-text-tertiary)]">
-            Full guide &amp; curated picks
-          </p>
-        )}
-        <p
-          className={`
-            inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider
-            text-[var(--color-primary)]
-            transition-colors group-hover:text-[var(--color-primary-light)]
-          `}
-        >
-          View town guide
-          <svg
-            className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+          <div
+            className={`
+              absolute inset-0 bg-gradient-to-br ${heroGradient(slug)}
+              transition-transform duration-700 ease-out
+              group-hover:scale-[1.03]
+            `}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </p>
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : null}
+          </div>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+        </div>
+
+        {/* Structured body (Apartments-style): title → description → action */}
+        <div className="min-w-0 flex-1 space-y-3">
+          <h3
+            className={`font-headline font-bold tracking-tight text-[var(--color-text-primary)] ${compact ? "text-base" : "text-lg sm:text-xl"}`}
+          >
+            {name}
+          </h3>
+          {subtitle ? (
+            <p className="text-listing-meta line-clamp-2">
+              {subtitle}
+            </p>
+          ) : (
+            <p className="text-listing-meta text-[var(--color-text-tertiary)]">
+              Full guide &amp; curated picks
+            </p>
+          )}
+          <p
+            className={`
+              inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider
+              text-[var(--color-primary)]
+              transition-colors group-hover:text-[var(--color-primary-light)]
+            `}
+          >
+            View town guide
+            <svg
+              className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </p>
+        </div>
       </div>
     </Link>
   );

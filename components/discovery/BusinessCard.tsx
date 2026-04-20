@@ -67,25 +67,26 @@ export function BusinessCard({
         ${isCompact ? "min-w-[260px] max-w-[280px]" : "min-w-[280px] max-w-sm sm:min-w-[300px]"}
       `}
     >
-      {!isCompact && (
-        <div className="relative aspect-video overflow-hidden">
-          {b.slug ? (
-            <Link href={`/business/${b.slug}`} className="group block h-full w-full focus:outline-none">
-              {hasImage ? (
-                <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
-              ) : (
-                <CategoryIcon category={b.category_name} className="h-full w-full" />
-              )}
-            </Link>
-          ) : hasImage ? (
-            <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
-          ) : (
-            <CategoryIcon category={b.category_name} className="h-full w-full" />
-          )}
-        </div>
-      )}
+      <div className={isCompact ? "space-y-3 p-4" : "flex items-stretch gap-4 p-5"}>
+        {!isCompact ? (
+          <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-xl sm:w-32">
+            {b.slug ? (
+              <Link href={`/business/${b.slug}`} className="group block h-full w-full focus:outline-none">
+                {hasImage ? (
+                  <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
+                ) : (
+                  <CategoryIcon category={b.category_name} className="h-full w-full" />
+                )}
+              </Link>
+            ) : hasImage ? (
+              <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
+            ) : (
+              <CategoryIcon category={b.category_name} className="h-full w-full" />
+            )}
+          </div>
+        ) : null}
 
-      <div className={isCompact ? "space-y-3 p-4" : "space-y-3 p-5"}>
+        <div className="min-w-0 flex-1 space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             {b.slug ? (
@@ -162,6 +163,7 @@ export function BusinessCard({
               Details
             </Link>
           ) : null}
+        </div>
         </div>
       </div>
     </li>

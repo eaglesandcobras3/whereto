@@ -2,11 +2,23 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
 
 type Props = { params: Promise<{ slug: string }> };
 
 async function loadGuide(slug: string) {
   try {
+    const entry = await getPublishedContentEntryBySlug("guide", slug);
+    if (entry) {
+      return {
+        title: entry.title,
+        body_markdown: entry.body_markdown,
+        seo_title: entry.seo_title,
+        seo_description: entry.seo_description,
+        og_image_url: entry.og_image_url,
+      };
+    }
+
     const supabase = getServiceSupabase();
     // 1. Fetch Page
     const { data: page, error: pageErr } = await supabase

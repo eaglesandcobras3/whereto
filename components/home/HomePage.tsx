@@ -227,12 +227,24 @@ type Props = {
     badge?: string | null;
   })[];
   towns?: TownPayload[];
+  heroSettings?: {
+    imageUrl: string;
+    title: string;
+    subtitle: string;
+    searchPlaceholder: string;
+  };
 };
 
 export function HomePage({
   featureFlags = {},
   featuredBusinesses = [],
   towns = [],
+  heroSettings = {
+    imageUrl: IMG.hero,
+    title: "I'm looking for...",
+    subtitle: "Your local guide to 30A. Search towns, guides, and trusted local picks.",
+    searchPlaceholder: "Search anything on 30A...",
+  },
 }: Props) {
   const searchParams = useSearchParams();
   const [q, setQ] = useState("");
@@ -288,7 +300,7 @@ export function HomePage({
           >
             <div className="absolute inset-0 z-0">
               <DesignImg
-                src={IMG.hero}
+                src={heroSettings.imageUrl}
                 alt="Cinematic wide shot of 30A beach with sugar-white sand and turquoise gulf water under a soft pastel sunset sky"
                 className="object-cover"
                 sizes="100vw"
@@ -304,8 +316,11 @@ export function HomePage({
                 </span>
               </div>
               <h1 className="mb-8 font-headline text-5xl font-extrabold tracking-tighter text-primary md:text-7xl">
-                I&apos;m looking for&hellip;
+                {heroSettings.title}
               </h1>
+              <p className="mb-6 max-w-2xl px-4 text-base text-white/90 md:text-lg">
+                {heroSettings.subtitle}
+              </p>
               <form
                 onSubmit={onSubmit}
                 className="mx-auto flex w-full max-w-[700px] gap-2 px-4"
@@ -321,7 +336,7 @@ export function HomePage({
                     value={q}
                     onChange={(e) => onChangeInput(e.target.value)}
                     className="h-16 w-full rounded-2xl border-none bg-surface-container-highest pl-14 pr-8 text-lg text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/10"
-                    placeholder="Search anything on 30A..."
+                    placeholder={heroSettings.searchPlaceholder}
                     type="search"
                     autoComplete="off"
                   />

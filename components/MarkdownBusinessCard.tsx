@@ -27,12 +27,12 @@ export function MarkdownBusinessCard({ slug, markdownNote, business }: Props) {
           <Image
             src={thumb}
             alt={title}
-            width={112}
-            height={112}
-            className="size-24 shrink-0 rounded-xl object-cover sm:size-28"
+            width={96}
+            height={144}
+            className="aspect-[2/3] w-20 shrink-0 rounded-xl object-cover sm:w-24"
           />
         ) : (
-          <div className="flex size-24 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 sm:size-28">
+          <div className="flex aspect-[2/3] w-20 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 sm:w-24">
             <span className="material-symbols-outlined !text-3xl">storefront</span>
           </div>
         )}

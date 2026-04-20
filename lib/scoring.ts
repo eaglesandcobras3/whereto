@@ -67,8 +67,9 @@ export function passesEligibility(
   if (b.status !== "active") return false;
   if (b.suspected_closed) return false;
   if (b.admin_suppressed) return false;
-  if (b.confidence_score < 0.35) return false;
-  if (b.freshness_score < 0.2) return false;
+  // Keep search resilient to sparse or stale scoring fields.
+  // We only hard-block clearly unusable records.
+  if (b.confidence_score <= 0) return false;
   if (suppressedIds.has(b.id)) return false;
   if (b.bad_experience_unique_users >= 3 && b.confidence_score < 0.5) {
     return false;

@@ -302,14 +302,14 @@ export function SearchPageClient({
                           >
                             <Link
                               href={`/business/${rec.business.slug}`}
-                              className="flex flex-col gap-4 sm:flex-row sm:gap-6"
+                              className="flex items-stretch gap-4 sm:gap-6"
                             >
-                              <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:aspect-[4/3] sm:w-40">
+                              <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:w-36">
                                 <RemoteCoverImage
                                   src={img}
                                   alt={rec.business.name}
                                   className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                  sizes="(max-width: 640px) 100vw, 160px"
+                                  sizes="(max-width: 640px) 112px, 144px"
                                   placeholderIcon="storefront"
                                 />
                               </div>
@@ -362,14 +362,14 @@ export function SearchPageClient({
                         >
                           <Link
                             href={`/events/${ev.slug}`}
-                            className="flex flex-col gap-4 sm:flex-row sm:gap-6"
+                            className="flex items-stretch gap-4 sm:gap-6"
                           >
-                            <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:aspect-[4/3] sm:w-40">
+                            <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:w-36">
                               <RemoteCoverImage
                                 src={ev.hero_image_url}
                                 alt=""
                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="(max-width: 640px) 100vw, 160px"
+                                sizes="(max-width: 640px) 112px, 144px"
                                 placeholderIcon="event"
                               />
                             </div>
@@ -482,13 +482,13 @@ export function SearchPageClient({
                           key={g.slug}
                           className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
                         >
-                          <Link href={`/guide/${g.slug}`} className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-                            <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:aspect-[4/3] sm:w-40">
+                          <Link href={`/guide/${g.slug}`} className="flex items-stretch gap-4 sm:gap-6">
+                            <div className="relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)] sm:w-36">
                               <RemoteCoverImage
                                 src={g.og_image_url}
                                 alt=""
                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="(max-width: 640px) 100vw, 160px"
+                                sizes="(max-width: 640px) 112px, 144px"
                                 placeholderIcon="menu_book"
                               />
                             </div>

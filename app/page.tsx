@@ -3,9 +3,11 @@ import { HomePage } from "@/components/home/HomePage";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
+import { getHomeHeroSettings } from "@/lib/data/site-settings";
 
 export default async function Home() {
   const flags = await getAllFeatureFlags();
+  const heroSettings = await getHomeHeroSettings();
   const supabase = getServiceSupabase();
 
   // Fetch towns for "Icons of 30A" section (only columns that exist on `towns`;
@@ -70,7 +72,12 @@ export default async function Home() {
     <Suspense
       fallback={<div className="min-h-screen bg-background" aria-hidden />}
     >
-      <HomePage featureFlags={flags} featuredBusinesses={featuredBusinesses} towns={towns ?? []} />
+      <HomePage
+        featureFlags={flags}
+        featuredBusinesses={featuredBusinesses}
+        towns={towns ?? []}
+        heroSettings={heroSettings}
+      />
     </Suspense>
   );
 }
