@@ -57,7 +57,9 @@ export async function POST(request: NextRequest) {
     const id = randomUUID();
     const safeName = sanitizeFileName(file.name || `${id}.jpg`);
     const checksum = createHash("sha256").update(bytes).digest("hex");
-    const storage = getServiceSupabase().storage.from("cms-media");
+    const serviceSupabase = getServiceSupabase();
+    const candidateBuckets = ["cms-media", "business-images"] as const;
+    let activeBucket: (typeof candidateBuckets)[number] = "cms-media";
 
     const variantsOut: Record<string, { url: string; width: number; height: number; bytes: number }> = {};
     const uploadTasks = (Object.keys(VARIANTS) as VariantName[]).map(async (variant) => {
@@ -69,12 +71,25 @@ export async function POST(request: NextRequest) {
         .toBuffer({ resolveWithObject: true });
 
       const path = `${folder}/${id}/${variant}-${safeName.replace(/\.[^.]+$/, "")}.webp`;
-      const { error } = await storage.upload(path, transformed.data, {
-        contentType: "image/webp",
-        upsert: true,
-      });
-      if (error) throw error;
-      const publicUrl = storage.getPublicUrl(path).data.publicUrl;
+      let uploaded = false;
+      let lastErr: string | null = null;
+      for (const bucket of candidateBuckets) {
+        const storage = serviceSupabase.storage.from(bucket);
+        const { error } = await storage.upload(path, transformed.data, {
+          contentType: "image/webp",
+          upsert: true,
+        });
+        if (!error) {
+          activeBucket = bucket;
+          uploaded = true;
+          break;
+        }
+        lastErr = error.message;
+      }
+      if (!uploaded) {
+        throw new Error(lastErr ?? "Upload failed. Ensure cms-media or business-images bucket exists.");
+      }
+      const publicUrl = serviceSupabase.storage.from(activeBucket).getPublicUrl(path).data.publicUrl;
       variantsOut[variant] = {
         url: publicUrl,
         width: transformed.info.width,
@@ -86,8 +101,8 @@ export async function POST(request: NextRequest) {
 
     const hero = variantsOut.hero ?? variantsOut.card ?? variantsOut.thumbnail;
     const objectPath = `${folder}/${id}/hero-${safeName.replace(/\.[^.]+$/, "")}.webp`;
-    const { error: insertErr } = await getServiceSupabase().from("media_assets").insert({
-      bucket: "cms-media",
+    const { error: insertErr } = await serviceSupabase.from("media_assets").insert({
+      bucket: activeBucket,
       object_path: objectPath,
       public_url: hero.url,
       mime_type: "image/webp",
@@ -99,9 +114,12 @@ export async function POST(request: NextRequest) {
       alt_text: altText,
       created_by: userId,
     });
-    if (insertErr) throw insertErr;
+    if (insertErr) {
+      // Upload should still succeed even when optional media_assets metadata table is unavailable.
+      console.warn("media_assets insert skipped:", insertErr.message);
+    }
 
-    return NextResponse.json({ ok: true, url: hero.url, variants: variantsOut });
+    return NextResponse.json({ ok: true, url: hero.url, variants: variantsOut, bucket: activeBucket });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
