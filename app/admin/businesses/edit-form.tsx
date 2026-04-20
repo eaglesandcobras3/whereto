@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Image from "next/image";
 
 type Row = { id: number; name: string; slug?: string; category?: string };
@@ -37,6 +37,13 @@ export function BusinessEditForm({
   deleteImageAction: (imageId: string) => Promise<{ error?: string; ok?: boolean }>;
   deleteAction: () => Promise<{ error?: string; ok?: boolean; deleted?: boolean }>;
 }) {
+  const [publicUrlInput, setPublicUrlInput] = useState("");
+  const [imageTypeInput, setImageTypeInput] = useState("owner");
+  const [attributionInput, setAttributionInput] = useState("");
+  const [fileInput, setFileInput] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+
   const [state, formAction] = useActionState(
     async (_prev: { error?: string; ok?: boolean } | null, formData: FormData) => {
       return updateAction(formData);
@@ -50,6 +57,37 @@ export function BusinessEditForm({
     },
     null,
   );
+
+  async function uploadSelectedFileToProcessedUrl() {
+    if (!fileInput) {
+      setUploadMessage("Choose a file first.");
+      return;
+    }
+    setUploadingFile(true);
+    setUploadMessage(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", fileInput);
+      fd.append("folder", `businesses/${businessId}`);
+      fd.append("alt_text", attributionInput);
+
+      const res = await fetch("/api/admin/media/upload", {
+        method: "POST",
+        body: fd,
+      });
+      const json = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !json.url) {
+        setUploadMessage(json.error ?? "File upload failed.");
+        return;
+      }
+      setPublicUrlInput(json.url);
+      setUploadMessage("File processed and uploaded. URL is filled in below.");
+    } catch {
+      setUploadMessage("File upload failed.");
+    } finally {
+      setUploadingFile(false);
+    }
+  }
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -257,16 +295,34 @@ export function BusinessEditForm({
             {addImageState?.error ? (
               <p className="text-xs text-red-600">{addImageState.error}</p>
             ) : null}
+            {uploadMessage ? <p className="text-xs text-zinc-600">{uploadMessage}</p> : null}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              onChange={(e) => setFileInput(e.target.files?.[0] ?? null)}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
+            />
+            <button
+              type="button"
+              onClick={uploadSelectedFileToProcessedUrl}
+              disabled={uploadingFile}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
+            >
+              {uploadingFile ? "Uploading file..." : "Upload file (process + fill URL)"}
+            </button>
             <input
               name="public_url"
+              value={publicUrlInput}
+              onChange={(e) => setPublicUrlInput(e.target.value)}
               placeholder="Public URL (https://...)"
               className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
               required
             />
             <select
               name="image_type"
+              value={imageTypeInput}
+              onChange={(e) => setImageTypeInput(e.target.value)}
               className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
-              defaultValue="owner"
             >
               <option value="owner">Owner</option>
               <option value="licensed">Licensed</option>
@@ -275,6 +331,8 @@ export function BusinessEditForm({
             </select>
             <input
               name="attribution_text"
+              value={attributionInput}
+              onChange={(e) => setAttributionInput(e.target.value)}
               placeholder="Attribution (optional)"
               className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
             />
