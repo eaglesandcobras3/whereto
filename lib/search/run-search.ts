@@ -18,12 +18,23 @@ export async function runSearch(options: {
   priceLevel?: number;
   /** When set, ranking and AI candidates are constrained to this category slug (e.g. \`services\` for /search?type=services). */
   forcedCategorySlug?: string | null;
+  /** When set, excludes this category slug from candidates (e.g. hide services from businesses browse). */
+  excludedCategorySlug?: string | null;
+  /** Optional location mode filter for candidate rows. */
+  requiredHasPhysicalLocation?: boolean;
 }): Promise<SearchResultPayload> {
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
-  const cacheBasis = options.forcedCategorySlug
-    ? `${normalized}::__forced_cat__:${options.forcedCategorySlug}`
-    : normalized;
+  let cacheBasis = normalized;
+  if (options.forcedCategorySlug) {
+    cacheBasis = `${cacheBasis}::__forced_cat__:${options.forcedCategorySlug}`;
+  }
+  if (options.excludedCategorySlug) {
+    cacheBasis = `${cacheBasis}::__excluded_cat__:${options.excludedCategorySlug}`;
+  }
+  if (typeof options.requiredHasPhysicalLocation === "boolean") {
+    cacheBasis = `${cacheBasis}::__physical__:${options.requiredHasPhysicalLocation ? "yes" : "no"}`;
+  }
   const queryHash = hashQuery(cacheBasis);
 
   const { data: cached } = await supabase
@@ -76,6 +87,8 @@ export async function runSearch(options: {
     openaiKey: options.openaiKey,
     locationScope,
     priceLevel: options.priceLevel,
+    requiredHasPhysicalLocation: options.requiredHasPhysicalLocation,
+    excludedCategorySlug: options.excludedCategorySlug,
   });
 
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();

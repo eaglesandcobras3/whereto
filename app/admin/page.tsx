@@ -17,42 +17,32 @@ export default async function AdminHomePage() {
 
   const staleBefore = getStaleBeforeDate();
 
-  const [biz, jobs, cache, feedback, stale, claims, candidates, flags, featured] = await Promise.all([
+  const [biz, jobs, cache, stale, flags, entries] = await Promise.all([
     supabase.from("businesses").select("id", { count: "exact", head: true }),
     supabase
       .from("search_jobs")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending"),
     supabase.from("query_cache").select("id", { count: "exact", head: true }),
-    supabase.from("user_feedback").select("id", { count: "exact", head: true }),
     supabase
       .from("businesses")
       .select("id", { count: "exact", head: true })
       .eq("status", "active")
       .lt("last_refreshed_at", staleBefore),
-    supabase
-      .from("business_claim_requests")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending"),
-    supabase
-      .from("category_candidates")
-      .select("id", { count: "exact", head: true })
-      .eq("approval_status", "pending"),
     supabase.from("feature_flags").select("id", { count: "exact", head: true }),
-    supabase.from("featured_content").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("content_entries").select("id", { count: "exact", head: true }),
   ]);
 
   const stats = [
+    { label: "Site settings", value: "Edit", href: "/admin/site-settings" },
+    { label: "Content entries", value: countOr0(entries), href: "/admin/content" },
+    { label: "Media manager", value: "Open", href: "/admin/media" },
     { label: "Businesses", value: countOr0(biz), href: "/admin/businesses" },
-    { label: "Stale 90d+ (active)", value: countOr0(stale), href: "/admin/businesses" },
+    { label: "Categories", value: "Manage", href: "/admin/categories" },
+    { label: "Stale 90d+ (active)", value: countOr0(stale), href: "/admin/jobs" },
     { label: "Pending jobs", value: countOr0(jobs), href: "/admin/jobs" },
     { label: "Cached queries", value: countOr0(cache), href: "/admin/cache" },
-    { label: "Pending claims", value: countOr0(claims), href: "/admin/claims" },
-    { label: "Categories & Queue", value: countOr0(candidates), href: "/admin/categories" },
     { label: "Feature Flags", value: countOr0(flags), href: "/admin/feature-flags" },
-    { label: "Featured Content", value: countOr0(featured), href: "/admin/featured" },
-    { label: "Topic candidates", value: countOr0(candidates), href: "/admin/topic-mining" },
-    { label: "Feedback rows", value: countOr0(feedback), href: "/admin/scores" },
   ];
 
   return (

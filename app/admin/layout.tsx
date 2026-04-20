@@ -5,23 +5,16 @@ export const dynamic = "force-dynamic";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const nav = [
     { href: "/admin", label: "Overview" },
-    { href: "/admin/businesses", label: "Businesses" },
-    { href: "/admin/discovery", label: "Discovery" },
-    { href: "/admin/categories", label: "Categories" },
-    { href: "/admin/bulk-tags", label: "Bulk tags" },
-    { href: "/admin/jobs", label: "Jobs" },
-    { href: "/admin/ingestion", label: "Ingestion" },
-    { href: "/admin/feature-flags", label: "Feature flags" },
     { href: "/admin/site-settings", label: "Site settings" },
     { href: "/admin/content", label: "Content" },
     { href: "/admin/content-model", label: "Content model" },
     { href: "/admin/media", label: "Media" },
+    { href: "/admin/businesses", label: "Businesses" },
+    { href: "/admin/categories", label: "Categories" },
+    { href: "/admin/jobs", label: "Jobs" },
+    { href: "/admin/feature-flags", label: "Feature flags" },
     { href: "/admin/cache", label: "Cache" },
-    { href: "/admin/claims", label: "Claims" },
-    { href: "/admin/topic-mining", label: "Topic mining" },
-    { href: "/admin/scores", label: "Scores" },
-    { href: "/admin/duplicates", label: "Duplicates" },
-    { href: "/admin/data-pipeline", label: "Data Pipeline" },
+    { href: "/admin/advanced", label: "Advanced tools" },
   ];
 
   return (

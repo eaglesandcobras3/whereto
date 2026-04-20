@@ -37,7 +37,7 @@ export default async function AdminBusinessEditPage({
         town_id, category_id, listing_external_key, phone, website,
         listing_rating, listing_review_count, price_level, ai_summary,
         confidence_score, freshness_score, engagement_score,
-        directory_refresh_requested_at, hero_image_url
+        directory_refresh_requested_at, hero_image_url, has_physical_location
       `,
       )
       .eq("id", id)

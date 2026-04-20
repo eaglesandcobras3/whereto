@@ -19,6 +19,7 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 
 type DbBusinessRow = {
   id: string;
+  has_physical_location: boolean;
   slug?: string;
   name: string;
   address: string | null;
@@ -72,6 +73,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
   }
   const {
     id,
+    has_physical_location,
     slug,
     name,
     address,
@@ -100,6 +102,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
   } = row;
   return {
     id,
+    has_physical_location,
     slug,
     name,
     address,
@@ -152,7 +155,7 @@ export async function fetchActiveBusinessesWithTags(
     .from("businesses")
     .select(
       `
-      id, slug, name, address, town_id, category_id, lat, lng, phone, website, price_level, ai_summary,
+      id, has_physical_location, slug, name, address, town_id, category_id, lat, lng, phone, website, price_level, ai_summary,
       status, suspected_closed, admin_suppressed,
       confidence_score, freshness_score, engagement_score, exploration_score, completeness_score,
       bad_experience_unique_users, listing_rating, listing_review_count, legacy_photo_refs, hero_image_url,
@@ -223,6 +226,7 @@ export type EnrichedRecommendationPayload = {
       category_name?: string;
       lat?: number;
       lng?: number;
+      has_physical_location?: boolean;
       phone?: string | null;
       website?: string | null;
       price_level?: number | null;
@@ -250,6 +254,8 @@ export async function buildRecommendationSet(options: {
   locationScope: LocationRankingScope | null;
   limit?: number;
   priceLevel?: number;
+  requiredHasPhysicalLocation?: boolean;
+  excludedCategorySlug?: string | null;
 }): Promise<{
   ranked: BusinessRowWithTags[];
   enriched: EnrichedRecommendationPayload;
@@ -274,6 +280,17 @@ export async function buildRecommendationSet(options: {
 
   if (options.priceLevel) {
     ranked = ranked.filter((r) => r.price_level === options.priceLevel);
+  }
+  if (typeof options.requiredHasPhysicalLocation === "boolean") {
+    ranked = ranked.filter(
+      (r) => r.has_physical_location === options.requiredHasPhysicalLocation,
+    );
+  }
+  if (options.excludedCategorySlug) {
+    const excludedCategoryId = categorySlugToId.get(options.excludedCategorySlug);
+    if (excludedCategoryId != null) {
+      ranked = ranked.filter((r) => r.category_id !== excludedCategoryId);
+    }
   }
 
   const candidateIds = new Set(ranked.map((r) => r.id));
@@ -337,6 +354,7 @@ export async function buildRecommendationSet(options: {
                 category_id: b.category_id,
                 lat: b.lat,
                 lng: b.lng,
+                has_physical_location: b.has_physical_location,
                 phone: b.phone ?? null,
                 website: b.website ?? null,
                 price_level: b.price_level ?? null,

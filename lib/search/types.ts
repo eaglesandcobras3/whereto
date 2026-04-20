@@ -18,6 +18,7 @@ export type BusinessPayload = {
   ai_summary?: string | null;
   image_url?: string | null;
   hero_image_url?: string | null;
+  has_physical_location?: boolean;
 };
 
 export type SearchResultPayload = {

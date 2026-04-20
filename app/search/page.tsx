@@ -27,7 +27,7 @@ const TYPE_FILTERS: Record<string, { label: string; query: string }> = {
   },
   businesses: {
     label: "Businesses",
-    query: "restaurants cafes shops retail services local businesses",
+    query: "restaurants cafes coffee bars shops retail local businesses storefronts",
   },
   services: {
     label: "Services",
@@ -313,6 +313,9 @@ export default async function SearchPage({ searchParams }: Props) {
     openaiKey: process.env.OPENAI_API_KEY,
     priceLevel: price ? parseInt(price, 10) : undefined,
     forcedCategorySlug: type === "services" ? "services" : undefined,
+    excludedCategorySlug: type === "businesses" ? "services" : undefined,
+    requiredHasPhysicalLocation:
+      type === "services" ? false : type === "businesses" ? true : undefined,
   });
 
   return (

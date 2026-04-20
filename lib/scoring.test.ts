@@ -59,6 +59,7 @@ describe("locationProximityMultiplier", () => {
 describe("passesEligibility", () => {
   const base = {
     id: "x",
+    has_physical_location: true,
     town_id: 1,
     category_id: 1,
     status: "active",
@@ -103,6 +104,7 @@ describe("scoreAndRankCandidates", () => {
         ...{
           id: "a",
           name: "A",
+          has_physical_location: true,
           town_id: 1,
           category_id: 1,
           status: "active",
@@ -123,6 +125,7 @@ describe("scoreAndRankCandidates", () => {
         ...{
           id: "b",
           name: "B",
+          has_physical_location: true,
           town_id: 1,
           category_id: 1,
           status: "active",
@@ -172,6 +175,7 @@ describe("scoreAndRankCandidates", () => {
         ...{
           id: "in-town",
           name: "Local",
+          has_physical_location: true,
           town_id: 10,
           category_id: 1,
           status: "active",
@@ -192,6 +196,7 @@ describe("scoreAndRankCandidates", () => {
         ...{
           id: "neighbor",
           name: "Next Door Hit",
+          has_physical_location: true,
           town_id: 20,
           category_id: 1,
           status: "active",
@@ -235,6 +240,7 @@ describe("scoreAndRankCandidates", () => {
     const categorySlugToId = new Map([["restaurants", 1]]);
     const base = {
       name: "Spot",
+      has_physical_location: true,
       town_id: 1,
       category_id: 1,
       status: "active",

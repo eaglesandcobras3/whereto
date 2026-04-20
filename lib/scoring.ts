@@ -3,6 +3,7 @@ import { getCompositeWeights } from "@/lib/scoring-weights";
 
 export type BusinessForScore = {
   id: string;
+  has_physical_location: boolean;
   town_id: number | null;
   category_id: number | null;
   status: string;
