@@ -128,11 +128,12 @@ function normalizeMarkdownStatus(raw: string | undefined): "draft" | "published"
 
 export async function ingestMarkdownContentAction(
   formData: FormData,
-): Promise<{ ok?: boolean; error?: string; slug?: string; type?: string }> {
+): Promise<{ ok?: boolean; error?: string; slug?: string; type?: string; warnings?: string[] }> {
   await requireAdmin();
   const supabase = getServiceSupabase();
   const raw = String(formData.get("markdown") ?? "");
   if (!raw.trim()) return { error: "Markdown is required." };
+  const intent = String(formData.get("intent") ?? "process");
 
   let parsed: { data: ParsedFrontmatter; content: string };
   try {
@@ -163,6 +164,23 @@ export async function ingestMarkdownContentAction(
   const lng = asNumber(fm.longitude) ?? asNumber(fm.map_center?.lng) ?? asNumber(fm.map_location?.lng);
   const status = normalizeMarkdownStatus(fm.status);
   const summary = (fm.seo_description ?? "").trim() || parsed.content.slice(0, 500).replace(/[#*\[\]`]/g, "");
+  const warnings: string[] = [];
+  if (!parsed.content.trim()) warnings.push("Body markdown is empty.");
+
+  if (intent === "validate") {
+    if (type === "event") {
+      if (!fm.event_date) return { error: "Event frontmatter requires `event_date` (YYYY-MM-DD)." };
+      const rf = fm.recurrence_frequency;
+      const rw = fm.recurrence_weekday;
+      if ((rf != null) !== (rw != null)) {
+        return { error: "Set both `recurrence_frequency` and `recurrence_weekday`, or neither." };
+      }
+      if (rf === "weekly" && (typeof rw !== "number" || !Number.isInteger(rw) || rw < 0 || rw > 6)) {
+        return { error: "`recurrence_weekday` must be an integer 0-6 when recurrence_frequency is weekly." };
+      }
+    }
+    return { ok: true, slug, type, warnings };
+  }
 
   if (type === "town") {
     const centerLat = lat ?? 30.3;
@@ -289,5 +307,16 @@ export async function ingestMarkdownContentAction(
   revalidatePath(`/${slug}`);
   revalidatePath(`/events/${slug}`);
   return { ok: true, slug, type };
+}
+
+export async function updateContentFromMarkdownAction(
+  entryId: string,
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string; slug?: string; type?: string; warnings?: string[] }> {
+  const result = await ingestMarkdownContentAction(formData);
+  if (result.ok) {
+    revalidatePath(`/admin/content/${entryId}`);
+  }
+  return result;
 }
 

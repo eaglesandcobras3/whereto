@@ -232,7 +232,21 @@ type BusinessFrontmatter = {
   seo_keywords?: string[];
   town?: string;
   categories?: string[];
+  category?: string;
+  sub_category?: string;
+  entity_type?: string;
   tags?: string[];
+  search_intent?: string[];
+  related_entities?: string[];
+  known_for?: string[];
+  atmosphere?: string[];
+  vibe?: string;
+  best_for?: string[];
+  time_of_day?: string[];
+  featured?: boolean;
+  is_walkable?: boolean;
+  reading_time?: number;
+  last_updated?: string;
   phone?: string;
   website?: string;
   address?: string;
@@ -253,33 +267,67 @@ function parseNumberOrNull(v: unknown): number | null {
   return null;
 }
 
-export async function ingestBusinessMarkdownAction(formData: FormData): Promise<{
-  ok?: boolean;
-  error?: string;
-  slug?: string;
-}> {
-  await requireAdmin();
-  const supabase = getServiceSupabase();
+function titleCaseFromSlug(slug: string): string {
+  return slug
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
-  const raw = String(formData.get("markdown") ?? "");
-  if (!raw.trim()) return { error: "Markdown is required." };
+async function resolveOrCreateTagIds(supabase: ReturnType<typeof getServiceSupabase>, rawTags: string[]) {
+  const tagSlugs = rawTags
+    .map((t) => t.trim().toLowerCase().replace(/\s+/g, "-"))
+    .filter(Boolean);
+  if (tagSlugs.length === 0) return [];
 
+  const { data: existing } = await supabase.from("tags").select("id, slug").in("slug", tagSlugs);
+  const existingMap = new Map((existing ?? []).map((r) => [String(r.slug), Number(r.id)]));
+  const missing = tagSlugs.filter((s) => !existingMap.has(s));
+
+  if (missing.length > 0) {
+    await supabase.from("tags").insert(
+      missing.map((slug, i) => ({
+        name: titleCaseFromSlug(slug),
+        slug,
+        category: "imported",
+        display_order: 900 + i,
+      })),
+    );
+    const { data: created } = await supabase.from("tags").select("id, slug").in("slug", missing);
+    for (const row of created ?? []) {
+      existingMap.set(String(row.slug), Number(row.id));
+    }
+  }
+
+  return tagSlugs.map((s) => existingMap.get(s)).filter((id): id is number => Number.isFinite(id));
+}
+
+async function ingestBusinessMarkdown(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  rawMarkdown: string,
+): Promise<{ ok: true; slug: string; businessId: string } | { ok: false; error: string }> {
   let parsed: { data: BusinessFrontmatter; content: string };
   try {
-    const m = matter(raw);
+    const m = matter(rawMarkdown);
     parsed = { data: (m.data as BusinessFrontmatter) ?? {}, content: m.content ?? "" };
   } catch (e) {
-    return { error: `Frontmatter parse failed: ${e instanceof Error ? e.message : "unknown error"}` };
+    return {
+      ok: false,
+      error: `Frontmatter parse failed: ${e instanceof Error ? e.message : "unknown error"}`,
+    };
   }
 
   const fm = parsed.data;
   if ((fm.type ?? "").trim() !== "business") {
-    return { error: 'Frontmatter must include `type: business`.' };
+    return { ok: false, error: "Frontmatter must include `type: business`." };
   }
   const slug = (fm.slug ?? "").trim();
   const title = (fm.title ?? "").trim();
   if (!slug || !title) {
-    return { error: "Frontmatter must include `slug` and `title`." };
+    return { ok: false, error: "Frontmatter must include `slug` and `title`." };
   }
 
   const townSlug = (fm.town ?? "").trim();
@@ -293,7 +341,7 @@ export async function ingestBusinessMarkdownAction(formData: FormData): Promise<
     townId = (town?.id as number | undefined) ?? null;
   }
 
-  const categorySlug = (fm.categories?.[0] ?? "").trim();
+  const categorySlug = (fm.categories?.[0] ?? fm.category ?? "").trim();
   let categoryId: number | null = null;
   if (categorySlug) {
     const { data: category } = await supabase
@@ -304,9 +352,16 @@ export async function ingestBusinessMarkdownAction(formData: FormData): Promise<
     categoryId = (category?.id as number | undefined) ?? null;
   }
 
-  const lat = parseNumberOrNull(fm.latitude) ?? parseNumberOrNull(fm.map_center?.lat) ?? parseNumberOrNull(fm.map_location?.lat);
-  const lng = parseNumberOrNull(fm.longitude) ?? parseNumberOrNull(fm.map_center?.lng) ?? parseNumberOrNull(fm.map_location?.lng);
-  const summary = (fm.seo_description ?? "").trim() || parsed.content.slice(0, 240).trim() || null;
+  const lat =
+    parseNumberOrNull(fm.latitude) ??
+    parseNumberOrNull(fm.map_center?.lat) ??
+    parseNumberOrNull(fm.map_location?.lat);
+  const lng =
+    parseNumberOrNull(fm.longitude) ??
+    parseNumberOrNull(fm.map_center?.lng) ??
+    parseNumberOrNull(fm.map_location?.lng);
+  const summary =
+    (fm.seo_description ?? "").trim() || parsed.content.slice(0, 240).trim() || null;
   const hasPhysicalLocation =
     typeof fm.has_physical_location === "boolean"
       ? fm.has_physical_location
@@ -336,7 +391,10 @@ export async function ingestBusinessMarkdownAction(formData: FormData): Promise<
     .single();
 
   if (bizErr || !upserted?.id) {
-    return { error: `Business upsert failed: ${bizErr?.message ?? "unknown error"}` };
+    return {
+      ok: false,
+      error: `Business upsert failed: ${bizErr?.message ?? "unknown error"}`,
+    };
   }
 
   const { error: pageErr } = await supabase.from("pages").upsert(
@@ -353,31 +411,132 @@ export async function ingestBusinessMarkdownAction(formData: FormData): Promise<
     { onConflict: "slug" },
   );
   if (pageErr) {
-    return { error: `Business page markdown upsert failed: ${pageErr.message}` };
+    return { ok: false, error: `Business page markdown upsert failed: ${pageErr.message}` };
   }
 
-  if (Array.isArray(fm.tags) && fm.tags.length > 0) {
-    const tagSlugs = fm.tags.map((t) => String(t).trim()).filter(Boolean);
-    const { data: tagRows } = await supabase
-      .from("tags")
-      .select("id, slug")
-      .in("slug", tagSlugs);
-    const tagIds = (tagRows ?? []).map((r) => r.id as number);
-    await supabase.from("business_tags").delete().eq("business_id", upserted.id);
-    if (tagIds.length > 0) {
-      await supabase.from("business_tags").insert(
-        tagIds.map((tagId) => ({
-          business_id: upserted.id as string,
-          tag_id: tagId,
-          source: "admin_set",
-          confidence: 1,
-        })),
-      );
-    }
+  const tagIds = await resolveOrCreateTagIds(supabase, Array.isArray(fm.tags) ? fm.tags : []);
+  await supabase.from("business_tags").delete().eq("business_id", upserted.id);
+  if (tagIds.length > 0) {
+    await supabase.from("business_tags").insert(
+      tagIds.map((tagId) => ({
+        business_id: upserted.id as string,
+        tag_id: tagId,
+        source: "admin_set",
+        confidence: 1,
+      })),
+    );
   }
+
+  await supabase.from("content_entries").upsert(
+    {
+      content_type: "business",
+      slug,
+      title,
+      excerpt: (fm.seo_description ?? "").trim() || null,
+      body_markdown: parsed.content,
+      seo_title: (fm.seo_title ?? "").trim() || null,
+      seo_description: (fm.seo_description ?? "").trim() || null,
+      seo_keywords: fm.seo_keywords ?? null,
+      status: "published",
+      published_at: new Date().toISOString(),
+      custom_fields_json: fm as unknown as Record<string, unknown>,
+    },
+    { onConflict: "content_type,slug" },
+  );
+
+  return { ok: true, slug, businessId: upserted.id as string };
+}
+
+async function validateBusinessMarkdown(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  rawMarkdown: string,
+): Promise<{ ok: true; slug: string; warnings: string[] } | { ok: false; error: string }> {
+  let parsed: { data: BusinessFrontmatter; content: string };
+  try {
+    const m = matter(rawMarkdown);
+    parsed = { data: (m.data as BusinessFrontmatter) ?? {}, content: m.content ?? "" };
+  } catch (e) {
+    return {
+      ok: false,
+      error: `Frontmatter parse failed: ${e instanceof Error ? e.message : "unknown error"}`,
+    };
+  }
+  const fm = parsed.data;
+  if ((fm.type ?? "").trim() !== "business") {
+    return { ok: false, error: "Frontmatter must include `type: business`." };
+  }
+  const slug = (fm.slug ?? "").trim();
+  const title = (fm.title ?? "").trim();
+  if (!slug || !title) {
+    return { ok: false, error: "Frontmatter must include `slug` and `title`." };
+  }
+  const warnings: string[] = [];
+  if (!parsed.content.trim()) warnings.push("Body markdown is empty.");
+
+  const townSlug = (fm.town ?? "").trim();
+  if (townSlug) {
+    const { data: town } = await supabase.from("towns").select("id").eq("slug", townSlug).maybeSingle();
+    if (!town) warnings.push(`Town slug "${townSlug}" was not found.`);
+  }
+  const categorySlug = (fm.categories?.[0] ?? fm.category ?? "").trim();
+  if (categorySlug) {
+    const { data: category } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("slug", categorySlug)
+      .maybeSingle();
+    if (!category) warnings.push(`Category slug "${categorySlug}" was not found.`);
+  }
+  return { ok: true, slug, warnings };
+}
+
+export async function ingestBusinessMarkdownAction(formData: FormData): Promise<{
+  ok?: boolean;
+  error?: string;
+  slug?: string;
+  warnings?: string[];
+  validated?: boolean;
+}> {
+  await requireAdmin();
+  const supabase = getServiceSupabase();
+
+  const raw = String(formData.get("markdown") ?? "");
+  if (!raw.trim()) return { error: "Markdown is required." };
+  const intent = String(formData.get("intent") ?? "process");
+  if (intent === "validate") {
+    const validated = await validateBusinessMarkdown(supabase, raw);
+    if (!validated.ok) return { error: validated.error };
+    return { ok: true, slug: validated.slug, warnings: validated.warnings, validated: true };
+  }
+  const result = await ingestBusinessMarkdown(supabase, raw);
+  if (!result.ok) return { error: result.error };
 
   revalidatePath("/admin/businesses");
-  revalidatePath(`/admin/businesses/${upserted.id}`);
-  revalidatePath(`/business/${slug}`);
-  return { ok: true, slug };
+  revalidatePath(`/admin/businesses/${result.businessId}`);
+  revalidatePath(`/business/${result.slug}`);
+  return { ok: true, slug: result.slug };
+}
+
+export async function updateBusinessFromMarkdownAction(
+  businessId: string,
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string; slug?: string; warnings?: string[]; validated?: boolean }> {
+  await requireAdmin();
+  const supabase = getServiceSupabase();
+  const raw = String(formData.get("markdown") ?? "");
+  if (!raw.trim()) return { error: "Markdown is required." };
+  const intent = String(formData.get("intent") ?? "process");
+  if (intent === "validate") {
+    const validated = await validateBusinessMarkdown(supabase, raw);
+    if (!validated.ok) return { error: validated.error };
+    return { ok: true, slug: validated.slug, warnings: validated.warnings, validated: true };
+  }
+
+  const result = await ingestBusinessMarkdown(supabase, raw);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath(`/admin/businesses/${businessId}`);
+  revalidatePath(`/admin/businesses/${result.businessId}`);
+  revalidatePath(`/business/${result.slug}`);
+  return { ok: true, slug: result.slug };
 }
