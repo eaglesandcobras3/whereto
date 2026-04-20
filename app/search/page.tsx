@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { SearchPageClient } from "./search-page-client";
+import { SearchPageClient, type DiscoveryTag } from "./search-page-client";
 import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
 
@@ -82,7 +82,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function SearchPage({ searchParams }: Props) {
-  const { q, town_id, price, type: rawType } = await searchParams;
+  const { q, town_id, price, page, type: rawType } = await searchParams;
   const type = normalizeSearchType(rawType);
 
   const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
@@ -111,6 +111,7 @@ export default async function SearchPage({ searchParams }: Props) {
   }
 
   const displayQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey]!.label : "") || effectiveQuery;
+  const currentPage = Math.max(1, Number(page) || 1);
 
   const townsForSidebarPromise = (async () => {
     const { data: region30a } = await serviceSupabase
@@ -128,7 +129,18 @@ export default async function SearchPage({ searchParams }: Props) {
     return data ?? [];
   })();
 
-  const [sidebarTowns, recentPostsResult] = await Promise.all([
+  // Fetch discovery tags for editorial chips
+  const discoveryTagsPromise = (async () => {
+    const { data } = await serviceSupabase
+      .from("tags")
+      .select("name, slug")
+      .eq("category", "discovery")
+      .order("display_order", { ascending: true })
+      .limit(10);
+    return (data ?? []) as DiscoveryTag[];
+  })();
+
+  const [sidebarTowns, recentPostsResult, discoveryTags] = await Promise.all([
     townsForSidebarPromise,
     serviceSupabase
       .from("businesses")
@@ -136,6 +148,7 @@ export default async function SearchPage({ searchParams }: Props) {
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(5),
+    discoveryTagsPromise,
   ]);
 
   const browseMode =
@@ -176,6 +189,7 @@ export default async function SearchPage({ searchParams }: Props) {
         townName={townName}
         towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
+        discoveryTags={discoveryTags}
       />
     );
   }
@@ -209,6 +223,7 @@ export default async function SearchPage({ searchParams }: Props) {
         townName={townName}
         towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
+        discoveryTags={discoveryTags}
       />
     );
   }
@@ -284,6 +299,7 @@ export default async function SearchPage({ searchParams }: Props) {
         townName={townName}
         towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
+        discoveryTags={discoveryTags}
       />
     );
   }
@@ -318,6 +334,7 @@ export default async function SearchPage({ searchParams }: Props) {
         townName={townName}
         towns={sidebarTowns}
         recentPosts={recentPostsResult.data ?? []}
+        discoveryTags={discoveryTags}
       />
     );
   }
@@ -328,6 +345,8 @@ export default async function SearchPage({ searchParams }: Props) {
     model,
     openaiKey: process.env.OPENAI_API_KEY,
     priceLevel: price ? parseInt(price, 10) : undefined,
+    page: currentPage,
+    pageSize: 12,
     forcedCategorySlug: type === "services" ? "services" : undefined,
     excludedCategorySlug: type === "businesses" ? "services" : undefined,
     requiredHasPhysicalLocation:
@@ -342,6 +361,7 @@ export default async function SearchPage({ searchParams }: Props) {
       townName={townName}
       towns={sidebarTowns}
       recentPosts={recentPostsResult.data ?? []}
+      discoveryTags={discoveryTags}
     />
   );
 }

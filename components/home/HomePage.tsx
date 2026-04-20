@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
+import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 
 type Rec = {
   business_id: string;
@@ -296,92 +297,101 @@ export function HomePage({
         {featureFlags["search"] === true && (
           <section
             id="hero"
-            className="relative flex h-[700px] w-full flex-col items-center justify-center"
+            className="relative flex min-h-[95vh] w-full flex-col items-center justify-center"
           >
-            <div className="absolute inset-0 z-0">
-              <DesignImg
-                src={heroSettings.imageUrl}
-                alt="Cinematic wide shot of 30A beach with sugar-white sand and turquoise gulf water under a soft pastel sunset sky"
-                className="object-cover"
-                sizes="100vw"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-background" />
+            {/* Full-bleed hero image with Ken Burns effect */}
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              <div className="absolute inset-0 img-editorial">
+                <DesignImg
+                  src={heroSettings.imageUrl}
+                  alt="Cinematic wide shot of 30A beach with sugar-white sand and turquoise gulf water under a soft pastel sunset sky"
+                  className="object-cover"
+                  sizes="100vw"
+                  priority
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-background" />
             </div>
-            <div className="relative z-10 flex flex-col items-center justify-center text-center">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-fixed/30 px-4 py-1.5 text-primary">
-                <MsIcon name="auto_awesome" className="!text-sm" filled />
-                <span className="text-xs font-bold uppercase tracking-widest">
+
+            {/* Hero content */}
+            <div className="relative z-10 flex flex-col items-center justify-center px-4 text-center">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur-md">
+                <MsIcon name="auto_awesome" className="!text-sm text-white" filled />
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-white">
                   Local Guide to 30A
                 </span>
               </div>
-              <h1 className="mb-8 font-headline text-5xl font-extrabold tracking-tighter text-primary md:text-7xl">
+
+              <h1 className="text-editorial-hero mb-6 max-w-4xl text-white drop-shadow-lg">
                 {heroSettings.title}
               </h1>
-              <p className="mb-6 max-w-2xl px-4 text-base text-white/90 md:text-lg">
+
+              <p className="mb-10 max-w-2xl text-lg leading-relaxed text-white/90 md:text-xl">
                 {heroSettings.subtitle}
               </p>
+
+              {/* Minimal, centered search bar */}
               <form
                 onSubmit={onSubmit}
-                className="mx-auto flex w-full max-w-[700px] gap-2 px-4"
+                className="mx-auto w-full max-w-[640px]"
               >
-                <div className="relative flex-1">
-                  <MsIcon 
-                    name="search" 
-                    className="absolute left-5 top-1/2 -translate-y-1/2 text-primary/40" 
+                <div className="relative">
+                  <MsIcon
+                    name="search"
+                    className="absolute left-6 top-1/2 -translate-y-1/2 !text-xl text-zinc-400"
                   />
                   <input
                     ref={heroInputRef}
                     name="q"
                     value={q}
                     onChange={(e) => onChangeInput(e.target.value)}
-                    className="h-16 w-full rounded-2xl border-none bg-surface-container-highest pl-14 pr-8 text-lg text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/10"
+                    className="h-16 w-full rounded-full border-none bg-white/95 pl-14 pr-32 text-lg text-zinc-900 shadow-xl backdrop-blur-md transition-all placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-white/30"
                     placeholder={heroSettings.searchPlaceholder}
                     type="search"
                     autoComplete="off"
                   />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="h-16 rounded-2xl bg-primary px-8 font-bold text-on-primary transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
-                >
-                  Search
-                </button>
-              </form>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-2 px-4 text-sm font-semibold">
-                {featureFlags["curator"] === true ? (
-                  <a
-                    href="#section-curator"
-                    className="rounded-full border border-white/40 bg-white/15 px-4 py-2 text-white backdrop-blur-sm transition-colors hover:bg-white/25"
-                  >
-                    Experiences
-                  </a>
-                ) : null}
-                {featureFlags["plan-your-trip"] === true ? (
                   <button
-                    type="button"
-                    onClick={scrollToHero}
-                    className="rounded-full bg-primary px-5 py-2 text-on-primary shadow-md transition-all hover:opacity-90"
+                    type="submit"
+                    disabled={loading}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-primary px-6 font-semibold text-white transition-all hover:bg-primary-light active:scale-[0.98] disabled:opacity-60"
                   >
-                    Plan trip
+                    Search
                   </button>
-                ) : null}
+                </div>
+              </form>
+
+              {/* Quick discovery prompts */}
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+                {["Restaurants", "Coffee", "Activities", "Guides"].map((label) => (
+                  <Link
+                    key={label}
+                    href={`/search?q=${encodeURIComponent(label.toLowerCase() + " 30A")}`}
+                    className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Scroll indicator */}
+            <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
+              <div className="animate-scroll-bounce flex flex-col items-center gap-2 text-white/60">
+                <span className="text-xs font-medium uppercase tracking-widest">Explore</span>
+                <MsIcon name="keyboard_arrow_down" className="!text-2xl" />
               </div>
             </div>
           </section>
         )}
 
-        {featureFlags["featured_business"] === true && (
-          <section id="section-featured" className="bg-background py-24 md:py-28">
+        {featureFlags["featured_business"] === true && featuredBusinesses.length > 0 && (
+          <section id="section-featured" className="bg-background py-20 md:py-28">
             <div className="mx-auto max-w-[1280px] px-5 sm:px-6 lg:px-8">
-              <div className="mb-10 md:mb-14">
-                <h2 className="font-headline text-3xl font-bold tracking-tight text-primary sm:text-4xl">
-                  Featured Businesses
+              <div className="mb-12 md:mb-16">
+                <p className="text-eyebrow mb-3">Editor's Picks</p>
+                <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
+                  Featured This Week
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600 sm:text-base">
-                  Hand-picked highlights of the Emerald Coast.
-                </p>
               </div>
               <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
             </div>
@@ -399,75 +409,67 @@ export function HomePage({
         {featureFlags["curator"] === true && (
           <section
             id="section-curator"
-            className="overflow-hidden bg-background py-32"
+            className="overflow-hidden bg-background py-20 md:py-28"
           >
-            <div className="mx-auto max-w-screen-xl px-6">
-              <div className="mb-4 flex items-center space-x-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <MsIcon
-                    name="auto_awesome"
-                    className="!text-lg text-primary"
-                  />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
-                  My Curator Recommendations
-                </span>
+            <div className="mx-auto max-w-screen-xl px-5 sm:px-6 lg:px-8">
+              <div className="mb-12 md:mb-16">
+                <p className="text-eyebrow mb-3">Personalized</p>
+                <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
+                  Curated for You
+                </h2>
               </div>
-              <h2 className="mb-16 font-headline text-5xl font-extrabold text-primary">
-                Curated for You
-              </h2>
-              <div className="hide-scrollbar flex space-x-8 overflow-x-auto pb-12">
+
+              {/* Horizontal scroll carousel */}
+              <div className="editorial-scroll scrollbar-hide -mx-5 px-5 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
                 {CURATOR_CARDS.map((card) => (
                   <article
                     key={card.title}
-                    className="min-w-[450px] overflow-hidden rounded-xl bg-surface-elevated shadow-design-card transition-transform duration-500 hover:scale-[1.02]"
+                    className="editorial-card group w-[340px] overflow-hidden rounded-2xl border border-zinc-100 bg-white sm:w-[400px]"
                   >
-                    <div className="relative h-64">
-                      <DesignImg
-                        src={card.image}
-                        alt={card.alt}
-                        className="object-cover"
-                        sizes="450px"
-                      />
-                      <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-1 text-xs font-bold text-primary backdrop-blur-md">
-                        {card.badge}
+                    {/* Horizontal layout: image left, content right */}
+                    <div className="flex h-full">
+                      <div className="relative w-[140px] shrink-0 overflow-hidden sm:w-[160px]">
+                        <DesignImg
+                          src={card.image}
+                          alt={card.alt}
+                          className="img-editorial-fast object-cover"
+                          sizes="160px"
+                        />
+                        <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-primary backdrop-blur-md">
+                          {card.badge}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-10">
-                      <div className="mb-6 flex items-start justify-between">
-                        <div>
-                          <h3 className="font-headline text-2xl font-bold text-primary">
-                            {card.title}
-                          </h3>
-                          <p className="text-sm text-on-surface-variant">
-                            {card.meta}
+                      <div className="flex flex-1 flex-col p-4 sm:p-5">
+                        <div className="mb-3 flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-headline text-lg font-bold leading-tight text-zinc-900 group-hover:text-primary">
+                              {card.title}
+                            </h3>
+                            <p className="mt-0.5 text-xs text-zinc-500">
+                              {card.meta}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            <MsIcon name="star" className="!text-xs text-amber-400" filled />
+                            <span className="text-xs font-bold text-zinc-700">{card.rating}</span>
+                          </div>
+                        </div>
+
+                        {/* Pull quote style */}
+                        <div className="mb-3 flex-1 border-l-2 border-primary/20 pl-3">
+                          <p className="line-clamp-4 text-sm italic leading-relaxed text-zinc-600">
+                            &ldquo;{card.blurb}&rdquo;
                           </p>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <MsIcon
-                            name="star"
-                            className="!text-sm text-amber-400"
-                            filled
-                          />
-                          <span className="text-sm font-bold text-primary">
-                            {card.rating}
-                          </span>
-                        </div>
+
+                        <Link
+                          href={card.ctaHref}
+                          className="mt-auto flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary-light"
+                        >
+                          {card.cta}
+                          <MsIcon name="arrow_forward" className="!text-sm" />
+                        </Link>
                       </div>
-                      <div className="h-[186px] rounded-lg border-l-4 border-primary/20 bg-primary/5 p-6">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">
-                          Why we picked this
-                        </p>
-                        <p className="text-sm italic leading-relaxed text-on-surface-variant">
-                          &ldquo;{card.blurb}&rdquo;
-                        </p>
-                      </div>
-                      <Link
-                        href={card.ctaHref}
-                        className="mt-8 flex w-full items-center justify-center rounded-full bg-primary py-4 font-bold text-on-primary transition-all hover:opacity-90"
-                      >
-                        {card.cta}
-                      </Link>
                     </div>
                   </article>
                 ))}
@@ -515,57 +517,62 @@ export function HomePage({
         {featureFlags["towns"] === true && towns.length > 0 && (
           <section
             id="section-neighborhoods"
-            className="bg-surface-container-low py-32"
+            className="bg-surface-container-low py-20 md:py-28"
           >
-            <div className="mx-auto max-w-screen-xl px-6">
-              <div className="mb-16 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div className="mx-auto max-w-screen-xl px-5 sm:px-6 lg:px-8">
+              <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end md:mb-16">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary/50">
-                    The Neighborhoods
-                  </span>
-                  <h2 className="mt-2 font-headline text-5xl font-extrabold text-primary">
-                    Icons of 30A
+                  <p className="text-eyebrow mb-3">Discover</p>
+                  <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
+                    Beach Towns of 30A
                   </h2>
                 </div>
                 <Link
                   href={PRIMARY_REGION_HUB_PATH}
-                  className="border-b-2 border-primary pb-1 font-semibold text-primary transition-all hover:opacity-70"
+                  className="group flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3"
                 >
                   Explore all Towns
+                  <MsIcon name="arrow_forward" className="!text-lg transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
-                {towns.slice(0, 8).map((town) => {
-                  return (
-                    <Link
-                      key={town.slug}
-                      href={`/${town.slug}`}
-                      className="group relative overflow-hidden rounded-2xl"
-                    >
-                      <div className="relative aspect-[2/3] w-full overflow-hidden">
-                        {town.hero_image_url ? (
-                          <DesignImg
-                            src={town.hero_image_url}
-                            alt={town.name}
-                            className="object-cover transition duration-700 group-hover:scale-[1.04]"
-                            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent transition-opacity duration-500 group-hover:from-black/50" />
-                        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                          <h3 className="font-headline text-xl font-semibold tracking-tight text-white sm:text-2xl">
-                            {town.name}
-                          </h3>
-                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/90">
-                            {getTownCardBlurb(town)}
-                          </p>
-                        </div>
+
+              {/* Editorial town grid - larger cards with story feel */}
+              <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+                {towns.slice(0, 8).map((town, index) => (
+                  <Link
+                    key={town.slug}
+                    href={`/${town.slug}`}
+                    className="group editorial-card relative overflow-hidden rounded-2xl"
+                  >
+                    <div className="relative aspect-[2/3] w-full overflow-hidden">
+                      {town.hero_image_url ? (
+                        <DesignImg
+                          src={town.hero_image_url}
+                          alt={town.name}
+                          className="img-editorial-fast object-cover"
+                          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/60" />
+                      )}
+                      <div className="editorial-gradient absolute inset-0" />
+
+                      {/* Content overlay */}
+                      <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                        <h3 className="font-headline text-xl font-bold tracking-tight text-white sm:text-2xl">
+                          {town.name}
+                        </h3>
+                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/90">
+                          {getTownCardBlurb(town)}
+                        </p>
+                        <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                          Explore
+                          <MsIcon name="arrow_forward" className="!text-sm" />
+                        </span>
                       </div>
-                    </Link>
-                  );
-                })}
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           </section>
@@ -574,108 +581,119 @@ export function HomePage({
         {featureFlags["categories"] === true && (
           <section
             id="section-categories"
-            className="mx-auto max-w-7xl px-8 py-24"
+            className="mx-auto max-w-7xl px-5 py-20 sm:px-6 md:py-28 lg:px-8"
           >
-          <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
-                Curated Discovery
-              </p>
-              <h2 className="font-headline text-4xl font-extrabold tracking-tighter text-primary">
-                Explore by Category
-              </h2>
+            <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end md:mb-16">
+              <div>
+                <p className="text-eyebrow mb-3">Curated Discovery</p>
+                <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
+                  Explore by Category
+                </h2>
+              </div>
+              <Link
+                href={PRIMARY_REGION_HUB_PATH}
+                className="group flex items-center gap-2 font-semibold text-primary transition-all"
+              >
+                View all
+                <MsIcon name="arrow_forward" className="!text-lg transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <Link
-              href={PRIMARY_REGION_HUB_PATH}
-              className="flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3"
-            >
-              View all{" "}
-              <MsIcon name="east" className="!text-sm text-primary" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <Link
-              href="/?q=beachfront+stays+30A"
-              className="group cursor-pointer"
-            >
-              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
-                <DesignImg
-                  src={IMG.catStays}
-                  alt="Modern white architectural beach house with large glass windows reflecting the emerald coast at noon"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(min-width: 1024px) 25vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-              </div>
-              <h3 className="mb-1 font-headline text-xl font-bold text-primary">
-                Beachfront Stays
-              </h3>
-              <p className="text-sm text-on-surface-variant/80">
-                Wake up to the sound of waves.
-              </p>
-            </Link>
-            <Link
-              href="/?q=seaside+dining+30A"
-              className="group translate-y-12 cursor-pointer"
-            >
-              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
-                <DesignImg
-                  src={IMG.catDining}
-                  alt="Upscale outdoor restaurant terrace overlooking the gulf with string lights and elegant wooden furniture"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(min-width: 1024px) 25vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-              </div>
-              <h3 className="mb-1 font-headline text-xl font-bold text-primary">
-                Seaside Dining
-              </h3>
-              <p className="text-sm text-on-surface-variant/80">
-                Fresh catches and coastal spirits.
-              </p>
-            </Link>
-            <Link
-              href="/?q=family+friendly+30A"
-              className="group cursor-pointer"
-            >
-              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
-                <DesignImg
-                  src={IMG.catFamily}
-                  alt="Happy family riding bicycles along a scenic bike path lined with dunes and white picket fences"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(min-width: 1024px) 25vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-              </div>
-              <h3 className="mb-1 font-headline text-xl font-bold text-primary">
-                Family Experiences
-              </h3>
-              <p className="text-sm text-on-surface-variant/80">
-                Create memories along the shore.
-              </p>
-            </Link>
-            <Link
-              href="/?q=town+tours+30A"
-              className="group translate-y-12 cursor-pointer"
-            >
-              <div className="relative mb-6 aspect-[2/3] overflow-hidden rounded-xl shadow-sm transition-all duration-500 group-hover:shadow-xl">
-                <DesignImg
-                  src={IMG.catTours}
-                  alt="Aerial view of seaside architectural style with iconic white tower and green common spaces"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(min-width: 1024px) 25vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-              </div>
-              <h3 className="mb-1 font-headline text-xl font-bold text-primary">
-                Town Tours
-              </h3>
-              <p className="text-sm text-on-surface-variant/80">
-                Walk through coastal masterpieces.
-              </p>
-            </Link>
-          </div>
-        </section>
+
+            {/* Magazine spread layout - staggered grid */}
+            <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+              <Link
+                href="/search?q=beachfront+stays+30A"
+                className="group editorial-card"
+              >
+                <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
+                  <DesignImg
+                    src={IMG.catStays}
+                    alt="Modern white architectural beach house with large glass windows reflecting the emerald coast at noon"
+                    className="img-editorial-fast object-cover"
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                  />
+                  <div className="editorial-gradient absolute inset-0" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <h3 className="font-headline text-lg font-bold text-white sm:text-xl">
+                      Beachfront Stays
+                    </h3>
+                    <p className="mt-1 text-sm text-white/80">
+                      Wake up to the sound of waves
+                    </p>
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                href="/search?q=seaside+dining+30A"
+                className="group editorial-card lg:translate-y-8"
+              >
+                <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
+                  <DesignImg
+                    src={IMG.catDining}
+                    alt="Upscale outdoor restaurant terrace overlooking the gulf with string lights and elegant wooden furniture"
+                    className="img-editorial-fast object-cover"
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                  />
+                  <div className="editorial-gradient absolute inset-0" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <h3 className="font-headline text-lg font-bold text-white sm:text-xl">
+                      Seaside Dining
+                    </h3>
+                    <p className="mt-1 text-sm text-white/80">
+                      Fresh catches and coastal spirits
+                    </p>
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                href="/search?q=family+friendly+30A"
+                className="group editorial-card"
+              >
+                <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
+                  <DesignImg
+                    src={IMG.catFamily}
+                    alt="Happy family riding bicycles along a scenic bike path lined with dunes and white picket fences"
+                    className="img-editorial-fast object-cover"
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                  />
+                  <div className="editorial-gradient absolute inset-0" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <h3 className="font-headline text-lg font-bold text-white sm:text-xl">
+                      Family Fun
+                    </h3>
+                    <p className="mt-1 text-sm text-white/80">
+                      Create memories along the shore
+                    </p>
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                href="/search?q=town+tours+30A"
+                className="group editorial-card lg:translate-y-8"
+              >
+                <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
+                  <DesignImg
+                    src={IMG.catTours}
+                    alt="Aerial view of seaside architectural style with iconic white tower and green common spaces"
+                    className="img-editorial-fast object-cover"
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                  />
+                  <div className="editorial-gradient absolute inset-0" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <h3 className="font-headline text-lg font-bold text-white sm:text-xl">
+                      Town Tours
+                    </h3>
+                    <p className="mt-1 text-sm text-white/80">
+                      Walk through coastal masterpieces
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </section>
         )}
 
         {featureFlags["plan-your-trip"] === true && (

@@ -16,6 +16,8 @@ export async function runSearch(options: {
   model: string;
   openaiKey: string | undefined;
   priceLevel?: number;
+  page?: number;
+  pageSize?: number;
   /** When set, ranking and AI candidates are constrained to this category slug (e.g. \`services\` for /search?type=services). */
   forcedCategorySlug?: string | null;
   /** When set, excludes this category slug from candidates (e.g. hide services from businesses browse). */
@@ -25,7 +27,8 @@ export async function runSearch(options: {
 }): Promise<SearchResultPayload> {
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
-  let cacheBasis = normalized;
+  const CACHE_VERSION = "search-v2-min10";
+  let cacheBasis = `${normalized}::__v__:${CACHE_VERSION}`;
   if (options.forcedCategorySlug) {
     cacheBasis = `${cacheBasis}::__forced_cat__:${options.forcedCategorySlug}`;
   }
@@ -34,6 +37,12 @@ export async function runSearch(options: {
   }
   if (typeof options.requiredHasPhysicalLocation === "boolean") {
     cacheBasis = `${cacheBasis}::__physical__:${options.requiredHasPhysicalLocation ? "yes" : "no"}`;
+  }
+  if ((options.page ?? 1) > 1) {
+    cacheBasis = `${cacheBasis}::__page__:${options.page}`;
+  }
+  if (options.pageSize && options.pageSize !== 12) {
+    cacheBasis = `${cacheBasis}::__page_size__:${options.pageSize}`;
   }
   const queryHash = hashQuery(cacheBasis);
 
@@ -95,6 +104,8 @@ export async function runSearch(options: {
     priceLevel: options.priceLevel,
     requiredHasPhysicalLocation: options.requiredHasPhysicalLocation,
     excludedCategorySlug: options.excludedCategorySlug,
+    page: options.page,
+    pageSize: options.pageSize,
   });
 
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -126,6 +137,9 @@ export async function runSearch(options: {
     query_hash: queryHash,
     normalized_query: enriched.normalized_query,
     summary: enriched.summary,
+    total_results: enriched.total_results,
+    page: enriched.page,
+    page_size: enriched.page_size,
     recommendations: enriched.recommendations,
     suggestions: enriched.suggestions,
     cached: false,

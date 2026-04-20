@@ -148,6 +148,44 @@ function templateResponse(candidates: BusinessRowWithTags[], intent: SearchInten
   };
 }
 
+function topUpRecommendationsToDesiredCount(
+  recommendations: {
+    business_id: string;
+    rank: number;
+    headline: string;
+    explanation: string;
+    highlighted_tags: string[];
+  }[],
+  ranked: BusinessRowWithTags[],
+  desiredCount: number,
+) {
+  const out = [...recommendations]
+    .sort((a, b) => a.rank - b.rank)
+    .filter((rec, idx, arr) => arr.findIndex((r) => r.business_id === rec.business_id) === idx);
+  const seen = new Set(out.map((r) => r.business_id));
+
+  if (out.length >= desiredCount) {
+    return out.slice(0, desiredCount).map((rec, idx) => ({ ...rec, rank: idx + 1 }));
+  }
+
+  for (const candidate of ranked) {
+    if (out.length >= desiredCount) break;
+    if (seen.has(candidate.id)) continue;
+    out.push({
+      business_id: candidate.id,
+      rank: out.length + 1,
+      headline: "Strong local pick",
+      explanation:
+        candidate.ai_summary?.slice(0, 280) ??
+        `${candidate.name ?? "This spot"} is a listed 30A business that matches your search.`,
+      highlighted_tags: candidate.tag_slugs.slice(0, 4),
+    });
+    seen.add(candidate.id);
+  }
+
+  return out.map((rec, idx) => ({ ...rec, rank: idx + 1 }));
+}
+
 export async function fetchActiveBusinessesWithTags(
   supabase: SupabaseClient,
 ): Promise<BusinessRowWithTags[]> {
@@ -210,6 +248,9 @@ export type EnrichedRecommendationPayload = {
   query: string;
   normalized_query: string;
   summary: string;
+  total_results?: number;
+  page?: number;
+  page_size?: number;
   recommendations: Array<{
     business_id: string;
     rank: number;
@@ -256,8 +297,11 @@ export async function buildRecommendationSet(options: {
   priceLevel?: number;
   requiredHasPhysicalLocation?: boolean;
   excludedCategorySlug?: string | null;
+  page?: number;
+  pageSize?: number;
 }): Promise<{
   ranked: BusinessRowWithTags[];
+  totalCount: number;
   enriched: EnrichedRecommendationPayload;
   businessIds: string[];
 }> {
@@ -268,30 +312,36 @@ export async function buildRecommendationSet(options: {
   );
   const rows = await fetchActiveBusinessesWithTags(options.supabase);
   const limit = options.limit ?? 15;
-  let ranked = scoreAndRankCandidates(
-    rows,
+  const excludedCategoryId = options.excludedCategorySlug
+    ? categorySlugToId.get(options.excludedCategorySlug)
+    : undefined;
+
+  const eligibleRows = rows.filter((r) => {
+    if (options.priceLevel && r.price_level !== options.priceLevel) return false;
+    if (
+      typeof options.requiredHasPhysicalLocation === "boolean" &&
+      r.has_physical_location !== options.requiredHasPhysicalLocation
+    ) {
+      return false;
+    }
+    if (excludedCategoryId != null && r.category_id === excludedCategoryId) return false;
+    return true;
+  });
+
+  const rankedAll = scoreAndRankCandidates(
+    eligibleRows,
     options.intent,
     townSlugToId,
     categorySlugToId,
     suppressedIds,
-    limit,
+    Math.max(eligibleRows.length, limit),
     options.locationScope,
   );
-
-  if (options.priceLevel) {
-    ranked = ranked.filter((r) => r.price_level === options.priceLevel);
-  }
-  if (typeof options.requiredHasPhysicalLocation === "boolean") {
-    ranked = ranked.filter(
-      (r) => r.has_physical_location === options.requiredHasPhysicalLocation,
-    );
-  }
-  if (options.excludedCategorySlug) {
-    const excludedCategoryId = categorySlugToId.get(options.excludedCategorySlug);
-    if (excludedCategoryId != null) {
-      ranked = ranked.filter((r) => r.category_id !== excludedCategoryId);
-    }
-  }
+  const page = Math.max(1, options.page ?? 1);
+  const pageSize = Math.max(1, options.pageSize ?? 12);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const ranked = rankedAll.slice(startIndex, endIndex);
 
   const candidateIds = new Set(ranked.map((r) => r.id));
 
@@ -334,13 +384,22 @@ export async function buildRecommendationSet(options: {
     validated = { valid: true, data: empty };
   }
 
+  const desiredCount = Math.min(options.intent.result_count, ranked.length);
+  const finalRecommendations = topUpRecommendationsToDesiredCount(
+    validated.data.recommendations,
+    ranked,
+    desiredCount,
+  );
+
   const byId = new Map(ranked.map((r) => [r.id, r]));
   const enriched: EnrichedRecommendationPayload = {
     query: options.rawQuery,
     normalized_query: options.normalizedQuery,
     summary: validated.data.search_summary,
-    recommendations: validated.data.recommendations
-      .sort((a, b) => a.rank - b.rank)
+    total_results: rankedAll.length,
+    page,
+    page_size: pageSize,
+    recommendations: finalRecommendations
       .map((rec) => {
         const b = byId.get(rec.business_id);
         return {
@@ -376,7 +435,7 @@ export async function buildRecommendationSet(options: {
   };
 
   const businessIds = enriched.recommendations.map((r) => r.business_id);
-  return { ranked, enriched, businessIds };
+  return { ranked, totalCount: rankedAll.length, enriched, businessIds };
 }
 
 /** Parse intent from raw text (OpenAI or keyword fallback). */

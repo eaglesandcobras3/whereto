@@ -26,6 +26,9 @@ export type SearchResultPayload = {
   query_hash: string;
   normalized_query: string;
   summary: string;
+  total_results?: number;
+  page?: number;
+  page_size?: number;
   recommendations: Array<{
     business_id: string;
     rank: number;

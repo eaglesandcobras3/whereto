@@ -700,3 +700,252 @@ body {
 .heart-animate {
   animation: heart-fill 0.35s var(--ease-out);
 }
+
+/* --------------------------------------------------------------------------
+   Editorial Design System
+   Magazine-style components inspired by Condé Nast Traveler
+   -------------------------------------------------------------------------- */
+
+/* Editorial card hover - subtle lift with smooth timing */
+.editorial-card {
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editorial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Image Ken Burns effect - slow zoom on hover */
+.img-editorial {
+  transition: transform 8s ease-out;
+}
+
+.group:hover .img-editorial {
+  transform: scale(1.05);
+}
+
+/* Faster Ken Burns for cards */
+.img-editorial-fast {
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.group:hover .img-editorial-fast {
+  transform: scale(1.03);
+}
+
+/* Fade-in-up animation for staggered reveals */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+/* Staggered animation delays */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+
+/* Editorial typography - tighter tracking for headlines */
+.text-editorial-headline {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+/* Large editorial hero text */
+.text-editorial-hero {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+/* Editorial prose - increased line-height */
+.prose-editorial {
+  line-height: 1.8;
+  font-size: 1.125rem;
+}
+
+/* Editorial badge/chip styling */
+.editorial-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: var(--color-surface-container-high);
+  color: var(--color-text-secondary);
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.editorial-chip:hover {
+  background: var(--color-surface-container-highest);
+  color: var(--color-text-primary);
+}
+
+.editorial-chip-active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.editorial-chip-active:hover {
+  background: var(--color-primary-light);
+  color: white;
+}
+
+/* Discovery chip - editorial prompt style */
+.discovery-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: all var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.discovery-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+}
+
+.discovery-chip-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+}
+
+/* Gradient overlay for editorial cards */
+.editorial-gradient {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.4) 30%,
+    rgba(0, 0, 0, 0) 60%
+  );
+}
+
+/* Scroll indicator animation */
+@keyframes scroll-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+.animate-scroll-bounce {
+  animation: scroll-bounce 2s ease-in-out infinite;
+}
+
+/* Horizontal scroll with snap */
+.editorial-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.editorial-scroll > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Gallery scroll for business details */
+.gallery-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.gallery-scroll > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Pull quote styling for editorial content */
+.pull-quote {
+  position: relative;
+  padding: 1.5rem 2rem;
+  font-size: 1.25rem;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-surface-container-low);
+  border-radius: 0 var(--radius-listing) var(--radius-listing) 0;
+}
+
+/* Horizontal card layout - image left, content right */
+.card-horizontal {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.card-horizontal-image {
+  position: relative;
+  width: 140px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-listing);
+  background: var(--color-surface-secondary);
+}
+
+@media (min-width: 640px) {
+  .card-horizontal-image {
+    width: 180px;
+  }
+}
+
+@media (min-width: 768px) {
+  .card-horizontal-image {
+    width: 200px;
+  }
+}
+
+.card-horizontal-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0;
+}
+
+/* Responsive aspect ratio utilities */
+.aspect-portrait {
+  aspect-ratio: 2/3;
+}
+
+.aspect-editorial {
+  aspect-ratio: 3/4;
+}

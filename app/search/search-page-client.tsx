@@ -9,6 +9,11 @@ import type { SearchResultPayload } from "@/lib/search/types";
 
 const ITEMS_PER_PAGE = 12;
 
+export type DiscoveryTag = {
+  name: string;
+  slug: string;
+};
+
 type Town = {
   name: string;
   slug: string;
@@ -84,6 +89,7 @@ type Props = {
   townName?: string;
   towns?: Town[];
   recentPosts?: RecentPost[];
+  discoveryTags?: DiscoveryTag[];
 };
 
 function shortEventDates(eventDate: string, endDate: string | null): string {
@@ -126,6 +132,7 @@ export function SearchPageClient({
   townName,
   towns = [],
   recentPosts = [],
+  discoveryTags = [],
 }: Props) {
   const isAreasLike = browseMode === "areas" || browseMode === "access";
   const router = useRouter();
@@ -179,13 +186,13 @@ export function SearchPageClient({
           ? browseGuides.length
           : isAreasLike
             ? browseAreas.length
-            : results.recommendations.length;
+            : (results.total_results ?? results.recommendations.length);
 
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
 
-  const paginatedBusiness = results.recommendations.slice(startIndex, endIndex);
+  const paginatedBusiness = results.recommendations;
   const paginatedEvents = browseEvents.slice(startIndex, endIndex);
   const paginatedTowns = browseTowns.slice(startIndex, endIndex);
   const paginatedGuides = browseGuides.slice(startIndex, endIndex);
@@ -225,128 +232,175 @@ export function SearchPageClient({
             ? paginatedAreas.length > 0
             : paginatedBusiness.length > 0;
 
+  // Check if a discovery tag is active in the current query
+  const activeDiscoveryTag = discoveryTags.find(
+    (tag) => q.toLowerCase().includes(tag.name.toLowerCase()) ||
+             initialQuery.toLowerCase().includes(tag.name.toLowerCase())
+  );
+
+  const handleDiscoveryTagClick = (tag: DiscoveryTag) => {
+    const newQuery = tag.name.toLowerCase() + " 30A";
+    setQ(newQuery);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("q", newQuery);
+    params.delete("page");
+    router.push(`/search?${params.toString()}`);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      {/* Editorial search header */}
       {browseMode === "business" ? (
         <div className="sticky top-[var(--site-header-offset)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
-          <div className="mx-auto max-w-5xl px-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="flex-1">
-                <SearchBar
-                  value={q}
-                  onChange={setQ}
-                  onSubmit={handleSearch}
-                  loading={isSearching}
-                  variant="compact"
-                  placeholder="Search anything on 30A…"
-                />
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            {/* Search bar - minimal, centered feel */}
+            <div className="mb-4">
+              <SearchBar
+                value={q}
+                onChange={setQ}
+                onSubmit={handleSearch}
+                loading={isSearching}
+                variant="compact"
+                placeholder="What are you looking for?"
+              />
+            </div>
+
+            {/* Discovery chips - horizontal scroll */}
+            <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
+              {/* Price filter - subtle */}
+              <div className="flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border)] p-0.5">
+                {[1, 2, 3, 4].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => togglePrice(p)}
+                    className={`h-7 w-8 rounded-full text-xs font-medium transition-all ${
+                      activePrice === p.toString()
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                    }`}
+                  >
+                    {"$".repeat(p)}
+                  </button>
+                ))}
               </div>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
-                <div className="flex items-center gap-1 rounded-full bg-[var(--color-surface-secondary)] p-1">
-                  {[1, 2, 3, 4].map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => togglePrice(p)}
-                      className={`h-8 w-10 rounded-full text-xs font-bold transition-all ${
-                        activePrice === p.toString()
-                          ? "bg-[var(--color-primary)] text-white shadow-sm"
-                          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
-                      }`}
-                    >
-                      {"$".repeat(p)}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
+              {/* Divider */}
+              {discoveryTags.length > 0 && (
+                <div className="h-5 w-px shrink-0 bg-[var(--color-border)]" />
+              )}
+
+              {/* Discovery tags as editorial prompts */}
+              {discoveryTags.map((tag) => (
+                <button
+                  key={tag.slug}
+                  type="button"
+                  onClick={() => handleDiscoveryTagClick(tag)}
+                  className={`discovery-chip ${
+                    activeDiscoveryTag?.slug === tag.slug ? "discovery-chip-active" : ""
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              ))}
             </div>
           </div>
         </div>
       ) : null}
 
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-8 lg:flex-row">
-            <div className="flex-1 lg:w-2/3">
+            {/* Main content - wider on desktop */}
+            <div className="flex-1 lg:w-3/4">
+              {/* Editorial heading */}
               <div className="mb-8">
-                <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">
-                  {headingSecondary}
-                  {townName && browseMode === "business" ? (
-                    <span className="text-[var(--color-text-secondary)]"> in {townName}</span>
-                  ) : null}
+                <p className="text-eyebrow mb-2">
+                  {browseMode === "business"
+                    ? (townName ? `Discovering ${townName}` : "Local Favorites")
+                    : browseMode === "events"
+                      ? "Upcoming Events"
+                      : browseMode === "guides"
+                        ? "Editorial Guides"
+                        : "Explore"}
+                </p>
+                <h1 className="text-editorial-headline text-3xl text-[var(--color-text-primary)] sm:text-4xl">
+                  {browseMode === "business"
+                    ? `${totalResults} ${totalResults === 1 ? "favorite" : "favorites"}`
+                    : headingSecondary}
                 </h1>
-                {browseMode !== "business" ? (
-                  <p className="mt-2 text-sm text-[var(--color-text-tertiary)]">
-                    Browsing: <span className="font-medium text-[var(--color-text-secondary)]">{initialQuery}</span>
-                    {townName ? (
-                      <span className="text-[var(--color-text-tertiary)]"> · scoped to {townName}</span>
-                    ) : null}
-                  </p>
-                ) : null}
                 {results.summary ? (
-                  <p className="mt-3 text-base text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
                     {results.summary}
                   </p>
                 ) : null}
               </div>
 
               {hasRows ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {browseMode === "business"
                     ? paginatedBusiness.map((rec) => {
                         const img = rec.business.image_url || rec.business.hero_image_url;
                         return (
                           <article
                             key={rec.business_id}
-                            className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-300 hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-4"
+                            className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
                           >
                             <Link
                               href={`/business/${rec.business.slug}`}
-                              className="flex items-start gap-3 sm:gap-4"
+                              className="card-horizontal"
                             >
-                              <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)] sm:w-32 md:w-36">
+                              {/* Portrait image - left side */}
+                              <div className="card-horizontal-image aspect-portrait">
                                 <RemoteCoverImage
                                   src={img}
                                   alt={rec.business.name}
-                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                  sizes="(max-width: 640px) 96px, (max-width: 1024px) 128px, 144px"
+                                  className="img-editorial-fast object-cover"
+                                  sizes="(max-width: 640px) 140px, 200px"
                                   placeholderIcon="storefront"
                                 />
                               </div>
-                              <div className="flex flex-1 flex-col">
-                                <h2 className="text-base font-semibold tracking-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-lg">
+
+                              {/* Content - right side */}
+                              <div className="card-horizontal-content p-4 sm:p-5">
+                                {/* Meta line */}
+                                <div className="mb-1 flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
+                                  {rec.business.town_name && (
+                                    <span className="font-medium">{rec.business.town_name}</span>
+                                  )}
+                                  {rec.business.price_level && rec.business.town_name && (
+                                    <span>·</span>
+                                  )}
+                                  {rec.business.price_level && (
+                                    <span>{"$".repeat(rec.business.price_level)}</span>
+                                  )}
+                                </div>
+
+                                {/* Title */}
+                                <h2 className="font-headline text-lg font-bold leading-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-xl">
                                   {rec.business.name}
                                 </h2>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                                  {rec.business.price_level ? (
-                                    <span className="font-medium text-[var(--color-text-tertiary)]">
-                                      {"$".repeat(rec.business.price_level)}
-                                    </span>
-                                  ) : null}
-                                  {rec.business.town_name ? (
-                                    <>
-                                      <span className="text-[var(--color-text-tertiary)]">·</span>
-                                      <span>{rec.business.town_name}</span>
-                                    </>
-                                  ) : null}
-                                </div>
-                                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+
+                                {/* Editorial description */}
+                                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:line-clamp-3">
                                   {rec.explanation ||
                                     rec.business.ai_summary ||
                                     "Discover this local gem on 30A."}
                                 </p>
-                                {rec.business.tags && rec.business.tags.length > 0 ? (
-                                  <div className="mt-2 flex flex-wrap gap-1.5">
+
+                                {/* Tags as editorial badges */}
+                                {rec.business.tags && rec.business.tags.length > 0 && (
+                                  <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
                                     {rec.business.tags.slice(0, 3).map((tag) => (
                                       <span
                                         key={tag}
-                                        className="rounded-full bg-[var(--color-surface-secondary)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]"
+                                        className="rounded-full bg-[var(--color-surface-secondary)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
                                       >
                                         {tag}
                                       </span>
                                     ))}
                                   </div>
-                                ) : null}
+                                )}
                               </div>
                             </Link>
                           </article>
