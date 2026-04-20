@@ -32,6 +32,8 @@ This is the markdown-first content source for WhereTo30A.
   /events         # Time-limited events (farmers-market-seaside.md)
 ```
 
+**Towns vs town guides:** `content/towns/*.md` powers `/[townSlug]` and should read like a place snapshot (what the town is, how it feels week to week, who tends to stay there). `content/guides/*.md` with the same slug powers `/guide/[slug]` and should read like visitor advice (what to book, where to eat, beach and parking reality). Keep both files; do not copy the same body between them. Every town slug that exists in the product (including Gulf Place, Prominence, and regions such as Destin or Panama City Beach when enabled) should have **both** files so hub and guide routes stay in sync.
+
 ## Frontmatter Schema
 
 Every markdown file must include frontmatter with required and optional fields.

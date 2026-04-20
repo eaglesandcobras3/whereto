@@ -18,6 +18,8 @@
     "@tailwindcss/typography": "^0.5.19",
     "@vercel/analytics": "^2.0.1",
     "gray-matter": "^4.0.3",
+    "imagesloaded": "^5.0.0",
+    "masonry-layout": "^4.2.2",
     "nanoid": "^5.1.7",
     "next": "16.2.0",
     "openai": "^6.33.0",
@@ -31,6 +33,8 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
+    "@types/imagesloaded": "^4.1.7",
+    "@types/masonry-layout": "^4.2.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -199,27 +199,41 @@ export default async function SearchPage({ searchParams }: Props) {
 
   if (browseMode === "areas" || browseMode === "access") {
     const accessOnly = browseMode === "access";
-    let aq = serviceSupabase
-      .from("areas")
-      .select("id, name, slug, description_short, area_type, town_id, towns(slug, name)")
-      .eq("include_in_site_browse", true)
-      .order("name")
-      .limit(100);
+    const buildAreasQuery = (withBrowseFlag: boolean) => {
+      let aq = serviceSupabase
+        .from("areas")
+        .select("id, name, slug, description_short, area_type, town_id, towns(slug, name)")
+        .order("name")
+        .limit(100);
+      if (withBrowseFlag) {
+        aq = aq.eq("include_in_site_browse", true);
+      } else {
+        // Legacy DB fallback before include_in_site_browse migration exists.
+        aq = aq.neq("slug", "grayton-central");
+      }
+      if (town_id && !Number.isNaN(Number(town_id))) {
+        aq = aq.eq("town_id", Number(town_id));
+      }
+      if (accessOnly) {
+        aq = aq.eq("area_type", "point_of_interest");
+      } else {
+        aq = aq.in("area_type", [...AREA_TYPES_FOR_AREAS_SEARCH]);
+      }
+      const safeA = sanitizeSearchToken(trimmedQ);
+      if (safeA) {
+        aq = aq.or(`name.ilike.%${safeA}%,slug.ilike.%${safeA}%,description_short.ilike.%${safeA}%`);
+      }
+      return aq;
+    };
 
-    if (town_id && !Number.isNaN(Number(town_id))) {
-      aq = aq.eq("town_id", Number(town_id));
-    }
-    if (accessOnly) {
-      aq = aq.eq("area_type", "point_of_interest");
+    let rawAreas: Record<string, unknown>[] | null = null;
+    const first = await buildAreasQuery(true);
+    if (first.error && first.error.message.includes("include_in_site_browse")) {
+      const fallback = await buildAreasQuery(false);
+      rawAreas = (fallback.data as Record<string, unknown>[] | null) ?? [];
     } else {
-      aq = aq.in("area_type", [...AREA_TYPES_FOR_AREAS_SEARCH]);
+      rawAreas = (first.data as Record<string, unknown>[] | null) ?? [];
     }
-    const safeA = sanitizeSearchToken(trimmedQ);
-    if (safeA) {
-      aq = aq.or(`name.ilike.%${safeA}%,slug.ilike.%${safeA}%,description_short.ilike.%${safeA}%`);
-    }
-
-    const { data: rawAreas } = await aq;
     const browseAreas = (rawAreas ?? [])
       .filter((row) => {
         const at = row.area_type as string;

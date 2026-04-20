@@ -71,7 +71,7 @@ map_location:
 
 # Content metadata
 reading_time: 5
-last_updated: 2026-04-12
+last_updated: 2026-04-17
 ---
 
 ## Rosemary Beach Town Center
@@ -113,14 +113,20 @@ It feels most complete at night.
 
 ---
 
-## What You’ll Find
+## What you will find
 
 The Town Center holds most of what you come to Rosemary for.
 
-* Coffee spots like Amavida Coffee Roasters
-* Restaurants that open into the streets and courtyards
-* Boutiques and shops that match the tone of the town
-* Open spaces where people naturally gather
+**Anchors we send people to again and again**
+
+- [[amavida-coffee-rosemary]] for morning coffee
+- [[pescado-rosemary-beach]] for a rooftop-style dinner
+- [[la-crema-rosemary-beach]] for shareable plates and dessert
+- [[edwards-fine-food-and-wine-rosemary-beach]] for a classic reservation night
+- [[havana-beach-bar-and-grill-rosemary-beach]] for a polished beach-town meal
+- [[playa-bowls-rosemary-beach]] for cold bowls after the beach
+
+Smaller boutiques and gift shops rotate with the season. I walk the loop and let something catch me instead of chasing an old list.
 
 It is not about any one place. It is about how they all sit together.
 

@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { nanoid } from "nanoid";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { BusinessPayload } from "@/lib/search/types";
+import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 
 type Rec = {
   business_id: string;
@@ -365,60 +366,7 @@ export function HomePage({
                 </h2>
                 <p className="mt-2 text-zinc-500">Hand-picked highlights of the Emerald Coast.</p>
               </div>
-              <div className="columns-1 gap-8 sm:columns-2 lg:columns-3">
-                {featuredBusinesses.map((b, index) => {
-                  const imageHeightClass =
-                    index % 3 === 0
-                      ? "h-72"
-                      : index % 3 === 1
-                        ? "h-56"
-                        : "h-80";
-                  const copyClampClass = index % 2 === 0 ? "line-clamp-4" : "line-clamp-3";
-                  return (
-                    <div key={b.id} className="mb-8 break-inside-avoid">
-                      <Link
-                        href={`/business/${b.slug}`}
-                        className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-                      >
-                        <div className={`relative ${imageHeightClass}`}>
-                          {b.hero_image_url ? (
-                            <Image
-                              src={b.hero_image_url}
-                              alt={b.name}
-                              fill
-                              unoptimized
-                              className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40">
-                              <div className="flex h-full items-center justify-center">
-                                <MsIcon name="storefront" className="!text-6xl text-primary/40" />
-                              </div>
-                            </div>
-                          )}
-                          {b.badge && (
-                            <div className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-md">
-                              {b.badge}
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-6">
-                          <h3 className="font-headline text-xl font-bold text-zinc-900 transition-colors group-hover:text-primary">
-                            {b.name}
-                          </h3>
-                          <p className={`mt-2 text-sm leading-relaxed text-zinc-600 ${copyClampClass}`}>
-                            {b.featured_description || b.ai_summary || "Explore more about this local favorite."}
-                          </p>
-                          <div className="mt-4 flex items-center text-sm font-bold text-primary">
-                            View details
-                            <MsIcon name="chevron_right" className="!text-lg" />
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
-                  );
-                })}
-              </div>
+              <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
             </div>
           </section>
         )}

@@ -21,7 +21,7 @@ export async function MarkdownRenderer({ content, className = "" }: Props) {
   return (
     <div
       className={`prose prose-zinc max-w-none 
-      prose-headings:font-headline prose-headings:tracking-tight prose-headings:text-[var(--color-text-primary)]
+      prose-headings:font-headline prose-headings:tracking-tight prose-headings:text-[var(--color-text-primary)] prose-headings:normal-case
       prose-p:text-[var(--color-text-secondary)] prose-p:leading-relaxed prose-p:text-lg
       prose-li:text-[var(--color-text-secondary)] prose-li:text-lg
       prose-strong:text-[var(--color-text-primary)] prose-strong:font-bold
@@ -32,9 +32,15 @@ export async function MarkdownRenderer({ content, className = "" }: Props) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          h1: ({ node, ...props }) => <h1 className="text-4xl md:text-5xl font-extrabold mb-8" {...props} />,
-          h2: ({ node, ...props }) => <h2 className="text-3xl font-extrabold mt-16 mb-6" {...props} />,
-          h3: ({ node, ...props }) => <h3 className="text-xl font-bold mt-10 mb-4" {...props} />,
+          h1: ({ node, ...props }) => (
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-8 normal-case" {...props} />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 className="text-3xl font-semibold mt-16 mb-6 normal-case" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-xl font-semibold mt-10 mb-4 normal-case" {...props} />
+          ),
           p: ({ node, ...props }) => <p className="mb-6" {...props} />,
           ul: ({ node, ...props }) => <ul className="list-disc pl-8 mb-8 space-y-3" {...props} />,
           hr: () => <hr className="my-16 border-[var(--color-border-strong)]" />,

@@ -128,7 +128,11 @@ export function scoreAndRankCandidates(
   if (intent.category) {
     const cid = categorySlugToId.get(intent.category);
     if (cid != null) {
-      eligible = eligible.filter((row) => row.category_id === cid);
+      const categoryScoped = eligible.filter((row) => row.category_id === cid);
+      // If ingestion/content has missing category_id values, do not zero out results.
+      if (categoryScoped.length > 0) {
+        eligible = categoryScoped;
+      }
     }
   }
 
