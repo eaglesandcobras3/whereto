@@ -11,6 +11,7 @@ import { getAllFeatureFlags } from "@/lib/feature-flags";
 import Image from "next/image";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
+import { selectBusinessHighlights } from "@/lib/business/highlights";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -33,7 +34,7 @@ async function loadBusiness(slug: string) {
         ai_family_score, ai_date_score, ai_value_score,
         business_tags(tags(name, slug)),
         towns(name, slug),
-        categories(name)
+        categories(name, slug)
       `;
     
     // 1. Fetch Business
@@ -183,20 +184,25 @@ export default async function BusinessPage({ params }: Props) {
   }
 
   const town = b.towns as { name?: string; slug?: string } | null;
-  const category = b.categories as { name?: string } | null;
+  const category = b.categories as { name?: string; slug?: string } | null;
   const hasPhysicalLocation = Boolean(b.has_physical_location);
   const normalizedCategoryName = (category?.name ?? "").trim().toLowerCase();
   const breadcrumbCategoryLabel =
     hasPhysicalLocation && normalizedCategoryName === "services"
-      ? "Businesses"
+      ? "Business"
       : category?.name ?? null;
   const tagRows = b.business_tags as
-    | { tags: { slug?: string } | null }[]
+    | { tags: { slug?: string; name?: string } | null }[]
     | null;
-  const tagSlugs: string[] = [];
+  const tagItems: Array<{ slug?: string | null; name?: string | null }> = [];
   for (const row of tagRows ?? []) {
     const t = row.tags;
-    if (t && typeof t === "object" && "slug" in t && t.slug) tagSlugs.push(t.slug);
+    if (t && typeof t === "object") {
+      tagItems.push({
+        slug: "slug" in t ? (t.slug ?? null) : null,
+        name: "name" in t ? (t.name ?? null) : null,
+      });
+    }
   }
 
   const heroImage = businessListingImageUrl(b.hero_image_url as string | null);
@@ -215,6 +221,13 @@ export default async function BusinessPage({ params }: Props) {
   const oneLiner = b.ai_one_liner as string | null;
   const localTip = b.ai_local_tip as string | null;
   const highlights = b.ai_highlights as string[] | null;
+  const displayHighlights = selectBusinessHighlights({
+    aiHighlights: highlights,
+    tags: tagItems,
+    categoryName: category?.name ?? null,
+    categorySlug: category?.slug ?? null,
+    max: 6,
+  });
   const familyScore = b.ai_family_score as number | null;
   const dateScore = b.ai_date_score as number | null;
   const valueScore = b.ai_value_score as number | null;
@@ -301,7 +314,7 @@ export default async function BusinessPage({ params }: Props) {
                 {category?.name && (
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined !text-base">category</span>
-                    {category.name}
+                    {breadcrumbCategoryLabel ?? category.name}
                   </span>
                 )}
               </div>
@@ -350,11 +363,11 @@ export default async function BusinessPage({ params }: Props) {
               ) : null}
 
               {/* Highlights - clean card */}
-              {highlights?.length ? (
+              {displayHighlights.length ? (
                 <div className="rounded-2xl bg-[var(--color-surface-container-low)] p-6 sm:p-8">
                   <h2 className="font-headline text-xl font-bold text-zinc-900 mb-5">Highlights</h2>
                   <ul className="space-y-3">
-                    {highlights.map((h, i) => (
+                    {displayHighlights.map((h, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <span className="mt-0.5 text-[var(--color-primary)] material-symbols-outlined !text-lg">check_circle</span>
                         <span className="text-zinc-700 leading-relaxed">{h}</span>
