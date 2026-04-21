@@ -1,4 +1,5 @@
 import { upsertContentEntryAction } from "./actions";
+import { OgImageUploadField } from "./og-image-upload-field";
 
 type Entry = {
   id?: string;
@@ -29,7 +30,7 @@ export function ContentEntryForm({ entry }: Props) {
             defaultValue={entry?.content_type ?? "guide"}
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           >
-            {["guide", "town", "page", "event", "seasonal", "business", "area"].map((t) => (
+            {["guide", "town", "page", "event", "seasonal", "business", "service", "area"].map((t) => (
               <option key={t} value={t}>
                 {t}
               </option>
@@ -100,14 +101,7 @@ export function ContentEntryForm({ entry }: Props) {
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
         </div>
-        <div>
-          <label className="block text-xs font-medium uppercase text-zinc-500">OG image URL</label>
-          <input
-            name="og_image_url"
-            defaultValue={entry?.og_image_url ?? ""}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-        </div>
+        <OgImageUploadField defaultValue={entry?.og_image_url ?? ""} />
       </div>
 
       <div>

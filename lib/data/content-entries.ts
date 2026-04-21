@@ -25,6 +25,7 @@ export async function listContentEntries(options?: {
   type?: string;
   status?: "draft" | "published" | "archived";
   limit?: number;
+  offset?: number;
 }) {
   const supabase = getServiceSupabase();
   let q = supabase
@@ -35,9 +36,49 @@ export async function listContentEntries(options?: {
     .order("updated_at", { ascending: false });
   if (options?.type) q = q.eq("content_type", options.type);
   if (options?.status) q = q.eq("status", options.status);
-  if (options?.limit) q = q.limit(options.limit);
+  if (options?.offset && options.offset > 0) {
+    q = q.range(options.offset, options.offset + (options?.limit ?? 200) - 1);
+  } else if (options?.limit) {
+    q = q.limit(options.limit);
+  }
   const { data } = await q;
   return data ?? [];
+}
+
+export async function listContentEntriesPage(options?: {
+  type?: string;
+  status?: "draft" | "published" | "archived";
+  limit?: number;
+  offset?: number;
+}) {
+  const supabase = getServiceSupabase();
+  const limit = options?.limit ?? 25;
+  const offset = options?.offset ?? 0;
+  let q = supabase
+    .from("content_entries")
+    .select(
+      "id, content_type, slug, title, status, published_at, updated_at, seo_title, seo_description",
+      { count: "exact" },
+    )
+    .order("updated_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (options?.type) q = q.eq("content_type", options.type);
+  if (options?.status) q = q.eq("status", options.status);
+  const { data, count } = await q;
+  return { entries: data ?? [], total: count ?? 0 };
+}
+
+export async function listContentEntryTypes(): Promise<string[]> {
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from("content_entries")
+    .select("content_type");
+  const uniq = new Set(
+    (data ?? [])
+      .map((row) => String(row.content_type ?? "").trim())
+      .filter(Boolean),
+  );
+  return Array.from(uniq).sort((a, b) => a.localeCompare(b));
 }
 
 export async function getContentEntryById(id: string): Promise<ContentEntry | null> {

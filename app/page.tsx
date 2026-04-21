@@ -10,13 +10,54 @@ export default async function Home() {
   const heroSettings = await getHomeHeroSettings();
   const supabase = getServiceSupabase();
 
-  // Fetch towns for "Icons of 30A" section (only columns that exist on `towns`;
-  // `hero_image_url` lives on businesses — selecting it here fails the query and returned no towns).
-  const { data: towns } = await supabase
-    .from("towns")
-    .select("name, slug, ai_tagline, ai_description")
-    .order("name")
-    .limit(6);
+  // Fetch towns for the homepage town section; prefer curated town spotlights from featured_content.
+  let towns:
+    | {
+        name: string;
+        slug: string;
+        ai_tagline: string | null;
+        ai_description: string | null;
+      }[]
+    | null = null;
+
+  const { data: featuredTownRows } = await supabase
+    .from("featured_content")
+    .select("reference_id")
+    .eq("content_type", "town")
+    .eq("is_active", true)
+    .order("sort_order")
+    .limit(12);
+
+  const featuredTownIds = (featuredTownRows ?? [])
+    .map((row) => Number(row.reference_id))
+    .filter((id) => Number.isFinite(id));
+
+  if (featuredTownIds.length > 0) {
+    const { data: featuredTowns } = await supabase
+      .from("towns")
+      .select("id, name, slug, ai_tagline, ai_description")
+      .in("id", featuredTownIds);
+
+    const byId = new Map((featuredTowns ?? []).map((t) => [Number(t.id), t]));
+    towns = featuredTownIds
+      .map((id) => byId.get(id))
+      .filter((t): t is NonNullable<typeof t> => Boolean(t))
+      .map((t) => ({
+        name: t.name as string,
+        slug: t.slug as string,
+        ai_tagline: (t.ai_tagline as string | null) ?? null,
+        ai_description: (t.ai_description as string | null) ?? null,
+      }));
+  }
+
+  if (!towns || towns.length === 0) {
+    const { data: fallbackTowns } = await supabase
+      .from("towns")
+      .select("name, slug, ai_tagline, ai_description")
+      .order("name")
+      .limit(6);
+    towns = fallbackTowns ?? [];
+  }
 
   let featuredBusinesses: (BusinessPayload & {
     featured_title?: string | null;

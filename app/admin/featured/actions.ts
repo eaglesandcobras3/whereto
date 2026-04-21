@@ -87,6 +87,46 @@ export async function addFeaturedCategoryAction(formData: FormData) {
   return { success: true };
 }
 
+export async function addFeaturedTownAction(formData: FormData) {
+  await requireAdmin();
+  const townId = formData.get("town_id") as string;
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+
+  if (!townId || !title) {
+    return { error: "Town and title are required" };
+  }
+
+  const supabase = getServiceSupabase();
+
+  const { data: maxRow } = await supabase
+    .from("featured_content")
+    .select("sort_order")
+    .eq("content_type", "town")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextOrder = (maxRow?.sort_order ?? -1) + 1;
+
+  const { error } = await supabase.from("featured_content").insert({
+    content_type: "town",
+    reference_id: townId,
+    title,
+    description: description || null,
+    sort_order: nextOrder,
+    is_active: true,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/featured");
+  revalidatePath("/");
+  return { success: true };
+}
+
 export async function toggleFeaturedAction(id: number, isActive: boolean) {
   await requireAdmin();
   const supabase = getServiceSupabase();

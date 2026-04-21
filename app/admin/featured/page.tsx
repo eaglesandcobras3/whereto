@@ -5,13 +5,14 @@ import {
   FeaturedItemRow,
   AddBusinessForm,
   AddCategoryForm,
+  AddTownForm,
 } from "./FeaturedActions";
 
 export default async function FeaturedAdminPage() {
   await requireAdmin();
   const supabase = getServiceSupabase();
 
-  const [featuredRes, businessesRes, categoriesRes] = await Promise.all([
+  const [featuredRes, businessesRes, categoriesRes, townsRes] = await Promise.all([
     supabase
       .from("featured_content")
       .select("*")
@@ -24,6 +25,7 @@ export default async function FeaturedAdminPage() {
       .order("name")
       .limit(200),
     supabase.from("categories").select("id, name").order("name"),
+    supabase.from("towns").select("id, name").order("name"),
   ]);
 
   const featured = (featuredRes.data ?? []) as {
@@ -42,6 +44,10 @@ export default async function FeaturedAdminPage() {
     name: string;
   }[];
   const categories = (categoriesRes.data ?? []) as {
+    id: number;
+    name: string;
+  }[];
+  const towns = (townsRes.data ?? []) as {
     id: number;
     name: string;
   }[];
@@ -118,6 +124,14 @@ export default async function FeaturedAdminPage() {
           Add Featured Category
         </h2>
         <AddCategoryForm categories={categories} />
+      </div>
+
+      {/* Add Town Spotlight */}
+      <div className="rounded-xl border border-zinc-200 bg-white p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+          Add Town Spotlight
+        </h2>
+        <AddTownForm towns={towns} />
       </div>
 
       {/* Featured Businesses Table */}

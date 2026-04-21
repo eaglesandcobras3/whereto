@@ -107,6 +107,30 @@ function ScoreBadge({ score, label }: { score: number | null; label: string }) {
   );
 }
 
+function highlightIconName(label: string): string {
+  const normalized = label.trim().toLowerCase();
+  const iconMap: Record<string, string> = {
+    family: "family_restroom",
+    "kid-friendly": "child_friendly",
+    "kid friendly": "child_friendly",
+    "pet-friendly": "pets",
+    "pet friendly": "pets",
+    casual: "deck",
+    upscale: "diamond",
+    "outdoor seating": "deck",
+    waterfront: "water",
+    "sunset views": "wb_twilight",
+    "date night": "favorite",
+    "live music": "music_note",
+    "quick bite": "lunch_dining",
+    brunch: "brunch_dining",
+    breakfast: "free_breakfast",
+    dinner: "dinner_dining",
+    groups: "groups",
+  };
+  return iconMap[normalized] ?? "check_circle";
+}
+
 export default async function BusinessPage({ params }: Props) {
   const { slug } = await params;
   const b = await loadBusiness(slug);
@@ -322,6 +346,22 @@ export default async function BusinessPage({ params }: Props) {
                 )}
               </div>
 
+              {displayHighlights.length > 0 ? (
+                <div className="mt-5 rounded-2xl bg-[var(--color-surface-container-low)] p-4 sm:p-5">
+                  <h2 className="font-headline text-lg font-bold text-zinc-900 mb-3">Highlights</h2>
+                  <ul className="grid gap-2 sm:grid-cols-2 sm:gap-x-6">
+                    {displayHighlights.map((h) => (
+                      <li key={h} className="flex items-center gap-2.5 text-zinc-700">
+                        <span className="material-symbols-outlined !text-[18px] text-[var(--color-primary)]">
+                          {highlightIconName(h)}
+                        </span>
+                        <span>{h}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               {oneLiner && (
                 <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
               )}
@@ -362,21 +402,6 @@ export default async function BusinessPage({ params }: Props) {
                 <div>
                   <h2 className="text-eyebrow mb-4">About</h2>
                   <p className="prose-editorial text-zinc-700">{b.ai_summary as string}</p>
-                </div>
-              ) : null}
-
-              {/* Highlights - clean card */}
-              {displayHighlights.length ? (
-                <div className="rounded-2xl bg-[var(--color-surface-container-low)] p-6 sm:p-8">
-                  <h2 className="font-headline text-xl font-bold text-zinc-900 mb-5">Highlights</h2>
-                  <ul className="space-y-3">
-                    {displayHighlights.map((h, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span className="mt-0.5 text-[var(--color-primary)] material-symbols-outlined !text-lg">check_circle</span>
-                        <span className="text-zinc-700 leading-relaxed">{h}</span>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               ) : null}
 

@@ -329,3 +329,70 @@ export function AddCategoryForm({
     </form>
   );
 }
+
+export function AddTownForm({
+  towns,
+}: {
+  towns: { id: number; name: string }[];
+}) {
+  return (
+    <form
+      action={async (formData) => {
+        const { addFeaturedTownAction } = await import("./actions");
+        const result = await addFeaturedTownAction(formData);
+        if (result.error) {
+          alert(result.error);
+        }
+      }}
+      className="space-y-4"
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-zinc-700 mb-1">
+            Town
+          </label>
+          <select
+            name="town_id"
+            required
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          >
+            <option value="">Select a town...</option>
+            {towns.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-zinc-700 mb-1">
+          Headline
+        </label>
+        <input
+          name="title"
+          required
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          placeholder="Town spotlight headline"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-zinc-700 mb-1">
+          Description
+        </label>
+        <textarea
+          name="description"
+          rows={2}
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          placeholder="What this town is known for..."
+        />
+      </div>
+      <button
+        type="submit"
+        className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+      >
+        Add Town Spotlight
+      </button>
+    </form>
+  );
+}

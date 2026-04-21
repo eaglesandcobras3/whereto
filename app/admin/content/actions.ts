@@ -87,6 +87,7 @@ type ParsedFrontmatter = {
   status?: string;
   town?: string;
   area?: string;
+  area_type?: string;
   region?: string;
   tags?: string[];
   guide_type?: string;
@@ -100,6 +101,10 @@ type ParsedFrontmatter = {
   price?: string;
   website?: string;
   address?: string;
+  phone?: string;
+  price_range?: string;
+  category?: string;
+  category_slug?: string;
   latitude?: number;
   longitude?: number;
   map_center?: { lat?: number; lng?: number };
@@ -150,8 +155,8 @@ export async function ingestMarkdownContentAction(
   if (!type || !slug || !title) {
     return { error: "Frontmatter must include `type`, `slug`, and `title`." };
   }
-  if (!["guide", "seasonal", "town", "event"].includes(type)) {
-    return { error: "Supported markdown ingest types are: guide, seasonal, town, event." };
+  if (!["guide", "seasonal", "town", "event", "area", "business", "service"].includes(type)) {
+    return { error: "Supported markdown ingest types are: guide, seasonal, town, event, area, business, service." };
   }
 
   const townSlug = (fm.town ?? "").trim();
@@ -285,6 +290,88 @@ export async function ingestMarkdownContentAction(
     if (eventErr) return { error: `Event upsert failed: ${eventErr.message}` };
   }
 
+  if (type === "area") {
+    const areaTypeRaw = String((fm as Record<string, unknown>).area_type ?? "").trim();
+    const allowedAreaTypes = new Set([
+      "shopping_area",
+      "district",
+      "square",
+      "development",
+      "neighborhood",
+      "point_of_interest",
+    ]);
+    const areaType = allowedAreaTypes.has(areaTypeRaw) ? areaTypeRaw : "neighborhood";
+    const includeInSiteBrowse = (fm.include_in_site_browse ?? true) !== false;
+
+    const basePayload = {
+      name: title,
+      slug,
+      town_id: townId,
+      area_type: areaType,
+      description_short: (fm.seo_description ?? "").trim() || null,
+      latitude_center: lat ?? null,
+      longitude_center: lng ?? null,
+    } as const;
+    const withBrowseFlag = {
+      ...basePayload,
+      include_in_site_browse: includeInSiteBrowse,
+    };
+
+    const first = await supabase.from("areas").upsert(withBrowseFlag, { onConflict: "slug" });
+    if (first.error) {
+      if (first.error.message.includes("include_in_site_browse")) {
+        const retry = await supabase.from("areas").upsert(basePayload, { onConflict: "slug" });
+        if (retry.error) return { error: `Area upsert failed: ${retry.error.message}` };
+      } else {
+        return { error: `Area upsert failed: ${first.error.message}` };
+      }
+    }
+  }
+
+  if (type === "business" || type === "service") {
+    let categoryId: number | null = null;
+
+    // Services default to the services category.
+    if (type === "service") {
+      const { data: serviceCat } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", "services")
+        .maybeSingle();
+      categoryId = (serviceCat?.id as number | undefined) ?? null;
+    } else {
+      const categorySlug = String(fm.category_slug ?? fm.category ?? "").trim();
+      if (categorySlug) {
+        const { data: cat } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("slug", categorySlug)
+          .maybeSingle();
+        categoryId = (cat?.id as number | undefined) ?? null;
+      }
+    }
+
+    const { error: bizErr } = await supabase.from("businesses").upsert(
+      {
+        name: title,
+        slug,
+        status: "active",
+        town_id: townId,
+        category_id: categoryId,
+        address: (fm.address ?? "").trim() || null,
+        phone: (fm.phone ?? "").trim() || null,
+        website: (fm.website ?? "").trim() || null,
+        price_level: fm.price_range ? String(fm.price_range).length : null,
+        lat,
+        lng,
+        ai_summary: (fm.seo_description ?? "").trim() || parsed.content.slice(0, 200) || null,
+        has_physical_location: true,
+      },
+      { onConflict: "slug" },
+    );
+    if (bizErr) return { error: `Business upsert failed: ${bizErr.message}` };
+  }
+
   await supabase.from("content_entries").upsert(
     {
       content_type: type === "seasonal" ? "seasonal" : type,
@@ -306,6 +393,7 @@ export async function ingestMarkdownContentAction(
   revalidatePath(`/guide/${slug}`);
   revalidatePath(`/${slug}`);
   revalidatePath(`/events/${slug}`);
+  revalidatePath(`/areas/${slug}`);
   return { ok: true, slug, type };
 }
 

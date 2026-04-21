@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getSiteSettingsByCategory } from "@/lib/data/site-settings";
 import { updateHomeHeroSettingsAction } from "./actions";
+import { HeroImageUploadField } from "./hero-image-upload-field";
 
 function valAsString(v: unknown, fallback = ""): string {
   return typeof v === "string" ? v : fallback;
@@ -37,15 +38,7 @@ export default async function SiteSettingsPage() {
           Controls the hero image, title, subtitle, and search placeholder.
         </p>
         <form action={updateHomeHeroSettingsAction} className="mt-6 space-y-4">
-          <div>
-            <label className="block text-xs font-medium uppercase text-zinc-500">Hero image URL</label>
-            <input
-              name="hero_image_url"
-              defaultValue={heroImage}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              placeholder="https://..."
-            />
-          </div>
+          <HeroImageUploadField defaultValue={heroImage} />
           <div>
             <label className="block text-xs font-medium uppercase text-zinc-500">Hero title</label>
             <input

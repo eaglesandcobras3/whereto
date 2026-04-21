@@ -3,17 +3,22 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const nav = [
+  const primaryNav = [
     { href: "/admin", label: "Overview" },
     { href: "/admin/site-settings", label: "Site settings" },
     { href: "/admin/content", label: "Content" },
-    { href: "/admin/content-model", label: "Content model" },
-    { href: "/admin/media", label: "Media" },
     { href: "/admin/businesses", label: "Businesses" },
-    { href: "/admin/categories", label: "Categories" },
-    { href: "/admin/jobs", label: "Jobs" },
+    { href: "/admin/featured", label: "Featured" },
     { href: "/admin/feature-flags", label: "Feature flags" },
     { href: "/admin/cache", label: "Cache" },
+  ];
+
+  const opsNav = [
+    { href: "/admin/data-pipeline", label: "Data pipeline" },
+    { href: "/admin/categories", label: "Categories (Ops)" },
+    { href: "/admin/jobs", label: "Jobs (Ops)" },
+    { href: "/admin/media", label: "Media (Utility)" },
+    { href: "/admin/content-model", label: "Content model" },
     { href: "/admin/advanced", label: "Advanced tools" },
   ];
 
@@ -29,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Admin
           </Link>
           <nav className="flex flex-wrap gap-2 text-sm md:gap-3">
-            {nav.map((item) => (
+            {primaryNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -46,6 +51,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             ← Public site
           </Link>
+        </div>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 pb-3 md:px-6">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            Ops
+          </span>
+          {opsNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch={false}
+              className="rounded-md px-2 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-primary)]"
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8 md:px-6">{children}</main>
