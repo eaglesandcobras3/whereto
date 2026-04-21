@@ -204,6 +204,9 @@ export default async function BusinessPage({ params }: Props) {
       });
     }
   }
+  const tagSlugs = tagItems
+    .map((tag) => tag.slug?.trim())
+    .filter((slug): slug is string => Boolean(slug));
 
   const heroImage = businessListingImageUrl(b.hero_image_url as string | null);
   const hasCoords = b.lat != null && b.lng != null;
