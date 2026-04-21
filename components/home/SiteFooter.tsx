@@ -7,8 +7,7 @@ async function getTowns() {
   const { data } = await supabase
     .from("towns")
     .select("name, slug")
-    .order("name")
-    .limit(10);
+    .order("name");
   return data ?? [];
 }
 

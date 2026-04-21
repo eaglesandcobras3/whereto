@@ -649,7 +649,7 @@ export function SearchPageClient({
                   <div>
                     <h3 className="text-eyebrow mb-4">Explore Towns</h3>
                     <ul className="space-y-2">
-                      {towns.slice(0, 8).map((town) => (
+                      {towns.map((town) => (
                         <li key={town.slug}>
                           <Link
                             href={`/${town.slug}`}

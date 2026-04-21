@@ -538,7 +538,7 @@ export function HomePage({
 
               {/* Editorial town grid - larger cards with story feel */}
               <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
-                {towns.slice(0, 8).map((town, index) => (
+                {towns.map((town, index) => (
                   <Link
                     key={town.slug}
                     href={`/${town.slug}`}

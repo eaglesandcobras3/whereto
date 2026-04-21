@@ -248,7 +248,7 @@ export default async function BusinessPage({ params }: Props) {
           />
 
           {/* Editorial Breadcrumb */}
-          <nav className="mb-8 flex items-center gap-2 text-sm">
+          <nav className="mb-6 flex items-center gap-2 text-sm">
             <Link href="/" className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">Home</Link>
             {town?.slug && (
               <>
@@ -264,84 +264,66 @@ export default async function BusinessPage({ params }: Props) {
             )}
           </nav>
 
-          {/* Hero Gallery - Horizontal portrait scroll */}
-          <section className="mb-10">
-            <div className="gallery-scroll scrollbar-thin -mx-4 px-4 sm:-mx-10 sm:px-10">
-              {/* Main hero image - larger */}
-              <div className="group relative aspect-[2/3] w-[280px] shrink-0 overflow-hidden rounded-2xl bg-zinc-100 sm:w-[320px] md:w-[360px]">
-                {heroImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={heroImage}
-                    alt={b.name as string}
-                    className="img-editorial-fast h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-zinc-400">
-                    <span className="material-symbols-outlined !text-5xl" aria-hidden>
-                      storefront
-                    </span>
-                  </div>
+          {/* Article Header - Horizontal layout with thumbnail */}
+          <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start">
+            {/* Hero thumbnail */}
+            <div className="relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40 md:w-48">
+              {heroImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={heroImage}
+                  alt={b.name as string}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-zinc-400">
+                  <span className="material-symbols-outlined !text-4xl" aria-hidden>
+                    storefront
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Title and meta */}
+            <div className="flex-1">
+              <h1 className="text-editorial-headline text-3xl text-zinc-900 sm:text-4xl">
+                {b.name as string}
+              </h1>
+
+              {/* Quick meta row */}
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-zinc-500">
+                {town?.name && (
+                  <Link href={`/${town.slug}`} className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]">
+                    <span className="material-symbols-outlined !text-base">place</span>
+                    {town.name}
+                  </Link>
+                )}
+                {category?.name && (
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined !text-base">category</span>
+                    {category.name}
+                  </span>
                 )}
               </div>
-              {/* Placeholder for additional images - would come from business_images table */}
-              {heroImage && (
-                <>
-                  <div className="relative aspect-[2/3] w-[200px] shrink-0 overflow-hidden rounded-2xl bg-zinc-100 sm:w-[240px]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={heroImage}
-                      alt=""
-                      className="h-full w-full object-cover opacity-90"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                  </div>
-                </>
+
+              {oneLiner && (
+                <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
+              )}
+
+              {/* Score badges inline */}
+              {(familyScore || dateScore || valueScore) && (
+                <div className="mt-4 flex gap-5">
+                  <ScoreBadge score={familyScore} label="Family" />
+                  <ScoreBadge score={dateScore} label="Date Night" />
+                  <ScoreBadge score={valueScore} label="Value" />
+                </div>
               )}
             </div>
-          </section>
-
-          {/* Article Header */}
-          <header className="mb-10 max-w-3xl">
-            <h1 className="text-editorial-headline text-4xl text-zinc-900 sm:text-5xl lg:text-6xl">
-              {b.name as string}
-            </h1>
-            {oneLiner && (
-              <p className="mt-5 text-xl leading-relaxed text-zinc-600 sm:text-2xl">{oneLiner}</p>
-            )}
-
-            {/* Quick meta row */}
-            <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-zinc-500">
-              {town?.name && (
-                <Link href={`/${town.slug}`} className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]">
-                  <span className="material-symbols-outlined !text-base">place</span>
-                  {town.name}
-                </Link>
-              )}
-              {category?.name && (
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined !text-base">category</span>
-                  {category.name}
-                </span>
-              )}
-              {b.address && (
-                <span className="hidden text-zinc-400 sm:block">{b.address as string}</span>
-              )}
-            </div>
-
-            {/* Score badges inline */}
-            {(familyScore || dateScore || valueScore) && (
-              <div className="mt-6 flex gap-6">
-                <ScoreBadge score={familyScore} label="Family" />
-                <ScoreBadge score={dateScore} label="Date Night" />
-                <ScoreBadge score={valueScore} label="Value" />
-              </div>
-            )}
           </header>
 
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)] lg:gap-12">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
-            <div className="space-y-10">
+            <div className="space-y-8">
 
               {hasMarkdown ? <MarkdownRenderer content={cleanedMarkdown} /> : null}
 
@@ -443,8 +425,8 @@ export default async function BusinessPage({ params }: Props) {
               )}
             </div>
 
-            {/* Sidebar — sticky editorial discovery */}
-            <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+            {/* Sidebar */}
+            <aside className="space-y-5">
               {/* Primary CTA */}
               {b.website && (
                 <a
