@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
-import { SearchBar } from "@/components/discovery/SearchBar";
 import type { SearchResultPayload } from "@/lib/search/types";
 
 const ITEMS_PER_PAGE = 12;
@@ -253,18 +252,6 @@ export function SearchPageClient({
       {browseMode === "business" ? (
         <div className="sticky top-[var(--site-header-offset)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            {/* Search bar - minimal, centered feel */}
-            <div className="mb-4">
-              <SearchBar
-                value={q}
-                onChange={setQ}
-                onSubmit={handleSearch}
-                loading={isSearching}
-                variant="compact"
-                placeholder="What are you looking for?"
-              />
-            </div>
-
             {/* Discovery chips - horizontal scroll */}
             <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
               {/* Price filter - subtle */}
@@ -317,7 +304,7 @@ export function SearchPageClient({
               <div className="mb-8">
                 <p className="text-eyebrow mb-2">
                   {browseMode === "business"
-                    ? (townName ? `Discovering ${townName}` : "Local Favorites")
+                    ? (townName ? `Discovering ${townName}` : "Local Businesses")
                     : browseMode === "events"
                       ? "Upcoming Events"
                       : browseMode === "guides"
@@ -326,14 +313,25 @@ export function SearchPageClient({
                 </p>
                 <h1 className="text-editorial-headline text-3xl text-[var(--color-text-primary)] sm:text-4xl">
                   {browseMode === "business"
-                    ? `${totalResults} ${totalResults === 1 ? "favorite" : "favorites"}`
+                    ? `${totalResults} ${totalResults === 1 ? "business" : "businesses"}`
                     : headingSecondary}
                 </h1>
-                {results.summary ? (
+                {(() => {
+                  if (!results.summary) return null;
+                  let summaryText = results.summary;
+                  if (browseMode === "business") {
+                    // Keep the count/wording in sync with header total.
+                    summaryText = summaryText
+                      .replace(/Found\s+\d+\s+local\s+matches/i, `Found ${totalResults} local businesses`)
+                      .replace(/\bfavorites\b/gi, "businesses")
+                      .replace(/\bfavorite\b/gi, "business");
+                  }
+                  return (
                   <p className="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-                    {results.summary}
+                    {summaryText}
                   </p>
-                ) : null}
+                  );
+                })()}
               </div>
 
               {hasRows ? (
@@ -389,18 +387,26 @@ export function SearchPageClient({
                                 </p>
 
                                 {/* Tags as editorial badges */}
-                                {rec.business.tags && rec.business.tags.length > 0 && (
+                                {(() => {
+                                  const highlights = [
+                                    ...(rec.highlighted_tags ?? []),
+                                    ...(rec.business.tags ?? []),
+                                  ];
+                                  const unique = [...new Set(highlights)].slice(0, 3);
+                                  if (unique.length === 0) return null;
+                                  return (
                                   <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
-                                    {rec.business.tags.slice(0, 3).map((tag) => (
+                                    {unique.map((tag) => (
                                       <span
                                         key={tag}
                                         className="rounded-full bg-[var(--color-surface-secondary)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
                                       >
-                                        {tag}
+                                        {tag.replace(/_/g, " ")}
                                       </span>
                                     ))}
                                   </div>
-                                )}
+                                  );
+                                })()}
                               </div>
                             </Link>
                           </article>
@@ -643,7 +649,7 @@ export function SearchPageClient({
 
             {/* Minimal sidebar */}
             <aside className="hidden lg:block lg:w-1/4">
-              <div className="sticky top-32 space-y-6">
+              <div className="space-y-6">
                 {/* Towns - clean list */}
                 {towns.length > 0 && (
                   <div>
