@@ -412,40 +412,39 @@ export function SearchPageClient({
                     ? paginatedEvents.map((ev) => (
                         <article
                           key={ev.id}
-                          className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-300 hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-4"
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
                         >
                           <Link
                             href={`/events/${ev.slug}`}
-                            className="flex items-start gap-3 sm:gap-4"
+                            className="card-horizontal"
                           >
-                            <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)] sm:w-32 md:w-36">
+                            <div className="card-horizontal-image aspect-portrait">
                               <RemoteCoverImage
                                 src={ev.hero_image_url}
                                 alt=""
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="(max-width: 640px) 96px, (max-width: 1024px) 128px, 144px"
+                                className="img-editorial-fast object-cover"
+                                sizes="(max-width: 640px) 140px, 200px"
                                 placeholderIcon="event"
                               />
                             </div>
-                            <div className="flex flex-1 flex-col">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+                            <div className="card-horizontal-content p-4 sm:p-5">
+                              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
                                 {formatEventBrowseWhen(ev)}
                               </p>
-                              <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+                              <h2 className="font-headline text-lg font-bold leading-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-xl">
                                 {ev.title}
                               </h2>
-                              <div className="mt-1 flex flex-wrap gap-2 text-sm text-[var(--color-text-secondary)]">
-                                {ev.town_name ? <span>{ev.town_name}</span> : null}
-                                {ev.venue_name ? <span>{ev.venue_name}</span> : null}
-                                {ev.price ? (
-                                  <span className="font-medium text-[var(--color-text-primary)]">{ev.price}</span>
-                                ) : null}
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
+                                {ev.town_name && <span>{ev.town_name}</span>}
+                                {ev.venue_name && ev.town_name && <span>·</span>}
+                                {ev.venue_name && <span>{ev.venue_name}</span>}
+                                {ev.price && <span className="font-medium text-[var(--color-text-secondary)]">{ev.price}</span>}
                               </div>
-                              {ev.description ? (
-                                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                              {ev.description && (
+                                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:line-clamp-3">
                                   {ev.description}
                                 </p>
-                              ) : null}
+                              )}
                             </div>
                           </Link>
                         </article>
@@ -534,23 +533,26 @@ export function SearchPageClient({
                     ? paginatedGuides.map((g) => (
                         <article
                           key={g.slug}
-                          className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all duration-300 hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-4"
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
                         >
-                          <Link href={`/guide/${g.slug}`} className="flex items-start gap-3 sm:gap-4">
-                            <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)] sm:w-32 md:w-36">
+                          <Link href={`/guide/${g.slug}`} className="card-horizontal">
+                            <div className="card-horizontal-image aspect-portrait">
                               <RemoteCoverImage
                                 src={g.og_image_url}
                                 alt=""
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="(max-width: 640px) 96px, (max-width: 1024px) 128px, 144px"
+                                className="img-editorial-fast object-cover"
+                                sizes="(max-width: 640px) 140px, 200px"
                                 placeholderIcon="menu_book"
                               />
                             </div>
-                            <div className="flex flex-1 flex-col">
-                              <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+                            <div className="card-horizontal-content p-4 sm:p-5">
+                              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+                                Guide
+                              </p>
+                              <h2 className="font-headline text-lg font-bold leading-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-xl">
                                 {g.title}
                               </h2>
-                              <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:line-clamp-3">
                                 {g.excerpt || g.seo_description || "Local guide to 30A towns, favorites, and trip ideas."}
                               </p>
                             </div>
@@ -639,57 +641,49 @@ export function SearchPageClient({
               ) : null}
             </div>
 
-            <aside className="lg:w-1/3">
-              <div className="sticky top-32 space-y-8">
-                {recentPosts.length > 0 ? (
-                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                      Recent Posts
-                    </h3>
-                    <ul className="mt-4 space-y-4">
-                      {recentPosts.map((post) => (
-                        <li key={post.id}>
-                          <Link href={`/business/${post.slug}`} className="group flex items-center gap-3">
-                            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[var(--color-surface-secondary)]">
-                              <RemoteCoverImage
-                                src={post.hero_image_url}
-                                alt={post.name}
-                                className="object-cover"
-                                sizes="48px"
-                                placeholderIcon="storefront"
-                                iconSize="sm"
-                              />
-                            </div>
-                            <span className="line-clamp-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
-                              {post.name}
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {towns.length > 0 ? (
-                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                      Explore Towns
-                    </h3>
-                    <ul className="mt-4 space-y-2">
-                      {towns.map((town) => (
+            {/* Minimal sidebar */}
+            <aside className="hidden lg:block lg:w-1/4">
+              <div className="sticky top-32 space-y-6">
+                {/* Towns - clean list */}
+                {towns.length > 0 && (
+                  <div>
+                    <h3 className="text-eyebrow mb-4">Explore Towns</h3>
+                    <ul className="space-y-2">
+                      {towns.slice(0, 8).map((town) => (
                         <li key={town.slug}>
                           <Link
                             href={`/${town.slug}`}
-                            className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                           >
-                            <span className="material-symbols-outlined text-base">location_on</span>
+                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                              place
+                            </span>
                             {town.name}
                           </Link>
                         </li>
                       ))}
                     </ul>
                   </div>
-                ) : null}
+                )}
+
+                {/* Recent discoveries - minimal */}
+                {recentPosts.length > 0 && (
+                  <div className="border-t border-[var(--color-border)] pt-6">
+                    <h3 className="text-eyebrow mb-4">Recently Added</h3>
+                    <ul className="space-y-3">
+                      {recentPosts.slice(0, 4).map((post) => (
+                        <li key={post.id}>
+                          <Link
+                            href={`/business/${post.slug}`}
+                            className="group block text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-primary)]"
+                          >
+                            {post.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </aside>
           </div>

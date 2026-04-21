@@ -247,71 +247,97 @@ export default async function BusinessPage({ params }: Props) {
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
           />
 
-          {/* Breadcrumb */}
-          <nav className="mb-6 flex items-center gap-2 text-sm text-zinc-500">
-            <Link href="/" className="hover:text-teal-700">Home</Link>
+          {/* Editorial Breadcrumb */}
+          <nav className="mb-8 flex items-center gap-2 text-sm">
+            <Link href="/" className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">Home</Link>
             {town?.slug && (
               <>
-                <span className="mx-1 text-zinc-300">/</span>
-                <Link href={`/${town.slug}`} className="hover:text-teal-700">{town.name}</Link>
+                <span className="text-zinc-300">/</span>
+                <Link href={`/${town.slug}`} className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">{town.name}</Link>
               </>
             )}
             {breadcrumbCategoryLabel && (
               <>
-                <span className="mx-1 text-zinc-300">/</span>
-                <span className="text-zinc-400">{breadcrumbCategoryLabel}</span>
+                <span className="text-zinc-300">/</span>
+                <span className="text-zinc-500">{breadcrumbCategoryLabel}</span>
               </>
             )}
           </nav>
 
-          {/* Intro section: portrait media + headline card */}
-          <section className="mb-12 grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-stretch">
-            <div className="overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-100 shadow-premium-sm">
-              {heroImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={heroImage}
-                  alt={b.name as string}
-                  className="aspect-[2/3] h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex aspect-[2/3] items-center justify-center text-zinc-400">
-                  <span className="material-symbols-outlined !text-4xl" aria-hidden>
-                    storefront
-                  </span>
-                </div>
+          {/* Hero Gallery - Horizontal portrait scroll */}
+          <section className="mb-10">
+            <div className="gallery-scroll scrollbar-thin -mx-4 px-4 sm:-mx-10 sm:px-10">
+              {/* Main hero image - larger */}
+              <div className="group relative aspect-[2/3] w-[280px] shrink-0 overflow-hidden rounded-2xl bg-zinc-100 sm:w-[320px] md:w-[360px]">
+                {heroImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={heroImage}
+                    alt={b.name as string}
+                    className="img-editorial-fast h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-zinc-400">
+                    <span className="material-symbols-outlined !text-5xl" aria-hidden>
+                      storefront
+                    </span>
+                  </div>
+                )}
+              </div>
+              {/* Placeholder for additional images - would come from business_images table */}
+              {heroImage && (
+                <>
+                  <div className="relative aspect-[2/3] w-[200px] shrink-0 overflow-hidden rounded-2xl bg-zinc-100 sm:w-[240px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={heroImage}
+                      alt=""
+                      className="h-full w-full object-cover opacity-90"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+
+          {/* Article Header */}
+          <header className="mb-10 max-w-3xl">
+            <h1 className="text-editorial-headline text-4xl text-zinc-900 sm:text-5xl lg:text-6xl">
+              {b.name as string}
+            </h1>
+            {oneLiner && (
+              <p className="mt-5 text-xl leading-relaxed text-zinc-600 sm:text-2xl">{oneLiner}</p>
+            )}
+
+            {/* Quick meta row */}
+            <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-zinc-500">
+              {town?.name && (
+                <Link href={`/${town.slug}`} className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]">
+                  <span className="material-symbols-outlined !text-base">place</span>
+                  {town.name}
+                </Link>
+              )}
+              {category?.name && (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined !text-base">category</span>
+                  {category.name}
+                </span>
+              )}
+              {b.address && (
+                <span className="hidden text-zinc-400 sm:block">{b.address as string}</span>
               )}
             </div>
 
-            <header className="rounded-[1.5rem] border border-zinc-200 bg-white p-6 shadow-premium-sm sm:p-8 lg:p-10">
-              <h1 className="font-headline text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl">
-                {b.name as string}
-              </h1>
-              {oneLiner && (
-                <p className="mt-4 text-xl font-medium leading-snug text-zinc-700">{oneLiner}</p>
-              )}
-              {b.address && (
-                <p className="mt-5 flex items-start gap-2 text-zinc-600">
-                  <span
-                    className="material-symbols-outlined mt-0.5 !text-base text-zinc-400"
-                    aria-hidden
-                  >
-                    place
-                  </span>
-                  <span>{b.address as string}</span>
-                </p>
-              )}
-              {(familyScore || dateScore || valueScore) && (
-                <div className="mt-8 border-t border-zinc-100 pt-6">
-                  <div className="flex gap-8">
-                    <ScoreBadge score={familyScore} label="Family" />
-                    <ScoreBadge score={dateScore} label="Date Night" />
-                    <ScoreBadge score={valueScore} label="Value" />
-                  </div>
-                </div>
-              )}
-            </header>
-          </section>
+            {/* Score badges inline */}
+            {(familyScore || dateScore || valueScore) && (
+              <div className="mt-6 flex gap-6">
+                <ScoreBadge score={familyScore} label="Family" />
+                <ScoreBadge score={dateScore} label="Date Night" />
+                <ScoreBadge score={valueScore} label="Value" />
+              </div>
+            )}
+          </header>
 
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)] lg:gap-12">
             {/* Main Content */}
@@ -319,13 +345,13 @@ export default async function BusinessPage({ params }: Props) {
 
               {hasMarkdown ? <MarkdownRenderer content={cleanedMarkdown} /> : null}
 
-              {/* Vibe Tags */}
+              {/* Vibe Tags - Editorial badges */}
               {vibe?.length ? (
                 <div>
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">Vibe</h2>
+                  <h2 className="text-eyebrow mb-4">The Vibe</h2>
                   <div className="flex flex-wrap gap-2">
                     {vibe.map((v) => (
-                      <span key={v} className="rounded-full bg-teal-50 px-4 py-1.5 text-sm font-semibold text-teal-700 border border-teal-100">
+                      <span key={v} className="editorial-chip">
                         {v}
                       </span>
                     ))}
@@ -333,49 +359,48 @@ export default async function BusinessPage({ params }: Props) {
                 </div>
               ) : null}
 
+              {/* About - prose style */}
               {!hasMarkdown && b.ai_summary ? (
                 <div>
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">About</h2>
-                  <p className="text-lg leading-relaxed text-zinc-700">{b.ai_summary as string}</p>
+                  <h2 className="text-eyebrow mb-4">About</h2>
+                  <p className="prose-editorial text-zinc-700">{b.ai_summary as string}</p>
                 </div>
               ) : null}
 
-              {/* Highlights */}
+              {/* Highlights - clean card */}
               {highlights?.length ? (
-                <div className="rounded-2xl bg-zinc-50 p-8 border border-zinc-100">
-                  <h2 className="font-headline text-2xl font-bold text-zinc-900 mb-6">Highlights</h2>
-                  <ul className="space-y-4">
+                <div className="rounded-2xl bg-[var(--color-surface-container-low)] p-6 sm:p-8">
+                  <h2 className="font-headline text-xl font-bold text-zinc-900 mb-5">Highlights</h2>
+                  <ul className="space-y-3">
                     {highlights.map((h, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <span className="mt-1 text-teal-600 material-symbols-outlined !text-lg">auto_awesome</span>
-                        <span className="text-zinc-700 text-lg leading-snug">{h}</span>
+                        <span className="mt-0.5 text-[var(--color-primary)] material-symbols-outlined !text-lg">check_circle</span>
+                        <span className="text-zinc-700 leading-relaxed">{h}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               ) : null}
 
-              {/* Local Tip */}
+              {/* Local Tip - Pull quote style */}
               {localTip && (
-                <div className="rounded-2xl bg-amber-50 border border-amber-200 p-8">
-                  <h2 className="flex items-center gap-2 font-headline text-xl font-bold text-amber-900 mb-3">
-                    <span className="material-symbols-outlined text-amber-600">tips_and_updates</span>
-                    Local Tip
-                  </h2>
-                  <p className="text-lg text-amber-900 leading-relaxed">{localTip}</p>
+                <div className="pull-quote">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[var(--color-primary)]">Local Tip</p>
+                  <p className="text-lg leading-relaxed">{localTip}</p>
                 </div>
               )}
 
-              {/* Good For / Not Ideal For */}
+              {/* Good For / Skip If - Two column layout */}
               {(goodFor?.length || notIdealFor?.length) ? (
-                <div className="grid gap-10 sm:grid-cols-2">
+                <div className="grid gap-8 sm:grid-cols-2">
                   {goodFor?.length ? (
                     <div>
-                      <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">Great For</h2>
-                      <ul className="space-y-3">
+                      <h2 className="text-eyebrow mb-4">Great For</h2>
+                      <ul className="space-y-2.5">
                         {goodFor.map((g) => (
-                          <li key={g} className="flex items-center gap-2.5 text-zinc-700 text-lg">
-                            <span className="text-green-600 material-symbols-outlined !text-lg">check_circle</span> {g}
+                          <li key={g} className="flex items-center gap-2.5 text-zinc-700">
+                            <span className="text-green-600 material-symbols-outlined !text-base">check_circle</span>
+                            <span>{g}</span>
                           </li>
                         ))}
                       </ul>
@@ -383,11 +408,12 @@ export default async function BusinessPage({ params }: Props) {
                   ) : null}
                   {notIdealFor?.length ? (
                     <div>
-                      <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">Skip If</h2>
-                      <ul className="space-y-3">
+                      <h2 className="text-eyebrow mb-4">Skip If</h2>
+                      <ul className="space-y-2.5">
                         {notIdealFor.map((n) => (
-                          <li key={n} className="flex items-center gap-2.5 text-zinc-500 text-lg">
-                            <span className="text-zinc-300 material-symbols-outlined !text-lg">cancel</span> {n}
+                          <li key={n} className="flex items-center gap-2.5 text-zinc-500">
+                            <span className="text-zinc-300 material-symbols-outlined !text-base">remove_circle</span>
+                            <span>{n}</span>
                           </li>
                         ))}
                       </ul>
@@ -396,10 +422,10 @@ export default async function BusinessPage({ params }: Props) {
                 </div>
               ) : null}
 
-              {/* Tags */}
+              {/* Tags - linked for SEO */}
               {tagSlugs.length > 0 && (
                 <div>
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">Tags</h2>
+                  <h2 className="text-eyebrow mb-4">Tags</h2>
                   <TagPills tags={tagSlugs} />
                 </div>
               )}
@@ -417,109 +443,125 @@ export default async function BusinessPage({ params }: Props) {
               )}
             </div>
 
-            {/* Sidebar — blog-style discovery, not a map */}
-            <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            {/* Sidebar — sticky editorial discovery */}
+            <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+              {/* Primary CTA */}
               {b.website && (
-                <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-premium-sm">
-                  <a
-                    href={b.website as string}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="mb-1 text-xs font-bold uppercase tracking-widest text-zinc-400">Official site</p>
-                      <p className="max-w-[200px] truncate font-bold text-zinc-900">Visit website</p>
-                    </div>
-                    <span className="material-symbols-outlined text-zinc-300 transition-all group-hover:translate-x-1 group-hover:text-teal-600">
-                      arrow_forward
-                    </span>
-                  </a>
-                </div>
+                <a
+                  href={b.website as string}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-4 font-semibold text-white transition-all hover:bg-[var(--color-primary-light)]"
+                >
+                  Visit Website
+                  <span className="material-symbols-outlined !text-lg transition-transform group-hover:translate-x-1">
+                    arrow_forward
+                  </span>
+                </a>
               )}
 
+              {/* At a Glance card */}
               {(reservations || parking || waitTime || noiseLevel || bestTime?.length || crowd?.length) ? (
-                <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-premium-sm">
-                  <h2 className="font-headline text-lg font-bold text-zinc-900">Know before you go</h2>
-                  <div className="space-y-3 text-sm">
-                    {reservations ? (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Reservations</span>
-                        <p className="font-medium capitalize text-zinc-700">{reservations}</p>
+                <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                  <h2 className="font-headline text-base font-bold text-zinc-900 mb-4">At a Glance</h2>
+                  <dl className="space-y-3 text-sm">
+                    {reservations && (
+                      <div className="flex items-start justify-between gap-4">
+                        <dt className="flex items-center gap-2 text-zinc-500">
+                          <span className="material-symbols-outlined !text-base">event_available</span>
+                          Reservations
+                        </dt>
+                        <dd className="font-medium capitalize text-zinc-900">{reservations}</dd>
                       </div>
-                    ) : null}
-                    {waitTime ? (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Wait time</span>
-                        <p className="font-medium text-zinc-700">{waitTime}</p>
+                    )}
+                    {waitTime && (
+                      <div className="flex items-start justify-between gap-4">
+                        <dt className="flex items-center gap-2 text-zinc-500">
+                          <span className="material-symbols-outlined !text-base">schedule</span>
+                          Wait time
+                        </dt>
+                        <dd className="font-medium text-zinc-900">{waitTime}</dd>
                       </div>
-                    ) : null}
-                    {parking ? (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Parking</span>
-                        <p className="font-medium capitalize text-zinc-700">{parking}</p>
+                    )}
+                    {parking && (
+                      <div className="flex items-start justify-between gap-4">
+                        <dt className="flex items-center gap-2 text-zinc-500">
+                          <span className="material-symbols-outlined !text-base">local_parking</span>
+                          Parking
+                        </dt>
+                        <dd className="font-medium capitalize text-zinc-900">{parking}</dd>
                       </div>
-                    ) : null}
-                    {noiseLevel ? (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Noise</span>
-                        <p className="font-medium capitalize text-zinc-700">{noiseLevel}</p>
+                    )}
+                    {noiseLevel && (
+                      <div className="flex items-start justify-between gap-4">
+                        <dt className="flex items-center gap-2 text-zinc-500">
+                          <span className="material-symbols-outlined !text-base">volume_up</span>
+                          Noise
+                        </dt>
+                        <dd className="font-medium capitalize text-zinc-900">{noiseLevel}</dd>
                       </div>
-                    ) : null}
+                    )}
                     {bestTime?.length ? (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Best time</span>
-                        <p className="font-medium text-zinc-700">{bestTime.join(", ")}</p>
+                      <div className="flex items-start justify-between gap-4">
+                        <dt className="flex items-center gap-2 text-zinc-500">
+                          <span className="material-symbols-outlined !text-base">wb_twilight</span>
+                          Best time
+                        </dt>
+                        <dd className="font-medium text-right text-zinc-900">{bestTime.join(", ")}</dd>
                       </div>
                     ) : null}
                     {crowd?.length ? (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Crowd</span>
-                        <p className="font-medium text-zinc-700">{crowd.join(", ")}</p>
+                      <div className="flex items-start justify-between gap-4">
+                        <dt className="flex items-center gap-2 text-zinc-500">
+                          <span className="material-symbols-outlined !text-base">groups</span>
+                          Crowd
+                        </dt>
+                        <dd className="font-medium text-right text-zinc-900">{crowd.join(", ")}</dd>
                       </div>
                     ) : null}
-                  </div>
+                  </dl>
                 </div>
               ) : null}
 
-              {relatedBusinesses.length > 0 ? (
+              {/* Related businesses - horizontal card style */}
+              {relatedBusinesses.length > 0 && (
                 <section>
-                  <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-zinc-400">
+                  <h2 className="text-eyebrow mb-4">
                     {town?.name ? `More in ${town.name}` : "More nearby"}
                   </h2>
-                  <ul className="space-y-5">
+                  <ul className="space-y-3">
                     {relatedBusinesses.map((rb) => {
                       const thumb = businessListingImageUrl(rb.hero_image_url);
                       const blurb =
                         (rb.ai_one_liner && rb.ai_one_liner.trim()) ||
-                        (rb.ai_summary && rb.ai_summary.slice(0, 140).trim()) ||
+                        (rb.ai_summary && rb.ai_summary.slice(0, 100).trim()) ||
                         null;
                       return (
                         <li key={rb.id}>
                           <Link
                             href={`/business/${rb.slug}`}
-                            className="group flex gap-3 rounded-xl border border-transparent p-1 transition-colors hover:border-zinc-200 hover:bg-zinc-50/80"
+                            className="group flex gap-3 rounded-xl p-1 transition-colors hover:bg-[var(--color-surface-container-low)]"
                           >
                             {thumb ? (
                               <Image
                                 src={thumb}
                                 alt={rb.name}
-                                width={72}
-                                height={108}
-                                className="h-[6.75rem] w-[4.5rem] shrink-0 rounded-lg object-cover"
+                                width={64}
+                                height={96}
+                                className="aspect-[2/3] w-16 shrink-0 rounded-lg object-cover"
                               />
                             ) : (
-                              <div className="flex h-[6.75rem] w-[4.5rem] shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400">
-                                <span className="material-symbols-outlined !text-2xl">storefront</span>
+                              <div className="flex aspect-[2/3] w-16 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400">
+                                <span className="material-symbols-outlined !text-xl">storefront</span>
                               </div>
                             )}
-                            <div className="min-w-0 flex-1">
-                              <p className="font-headline font-bold leading-snug text-zinc-900 group-hover:text-teal-800">
+                            <div className="min-w-0 flex-1 py-1">
+                              <p className="font-headline text-sm font-bold leading-snug text-zinc-900 transition-colors group-hover:text-[var(--color-primary)]">
                                 {rb.name}
                               </p>
-                              {blurb ? (
-                                <p className="mt-1 line-clamp-2 text-sm leading-snug text-zinc-600">{blurb}</p>
-                              ) : null}
+                              {blurb && (
+                                <p className="mt-1 line-clamp-2 text-xs leading-snug text-zinc-500">{blurb}</p>
+                              )}
                             </div>
                           </Link>
                         </li>
@@ -527,37 +569,28 @@ export default async function BusinessPage({ params }: Props) {
                     })}
                   </ul>
                 </section>
-              ) : null}
+              )}
 
-              {townGuides.length > 0 ? (
-                <section>
-                  <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-zinc-400">Guides &amp; stories</h2>
-                  <ul className="space-y-6">
-                    {townGuides.map((g) => (
+              {/* Town guides */}
+              {townGuides.length > 0 && (
+                <section className="border-t border-[var(--color-border)] pt-6">
+                  <h2 className="text-eyebrow mb-4">Guides &amp; Stories</h2>
+                  <ul className="space-y-4">
+                    {townGuides.slice(0, 3).map((g) => (
                       <li key={g.slug}>
                         <Link href={`/guide/${g.slug}`} className="group block">
-                          {g.og_image_url?.startsWith("http") ? (
-                            <div className="mb-3 overflow-hidden rounded-xl border border-zinc-100">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={g.og_image_url}
-                                alt=""
-                                className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                              />
-                            </div>
-                          ) : null}
-                          <p className="font-headline text-base font-bold leading-snug text-zinc-900 group-hover:text-teal-800">
+                          <p className="font-headline text-sm font-bold leading-snug text-zinc-900 transition-colors group-hover:text-[var(--color-primary)]">
                             {g.title}
                           </p>
-                          {g.excerpt ? (
-                            <p className="mt-1 line-clamp-2 text-sm text-zinc-600">{g.excerpt}</p>
-                          ) : null}
+                          {g.excerpt && (
+                            <p className="mt-1 line-clamp-2 text-xs text-zinc-500">{g.excerpt}</p>
+                          )}
                         </Link>
                       </li>
                     ))}
                   </ul>
                 </section>
-              ) : null}
+              )}
             </aside>
           </div>
         </div>
