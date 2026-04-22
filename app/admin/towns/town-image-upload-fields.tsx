@@ -15,13 +15,20 @@ type UploadResponse = {
 export function TownImageUploadFields({ defaultThumbUrl, defaultWideUrl }: Props) {
   const [thumbUrl, setThumbUrl] = useState(defaultThumbUrl ?? "");
   const [wideUrl, setWideUrl] = useState(defaultWideUrl ?? "");
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [wideFile, setWideFile] = useState<File | null>(null);
   const [uploadingKey, setUploadingKey] = useState<"thumb" | "wide" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   async function upload(file: File | null, kind: "thumb" | "wide") {
-    if (!file) return;
+    if (!file) {
+      setError(`Choose a ${kind} file first.`);
+      return;
+    }
     setUploadingKey(kind);
     setError(null);
+    setMessage(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
@@ -38,6 +45,7 @@ export function TownImageUploadFields({ defaultThumbUrl, defaultWideUrl }: Props
       }
       if (kind === "thumb") setThumbUrl(json.url);
       else setWideUrl(json.url);
+      setMessage(`${kind === "thumb" ? "Thumbnail" : "Wide hero"} image uploaded and applied.`);
     } catch {
       setError("Upload failed.");
     } finally {
@@ -58,16 +66,21 @@ export function TownImageUploadFields({ defaultThumbUrl, defaultWideUrl }: Props
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             placeholder="https://..."
           />
-          <label className="inline-flex cursor-pointer items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            disabled={uploadingKey != null}
+            onChange={(e) => setThumbFile(e.target.files?.[0] ?? null)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            disabled={uploadingKey != null}
+            onClick={() => upload(thumbFile, "thumb")}
+            className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
             {uploadingKey === "thumb" ? "Processing..." : "Upload + Process Thumb"}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/avif"
-              className="hidden"
-              disabled={uploadingKey != null}
-              onChange={(e) => upload(e.target.files?.[0] ?? null, "thumb")}
-            />
-          </label>
+          </button>
           {thumbUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={thumbUrl} alt="Town thumb preview" className="h-28 w-full rounded-lg object-cover" />
@@ -83,22 +96,28 @@ export function TownImageUploadFields({ defaultThumbUrl, defaultWideUrl }: Props
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             placeholder="https://..."
           />
-          <label className="inline-flex cursor-pointer items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            disabled={uploadingKey != null}
+            onChange={(e) => setWideFile(e.target.files?.[0] ?? null)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            disabled={uploadingKey != null}
+            onClick={() => upload(wideFile, "wide")}
+            className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
             {uploadingKey === "wide" ? "Processing..." : "Upload + Process Wide"}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/avif"
-              className="hidden"
-              disabled={uploadingKey != null}
-              onChange={(e) => upload(e.target.files?.[0] ?? null, "wide")}
-            />
-          </label>
+          </button>
           {wideUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={wideUrl} alt="Town wide preview" className="h-28 w-full rounded-lg object-cover" />
           ) : null}
         </div>
       </div>
+      {message ? <p className="text-xs text-emerald-700">{message}</p> : null}
       {error ? <p className="text-xs text-red-700">{error}</p> : null}
     </div>
   );
