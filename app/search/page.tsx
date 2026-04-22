@@ -347,8 +347,6 @@ export default async function SearchPage({ searchParams }: Props) {
     priceLevel: price ? parseInt(price, 10) : undefined,
     page: currentPage,
     pageSize: 12,
-    forcedCategorySlug: type === "services" ? "services" : undefined,
-    excludedCategorySlug: type === "businesses" ? "services" : undefined,
     requiredHasPhysicalLocation:
       type === "services" ? false : type === "businesses" ? true : undefined,
   });

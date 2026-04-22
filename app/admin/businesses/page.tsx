@@ -10,10 +10,10 @@ const PAGE_SIZE = 50;
 export default async function AdminBusinessesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category_id?: string; town_id?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; category_id?: string; town_id?: string; service?: string; page?: string }>;
 }) {
   await requireAdmin();
-  const { q, category_id, town_id, page } = await searchParams;
+  const { q, category_id, town_id, service, page } = await searchParams;
   const flags = await getAllFeatureFlags();
   const supabase = getServiceSupabase();
   
@@ -37,6 +37,11 @@ export default async function AdminBusinessesPage({
   if (town_id) {
     query = query.eq("town_id", Number(town_id));
   }
+  if (service === "1") {
+    query = query.eq("has_physical_location", false);
+  } else if (service === "0") {
+    query = query.eq("has_physical_location", true);
+  }
 
   const { data: rows, error, count } = await query;
   if (error) {
@@ -54,6 +59,7 @@ export default async function AdminBusinessesPage({
     if (q) params.set("q", q);
     if (category_id) params.set("category_id", category_id);
     if (town_id) params.set("town_id", town_id);
+    if (service) params.set("service", service);
     params.set("page", String(p));
     return `/admin/businesses?${params.toString()}`;
   };
@@ -66,7 +72,7 @@ export default async function AdminBusinessesPage({
           <p className="text-sm text-zinc-600">
             {totalCount} total results found.
           </p>
-          {(category_id || town_id || term) && (
+          {(category_id || town_id || term || service) && (
             <Link href="/admin/businesses" className="text-xs text-teal-700 hover:underline">
               Clear all filters
             </Link>
@@ -86,6 +92,27 @@ export default async function AdminBusinessesPage({
             Search
           </button>
         </form>
+      </div>
+
+      <div className="flex gap-2">
+        <Link
+          href="/admin/businesses"
+          className={`rounded-lg border px-3 py-1.5 text-sm ${!service ? "border-teal-700 bg-teal-50 text-teal-800" : "border-zinc-300 bg-white text-zinc-700"}`}
+        >
+          All
+        </Link>
+        <Link
+          href="/admin/businesses?service=0"
+          className={`rounded-lg border px-3 py-1.5 text-sm ${service === "0" ? "border-teal-700 bg-teal-50 text-teal-800" : "border-zinc-300 bg-white text-zinc-700"}`}
+        >
+          Listings
+        </Link>
+        <Link
+          href="/admin/businesses?service=1"
+          className={`rounded-lg border px-3 py-1.5 text-sm ${service === "1" ? "border-teal-700 bg-teal-50 text-teal-800" : "border-zinc-300 bg-white text-zinc-700"}`}
+        >
+          Services
+        </Link>
       </div>
 
       <MarkdownIngestForm action={ingestBusinessMarkdownAction} />

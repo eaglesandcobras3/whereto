@@ -213,10 +213,10 @@ export function BusinessEditForm({
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                name="has_physical_location"
-                defaultChecked={Boolean(business.has_physical_location ?? true)}
+                name="is_service"
+                defaultChecked={!Boolean(business.has_physical_location ?? true)}
               />
-              Has physical storefront/location
+              Is service (no physical location)
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input

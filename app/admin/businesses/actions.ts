@@ -18,7 +18,8 @@ export async function updateBusinessAction(
   const status = String(formData.get("status") ?? "active");
   const admin_suppressed = formData.get("admin_suppressed") === "on";
   const suspected_closed = formData.get("suspected_closed") === "on";
-  const has_physical_location = formData.get("has_physical_location") === "on";
+  const is_service = formData.get("is_service") === "on";
+  const has_physical_location = !is_service;
   const town_id = formData.get("town_id")
     ? Number(formData.get("town_id"))
     : null;

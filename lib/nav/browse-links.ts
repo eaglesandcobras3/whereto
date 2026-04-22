@@ -15,7 +15,6 @@ export const BROWSE_NAV_ITEMS: BrowseNavItem[] = [
     activeTypes: ["businesses", "stores"],
   },
   { label: "Services", href: "/search?type=services", activeTypes: ["services"] },
-  { label: "Events", href: "/search?type=events", activeTypes: ["events"] },
   { label: "Guides", href: "/search?type=guides", activeTypes: ["guides"] },
 ];
 

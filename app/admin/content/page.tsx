@@ -13,6 +13,16 @@ type Props = {
 };
 
 const PAGE_SIZE = 25;
+const CORE_CONTENT_TYPES = [
+  "guide",
+  "town",
+  "area",
+  "event",
+  "seasonal",
+  "business",
+  "service",
+  "page",
+] as const;
 
 function buildQuery(params: { type?: string; status?: string; page?: number }) {
   const q = new URLSearchParams();
@@ -42,6 +52,7 @@ export default async function AdminContentIndexPage({ searchParams }: Props) {
         })
       : Promise.resolve({ entries: [], total: 0 }),
   ]);
+  const typeOptions = [...new Set([...CORE_CONTENT_TYPES, ...types])];
   const entries = pageData.entries;
   const total = pageData.total;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -75,12 +86,11 @@ export default async function AdminContentIndexPage({ searchParams }: Props) {
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             >
               <option value="">Select type...</option>
-              {types.map((type) => (
+              {typeOptions.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
               ))}
-              {!types.includes("service") ? <option value="service">service</option> : null}
             </select>
           </div>
           <div>

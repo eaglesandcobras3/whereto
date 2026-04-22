@@ -365,7 +365,7 @@ export async function ingestMarkdownContentAction(
         lat,
         lng,
         ai_summary: (fm.seo_description ?? "").trim() || parsed.content.slice(0, 200) || null,
-        has_physical_location: true,
+        has_physical_location: type === "service" ? false : true,
       },
       { onConflict: "slug" },
     );
