@@ -69,6 +69,11 @@ export default async function TownPage({ params }: Props) {
     ? (town.pages[0] as { body_markdown: string } | undefined)
     : (town.pages as { body_markdown: string } | undefined);
   const townBodyMarkdown = townEntry?.body_markdown || townPage?.body_markdown;
+  const townHeroImage =
+    ("hero_image_wide_url" in town && typeof town.hero_image_wide_url === "string" && town.hero_image_wide_url) ||
+    ("hero_image_thumb_url" in town && typeof town.hero_image_thumb_url === "string" && town.hero_image_thumb_url) ||
+    ("hero_image_url" in town && typeof town.hero_image_url === "string" && town.hero_image_url) ||
+    null;
 
   const { districts: townDistricts, pointsOfInterest: townPois } = townAreas;
   const showLocalGuideSection =
@@ -91,10 +96,10 @@ export default async function TownPage({ params }: Props) {
       <section className="mx-auto max-w-7xl px-6 pt-10 md:px-10 md:pt-14">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-stretch">
           <div className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface-container-high)] shadow-premium-sm">
-            {"hero_image_url" in town && typeof town.hero_image_url === "string" && town.hero_image_url ? (
+            {townHeroImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={town.hero_image_url}
+                src={townHeroImage}
                 alt={town.name}
                 className="aspect-[2/3] h-full w-full object-cover"
               />

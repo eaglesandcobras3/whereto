@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { updateTownAction } from "../actions";
+import { TownImageUploadFields } from "../town-image-upload-fields";
 
 export default async function AdminTownEditPage({
   params,
@@ -17,7 +18,9 @@ export default async function AdminTownEditPage({
   const supabase = getServiceSupabase();
   const { data: town, error } = await supabase
     .from("towns")
-    .select("id, name, slug, ai_tagline, ai_description, center_lat, center_lng, search_radius_meters")
+    .select(
+      "id, name, slug, ai_tagline, ai_description, hero_image_thumb_url, hero_image_wide_url, center_lat, center_lng, search_radius_meters",
+    )
     .eq("id", townId)
     .maybeSingle();
 
@@ -98,6 +101,11 @@ export default async function AdminTownEditPage({
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
         </div>
+
+        <TownImageUploadFields
+          defaultThumbUrl={String(town.hero_image_thumb_url ?? "")}
+          defaultWideUrl={String(town.hero_image_wide_url ?? "")}
+        />
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div>

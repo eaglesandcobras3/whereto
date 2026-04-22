@@ -17,6 +17,7 @@ export default async function Home() {
         slug: string;
         ai_tagline: string | null;
         ai_description: string | null;
+        hero_image_url: string | null;
       }[]
     | null = null;
 
@@ -35,7 +36,7 @@ export default async function Home() {
   if (featuredTownIds.length > 0) {
     const { data: featuredTowns } = await supabase
       .from("towns")
-      .select("id, name, slug, ai_tagline, ai_description")
+      .select("id, name, slug, ai_tagline, ai_description, hero_image_thumb_url, hero_image_wide_url")
       .in("id", featuredTownIds);
 
     const byId = new Map((featuredTowns ?? []).map((t) => [Number(t.id), t]));
@@ -47,16 +48,29 @@ export default async function Home() {
         slug: t.slug as string,
         ai_tagline: (t.ai_tagline as string | null) ?? null,
         ai_description: (t.ai_description as string | null) ?? null,
+        hero_image_url:
+          (t.hero_image_thumb_url as string | null) ??
+          (t.hero_image_wide_url as string | null) ??
+          null,
       }));
   }
 
   if (!towns || towns.length === 0) {
     const { data: fallbackTowns } = await supabase
       .from("towns")
-      .select("name, slug, ai_tagline, ai_description")
+      .select("name, slug, ai_tagline, ai_description, hero_image_thumb_url, hero_image_wide_url")
       .order("name")
       .limit(6);
-    towns = fallbackTowns ?? [];
+    towns = (fallbackTowns ?? []).map((t) => ({
+      name: t.name as string,
+      slug: t.slug as string,
+      ai_tagline: (t.ai_tagline as string | null) ?? null,
+      ai_description: (t.ai_description as string | null) ?? null,
+      hero_image_url:
+        (t.hero_image_thumb_url as string | null) ??
+        (t.hero_image_wide_url as string | null) ??
+        null,
+    }));
   }
 
   let featuredBusinesses: (BusinessPayload & {

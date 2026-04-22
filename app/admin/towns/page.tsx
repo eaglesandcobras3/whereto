@@ -7,7 +7,7 @@ export default async function AdminTownsPage() {
   const supabase = getServiceSupabase();
   const { data: towns } = await supabase
     .from("towns")
-    .select("id, name, slug, ai_tagline")
+    .select("id, name, slug, ai_tagline, hero_image_thumb_url")
     .order("name");
 
   return (
@@ -26,6 +26,7 @@ export default async function AdminTownsPage() {
               <th className="px-4 py-3">Town</th>
               <th className="px-4 py-3">Slug</th>
               <th className="px-4 py-3">Tagline</th>
+              <th className="px-4 py-3">Thumb</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -36,6 +37,9 @@ export default async function AdminTownsPage() {
                 <td className="px-4 py-3 text-zinc-600">{town.slug as string}</td>
                 <td className="px-4 py-3 text-zinc-600 line-clamp-1">
                   {(town.ai_tagline as string | null) ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-zinc-600">
+                  {(town.hero_image_thumb_url as string | null) ? "Yes" : "—"}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link

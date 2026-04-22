@@ -34,7 +34,7 @@ export async function getTownBySlug(slug: string) {
     // 1. Fetch Town
     const { data: town, error: townErr } = await supabase
       .from("towns")
-      .select("id, name, slug, region_id")
+      .select("id, name, slug, region_id, hero_image_thumb_url, hero_image_wide_url")
       .eq("slug", slug)
       .maybeSingle();
     

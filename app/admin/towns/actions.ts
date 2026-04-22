@@ -22,6 +22,8 @@ export async function updateTownAction(townId: number, formData: FormData): Prom
 
   const aiTagline = String(formData.get("ai_tagline") ?? "").trim() || null;
   const aiDescription = String(formData.get("ai_description") ?? "").trim() || null;
+  const heroImageThumbUrl = String(formData.get("hero_image_thumb_url") ?? "").trim() || null;
+  const heroImageWideUrl = String(formData.get("hero_image_wide_url") ?? "").trim() || null;
   const centerLat = asNumberOrNull(formData.get("center_lat"));
   const centerLng = asNumberOrNull(formData.get("center_lng"));
   const searchRadiusMeters = asNumberOrNull(formData.get("search_radius_meters"));
@@ -33,6 +35,8 @@ export async function updateTownAction(townId: number, formData: FormData): Prom
       slug,
       ai_tagline: aiTagline,
       ai_description: aiDescription,
+      hero_image_thumb_url: heroImageThumbUrl,
+      hero_image_wide_url: heroImageWideUrl,
       center_lat: centerLat,
       center_lng: centerLng,
       search_radius_meters: searchRadiusMeters,
