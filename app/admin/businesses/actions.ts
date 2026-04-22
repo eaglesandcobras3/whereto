@@ -324,6 +324,8 @@ type BusinessFrontmatter = {
   map_center?: { lat?: number; lng?: number };
   map_location?: { lat?: number; lng?: number };
   has_physical_location?: boolean;
+  /** Optional: applied on save for long-form listing body (also use Hero Image field in the form). */
+  hero_image_url?: string;
 };
 
 function parseNumberOrNull(v: unknown): number | null {
@@ -373,10 +375,24 @@ async function resolveOrCreateTagIds(supabase: ReturnType<typeof getServiceSupab
   return tagSlugs.map((s) => existingMap.get(s)).filter((id): id is number => Number.isFinite(id));
 }
 
+type IngestBusinessMarkdownOptions = {
+  /**
+   * When set (admin "edit this listing" flow), the DB row and slug are fixed to this id.
+   * Prevents pasting frontmatter with a different `slug` from writing to another business.
+   */
+  existingBusinessId?: string;
+};
+
 async function ingestBusinessMarkdown(
   supabase: ReturnType<typeof getServiceSupabase>,
   rawMarkdown: string,
-): Promise<{ ok: true; slug: string; businessId: string } | { ok: false; error: string }> {
+  options?: IngestBusinessMarkdownOptions,
+): Promise<
+  { ok: true; slug: string; businessId: string; warnings?: string[] } | { ok: false; error: string }
+> {
+  const warnings: string[] = [];
+  const existingId = options?.existingBusinessId?.trim() || null;
+
   let parsed: { data: BusinessFrontmatter; content: string };
   try {
     const m = matter(rawMarkdown);
@@ -392,10 +408,34 @@ async function ingestBusinessMarkdown(
   if ((fm.type ?? "").trim() !== "business") {
     return { ok: false, error: "Frontmatter must include `type: business`." };
   }
-  const slug = (fm.slug ?? "").trim();
   const title = (fm.title ?? "").trim();
-  if (!slug || !title) {
-    return { ok: false, error: "Frontmatter must include `slug` and `title`." };
+  if (!title) {
+    return { ok: false, error: "Frontmatter must include `title`." };
+  }
+
+  let slug: string;
+  if (existingId) {
+    const { data: row, error: rowErr } = await supabase
+      .from("businesses")
+      .select("id, slug")
+      .eq("id", existingId)
+      .maybeSingle();
+    if (rowErr || !row?.slug) {
+      return { ok: false, error: "Could not load this listing. Refresh the page and try again." };
+    }
+    slug = String(row.slug);
+    const fromFm = (fm.slug ?? "").trim();
+    if (fromFm && fromFm !== slug) {
+      warnings.push(
+        `Frontmatter had slug "${fromFm}"; this save always applies to the open listing ("${slug}").`,
+      );
+    }
+  } else {
+    const fromFm = (fm.slug ?? "").trim();
+    if (!fromFm) {
+      return { ok: false, error: "Frontmatter must include `slug` and `title` (when not editing an existing listing)." };
+    }
+    slug = fromFm;
   }
 
   const townSlug = (fm.town ?? "").trim();
@@ -435,34 +475,72 @@ async function ingestBusinessMarkdown(
       ? fm.has_physical_location
       : Boolean((fm.address ?? "").trim() || (lat != null && lng != null));
 
-  const { data: upserted, error: bizErr } = await supabase
-    .from("businesses")
-    .upsert(
-      {
-        name: title,
-        slug,
-        status: "active",
-        town_id: townId,
-        category_id: categoryId,
-        address: (fm.address ?? "").trim() || null,
-        phone: (fm.phone ?? "").trim() || null,
-        website: (fm.website ?? "").trim() || null,
-        price_level: fm.price_range ? String(fm.price_range).trim().length : null,
-        lat,
-        lng,
-        ai_summary: summary,
-        has_physical_location: hasPhysicalLocation,
-      },
-      { onConflict: "slug" },
-    )
-    .select("id")
-    .single();
+  const businessPayload = {
+    name: title,
+    status: "active" as const,
+    town_id: townId,
+    category_id: categoryId,
+    address: (fm.address ?? "").trim() || null,
+    phone: (fm.phone ?? "").trim() || null,
+    website: (fm.website ?? "").trim() || null,
+    price_level: fm.price_range ? String(fm.price_range).trim().length : null,
+    lat,
+    lng,
+    ai_summary: summary,
+    has_physical_location: hasPhysicalLocation,
+    ...((fm.hero_image_url ?? "").toString().trim()
+      ? { hero_image_url: (fm.hero_image_url ?? "").toString().trim() }
+      : {}),
+  };
 
-  if (bizErr || !upserted?.id) {
-    return {
-      ok: false,
-      error: `Business upsert failed: ${bizErr?.message ?? "unknown error"}`,
-    };
+  let businessRowId: string;
+  if (existingId) {
+    const { data: updated, error: bizErr } = await supabase
+      .from("businesses")
+      .update({
+        ...businessPayload,
+      })
+      .eq("id", existingId)
+      .select("id")
+      .single();
+    if (bizErr || !updated?.id) {
+      return {
+        ok: false,
+        error: `Business update failed: ${bizErr?.message ?? "unknown error"}`,
+      };
+    }
+    businessRowId = String(updated.id);
+  } else {
+    const { data: upserted, error: bizErr } = await supabase
+      .from("businesses")
+      .upsert(
+        {
+          name: title,
+          slug,
+          status: "active",
+          town_id: townId,
+          category_id: categoryId,
+          address: (fm.address ?? "").trim() || null,
+          phone: (fm.phone ?? "").trim() || null,
+          website: (fm.website ?? "").trim() || null,
+          price_level: fm.price_range ? String(fm.price_range).trim().length : null,
+          lat,
+          lng,
+          ai_summary: summary,
+          has_physical_location: hasPhysicalLocation,
+        },
+        { onConflict: "slug" },
+      )
+      .select("id")
+      .single();
+
+    if (bizErr || !upserted?.id) {
+      return {
+        ok: false,
+        error: `Business upsert failed: ${bizErr?.message ?? "unknown error"}`,
+      };
+    }
+    businessRowId = String(upserted.id);
   }
 
   const { error: pageErr } = await supabase.from("pages").upsert(
@@ -483,11 +561,11 @@ async function ingestBusinessMarkdown(
   }
 
   const tagIds = await resolveOrCreateTagIds(supabase, Array.isArray(fm.tags) ? fm.tags : []);
-  await supabase.from("business_tags").delete().eq("business_id", upserted.id);
+  await supabase.from("business_tags").delete().eq("business_id", businessRowId);
   if (tagIds.length > 0) {
     await supabase.from("business_tags").insert(
       tagIds.map((tagId) => ({
-        business_id: upserted.id as string,
+        business_id: businessRowId,
         tag_id: tagId,
         source: "admin_set",
         confidence: 1,
@@ -512,13 +590,20 @@ async function ingestBusinessMarkdown(
     { onConflict: "content_type,slug" },
   );
 
-  return { ok: true, slug, businessId: upserted.id as string };
+  return {
+    ok: true,
+    slug,
+    businessId: businessRowId,
+    warnings: warnings.length > 0 ? warnings : undefined,
+  };
 }
 
 async function validateBusinessMarkdown(
   supabase: ReturnType<typeof getServiceSupabase>,
   rawMarkdown: string,
+  options?: { expectBusinessId?: string },
 ): Promise<{ ok: true; slug: string; warnings: string[] } | { ok: false; error: string }> {
+  const expectId = options?.expectBusinessId?.trim() || null;
   let parsed: { data: BusinessFrontmatter; content: string };
   try {
     const m = matter(rawMarkdown);
@@ -533,13 +618,38 @@ async function validateBusinessMarkdown(
   if ((fm.type ?? "").trim() !== "business") {
     return { ok: false, error: "Frontmatter must include `type: business`." };
   }
-  const slug = (fm.slug ?? "").trim();
   const title = (fm.title ?? "").trim();
-  if (!slug || !title) {
-    return { ok: false, error: "Frontmatter must include `slug` and `title`." };
+  if (!title) {
+    return { ok: false, error: "Frontmatter must include `title`." };
   }
+  const fromFm = (fm.slug ?? "").trim();
   const warnings: string[] = [];
+  if (!expectId) {
+    if (!fromFm) {
+      return { ok: false, error: "Frontmatter must include `slug` and `title` (when not validating from a listing page)." };
+    }
+  }
   if (!parsed.content.trim()) warnings.push("Body markdown is empty.");
+
+  let canonicalSlug: string;
+  if (expectId) {
+    const { data: row, error: rowErr } = await supabase
+      .from("businesses")
+      .select("slug")
+      .eq("id", expectId)
+      .maybeSingle();
+    if (rowErr || !row?.slug) {
+      return { ok: false, error: "Could not load this listing. Refresh the page and try again." };
+    }
+    canonicalSlug = String(row.slug);
+    if (fromFm && fromFm !== canonicalSlug) {
+      warnings.push(
+        `Frontmatter slug "${fromFm}" does not match this listing. Saving will use "${canonicalSlug}" only on this page.`,
+      );
+    }
+  } else {
+    canonicalSlug = fromFm;
+  }
 
   const townSlug = (fm.town ?? "").trim();
   if (townSlug) {
@@ -555,7 +665,7 @@ async function validateBusinessMarkdown(
       .maybeSingle();
     if (!category) warnings.push(`Category slug "${categorySlug}" was not found.`);
   }
-  return { ok: true, slug, warnings };
+  return { ok: true, slug: canonicalSlug, warnings };
 }
 
 export async function ingestBusinessMarkdownAction(formData: FormData): Promise<{
@@ -582,7 +692,7 @@ export async function ingestBusinessMarkdownAction(formData: FormData): Promise<
   revalidatePath("/admin/businesses");
   revalidatePath(`/admin/businesses/${result.businessId}`);
   revalidatePath(`/business/${result.slug}`);
-  return { ok: true, slug: result.slug };
+  return { ok: true, slug: result.slug, warnings: result.warnings };
 }
 
 export async function updateBusinessFromMarkdownAction(
@@ -595,16 +705,18 @@ export async function updateBusinessFromMarkdownAction(
   if (!raw.trim()) return { error: "Markdown is required." };
   const intent = String(formData.get("intent") ?? "process");
   if (intent === "validate") {
-    const validated = await validateBusinessMarkdown(supabase, raw);
+    const validated = await validateBusinessMarkdown(supabase, raw, {
+      expectBusinessId: businessId,
+    });
     if (!validated.ok) return { error: validated.error };
     return { ok: true, slug: validated.slug, warnings: validated.warnings, validated: true };
   }
 
-  const result = await ingestBusinessMarkdown(supabase, raw);
+  const result = await ingestBusinessMarkdown(supabase, raw, { existingBusinessId: businessId });
   if (!result.ok) return { error: result.error };
 
   revalidatePath(`/admin/businesses/${businessId}`);
   revalidatePath(`/admin/businesses/${result.businessId}`);
   revalidatePath(`/business/${result.slug}`);
-  return { ok: true, slug: result.slug };
+  return { ok: true, slug: result.slug, warnings: result.warnings };
 }

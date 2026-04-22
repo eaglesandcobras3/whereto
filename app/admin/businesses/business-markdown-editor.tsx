@@ -26,7 +26,9 @@ export function BusinessMarkdownEditor({
     <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-zinc-900">Markdown + Frontmatter Editor</h2>
       <p className="text-sm text-zinc-600">
-        Edit this listing in full markdown/frontmatter format and process in one save.
+        Edit this listing in full markdown/frontmatter format and use <span className="font-medium">Save from Markdown</span>.
+        The open listing&rsquo;s URL slug is always taken from the database, so a different <code className="rounded bg-zinc-100 px-1">slug:</code> in
+        the YAML cannot send your text to another business.
       </p>
       <form action={formAction} className="space-y-3">
         <textarea
