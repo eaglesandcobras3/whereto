@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { listContentEntriesPage, listContentEntryTypes } from "@/lib/data/content-entries";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { deleteContentEntryAction, ingestMarkdownContentAction } from "./actions";
 import { ContentMarkdownIngestForm } from "./markdown-ingest-form";
 
@@ -40,6 +41,27 @@ export default async function AdminContentIndexPage({ searchParams }: Props) {
   const selectedStatus = (sp.status ?? "").trim() as "draft" | "published" | "archived" | "";
   const currentPage = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
   const offset = (currentPage - 1) * PAGE_SIZE;
+
+  // Backfill town records into content_entries so `type=town` always lists existing towns.
+  if (selectedType === "town") {
+    const supabase = getServiceSupabase();
+    const { data: towns } = await supabase
+      .from("towns")
+      .select("name, slug, ai_tagline");
+    if ((towns ?? []).length > 0) {
+      await supabase.from("content_entries").upsert(
+        (towns ?? []).map((town) => ({
+          content_type: "town",
+          slug: String(town.slug),
+          title: String(town.name),
+          excerpt: (town.ai_tagline as string | null) ?? null,
+          status: "published",
+          published_at: new Date().toISOString(),
+        })),
+        { onConflict: "content_type,slug" },
+      );
+    }
+  }
 
   const [types, pageData] = await Promise.all([
     listContentEntryTypes(),

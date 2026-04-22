@@ -17,8 +17,9 @@ export default async function AdminHomePage() {
 
   const staleBefore = getStaleBeforeDate();
 
-  const [biz, jobs, cache, stale, flags, entries] = await Promise.all([
+  const [biz, towns, jobs, cache, stale, flags, entries] = await Promise.all([
     supabase.from("businesses").select("id", { count: "exact", head: true }),
+    supabase.from("towns").select("id", { count: "exact", head: true }),
     supabase
       .from("search_jobs")
       .select("id", { count: "exact", head: true })
@@ -37,7 +38,8 @@ export default async function AdminHomePage() {
     { label: "Site settings", value: "Edit", href: "/admin/site-settings" },
     { label: "Content entries", value: countOr0(entries), href: "/admin/content" },
     { label: "Media manager", value: "Open", href: "/admin/media" },
-    { label: "Businesses", value: countOr0(biz), href: "/admin/businesses" },
+    { label: "Towns", value: countOr0(towns), href: "/admin/towns" },
+    { label: "Listings", value: countOr0(biz), href: "/admin/businesses?service=0" },
     { label: "Categories", value: "Manage", href: "/admin/categories" },
     { label: "Stale 90d+ (active)", value: countOr0(stale), href: "/admin/jobs" },
     { label: "Pending jobs", value: countOr0(jobs), href: "/admin/jobs" },

@@ -6,15 +6,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const primaryNav = [
     { href: "/admin", label: "Overview" },
     { href: "/admin/site-settings", label: "Site settings" },
+    { href: "/admin/content", label: "Editorial Content" },
+    { href: "/admin/towns", label: "Towns" },
     { href: "/admin/businesses?service=0", label: "Listings" },
-    { href: "/admin/businesses?service=1", label: "Services" },
     { href: "/admin/featured", label: "Featured" },
     { href: "/admin/feature-flags", label: "Feature flags" },
     { href: "/admin/cache", label: "Cache" },
   ];
 
   const opsNav = [
-    { href: "/admin/content", label: "Content (CMS)" },
     { href: "/admin/data-pipeline", label: "Data pipeline" },
     { href: "/admin/categories", label: "Categories (Ops)" },
     { href: "/admin/jobs", label: "Jobs (Ops)" },
