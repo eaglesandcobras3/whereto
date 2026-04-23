@@ -1,8 +1,8 @@
 /**
- * Resolve public image URLs for the Next app. **No Directus** — the storefront only needs
- * Supabase Storage (or any absolute URL already stored in the row).
+ * Resolve public image URLs for the Next app.
  *
  * - Full `https?://…` (or `//…`) → returned as-is (after normalizing `//` to `https://`).
+ * - Directus UUID (36-char UUID format) → `NEXT_PUBLIC_DIRECTUS_URL` + `/assets/{uuid}`.
  * - Relative values → `NEXT_PUBLIC_SUPABASE_URL` + `/storage/v1/object/public/{bucket}/{key}`.
  *   Default bucket: `NEXT_PUBLIC_IMAGE_STORAGE_BUCKET` or `whereto-media`.
  *   If the path starts with a known public bucket name (`whereto-media`, `cms-media`, `business-images`), that
@@ -10,6 +10,15 @@
  */
 
 const KNOWN_BUCKETS = ["whereto-media", "cms-media", "business-images"] as const;
+
+// Matches Directus-style UUIDs: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function directusOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_DIRECTUS_URL?.trim();
+  if (!raw) return null;
+  return raw.replace(/\/$/, "");
+}
 
 function defaultBucket(): string {
   return process.env.NEXT_PUBLIC_IMAGE_STORAGE_BUCKET?.trim() || "whereto-media";
@@ -46,6 +55,15 @@ export function getPublicImageUrl(raw: string | null | undefined): string | null
   if (!s) return null;
   if (/^https?:\/\//i.test(s)) return s;
   if (s.startsWith("//")) return `https:${s}`;
+
+  // Directus UUID format: convert to Directus asset URL
+  if (UUID_REGEX.test(s)) {
+    const directus = directusOrigin();
+    if (directus) {
+      return `${directus}/assets/${s}`;
+    }
+    // Fall through to Supabase if no Directus URL configured
+  }
 
   const base = supabaseOrigin();
   if (!base) return null;

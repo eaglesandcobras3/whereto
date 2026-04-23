@@ -41,8 +41,8 @@ export type AdjacentTown = { name: string; slug: string };
 export async function getTownBySlug(slug: string) {
   const supabase = getServiceSupabase();
   const { data: town, error } = await supabase
-    .from("towns")
-    .select("id, title, slug, region_id, excerpt, content, main_image, hero_image, status")
+    .from("towns_view")
+    .select("id, title, slug, region_id, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, status")
     .eq("slug", slug)
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
@@ -55,8 +55,11 @@ export async function getTownBySlug(slug: string) {
     excerpt: string | null;
     main_image: string | null;
     hero_image: string | null;
+    main_image_url: string | null;
+    hero_image_url: string | null;
   };
-  const heroThumb = getPublicImageUrl(t.main_image) ?? getPublicImageUrl(t.hero_image);
+  // Prefer resolved URLs from view, fall back to getPublicImageUrl for non-UUID values
+  const heroThumb = t.main_image_url ?? t.hero_image_url ?? getPublicImageUrl(t.main_image) ?? getPublicImageUrl(t.hero_image);
   return {
     ...t,
     name: t.title,

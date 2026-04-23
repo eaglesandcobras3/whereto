@@ -65,9 +65,9 @@ export async function buildMinimalSearchResult(
   const q = sanitizeIlikeToken(options.rawQuery) || sanitizeIlikeToken(options.normalizedQuery) || "a";
 
   let query = supabase
-    .from("businesses")
+    .from("businesses_view")
     .select(
-      `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, status, business_categories ( name, slug )`,
+      `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, main_image_url, hero_image_url, status, business_categories ( name, slug )`,
       { count: "exact" },
     )
     .is("archived_at", null)
@@ -100,7 +100,10 @@ export async function buildMinimalSearchResult(
 
   const list = (rows ?? []) as Record<string, unknown>[];
   const recs: SearchResultPayload["recommendations"] = list.map((row, i) => {
+    // Prefer resolved URLs from view, fall back to getPublicImageUrl
     const img =
+      (row.main_image_url as string | null) ??
+      (row.hero_image_url as string | null) ??
       getPublicImageUrl((row.main_image as string) ?? null) ??
       getPublicImageUrl((row.hero_image as string) ?? null);
     const categories = row.business_categories as { name?: string; slug?: string } | null;
