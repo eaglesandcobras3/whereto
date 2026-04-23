@@ -1,8 +1,39 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  getFeatureFlagsForEdgeRequest,
+  isAuthEnabled,
+  isSavedEnabled,
+} from "@/lib/feature-flags-core";
 
+function isAuthGatedPath(pathname: string): boolean {
+  if (pathname === "/login" || pathname.startsWith("/login/")) return true;
+  if (pathname === "/signup" || pathname.startsWith("/signup/")) return true;
+  if (pathname === "/forgot-password" || pathname.startsWith("/forgot-password/"))
+    return true;
+  if (pathname === "/reset-password" || pathname.startsWith("/reset-password/"))
+    return true;
+  if (pathname === "/profile" || pathname.startsWith("/profile/")) return true;
+  if (pathname === "/auth/callback" || pathname.startsWith("/auth/")) return true;
+  return false;
+}
 
 export async function middleware(request: NextRequest) {
+  const flags = getFeatureFlagsForEdgeRequest((name) =>
+    request.cookies.get(name)?.value,
+  );
+  const { pathname } = request.nextUrl;
+
+  if (!isAuthEnabled(flags) && isAuthGatedPath(pathname)) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+  if (
+    !isSavedEnabled(flags) &&
+    (pathname === "/saved" || pathname.startsWith("/saved/"))
+  ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });

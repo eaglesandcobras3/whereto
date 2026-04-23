@@ -39,19 +39,16 @@ export async function getEnrichmentStats() {
 
   const { count: total } = await supabase
     .from("businesses")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "active");
+    .select("*", { count: "exact", head: true });
 
   const { count: enriched } = await supabase
     .from("businesses")
     .select("*", { count: "exact", head: true })
-    .eq("status", "active")
     .not("ai_reasoning_updated_at", "is", null);
 
   const { count: pending } = await supabase
     .from("businesses")
     .select("*", { count: "exact", head: true })
-    .eq("status", "active")
     .is("ai_reasoning_updated_at", null);
 
   return {
@@ -77,7 +74,6 @@ export async function getBusinessesForManualEnrichment(limit: number = 20): Prom
       google_rating,
       price_level
     `)
-    .eq("status", "active")
     .is("ai_reasoning_updated_at", null)
     .limit(limit);
 

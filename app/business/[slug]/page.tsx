@@ -8,12 +8,12 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 import Image from "next/image";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { selectBusinessHighlights } from "@/lib/business/highlights";
-import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -55,7 +55,6 @@ async function loadBusiness(slug: string) {
       ? await supabase
           .from("businesses")
           .select(sel)
-          .in("status", storefrontListingStatuses())
           .is("archived_at", null)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("id", slug)
@@ -63,7 +62,6 @@ async function loadBusiness(slug: string) {
       : await supabase
           .from("businesses")
           .select(sel)
-          .in("status", storefrontListingStatuses())
           .is("archived_at", null)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("slug", slug)
@@ -188,6 +186,7 @@ export default async function BusinessPage({ params }: Props) {
   } = await auth.auth.getUser();
 
   const flags = await getAllFeatureFlags();
+  const authEnabled = isAuthEnabled(flags);
   const supabase = getServiceSupabase();
   const townId = b.town_id as string | null;
   const businessId = b.id as string;
@@ -229,7 +228,6 @@ export default async function BusinessPage({ params }: Props) {
       .select("id, title, slug, excerpt, main_image, hero_image")
       .eq("town_id", townId)
       .neq("id", businessId)
-      .in("status", storefrontListingStatuses())
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("date_updated", { ascending: false, nullsFirst: false })
@@ -252,7 +250,6 @@ export default async function BusinessPage({ params }: Props) {
         .from("guides")
         .select("slug, title, excerpt, main_image, hero_image")
         .in("id", gids)
-        .in("status", storefrontListingStatuses())
         .is("archived_at", null)
         .or(BROWSE_VISIBLE_NOT_HIDDEN);
       townGuides =
@@ -270,7 +267,6 @@ export default async function BusinessPage({ params }: Props) {
     const { data: g2 } = await supabase
       .from("guides")
       .select("slug, title, excerpt, main_image, hero_image")
-      .in("status", storefrontListingStatuses())
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("date_updated", { ascending: false, nullsFirst: false })
@@ -540,6 +536,7 @@ export default async function BusinessPage({ params }: Props) {
                     claimStatus={(b.claim_status as string) ?? "unclaimed"}
                     userId={user?.id ?? null}
                     claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
+                    authEnabled={authEnabled}
                   />
                 </section>
               )}

@@ -1,6 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
 /** Town hub: browse row for an `areas` table record (links to /search?type=areas). */
@@ -44,7 +44,6 @@ export async function getTownBySlug(slug: string) {
     .from("towns")
     .select("id, title, slug, region_id, excerpt, content, main_image, hero_image, status")
     .eq("slug", slug)
-    .in("status", storefrontListingStatuses())
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .maybeSingle();
@@ -113,7 +112,6 @@ export async function getRegionBySlug(slug: string) {
     .from("regions")
     .select("id, title, slug, status")
     .eq("slug", slug)
-    .in("status", storefrontListingStatuses())
     .maybeSingle();
   if (!data) return null;
   const r = data as { id: string; title: string; slug: string };
@@ -153,7 +151,6 @@ export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeat
     .from("guides")
     .select("slug, title, excerpt, main_image, hero_image, status")
     .in("id", gids)
-    .in("status", storefrontListingStatuses())
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(8);
@@ -176,13 +173,11 @@ export async function getTownAreasForLocalGuide(
   townId: string,
 ): Promise<{ districts: TownAreaBrowseRow[]; pointsOfInterest: TownAreaBrowseRow[] }> {
   const supabase = getServiceSupabase();
-  const list = storefrontListingStatuses();
 
   const { data: areaData } = await supabase
     .from("areas")
     .select("id, title, slug, area_type, excerpt, town_id, status")
     .eq("town_id", townId)
-    .in("status", list)
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
@@ -266,7 +261,6 @@ export async function getTownsInRegion(regionId: string) {
     .from("towns")
     .select("title, slug, status")
     .eq("region_id", regionId)
-    .in("status", storefrontListingStatuses())
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");

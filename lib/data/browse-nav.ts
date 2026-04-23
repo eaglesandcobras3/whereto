@@ -2,10 +2,10 @@ import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
-import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
 /**
- * True when at least one `points_of_interest` row is listable (same rules as /search?type=access).
+ * True when at least one `points_of_interest` row passes archive + hide-from-search rules (type=access).
  * Landmarks & parks use the `points_of_interest` table, not `areas.area_type` only.
  */
 export async function hasPointOfInterestAreas(): Promise<boolean> {
@@ -14,7 +14,6 @@ export async function hasPointOfInterestAreas(): Promise<boolean> {
     const { count, error } = await supabase
       .from("points_of_interest")
       .select("id", { count: "exact", head: true })
-      .in("status", storefrontListingStatuses())
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN);
     if (error) return false;

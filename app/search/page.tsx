@@ -3,10 +3,7 @@ import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
-  storefrontListingStatuses,
-} from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { SearchPageClient, type DiscoveryTag } from "./search-page-client";
 import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
@@ -126,7 +123,6 @@ export default async function SearchPage({ searchParams }: Props) {
 
   const supabase = await createSupabaseServerClient();
   const serviceSupabase = getServiceSupabase();
-  const listableStatus = storefrontListingStatuses();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -152,7 +148,6 @@ export default async function SearchPage({ searchParams }: Props) {
   const { data: sidebarRows } = await serviceSupabase
     .from("towns")
     .select("id, title, slug")
-    .in("status", listableStatus)
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title")
@@ -166,7 +161,6 @@ export default async function SearchPage({ searchParams }: Props) {
   const { data: recentBiz } = await serviceSupabase
     .from("businesses")
     .select("id, title, slug, main_image, hero_image, date_updated")
-    .in("status", listableStatus)
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("date_updated", { ascending: false, nullsFirst: false })
@@ -212,7 +206,6 @@ export default async function SearchPage({ searchParams }: Props) {
     let evQuery = serviceSupabase
       .from("events")
       .select("id, slug, title, excerpt, main_image, hero_image, starts_at, ends_at, location_name, cost_notes, ticket_url, recurrence_rule, status")
-      .in("status", listableStatus)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("starts_at", { ascending: true, nullsFirst: false })
@@ -246,7 +239,6 @@ export default async function SearchPage({ searchParams }: Props) {
     let tq = serviceSupabase
       .from("towns")
       .select("id, title, slug, excerpt, status")
-      .in("status", listableStatus)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
@@ -282,7 +274,6 @@ export default async function SearchPage({ searchParams }: Props) {
     let gq = serviceSupabase
       .from("guides")
       .select("slug, title, excerpt, seo_description, main_image, hero_image, status")
-      .in("status", listableStatus)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
@@ -326,8 +317,7 @@ export default async function SearchPage({ searchParams }: Props) {
       let pq = serviceSupabase
         .from("points_of_interest")
         .select("id, title, slug, excerpt, poi_type, town_id, towns(slug, title)")
-        .in("status", listableStatus)
-        .is("archived_at", null)
+    .is("archived_at", null)
         .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .order("title")
         .limit(100);
@@ -371,7 +361,6 @@ export default async function SearchPage({ searchParams }: Props) {
     let aq = serviceSupabase
       .from("areas")
       .select("id, title, slug, excerpt, area_type, town_id, is_shopping_area, towns(slug, title)")
-      .in("status", listableStatus)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")

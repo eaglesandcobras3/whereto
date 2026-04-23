@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
+import { isAuthEnabled, isSavedEnabled } from "@/lib/feature-flags-core";
 import type { User } from "@supabase/supabase-js";
 
 type Props = {
@@ -52,7 +53,8 @@ export function Navbar({
   const showSearchInNavbar = showSearch || !isHome;
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
-  const showUserFeatures = featureFlags["user_features"] === true;
+  const showAuth = isAuthEnabled(featureFlags);
+  const showSaved = isSavedEnabled(featureFlags);
 
   const closePanels = useCallback(() => {
     setSearchOpen(false);
@@ -179,16 +181,16 @@ export function Navbar({
           </button>
 
           <nav className="hidden items-center gap-0.5 md:flex sm:gap-1">
-            {showUserFeatures && (
+            {showSaved ? (
               <Link href="/saved" className={navLinkClass(isSaved)}>
                 Saved
               </Link>
-            )}
-            {showUserFeatures && user ? (
+            ) : null}
+            {showAuth && user ? (
               <Link href="/profile" className={navLinkClass(isProfile)}>
                 Profile
               </Link>
-            ) : showUserFeatures ? (
+            ) : showAuth ? (
               <Link href="/login" className={navLinkClass(pathname === "/login")}>
                 Login
               </Link>
@@ -249,7 +251,8 @@ export function Navbar({
           browseNavItems={browseNavItems}
           isSaved={isSaved}
           isProfile={isProfile}
-          showUserFeatures={showUserFeatures}
+          showAuth={showAuth}
+          showSaved={showSaved}
           user={user}
         />
       </Suspense>

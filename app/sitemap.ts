@@ -6,7 +6,7 @@ import {
   PRIMARY_REGION_DB_SLUG,
   PRIMARY_REGION_HUB_PATH,
 } from "@/lib/routes/primary-region";
-import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
 const STATIC_PATHS = [
   "/",
@@ -27,7 +27,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
   const now = new Date();
   const supabase = getServiceSupabaseOrNull();
-  const listable = storefrontListingStatuses();
   if (!supabase) {
     return [
       { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
@@ -53,30 +52,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     supabase
       .from("towns")
       .select("slug, date_updated, published_at")
-      .in("status", listable)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN),
     supabase
       .from("regions")
-      .select("slug, date_updated, published_at")
-      .in("status", listable),
+      .select("slug, date_updated, published_at"),
     supabase
       .from("businesses")
       .select("slug, date_updated, published_at")
-      .in("status", listable)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .limit(8000),
     supabase
       .from("guides")
       .select("slug, date_updated, published_at")
-      .in("status", listable)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN),
     supabase
       .from("events")
       .select("slug, date_updated, published_at, starts_at")
-      .in("status", listable)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN),
   ]);

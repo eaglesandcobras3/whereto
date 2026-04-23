@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { weekdayLongName } from "@/lib/events/recurrence";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -42,7 +42,6 @@ async function loadEvent(slug: string): Promise<EventRow | null> {
       "id, title, excerpt, content, slug, starts_at, ends_at, recurrence_rule, main_image, hero_image, location_name, address, cost_notes, ticket_url, intent_tags, status",
     )
     .eq("slug", slug)
-    .in("status", storefrontListingStatuses())
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .maybeSingle();

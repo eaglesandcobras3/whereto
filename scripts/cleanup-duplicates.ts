@@ -22,8 +22,7 @@ async function cleanup() {
 
   const { data: rows, error } = await supabase
     .from("businesses")
-    .select("id, name, town_id, lat, lng, status")
-    .eq("status", "active");
+    .select("id, name, town_id, lat, lng, status");
 
   if (error) {
     console.error("Error fetching businesses:", error);

@@ -87,7 +87,6 @@ export async function getHomeFeaturedStrips(): Promise<{
       supabase
         .from("businesses")
         .select(selectCols)
-        .eq("status", "active")
         .eq("admin_suppressed", false)
         .eq("suspected_closed", false)
         .gte("confidence_score", 0.35);

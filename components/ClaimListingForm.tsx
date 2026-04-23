@@ -8,6 +8,8 @@ type Props = {
   claimStatus: string;
   userId: string | null;
   claimedByUserId: string | null;
+  /** When false, do not show sign-in / claim flow (see `auth` in FEATURE_FLAGS_JSON). */
+  authEnabled?: boolean;
 };
 
 export function ClaimListingForm({
@@ -15,12 +17,20 @@ export function ClaimListingForm({
   claimStatus,
   userId,
   claimedByUserId,
+  authEnabled = true,
 }: Props) {
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   if (!userId) {
+    if (!authEnabled) {
+      return (
+        <p className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
+          Account sign-in is not available; listing claims are disabled in this build.
+        </p>
+      );
+    }
     return (
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
         <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">

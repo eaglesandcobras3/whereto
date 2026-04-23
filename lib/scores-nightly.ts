@@ -9,8 +9,7 @@ async function aggregateFeedbackSignals() {
       bad_experience_unique_users: 0,
       not_relevant_count: 0,
       inaccurate_info_count: 0,
-    })
-    .eq("status", "active");
+    });
 
   const { data: rows, error } = await supabase
     .from("user_feedback")
@@ -62,8 +61,7 @@ export async function runScoreComputation() {
     .from("businesses")
     .select(
       "id, total_impressions, total_clicks, total_saves, total_shares, last_refreshed_at, listing_review_count, ai_summary, admin_suppressed, suspected_closed, bad_experience_unique_users, not_relevant_count",
-    )
-    .eq("status", "active");
+    );
 
   if (error) throw error;
   const now = Date.now();

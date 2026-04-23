@@ -72,7 +72,6 @@ export function findDuplicatePairs(
 ): DuplicatePair[] {
   const byTown = new Map<number | string, BusinessStub[]>();
   for (const r of rows) {
-    if (r.status !== "active") continue;
     const k = r.town_id ?? "none";
     const list = byTown.get(k) ?? [];
     list.push(r);

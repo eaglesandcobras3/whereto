@@ -23,7 +23,6 @@ export type ContentEntry = {
 
 export async function listContentEntries(options?: {
   type?: string;
-  status?: "draft" | "published" | "archived";
   limit?: number;
   offset?: number;
 }) {
@@ -35,7 +34,6 @@ export async function listContentEntries(options?: {
     )
     .order("updated_at", { ascending: false });
   if (options?.type) q = q.eq("content_type", options.type);
-  if (options?.status) q = q.eq("status", options.status);
   if (options?.offset && options.offset > 0) {
     q = q.range(options.offset, options.offset + (options?.limit ?? 200) - 1);
   } else if (options?.limit) {
@@ -47,7 +45,6 @@ export async function listContentEntries(options?: {
 
 export async function listContentEntriesPage(options?: {
   type?: string;
-  status?: "draft" | "published" | "archived";
   limit?: number;
   offset?: number;
 }) {
@@ -63,7 +60,6 @@ export async function listContentEntriesPage(options?: {
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);
   if (options?.type) q = q.eq("content_type", options.type);
-  if (options?.status) q = q.eq("status", options.status);
   const { data, count } = await q;
   return { entries: data ?? [], total: count ?? 0 };
 }
@@ -101,7 +97,6 @@ export async function getPublishedContentEntryBySlug(
     .select("*")
     .eq("content_type", contentType)
     .eq("slug", slug)
-    .eq("status", "published")
     .maybeSingle();
   return (data as ContentEntry | null) ?? null;
 }

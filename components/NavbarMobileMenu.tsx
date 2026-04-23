@@ -19,7 +19,8 @@ type Props = {
   browseNavItems?: BrowseNavItem[];
   isSaved: boolean;
   isProfile: boolean;
-  showUserFeatures: boolean;
+  showAuth: boolean;
+  showSaved: boolean;
   user: User | null;
 };
 
@@ -29,7 +30,8 @@ export function NavbarMobileMenu({
   browseNavItems = BROWSE_NAV_ITEMS,
   isSaved,
   isProfile,
-  showUserFeatures,
+  showAuth,
+  showSaved,
   user,
 }: Props) {
   const pathname = usePathname();
@@ -62,16 +64,16 @@ export function NavbarMobileMenu({
               {item.label}
             </Link>
           ))}
-          {showUserFeatures ? (
+          {showSaved ? (
             <Link href="/saved" onClick={onClose} className={navLinkClassMobile(isSaved)}>
               Saved
             </Link>
           ) : null}
-          {showUserFeatures && user ? (
+          {showAuth && user ? (
             <Link href="/profile" onClick={onClose} className={navLinkClassMobile(isProfile)}>
               Profile
             </Link>
-          ) : showUserFeatures ? (
+          ) : showAuth ? (
             <Link href="/login" onClick={onClose} className={navLinkClassMobile(pathname === "/login")}>
               Login
             </Link>

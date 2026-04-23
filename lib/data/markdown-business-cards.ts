@@ -20,7 +20,6 @@ export async function fetchBusinessesForMarkdownCards(
   const { data, error } = await supabase
     .from("businesses")
     .select("slug, name, hero_image_url, ai_one_liner, towns(name)")
-    .eq("status", "active")
     .in("slug", unique);
 
   if (error || !data) return {};

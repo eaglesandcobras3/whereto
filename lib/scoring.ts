@@ -67,7 +67,6 @@ export function passesEligibility(
   b: BusinessForScore,
   suppressedIds: Set<string>,
 ): boolean {
-  if (b.status !== "active") return false;
   if (b.suspected_closed) return false;
   if (b.admin_suppressed) return false;
   // Keep search resilient to sparse or stale scoring fields.

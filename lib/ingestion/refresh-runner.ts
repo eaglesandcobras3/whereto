@@ -108,7 +108,6 @@ export async function runRefreshBatch(budget: number) {
     .select(
       "id, lat, lng, category_id, last_refreshed_at, legacy_photo_refs, directory_refresh_requested_at",
     )
-    .eq("status", "active")
     .not("directory_refresh_requested_at", "is", null)
     .order("directory_refresh_requested_at", { ascending: true })
     .limit(budget * 3);
@@ -138,7 +137,6 @@ export async function runRefreshBatch(budget: number) {
       .select(
         "id, lat, lng, category_id, last_refreshed_at, legacy_photo_refs, directory_refresh_requested_at",
       )
-      .eq("status", "active")
       .is("directory_refresh_requested_at", null)
       .order("refresh_priority", { ascending: true })
       .order("last_refreshed_at", { ascending: true })
@@ -193,7 +191,6 @@ export async function runAiSummaryBatch(budget: number) {
   const { data: rows, error } = await supabase
     .from("businesses")
     .select("id, name, listing_rating, listing_review_count, price_level, ai_summary")
-    .eq("status", "active")
     .is("ai_summary", null)
     .limit(budget);
 

@@ -205,7 +205,6 @@ export async function fetchActiveBusinessesWithTags(
       categories(name)
     `,
     )
-    .eq("status", "active")
     .limit(400);
 
   if (bizErr) throw bizErr;

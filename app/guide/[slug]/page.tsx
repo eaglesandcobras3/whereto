@@ -4,7 +4,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -27,7 +27,6 @@ async function loadGuide(slug: string) {
       .from("guides")
       .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, status")
       .eq("slug", slug)
-      .in("status", storefrontListingStatuses())
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .maybeSingle();
@@ -62,7 +61,6 @@ async function loadGuide(slug: string) {
         page_type
       `)
       .eq("slug", slug)
-      .eq("status", "published")
       .maybeSingle();
 
     if (pageErr || !page) return null;

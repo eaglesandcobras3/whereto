@@ -1,48 +1,57 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import {
+  DEFAULT_FLAGS,
+  FLAG_OVERRIDE_COOKIE,
+  applyUserFeaturesLegacy,
+  getFeatureFlagsForEdgeRequest,
+  isAuthEnabled,
+  isSavedEnabled,
+  mergeWithCookieOverride,
+  parseFlagsFromEnv,
+} from "@/lib/feature-flags-core";
 
-const FLAG_OVERRIDE_COOKIE = "ff_overrides";
-
-const DEFAULT_FLAGS: Record<string, boolean> = {
-  search: true,
-  towns: true,
-  featured_business: true,
-  user_features: true,
-  experimental: false,
-};
-
-function parseEnvFlags(): Record<string, boolean> {
-  const raw = process.env.FEATURE_FLAGS_JSON?.trim();
-  if (!raw) return { ...DEFAULT_FLAGS };
-  try {
-    const parsed = JSON.parse(raw) as Record<string, boolean>;
-    return { ...DEFAULT_FLAGS, ...parsed };
-  } catch {
-    return { ...DEFAULT_FLAGS };
-  }
-}
+export {
+  DEFAULT_FLAGS,
+  FLAG_OVERRIDE_COOKIE,
+  applyUserFeaturesLegacy,
+  getFeatureFlagsForEdgeRequest,
+  isAuthEnabled,
+  isSavedEnabled,
+} from "@/lib/feature-flags-core";
 
 /**
  * Feature flags: `FEATURE_FLAGS_JSON` env (server) plus optional `ff_overrides` cookie.
  * The legacy `feature_flags` table is not used; configure flags in env / deploy config.
  */
 export async function getAllFeatureFlags(): Promise<Record<string, boolean>> {
-  let flags = parseEnvFlags();
-
+  let flags = parseFlagsFromEnv();
   try {
     const cookieStore = await cookies();
-    const overrideCookie = cookieStore.get(FLAG_OVERRIDE_COOKIE);
-    if (overrideCookie?.value) {
-      const overrides = JSON.parse(overrideCookie.value) as Record<string, boolean>;
-      flags = { ...flags, ...overrides };
-    }
+    const c = cookieStore.get(FLAG_OVERRIDE_COOKIE);
+    return mergeWithCookieOverride(flags, c?.value);
   } catch {
-    /* ignore */
+    return flags;
   }
-
-  return flags;
 }
 
 export async function isFeatureEnabled(name: string): Promise<boolean> {
   const flags = await getAllFeatureFlags();
   return !!flags[name];
+}
+
+/** For route handlers: returns a 404 response when the auth feature is off. */
+export async function authApiBlocked(): Promise<NextResponse | null> {
+  if (!isAuthEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 response when the saved-places feature is off. */
+export async function savedApiBlocked(): Promise<NextResponse | null> {
+  if (!isSavedEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
 }
