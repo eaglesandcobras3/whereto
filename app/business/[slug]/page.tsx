@@ -13,6 +13,7 @@ import Image from "next/image";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { selectBusinessHighlights } from "@/lib/business/highlights";
+import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -54,13 +55,17 @@ async function loadBusiness(slug: string) {
       ? await supabase
           .from("businesses")
           .select(sel)
-          .in("status", ["published", "active"])
+          .in("status", storefrontListingStatuses())
+          .is("archived_at", null)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("id", slug)
           .maybeSingle()
       : await supabase
           .from("businesses")
           .select(sel)
-          .in("status", ["published", "active"])
+          .in("status", storefrontListingStatuses())
+          .is("archived_at", null)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("slug", slug)
           .maybeSingle();
 
@@ -224,7 +229,9 @@ export default async function BusinessPage({ params }: Props) {
       .select("id, title, slug, excerpt, main_image, hero_image")
       .eq("town_id", townId)
       .neq("id", businessId)
-      .in("status", ["published", "active"])
+      .in("status", storefrontListingStatuses())
+      .is("archived_at", null)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("date_updated", { ascending: false, nullsFirst: false })
       .limit(5);
     relatedBusinesses = (data as Record<string, unknown>[] | null)?.map((r) => mapRel(r)) ?? [];
@@ -244,7 +251,10 @@ export default async function BusinessPage({ params }: Props) {
       const { data: gRows } = await supabase
         .from("guides")
         .select("slug, title, excerpt, main_image, hero_image")
-        .in("id", gids);
+        .in("id", gids)
+        .in("status", storefrontListingStatuses())
+        .is("archived_at", null)
+        .or(BROWSE_VISIBLE_NOT_HIDDEN);
       townGuides =
         (gRows ?? []).map((g) => ({
           slug: g.slug,
@@ -260,7 +270,9 @@ export default async function BusinessPage({ params }: Props) {
     const { data: g2 } = await supabase
       .from("guides")
       .select("slug, title, excerpt, main_image, hero_image")
-      .in("status", ["published", "active"])
+      .in("status", storefrontListingStatuses())
+      .is("archived_at", null)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("date_updated", { ascending: false, nullsFirst: false })
       .limit(5);
     townGuides =

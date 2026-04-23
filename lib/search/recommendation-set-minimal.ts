@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  storefrontListingStatuses,
+} from "@/lib/shop/public-listing-filters";
 import type { BusinessPayload, SearchResultPayload } from "@/lib/search/types";
 import type { SearchCandidateRankOrder } from "@/lib/scoring";
 
@@ -69,7 +73,9 @@ export async function buildMinimalSearchResult(
       `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, status, business_categories ( name, slug )`,
       { count: "exact" },
     )
-    .in("status", ["published", "active"])
+    .in("status", storefrontListingStatuses())
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%`);
 
   if (options.constrainTownId) {

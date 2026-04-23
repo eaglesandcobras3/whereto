@@ -5,7 +5,10 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import { storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  storefrontListingStatuses,
+} from "@/lib/shop/public-listing-filters";
 
 export default async function Home() {
   const flags = await getAllFeatureFlags();
@@ -18,7 +21,7 @@ export default async function Home() {
     .select("id, title, slug, excerpt, content, main_image, hero_image, is_featured_destination, featured, status, sort")
     .in("status", listableStatus)
     .is("archived_at", null)
-    .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("is_featured_destination", { ascending: false, nullsFirst: true })
     .order("featured", { ascending: false, nullsFirst: true })
     .order("sort", { ascending: true, nullsFirst: false })
@@ -55,7 +58,7 @@ export default async function Home() {
       .select("id, title, slug, excerpt, main_image, hero_image, content, featured, sort, date_updated")
       .in("status", listableStatus)
       .is("archived_at", null)
-      .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("featured", { ascending: false, nullsFirst: true })
       .order("sort", { ascending: true, nullsFirst: false })
       .order("date_updated", { ascending: false, nullsFirst: false })

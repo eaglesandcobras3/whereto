@@ -1,9 +1,16 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import { storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
-const AREA_TYPE_POI = "point_of_interest";
+/** Town hub: browse row for an `areas` table record (links to /search?type=areas). */
+export type TownAreaBrowseRow = {
+  id: string;
+  name: string;
+  slug: string;
+  area_type: string;
+  description_short: string | null;
+};
 
 function emptyCarousel(_label: string): EnrichedRecommendationPayload {
   return {
@@ -39,7 +46,7 @@ export async function getTownBySlug(slug: string) {
     .eq("slug", slug)
     .in("status", storefrontListingStatuses())
     .is("archived_at", null)
-    .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .maybeSingle();
   if (error || !town) return null;
   const t = town as {
@@ -106,7 +113,7 @@ export async function getRegionBySlug(slug: string) {
     .from("regions")
     .select("id, title, slug, status")
     .eq("slug", slug)
-    .in("status", ["published", "active"])
+    .in("status", storefrontListingStatuses())
     .maybeSingle();
   if (!data) return null;
   const r = data as { id: string; title: string; slug: string };
@@ -146,7 +153,9 @@ export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeat
     .from("guides")
     .select("slug, title, excerpt, main_image, hero_image, status")
     .in("id", gids)
-    .in("status", ["published", "active"])
+    .in("status", storefrontListingStatuses())
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(8);
   return (guides ?? []).map((g) => {
     const row = g as { slug: string; title: string; excerpt: string | null; main_image: string | null; hero_image: string | null };
@@ -159,42 +168,43 @@ export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeat
   });
 }
 
-export type TownAreaBrowseRow = {
-  id: string;
-  name: string;
-  slug: string;
-  area_type: string;
-  description_short: string | null;
-};
-
+/**
+ * All listable `areas` for a town. `points_of_interest` is a separate product surface
+ * (/search?type=access); the town hub only lists the `areas` table for now.
+ */
 export async function getTownAreasForLocalGuide(
   townId: string,
 ): Promise<{ districts: TownAreaBrowseRow[]; pointsOfInterest: TownAreaBrowseRow[] }> {
   const supabase = getServiceSupabase();
-  const { data } = await supabase
+  const list = storefrontListingStatuses();
+
+  const { data: areaData } = await supabase
     .from("areas")
     .select("id, title, slug, area_type, excerpt, town_id, status")
     .eq("town_id", townId)
-    .in("status", ["published", "active"])
+    .in("status", list)
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
-  const rows = (data ?? []) as {
-    id: string;
-    title: string;
-    slug: string;
-    area_type: string | null;
-    excerpt: string | null;
-  }[];
-  const mapped: TownAreaBrowseRow[] = rows.map((r) => ({
-    id: r.id,
-    name: r.title,
-    slug: r.slug,
-    area_type: r.area_type ?? "area",
-    description_short: r.excerpt,
-  }));
-  return {
-    districts: mapped.filter((r) => r.area_type !== AREA_TYPE_POI),
-    pointsOfInterest: mapped.filter((r) => r.area_type === AREA_TYPE_POI),
-  };
+
+  const districts: TownAreaBrowseRow[] = (areaData ?? []).map((r) => {
+    const row = r as {
+      id: string;
+      title: string;
+      slug: string;
+      area_type: string | null;
+      excerpt: string | null;
+    };
+    return {
+      id: row.id,
+      name: row.title,
+      slug: row.slug,
+      area_type: row.area_type ?? "area",
+      description_short: row.excerpt,
+    };
+  });
+
+  return { districts, pointsOfInterest: [] };
 }
 
 export async function getAdjacentTownNames(_townId: string): Promise<AdjacentTown[]> {
@@ -256,7 +266,9 @@ export async function getTownsInRegion(regionId: string) {
     .from("towns")
     .select("title, slug, status")
     .eq("region_id", regionId)
-    .in("status", ["published", "active"])
+    .in("status", storefrontListingStatuses())
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
   return (data ?? []).map((t) => ({
     name: (t as { title: string }).title,

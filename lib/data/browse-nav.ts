@@ -2,15 +2,21 @@ import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
+import { BROWSE_VISIBLE_NOT_HIDDEN, storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
 
+/**
+ * True when at least one `points_of_interest` row is listable (same rules as /search?type=access).
+ * Landmarks & parks use the `points_of_interest` table, not `areas.area_type` only.
+ */
 export async function hasPointOfInterestAreas(): Promise<boolean> {
   try {
     const supabase = getServiceSupabase();
     const { count, error } = await supabase
-      .from("areas")
+      .from("points_of_interest")
       .select("id", { count: "exact", head: true })
-      .eq("area_type", "point_of_interest")
-      .eq("include_in_site_browse", true);
+      .in("status", storefrontListingStatuses())
+      .is("archived_at", null)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN);
     if (error) return false;
     return (count ?? 0) > 0;
   } catch {
