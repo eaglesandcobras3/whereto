@@ -3,6 +3,7 @@ import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
 import { SearchPageClient, type DiscoveryTag } from "./search-page-client";
 import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
@@ -41,7 +42,6 @@ const TYPE_FILTERS: Record<string, { label: string; query: string }> = {
 };
 
 const BROWSE_TYPES = new Set(["events", "towns", "guides", "areas", "access"]);
-const AREA_TYPES_FOR_AREAS_SEARCH = ["shopping_area", "district", "neighborhood"] as const;
 
 function normalizeSearchType(type: string | undefined): string | undefined {
   if (!type) return undefined;
@@ -123,6 +123,7 @@ export default async function SearchPage({ searchParams }: Props) {
 
   const supabase = await createSupabaseServerClient();
   const serviceSupabase = getServiceSupabase();
+  const listableStatus = storefrontListingStatuses();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -148,7 +149,9 @@ export default async function SearchPage({ searchParams }: Props) {
   const { data: sidebarRows } = await serviceSupabase
     .from("towns")
     .select("id, title, slug")
-    .in("status", ["published", "active"])
+    .in("status", listableStatus)
+    .is("archived_at", null)
+    .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
     .order("title")
     .limit(50);
   const sidebarTowns = (sidebarRows ?? []).map((t) => ({
@@ -160,7 +163,9 @@ export default async function SearchPage({ searchParams }: Props) {
   const { data: recentBiz } = await serviceSupabase
     .from("businesses")
     .select("id, title, slug, main_image, hero_image, date_updated")
-    .in("status", ["published", "active"])
+    .in("status", listableStatus)
+    .is("archived_at", null)
+    .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
     .order("date_updated", { ascending: false, nullsFirst: false })
     .limit(5);
   const recentPostsResult = {
@@ -204,7 +209,9 @@ export default async function SearchPage({ searchParams }: Props) {
     let evQuery = serviceSupabase
       .from("events")
       .select("id, slug, title, excerpt, main_image, hero_image, starts_at, ends_at, location_name, cost_notes, ticket_url, recurrence_rule, status")
-      .in("status", ["published", "active"])
+      .in("status", listableStatus)
+      .is("archived_at", null)
+      .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
       .order("starts_at", { ascending: true, nullsFirst: false })
       .limit(100);
     if (eventIdFilter?.length) evQuery = evQuery.in("id", eventIdFilter);
@@ -236,7 +243,9 @@ export default async function SearchPage({ searchParams }: Props) {
     let tq = serviceSupabase
       .from("towns")
       .select("id, title, slug, excerpt, status")
-      .in("status", ["published", "active"])
+      .in("status", listableStatus)
+      .is("archived_at", null)
+      .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
       .order("title")
       .limit(100);
     if (constrainTownId) tq = tq.eq("id", constrainTownId);
@@ -270,7 +279,9 @@ export default async function SearchPage({ searchParams }: Props) {
     let gq = serviceSupabase
       .from("guides")
       .select("slug, title, excerpt, seo_description, main_image, hero_image, status")
-      .in("status", ["published", "active"])
+      .in("status", listableStatus)
+      .is("archived_at", null)
+      .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
       .order("title")
       .limit(100);
     const safeG = sanitizeSearchToken(trimmedQ);
@@ -312,7 +323,9 @@ export default async function SearchPage({ searchParams }: Props) {
       let pq = serviceSupabase
         .from("points_of_interest")
         .select("id, title, slug, excerpt, poi_type, town_id, towns(slug, title)")
-        .in("status", ["published", "active"])
+        .in("status", listableStatus)
+        .is("archived_at", null)
+        .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
         .order("title")
         .limit(100);
       if (constrainTownId) pq = pq.eq("town_id", constrainTownId);
@@ -355,7 +368,9 @@ export default async function SearchPage({ searchParams }: Props) {
     let aq = serviceSupabase
       .from("areas")
       .select("id, title, slug, excerpt, area_type, town_id, is_shopping_area, towns(slug, title)")
-      .in("status", ["published", "active"])
+      .in("status", listableStatus)
+      .is("archived_at", null)
+      .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
       .order("title")
       .limit(100);
     if (constrainTownId) aq = aq.eq("town_id", constrainTownId);
@@ -364,15 +379,7 @@ export default async function SearchPage({ searchParams }: Props) {
       aq = aq.or(`title.ilike.%${safeA}%,slug.ilike.%${safeA}%,excerpt.ilike.%${safeA}%,search_keywords.ilike.%${safeA}%`);
     }
     const { data: rawAreas } = await aq;
-    const browseAreas: BrowseAreaRow[] = (rawAreas ?? [])
-      .filter((row) => {
-        const r = row as { area_type: string | null; is_shopping_area?: boolean | null };
-        return (
-          (r.area_type && AREA_TYPES_FOR_AREAS_SEARCH.includes(r.area_type as (typeof AREA_TYPES_FOR_AREAS_SEARCH)[number])) ||
-          r.is_shopping_area === true
-        );
-      })
-      .map((row: Record<string, unknown>) => {
+    const browseAreas: BrowseAreaRow[] = (rawAreas ?? []).map((row: Record<string, unknown>) => {
         const rawT = row.towns as
           | { slug: string; title: string }
           | { slug: string; title: string }[]

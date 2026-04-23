@@ -1,5 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { storefrontListingStatuses } from "@/lib/shop/public-listing-filters";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
 const AREA_TYPE_POI = "point_of_interest";
@@ -36,7 +37,9 @@ export async function getTownBySlug(slug: string) {
     .from("towns")
     .select("id, title, slug, region_id, excerpt, content, main_image, hero_image, status")
     .eq("slug", slug)
-    .in("status", ["published", "active"])
+    .in("status", storefrontListingStatuses())
+    .is("archived_at", null)
+    .or("is_hidden_from_search.is.null,is_hidden_from_search.eq.false")
     .maybeSingle();
   if (error || !town) return null;
   const t = town as {
