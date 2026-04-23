@@ -1,45 +1,33 @@
 import { cookies } from "next/headers";
-import { getServiceSupabase } from "./supabase/service-role";
 
-export type FeatureFlag = {
-  name: string;
-  enabled: boolean;
-};
-
-/**
- * Cookie name for local feature flag overrides.
- * Set this cookie to a JSON object to override flags locally.
- * Example: {"user_features":true,"experimental":true}
- */
 const FLAG_OVERRIDE_COOKIE = "ff_overrides";
 
+const DEFAULT_FLAGS: Record<string, boolean> = {
+  search: true,
+  towns: true,
+  featured_business: true,
+  user_features: true,
+  experimental: false,
+};
+
+function parseEnvFlags(): Record<string, boolean> {
+  const raw = process.env.FEATURE_FLAGS_JSON?.trim();
+  if (!raw) return { ...DEFAULT_FLAGS };
+  try {
+    const parsed = JSON.parse(raw) as Record<string, boolean>;
+    return { ...DEFAULT_FLAGS, ...parsed };
+  } catch {
+    return { ...DEFAULT_FLAGS };
+  }
+}
+
 /**
- * Fetch all feature flags from the database.
- * Supports cookie-based overrides for local development.
- *
- * To enable flags locally without affecting production:
- * 1. Open browser dev tools → Application → Cookies
- * 2. Add cookie: ff_overrides = {"user_features":true}
- * 3. Refresh the page
+ * Feature flags: `FEATURE_FLAGS_JSON` env (server) plus optional `ff_overrides` cookie.
+ * The legacy `feature_flags` table is not used; configure flags in env / deploy config.
  */
 export async function getAllFeatureFlags(): Promise<Record<string, boolean>> {
-  const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("feature_flags")
-    .select("name, enabled");
+  let flags = parseEnvFlags();
 
-  let flags: Record<string, boolean> = {};
-
-  if (error || !data) {
-    console.error("Error fetching feature flags:", error);
-  } else {
-    flags = data.reduce((acc, flag) => {
-      acc[flag.name] = flag.enabled;
-      return acc;
-    }, {} as Record<string, boolean>);
-  }
-
-  // Apply cookie overrides (for local development)
   try {
     const cookieStore = await cookies();
     const overrideCookie = cookieStore.get(FLAG_OVERRIDE_COOKIE);
@@ -48,15 +36,12 @@ export async function getAllFeatureFlags(): Promise<Record<string, boolean>> {
       flags = { ...flags, ...overrides };
     }
   } catch {
-    // Ignore cookie parsing errors
+    /* ignore */
   }
 
   return flags;
 }
 
-/**
- * Check if a specific feature flag is enabled.
- */
 export async function isFeatureEnabled(name: string): Promise<boolean> {
   const flags = await getAllFeatureFlags();
   return !!flags[name];

@@ -1,25 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertCronAuthorized } from "@/lib/cron-auth";
-import { runRecommendationPrecompute } from "@/lib/cron/recommendation-precompute";
+import { cronLegacyDisabledResponse } from "@/lib/cron-legacy-disabled";
 
-/**
- * Weekly pass: same pipeline as recommendation-precompute, smaller budget.
- * Refreshes stale high-value `query_cache` rows (town × category / intent).
- */
 export async function GET(request: NextRequest) {
   try {
     assertCronAuthorized(request);
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  try {
-    const report = await runRecommendationPrecompute(40);
-    return NextResponse.json({
-      warmed: report.processed,
-      ...report,
-    });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "popular-cache failed";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return cronLegacyDisabledResponse("popular-cache");
 }

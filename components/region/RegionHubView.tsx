@@ -4,7 +4,7 @@ import { TownCard } from "@/components/discovery/TownCard";
 import { getRegionDescriptor, getTownDescriptor } from "@/lib/data/town-descriptors";
 import type { AdjacentTown } from "@/lib/data/town-hub";
 
-type RegionRecord = { id: number; name: string; slug: string };
+type RegionRecord = { id: string; name: string; slug: string };
 
 export function RegionHubView({
   region,

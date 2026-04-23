@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
+import { getPublicImageUrl } from "@/lib/media/public-image-url";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -20,7 +21,33 @@ async function loadGuide(slug: string) {
     }
 
     const supabase = getServiceSupabase();
-    // 1. Fetch Page
+
+    const { data: g } = await supabase
+      .from("guides")
+      .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, status")
+      .eq("slug", slug)
+      .in("status", ["published", "active"])
+      .maybeSingle();
+    if (g) {
+      const row = g as {
+        title: string;
+        content: string | null;
+        excerpt: string | null;
+        seo_title: string | null;
+        seo_description: string | null;
+        main_image: string | null;
+        hero_image: string | null;
+      };
+      const img = getPublicImageUrl(row.main_image) ?? getPublicImageUrl(row.hero_image);
+      return {
+        title: row.title,
+        body_markdown: row.content ?? "",
+        seo_title: row.seo_title,
+        seo_description: row.seo_description ?? row.excerpt,
+        og_image_url: img,
+      };
+    }
+
     const { data: page, error: pageErr } = await supabase
       .from("pages")
       .select(`
@@ -34,9 +61,8 @@ async function loadGuide(slug: string) {
       .eq("slug", slug)
       .eq("status", "published")
       .maybeSingle();
-    
-    if (pageErr || !page) return null;
 
+    if (pageErr || !page) return null;
     return page;
   } catch {
     return null;

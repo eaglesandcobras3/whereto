@@ -65,9 +65,13 @@ export default async function TownPage({ params }: Props) {
 
   const descriptor = getTownDescriptor(town.slug);
   const townEntry = await getPublishedContentEntryBySlug("town", town.slug);
-  const townPage = Array.isArray(town.pages)
-    ? (town.pages[0] as { body_markdown: string } | undefined)
-    : (town.pages as { body_markdown: string } | undefined);
+  const rawPages = town.pages;
+  const townPage =
+    rawPages == null
+      ? undefined
+      : Array.isArray(rawPages)
+        ? (rawPages[0] as { body_markdown: string } | undefined)
+        : (rawPages as { body_markdown: string });
   const townBodyMarkdown = townEntry?.body_markdown || townPage?.body_markdown;
   const townHeroImage =
     ("hero_image_wide_url" in town && typeof town.hero_image_wide_url === "string" && town.hero_image_wide_url) ||

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { weekdayLongName } from "@/lib/events/recurrence";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getPublicImageUrl } from "@/lib/media/public-image-url";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -14,7 +15,6 @@ type EventRow = {
   end_date: string | null;
   recurrence_frequency: string | null;
   recurrence_weekday: number | null;
-  /** From `upcoming_events` when the series still has a future occurrence. */
   next_list_date: string | null;
   venue_name: string | null;
   address: string | null;
@@ -25,56 +25,79 @@ type EventRow = {
   town_slug: string | null;
 };
 
+function parseWeekdayFromRRule(rule: string | null): number | null {
+  if (!rule || !rule.toLowerCase().includes("weekly")) return null;
+  const m = /BYDAY=([A-Z]{2})/i.exec(rule);
+  if (!m) return null;
+  const map: Record<string, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+  return map[m[1].toUpperCase()] ?? null;
+}
+
 async function loadEvent(slug: string): Promise<EventRow | null> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("events")
     .select(
-      "title, description, hero_image_url, event_date, end_date, recurrence_frequency, recurrence_weekday, venue_name, address, price, website, tags, town_id"
+      "id, title, excerpt, content, slug, starts_at, ends_at, recurrence_rule, main_image, hero_image, location_name, address, cost_notes, ticket_url, intent_tags, status",
     )
     .eq("slug", slug)
-    .eq("status", "active")
+    .in("status", ["published", "active"])
     .maybeSingle();
 
   if (error || !data) return null;
 
-  const { data: upcoming } = await supabase
-    .from("upcoming_events")
-    .select("next_list_date")
-    .eq("slug", slug)
+  const row = data as {
+    id: string;
+    title: string;
+    excerpt: string | null;
+    content: string | null;
+    starts_at: string | null;
+    ends_at: string | null;
+    recurrence_rule: string | null;
+    main_image: string | null;
+    hero_image: string | null;
+    location_name: string | null;
+    address: string | null;
+    cost_notes: string | null;
+    ticket_url: string | null;
+    intent_tags: unknown;
+  };
+
+  const { data: et } = await supabase
+    .from("event_towns")
+    .select("towns ( title, slug )")
+    .eq("event_id", row.id)
+    .limit(1)
     .maybeSingle();
 
-  let town_name: string | null = null;
-  let town_slug: string | null = null;
-  const townId = data.town_id as number | null;
-  if (townId) {
-    const { data: town } = await supabase
-      .from("towns")
-      .select("name, slug")
-      .eq("id", townId)
-      .maybeSingle();
-    if (town) {
-      town_name = town.name as string;
-      town_slug = town.slug as string;
-    }
-  }
+  const rawT = (et as { towns: { title: string; slug: string } | { title: string; slug: string }[] | null } | null)
+    ?.towns;
+  const t = Array.isArray(rawT) ? rawT[0] : rawT;
+
+  const start = row.starts_at ? row.starts_at.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  const end = row.ends_at ? row.ends_at.slice(0, 10) : null;
+  const hero = getPublicImageUrl(row.main_image) ?? getPublicImageUrl(row.hero_image);
+  const tags = Array.isArray(row.intent_tags)
+    ? row.intent_tags.filter((x): x is string => typeof x === "string")
+    : null;
+  const wd = parseWeekdayFromRRule(row.recurrence_rule);
 
   return {
-    title: data.title as string,
-    description: data.description as string | null,
-    hero_image_url: data.hero_image_url as string | null,
-    event_date: data.event_date as string,
-    end_date: data.end_date as string | null,
-    recurrence_frequency: (data.recurrence_frequency as string | null) ?? null,
-    recurrence_weekday: (data.recurrence_weekday as number | null) ?? null,
-    next_list_date: (upcoming?.next_list_date as string | null) ?? null,
-    venue_name: data.venue_name as string | null,
-    address: data.address as string | null,
-    price: data.price as string | null,
-    website: data.website as string | null,
-    tags: data.tags as string[] | null,
-    town_name,
-    town_slug,
+    title: row.title,
+    description: row.excerpt ?? row.content,
+    hero_image_url: hero,
+    event_date: start,
+    end_date: end,
+    recurrence_frequency: row.recurrence_rule?.toLowerCase().includes("weekly") ? "weekly" : null,
+    recurrence_weekday: wd,
+    next_list_date: row.starts_at,
+    venue_name: row.location_name,
+    address: row.address,
+    price: row.cost_notes,
+    website: row.ticket_url,
+    tags,
+    town_name: t?.title ?? null,
+    town_slug: t?.slug ?? null,
   };
 }
 
@@ -89,8 +112,7 @@ function formatDateRange(eventDate: string, endDate: string | null): string {
     });
   }
   const end = new Date(endDate + "T12:00:00");
-  const sameMonth =
-    start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
   if (sameMonth) {
     return `${start.toLocaleDateString("en-US", { month: "long", day: "numeric" })} – ${end.toLocaleDateString("en-US", { day: "numeric", year: "numeric" })}`;
   }
@@ -148,21 +170,16 @@ export default async function EventDetailPage({ params }: Props) {
       ) : null}
 
       <header className="mb-8">
-        {event.recurrence_frequency === "weekly" &&
-        event.recurrence_weekday != null &&
-        event.recurrence_weekday >= 0 &&
-        event.recurrence_weekday <= 6 ? (
+        {event.recurrence_frequency === "weekly" && event.recurrence_weekday != null && event.recurrence_weekday >= 0 && event.recurrence_weekday <= 6 ? (
           <div className="space-y-1">
             <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-primary)]">
               Every {weekdayLongName(event.recurrence_weekday)}
             </p>
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Season {formatSeasonLine(event.event_date, event.end_date)}
-            </p>
+            <p className="text-sm text-[var(--color-text-secondary)]">Season {formatSeasonLine(event.event_date, event.end_date)}</p>
             {event.next_list_date ? (
               <p className="text-sm text-[var(--color-text-secondary)]">
-                Next date:{" "}
-                {new Date(event.next_list_date + "T12:00:00").toLocaleDateString("en-US", {
+                Next:{" "}
+                {new Date(event.next_list_date).toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
@@ -196,7 +213,7 @@ export default async function EventDetailPage({ params }: Props) {
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
           >
-            Official site
+            Tickets / site
             <span className="material-symbols-outlined !text-lg">open_in_new</span>
           </a>
         ) : null}

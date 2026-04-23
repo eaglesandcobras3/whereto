@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import type { Database } from "@/lib/supabase/database.types";
 import { getSupabasePublishableKey } from "@/lib/supabase/env-keys";
 
 export async function GET(request: Request) {
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const publishable = getSupabasePublishableKey();
     if (url && publishable) {
-      const supabase = createServerClient<Database>(url, publishable, {
+      const supabase = createServerClient(url, publishable, {
         cookies: {
           getAll() {
             return cookieStore.getAll();

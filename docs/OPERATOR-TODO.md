@@ -35,6 +35,12 @@
 | `GEOAPIFY_API_KEY` | [Geoapify MyProjects](https://myprojects.geoapify.com/) | Optional; without it, discovery and directory refresh crons skip external calls (discovery leaves jobs pending). Places + Place Details use OSM-derived data under Geoapify’s and ODbL terms — keep attribution (see `business_sources`). |
 | `CRON_SECRET` | Generate a long random string | Required in **production** for `/api/cron/*`; omitted in `NODE_ENV=development` the app allows cron without secret |
 | `NEXT_PUBLIC_SITE_URL` | Your canonical origin (e.g. `https://yoursite.com`) | Optional; improves sitemap, robots, and Open Graph URLs. Vercel sets `VERCEL_URL` as a server fallback if unset |
+| `NEXT_PUBLIC_IMAGE_STORAGE_BUCKET` | Optional; default **`whereto-media`** | When `main_image` / `hero_image` store a **storage key** (not a full URL), the app builds `…/storage/v1/object/public/{bucket}/{key}`. Use `bucket/…` as the key prefix to pick another public bucket, or set this env to override the default. |
+| `NEXT_PUBLIC_DIRECTUS_URL` | (Optional) Directus origin if you use it for editing only | **Not used for public image URLs** at runtime. |
+| `ADMIN_USER_IDS` | Comma-separated Supabase Auth user UUIDs | Who can open `/admin` in the Next app (optional in-app shell). |
+| `ADMIN_EMAILS` | Comma-separated emails | Alternative to `ADMIN_USER_IDS` for `/admin` access. |
+| `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true}` | Server-side feature flags (replaces legacy `feature_flags` table). |
+| `HOME_HERO_TITLE`, `HOME_HERO_SUBTITLE`, `HOME_HERO_IMAGE_URL`, `HOME_SEARCH_PLACEHOLDER` | Local / Vercel env | Override homepage hero when not using legacy `site_settings`. |
 
 ---
 
@@ -105,6 +111,9 @@ After deploying the premium redesign code, complete these steps to enable new to
 | 2026-04-20 | **CMS foundation + ACF-style flexibility:** Apply **`20260420110000_cms_foundation.sql`**. Adds `site_settings`, `field_groups`, `field_definitions`, `content_entries`, `content_revisions`, `media_assets`, and public bucket `cms-media`. New admin routes: `/admin/site-settings`, `/admin/content`, `/admin/media`. For DB-first cutover, run `npm run content:migrate:db` to seed `content_entries` from existing `pages` rows. |
 | 2026-04-22 | **Town image fields + Towns admin:** Apply **`20260422110000_town_image_fields.sql`**. Adds `towns.hero_image_thumb_url` + `towns.hero_image_wide_url`; `/admin/towns/[id]` now supports upload+process for both, and town/home UIs read these fields (thumb prioritized for cards, wide for town hero). |
 | 2026-04-22 | **Featured content table:** Apply **`20260422120000_featured_content.sql`**. Creates `public.featured_content` with indexes and `updated_at` trigger. Without this table, business save (when syncing homepage featured) and `/admin/featured` fail with PostgREST “not found in the schema cache”. |
+| 2026-04-23 | **Directus + new public schema:** Editorial and listings are edited in **Directus**; the app reads **Supabase** only. Set `NEXT_PUBLIC_DIRECTUS_URL` for asset URLs and the in-app admin link. `/admin` access uses `ADMIN_USER_IDS` / `ADMIN_EMAILS` (not `public.profiles`). Feature flags use `FEATURE_FLAGS_JSON` if needed. Regenerate types with `npm run supabase:types` / `supabase:types:remote` after schema changes. |
+| 2026-04-23 | **Regions + `query_cache` + crons:** Apply **`20260423130000_regions_and_query_cache.sql`** (`regions`, `towns.region_id` FK, `query_cache` for TTL rows). [vercel.json](../vercel.json) schedules only **`/api/cron/cache-prune`**. Other `/api/cron/*` routes return a JSON *disabled* body (ingestion/AI/SEO pipelines off in favor of Directus + DB). Promote users via `ADMIN_USER_IDS` / `ADMIN_EMAILS` if you still use any env-gated tool routes—Next **in-app** `/admin` UI was removed. |
+| 2026-04-24 | **Public images:** The storefront does **not** call Directus for assets. `getPublicImageUrl` builds Supabase **Storage** public URLs from `NEXT_PUBLIC_SUPABASE_URL` (and optional `NEXT_PUBLIC_IMAGE_STORAGE_BUCKET` / `bucket/…` keys). Default public bucket: **`whereto-media`**. Store full `https://…` URLs in the row if you prefer. |
 
 ---
 

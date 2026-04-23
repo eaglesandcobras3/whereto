@@ -7,120 +7,155 @@ import {
   PRIMARY_REGION_HUB_PATH,
 } from "@/lib/routes/primary-region";
 
+const STATIC_PATHS = [
+  "/",
+  "/about",
+  "/terms",
+  "/privacy",
+  "/guide",
+  "/towns",
+  "/search",
+  "/login",
+] as const;
+
+/**
+ * Sitemap from Supabase: towns, regions, businesses, guides, events, and areas
+ * (Directus-backed collections). `lastModified` uses row timestamps when available.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
   const now = new Date();
   const supabase = getServiceSupabaseOrNull();
   if (!supabase) {
     return [
-      {
-        url: `${base}/`,
-        lastModified: now,
-        changeFrequency: "daily",
-        priority: 1,
-      },
+      { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
+      ...STATIC_PATHS.filter((p) => p !== "/").map(
+        (p) =>
+          ({
+            url: `${base}${p}`,
+            lastModified: now,
+            changeFrequency: "monthly" as const,
+            priority: 0.4,
+          }) satisfies MetadataRoute.Sitemap[0],
+      ),
     ];
   }
 
-  const [{ data: towns }, { data: regions }, { data: seo }, { data: businesses }] =
-    await Promise.all([
-      supabase.from("towns").select("slug"),
-      supabase.from("regions").select("slug"),
-      supabase
-        .from("seo_pages")
-        .select("slug, updated_at")
-        .eq("published", true),
-      supabase
-        .from("businesses")
-        .select("slug, updated_at")
-        .eq("status", "active")
-        .eq("admin_suppressed", false)
-        .limit(5000),
-    ]);
+  const [
+    { data: towns },
+    { data: regions },
+    { data: businesses },
+    { data: guides },
+    { data: events },
+  ] = await Promise.all([
+    supabase
+      .from("towns")
+      .select("slug, date_updated, published_at")
+      .in("status", ["published", "active"]),
+    supabase
+      .from("regions")
+      .select("slug, date_updated, published_at")
+      .in("status", ["published", "active"]),
+    supabase
+      .from("businesses")
+      .select("slug, date_updated, published_at")
+      .in("status", ["published", "active"])
+      .limit(8000),
+    supabase
+      .from("guides")
+      .select("slug, date_updated, published_at")
+      .in("status", ["published", "active"]),
+    supabase
+      .from("events")
+      .select("slug, date_updated, published_at, starts_at")
+      .in("status", ["published", "active"]),
+  ]);
 
   const entries: MetadataRoute.Sitemap = [
-    {
-      url: `${base}/`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 1,
-    },
-    {
-      url: `${base}/guide`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.95,
-    },
-    {
-      url: `${base}${PRIMARY_REGION_HUB_PATH}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.88,
-    },
+    { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: `${base}/guide`, lastModified: now, changeFrequency: "weekly", priority: 0.95 },
+    { url: `${base}${PRIMARY_REGION_HUB_PATH}`, lastModified: now, changeFrequency: "weekly", priority: 0.88 },
   ];
 
-  // Guide pages for each town (high SEO value)
-  for (const t of towns ?? []) {
-    const slug = t.slug as string;
-    if (!slug) continue;
+  for (const p of STATIC_PATHS) {
+    if (p === "/") continue;
     entries.push({
-      url: `${base}/guide/${slug}`,
+      url: `${base}${p}`,
       lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.92,
+      changeFrequency: "monthly",
+      priority: 0.5,
     });
   }
 
   for (const t of towns ?? []) {
     const slug = t.slug as string;
     if (!slug || isReservedRootSlug(slug)) continue;
-    entries.push({
-      url: `${base}/${slug}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    });
+    const lm = pickDate(t, now);
+    entries.push({ url: `${base}/${slug}`, lastModified: lm, changeFrequency: "weekly", priority: 0.9 });
   }
 
   for (const r of regions ?? []) {
     const slug = r.slug as string;
-    if (!slug || isReservedRootSlug(slug)) continue;
-    if (slug === PRIMARY_REGION_DB_SLUG) continue;
+    if (!slug || isReservedRootSlug(slug) || slug === PRIMARY_REGION_DB_SLUG) continue;
     entries.push({
       url: `${base}/${slug}`,
-      lastModified: now,
+      lastModified: pickDate(r, now),
       changeFrequency: "weekly",
-      priority: 0.85,
-    });
-  }
-
-  for (const row of seo ?? []) {
-    const slug = row.slug as string;
-    if (!slug) continue;
-    const lm = row.updated_at
-      ? new Date(row.updated_at as string)
-      : now;
-    entries.push({
-      url: `${base}/${slug}`,
-      lastModified: lm,
-      changeFrequency: "weekly",
-      priority: 0.8,
+      priority: 0.86,
     });
   }
 
   for (const b of businesses ?? []) {
     const slug = b.slug as string;
     if (!slug) continue;
-    const lm = b.updated_at
-      ? new Date(b.updated_at as string)
-      : now;
     entries.push({
       url: `${base}/business/${slug}`,
-      lastModified: lm,
+      lastModified: pickDate(b, now),
       changeFrequency: "monthly",
       priority: 0.65,
     });
   }
 
-  return entries;
+  for (const g of guides ?? []) {
+    const slug = g.slug as string;
+    if (!slug) continue;
+    entries.push({
+      url: `${base}/guide/${slug}`,
+      lastModified: pickDate(g, now),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
+  }
+
+  for (const e of events ?? []) {
+    const slug = e.slug as string;
+    if (!slug) continue;
+    entries.push({
+      url: `${base}/events/${slug}`,
+      lastModified: pickDate(e, now),
+      changeFrequency: "weekly",
+      priority: 0.62,
+    });
+  }
+
+  return dedupeByUrl(entries);
+}
+
+function pickDate(row: Record<string, unknown>, fallback: Date): Date {
+  for (const k of ["date_updated", "published_at", "starts_at"]) {
+    const v = row[k];
+    if (typeof v === "string" && v) return new Date(v);
+  }
+  return fallback;
+}
+
+function dedupeByUrl(entries: MetadataRoute.Sitemap): MetadataRoute.Sitemap {
+  const seen = new Set<string>();
+  const out: MetadataRoute.Sitemap = [];
+  for (const e of entries) {
+    if (seen.has(e.url)) continue;
+    seen.add(e.url);
+    out.push(e);
+  }
+  return out;
 }

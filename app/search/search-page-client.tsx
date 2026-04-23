@@ -14,7 +14,7 @@ export type DiscoveryTag = {
 };
 
 type Town = {
-  id: number;
+  id: string;
   name: string;
   slug: string;
 };
@@ -47,7 +47,7 @@ export type BrowseEventRow = {
 };
 
 export type BrowseTownRow = {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   ai_tagline: string | null;
@@ -62,7 +62,7 @@ export type BrowseGuideRow = {
 };
 
 export type BrowseAreaRow = {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   description_short: string | null;

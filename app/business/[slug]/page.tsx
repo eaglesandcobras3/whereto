@@ -5,6 +5,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
+import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
@@ -18,51 +19,91 @@ type Props = { params: Promise<{ slug: string }> };
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function intentTagsToFakeTagRows(
+  raw: unknown,
+): { tags: { slug: string; name: string } | null }[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((t) => {
+      if (typeof t === "string")
+        return { tags: { slug: t, name: t } };
+      if (t && typeof t === "object" && "slug" in t) {
+        const o = t as { slug?: string; name?: string };
+        return { tags: { slug: o.slug ?? "tag", name: o.name ?? o.slug ?? "Tag" } };
+      }
+      return { tags: null };
+    });
+  }
+  return [];
+}
+
 async function loadBusiness(slug: string) {
   try {
     const supabase = getServiceSupabase();
     const isUuid = UUID_RE.test(slug);
     const sel = `
-        id, slug, name, address, town_id, category_id, lat, lng, phone, website,
-        has_physical_location,
-        ai_summary, listing_rating, listing_review_count, legacy_photo_refs, hero_image_url,
-        claim_status, claimed_by_user_id,
-        ai_vibe, ai_crowd, ai_noise_level,
-        ai_best_time, ai_reservations, ai_parking, ai_wait_time,
-        ai_good_for, ai_not_ideal_for, ai_pairs_with,
-        ai_one_liner, ai_local_tip, ai_highlights, ai_nearby_context,
-        ai_family_score, ai_date_score, ai_value_score,
-        business_tags(tags(name, slug)),
-        towns(name, slug),
-        categories(name, slug)
+        id, slug, title, address, town_id, map_lat, map_lng, phone, website,
+        excerpt, content, main_image, hero_image,
+        review_rating_cached, review_count_cached,
+        claim_status, intent_tags, status, published_at,
+        towns ( title, slug ),
+        business_categories ( name, slug )
       `;
-    
-    // 1. Fetch Business
+
     const { data: business, error: bizErr } = isUuid
       ? await supabase
           .from("businesses")
           .select(sel)
-          .eq("status", "active")
+          .in("status", ["published", "active"])
           .eq("id", slug)
           .maybeSingle()
       : await supabase
           .from("businesses")
           .select(sel)
-          .eq("status", "active")
+          .in("status", ["published", "active"])
           .eq("slug", slug)
           .maybeSingle();
 
     if (bizErr || !business) return null;
 
-    // 2. Fetch Page content by slug
-    const { data: page } = await supabase
-      .from("pages")
-      .select("body_markdown")
-      .eq("slug", business.slug)
-      .eq("status", "published")
-      .maybeSingle();
+    const row = business as Record<string, unknown>;
+    const img =
+      getPublicImageUrl(row.main_image as string) ??
+      getPublicImageUrl(row.hero_image as string);
+    const towns = row.towns as { title?: string; name?: string; slug?: string } | null;
+    const category = row.business_categories as { name?: string; slug?: string } | null;
 
-    return { ...business, pages: page };
+    return {
+      ...row,
+      name: (row.title as string) ?? "Business",
+      lat: row.map_lat,
+      lng: row.map_lng,
+      has_physical_location: row.map_lat != null && row.map_lng != null,
+      hero_image_url: img,
+      ai_summary: (row.excerpt as string) ?? (typeof row.content === "string" ? row.content.slice(0, 500) : null),
+      listing_rating: row.review_rating_cached,
+      listing_review_count: row.review_count_cached,
+      towns: towns ? { name: (towns as { title?: string }).title ?? towns.name, slug: towns.slug } : null,
+      categories: category,
+      business_tags: intentTagsToFakeTagRows(row.intent_tags),
+      pages: null,
+      ai_vibe: null,
+      ai_crowd: null,
+      ai_noise_level: null,
+      ai_best_time: null,
+      ai_reservations: null,
+      ai_parking: null,
+      ai_wait_time: null,
+      ai_good_for: null,
+      ai_not_ideal_for: null,
+      ai_pairs_with: null,
+      ai_one_liner: (row.excerpt as string) ?? null,
+      ai_local_tip: null,
+      ai_highlights: null,
+      ai_family_score: null,
+      ai_date_score: null,
+      ai_value_score: null,
+    } as Record<string, unknown> & { pages: null };
   } catch (e) {
     console.error("loadBusiness error:", e);
     return null;
@@ -73,7 +114,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const b = await loadBusiness(slug);
   if (!b) return { title: "Business" };
-  const desc = (b.ai_one_liner as string) || (b.ai_summary as string)?.slice(0, 160) || undefined;
+  const desc = (b.excerpt as string) || (b.ai_summary as string)?.slice(0, 160) || undefined;
   const hero = businessListingImageUrl(b.hero_image_url as string | null);
   const ogUrl = hero ?? undefined;
   return {
@@ -143,7 +184,7 @@ export default async function BusinessPage({ params }: Props) {
 
   const flags = await getAllFeatureFlags();
   const supabase = getServiceSupabase();
-  const townId = b.town_id as number | null;
+  const townId = b.town_id as string | null;
   const businessId = b.id as string;
 
   type RelatedBusinessRow = {
@@ -153,6 +194,20 @@ export default async function BusinessPage({ params }: Props) {
     hero_image_url: string | null;
     ai_one_liner: string | null;
     ai_summary: string | null;
+  };
+
+  const mapRel = (r: Record<string, unknown>): RelatedBusinessRow => {
+    const m = (r as { main_image?: string | null; hero_image?: string | null }).main_image;
+    const h = (r as { hero_image?: string | null }).hero_image;
+    const u = getPublicImageUrl(m) ?? getPublicImageUrl(h);
+    return {
+      id: String(r.id),
+      name: String((r as { title: string }).title),
+      slug: String(r.slug),
+      hero_image_url: u,
+      ai_one_liner: (r as { excerpt?: string | null }).excerpt ?? null,
+      ai_summary: (r as { excerpt?: string | null }).excerpt ?? null,
+    };
   };
 
   type GuideCardRow = {
@@ -166,45 +221,57 @@ export default async function BusinessPage({ params }: Props) {
   if (townId != null) {
     const { data } = await supabase
       .from("businesses")
-      .select("id, name, slug, hero_image_url, ai_one_liner, ai_summary")
+      .select("id, title, slug, excerpt, main_image, hero_image")
       .eq("town_id", townId)
       .neq("id", businessId)
-      .eq("status", "active")
-      .order("confidence_score", { ascending: false })
+      .in("status", ["published", "active"])
+      .order("date_updated", { ascending: false, nullsFirst: false })
       .limit(5);
-    relatedBusinesses = (data as RelatedBusinessRow[] | null) ?? [];
+    relatedBusinesses = (data as Record<string, unknown>[] | null)?.map((r) => mapRel(r)) ?? [];
   }
 
   let townGuides: GuideCardRow[] = [];
   if (townId != null) {
-    const { data: ents } = await supabase
-      .from("entities")
-      .select("id")
-      .eq("primary_town_id", townId)
-      .eq("status", "published")
-      .in("entity_type", ["guide", "seasonal_guide"])
-      .limit(24);
-    const entityIds = (ents ?? []).map((e) => e.id as string).filter(Boolean);
-    if (entityIds.length > 0) {
-      const { data: g } = await supabase
-        .from("pages")
-        .select("slug, title, excerpt, og_image_url")
-        .eq("page_type", "guide")
-        .eq("status", "published")
-        .in("entity_id", entityIds)
-        .limit(6);
-      townGuides = (g as GuideCardRow[] | null) ?? [];
+    const { data: links } = await supabase
+      .from("guide_towns")
+      .select("guide_id")
+      .eq("town_id", townId)
+      .limit(20);
+    const gids = (links ?? [])
+      .map((l) => (l as { guide_id: string }).guide_id)
+      .filter(Boolean);
+    if (gids.length > 0) {
+      const { data: gRows } = await supabase
+        .from("guides")
+        .select("slug, title, excerpt, main_image, hero_image")
+        .in("id", gids);
+      townGuides =
+        (gRows ?? []).map((g) => ({
+          slug: g.slug,
+          title: (g as { title: string }).title,
+          excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
+          og_image_url:
+            getPublicImageUrl((g as { main_image?: string | null }).main_image) ??
+            getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
+        })) ?? [];
     }
   }
   if (townGuides.length === 0) {
     const { data: g2 } = await supabase
-      .from("pages")
-      .select("slug, title, excerpt, og_image_url")
-      .eq("page_type", "guide")
-      .eq("status", "published")
-      .order("updated_at", { ascending: false })
+      .from("guides")
+      .select("slug, title, excerpt, main_image, hero_image")
+      .in("status", ["published", "active"])
+      .order("date_updated", { ascending: false, nullsFirst: false })
       .limit(5);
-    townGuides = (g2 as GuideCardRow[] | null) ?? [];
+    townGuides =
+      (g2 ?? []).map((g) => ({
+        slug: g.slug,
+        title: (g as { title: string }).title,
+        excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
+        og_image_url:
+          getPublicImageUrl((g as { main_image?: string | null }).main_image) ??
+          getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
+      })) ?? [];
   }
 
   const town = b.towns as { name?: string; slug?: string } | null;
@@ -469,9 +536,9 @@ export default async function BusinessPage({ params }: Props) {
             {/* Sidebar */}
             <aside className="space-y-5">
               {/* Primary CTA */}
-              {b.website && (
+              {typeof b.website === "string" && b.website && (
                 <a
-                  href={b.website as string}
+                  href={b.website}
                   target="_blank"
                   rel="noreferrer"
                   className="group flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-4 font-semibold text-white transition-all hover:bg-[var(--color-primary-light)]"
