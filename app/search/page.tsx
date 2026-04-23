@@ -13,6 +13,8 @@ type Props = {
     price?: string;
     page?: string;
     type?: string;
+    /** `updated` = newest `businesses.updated_at` first (good for spot-checking edits). */
+    sort?: string;
   }>;
 };
 
@@ -82,8 +84,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function SearchPage({ searchParams }: Props) {
-  const { q, town_id, price, page, type: rawType } = await searchParams;
+  const { q, town_id, price, page, type: rawType, sort: sortParam } = await searchParams;
   const type = normalizeSearchType(rawType);
+  const sortMode = sortParam === "updated" ? ("updated" as const) : ("relevance" as const);
 
   const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
   const trimmedQ = q?.trim() ?? "";
@@ -101,11 +104,13 @@ export default async function SearchPage({ searchParams }: Props) {
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
   let townName = "";
-  if (town_id) {
+  const townIdNum =
+    town_id && !Number.isNaN(Number(town_id)) ? Math.trunc(Number(town_id)) : undefined;
+  if (townIdNum != null) {
     const { data: town } = await serviceSupabase
       .from("towns")
       .select("name")
-      .eq("id", Number(town_id))
+      .eq("id", townIdNum)
       .single();
     if (town) townName = town.name;
   }
@@ -120,7 +125,7 @@ export default async function SearchPage({ searchParams }: Props) {
       .eq("slug", "30a")
       .maybeSingle();
 
-    let townsQuery = serviceSupabase.from("towns").select("name, slug").order("name");
+    let townsQuery = serviceSupabase.from("towns").select("id, name, slug").order("name");
     if (region30a?.id != null) {
       townsQuery = townsQuery.eq("region_id", region30a.id);
     }
@@ -349,6 +354,8 @@ export default async function SearchPage({ searchParams }: Props) {
     pageSize: 12,
     requiredHasPhysicalLocation:
       type === "services" ? false : type === "businesses" ? true : undefined,
+    constrainTownId: townIdNum,
+    sortMode,
   });
 
   return (

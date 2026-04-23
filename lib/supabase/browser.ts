@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 
+import type { Database } from "./database.types";
 import { getSupabasePublishableKey } from "./env-keys";
 
 export function createSupabaseBrowserClient() {
@@ -10,5 +11,5 @@ export function createSupabaseBrowserClient() {
       "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (legacy: NEXT_PUBLIC_SUPABASE_ANON_KEY)",
     );
   }
-  return createBrowserClient(url, publishable);
+  return createBrowserClient<Database>(url, publishable);
 }

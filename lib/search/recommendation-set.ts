@@ -8,6 +8,7 @@ import {
   scoreAndRankCandidates,
   type BusinessRowWithTags,
   type LocationRankingScope,
+  type SearchCandidateRankOrder,
 } from "@/lib/scoring";
 import {
   fallbackIntentFromKeywords,
@@ -45,6 +46,7 @@ type DbBusinessRow = {
   listing_review_count: number | null;
   legacy_photo_refs?: string[] | null;
   hero_image_url?: string | null;
+  updated_at?: string | null;
   business_tags: { tags: { slug: string } | { slug: string }[] | null }[] | null;
 };
 
@@ -99,6 +101,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
     listing_review_count,
     legacy_photo_refs: rowPhotos,
     hero_image_url: rowHeroUrl,
+    updated_at: rowUpdatedAt,
   } = row;
   return {
     id,
@@ -128,6 +131,7 @@ export function toBusinessWithTags(row: DbBusinessRow): BusinessRowWithTags & {
     listing_review_count,
     legacy_photo_refs: rowPhotos ?? null,
     hero_image_url: rowHeroUrl ?? null,
+    updated_at: rowUpdatedAt ?? null,
     tag_slugs,
   };
 }
@@ -196,7 +200,7 @@ export async function fetchActiveBusinessesWithTags(
       id, has_physical_location, slug, name, address, town_id, category_id, lat, lng, phone, website, price_level, ai_summary,
       status, suspected_closed, admin_suppressed,
       confidence_score, freshness_score, engagement_score, exploration_score, completeness_score,
-      bad_experience_unique_users, listing_rating, listing_review_count, legacy_photo_refs, hero_image_url,
+      bad_experience_unique_users, listing_rating, listing_review_count, legacy_photo_refs, hero_image_url, updated_at,
       business_tags(tags(slug)),
       categories(name)
     `,
@@ -299,6 +303,9 @@ export async function buildRecommendationSet(options: {
   excludedCategorySlug?: string | null;
   page?: number;
   pageSize?: number;
+  /** Hard-filter to a single `towns.id` (search UI location filter). */
+  constrainTownId?: number;
+  sortMode?: SearchCandidateRankOrder;
 }): Promise<{
   ranked: BusinessRowWithTags[];
   totalCount: number;
@@ -316,7 +323,7 @@ export async function buildRecommendationSet(options: {
     ? categorySlugToId.get(options.excludedCategorySlug)
     : undefined;
 
-  const eligibleRows = rows.filter((r) => {
+  let eligibleRows = rows.filter((r) => {
     if (options.priceLevel && r.price_level !== options.priceLevel) return false;
     if (
       typeof options.requiredHasPhysicalLocation === "boolean" &&
@@ -328,14 +335,23 @@ export async function buildRecommendationSet(options: {
     return true;
   });
 
+  const constrainTid = options.constrainTownId;
+  if (typeof constrainTid === "number" && Number.isFinite(constrainTid)) {
+    eligibleRows = eligibleRows.filter((r) => r.town_id === constrainTid);
+  }
+
+  const rankOrder: SearchCandidateRankOrder = options.sortMode ?? "relevance";
+  const poolLimit = Math.max(eligibleRows.length, limit);
+
   const rankedAll = scoreAndRankCandidates(
     eligibleRows,
     options.intent,
     townSlugToId,
     categorySlugToId,
     suppressedIds,
-    Math.max(eligibleRows.length, limit),
+    poolLimit,
     options.locationScope,
+    rankOrder,
   );
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.max(1, options.pageSize ?? 12);

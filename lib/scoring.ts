@@ -17,6 +17,8 @@ export type BusinessForScore = {
   bad_experience_unique_users: number;
   listing_rating: number | null;
   listing_review_count: number | null;
+  /** DB `updated_at` for admin “recently edited” sort in search. */
+  updated_at?: string | null;
 };
 
 export type BusinessRowWithTags = BusinessForScore & {
@@ -116,7 +118,9 @@ function compositeScore(
   );
 }
 
-/** Eligibility + weighted composite + light category diversity (Section 11 intent). */
+export type SearchCandidateRankOrder = "relevance" | "updated";
+
+/** Eligibility + weighted composite + light category diversity (Section 11 intent), or by `updated_at` when `rankOrder` is `updated`. */
 export function scoreAndRankCandidates(
   rows: BusinessRowWithTags[],
   intent: SearchIntent,
@@ -125,6 +129,7 @@ export function scoreAndRankCandidates(
   suppressedIds: Set<string>,
   limit = 15,
   locationScope: LocationRankingScope | null = null,
+  rankOrder: SearchCandidateRankOrder = "relevance",
 ): BusinessRowWithTags[] {
   let eligible = rows.filter((row) => passesEligibility(row, suppressedIds));
   if (intent.category) {
@@ -144,6 +149,16 @@ export function scoreAndRankCandidates(
     if (anchorTid != null) {
       eligible = eligible.filter((row) => row.town_id === anchorTid);
     }
+  }
+
+  if (rankOrder === "updated") {
+    return [...eligible]
+      .sort((a, b) => {
+        const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return tb - ta;
+      })
+      .slice(0, limit);
   }
 
   const ranked = eligible

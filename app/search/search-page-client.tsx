@@ -14,6 +14,7 @@ export type DiscoveryTag = {
 };
 
 type Town = {
+  id: number;
   name: string;
   slug: string;
 };
@@ -142,6 +143,8 @@ export function SearchPageClient({
   const activePrice = searchParams.get("price");
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const urlQ = searchParams.get("q");
+  const searchSort = searchParams.get("sort") === "updated" ? "updated" : "relevance";
+  const filterTownId = searchParams.get("town_id");
 
   const [lastUrlQ, setLastUrlQ] = useState(urlQ);
   if (urlQ !== lastUrlQ) {
@@ -172,6 +175,24 @@ export function SearchPageClient({
     } else {
       params.set("price", p.toString());
     }
+    params.delete("page");
+    router.push(`/search?${params.toString()}`);
+  };
+
+  const setSearchSort = (next: "relevance" | "updated") => {
+    if (browseMode !== "business") return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "relevance") params.delete("sort");
+    else params.set("sort", "updated");
+    params.delete("page");
+    router.push(`/search?${params.toString()}`);
+  };
+
+  const setLocationTownFilter = (townId: string) => {
+    if (browseMode !== "business") return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (!townId) params.delete("town_id");
+    else params.set("town_id", townId);
     params.delete("page");
     router.push(`/search?${params.toString()}`);
   };
@@ -290,7 +311,48 @@ export function SearchPageClient({
                   {tag.name}
                 </button>
               ))}
+
+              <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3">
+                {towns.length > 0 && (
+                  <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+                    <span className="shrink-0">Town</span>
+                    <select
+                      value={filterTownId ?? ""}
+                      onChange={(e) => setLocationTownFilter(e.target.value)}
+                      className="max-w-[10rem] truncate rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
+                      aria-label="Filter by town"
+                    >
+                      <option value="">All towns</option>
+                      {towns.map((t) => (
+                        <option key={t.id} value={String(t.id)}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+                  <span className="shrink-0">Sort</span>
+                  <select
+                    value={searchSort}
+                    onChange={(e) =>
+                      setSearchSort(e.target.value === "updated" ? "updated" : "relevance")
+                    }
+                    className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
+                    aria-label="Sort results"
+                  >
+                    <option value="relevance">Best match</option>
+                    <option value="updated">Recently updated</option>
+                  </select>
+                </label>
+              </div>
             </div>
+            {searchSort === "updated" && (
+              <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                Results use each listing&rsquo;s last saved time (newest first). Pair with a town filter
+                to review recent edits in one place.
+              </p>
+            )}
           </div>
         </div>
       ) : null}

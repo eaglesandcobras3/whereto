@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "content:compile": "npx tsx scripts/content-compiler.ts",
-    "content:migrate:db": "npx tsx scripts/migrate-pages-to-content-entries.ts"
+    "content:migrate:db": "npx tsx scripts/migrate-pages-to-content-entries.ts",
+    "supabase:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
+    "supabase:types:remote": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > lib/supabase/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.0",
@@ -46,6 +48,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.19.0",
     "typescript": "^5",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "supabase": "^2.84.2"
   }
 }

@@ -6,6 +6,7 @@ import {
   resolveIntent,
   resolveLocationScopeForIntent,
 } from "@/lib/search/recommendation-set";
+import type { SearchCandidateRankOrder } from "@/lib/scoring";
 import type { SearchResultPayload } from "@/lib/search/types";
 
 export type { SearchResultPayload } from "@/lib/search/types";
@@ -24,10 +25,13 @@ export async function runSearch(options: {
   excludedCategorySlug?: string | null;
   /** Optional location mode filter for candidate rows. */
   requiredHasPhysicalLocation?: boolean;
+  /** Hard filter to a single `towns.id` (search UI). */
+  constrainTownId?: number;
+  sortMode?: SearchCandidateRankOrder;
 }): Promise<SearchResultPayload> {
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
-  const CACHE_VERSION = "search-v2-min10";
+  const CACHE_VERSION = "search-v2-min12";
   let cacheBasis = `${normalized}::__v__:${CACHE_VERSION}`;
   if (options.forcedCategorySlug) {
     cacheBasis = `${cacheBasis}::__forced_cat__:${options.forcedCategorySlug}`;
@@ -37,6 +41,12 @@ export async function runSearch(options: {
   }
   if (typeof options.requiredHasPhysicalLocation === "boolean") {
     cacheBasis = `${cacheBasis}::__physical__:${options.requiredHasPhysicalLocation ? "yes" : "no"}`;
+  }
+  if (options.sortMode && options.sortMode !== "relevance") {
+    cacheBasis = `${cacheBasis}::__sort__:${options.sortMode}`;
+  }
+  if (options.constrainTownId != null && Number.isFinite(options.constrainTownId)) {
+    cacheBasis = `${cacheBasis}::__town__:${options.constrainTownId}`;
   }
   if ((options.page ?? 1) > 1) {
     cacheBasis = `${cacheBasis}::__page__:${options.page}`;
@@ -106,6 +116,8 @@ export async function runSearch(options: {
     excludedCategorySlug: options.excludedCategorySlug,
     page: options.page,
     pageSize: options.pageSize,
+    constrainTownId: options.constrainTownId,
+    sortMode: options.sortMode,
   });
 
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();

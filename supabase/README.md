@@ -23,6 +23,15 @@ npx supabase db push
 psql $DATABASE_URL -f supabase/seed.sql
 ```
 
+## TypeScript types (`lib/supabase/database.types.ts`)
+
+Regenerate whenever the database schema changes so app code stays aligned with Postgres.
+
+- **Local (Docker):** `supabase start` then from the repo root `npm run supabase:types`
+- **Hosted project:** `supabase login`, set `SUPABASE_PROJECT_ID` to the project ref (Dashboard → Settings → General), then `npm run supabase:types:remote`
+
+Commit the updated `database.types.ts` with migration PRs.
+
 ## PostGIS note
 
 Spatial indexing uses `ll_to_earth` from the **earthdistance** extension (with **cube**), matching the implementation plan. No separate PostGIS package is required for this schema.
