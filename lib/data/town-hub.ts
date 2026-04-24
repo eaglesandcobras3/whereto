@@ -67,6 +67,7 @@ export async function getTownBySlug(slug: string) {
     title: string;
     slug: string;
     excerpt: string | null;
+    content: string | null;
     main_image: string | null;
     hero_image: string | null;
   };

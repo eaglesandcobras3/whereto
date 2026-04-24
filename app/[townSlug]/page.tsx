@@ -10,6 +10,8 @@ import {
 import type { Metadata } from "next";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 
 type Props = { params: Promise<{ townSlug: string }> };
 
@@ -61,6 +63,12 @@ type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 function BasicTownPage({ town }: { town: TownRecord }) {
   const descriptor = getTownDescriptor(town.slug);
   const blurb = town.excerpt?.trim() || null;
+  const contentRaw =
+    "content" in town && typeof town.content === "string" ? town.content.trim() : "";
+  const bodyMarkdown = contentRaw
+    ? stripLeadingH1MatchingTitle(contentRaw, town.name).trim()
+    : "";
+  const hasBodyMarkdown = bodyMarkdown.length > 0;
   const hero =
     ("hero_image_wide_url" in town && town.hero_image_wide_url) ||
     ("hero_image_thumb_url" in town && town.hero_image_thumb_url) ||
@@ -81,7 +89,19 @@ function BasicTownPage({ town }: { town: TownRecord }) {
           {town.name}
         </h1>
         <p className="mt-4 text-lg text-[var(--color-text-secondary)]">{descriptor}</p>
-        {blurb ? <p className="mt-6 leading-relaxed text-[var(--color-text-primary)]">{blurb}</p> : null}
+        {blurb && !hasBodyMarkdown ? (
+          <p className="mt-6 leading-relaxed text-[var(--color-text-primary)]">{blurb}</p>
+        ) : null}
+        {blurb && hasBodyMarkdown ? (
+          <p className="prose-editorial mt-6 text-lg leading-relaxed text-[var(--color-text-primary)]">
+            {blurb}
+          </p>
+        ) : null}
+        {hasBodyMarkdown ? (
+          <div className="mt-8 max-w-3xl">
+            <MarkdownRenderer content={bodyMarkdown} />
+          </div>
+        ) : null}
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Link

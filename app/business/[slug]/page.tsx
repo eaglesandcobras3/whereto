@@ -347,7 +347,9 @@ export default async function BusinessPage({ params }: Props) {
     ...(heroImage ? { image: [heroImage] } : {}),
   };
 
-  const rawMarkdown = (b.pages as { body_markdown?: string } | null)?.body_markdown?.trim() ?? "";
+  const fromContent = typeof b.content === "string" && b.content.trim() ? b.content.trim() : "";
+  const fromPages = (b.pages as { body_markdown?: string } | null)?.body_markdown?.trim() ?? "";
+  const rawMarkdown = fromContent || fromPages;
   const cleanedMarkdown = rawMarkdown
     ? stripLeadingH1MatchingTitle(rawMarkdown, b.name as string).trim()
     : "";
