@@ -2,17 +2,34 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
+import { businessListingImageUrl } from "@/lib/media/place-photo";
+import { getSiteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ slug: string }> };
+
+function areaTypeLabel(areaType: string | null): string {
+  if (!areaType) return "Area";
+  if (areaType === "point_of_interest") return "Landmark & park";
+  return areaType.replace(/_/g, " ");
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const place = await getPublicPlaceBySlug(slug);
   if (!place) return { title: "Area | WhereTo30A" };
+  const desc = place.excerpt || `Explore ${place.title} on 30A.`;
+  const og = businessListingImageUrl(place.hero_image_url);
   return {
     title: `${place.title} | WhereTo30A`,
-    description: place.excerpt || `Explore ${place.title} on 30A.`,
+    description: desc,
+    openGraph: og
+      ? { title: `${place.title} | WhereTo30A`, description: desc, images: [{ url: og }] }
+      : { title: `${place.title} | WhereTo30A`, description: desc },
+    twitter: og
+      ? { card: "summary_large_image", description: desc, images: [og] }
+      : { card: "summary", description: desc },
   };
 }
 
@@ -22,81 +39,131 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) notFound();
 
+  const portraitUrl = businessListingImageUrl(area.hero_image_url);
+  const typeLabel = areaTypeLabel(area.areaTypeLabel);
+  const rawMarkdown = typeof area.content === "string" ? area.content.trim() : "";
+  const bodyMarkdown = rawMarkdown
+    ? stripLeadingH1MatchingTitle(rawMarkdown, area.title).trim()
+    : "";
+  const hasMarkdown = bodyMarkdown.length > 0;
+
+  const browseSearchType = area.areaTypeLabel === "point_of_interest" ? "access" : "areas";
+  const browseSearchLabel =
+    area.areaTypeLabel === "point_of_interest" ? "Landmarks & parks" : "Areas & districts";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: area.title,
+    description: area.excerpt ?? undefined,
+    url: `${getSiteUrl()}/area/${area.slug}`,
+    ...(portraitUrl ? { image: [portraitUrl] } : {}),
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
-      {/* Hero */}
-      {area.hero_image_url && (
-        <div className="relative h-64 w-full overflow-hidden bg-[var(--color-surface-secondary)] sm:h-80 lg:h-96">
-          <img
-            src={area.hero_image_url}
-            alt={area.title}
-            className="h-full w-full object-cover"
+    <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      <main className="flex-1">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6">
-            <div className="mx-auto max-w-4xl">
-              {area.town_name && area.town_slug && (
+
+          <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm">
+            <Link href="/" className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">
+              Home
+            </Link>
+            {area.town_slug && area.town_name && (
+              <>
+                <span className="text-zinc-300">/</span>
                 <Link
                   href={`/${area.town_slug}`}
-                  className="mb-2 inline-block text-sm font-medium text-white/80 hover:text-white"
+                  className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
                 >
                   {area.town_name}
                 </Link>
+              </>
+            )}
+            <span className="text-zinc-300">/</span>
+            <span className="text-zinc-500">{typeLabel}</span>
+          </nav>
+
+          <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-start">
+            <div className="relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40 md:w-48">
+              {portraitUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={portraitUrl}
+                  alt={area.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-zinc-400">
+                  <span className="material-symbols-outlined !text-4xl" aria-hidden>
+                    explore
+                  </span>
+                </div>
               )}
-              <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+            </div>
+
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-primary)]">
+                {typeLabel}
+              </p>
+              <h1 className="text-editorial-headline mt-2 text-3xl text-zinc-900 sm:text-4xl">
                 {area.title}
               </h1>
+              {area.town_name && area.town_slug && (
+                <div className="mt-3 text-sm text-zinc-500">
+                  <Link
+                    href={`/${area.town_slug}`}
+                    className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
+                  >
+                    <span className="material-symbols-outlined !text-base">place</span>
+                    {area.town_name}
+                  </Link>
+                </div>
+              )}
+              {area.excerpt && (
+                <p className="mt-4 text-lg leading-relaxed text-zinc-600">{area.excerpt}</p>
+              )}
             </div>
+          </header>
+
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
+            <div className="min-w-0">
+              {hasMarkdown ? (
+                <MarkdownRenderer content={bodyMarkdown} />
+              ) : !area.excerpt ? (
+                <p className="prose-editorial text-zinc-500">
+                  Full write-up for this place is on the way—browse the town or nearby spots in the meantime.
+                </p>
+              ) : null}
+            </div>
+
+            <aside className="space-y-6">
+              <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                <h2 className="font-headline text-sm font-bold text-zinc-900">Explore</h2>
+                {area.town_slug && area.town_name && (
+                  <Link
+                    href={`/${area.town_slug}`}
+                    className="mt-3 flex items-center gap-2 text-sm text-[var(--color-primary)] hover:underline"
+                  >
+                    <span className="material-symbols-outlined !text-lg">location_city</span>
+                    {area.town_name} town page
+                  </Link>
+                )}
+                <Link
+                  href={`/search?type=${browseSearchType}`}
+                  className="mt-3 flex items-center gap-2 text-sm text-zinc-600 transition-colors hover:text-[var(--color-primary)]"
+                >
+                  <span className="material-symbols-outlined !text-lg">map</span>
+                  {browseSearchLabel}
+                </Link>
+              </div>
+            </aside>
           </div>
         </div>
-      )}
-
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        {!area.hero_image_url && (
-          <>
-            {area.town_name && area.town_slug && (
-              <Link
-                href={`/${area.town_slug}`}
-                className="mb-2 inline-block text-sm font-medium text-[var(--color-primary)] hover:underline"
-              >
-                &larr; {area.town_name}
-              </Link>
-            )}
-            <h1 className="mb-4 text-3xl font-bold text-[var(--color-text-primary)] sm:text-4xl">
-              {area.title}
-            </h1>
-          </>
-        )}
-
-        {area.areaTypeLabel && (
-          <p className="mb-4 text-sm font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-            {area.areaTypeLabel.replace(/_/g, " ")}
-          </p>
-        )}
-
-        {area.excerpt && (
-          <p className="mb-6 text-lg leading-relaxed text-[var(--color-text-secondary)]">
-            {area.excerpt}
-          </p>
-        )}
-
-        {area.content && (
-          <div className="prose prose-lg max-w-none">
-            <MarkdownRenderer content={area.content} />
-          </div>
-        )}
-
-        {area.town_slug && area.town_name && (
-          <div className="mt-8 border-t border-[var(--color-border)] pt-6">
-            <Link
-              href={`/${area.town_slug}`}
-              className="inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline"
-            >
-              <span className="material-symbols-outlined text-lg">arrow_back</span>
-              Explore more of {area.town_name}
-            </Link>
-          </div>
-        )}
       </main>
     </div>
   );

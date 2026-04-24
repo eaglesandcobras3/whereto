@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import type { BusinessPayload, SearchResultPayload } from "@/lib/search/types";
 import type { SearchCandidateRankOrder } from "@/lib/scoring";
@@ -70,9 +70,9 @@ export async function buildMinimalSearchResult(
   const q = sanitizeIlikeToken(options.rawQuery) || sanitizeIlikeToken(options.normalizedQuery) || "a";
 
   let query = supabase
-    .from("businesses")
+    .from("businesses_view")
     .select(
-      `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, status, business_categories ( title, slug )`,
+      `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, main_image_url, hero_image_url, status, business_categories ( title, slug )`,
       { count: "exact" },
     )
     .is("archived_at", null)
@@ -108,9 +108,18 @@ export async function buildMinimalSearchResult(
 
   const list = (rows ?? []) as Record<string, unknown>[];
   const recs: SearchResultPayload["recommendations"] = list.map((row, i) => {
-    const img =
-      getPublicImageUrl((row.main_image as string) ?? null) ??
-      getPublicImageUrl((row.hero_image as string) ?? null);
+    const r = row as {
+      main_image?: string | null;
+      hero_image?: string | null;
+      main_image_url?: string | null;
+      hero_image_url?: string | null;
+    };
+    const img = getPublicImageUrlWithView(
+      r.main_image_url,
+      r.hero_image_url,
+      r.main_image,
+      r.hero_image,
+    );
     const categories = row.business_categories as { title?: string; slug?: string } | null;
     const bp = businessPayload(row, img);
     if (categories?.title) bp.category_name = categories.title;

@@ -1,6 +1,6 @@
 import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 
@@ -33,8 +33,10 @@ export async function getPublicPlaceBySlug(
   const supabase = getServiceSupabase();
 
   const { data: areaRows, error: areaErr } = await supabase
-    .from("areas")
-    .select("id, title, slug, excerpt, content, main_image, hero_image, area_type, town_id, towns(title, slug)")
+    .from("areas_view")
+    .select(
+      "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, area_type, town_id, towns(title, slug)",
+    )
     .eq("slug", key)
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
@@ -63,14 +65,20 @@ export async function getPublicPlaceBySlug(
       town_id: (a.town_id as string | null) ?? null,
       town_name: to?.title ?? null,
       town_slug: to?.slug ?? null,
-      hero_image_url:
-        getPublicImageUrl(a.main_image as string | null) ?? getPublicImageUrl(a.hero_image as string | null),
+      hero_image_url: getPublicImageUrlWithView(
+        a.main_image_url as string | null,
+        a.hero_image_url as string | null,
+        a.main_image as string | null,
+        a.hero_image as string | null,
+      ),
     };
   }
 
   const { data: poiRows, error: poiErr } = await supabase
-    .from("points_of_interest")
-    .select("id, title, slug, excerpt, content, main_image, hero_image, poi_type, town_id, towns(title, slug)")
+    .from("points_of_interest_view")
+    .select(
+      "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, poi_type, town_id, towns(title, slug)",
+    )
     .eq("slug", key)
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
@@ -101,7 +109,11 @@ export async function getPublicPlaceBySlug(
     town_id: (p.town_id as string | null) ?? null,
     town_name: to?.title ?? null,
     town_slug: to?.slug ?? null,
-    hero_image_url:
-      getPublicImageUrl(p.main_image as string | null) ?? getPublicImageUrl(p.hero_image as string | null),
+    hero_image_url: getPublicImageUrlWithView(
+      p.main_image_url as string | null,
+      p.hero_image_url as string | null,
+      p.main_image as string | null,
+      p.hero_image as string | null,
+    ),
   };
 }

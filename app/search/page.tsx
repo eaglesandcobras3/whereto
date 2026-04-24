@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { SearchPageClient, type DiscoveryTag } from "./search-page-client";
 import type { Metadata } from "next";
@@ -67,8 +67,12 @@ function emptySearchResult(displayQuery: string, summary: string): SearchResultP
 function mapEventToBrowseRow(
   e: Record<string, unknown>,
 ): BrowseEventRow {
-  const main = (e as { main_image?: string | null }).main_image;
-  const hero = (e as { hero_image?: string | null }).hero_image;
+  const r = e as {
+    main_image?: string | null;
+    hero_image?: string | null;
+    main_image_url?: string | null;
+    hero_image_url?: string | null;
+  };
   const starts = (e as { starts_at?: string | null }).starts_at;
   const ends = (e as { ends_at?: string | null }).ends_at;
   const d0 = starts ? starts.slice(0, 10) : new Date().toISOString().slice(0, 10);
@@ -77,7 +81,12 @@ function mapEventToBrowseRow(
     slug: String(e.slug),
     title: String((e as { title: string }).title),
     description: ((e as { excerpt?: string | null }).excerpt as string | null) ?? null,
-    hero_image_url: getPublicImageUrl(main) ?? getPublicImageUrl(hero),
+    hero_image_url: getPublicImageUrlWithView(
+      r.main_image_url,
+      r.hero_image_url,
+      r.main_image,
+      r.hero_image,
+    ),
     event_date: d0,
     end_date: ends ? ends.slice(0, 10) : null,
     next_list_date: null,
@@ -159,19 +168,35 @@ export default async function SearchPage({ searchParams }: Props) {
   }));
 
   const { data: recentBiz } = await serviceSupabase
-    .from("businesses")
-    .select("id, title, slug, main_image, hero_image, date_updated")
+    .from("businesses_view")
+    .select("id, title, slug, main_image, hero_image, main_image_url, hero_image_url, date_updated")
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("date_updated", { ascending: false, nullsFirst: false })
     .limit(5);
   const recentPostsResult = {
-    data: (recentBiz ?? []).map((b) => ({
-      id: b.id,
-      name: (b as { title: string }).title,
-      slug: b.slug as string,
-      hero_image_url: getPublicImageUrl(b.main_image) ?? getPublicImageUrl(b.hero_image),
-    })),
+    data: (recentBiz ?? []).map((b) => {
+      const r = b as {
+        id: string;
+        title: string;
+        slug: string;
+        main_image?: string | null;
+        hero_image?: string | null;
+        main_image_url?: string | null;
+        hero_image_url?: string | null;
+      };
+      return {
+        id: r.id,
+        name: r.title,
+        slug: r.slug,
+        hero_image_url: getPublicImageUrlWithView(
+          r.main_image_url,
+          r.hero_image_url,
+          r.main_image,
+          r.hero_image,
+        ),
+      };
+    }),
   };
 
   const discoveryTags: DiscoveryTag[] = [];
@@ -204,8 +229,8 @@ export default async function SearchPage({ searchParams }: Props) {
       }
     }
     let evQuery = serviceSupabase
-      .from("events")
-      .select("id, slug, title, excerpt, main_image, hero_image, starts_at, ends_at, location_name, cost_notes, ticket_url, recurrence_rule, status")
+      .from("events_view")
+      .select("id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, starts_at, ends_at, location_name, cost_notes, ticket_url, recurrence_rule, status")
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("starts_at", { ascending: true, nullsFirst: false })
@@ -237,8 +262,8 @@ export default async function SearchPage({ searchParams }: Props) {
 
   if (browseMode === "towns") {
     let tq = serviceSupabase
-      .from("towns")
-      .select("id, title, slug, excerpt, status")
+      .from("towns_view")
+      .select("id, title, slug, excerpt, status, main_image, hero_image, main_image_url, hero_image_url")
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
@@ -249,12 +274,30 @@ export default async function SearchPage({ searchParams }: Props) {
       tq = tq.or(`title.ilike.%${safeT}%,slug.ilike.%${safeT}%,excerpt.ilike.%${safeT}%`);
     }
     const { data: browseTownsRaw } = await tq;
-    const browseTowns: BrowseTownRow[] = (browseTownsRaw ?? []).map((t) => ({
-      id: t.id,
-      name: (t as { title: string }).title,
-      slug: t.slug,
-      ai_tagline: (t as { excerpt?: string | null }).excerpt ?? null,
-    }));
+    const browseTowns: BrowseTownRow[] = (browseTownsRaw ?? []).map((t) => {
+      const r = t as {
+        id: string;
+        title: string;
+        slug: string;
+        excerpt?: string | null;
+        main_image?: string | null;
+        hero_image?: string | null;
+        main_image_url?: string | null;
+        hero_image_url?: string | null;
+      };
+      return {
+        id: r.id,
+        name: r.title,
+        slug: r.slug,
+        ai_tagline: r.excerpt ?? null,
+        hero_image_url: getPublicImageUrlWithView(
+          r.main_image_url,
+          r.hero_image_url,
+          r.main_image,
+          r.hero_image,
+        ),
+      };
+    });
 
     return (
       <SearchPageClient
@@ -272,8 +315,8 @@ export default async function SearchPage({ searchParams }: Props) {
 
   if (browseMode === "guides") {
     let gq = serviceSupabase
-      .from("guides")
-      .select("slug, title, excerpt, seo_description, main_image, hero_image, status")
+      .from("guides_view")
+      .select("slug, title, excerpt, seo_description, main_image, hero_image, main_image_url, hero_image_url, status")
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
@@ -284,14 +327,27 @@ export default async function SearchPage({ searchParams }: Props) {
     }
     const { data: guides } = await gq;
     const browseGuides: BrowseGuideRow[] = (guides ?? []).map((g) => {
-      const m = (g as { main_image?: string | null }).main_image;
-      const h = (g as { hero_image?: string | null }).hero_image;
+      const r = g as {
+        slug: string;
+        title: string;
+        excerpt?: string | null;
+        seo_description?: string | null;
+        main_image?: string | null;
+        hero_image?: string | null;
+        main_image_url?: string | null;
+        hero_image_url?: string | null;
+      };
       return {
-        slug: g.slug,
-        title: (g as { title: string }).title,
-        excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
-        seo_description: (g as { seo_description?: string | null }).seo_description ?? null,
-        og_image_url: getPublicImageUrl(m) ?? getPublicImageUrl(h),
+        slug: r.slug,
+        title: r.title,
+        excerpt: r.excerpt ?? null,
+        seo_description: r.seo_description ?? null,
+        og_image_url: getPublicImageUrlWithView(
+          r.main_image_url,
+          r.hero_image_url,
+          r.main_image,
+          r.hero_image,
+        ),
       };
     });
     return (
@@ -315,8 +371,8 @@ export default async function SearchPage({ searchParams }: Props) {
     const accessOnly = browseMode === "access";
     if (accessOnly) {
       let pq = serviceSupabase
-        .from("points_of_interest")
-        .select("id, title, slug, excerpt, poi_type, town_id, towns(slug, title)")
+        .from("points_of_interest_view")
+        .select("id, title, slug, excerpt, poi_type, town_id, main_image, hero_image, main_image_url, hero_image_url, towns(slug, title)")
         .is("archived_at", null)
         .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .order("title")
@@ -328,17 +384,34 @@ export default async function SearchPage({ searchParams }: Props) {
       }
       const { data: pois } = await pq;
       const browseAreas: BrowseAreaRow[] = (pois ?? []).map((row) => {
-        const rawT = (row as { towns: { slug: string; title: string } | { slug: string; title: string }[] | null })
-          .towns;
+        const r = row as {
+          id: string;
+          title: string;
+          slug: string;
+          excerpt?: string | null;
+          poi_type?: string | null;
+          main_image?: string | null;
+          hero_image?: string | null;
+          main_image_url?: string | null;
+          hero_image_url?: string | null;
+          towns: { slug: string; title: string } | { slug: string; title: string }[] | null;
+        };
+        const rawT = r.towns;
         const to = Array.isArray(rawT) ? rawT[0] : rawT;
         return {
-          id: String((row as { id: string }).id),
-          name: String((row as { title: string }).title),
-          slug: String((row as { slug: string }).slug),
-          description_short: (row as { excerpt?: string | null }).excerpt ?? null,
-          area_type: String((row as { poi_type?: string | null }).poi_type ?? "point_of_interest"),
+          id: String(r.id),
+          name: String(r.title),
+          slug: String(r.slug),
+          description_short: r.excerpt ?? null,
+          area_type: String(r.poi_type ?? "point_of_interest"),
           town_slug: to?.slug ?? null,
           town_name: to?.title ?? null,
+          hero_image_url: getPublicImageUrlWithView(
+            r.main_image_url,
+            r.hero_image_url,
+            r.main_image,
+            r.hero_image,
+          ),
         };
       });
       return (
@@ -359,8 +432,8 @@ export default async function SearchPage({ searchParams }: Props) {
     }
 
     let aq = serviceSupabase
-      .from("areas")
-      .select("id, title, slug, excerpt, area_type, town_id, is_shopping_area, towns(slug, title)")
+      .from("areas_view")
+      .select("id, title, slug, excerpt, area_type, town_id, is_shopping_area, main_image, hero_image, main_image_url, hero_image_url, towns(slug, title)")
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
@@ -372,19 +445,37 @@ export default async function SearchPage({ searchParams }: Props) {
     }
     const { data: rawAreas } = await aq;
     const browseAreas: BrowseAreaRow[] = (rawAreas ?? []).map((row: Record<string, unknown>) => {
-        const rawT = row.towns as
-          | { slug: string; title: string }
-          | { slug: string; title: string }[]
-          | null;
+        const r = row as {
+          id: string;
+          title: string;
+          slug: string;
+          excerpt?: string | null;
+          area_type?: string | null;
+          main_image?: string | null;
+          hero_image?: string | null;
+          main_image_url?: string | null;
+          hero_image_url?: string | null;
+          towns:
+            | { slug: string; title: string }
+            | { slug: string; title: string }[]
+            | null;
+        };
+        const rawT = r.towns;
         const to = Array.isArray(rawT) ? rawT[0] : rawT;
         return {
-          id: String(row.id),
-          name: String((row as { title: string }).title),
-          slug: String(row.slug),
-          description_short: (row as { excerpt?: string | null }).excerpt ?? null,
-          area_type: String((row as { area_type: string | null }).area_type ?? "area"),
+          id: String(r.id),
+          name: String(r.title),
+          slug: String(r.slug),
+          description_short: r.excerpt ?? null,
+          area_type: String(r.area_type ?? "area"),
           town_slug: to?.slug ?? null,
           town_name: to?.title ?? null,
+          hero_image_url: getPublicImageUrlWithView(
+            r.main_image_url,
+            r.hero_image_url,
+            r.main_image,
+            r.hero_image,
+          ),
         };
       });
 

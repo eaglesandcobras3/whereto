@@ -51,6 +51,7 @@ export type BrowseTownRow = {
   name: string;
   slug: string;
   ai_tagline: string | null;
+  hero_image_url: string | null;
 };
 
 export type BrowseGuideRow = {
@@ -69,6 +70,7 @@ export type BrowseAreaRow = {
   area_type: string;
   town_slug: string | null;
   town_name: string | null;
+  hero_image_url: string | null;
 };
 
 type BrowseMode = "business" | "events" | "towns" | "guides" | "areas" | "access";
@@ -523,22 +525,31 @@ export function SearchPageClient({
                     ? paginatedTowns.map((t) => (
                         <article
                           key={t.id}
-                          className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
                         >
-                          <Link href={`/${t.slug}`} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-secondary)] text-[var(--color-primary)]">
-                              <span className="material-symbols-outlined text-3xl">location_city</span>
+                          <Link href={`/${t.slug}`} className="card-horizontal">
+                            <div className="card-horizontal-image aspect-portrait">
+                              <RemoteCoverImage
+                                src={t.hero_image_url}
+                                alt={t.name}
+                                className="img-editorial-fast object-cover"
+                                sizes="(max-width: 640px) 140px, 200px"
+                                placeholderIcon="location_city"
+                              />
                             </div>
-                            <div className="flex-1">
-                              <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+                            <div className="card-horizontal-content p-4 sm:p-5">
+                              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+                                Town
+                              </p>
+                              <h2 className="font-headline text-lg font-bold leading-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-xl">
                                 {t.name}
                               </h2>
                               {t.ai_tagline ? (
-                                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:line-clamp-3">
                                   {t.ai_tagline}
                                 </p>
                               ) : (
-                                <p className="mt-2 text-sm text-[var(--color-text-tertiary)]">
+                                <p className="mt-2 line-clamp-2 text-sm text-[var(--color-text-tertiary)] sm:line-clamp-3">
                                   Explore this 30A beach town.
                                 </p>
                               )}
@@ -549,48 +560,44 @@ export function SearchPageClient({
                     : null}
 
                   {isAreasLike
-                    ? paginatedAreas.map((a) => {
-                        const inner = (
-                          <>
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-secondary)] text-[var(--color-primary)]">
-                              <span className="material-symbols-outlined text-3xl">explore</span>
+                    ? paginatedAreas.map((a) => (
+                        <article
+                          key={a.id}
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+                        >
+                          <Link href={`/area/${a.slug}`} className="card-horizontal">
+                            <div className="card-horizontal-image aspect-portrait">
+                              <RemoteCoverImage
+                                src={a.hero_image_url}
+                                alt={a.name}
+                                className="img-editorial-fast object-cover"
+                                sizes="(max-width: 640px) 140px, 200px"
+                                placeholderIcon="explore"
+                              />
                             </div>
-                            <div className="flex-1">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                            <div className="card-horizontal-content p-4 sm:p-5">
+                              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                                 {areaTypeLabel(a.area_type)}
                               </p>
-                              <h2 className="text-lg font-semibold text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+                              <h2 className="font-headline text-lg font-bold leading-tight text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-xl">
                                 {a.name}
                               </h2>
                               <div className="mt-1 text-sm text-[var(--color-text-secondary)]">
                                 {a.town_name ? <span>{a.town_name}</span> : null}
                               </div>
                               {a.description_short ? (
-                                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:line-clamp-3">
                                   {a.description_short}
                                 </p>
                               ) : (
-                                <p className="mt-2 text-sm text-[var(--color-text-tertiary)]">
+                                <p className="mt-2 line-clamp-2 text-sm text-[var(--color-text-tertiary)] sm:line-clamp-3">
                                   Named place or district on 30A.
                                 </p>
                               )}
                             </div>
-                          </>
-                        );
-                        return (
-                          <article
-                            key={a.id}
-                            className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
-                          >
-                            <Link
-                            href={`/area/${a.slug}`}
-                            className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6"
-                          >
-                            {inner}
                           </Link>
-                          </article>
-                        );
-                      })
+                        </article>
+                      ))
                     : null}
 
                   {browseMode === "guides"
