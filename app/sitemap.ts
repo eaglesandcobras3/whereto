@@ -2,10 +2,7 @@ import type { MetadataRoute } from "next";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
-import {
-  PRIMARY_REGION_DB_SLUG,
-  PRIMARY_REGION_HUB_PATH,
-} from "@/lib/routes/primary-region";
+import { PRIMARY_REGION_DB_SLUG, PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
 const STATIC_PATHS = [
@@ -20,7 +17,7 @@ const STATIC_PATHS = [
 ] as const;
 
 /**
- * Sitemap from Supabase: towns, regions, businesses, guides, events, and areas
+ * Sitemap from Supabase: towns, businesses, guides, events, and areas
  * (Directus-backed collections). `lastModified` uses row timestamps when available.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -44,7 +41,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const [
     { data: towns },
-    { data: regions },
     { data: businesses },
     { data: guides },
     { data: events },
@@ -54,9 +50,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select("slug, date_updated, published_at")
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN),
-    supabase
-      .from("regions")
-      .select("slug, date_updated, published_at"),
     supabase
       .from("businesses")
       .select("slug, date_updated, published_at")
@@ -93,21 +86,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   for (const t of towns ?? []) {
     const slug = t.slug as string;
-    if (!slug || isReservedRootSlug(slug)) continue;
+    if (!slug || isReservedRootSlug(slug) || slug === PRIMARY_REGION_DB_SLUG) continue;
     const lm = pickDate(t, now);
     entries.push({ url: `${base}/${slug}`, lastModified: lm, changeFrequency: "weekly", priority: 0.9 });
   }
 
-  for (const r of regions ?? []) {
-    const slug = r.slug as string;
-    if (!slug || isReservedRootSlug(slug) || slug === PRIMARY_REGION_DB_SLUG) continue;
-    entries.push({
-      url: `${base}/${slug}`,
-      lastModified: pickDate(r, now),
-      changeFrequency: "weekly",
-      priority: 0.86,
-    });
-  }
+  // Single region: hub is only PRIMARY_REGION_HUB_PATH (`/towns`); no extra /{regionSlug} URLs.
 
   for (const b of businesses ?? []) {
     const slug = b.slug as string;

@@ -1,6 +1,6 @@
 /**
- * Default region hub: DB row uses slug `30a`; public URL is `/towns` so we do not
- * repeat “30A” on whereto30a.com. Other regions (e.g. future PCB) keep `/{regionSlug}`.
+ * Single region for now: one `regions` row (slug `30a`) and one public hub at `/towns`.
+ * We do not serve extra region pages at `/{slug}`; only beach towns use the root segment.
  */
 export const PRIMARY_REGION_DB_SLUG = "30a" as const;
 

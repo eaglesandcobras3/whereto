@@ -1,6 +1,7 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
 /** Town hub: browse row for an `areas` table record (links to /search?type=areas). */
@@ -39,15 +40,28 @@ function filterToTown(
 export type AdjacentTown = { name: string; slug: string };
 
 export async function getTownBySlug(slug: string) {
+  const key = normalizeUrlSegment(slug);
+  if (!key) return null;
+
   const supabase = getServiceSupabase();
-  const { data: town, error } = await supabase
-    .from("towns_view")
-    .select("id, title, slug, region_id, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, status")
-    .eq("slug", slug)
+  // Town *hub* is a direct URL, not the search index. Match any non-archived row by slug.
+  // (`is_hidden_from_search` is for /search, lists, sitemap — not for /{slug} where someone
+  // has a permalink. Your SQL in the editor often omits the hide filter; the old query
+  // could return zero rows even when a row existed.)
+  const { data: rows, error } = await supabase
+    .from("towns")
+    .select("id, title, slug, region, excerpt, content, main_image, hero_image, status")
+    .eq("slug", key)
     .is("archived_at", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .maybeSingle();
-  if (error || !town) return null;
+    .limit(1);
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("getTownBySlug", { slug: key, error });
+    return null;
+  }
+  const town = rows?.[0] ?? null;
+  if (!town) return null;
   const t = town as {
     id: string;
     title: string;
@@ -55,11 +69,8 @@ export async function getTownBySlug(slug: string) {
     excerpt: string | null;
     main_image: string | null;
     hero_image: string | null;
-    main_image_url: string | null;
-    hero_image_url: string | null;
   };
-  // Prefer resolved URLs from view, fall back to getPublicImageUrl for non-UUID values
-  const heroThumb = t.main_image_url ?? t.hero_image_url ?? getPublicImageUrl(t.main_image) ?? getPublicImageUrl(t.hero_image);
+  const heroThumb = getPublicImageUrl(t.main_image) ?? getPublicImageUrl(t.hero_image);
   return {
     ...t,
     name: t.title,
@@ -85,11 +96,13 @@ export type TownGuidePreview = {
 };
 
 export async function getTownGuidePreview(slug: string): Promise<TownGuidePreview | null> {
+  const key = normalizeUrlSegment(slug);
+  if (!key) return null;
   const supabase = getServiceSupabase();
   const { data: town } = await supabase
     .from("towns")
     .select("id, title, excerpt, content, intent_tags")
-    .eq("slug", slug)
+    .eq("slug", key)
     .maybeSingle();
   if (!town) return null;
   const t = town as { id: string; title: string; excerpt: string | null; content: string | null };
@@ -260,6 +273,7 @@ export async function getTownHubExpandedSections(townSlug: string, townName: str
 
 export async function getTownsInRegion(regionId: string) {
   const supabase = getServiceSupabase();
+  // `towns.region_id` (uuid FK) is the source of truth; legacy `region` is a string field.
   const { data } = await supabase
     .from("towns")
     .select("title, slug, status")

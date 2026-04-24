@@ -25,6 +25,8 @@ export async function runSearch(options: {
   /** `towns.id` (UUID) from search UI. */
   constrainTownId?: string;
   sortMode?: SearchCandidateRankOrder;
+  /** `?type=businesses` / `services` with no `q`: list all visible listings without ilike. */
+  skipIlikeTextFilter?: boolean;
 }): Promise<SearchResultPayload> {
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
@@ -44,6 +46,9 @@ export async function runSearch(options: {
   }
   if (options.constrainTownId) {
     cacheBasis = `${cacheBasis}::__town__:${options.constrainTownId}`;
+  }
+  if (options.skipIlikeTextFilter) {
+    cacheBasis = `${cacheBasis}::__browse__:${"no_ilike"}`;
   }
   if ((options.page ?? 1) > 1) {
     cacheBasis = `${cacheBasis}::__page__:${options.page}`;
@@ -80,7 +85,9 @@ export async function runSearch(options: {
       .eq("slug", options.forcedCategorySlug)
       .maybeSingle();
     if (cat?.id) filterCategoryId = cat.id as string;
-  } else if (intent.category) {
+  } else if (intent.category && !options.skipIlikeTextFilter) {
+    // Browse without `q` uses label "Businesses" / "Services" — intent still defaults to e.g. restaurants.
+    // Applying that category would return 0 rows when listings are in other primary categories.
     const { data: cat } = await supabase
       .from("business_categories")
       .select("id")
@@ -101,5 +108,6 @@ export async function runSearch(options: {
     requiredHasPhysicalLocation: options.requiredHasPhysicalLocation,
     sortMode: options.sortMode,
     primaryCategoryId: filterCategoryId,
+    skipIlikeTextFilter: options.skipIlikeTextFilter,
   });
 }

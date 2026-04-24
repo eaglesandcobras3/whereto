@@ -38,6 +38,7 @@
 | `NEXT_PUBLIC_IMAGE_STORAGE_BUCKET` | Optional; default **`whereto-media`** | When `main_image` / `hero_image` store a **storage key** (not a full URL), the app builds `…/storage/v1/object/public/{bucket}/{key}`. Use `bucket/…` as the key prefix to pick another public bucket, or set this env to override the default. |
 | `NEXT_PUBLIC_INCLUDE_DRAFT_CONTENT` | *(legacy / unused)* | No longer read by the app: browse and content slugs are **not** filtered by `status` in code. You can remove this from env if set. |
 | `NEXT_PUBLIC_DIRECTUS_URL` | (Optional) Directus origin if you use it for editing only | **Not used for public image URLs** at runtime. |
+| `ENABLE_SUPABASE_DIAG_UI` | Set to `1` on a **hosted** preview if you need `/dev/supabase-check` there. | **Off in production by default.** In `NODE_ENV=development` the page is available without this. |
 | `ADMIN_USER_IDS` | Comma-separated Supabase Auth user UUIDs | Who can open `/admin` in the Next app (optional in-app shell). |
 | `ADMIN_EMAILS` | Comma-separated emails | Alternative to `ADMIN_USER_IDS` for `/admin` access. |
 | `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). Keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. Optional `ff_overrides` cookie merges the same shape (dev). |
@@ -92,6 +93,7 @@ After deploying the premium redesign code, complete these steps to enable new to
 
 | Date | What changed |
 |------|----------------|
+| 2026-04-24 | **Supabase diagnostics UI:** `/dev/supabase-check` (dev only) shows the same step-by-step checks as `pnpm run diagnose:supabase`. Optional **`ENABLE_SUPABASE_DIAG_UI=1`** enables that page on non-dev deploys (e.g. staging). |
 | 2026-04-03 | Initial checklist; then: `/admin` UI, expanded runbook, `npm test`, [PRIVACY.md](./PRIVACY.md). |
 | 2026-04-03 | Phase 1 wrap: run **both** SQL migrations (adds `insert_discovery_business_with_tags`); CI runs lint, Vitest, build, Playwright; in-memory `/api/search` rate limit in code. |
 | 2026-04-04 | Phase 2 SEO/towns: apply `20260404120000_seo_town_architecture.sql`; new crons `recommendation-precompute` + `seo-publish` in [vercel.json](../vercel.json). |

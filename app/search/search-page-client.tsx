@@ -582,16 +582,12 @@ export function SearchPageClient({
                             key={a.id}
                             className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-border-strong)] hover:shadow-md sm:p-6"
                           >
-                            {a.town_slug ? (
-                              <Link
-                                href={`/${a.town_slug}`}
-                                className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6"
-                              >
-                                {inner}
-                              </Link>
-                            ) : (
-                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">{inner}</div>
-                            )}
+                            <Link
+                            href={`/area/${a.slug}`}
+                            className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6"
+                          >
+                            {inner}
+                          </Link>
                           </article>
                         );
                       })

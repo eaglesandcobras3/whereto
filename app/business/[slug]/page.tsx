@@ -48,7 +48,7 @@ async function loadBusiness(slug: string) {
         review_rating_cached, review_count_cached,
         claim_status, intent_tags, status, published_at,
         towns ( title, slug ),
-        business_categories ( name, slug )
+        business_categories ( title, slug )
       `;
 
     const { data: business, error: bizErr } = isUuid
@@ -74,7 +74,7 @@ async function loadBusiness(slug: string) {
       getPublicImageUrl(row.main_image as string) ??
       getPublicImageUrl(row.hero_image as string);
     const towns = row.towns as { title?: string; name?: string; slug?: string } | null;
-    const category = row.business_categories as { name?: string; slug?: string } | null;
+    const category = row.business_categories as { title?: string; slug?: string } | null;
 
     return {
       ...row,
@@ -87,7 +87,7 @@ async function loadBusiness(slug: string) {
       listing_rating: row.review_rating_cached,
       listing_review_count: row.review_count_cached,
       towns: towns ? { name: (towns as { title?: string }).title ?? towns.name, slug: towns.slug } : null,
-      categories: category,
+      categories: category ? { name: category.title, slug: category.slug } : null,
       business_tags: intentTagsToFakeTagRows(row.intent_tags),
       pages: null,
       ai_vibe: null,

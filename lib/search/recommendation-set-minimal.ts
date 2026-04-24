@@ -55,6 +55,11 @@ export async function buildMinimalSearchResult(
     sortMode?: SearchCandidateRankOrder;
     /** When set, filter `businesses.primary_category_id`. */
     primaryCategoryId?: string | null;
+    /**
+     * `?type=businesses` (or services) with no `q` used to pass a long placeholder string as one
+     * ilike pattern — it matched nothing. When true, list visible non-archived rows without a text match.
+     */
+    skipIlikeTextFilter?: boolean;
   },
 ): Promise<SearchResultPayload> {
   const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 12));
@@ -65,14 +70,17 @@ export async function buildMinimalSearchResult(
   const q = sanitizeIlikeToken(options.rawQuery) || sanitizeIlikeToken(options.normalizedQuery) || "a";
 
   let query = supabase
-    .from("businesses_view")
+    .from("businesses")
     .select(
-      `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, main_image_url, hero_image_url, status, business_categories ( name, slug )`,
+      `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, status, business_categories ( title, slug )`,
       { count: "exact" },
     )
     .is("archived_at", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%`);
+    .or(BROWSE_VISIBLE_NOT_HIDDEN);
+
+  if (!options.skipIlikeTextFilter) {
+    query = query.or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%`);
+  }
 
   if (options.constrainTownId) {
     query = query.eq("town_id", options.constrainTownId);
@@ -100,15 +108,12 @@ export async function buildMinimalSearchResult(
 
   const list = (rows ?? []) as Record<string, unknown>[];
   const recs: SearchResultPayload["recommendations"] = list.map((row, i) => {
-    // Prefer resolved URLs from view, fall back to getPublicImageUrl
     const img =
-      (row.main_image_url as string | null) ??
-      (row.hero_image_url as string | null) ??
       getPublicImageUrl((row.main_image as string) ?? null) ??
       getPublicImageUrl((row.hero_image as string) ?? null);
-    const categories = row.business_categories as { name?: string; slug?: string } | null;
+    const categories = row.business_categories as { title?: string; slug?: string } | null;
     const bp = businessPayload(row, img);
-    if (categories?.name) bp.category_name = categories.name;
+    if (categories?.title) bp.category_name = categories.title;
     return {
       business_id: String(row.id),
       rank: from + i + 1,
