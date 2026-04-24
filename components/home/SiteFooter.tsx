@@ -1,14 +1,25 @@
 import Link from "next/link";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
-async function getTowns() {
+async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
   const supabase = getServiceSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("towns")
-    .select("name, slug")
-    .order("name");
-  return data ?? [];
+    .select("title, slug")
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .order("title");
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("SiteFooter getFooterTowns", error);
+    return [];
+  }
+  return (data ?? []).map((t) => ({
+    name: (t as { title: string }).title,
+    slug: t.slug as string,
+  }));
 }
 
 const companyLinks = [
@@ -20,15 +31,17 @@ const companyLinks = [
 export async function SiteFooter() {
   const [flags, townLinks] = await Promise.all([
     getAllFeatureFlags(),
-    getTowns(),
+    getFooterTowns(),
   ]);
-  const showTowns = flags["towns"] === true;
+  const showTowns = townLinks.length > 0;
 
   return (
     <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
         {/* Main footer content */}
-        <div className={`grid gap-8 sm:grid-cols-2 ${showTowns ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+        <div
+          className={`grid gap-8 sm:grid-cols-2 ${showTowns ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}
+        >
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -42,16 +55,15 @@ export async function SiteFooter() {
             </p>
           </div>
 
-          {/* Towns - conditionally shown based on feature flag */}
-          {showTowns && (
+          {showTowns ? (
             <div>
               <h3 className="text-eyebrow mb-4">Towns</h3>
-              <ul className="space-y-2">
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {townLinks.map((town) => (
                   <li key={town.slug}>
                     <Link
                       href={`/${town.slug}`}
-                      className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                      className="text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                     >
                       {town.name}
                     </Link>
@@ -59,7 +71,7 @@ export async function SiteFooter() {
                 ))}
               </ul>
             </div>
-          )}
+          ) : null}
 
           {/* Newsletter / Company */}
           <div className="space-y-6">

@@ -21,6 +21,7 @@ type Props = {
   isProfile: boolean;
   showAuth: boolean;
   showSaved: boolean;
+  showLogin: boolean;
   user: User | null;
 };
 
@@ -32,6 +33,7 @@ export function NavbarMobileMenu({
   isProfile,
   showAuth,
   showSaved,
+  showLogin,
   user,
 }: Props) {
   const pathname = usePathname();
@@ -73,7 +75,7 @@ export function NavbarMobileMenu({
             <Link href="/profile" onClick={onClose} className={navLinkClassMobile(isProfile)}>
               Profile
             </Link>
-          ) : showAuth ? (
+          ) : showAuth && showLogin ? (
             <Link href="/login" onClick={onClose} className={navLinkClassMobile(pathname === "/login")}>
               Login
             </Link>
