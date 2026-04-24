@@ -5,7 +5,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
-import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
@@ -44,7 +44,7 @@ async function loadBusiness(slug: string) {
     const isUuid = UUID_RE.test(slug);
     const sel = `
         id, slug, title, address, town_id, map_lat, map_lng, phone, website,
-        excerpt, content, main_image, hero_image,
+        excerpt, content, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
         claim_status, intent_tags, status, published_at,
         towns ( title, slug ),
@@ -53,14 +53,14 @@ async function loadBusiness(slug: string) {
 
     const { data: business, error: bizErr } = isUuid
       ? await supabase
-          .from("businesses")
+          .from("businesses_view")
           .select(sel)
           .is("archived_at", null)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("id", slug)
           .maybeSingle()
       : await supabase
-          .from("businesses")
+          .from("businesses_view")
           .select(sel)
           .is("archived_at", null)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
@@ -69,10 +69,16 @@ async function loadBusiness(slug: string) {
 
     if (bizErr || !business) return null;
 
-    const row = business as Record<string, unknown>;
-    const img =
-      getPublicImageUrl(row.main_image as string) ??
-      getPublicImageUrl(row.hero_image as string);
+    const row = business as Record<string, unknown> & {
+      main_image_url?: string | null;
+      hero_image_url?: string | null;
+    };
+    const img = getPublicImageUrlWithView(
+      row.main_image_url,
+      row.hero_image_url,
+      row.main_image as string,
+      row.hero_image as string,
+    );
     const towns = row.towns as { title?: string; name?: string; slug?: string } | null;
     const category = row.business_categories as { title?: string; slug?: string } | null;
 
@@ -201,9 +207,13 @@ export default async function BusinessPage({ params }: Props) {
   };
 
   const mapRel = (r: Record<string, unknown>): RelatedBusinessRow => {
-    const m = (r as { main_image?: string | null; hero_image?: string | null }).main_image;
-    const h = (r as { hero_image?: string | null }).hero_image;
-    const u = getPublicImageUrl(m) ?? getPublicImageUrl(h);
+    const row = r as {
+      main_image?: string | null;
+      hero_image?: string | null;
+      main_image_url?: string | null;
+      hero_image_url?: string | null;
+    };
+    const u = getPublicImageUrlWithView(row.main_image_url, row.hero_image_url, row.main_image, row.hero_image);
     return {
       id: String(r.id),
       name: String((r as { title: string }).title),
@@ -224,8 +234,8 @@ export default async function BusinessPage({ params }: Props) {
   let relatedBusinesses: RelatedBusinessRow[] = [];
   if (townId != null) {
     const { data } = await supabase
-      .from("businesses")
-      .select("id, title, slug, excerpt, main_image, hero_image")
+      .from("businesses_view")
+      .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url")
       .eq("town_id", townId)
       .neq("id", businessId)
       .is("archived_at", null)

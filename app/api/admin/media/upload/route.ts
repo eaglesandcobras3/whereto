@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
     const safeName = sanitizeFileName(file.name || `${id}.jpg`);
     const checksum = createHash("sha256").update(bytes).digest("hex");
     const serviceSupabase = getServiceSupabase();
-    const candidateBuckets = ["whereto-media", "cms-media", "business-images"] as const;
-    let activeBucket: (typeof candidateBuckets)[number] = "whereto-media";
+    const candidateBuckets = ["whereto30a-media", "whereto-media", "cms-media", "business-images"] as const;
+    let activeBucket: (typeof candidateBuckets)[number] = "whereto30a-media";
 
     const variantsOut: Record<string, { url: string; width: number; height: number; bytes: number }> = {};
     const uploadTasks = (Object.keys(VARIANTS) as VariantName[]).map(async (variant) => {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       }
       if (!uploaded) {
         throw new Error(
-          lastErr ?? "Upload failed. Ensure whereto-media (or cms-media / business-images) bucket exists.",
+          lastErr ?? "Upload failed. Ensure whereto30a-media (or whereto-media / cms-media / business-images) bucket exists.",
         );
       }
       const publicUrl = serviceSupabase.storage.from(activeBucket).getPublicUrl(path).data.publicUrl;

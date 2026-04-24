@@ -1,5 +1,5 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
@@ -48,9 +48,10 @@ export async function getTownBySlug(slug: string) {
   // (`is_hidden_from_search` is for /search, lists, sitemap — not for /{slug} where someone
   // has a permalink. Your SQL in the editor often omits the hide filter; the old query
   // could return zero rows even when a row existed.)
+  // `towns_view` adds `main_image_url` / `hero_image_url` via `resolve_directus_file_url` → Supabase Storage
   const { data: rows, error } = await supabase
-    .from("towns")
-    .select("id, title, slug, region, excerpt, content, main_image, hero_image, status")
+    .from("towns_view")
+    .select("id, title, slug, region, excerpt, content, main_image, hero_image, status, main_image_url, hero_image_url")
     .eq("slug", key)
     .is("archived_at", null)
     .limit(1);
@@ -70,8 +71,15 @@ export async function getTownBySlug(slug: string) {
     content: string | null;
     main_image: string | null;
     hero_image: string | null;
+    main_image_url: string | null;
+    hero_image_url: string | null;
   };
-  const heroThumb = getPublicImageUrl(t.main_image) ?? getPublicImageUrl(t.hero_image);
+  const heroThumb = getPublicImageUrlWithView(
+    t.main_image_url,
+    t.hero_image_url,
+    t.main_image,
+    t.hero_image,
+  );
   return {
     ...t,
     name: t.title,
