@@ -142,7 +142,6 @@ export function SearchPageClient({
   const [q, setQ] = useState(() => searchParams.get("q") ?? "");
   const [isSearching, setIsSearching] = useState(false);
 
-  const activePrice = searchParams.get("price");
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const urlQ = searchParams.get("q");
   const searchSort = searchParams.get("sort") === "updated" ? "updated" : "relevance";
@@ -166,18 +165,6 @@ export function SearchPageClient({
       params.set("q", trimmed);
     }
     setIsSearching(true);
-    router.push(`/search?${params.toString()}`);
-  };
-
-  const togglePrice = (p: number) => {
-    if (browseMode !== "business") return;
-    const params = new URLSearchParams(searchParams.toString());
-    if (activePrice === p.toString()) {
-      params.delete("price");
-    } else {
-      params.set("price", p.toString());
-    }
-    params.delete("page");
     router.push(`/search?${params.toString()}`);
   };
 
@@ -277,29 +264,6 @@ export function SearchPageClient({
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             {/* Discovery chips - horizontal scroll */}
             <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {/* Price filter - subtle */}
-              <div className="flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border)] p-0.5">
-                {[1, 2, 3, 4].map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => togglePrice(p)}
-                    className={`h-7 w-8 rounded-full text-xs font-medium transition-all ${
-                      activePrice === p.toString()
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
-                    }`}
-                  >
-                    {"$".repeat(p)}
-                  </button>
-                ))}
-              </div>
-
-              {/* Divider */}
-              {discoveryTags.length > 0 && (
-                <div className="h-5 w-px shrink-0 bg-[var(--color-border)]" />
-              )}
-
               {/* Discovery tags as editorial prompts */}
               {discoveryTags.map((tag) => (
                 <button

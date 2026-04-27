@@ -13,7 +13,6 @@ type Props = {
   searchParams: Promise<{
     q?: string;
     town_id?: string;
-    price?: string;
     page?: string;
     type?: string;
     sort?: string;
