@@ -24,6 +24,13 @@ export async function runSearch(options: {
   requiredHasPhysicalLocation?: boolean;
   /** `towns.id` (UUID) from search UI. */
   constrainTownId?: string;
+  /** `areas.id` (UUID): businesses in this area via `area_id` or `area_businesses`. */
+  constrainAreaId?: string;
+  /**
+   * `business_categories.slug` from search UI. When set, filters by primary category and
+   * overrides the AI-parsed category (intent) so URL filters stay predictable.
+   */
+  constrainCategorySlug?: string | null;
   sortMode?: SearchCandidateRankOrder;
   /** `?type=businesses` / `services` with no `q`: list all visible listings without ilike. */
   skipIlikeTextFilter?: boolean;
@@ -47,6 +54,12 @@ export async function runSearch(options: {
   if (options.constrainTownId) {
     cacheBasis = `${cacheBasis}::__town__:${options.constrainTownId}`;
   }
+  if (options.constrainAreaId) {
+    cacheBasis = `${cacheBasis}::__area__:${options.constrainAreaId}`;
+  }
+  if (options.constrainCategorySlug) {
+    cacheBasis = `${cacheBasis}::__cat__:${options.constrainCategorySlug}`;
+  }
   if (options.skipIlikeTextFilter) {
     cacheBasis = `${cacheBasis}::__browse__:${"no_ilike"}`;
   }
@@ -64,7 +77,7 @@ export async function runSearch(options: {
     options.model,
     options.openaiKey,
   );
-  if (options.forcedCategorySlug) {
+  if (options.forcedCategorySlug && !options.constrainCategorySlug) {
     intent = searchIntentSchema.parse({
       ...intent,
       category: options.forcedCategorySlug,
@@ -77,12 +90,13 @@ export async function runSearch(options: {
     });
   }
 
+  const explicitCategorySlug = options.constrainCategorySlug ?? options.forcedCategorySlug;
   let filterCategoryId: string | null = null;
-  if (options.forcedCategorySlug) {
+  if (explicitCategorySlug) {
     const { data: cat } = await supabase
       .from("business_categories")
       .select("id")
-      .eq("slug", options.forcedCategorySlug)
+      .eq("slug", explicitCategorySlug)
       .maybeSingle();
     if (cat?.id) filterCategoryId = cat.id as string;
   } else if (intent.category && !options.skipIlikeTextFilter) {
@@ -105,6 +119,7 @@ export async function runSearch(options: {
     page: options.page,
     pageSize: options.pageSize,
     constrainTownId: options.constrainTownId,
+    constrainAreaId: options.constrainAreaId,
     requiredHasPhysicalLocation: options.requiredHasPhysicalLocation,
     sortMode: options.sortMode,
     primaryCategoryId: filterCategoryId,

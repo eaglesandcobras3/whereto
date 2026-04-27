@@ -14,6 +14,11 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
+import {
+  getBrowseBusinessesForTown,
+  type BrowseBusinessCard,
+} from "@/lib/data/business-browse-cards";
+import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 
 type Props = { params: Promise<{ townSlug: string }> };
 
@@ -56,7 +61,8 @@ export default async function TownPage({ params }: Props) {
 
   const town = await getTownBySlug(townSlug);
   if (town) {
-    return <BasicTownPage town={town} />;
+    const townBusinesses = await getBrowseBusinessesForTown(town.id, 12);
+    return <BasicTownPage town={town} townBusinesses={townBusinesses} />;
   }
 
   const asPlace = await getPublicPlaceBySlug(townSlug);
@@ -66,7 +72,13 @@ export default async function TownPage({ params }: Props) {
 
 type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 
-function BasicTownPage({ town }: { town: TownRecord }) {
+function BasicTownPage({
+  town,
+  townBusinesses,
+}: {
+  town: TownRecord;
+  townBusinesses: BrowseBusinessCard[];
+}) {
   const descriptor = getTownDescriptor(town.slug);
   const blurb = town.excerpt?.trim() || null;
   const contentRaw =
@@ -187,6 +199,15 @@ function BasicTownPage({ town }: { town: TownRecord }) {
               </div>
             </aside>
           </div>
+
+          {townBusinesses.length > 0 && (
+            <div className="mt-10 border-t border-[var(--color-border)] pt-10">
+              <BusinessBrowseLinksList
+                title={`Businesses in ${town.name}`}
+                items={townBusinesses}
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>

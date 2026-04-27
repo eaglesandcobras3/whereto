@@ -5,6 +5,8 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
+import { getBrowseBusinessesForPublicPlace } from "@/lib/data/business-browse-cards";
+import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -39,6 +41,10 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) notFound();
 
+  const placeBusinesses = await getBrowseBusinessesForPublicPlace(area, 12);
+  const businessSectionTitle =
+    area.source === "area" ? `Businesses in ${area.title}` : `Businesses near ${area.title}`;
+
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
   const typeLabel = areaTypeLabel(area.areaTypeLabel);
   const rawMarkdown = typeof area.content === "string" ? area.content.trim() : "";
@@ -47,9 +53,8 @@ export default async function AreaPage({ params }: Props) {
     : "";
   const hasMarkdown = bodyMarkdown.length > 0;
 
-  const browseSearchType = area.areaTypeLabel === "point_of_interest" ? "access" : "areas";
-  const browseSearchLabel =
-    area.areaTypeLabel === "point_of_interest" ? "Landmarks & parks" : "Areas & districts";
+  const browseSearchType = area.source === "point_of_interest" ? "access" : "areas";
+  const browseSearchLabel = area.source === "point_of_interest" ? "Landmarks & parks" : "Areas & districts";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -163,6 +168,12 @@ export default async function AreaPage({ params }: Props) {
               </div>
             </aside>
           </div>
+
+          {placeBusinesses.length > 0 && (
+            <div className="mt-10 border-t border-[var(--color-border)] pt-10">
+              <BusinessBrowseLinksList title={businessSectionTitle} items={placeBusinesses} />
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -80,6 +80,9 @@ function areaTypeLabel(areaType: string): string {
   return areaType.replace(/_/g, " ");
 }
 
+type CategoryOption = { title: string; slug: string };
+type AreaOption = { id: string; title: string };
+
 type Props = {
   browseMode?: BrowseMode;
   browseEvents?: BrowseEventRow[];
@@ -89,7 +92,12 @@ type Props = {
   initialQuery: string;
   results: SearchResultPayload;
   townName?: string;
+  areaName?: string;
   towns?: Town[];
+  /** Business category filters (primary `business_categories.slug`). */
+  categoryOptions?: CategoryOption[];
+  /** `areas` rows for the area dropdown (optionally pre-scoped to selected town on the server). */
+  areaOptions?: AreaOption[];
   recentPosts?: RecentPost[];
   discoveryTags?: DiscoveryTag[];
 };
@@ -132,7 +140,10 @@ export function SearchPageClient({
   initialQuery,
   results,
   townName,
+  areaName,
   towns = [],
+  categoryOptions = [],
+  areaOptions = [],
   recentPosts = [],
   discoveryTags = [],
 }: Props) {
@@ -144,8 +155,12 @@ export function SearchPageClient({
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const urlQ = searchParams.get("q");
-  const searchSort = searchParams.get("sort") === "updated" ? "updated" : "relevance";
+  const sortP = searchParams.get("sort");
+  const searchSort: "relevance" | "name" | "updated" =
+    sortP === "updated" ? "updated" : sortP === "name" ? "name" : "relevance";
   const filterTownId = searchParams.get("town_id");
+  const filterCategory = searchParams.get("category") ?? "";
+  const filterAreaId = searchParams.get("area_id") ?? "";
 
   const [lastUrlQ, setLastUrlQ] = useState(urlQ);
   if (urlQ !== lastUrlQ) {
@@ -168,11 +183,11 @@ export function SearchPageClient({
     router.push(`/search?${params.toString()}`);
   };
 
-  const setSearchSort = (next: "relevance" | "updated") => {
+  const setSearchSort = (next: "relevance" | "name" | "updated") => {
     if (browseMode !== "business") return;
     const params = new URLSearchParams(searchParams.toString());
     if (next === "relevance") params.delete("sort");
-    else params.set("sort", "updated");
+    else params.set("sort", next);
     params.delete("page");
     router.push(`/search?${params.toString()}`);
   };
@@ -182,6 +197,25 @@ export function SearchPageClient({
     const params = new URLSearchParams(searchParams.toString());
     if (!townId) params.delete("town_id");
     else params.set("town_id", townId);
+    params.delete("area_id");
+    params.delete("page");
+    router.push(`/search?${params.toString()}`);
+  };
+
+  const setCategoryFilter = (slug: string) => {
+    if (browseMode !== "business") return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (!slug) params.delete("category");
+    else params.set("category", slug);
+    params.delete("page");
+    router.push(`/search?${params.toString()}`);
+  };
+
+  const setAreaFilter = (areaId: string) => {
+    if (browseMode !== "business") return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (!areaId) params.delete("area_id");
+    else params.set("area_id", areaId);
     params.delete("page");
     router.push(`/search?${params.toString()}`);
   };
@@ -297,17 +331,55 @@ export function SearchPageClient({
                     </select>
                   </label>
                 )}
+                {areaOptions.length > 0 && (
+                  <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+                    <span className="shrink-0">Area</span>
+                    <select
+                      value={filterAreaId}
+                      onChange={(e) => setAreaFilter(e.target.value)}
+                      className="max-w-[10rem] truncate rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
+                      aria-label="Filter by area or district"
+                    >
+                      <option value="">All areas</option>
+                      {areaOptions.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {categoryOptions.length > 0 && (
+                  <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+                    <span className="shrink-0">Type</span>
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="max-w-[11rem] truncate rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
+                      aria-label="Filter by business type"
+                    >
+                      <option value="">All types</option>
+                      {categoryOptions.map((c) => (
+                        <option key={c.slug} value={c.slug}>
+                          {c.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
                   <span className="shrink-0">Sort</span>
                   <select
                     value={searchSort}
-                    onChange={(e) =>
-                      setSearchSort(e.target.value === "updated" ? "updated" : "relevance")
-                    }
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setSearchSort(v === "updated" || v === "name" ? v : "relevance");
+                    }}
                     className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
                     aria-label="Sort results"
                   >
                     <option value="relevance">Best match</option>
+                    <option value="name">Name (A–Z)</option>
                     <option value="updated">Recently updated</option>
                   </select>
                 </label>
@@ -317,6 +389,17 @@ export function SearchPageClient({
               <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                 Results use each listing&rsquo;s last saved time (newest first). Pair with a town filter
                 to review recent edits in one place.
+              </p>
+            )}
+            {searchSort === "relevance" && (
+              <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                Picks with featured, rating, and review signals first, then A–Z by name. Use
+                &ldquo;Name (A–Z)&rdquo; for a simple alphabetical list.
+              </p>
+            )}
+            {searchSort === "name" && (
+              <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                Alphabetical by listing title. Filters (town, area, type) still apply.
               </p>
             )}
           </div>
@@ -332,7 +415,13 @@ export function SearchPageClient({
               <div className="mb-8">
                 <p className="text-eyebrow mb-2">
                   {browseMode === "business"
-                    ? (townName ? `Discovering ${townName}` : "Local Businesses")
+                    ? (townName && areaName
+                        ? `Discovering ${areaName} · ${townName}`
+                        : townName
+                          ? `Discovering ${townName}`
+                          : areaName
+                            ? `Discovering ${areaName}`
+                            : "Local Businesses")
                     : browseMode === "events"
                       ? "Upcoming Events"
                       : browseMode === "guides"

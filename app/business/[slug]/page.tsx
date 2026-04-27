@@ -9,11 +9,12 @@ import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
-import Image from "next/image";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { selectBusinessHighlights } from "@/lib/business/highlights";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
+import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -43,7 +44,7 @@ async function loadBusiness(slug: string) {
     const supabase = getServiceSupabase();
     const isUuid = UUID_RE.test(slug);
     const sel = `
-        id, slug, title, address, town_id, map_lat, map_lng, phone, website,
+        id, slug, title, address, town_id, primary_category_id, map_lat, map_lng, phone, website,
         excerpt, content, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
         claim_status, intent_tags, status, published_at,
@@ -197,33 +198,6 @@ export default async function BusinessPage({ params }: Props) {
   const townId = b.town_id as string | null;
   const businessId = b.id as string;
 
-  type RelatedBusinessRow = {
-    id: string;
-    name: string;
-    slug: string;
-    hero_image_url: string | null;
-    ai_one_liner: string | null;
-    ai_summary: string | null;
-  };
-
-  const mapRel = (r: Record<string, unknown>): RelatedBusinessRow => {
-    const row = r as {
-      main_image?: string | null;
-      hero_image?: string | null;
-      main_image_url?: string | null;
-      hero_image_url?: string | null;
-    };
-    const u = getPublicImageUrlWithView(row.main_image_url, row.hero_image_url, row.main_image, row.hero_image);
-    return {
-      id: String(r.id),
-      name: String((r as { title: string }).title),
-      slug: String(r.slug),
-      hero_image_url: u,
-      ai_one_liner: (r as { excerpt?: string | null }).excerpt ?? null,
-      ai_summary: (r as { excerpt?: string | null }).excerpt ?? null,
-    };
-  };
-
   type GuideCardRow = {
     slug: string;
     title: string;
@@ -231,19 +205,12 @@ export default async function BusinessPage({ params }: Props) {
     og_image_url: string | null;
   };
 
-  let relatedBusinesses: RelatedBusinessRow[] = [];
-  if (townId != null) {
-    const { data } = await supabase
-      .from("businesses_view")
-      .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url")
-      .eq("town_id", townId)
-      .neq("id", businessId)
-      .is("archived_at", null)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .order("date_updated", { ascending: false, nullsFirst: false })
-      .limit(5);
-    relatedBusinesses = (data as Record<string, unknown>[] | null)?.map((r) => mapRel(r)) ?? [];
-  }
+  const relatedBusinesses = await getSimilarBusinesses({
+    businessId,
+    townId,
+    primaryCategoryId: (b.primary_category_id as string | null) ?? null,
+    limit: 5,
+  });
 
   let townGuides: GuideCardRow[] = [];
   if (townId != null) {
@@ -636,50 +603,10 @@ export default async function BusinessPage({ params }: Props) {
 
               {/* Related businesses - horizontal card style */}
               {relatedBusinesses.length > 0 && (
-                <section>
-                  <h2 className="text-eyebrow mb-4">
-                    {town?.name ? `More in ${town.name}` : "More nearby"}
-                  </h2>
-                  <ul className="space-y-3">
-                    {relatedBusinesses.map((rb) => {
-                      const thumb = businessListingImageUrl(rb.hero_image_url);
-                      const blurb =
-                        (rb.ai_one_liner && rb.ai_one_liner.trim()) ||
-                        (rb.ai_summary && rb.ai_summary.slice(0, 100).trim()) ||
-                        null;
-                      return (
-                        <li key={rb.id}>
-                          <Link
-                            href={`/business/${rb.slug}`}
-                            className="group flex gap-3 rounded-xl p-1 transition-colors hover:bg-[var(--color-surface-container-low)]"
-                          >
-                            {thumb ? (
-                              <Image
-                                src={thumb}
-                                alt={rb.name}
-                                width={64}
-                                height={96}
-                                className="aspect-[2/3] w-16 shrink-0 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="flex aspect-[2/3] w-16 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400">
-                                <span className="material-symbols-outlined !text-xl">storefront</span>
-                              </div>
-                            )}
-                            <div className="min-w-0 flex-1 py-1">
-                              <p className="font-headline text-sm font-bold leading-snug text-zinc-900 transition-colors group-hover:text-[var(--color-primary)]">
-                                {rb.name}
-                              </p>
-                              {blurb && (
-                                <p className="mt-1 line-clamp-2 text-xs leading-snug text-zinc-500">{blurb}</p>
-                              )}
-                            </div>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
+                <BusinessBrowseLinksList
+                  title={town?.name ? `Similar in ${town.name}` : "Similar places"}
+                  items={relatedBusinesses}
+                />
               )}
 
               {/* Town guides */}

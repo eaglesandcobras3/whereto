@@ -117,7 +117,7 @@ function compositeScore(
   );
 }
 
-export type SearchCandidateRankOrder = "relevance" | "updated";
+export type SearchCandidateRankOrder = "relevance" | "updated" | "name";
 
 /** Eligibility + weighted composite + light category diversity (Section 11 intent), or by `updated_at` when `rankOrder` is `updated`. */
 export function scoreAndRankCandidates(
@@ -157,6 +157,14 @@ export function scoreAndRankCandidates(
         const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0;
         return tb - ta;
       })
+      .slice(0, limit);
+  }
+
+  if (rankOrder === "name") {
+    return [...eligible]
+      .sort((a, b) =>
+        (a.name ?? "").localeCompare(b.name ?? "", undefined, { sensitivity: "base" }),
+      )
       .slice(0, limit);
   }
 

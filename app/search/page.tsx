@@ -16,6 +16,10 @@ type Props = {
     page?: string;
     type?: string;
     sort?: string;
+    /** `business_categories.slug` */
+    category?: string;
+    /** `areas.id` (UUID) */
+    area_id?: string;
   }>;
 };
 
@@ -117,9 +121,18 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function SearchPage({ searchParams }: Props) {
-  const { q, town_id, page, type: rawType, sort: sortParam } = await searchParams;
+  const {
+    q,
+    town_id,
+    page,
+    type: rawType,
+    sort: sortParam,
+    category: categoryParam,
+    area_id: areaIdParam,
+  } = await searchParams;
   const type = normalizeSearchType(rawType);
-  const sortMode = sortParam === "updated" ? ("updated" as const) : ("relevance" as const);
+  const sortMode =
+    sortParam === "updated" ? "updated" : sortParam === "name" ? "name" : "relevance";
 
   const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
   const trimmedQ = q?.trim() ?? "";
@@ -150,6 +163,29 @@ export default async function SearchPage({ searchParams }: Props) {
     }
   }
 
+  let constrainCategorySlug: string | undefined;
+  if (categoryParam && /^[a-z0-9_]+$/.test(categoryParam.trim())) {
+    constrainCategorySlug = categoryParam.trim();
+  }
+
+  let constrainAreaId: string | undefined;
+  let areaName: string | undefined;
+  if (areaIdParam?.trim()) {
+    const { data: arow } = await serviceSupabase
+      .from("areas")
+      .select("id, title, town_id")
+      .eq("id", areaIdParam.trim())
+      .is("archived_at", null)
+      .maybeSingle();
+    if (arow) {
+      const a = arow as { id: string; title: string; town_id: string | null };
+      if (!constrainTownId || a.town_id == null || a.town_id === constrainTownId) {
+        constrainAreaId = a.id;
+        areaName = a.title;
+      }
+    }
+  }
+
   const displayQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey!]!.label : "") || effectiveQuery;
   const currentPage = Math.max(1, Number(page) || 1);
 
@@ -164,6 +200,33 @@ export default async function SearchPage({ searchParams }: Props) {
     id: t.id,
     name: (t as { title: string }).title,
     slug: t.slug,
+  }));
+
+  const { data: categoryRows } = await serviceSupabase
+    .from("business_categories")
+    .select("title, slug")
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .order("title");
+  const categoryOptions = (categoryRows ?? []).map((c) => ({
+    title: (c as { title: string }).title,
+    slug: (c as { slug: string }).slug,
+  }));
+
+  let areaListQuery = serviceSupabase
+    .from("areas_view")
+    .select("id, title, town_id")
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .order("title")
+    .limit(500);
+  if (constrainTownId) {
+    areaListQuery = areaListQuery.eq("town_id", constrainTownId);
+  }
+  const { data: areaListRows } = await areaListQuery;
+  const areaOptions = (areaListRows ?? []).map((a) => ({
+    id: String((a as { id: string }).id),
+    title: String((a as { title: string }).title),
   }));
 
   const { data: recentBiz } = await serviceSupabase
@@ -499,11 +562,18 @@ export default async function SearchPage({ searchParams }: Props) {
 
   const skipIlikeTextFilter =
     (typeKey === "businesses" || typeKey === "services") && !trimmedQ;
+  /**
+   * Text match uses a single `ilike` on title/excerpt/search_keywords. Do not append
+   * " in {townName}" when `town_id` is already a column filter — that would require one
+   * field to contain the whole phrase (e.g. "donuts in Rosemary Beach") and hides real matches.
+   */
   const runSearchRawQuery = skipIlikeTextFilter
     ? (typeKey ? TYPE_FILTERS[typeKey].label : effectiveQuery)
-    : townName
-      ? `${effectiveQuery} in ${townName}`
-      : effectiveQuery;
+    : constrainTownId
+      ? (trimmedQ || effectiveQuery)
+      : townName
+        ? `${effectiveQuery} in ${townName}`
+        : effectiveQuery;
 
   const searchResult = await runSearch({
     rawQuery: runSearchRawQuery,
@@ -514,6 +584,8 @@ export default async function SearchPage({ searchParams }: Props) {
     pageSize: 12,
     requiredHasPhysicalLocation: type === "services" ? false : undefined,
     constrainTownId,
+    constrainAreaId,
+    constrainCategorySlug: constrainCategorySlug ?? null,
     sortMode,
     skipIlikeTextFilter,
   });
@@ -524,7 +596,10 @@ export default async function SearchPage({ searchParams }: Props) {
       initialQuery={displayQuery}
       results={searchResult}
       townName={townName}
+      areaName={areaName}
       towns={sidebarTowns}
+      categoryOptions={categoryOptions}
+      areaOptions={areaOptions}
       recentPosts={recentPostsResult.data ?? []}
       discoveryTags={discoveryTags}
     />

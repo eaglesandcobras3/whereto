@@ -15,6 +15,10 @@ export type PublicPlacePage = {
   excerpt: string | null;
   content: string | null;
   areaTypeLabel: string | null;
+  /** `areas` row vs `points_of_interest` — drives how related businesses are queried. */
+  source: "area" | "point_of_interest";
+  /** For POI only: optional parent `areas.id` when the landmark sits in a district. */
+  parent_area_id: string | null;
   town_id: string | null;
   town_name: string | null;
   town_slug: string | null;
@@ -62,6 +66,8 @@ export async function getPublicPlaceBySlug(
       excerpt: (a.excerpt as string | null) ?? null,
       content: (a.content as string | null) ?? null,
       areaTypeLabel: (a.area_type as string | null) ?? null,
+      source: "area" as const,
+      parent_area_id: null,
       town_id: (a.town_id as string | null) ?? null,
       town_name: to?.title ?? null,
       town_slug: to?.slug ?? null,
@@ -77,7 +83,7 @@ export async function getPublicPlaceBySlug(
   const { data: poiRows, error: poiErr } = await supabase
     .from("points_of_interest_view")
     .select(
-      "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, poi_type, town_id, towns(title, slug)",
+      "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, poi_type, town_id, area_id, towns(title, slug)",
     )
     .eq("slug", key)
     .is("archived_at", null)
@@ -106,6 +112,8 @@ export async function getPublicPlaceBySlug(
     excerpt: (p.excerpt as string | null) ?? null,
     content: (p.content as string | null) ?? null,
     areaTypeLabel: (p.poi_type as string | null) ?? null,
+    source: "point_of_interest" as const,
+    parent_area_id: (p.area_id as string | null) ?? null,
     town_id: (p.town_id as string | null) ?? null,
     town_name: to?.title ?? null,
     town_slug: to?.slug ?? null,

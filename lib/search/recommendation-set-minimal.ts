@@ -13,13 +13,15 @@ function businessPayload(
   imageUrl: string | null,
 ): BusinessPayload {
   const displayName = String((row as { title?: string; name?: string }).title ?? row.name ?? "");
+  const t = row.towns as { title?: string; slug?: string } | { title?: string; slug?: string }[] | null;
+  const townOne = t && Array.isArray(t) ? t[0] : t;
   return {
     id: String(row.id),
     name: displayName,
     slug: row.slug != null ? String(row.slug) : undefined,
     address: (row.address as string | null) ?? null,
     town_id: null,
-    town_name: null,
+    town_name: townOne?.title ?? null,
     category_id: null,
     category_name: undefined,
     lat: row.map_lat != null ? Number(row.map_lat) : undefined,
@@ -51,6 +53,8 @@ export async function buildMinimalSearchResult(
     page?: number;
     pageSize?: number;
     constrainTownId?: string;
+    /** `areas.id`: `businesses.area_id` or `area_businesses` for this area. */
+    constrainAreaId?: string;
     requiredHasPhysicalLocation?: boolean;
     sortMode?: SearchCandidateRankOrder;
     /** When set, filter `businesses.primary_category_id`. */
@@ -72,7 +76,7 @@ export async function buildMinimalSearchResult(
   let query = supabase
     .from("businesses_view")
     .select(
-      `id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, main_image_url, hero_image_url, status, business_categories ( title, slug )`,
+      `id, town_id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, main_image, hero_image, main_image_url, hero_image_url, status, featured, date_updated, business_categories ( title, slug ), towns ( title, slug )`,
       { count: "exact" },
     )
     .is("archived_at", null)
@@ -86,6 +90,22 @@ export async function buildMinimalSearchResult(
     query = query.eq("town_id", options.constrainTownId);
   }
 
+  if (options.constrainAreaId) {
+    const { data: linkRows } = await supabase
+      .from("area_businesses")
+      .select("business_id")
+      .eq("area_id", options.constrainAreaId);
+    const linkIds = (linkRows ?? [])
+      .map((r) => (r as { business_id: string }).business_id)
+      .filter(Boolean)
+      .slice(0, 500);
+    if (linkIds.length > 0) {
+      query = query.or(`area_id.eq.${options.constrainAreaId},id.in.(${linkIds.join(",")})`);
+    } else {
+      query = query.eq("area_id", options.constrainAreaId);
+    }
+  }
+
   if (options.primaryCategoryId) {
     query = query.eq("primary_category_id", options.primaryCategoryId);
   }
@@ -96,8 +116,14 @@ export async function buildMinimalSearchResult(
 
   if (options.sortMode === "updated") {
     query = query.order("date_updated", { ascending: false, nullsFirst: false });
-  } else {
+  } else if (options.sortMode === "name") {
     query = query.order("title", { ascending: true });
+  } else {
+    query = query
+      .order("featured", { ascending: false, nullsFirst: true })
+      .order("review_rating_cached", { ascending: false, nullsFirst: true })
+      .order("review_count_cached", { ascending: false, nullsFirst: true })
+      .order("title", { ascending: true });
   }
 
   const { data: rows, error, count } = await query.range(from, to);
