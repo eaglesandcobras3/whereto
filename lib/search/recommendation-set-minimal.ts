@@ -83,7 +83,9 @@ export async function buildMinimalSearchResult(
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (!options.skipIlikeTextFilter) {
-    query = query.or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%`);
+    query = query.or(
+      `title.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%,content.ilike.%${q}%`,
+    );
   }
 
   if (options.constrainTownId) {
