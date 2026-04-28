@@ -6,6 +6,10 @@ import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { pickDailySubset } from "@/lib/home/daily-featured-pick";
+
+/** Fresh `Date` each request so daily featured picks advance. Shuffle seed uses `America/Chicago` calendar dates. */
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const flags = await getAllFeatureFlags();
@@ -64,18 +68,21 @@ export default async function Home() {
     const { data: businessRows, error: bizErr } = await supabase
       .from("businesses_view")
       .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated")
+      .eq("featured", true)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .order("featured", { ascending: false, nullsFirst: true })
       .order("sort", { ascending: true, nullsFirst: false })
-      .order("date_updated", { ascending: false, nullsFirst: false })
-      .limit(10);
+      .order("title", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(150);
 
     if (bizErr) {
       console.error("home: businesses query", bizErr);
     }
 
-    featuredBusinesses = (businessRows ?? []).map((b) => {
+    const dailyPicks = pickDailySubset(businessRows ?? [], 10);
+
+    featuredBusinesses = dailyPicks.map((b) => {
       const row = b as {
         id: string;
         title: string;

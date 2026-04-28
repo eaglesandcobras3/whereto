@@ -390,7 +390,7 @@ export function HomePage({
               <div className="mb-12 md:mb-16">
                 <p className="text-eyebrow mb-3">Editor's Picks</p>
                 <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
-                  Featured This Week
+                  Featured Today
                 </h2>
               </div>
               <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
