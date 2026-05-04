@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { HomePage } from "@/components/home/HomePage";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -7,9 +8,14 @@ import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 /** Fresh `Date` each request so daily featured picks advance. Shuffle seed uses `America/Chicago` calendar dates. */
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  ...canonicalAlternates("/"),
+};
 
 export default async function Home() {
   const flags = await getAllFeatureFlags();

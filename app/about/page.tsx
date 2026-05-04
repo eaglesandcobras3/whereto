@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 const siteUrl = "https://whereto30a.com";
 
 export const metadata: Metadata = {
+  ...canonicalAlternates("/about"),
   title: "About",
   description:
     "WhereTo30A helps you discover restaurants, events, guides, and places along Florida's 30A and the Emerald Coast.",

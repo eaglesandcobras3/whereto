@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { Metadata } from "next";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 export const metadata: Metadata = {
+  ...canonicalAlternates("/guide"),
   title: "30A Florida Vacation Guide 2026 | Local Guide to 30A Towns",
   description:
     "Your ultimate guide to Florida's 30A corridor. Explore Seaside, Rosemary Beach, Alys Beach, Grayton Beach and more. Local tips, best restaurants, activities, and hidden gems along the Emerald Coast.",

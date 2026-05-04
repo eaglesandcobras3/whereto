@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 const siteUrl = "https://whereto30a.com";
 
 export const metadata: Metadata = {
+  ...canonicalAlternates("/terms"),
   title: "Terms",
   description: "Terms of Service for using WhereTo30A and whereto30a.com.",
   openGraph: {

@@ -5,6 +5,8 @@ import { weekdayLongName } from "@/lib/events/recurrence";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -134,7 +136,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const event = await loadEvent(slug);
   if (!event) return { title: "Event" };
+  const seg = normalizeUrlSegment(slug);
   return {
+    ...canonicalAlternates(`/events/${seg}`),
     title: `${event.title} | WhereTo30A`,
     description: event.description?.slice(0, 160) ?? `Event on 30A: ${event.title}`,
   };

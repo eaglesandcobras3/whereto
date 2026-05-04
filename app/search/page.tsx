@@ -8,6 +8,7 @@ import { SearchPageClient, type DiscoveryTag } from "./search-page-client";
 import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
 import type { BrowseEventRow, BrowseAreaRow, BrowseGuideRow, BrowseTownRow } from "./search-page-client";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 type Props = {
   searchParams: Promise<{
@@ -50,6 +51,30 @@ function normalizeSearchType(type: string | undefined): string | undefined {
   if (!type) return undefined;
   if (type === "stores") return "businesses";
   return type;
+}
+
+function sortedSearchCanonicalPath(sp: {
+  q?: string;
+  town_id?: string;
+  page?: string;
+  type?: string;
+  sort?: string;
+  category?: string;
+  area_id?: string;
+}): string {
+  const pairs: [string, string][] = [];
+  const type = normalizeSearchType(sp.type);
+  if (type) pairs.push(["type", type]);
+  if (sp.area_id?.trim()) pairs.push(["area_id", sp.area_id.trim()]);
+  if (sp.category?.trim()) pairs.push(["category", sp.category.trim()]);
+  const pg = sp.page?.trim();
+  if (pg && pg !== "1") pairs.push(["page", pg]);
+  if (sp.q?.trim()) pairs.push(["q", sp.q.trim()]);
+  if (sp.sort?.trim()) pairs.push(["sort", sp.sort.trim()]);
+  if (sp.town_id?.trim()) pairs.push(["town_id", sp.town_id.trim()]);
+  pairs.sort((a, b) => a[0].localeCompare(b[0]));
+  const qs = new URLSearchParams(pairs).toString();
+  return qs ? `/search?${qs}` : `/search`;
 }
 
 function sanitizeSearchToken(raw: string): string {
@@ -105,16 +130,25 @@ function mapEventToBrowseRow(
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const { q, type: rawType } = await searchParams;
+  const sp = await searchParams;
+  const canon = canonicalAlternates(sortedSearchCanonicalPath(sp));
+  const { q, type: rawType } = sp;
   const type = normalizeSearchType(rawType);
   if (type && TYPE_FILTERS[type]) {
     return {
+      ...canon,
       title: `${TYPE_FILTERS[type].label} | WhereTo30A`,
       description: `Explore ${TYPE_FILTERS[type].label.toLowerCase()} across 30A and Florida's Emerald Coast.`,
     };
   }
-  if (!q) return { title: "Search | WhereTo30A" };
+  if (!q?.trim()) {
+    return {
+      ...canon,
+      title: "Search | WhereTo30A",
+    };
+  }
   return {
+    ...canon,
     title: `Search results for "${q}" | WhereTo30A`,
     description: `Find towns, businesses, events, guides, and local favorites on 30A for "${q}".`,
   };

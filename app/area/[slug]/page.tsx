@@ -8,6 +8,8 @@ import { getSiteUrl } from "@/lib/site-url";
 import { getBrowseBusinessesForPublicPlace } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import type { Metadata } from "next";
+import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -18,12 +20,14 @@ function areaTypeLabel(areaType: string | null): string {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const place = await getPublicPlaceBySlug(slug);
+  const { slug: raw } = await params;
+  const place = await getPublicPlaceBySlug(raw);
   if (!place) return { title: "Area | WhereTo30A" };
   const desc = place.excerpt || `Explore ${place.title} on 30A.`;
   const og = businessListingImageUrl(place.hero_image_url);
+  const pathSeg = normalizeUrlSegment(place.slug);
   return {
+    ...canonicalAlternates(`/area/${pathSeg}`),
     title: `${place.title} | WhereTo30A`,
     description: desc,
     openGraph: og

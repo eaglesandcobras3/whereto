@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 const siteUrl = "https://whereto30a.com";
 
 export const metadata: Metadata = {
+  ...canonicalAlternates("/privacy"),
   title: "Privacy",
   description:
     "How WhereTo30A collects, uses, and shares information when you use our website and services.",

@@ -34,7 +34,7 @@
 | `OPENAI_API_KEY` | OpenAI | Optional for local; without it, search uses keyword + template fallbacks |
 | `GEOAPIFY_API_KEY` | [Geoapify MyProjects](https://myprojects.geoapify.com/) | Optional; without it, discovery and directory refresh crons skip external calls (discovery leaves jobs pending). Places + Place Details use OSM-derived data under Geoapify’s and ODbL terms — keep attribution (see `business_sources`). |
 | `CRON_SECRET` | Generate a long random string | Required in **production** for `/api/cron/*`; omitted in `NODE_ENV=development` the app allows cron without secret |
-| `NEXT_PUBLIC_SITE_URL` | Your canonical origin (e.g. `https://yoursite.com`) | Optional; improves sitemap, robots, and Open Graph URLs. Vercel sets `VERCEL_URL` as a server fallback if unset |
+| `NEXT_PUBLIC_SITE_URL` | Your canonical origin (e.g. `https://yoursite.com`) | **Strongly recommended in production.** Drives `metadataBase` + `<link rel="canonical">` site-wide (with sitemap/robots). Use your single preferred hostname (apex **or** `www`, not both). On Vercel, `VERCEL_URL` is only a fallback preview hostname if unset. |
 | `NEXT_PUBLIC_IMAGE_STORAGE_BUCKET` | Optional; default **`whereto30a-media`** | When `main_image` / `hero_image` store a **storage key** (not a full URL), the app builds `…/storage/v1/object/public/{bucket}/{key}`. Use `bucket/…` as the key prefix to pick another public bucket, or set this env to override the default. |
 | `NEXT_PUBLIC_INCLUDE_DRAFT_CONTENT` | *(legacy / unused)* | No longer read by the app: browse and content slugs are **not** filtered by `status` in code. You can remove this from env if set. |
 | `NEXT_PUBLIC_DIRECTUS_URL` | (Optional) Directus origin if you use it for editing only | **Not used for public image URLs** at runtime. |
@@ -93,6 +93,7 @@ After deploying the premium redesign code, complete these steps to enable new to
 
 | Date | What changed |
 |------|----------------|
+| 2026-04-29 | **SEO canonical URLs:** App sets root `metadataBase` from `getSiteUrl()` + `alternates.canonical` on major routes (home, search with sorted query keys, towns/areas/guides/events/business/town/intent SEO pages, legal). **`/business/{uuid}`** 308-redirects to **`/business/{slug}`** when a slug exists. Set **`NEXT_PUBLIC_SITE_URL`** to your real production origin (one hostname) so canonicals match Search Console property. |
 | 2026-04-24 | **Default Storage bucket:** Public image URLs default to **`whereto30a-media`** (not `whereto-media`). Apply **`20260425120000_whereto30a_media_bucket.sql`** so `resolve_directus_file_url` and `*_view` image URLs use the correct bucket; app rewrites legacy `/object/public/supabase/` and `/object/public/whereto-media/` paths when present. |
 | 2026-04-24 | **Supabase diagnostics UI:** `/dev/supabase-check` (dev only) shows the same step-by-step checks as `pnpm run diagnose:supabase`. Optional **`ENABLE_SUPABASE_DIAG_UI=1`** enables that page on non-dev deploys (e.g. staging). |
 | 2026-04-03 | Initial checklist; then: `/admin` UI, expanded runbook, `npm test`, [PRIVACY.md](./PRIVACY.md). |

@@ -5,6 +5,8 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -74,8 +76,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const page = await loadGuide(slug);
   if (!page) return { title: "Guide" };
-  
+  const seg = normalizeUrlSegment(slug);
+
   return {
+    ...canonicalAlternates(`/guide/${seg}`),
     title: page.seo_title || `${page.title} | WhereTo30A`,
     description: page.seo_description,
     openGraph: {

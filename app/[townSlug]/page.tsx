@@ -19,6 +19,7 @@ import {
   type BrowseBusinessCard,
 } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 type Props = { params: Promise<{ townSlug: string }> };
 
@@ -36,6 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `Local guide: ${town.name} on 30A.`;
     const og = businessListingImageUrl(town.hero_image_thumb_url as string | null);
     return {
+      ...canonicalAlternates(`/${town.slug}`),
       title: `${town.name} | WhereTo30A`,
       description: desc,
       openGraph: og

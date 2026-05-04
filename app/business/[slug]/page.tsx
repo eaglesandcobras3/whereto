@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -15,6 +15,7 @@ import { selectBusinessHighlights } from "@/lib/business/highlights";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -127,7 +128,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const desc = (b.excerpt as string) || (b.ai_summary as string)?.slice(0, 160) || undefined;
   const hero = businessListingImageUrl(b.hero_image_url as string | null);
   const ogUrl = hero ?? undefined;
+  const row = b as Record<string, unknown>;
+  const rawSlug = row.slug;
+  const dbSlug = typeof rawSlug === "string" ? rawSlug.trim() : "";
+  const bizId = row.id != null ? String(row.id) : "";
+  const canonicalSegment = dbSlug || bizId;
+  const canonicalPath = `/business/${encodeURIComponent(canonicalSegment)}`;
   return {
+    ...canonicalAlternates(canonicalPath),
     title: `${b.name as string} | WhereTo30A`,
     description: desc,
     openGraph: ogUrl
@@ -186,6 +194,13 @@ export default async function BusinessPage({ params }: Props) {
   const { slug } = await params;
   const b = await loadBusiness(slug);
   if (!b) notFound();
+
+  const row = b as Record<string, unknown>;
+  const rawSlug = row.slug;
+  const dbSlug = typeof rawSlug === "string" ? rawSlug.trim() : "";
+  if (UUID_RE.test(slug) && dbSlug && slug !== dbSlug) {
+    permanentRedirect(`/business/${encodeURIComponent(dbSlug)}`);
+  }
 
   const auth = await createSupabaseServerClient();
   const {

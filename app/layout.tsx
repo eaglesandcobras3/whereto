@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { NavbarServer } from "@/components/NavbarServer";
 import { SiteFooter } from "@/components/home/SiteFooter";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,6 +25,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "WhereTo30A | Local Guide to 30A",
   description:
     "Discover towns, restaurants, events, guides, and local favorites along 30A and Florida's Emerald Coast.",
