@@ -8,6 +8,20 @@ import type { SearchResultPayload } from "@/lib/search/types";
 
 const ITEMS_PER_PAGE = 12;
 
+function CardExploreHint({ label = "Explore" }: { label?: string }) {
+  return (
+    <span className="mt-auto inline-flex items-center gap-1 pt-3 text-sm font-semibold text-[var(--color-primary)]">
+      {label}
+      <span
+        className="material-symbols-outlined !text-base transition-transform group-hover:translate-x-0.5"
+        aria-hidden
+      >
+        arrow_forward
+      </span>
+    </span>
+  );
+}
+
 export type DiscoveryTag = {
   name: string;
   slug: string;
@@ -410,25 +424,27 @@ export function SearchPageClient({
                         return (
                           <article
                             key={rec.business_id}
-                            className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+                            className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                           >
                             <Link
                               href={`/business/${rec.business.slug}`}
                               className="card-horizontal"
                             >
-                              {/* Portrait image - left side */}
-                              <div className="card-horizontal-image aspect-portrait">
-                                <RemoteCoverImage
-                                  src={img}
-                                  alt={rec.business.name}
-                                  className="img-editorial-fast object-cover"
-                                  sizes="(max-width: 640px) 140px, 200px"
-                                  placeholderIcon="storefront"
-                                />
+                              {/* Portrait image - left side, flush with content (no radius on trailing edge) */}
+                              <div className="card-horizontal-image">
+                                <div className="card-horizontal-image-inner">
+                                  <RemoteCoverImage
+                                    src={img}
+                                    alt={rec.business.name}
+                                    className="object-contain object-center rounded-none"
+                                    sizes="(max-width: 640px) 112px, 144px"
+                                    placeholderIcon="storefront"
+                                  />
+                                </div>
                               </div>
 
                               {/* Content - right side */}
-                              <div className="card-horizontal-content p-4 sm:p-5">
+                              <div className="card-horizontal-content gap-1.5 px-5 py-6 sm:gap-2 sm:px-6 sm:py-8">
                                 {/* Meta line */}
                                 <div className="mb-1 flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
                                   {rec.business.town_name && (
@@ -463,18 +479,19 @@ export function SearchPageClient({
                                   const unique = [...new Set(highlights)].slice(0, 3);
                                   if (unique.length === 0) return null;
                                   return (
-                                  <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
-                                    {unique.map((tag) => (
-                                      <span
-                                        key={tag}
-                                        className="rounded-full bg-[var(--color-surface-secondary)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
-                                      >
-                                        {tag.replace(/_/g, " ")}
-                                      </span>
-                                    ))}
-                                  </div>
+                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                      {unique.map((tag) => (
+                                        <span
+                                          key={tag}
+                                          className="rounded-full bg-[var(--color-surface-secondary)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
+                                        >
+                                          {tag.replace(/_/g, " ")}
+                                        </span>
+                                      ))}
+                                    </div>
                                   );
                                 })()}
+                                <CardExploreHint />
                               </div>
                             </Link>
                           </article>
@@ -486,22 +503,24 @@ export function SearchPageClient({
                     ? paginatedEvents.map((ev) => (
                         <article
                           key={ev.id}
-                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                         >
                           <Link
                             href={`/events/${ev.slug}`}
                             className="card-horizontal"
                           >
-                            <div className="card-horizontal-image aspect-portrait">
-                              <RemoteCoverImage
-                                src={ev.hero_image_url}
-                                alt=""
-                                className="img-editorial-fast object-cover"
-                                sizes="(max-width: 640px) 140px, 200px"
-                                placeholderIcon="event"
-                              />
+                            <div className="card-horizontal-image">
+                              <div className="card-horizontal-image-inner">
+                                <RemoteCoverImage
+                                  src={ev.hero_image_url}
+                                  alt=""
+                                  className="object-contain object-center rounded-none"
+                                  sizes="(max-width: 640px) 112px, 144px"
+                                  placeholderIcon="event"
+                                />
+                              </div>
                             </div>
-                            <div className="card-horizontal-content p-4 sm:p-5">
+                            <div className="card-horizontal-content gap-1.5 px-5 py-6 sm:gap-2 sm:px-6 sm:py-8">
                               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
                                 {formatEventBrowseWhen(ev)}
                               </p>
@@ -519,6 +538,7 @@ export function SearchPageClient({
                                   {ev.description}
                                 </p>
                               )}
+                              <CardExploreHint />
                             </div>
                           </Link>
                         </article>
@@ -529,19 +549,21 @@ export function SearchPageClient({
                     ? paginatedTowns.map((t) => (
                         <article
                           key={t.id}
-                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                         >
                           <Link href={`/${t.slug}`} className="card-horizontal">
-                            <div className="card-horizontal-image aspect-portrait">
-                              <RemoteCoverImage
-                                src={t.hero_image_url}
-                                alt={t.name}
-                                className="img-editorial-fast object-cover"
-                                sizes="(max-width: 640px) 140px, 200px"
-                                placeholderIcon="location_city"
-                              />
+                            <div className="card-horizontal-image">
+                              <div className="card-horizontal-image-inner">
+                                <RemoteCoverImage
+                                  src={t.hero_image_url}
+                                  alt={t.name}
+                                  className="object-contain object-center rounded-none"
+                                  sizes="(max-width: 640px) 112px, 144px"
+                                  placeholderIcon="location_city"
+                                />
+                              </div>
                             </div>
-                            <div className="card-horizontal-content p-4 sm:p-5">
+                            <div className="card-horizontal-content gap-1.5 px-5 py-6 sm:gap-2 sm:px-6 sm:py-8">
                               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
                                 Town
                               </p>
@@ -557,6 +579,7 @@ export function SearchPageClient({
                                   Explore this 30A beach town.
                                 </p>
                               )}
+                              <CardExploreHint />
                             </div>
                           </Link>
                         </article>
@@ -567,19 +590,21 @@ export function SearchPageClient({
                     ? paginatedAreas.map((a) => (
                         <article
                           key={a.id}
-                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                         >
                           <Link href={`/area/${a.slug}`} className="card-horizontal">
-                            <div className="card-horizontal-image aspect-portrait">
-                              <RemoteCoverImage
-                                src={a.hero_image_url}
-                                alt={a.name}
-                                className="img-editorial-fast object-cover"
-                                sizes="(max-width: 640px) 140px, 200px"
-                                placeholderIcon="explore"
-                              />
+                            <div className="card-horizontal-image">
+                              <div className="card-horizontal-image-inner">
+                                <RemoteCoverImage
+                                  src={a.hero_image_url}
+                                  alt={a.name}
+                                  className="object-contain object-center rounded-none"
+                                  sizes="(max-width: 640px) 112px, 144px"
+                                  placeholderIcon="explore"
+                                />
+                              </div>
                             </div>
-                            <div className="card-horizontal-content p-4 sm:p-5">
+                            <div className="card-horizontal-content gap-1.5 px-5 py-6 sm:gap-2 sm:px-6 sm:py-8">
                               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                                 {areaTypeLabel(a.area_type)}
                               </p>
@@ -598,6 +623,7 @@ export function SearchPageClient({
                                   Named place or district on 30A.
                                 </p>
                               )}
+                              <CardExploreHint />
                             </div>
                           </Link>
                         </article>
@@ -608,19 +634,21 @@ export function SearchPageClient({
                     ? paginatedGuides.map((g) => (
                         <article
                           key={g.slug}
-                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
+                          className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                         >
                           <Link href={`/guide/${g.slug}`} className="card-horizontal">
-                            <div className="card-horizontal-image aspect-portrait">
-                              <RemoteCoverImage
-                                src={g.og_image_url}
-                                alt=""
-                                className="img-editorial-fast object-cover"
-                                sizes="(max-width: 640px) 140px, 200px"
-                                placeholderIcon="menu_book"
-                              />
+                            <div className="card-horizontal-image">
+                              <div className="card-horizontal-image-inner">
+                                <RemoteCoverImage
+                                  src={g.og_image_url}
+                                  alt=""
+                                  className="object-contain object-center rounded-none"
+                                  sizes="(max-width: 640px) 112px, 144px"
+                                  placeholderIcon="menu_book"
+                                />
+                              </div>
                             </div>
-                            <div className="card-horizontal-content p-4 sm:p-5">
+                            <div className="card-horizontal-content gap-1.5 px-5 py-6 sm:gap-2 sm:px-6 sm:py-8">
                               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
                                 Guide
                               </p>
@@ -630,6 +658,7 @@ export function SearchPageClient({
                               <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:line-clamp-3">
                                 {g.excerpt || g.seo_description || "Local guide to 30A towns, favorites, and trip ideas."}
                               </p>
+                              <CardExploreHint />
                             </div>
                           </Link>
                         </article>

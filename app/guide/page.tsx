@@ -1,9 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { Metadata } from "next";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { loadHubMainGuideMarkdown } from "@/lib/data/load-hub-main-guide-markdown";
+import { getHomeHeroSettings } from "@/lib/data/site-settings";
 
 const HUB_FEATURED_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
@@ -67,10 +69,11 @@ async function getOtherGuides() {
 }
 
 export default async function GuidePage() {
-  const [towns, otherGuides, hubBody] = await Promise.all([
+  const [towns, otherGuides, hubBody, heroSettings] = await Promise.all([
     getTowns(),
     getOtherGuides(),
     loadHubMainGuideMarkdown(),
+    getHomeHeroSettings(),
   ]);
 
   const jsonLd = {
@@ -83,7 +86,7 @@ export default async function GuidePage() {
     includesAttraction: towns.map((t) => ({
       "@type": "City",
       name: t.name,
-      url: `https://whereto30a.com/guide/${t.slug}`,
+      url: `https://whereto30a.com/${t.slug}`,
     })),
   };
 
@@ -94,37 +97,29 @@ export default async function GuidePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-        {/* Hero: typography and color only (no photography) */}
-        <section className="relative overflow-hidden border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)]">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.14]"
-            style={{
-              backgroundImage:
-                "radial-gradient(ellipse 85% 70% at 15% -10%, var(--color-primary), transparent 72%), radial-gradient(ellipse 55% 45% at 95% 15%, var(--color-primary), transparent 68%)",
-            }}
-          />
-          <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-24">
-            <span className="mb-5 inline-block rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+        {/* Hero: same configurable image as home / HOME_HERO_IMAGE_URL */}
+        <section className="relative min-h-[380px] w-full overflow-hidden border-b border-[var(--color-border)] md:min-h-[480px]">
+          <div className="absolute inset-0 z-0">
+            <Image
+              src={heroSettings.imageUrl}
+              alt="Scenic 30A coastline with sugar-white sand and Gulf water"
+              fill
+              className="object-cover object-center"
+              sizes="100vw"
+              priority
+              unoptimized
+            />
+          </div>
+          <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/35 to-[var(--color-background)]" />
+          <div className="relative z-10 mx-auto max-w-3xl px-6 py-16 text-[var(--color-text-primary)] md:py-24">
+            <span className="mb-5 inline-flex items-center rounded-full border border-white/35 bg-white/15 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-white backdrop-blur-md">
               Local planning guide
             </span>
-            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl lg:text-[3.25rem] md:leading-[1.1]">
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white drop-shadow-md md:text-5xl lg:text-[3.25rem] md:leading-[1.1]">
               The complete guide to visiting 30A, Florida
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Sugar sand, town-by-town energy, and the beach-access details that
-              actually matter. Written like the email I send friends before they
-              book their first rental.
-            </p>
-            <p className="mt-6 text-sm text-[var(--color-text-tertiary)]">
-              Prefer a dedicated URL?{" "}
-              <Link
-                href={`/guide/${HUB_FEATURED_GUIDE_SLUG}`}
-                className="font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
-              >
-                Open this guide on its own page
-              </Link>
-              .
+            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/90">
+              {heroSettings.subtitle}
             </p>
           </div>
         </section>
@@ -151,7 +146,7 @@ export default async function GuidePage() {
               {towns.map((town) => (
                 <Link
                   key={town.id}
-                  href={`/guide/${town.slug}`}
+                  href={`/${town.slug}`}
                   className="group flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
                 >
                   <div className="flex flex-1 flex-col gap-3">
@@ -232,14 +227,14 @@ export default async function GuidePage() {
               </p>
               <div className="mt-4 flex gap-2">
                 <Link
-                  href="/guide/alys-beach"
+                  href="/alys-beach"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Alys Beach
                 </Link>
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
-                  href="/guide/rosemary-beach"
+                  href="/rosemary-beach"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Rosemary Beach
@@ -262,14 +257,14 @@ export default async function GuidePage() {
               </p>
               <div className="mt-4 flex gap-2">
                 <Link
-                  href="/guide/seaside"
+                  href="/seaside"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Seaside
                 </Link>
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
-                  href="/guide/watercolor"
+                  href="/watercolor"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   WaterColor
@@ -292,14 +287,14 @@ export default async function GuidePage() {
               </p>
               <div className="mt-4 flex gap-2">
                 <Link
-                  href="/guide/grayton-beach"
+                  href="/grayton-beach"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Grayton Beach
                 </Link>
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
-                  href="/guide/seaside"
+                  href="/seaside"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Seaside
@@ -322,14 +317,14 @@ export default async function GuidePage() {
               </p>
               <div className="mt-4 flex gap-2">
                 <Link
-                  href="/guide/santa-rosa-beach"
+                  href="/santa-rosa-beach"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Santa Rosa Beach
                 </Link>
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
-                  href="/guide/inlet-beach"
+                  href="/inlet-beach"
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Inlet Beach
