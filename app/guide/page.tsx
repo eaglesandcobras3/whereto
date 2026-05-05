@@ -2,12 +2,16 @@ import Link from "next/link";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { Metadata } from "next";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { loadHubMainGuideMarkdown } from "@/lib/data/load-hub-main-guide-markdown";
+
+const HUB_FEATURED_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/guide"),
-  title: "30A Florida Vacation Guide 2026 | Local Guide to 30A Towns",
+  title: "Complete Guide to Visiting 30A, Florida (2026) | WhereTo30A",
   description:
-    "Your ultimate guide to Florida's 30A corridor. Explore Seaside, Rosemary Beach, Alys Beach, Grayton Beach and more. Local tips, best restaurants, activities, and hidden gems along the Emerald Coast.",
+    "A local-style guide to South Walton's 30A corridor: what it is, how to pick a town, beach access, airports, where to eat, and a simple first-trip rhythm. Straight talk for first-time visitors.",
   keywords: [
     "30A Florida",
     "30A vacation guide",
@@ -16,13 +20,13 @@ export const metadata: Metadata = {
     "Seaside Florida",
     "Rosemary Beach",
     "Alys Beach",
-    "30A restaurants",
-    "30A things to do",
+    "30A beach access",
+    "where to stay on 30A",
   ],
   openGraph: {
-    title: "30A Florida Vacation Guide 2026 | WhereTo30A",
+    title: "Complete Guide to Visiting 30A, Florida | WhereTo30A",
     description:
-      "Your complete guide to the Emerald Coast's beach communities. Local insights, dining recommendations, and hidden gems.",
+      "Plan a first 30A trip with clear town picks, beach-access reality, and pacing that matches your crew.",
     type: "website",
     url: "https://whereto30a.com/guide",
   },
@@ -57,14 +61,16 @@ async function getOtherGuides() {
     .from("guides")
     .select("title, slug, guide_type")
     .is("primary_town_id", null)
+    .neq("slug", HUB_FEATURED_GUIDE_SLUG)
     .limit(10);
   return data ?? [];
 }
 
 export default async function GuidePage() {
-  const [towns, otherGuides] = await Promise.all([
+  const [towns, otherGuides, hubBody] = await Promise.all([
     getTowns(),
     getOtherGuides(),
+    loadHubMainGuideMarkdown(),
   ]);
 
   const jsonLd = {
@@ -88,54 +94,44 @@ export default async function GuidePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-        {/* Hero Section */}
-        <section className="relative h-[500px] w-full overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[var(--color-background)]" />
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920')] bg-cover bg-center" />
-          <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col justify-end px-6 pb-16">
-            <span className="mb-4 inline-block w-fit rounded-full bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[var(--color-primary)]">
-              Complete Vacation Guide
+        {/* Hero: typography and color only (no photography) */}
+        <section className="relative overflow-hidden border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)]">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.14]"
+            style={{
+              backgroundImage:
+                "radial-gradient(ellipse 85% 70% at 15% -10%, var(--color-primary), transparent 72%), radial-gradient(ellipse 55% 45% at 95% 15%, var(--color-primary), transparent 68%)",
+            }}
+          />
+          <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-24">
+            <span className="mb-5 inline-block rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+              Local planning guide
             </span>
-            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white md:text-6xl">
-              30A Florida Vacation Guide
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl lg:text-[3.25rem] md:leading-[1.1]">
+              The complete guide to visiting 30A, Florida
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-white/90">
-              Your insider&apos;s guide to the Emerald Coast&apos;s most beautiful beach
-              communities. From Inlet Beach to Dune Allen Beach, discover the
-              magic of South Walton.
+            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
+              Sugar sand, town-by-town energy, and the beach-access details that
+              actually matter. Written like the email I send friends before they
+              book their first rental.
+            </p>
+            <p className="mt-6 text-sm text-[var(--color-text-tertiary)]">
+              Prefer a dedicated URL?{" "}
+              <Link
+                href={`/guide/${HUB_FEATURED_GUIDE_SLUG}`}
+                className="font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
+              >
+                Open this guide on its own page
+              </Link>
+              .
             </p>
           </div>
         </section>
 
-        {/* Introduction */}
-        <section className="mx-auto max-w-4xl px-6 py-16">
-          <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
-            What is 30A?
-          </h2>
-          <div className="mt-6 space-y-4 text-[var(--color-text-secondary)] leading-relaxed">
-            <p>
-              <strong className="text-[var(--color-text-primary)]">
-                Highway 30A
-              </strong>{" "}
-              is a scenic coastal road that runs for 24 miles along the Gulf of
-              Mexico in South Walton County, Florida. Often called the &ldquo;Emerald
-              Coast&rdquo; for its stunning turquoise waters and sugar-white sand
-              beaches, 30A has become one of the most sought-after vacation
-              destinations in the United States.
-            </p>
-            <p>
-              The 30A corridor is home to a collection of unique beach
-              communities, each with its own distinct personality. From the
-              European elegance of Rosemary Beach to the bohemian spirit of
-              Grayton Beach, there&apos;s a perfect town for every type of traveler.
-            </p>
-            <p>
-              Whether you&apos;re planning a romantic getaway, a family vacation, or
-              a girls&apos; trip, this guide will help you discover the best of 30A &mdash;
-              from hidden local restaurants to the most photogenic spots along
-              the coast.
-            </p>
-          </div>
+        {/* Main article (markdown; no stock or inline images) */}
+        <section className="mx-auto max-w-3xl px-6 py-14 md:py-20">
+          <MarkdownRenderer content={hubBody} />
         </section>
 
         {/* Town Grid */}
@@ -143,52 +139,54 @@ export default async function GuidePage() {
           <div className="mx-auto max-w-6xl px-6">
             <div className="mb-12 text-center">
               <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
-                Explore the Beach Communities
+                Dive deeper by town
               </h2>
               <p className="mt-3 text-[var(--color-text-secondary)]">
-              Click on any town to read our local guide
+                Each guide is written with on-the-ground detail to help you pick
+                a place that fits your week.
               </p>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {towns.map((town) => (
                 <Link
                   key={town.id}
                   href={`/guide/${town.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:shadow-lg"
+                  className="group flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
                 >
-                  <div className="relative h-48 overflow-hidden bg-[var(--color-surface-container-high)]">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="material-symbols-outlined !text-6xl text-[var(--color-text-tertiary)] opacity-20">
-                        beach_access
+                  <div className="flex flex-1 flex-col gap-3">
+                    <div className="flex items-start gap-4">
+                      <span
+                        aria-hidden
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-container-high)] text-[var(--color-primary)]"
+                      >
+                        <span className="material-symbols-outlined text-2xl">
+                          beach_access
+                        </span>
                       </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-headline text-xl font-bold text-[var(--color-text-primary)]">
+                          {town.name}
+                        </h3>
+                        {town.ai_tagline && (
+                          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                            {town.ai_tagline}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h3 className="font-headline text-2xl font-bold text-white">
-                        {town.name}
-                      </h3>
-                      {town.ai_tagline && (
-                        <p className="mt-1 text-sm text-white/80 line-clamp-1">
-                          {town.ai_tagline}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="p-5">
                     {town.ai_description ? (
-                      <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3">
+                      <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] line-clamp-4">
                         {town.ai_description}
                       </p>
                     ) : (
                       <p className="text-sm text-[var(--color-text-secondary)]">
-                        Discover the charm of {town.name} on Florida&apos;s Emerald
-                        Coast.
+                        Local notes on {town.name} along Scenic 30A.
                       </p>
                     )}
 
                     {town.ai_vibe && town.ai_vibe.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 pt-1">
                         {town.ai_vibe.slice(0, 3).map((v) => (
                           <span
                             key={v}
@@ -199,13 +197,13 @@ export default async function GuidePage() {
                         ))}
                       </div>
                     )}
+                  </div>
 
-                    <div className="mt-4 flex items-center text-sm font-semibold text-[var(--color-primary)]">
-                      Read Full Guide
-                      <span className="material-symbols-outlined ml-1 !text-sm transition-transform group-hover:translate-x-1">
-                        arrow_forward
-                      </span>
-                    </div>
+                  <div className="mt-5 flex items-center text-sm font-semibold text-[var(--color-primary)]">
+                    Read town guide
+                    <span className="material-symbols-outlined ml-1 !text-sm transition-transform group-hover:translate-x-1">
+                      arrow_forward
+                    </span>
                   </div>
                 </Link>
               ))}
