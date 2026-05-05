@@ -7,6 +7,7 @@ import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -96,10 +97,31 @@ export default async function GuidePage({ params }: Props) {
 
   if (!page) notFound();
 
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Guides", url: "/guide" },
+    { name: page.title },
+  ]);
+
+  const guideSchema = generateGuideSchema({
+    title: page.title,
+    slug,
+    description: page.seo_description,
+    imageUrl: page.og_image_url,
+  });
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
         <article className="mx-auto max-w-6xl px-5 py-12 sm:px-6 md:py-16 lg:px-8">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(guideSchema) }}
+          />
           {/* Hero Section - Full width image with overlay */}
           {page.og_image_url && (
             <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-2xl sm:aspect-[21/9] lg:aspect-[3/1]">

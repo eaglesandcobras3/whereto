@@ -24,11 +24,104 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
-  title: "WhereTo30A | Local Guide to 30A",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "WhereTo30A | Local Guide to Florida's 30A & Emerald Coast",
+    template: "%s | WhereTo30A",
+  },
   description:
-    "Discover towns, restaurants, events, guides, and local favorites along 30A and Florida's Emerald Coast.",
+    "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips from Rosemary Beach to Seaside.",
+  keywords: [
+    "30A",
+    "30A Florida",
+    "Emerald Coast",
+    "Rosemary Beach",
+    "Seaside Florida",
+    "Alys Beach",
+    "Grayton Beach",
+    "30A restaurants",
+    "30A things to do",
+    "30A vacation",
+    "30A beach towns",
+    "Florida panhandle beaches",
+  ],
+  authors: [{ name: "WhereTo30A" }],
+  creator: "WhereTo30A",
+  publisher: "WhereTo30A",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "WhereTo30A",
+    title: "WhereTo30A | Local Guide to Florida's 30A & Emerald Coast",
+    description:
+      "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "WhereTo30A | Local Guide to 30A",
+    description:
+      "Your complete local guide to 30A and Florida's Emerald Coast.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    // Add your verification codes here when available
+    // google: "your-google-verification-code",
+    // yandex: "your-yandex-verification-code",
+  },
+};
+
+/** Organization and WebSite schema for the entire site */
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${siteUrl}/#organization`,
+  name: "WhereTo30A",
+  url: siteUrl,
+  logo: {
+    "@type": "ImageObject",
+    url: `${siteUrl}/favicon.ico`,
+  },
+  sameAs: [],
+  description:
+    "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips.",
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${siteUrl}/#website`,
+  url: siteUrl,
+  name: "WhereTo30A",
+  description: "Local guide to 30A and Florida's Emerald Coast",
+  publisher: { "@id": `${siteUrl}/#organization` },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${siteUrl}/search?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+  inLanguage: "en-US",
 };
 
 export default function RootLayout({
@@ -46,6 +139,20 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=swap"
           rel="stylesheet"
+        />
+        <meta name="theme-color" content="#0d9488" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Organization and WebSite schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
         {/* Product theme: design/homepage.html is light-only; keep html.class in sync before paint */}
         <script

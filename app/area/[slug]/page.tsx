@@ -8,6 +8,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
@@ -122,14 +123,23 @@ export default async function AreaPage({ params }: Props) {
   const browseSearchType = area.source === "point_of_interest" ? "access" : "areas";
   const browseSearchLabel = area.source === "point_of_interest" ? "Landmarks & parks" : "Areas & districts";
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Place",
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    ...(area.town_slug && area.town_name
+      ? [{ name: area.town_name, url: `/${area.town_slug}` }]
+      : []),
+    { name: area.title },
+  ];
+  const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
+
+  const areaSchema = generateAreaSchema({
     name: area.title,
-    description: area.excerpt ?? undefined,
-    url: `${getSiteUrl()}/area/${area.slug}`,
-    ...(portraitUrl ? { image: [portraitUrl] } : {}),
-  };
+    slug: area.slug,
+    description: area.excerpt,
+    imageUrl: portraitUrl,
+    townName: area.town_name,
+    townSlug: area.town_slug,
+  });
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -137,7 +147,11 @@ export default async function AreaPage({ params }: Props) {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(areaSchema) }}
           />
 
           <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm">

@@ -9,40 +9,36 @@ import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 /** PostgREST often caps a single response at ~1000 rows; paginate to include full catalogs. */
 const SITEMAP_PAGE_SIZE = 1000;
 
-const STATIC_PATHS = [
-  "/",
-  "/about",
-  "/terms",
-  "/privacy",
-  "/guide",
-  "/towns",
-  "/search",
-  "/login",
+const STATIC_PAGES = [
+  { path: "/", priority: 1.0, changeFreq: "daily" as const },
+  { path: "/guide", priority: 0.95, changeFreq: "weekly" as const },
+  { path: PRIMARY_REGION_HUB_PATH, priority: 0.9, changeFreq: "weekly" as const },
+  { path: "/about", priority: 0.5, changeFreq: "monthly" as const },
+  { path: "/terms", priority: 0.3, changeFreq: "yearly" as const },
+  { path: "/privacy", priority: 0.3, changeFreq: "yearly" as const },
 ] as const;
 
 /**
- * Sitemap from Supabase: towns, businesses, guides, events, areas, and points of interest.
- * Businesses: every non-archived row, `/business/{slug}` when slug is set and unique, else
- * `/business/{id}` (matches the app’s UUID route).
- * `lastModified` prefers `date_updated`, then `published_at` / event `starts_at`, then `date_created`.
+ * Comprehensive sitemap optimized for SEO:
+ * - Static pages with appropriate priorities
+ * - Towns (high priority - main navigation hubs)
+ * - Businesses (medium-high priority - core content)
+ * - Guides (medium priority - editorial content)
+ * - Events (medium priority - time-sensitive content)
+ * - Areas & POIs (medium priority - location content)
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
   const now = new Date();
   const supabase = getServiceSupabaseOrNull();
+
   if (!supabase) {
-    return [
-      { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
-      ...STATIC_PATHS.filter((p) => p !== "/").map(
-        (p) =>
-          ({
-            url: `${base}${p}`,
-            lastModified: now,
-            changeFrequency: "monthly" as const,
-            priority: 0.4,
-          }) satisfies MetadataRoute.Sitemap[0],
-      ),
-    ];
+    return STATIC_PAGES.map((p) => ({
+      url: `${base}${p.path}`,
+      lastModified: now,
+      changeFrequency: p.changeFreq,
+      priority: p.priority,
+    }));
   }
 
   const [
@@ -65,35 +61,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ),
   ]);
 
-  const entries: MetadataRoute.Sitemap = [
-    { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: `${base}/guide`, lastModified: now, changeFrequency: "weekly", priority: 0.95 },
-    { url: `${base}${PRIMARY_REGION_HUB_PATH}`, lastModified: now, changeFrequency: "weekly", priority: 0.88 },
-  ];
+  const entries: MetadataRoute.Sitemap = [];
 
-  for (const p of STATIC_PATHS) {
-    if (p === "/") continue;
+  // Static pages first
+  for (const p of STATIC_PAGES) {
     entries.push({
-      url: `${base}${p}`,
+      url: `${base}${p.path}`,
       lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.5,
+      changeFrequency: p.changeFreq,
+      priority: p.priority,
     });
   }
 
+  // Towns - high priority hub pages
   for (const t of towns ?? []) {
     const slug = t.slug as string;
     if (!slug || isReservedRootSlug(slug) || slug === PRIMARY_REGION_DB_SLUG) continue;
-    const lm = pickDate(t, now);
-    entries.push({ url: `${base}/${slug}`, lastModified: lm, changeFrequency: "weekly", priority: 0.9 });
+    entries.push({
+      url: `${base}/${slug}`,
+      lastModified: pickDate(t, now),
+      changeFrequency: "weekly",
+      priority: 0.85,
+    });
   }
 
-  // Single region: hub is only PRIMARY_REGION_HUB_PATH (`/towns`); no extra /{regionSlug} URLs.
+  // Businesses - core content with varying priorities
+  entries.push(...buildBusinessSitemapEntries(base, businesses ?? [], now));
 
-  entries.push(
-    ...buildBusinessSitemapEntries(base, businesses ?? [], now),
-  );
-
+  // Guides - editorial content
   for (const g of guides ?? []) {
     const slug = g.slug as string;
     if (!slug) continue;
@@ -101,21 +96,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${base}/guide/${slug}`,
       lastModified: pickDate(g, now),
       changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.75,
     });
   }
 
+  // Events - time-sensitive content
   for (const e of events ?? []) {
     const slug = e.slug as string;
     if (!slug) continue;
+    const eventDate = pickDate(e, now);
+    // Boost priority for upcoming events
+    const isUpcoming = eventDate > now;
     entries.push({
       url: `${base}/events/${slug}`,
-      lastModified: pickDate(e, now),
+      lastModified: eventDate,
       changeFrequency: "weekly",
-      priority: 0.62,
+      priority: isUpcoming ? 0.7 : 0.5,
     });
   }
 
+  // Areas - location content
   for (const a of areas ?? []) {
     const slug = a.slug as string;
     if (!slug) continue;
@@ -123,10 +123,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${base}/area/${slug}`,
       lastModified: pickDate(a, now),
       changeFrequency: "monthly",
-      priority: 0.58,
+      priority: 0.65,
     });
   }
 
+  // Points of Interest
   for (const p of pointsOfInterest ?? []) {
     const slug = p.slug as string;
     if (!slug) continue;
@@ -134,7 +135,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${base}/area/${slug}`,
       lastModified: pickDate(p, now),
       changeFrequency: "monthly",
-      priority: 0.58,
+      priority: 0.6,
     });
   }
 
@@ -142,8 +143,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 }
 
 /**
- * All **non-archived** businesses (not limited to “browse visible”): sitemaps should list
- * every public detail URL. Rows missing `slug` still resolve via `/business/{id}` in the app.
+ * All **non-archived** businesses: sitemaps should list every public detail URL.
  */
 async function fetchSitemapBusinessRows(supabase: SupabaseClient): Promise<Record<string, unknown>[]> {
   const out: Record<string, unknown>[] = [];
@@ -151,12 +151,11 @@ async function fetchSitemapBusinessRows(supabase: SupabaseClient): Promise<Recor
   for (;;) {
     const { data, error } = await supabase
       .from("businesses")
-      .select("id, slug, date_updated, published_at, date_created")
+      .select("id, slug, date_updated, published_at, date_created, featured")
       .is("archived_at", null)
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);
     if (error) {
-      // eslint-disable-next-line no-console
       console.error("sitemap: businesses", error);
       break;
     }
@@ -175,26 +174,34 @@ function buildBusinessSitemapEntries(
 ): MetadataRoute.Sitemap {
   const slugUsed = new Set<string>();
   const out: MetadataRoute.Sitemap = [];
+
   for (const b of businesses) {
     const id = (b as { id?: string }).id;
     if (id == null) continue;
+
     const slugRaw = (b as { slug?: string | null }).slug;
     const slug = typeof slugRaw === "string" ? slugRaw.trim() : "";
+    const isFeatured = Boolean((b as { featured?: boolean }).featured);
+
     let path: string;
     if (slug && !slugUsed.has(slug)) {
       slugUsed.add(slug);
       path = `business/${encodeURIComponent(slug)}`;
     } else {
-      // No slug, empty slug, or duplicate slug: canonical detail route is `/business/{uuid}`.
       path = `business/${id}`;
     }
+
+    // Featured businesses get higher priority
+    const priority = isFeatured ? 0.8 : 0.7;
+
     out.push({
       url: `${base}/${path}`,
       lastModified: pickDate(b, now),
       changeFrequency: "monthly",
-      priority: 0.65,
+      priority,
     });
   }
+
   return out;
 }
 
@@ -214,7 +221,6 @@ async function fetchBrowseableRows(
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);
     if (error) {
-      // eslint-disable-next-line no-console
       console.error(`sitemap: ${table}`, error);
       break;
     }

@@ -15,6 +15,7 @@ import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-titl
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
@@ -170,14 +171,18 @@ function BasicTownPage({
 
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "TouristDestination",
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Towns", url: "/towns" },
+    { name: town.name },
+  ]);
+
+  const townSchema = generateTownSchema({
     name: town.name,
+    slug: town.slug,
     description: blurb ?? descriptor,
-    url: `${getSiteUrl()}/${town.slug}`,
-    ...(portraitUrl ? { image: [portraitUrl] } : {}),
-  };
+    imageUrl: portraitUrl,
+  });
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -185,7 +190,11 @@ function BasicTownPage({
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(townSchema) }}
           />
 
           <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm">

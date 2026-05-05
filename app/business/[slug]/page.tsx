@@ -16,6 +16,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -326,18 +327,30 @@ export default async function BusinessPage({ params }: Props) {
   const dateScore = b.ai_date_score as number | null;
   const valueScore = b.ai_value_score as number | null;
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    ...(town?.slug && town?.name ? [{ name: town.name, url: `/${town.slug}` }] : []),
+    ...(breadcrumbCategoryLabel ? [{ name: breadcrumbCategoryLabel }] : []),
+    { name: b.name as string },
+  ];
+  const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
+
+  const businessSchema = generateLocalBusinessSchema({
     name: b.name as string,
+    slug: (b.slug as string) || (b.id as string),
     description: oneLiner || (b.ai_summary as string) || undefined,
-    address: b.address ? { "@type": "PostalAddress", streetAddress: b.address } : undefined,
-    geo: hasCoords
-      ? { "@type": "GeoCoordinates", latitude: b.lat, longitude: b.lng }
-      : undefined,
-    url: `${getSiteUrl()}/business/${b.slug as string}`,
-    ...(heroImage ? { image: [heroImage] } : {}),
-  };
+    address: b.address as string | null,
+    lat: b.lat as number | null,
+    lng: b.lng as number | null,
+    phone: b.phone as string | null,
+    website: b.website as string | null,
+    imageUrl: heroImage,
+    townName: town?.name,
+    townSlug: town?.slug,
+    categoryName: category?.name,
+    rating: b.listing_rating as number | null,
+    reviewCount: b.listing_review_count as number | null,
+  });
 
   const fromContent = typeof b.content === "string" && b.content.trim() ? b.content.trim() : "";
   const fromPages = (b.pages as { body_markdown?: string } | null)?.body_markdown?.trim() ?? "";
@@ -353,7 +366,11 @@ export default async function BusinessPage({ params }: Props) {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(businessSchema) }}
           />
 
           {/* Editorial Breadcrumb */}
