@@ -74,7 +74,6 @@ export default async function Home() {
     const { data: businessRows, error: bizErr } = await supabase
       .from("businesses_view")
       .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated")
-      .eq("featured", true)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("sort", { ascending: true, nullsFirst: false })
@@ -86,7 +85,7 @@ export default async function Home() {
       console.error("home: businesses query", bizErr);
     }
 
-    const dailyPicks = pickDailySubset(businessRows ?? [], 10);
+    const dailyPicks = pickDailySubset(businessRows ?? [], 8);
 
     featuredBusinesses = dailyPicks.map((b) => {
       const row = b as {

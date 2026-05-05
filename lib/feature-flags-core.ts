@@ -5,7 +5,7 @@
 export const FLAG_OVERRIDE_COOKIE = "ff_overrides" as const;
 
 export const DEFAULT_FLAGS: Record<string, boolean> = {
-  search: true,
+  search: false,
   towns: true,
   featured_business: true,
   /** Legacy: when `false`, `auth` and `saved` are treated as off. */

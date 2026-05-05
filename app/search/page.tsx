@@ -9,6 +9,25 @@ import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
 import type { BrowseEventRow, BrowseAreaRow, BrowseGuideRow, BrowseTownRow } from "./search-page-client";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
+
+/** Deterministic shuffle using mulberry32 PRNG with daily seed */
+function shuffleWithDailySeed<T>(items: T[]): T[] {
+  const seed = chicagoCalendarDaySeed();
+  let a = seed >>> 0;
+  const rng = () => {
+    a += 0x6d2b79f5;
+    let t = Math.imul(a ^ (a >>> 15), a | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 
 type Props = {
   searchParams: Promise<{
@@ -263,37 +282,64 @@ export default async function SearchPage({ searchParams }: Props) {
     title: String((a as { title: string }).title),
   }));
 
-  const { data: recentBiz } = await serviceSupabase
-    .from("businesses_view")
-    .select("id, title, slug, main_image, hero_image, main_image_url, hero_image_url, date_updated")
+  // Sidebar: Explore Areas (random selection)
+  const { data: sidebarAreaRows } = await serviceSupabase
+    .from("areas_view")
+    .select("id, title, slug")
     .is("archived_at", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("date_updated", { ascending: false, nullsFirst: false })
-    .limit(5);
-  const recentPostsResult = {
-    data: (recentBiz ?? []).map((b) => {
-      const r = b as {
-        id: string;
-        title: string;
-        slug: string;
-        main_image?: string | null;
-        hero_image?: string | null;
-        main_image_url?: string | null;
-        hero_image_url?: string | null;
-      };
-      return {
-        id: r.id,
-        name: r.title,
-        slug: r.slug,
-        hero_image_url: getPublicImageUrlWithView(
-          r.main_image_url,
-          r.hero_image_url,
-          r.main_image,
-          r.hero_image,
-        ),
-      };
-    }),
-  };
+    .order("title")
+    .limit(50);
+  const allSidebarAreas = (sidebarAreaRows ?? []).map((a) => ({
+    id: String((a as { id: string }).id),
+    name: String((a as { title: string }).title),
+    slug: String((a as { slug: string }).slug),
+  }));
+  // Pick 8 random areas with daily rotation
+  const sidebarAreas = shuffleWithDailySeed(allSidebarAreas).slice(0, 8);
+
+  // Sidebar: Featured Guides (daily random selection)
+  const { data: guideRows } = await serviceSupabase
+    .from("guides_view")
+    .select("slug, title")
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .limit(50);
+  const allGuides = (guideRows ?? []).map((g) => ({
+    slug: String((g as { slug: string }).slug),
+    title: String((g as { title: string }).title),
+  }));
+  const sidebarGuides = shuffleWithDailySeed(allGuides).slice(0, 6);
+
+  // Sidebar: Featured Businesses (daily random, has_physical_location = true)
+  const { data: bizRows } = await serviceSupabase
+    .from("businesses_view")
+    .select("id, title, slug")
+    .is("archived_at", null)
+    .eq("has_physical_location", true)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .limit(100);
+  const allBiz = (bizRows ?? []).map((b) => ({
+    id: String((b as { id: string }).id),
+    name: String((b as { title: string }).title),
+    slug: String((b as { slug: string }).slug),
+  }));
+  const sidebarBusinesses = shuffleWithDailySeed(allBiz).slice(0, 6);
+
+  // Sidebar: Featured Services (daily random, is_service_business = true)
+  const { data: serviceRows } = await serviceSupabase
+    .from("businesses_view")
+    .select("id, title, slug")
+    .is("archived_at", null)
+    .eq("is_service_business", true)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .limit(100);
+  const allServices = (serviceRows ?? []).map((s) => ({
+    id: String((s as { id: string }).id),
+    name: String((s as { title: string }).title),
+    slug: String((s as { slug: string }).slug),
+  }));
+  const sidebarServices = shuffleWithDailySeed(allServices).slice(0, 6);
 
   const discoveryTags: DiscoveryTag[] = [];
   const browseMode =
@@ -318,7 +364,10 @@ export default async function SearchPage({ searchParams }: Props) {
             results={emptySearchResult(displayQuery, "No events in this town yet.")}
             townName={townName}
             towns={sidebarTowns}
-            recentPosts={recentPostsResult.data ?? []}
+            sidebarAreas={sidebarAreas}
+        sidebarGuides={sidebarGuides}
+        sidebarBusinesses={sidebarBusinesses}
+        sidebarServices={sidebarServices}
             discoveryTags={discoveryTags}
           />
         );
@@ -350,7 +399,10 @@ export default async function SearchPage({ searchParams }: Props) {
         )}
         townName={townName}
         towns={sidebarTowns}
-        recentPosts={recentPostsResult.data ?? []}
+        sidebarAreas={sidebarAreas}
+        sidebarGuides={sidebarGuides}
+        sidebarBusinesses={sidebarBusinesses}
+        sidebarServices={sidebarServices}
         discoveryTags={discoveryTags}
       />
     );
@@ -403,7 +455,10 @@ export default async function SearchPage({ searchParams }: Props) {
         results={emptySearchResult(displayQuery, "Beach towns and neighborhoods along 30A.")}
         townName={townName}
         towns={sidebarTowns}
-        recentPosts={recentPostsResult.data ?? []}
+        sidebarAreas={sidebarAreas}
+        sidebarGuides={sidebarGuides}
+        sidebarBusinesses={sidebarBusinesses}
+        sidebarServices={sidebarServices}
         discoveryTags={discoveryTags}
       />
     );
@@ -457,7 +512,10 @@ export default async function SearchPage({ searchParams }: Props) {
         )}
         townName={townName}
         towns={sidebarTowns}
-        recentPosts={recentPostsResult.data ?? []}
+        sidebarAreas={sidebarAreas}
+        sidebarGuides={sidebarGuides}
+        sidebarBusinesses={sidebarBusinesses}
+        sidebarServices={sidebarServices}
         discoveryTags={discoveryTags}
       />
     );
@@ -521,7 +579,10 @@ export default async function SearchPage({ searchParams }: Props) {
           )}
           townName={townName}
           towns={sidebarTowns}
-          recentPosts={recentPostsResult.data ?? []}
+          sidebarAreas={sidebarAreas}
+        sidebarGuides={sidebarGuides}
+        sidebarBusinesses={sidebarBusinesses}
+        sidebarServices={sidebarServices}
           discoveryTags={discoveryTags}
         />
       );
@@ -588,7 +649,10 @@ export default async function SearchPage({ searchParams }: Props) {
         )}
         townName={townName}
         towns={sidebarTowns}
-        recentPosts={recentPostsResult.data ?? []}
+        sidebarAreas={sidebarAreas}
+        sidebarGuides={sidebarGuides}
+        sidebarBusinesses={sidebarBusinesses}
+        sidebarServices={sidebarServices}
         discoveryTags={discoveryTags}
       />
     );
@@ -634,7 +698,10 @@ export default async function SearchPage({ searchParams }: Props) {
       towns={sidebarTowns}
       categoryOptions={categoryOptions}
       areaOptions={areaOptions}
-      recentPosts={recentPostsResult.data ?? []}
+      sidebarAreas={sidebarAreas}
+        sidebarGuides={sidebarGuides}
+        sidebarBusinesses={sidebarBusinesses}
+        sidebarServices={sidebarServices}
       discoveryTags={discoveryTags}
     />
   );

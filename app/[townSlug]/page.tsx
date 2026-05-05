@@ -14,12 +14,84 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
-import {
-  getBrowseBusinessesForTown,
-  type BrowseBusinessCard,
-} from "@/lib/data/business-browse-cards";
-import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
+
+/** Deterministic shuffle using mulberry32 PRNG with daily seed */
+function shuffleWithDailySeed<T>(items: T[]): T[] {
+  const seed = chicagoCalendarDaySeed();
+  let a = seed >>> 0;
+  const rng = () => {
+    a += 0x6d2b79f5;
+    let t = Math.imul(a ^ (a >>> 15), a | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+type SidebarArea = { id: string; name: string; slug: string };
+type SidebarGuide = { slug: string; title: string };
+type SidebarBusiness = { id: string; name: string; slug: string };
+
+async function getSidebarData() {
+  const supabase = getServiceSupabase();
+
+  const [areasRes, guidesRes, bizRes] = await Promise.all([
+    supabase
+      .from("areas_view")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .order("title")
+      .limit(50),
+    supabase
+      .from("guides_view")
+      .select("slug, title")
+      .is("archived_at", null)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(50),
+    supabase
+      .from("businesses_view")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("has_physical_location", true)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(100),
+  ]);
+
+  const areas: SidebarArea[] = shuffleWithDailySeed(
+    (areasRes.data ?? []).map((a) => ({
+      id: String((a as { id: string }).id),
+      name: String((a as { title: string }).title),
+      slug: String((a as { slug: string }).slug),
+    }))
+  ).slice(0, 8);
+
+  const guides: SidebarGuide[] = shuffleWithDailySeed(
+    (guidesRes.data ?? []).map((g) => ({
+      slug: String((g as { slug: string }).slug),
+      title: String((g as { title: string }).title),
+    }))
+  ).slice(0, 6);
+
+  const businesses: SidebarBusiness[] = shuffleWithDailySeed(
+    (bizRes.data ?? []).map((b) => ({
+      id: String((b as { id: string }).id),
+      name: String((b as { title: string }).title),
+      slug: String((b as { slug: string }).slug),
+    }))
+  ).slice(0, 6);
+
+  return { areas, guides, businesses };
+}
 
 type Props = { params: Promise<{ townSlug: string }> };
 
@@ -63,8 +135,8 @@ export default async function TownPage({ params }: Props) {
 
   const town = await getTownBySlug(townSlug);
   if (town) {
-    const townBusinesses = await getBrowseBusinessesForTown(town.id, 12);
-    return <BasicTownPage town={town} townBusinesses={townBusinesses} />;
+    const sidebar = await getSidebarData();
+    return <BasicTownPage town={town} sidebar={sidebar} />;
   }
 
   const asPlace = await getPublicPlaceBySlug(townSlug);
@@ -74,12 +146,18 @@ export default async function TownPage({ params }: Props) {
 
 type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 
+type SidebarData = {
+  areas: SidebarArea[];
+  guides: SidebarGuide[];
+  businesses: SidebarBusiness[];
+};
+
 function BasicTownPage({
   town,
-  townBusinesses,
+  sidebar,
 }: {
   town: TownRecord;
-  townBusinesses: BrowseBusinessCard[];
+  sidebar: SidebarData;
 }) {
   const descriptor = getTownDescriptor(town.slug);
   const blurb = town.excerpt?.trim() || null;
@@ -168,48 +246,73 @@ function BasicTownPage({
             </div>
 
             <aside className="space-y-6">
-              <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                <h2 className="font-headline text-sm font-bold text-zinc-900">Explore</h2>
-                <Link
-                  href="/search"
-                  className="mt-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)] hover:underline"
-                >
-                  <span className="material-symbols-outlined !text-lg">search</span>
-                  Search
-                </Link>
-                <Link
-                  href={`/search?town_id=${encodeURIComponent(town.id)}`}
-                  className="mt-3 flex items-center gap-2 text-sm text-zinc-600 transition-colors hover:text-[var(--color-primary)]"
-                >
-                  <span className="material-symbols-outlined !text-lg">storefront</span>
-                  Businesses in {town.name}
-                </Link>
-                <Link
-                  href={`/search?type=towns`}
-                  className="mt-3 flex items-center gap-2 text-sm text-zinc-600 transition-colors hover:text-[var(--color-primary)]"
-                >
-                  <span className="material-symbols-outlined !text-lg">map</span>
-                  All beach towns
-                </Link>
-                <Link
-                  href={`/guide/${encodeURIComponent(town.slug)}`}
-                  className="mt-3 flex items-center gap-2 text-sm text-zinc-600 transition-colors hover:text-[var(--color-primary)]"
-                >
-                  <span className="material-symbols-outlined !text-lg">menu_book</span>
-                  Town guide
-                </Link>
-              </div>
+              {/* Explore Areas */}
+              {sidebar.areas.length > 0 && (
+                <div>
+                  <h3 className="text-eyebrow mb-4">Explore Areas</h3>
+                  <ul className="space-y-2">
+                    {sidebar.areas.map((area) => (
+                      <li key={area.id}>
+                        <Link
+                          href={`/area/${area.slug}`}
+                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                        >
+                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                            explore
+                          </span>
+                          {area.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Featured Guides */}
+              {sidebar.guides.length > 0 && (
+                <div className="border-t border-[var(--color-border)] pt-6">
+                  <h3 className="text-eyebrow mb-4">Featured Guides</h3>
+                  <ul className="space-y-2">
+                    {sidebar.guides.map((guide) => (
+                      <li key={guide.slug}>
+                        <Link
+                          href={`/guide/${guide.slug}`}
+                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                        >
+                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                            menu_book
+                          </span>
+                          {guide.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Featured Businesses */}
+              {sidebar.businesses.length > 0 && (
+                <div className="border-t border-[var(--color-border)] pt-6">
+                  <h3 className="text-eyebrow mb-4">Featured Businesses</h3>
+                  <ul className="space-y-2">
+                    {sidebar.businesses.map((biz) => (
+                      <li key={biz.id}>
+                        <Link
+                          href={`/business/${biz.slug}`}
+                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                        >
+                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                            storefront
+                          </span>
+                          {biz.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </aside>
           </div>
-
-          {townBusinesses.length > 0 && (
-            <div className="mt-10 border-t border-[var(--color-border)] pt-10">
-              <BusinessBrowseLinksList
-                title={`Businesses in ${town.name}`}
-                items={townBusinesses}
-              />
-            </div>
-          )}
         </div>
       </main>
     </div>

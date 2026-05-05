@@ -19,11 +19,27 @@ type Town = {
   slug: string;
 };
 
-type RecentPost = {
+type SidebarArea = {
   id: string;
   name: string;
   slug: string;
-  hero_image_url?: string | null;
+};
+
+type SidebarGuide = {
+  slug: string;
+  title: string;
+};
+
+type SidebarBusiness = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+type SidebarService = {
+  id: string;
+  name: string;
+  slug: string;
 };
 
 export type BrowseEventRow = {
@@ -98,7 +114,10 @@ type Props = {
   categoryOptions?: CategoryOption[];
   /** `areas` rows for the area dropdown (optionally pre-scoped to selected town on the server). */
   areaOptions?: AreaOption[];
-  recentPosts?: RecentPost[];
+  sidebarAreas?: SidebarArea[];
+  sidebarGuides?: SidebarGuide[];
+  sidebarBusinesses?: SidebarBusiness[];
+  sidebarServices?: SidebarService[];
   discoveryTags?: DiscoveryTag[];
 };
 
@@ -144,7 +163,10 @@ export function SearchPageClient({
   towns = [],
   categoryOptions = [],
   areaOptions = [],
-  recentPosts = [],
+  sidebarAreas = [],
+  sidebarGuides = [],
+  sidebarBusinesses = [],
+  sidebarServices = [],
   discoveryTags = [],
 }: Props) {
   const isAreasLike = browseMode === "areas" || browseMode === "access";
@@ -313,60 +335,6 @@ export function SearchPageClient({
               ))}
 
               <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3">
-                {towns.length > 0 && (
-                  <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
-                    <span className="shrink-0">Town</span>
-                    <select
-                      value={filterTownId ?? ""}
-                      onChange={(e) => setLocationTownFilter(e.target.value)}
-                      className="max-w-[10rem] truncate rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
-                      aria-label="Filter by town"
-                    >
-                      <option value="">All towns</option>
-                      {towns.map((t) => (
-                        <option key={t.id} value={String(t.id)}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {areaOptions.length > 0 && (
-                  <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
-                    <span className="shrink-0">Area</span>
-                    <select
-                      value={filterAreaId}
-                      onChange={(e) => setAreaFilter(e.target.value)}
-                      className="max-w-[10rem] truncate rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
-                      aria-label="Filter by area or district"
-                    >
-                      <option value="">All areas</option>
-                      {areaOptions.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {categoryOptions.length > 0 && (
-                  <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
-                    <span className="shrink-0">Type</span>
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="max-w-[11rem] truncate rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
-                      aria-label="Filter by business type"
-                    >
-                      <option value="">All types</option>
-                      {categoryOptions.map((c) => (
-                        <option key={c.slug} value={c.slug}>
-                          {c.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
                 <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
                   <span className="shrink-0">Sort</span>
                   <select
@@ -385,23 +353,6 @@ export function SearchPageClient({
                 </label>
               </div>
             </div>
-            {searchSort === "updated" && (
-              <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                Results use each listing&rsquo;s last saved time (newest first). Pair with a town filter
-                to review recent edits in one place.
-              </p>
-            )}
-            {searchSort === "relevance" && (
-              <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                Picks with featured, rating, and review signals first, then A–Z by name. Use
-                &ldquo;Name (A–Z)&rdquo; for a simple alphabetical list.
-              </p>
-            )}
-            {searchSort === "name" && (
-              <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                Alphabetical by listing title. Filters (town, area, type) still apply.
-              </p>
-            )}
           </div>
         </div>
       ) : null}
@@ -790,18 +741,87 @@ export function SearchPageClient({
                   </div>
                 )}
 
-                {/* Recent discoveries - minimal */}
-                {recentPosts.length > 0 && (
+                {/* Explore Areas */}
+                {sidebarAreas.length > 0 && (
                   <div className="border-t border-[var(--color-border)] pt-6">
-                    <h3 className="text-eyebrow mb-4">Recently Added</h3>
-                    <ul className="space-y-3">
-                      {recentPosts.slice(0, 4).map((post) => (
-                        <li key={post.id}>
+                    <h3 className="text-eyebrow mb-4">Explore Areas</h3>
+                    <ul className="space-y-2">
+                      {sidebarAreas.map((area) => (
+                        <li key={area.id}>
                           <Link
-                            href={`/business/${post.slug}`}
-                            className="group block text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-primary)]"
+                            href={`/area/${area.slug}`}
+                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                           >
-                            {post.name}
+                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                              explore
+                            </span>
+                            {area.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Featured Guides */}
+                {sidebarGuides.length > 0 && (
+                  <div className="border-t border-[var(--color-border)] pt-6">
+                    <h3 className="text-eyebrow mb-4">Featured Guides</h3>
+                    <ul className="space-y-2">
+                      {sidebarGuides.map((guide) => (
+                        <li key={guide.slug}>
+                          <Link
+                            href={`/guide/${guide.slug}`}
+                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                          >
+                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                              menu_book
+                            </span>
+                            {guide.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Featured Businesses */}
+                {sidebarBusinesses.length > 0 && (
+                  <div className="border-t border-[var(--color-border)] pt-6">
+                    <h3 className="text-eyebrow mb-4">Featured Businesses</h3>
+                    <ul className="space-y-2">
+                      {sidebarBusinesses.map((biz) => (
+                        <li key={biz.id}>
+                          <Link
+                            href={`/business/${biz.slug}`}
+                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                          >
+                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                              storefront
+                            </span>
+                            {biz.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Featured Services */}
+                {sidebarServices.length > 0 && (
+                  <div className="border-t border-[var(--color-border)] pt-6">
+                    <h3 className="text-eyebrow mb-4">Featured Services</h3>
+                    <ul className="space-y-2">
+                      {sidebarServices.map((svc) => (
+                        <li key={svc.id}>
+                          <Link
+                            href={`/business/${svc.slug}`}
+                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                          >
+                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                              handyman
+                            </span>
+                            {svc.name}
                           </Link>
                         </li>
                       ))}

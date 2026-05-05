@@ -50,7 +50,7 @@ export function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isHome = pathname === "/";
-  const showSearchInNavbar = showSearch || !isHome;
+  const showSearchInNavbar = featureFlags["search"] !== false && (showSearch || !isHome);
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
   const showAuth = isAuthEnabled(featureFlags);
