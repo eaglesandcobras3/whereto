@@ -46,11 +46,12 @@ async function loadBusiness(slug: string) {
     const supabase = getServiceSupabase();
     const isUuid = UUID_RE.test(slug);
     const sel = `
-        id, slug, title, address, town_id, primary_category_id, map_lat, map_lng, phone, website,
+        id, slug, title, address, town_id, area_id, primary_category_id, map_lat, map_lng, phone, website,
         excerpt, content, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
         claim_status, intent_tags, status, published_at,
         towns ( title, slug ),
+        areas ( title, slug ),
         business_categories ( title, slug )
       `;
 
@@ -85,6 +86,62 @@ async function loadBusiness(slug: string) {
     const towns = row.towns as { title?: string; name?: string; slug?: string } | null;
     const category = row.business_categories as { title?: string; slug?: string } | null;
 
+    const areasEmbed = row.areas as
+      | { title?: string; slug?: string }
+      | { title?: string; slug?: string }[]
+      | null;
+    const areasOne = areasEmbed && Array.isArray(areasEmbed) ? areasEmbed[0] : areasEmbed;
+    let primary_area: { name: string; slug: string } | null =
+      areasOne?.slug != null && String(areasOne.slug).trim()
+        ? {
+            name: (areasOne.title ?? "Area").trim() || "Area",
+            slug: String(areasOne.slug).trim(),
+          }
+        : null;
+    const rawAreaId = row.area_id as string | null | undefined;
+    if (!primary_area && rawAreaId) {
+      const { data: ar } = await supabase
+        .from("areas_view")
+        .select("title, slug")
+        .eq("id", rawAreaId)
+        .is("archived_at", null)
+        .or(BROWSE_VISIBLE_NOT_HIDDEN)
+        .maybeSingle();
+      const a = ar as { title?: string; slug?: string } | null;
+      if (a?.slug != null && String(a.slug).trim()) {
+        primary_area = {
+          name: (a.title ?? "Area").trim() || "Area",
+          slug: String(a.slug).trim(),
+        };
+      }
+    }
+    if (!primary_area) {
+      const { data: ab } = await supabase
+        .from("area_businesses")
+        .select("area_id")
+        .eq("business_id", row.id as string)
+        .order("sort", { ascending: true, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+      const jid = (ab as { area_id?: string } | null)?.area_id;
+      if (jid) {
+        const { data: ar } = await supabase
+          .from("areas_view")
+          .select("title, slug")
+          .eq("id", jid)
+          .is("archived_at", null)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN)
+          .maybeSingle();
+        const a = ar as { title?: string; slug?: string } | null;
+        if (a?.slug != null && String(a.slug).trim()) {
+          primary_area = {
+            name: (a.title ?? "Area").trim() || "Area",
+            slug: String(a.slug).trim(),
+          };
+        }
+      }
+    }
+
     return {
       ...row,
       name: (row.title as string) ?? "Business",
@@ -96,6 +153,7 @@ async function loadBusiness(slug: string) {
       listing_rating: row.review_rating_cached,
       listing_review_count: row.review_count_cached,
       towns: towns ? { name: (towns as { title?: string }).title ?? towns.name, slug: towns.slug } : null,
+      primary_area,
       categories: category ? { name: category.title, slug: category.slug } : null,
       business_tags: intentTagsToFakeTagRows(row.intent_tags),
       pages: null,
@@ -276,6 +334,7 @@ export default async function BusinessPage({ params }: Props) {
   }
 
   const town = b.towns as { name?: string; slug?: string } | null;
+  const primaryArea = b.primary_area as { name: string; slug: string } | null;
   const category = b.categories as { name?: string; slug?: string } | null;
   const hasPhysicalLocation = Boolean(b.has_physical_location);
   const normalizedCategoryName = (category?.name ?? "").trim().toLowerCase();
@@ -633,12 +692,65 @@ export default async function BusinessPage({ params }: Props) {
                 </div>
               ) : null}
 
+              {((town?.slug && town?.name) || primaryArea) && (
+                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                  <h2 className="text-eyebrow mb-4">Town &amp; area</h2>
+                  <ul className="space-y-2">
+                    {town?.slug && town?.name ? (
+                      <li>
+                        <Link
+                          href={`/${town.slug}`}
+                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                        >
+                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                            place
+                          </span>
+                          {town.name}
+                        </Link>
+                      </li>
+                    ) : null}
+                    {primaryArea ? (
+                      <li>
+                        <Link
+                          href={`/area/${primaryArea.slug}`}
+                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                        >
+                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                            explore
+                          </span>
+                          {primaryArea.name}
+                        </Link>
+                      </li>
+                    ) : null}
+                  </ul>
+                </section>
+              )}
+
               {/* Related businesses - horizontal card style */}
-              {relatedBusinesses.length > 0 && (
-                <BusinessBrowseLinksList
-                  title={town?.name ? `Similar in ${town.name}` : "Similar places"}
-                  items={relatedBusinesses}
-                />
+              {(relatedBusinesses.length > 0 || townId) && (
+                <div>
+                  {relatedBusinesses.length > 0 ? (
+                    <BusinessBrowseLinksList
+                      title={town?.name ? `Similar in ${town.name}` : "Similar places"}
+                      items={relatedBusinesses}
+                    />
+                  ) : null}
+                  {townId ? (
+                    <p className={relatedBusinesses.length > 0 ? "mt-4" : ""}>
+                      <Link
+                        href={`/search?${new URLSearchParams({ town_id: townId }).toString()}`}
+                        className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
+                        aria-label={
+                          town?.name
+                            ? `View more businesses in ${town.name}`
+                            : "View more businesses in this town"
+                        }
+                      >
+                        View more
+                      </Link>
+                    </p>
+                  ) : null}
+                </div>
               )}
 
               {/* Town guides */}

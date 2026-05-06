@@ -19,6 +19,9 @@ import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcru
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
+import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 
 /** Deterministic shuffle using mulberry32 PRNG with daily seed */
 function shuffleWithDailySeed<T>(items: T[]): T[] {
@@ -40,56 +43,201 @@ function shuffleWithDailySeed<T>(items: T[]): T[] {
 
 type SidebarArea = { id: string; name: string; slug: string };
 type SidebarGuide = { slug: string; title: string };
-type SidebarBusiness = { id: string; name: string; slug: string };
 
-async function getSidebarData() {
+function toBrowseBusinessCard(row: Record<string, unknown>): BrowseBusinessCard {
+  const hero = getPublicImageUrlWithView(
+    row.main_image_url as string | null,
+    row.hero_image_url as string | null,
+    row.main_image as string | null,
+    row.hero_image as string | null,
+  );
+  const excerpt = (row.excerpt as string | null) ?? null;
+  return {
+    id: String(row.id),
+    name: String((row as { title: string }).title),
+    slug: String((row as { slug: string }).slug),
+    hero_image_url: hero,
+    ai_one_liner: excerpt,
+    ai_summary: excerpt,
+  };
+}
+
+const SIDEBAR_AREAS_LIMIT = 8;
+const TOWN_AREAS_CANDIDATE_CAP = 50;
+
+async function getSidebarData(townId: string) {
   const supabase = getServiceSupabase();
 
-  const [areasRes, guidesRes, bizRes] = await Promise.all([
+  const [guideTownLinksRes, areasRes, primaryGuidesRes] = await Promise.all([
+    supabase.from("guide_towns").select("guide_id").eq("town_id", townId),
     supabase
       .from("areas_view")
       .select("id, title, slug")
+      .eq("town_id", townId)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
-      .limit(50),
+      .limit(TOWN_AREAS_CANDIDATE_CAP),
     supabase
       .from("guides_view")
-      .select("slug, title")
+      .select("id, slug, title")
+      .eq("primary_town_id", townId)
       .is("archived_at", null)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .limit(50),
-    supabase
-      .from("businesses_view")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .eq("has_physical_location", true)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .limit(100),
   ]);
 
+  const townAreaRows = (areasRes.data ?? []) as { id: string; title: string; slug: string }[];
+  const townAreaIds = townAreaRows.map((a) => String(a.id));
+  const townAreaIdSet = new Set(townAreaIds);
+
+  const linkedGuideIds = [
+    ...new Set(
+      (guideTownLinksRes.data ?? [])
+        .map((r) => String((r as { guide_id: string }).guide_id))
+        .filter(Boolean),
+    ),
+  ];
+
+  const bizInTownQuery = supabase
+    .from("businesses_view")
+    .select(
+      "id, title, slug, area_id, excerpt, main_image, hero_image, main_image_url, hero_image_url",
+    )
+    .eq("town_id", townId)
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .limit(150);
+
+  const bizInTownAreasQuery =
+    townAreaIds.length > 0
+      ? supabase
+          .from("businesses_view")
+          .select(
+            "id, title, slug, area_id, excerpt, main_image, hero_image, main_image_url, hero_image_url",
+          )
+          .in("area_id", townAreaIds)
+          .is("archived_at", null)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN)
+          .limit(150)
+      : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
+
+  const directAreaBizTownQuery = supabase
+    .from("businesses_view")
+    .select("area_id")
+    .eq("town_id", townId)
+    .not("area_id", "is", null)
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN);
+
+  const directAreaBizInAreasQuery =
+    townAreaIds.length > 0
+      ? supabase
+          .from("businesses_view")
+          .select("area_id")
+          .in("area_id", townAreaIds)
+          .is("archived_at", null)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      : Promise.resolve({ data: [] as { area_id: string }[] | null });
+
+  const [bizTownRes, bizAreaRes, linkedGuidesRes, daTownRes, daAreaRes, junctionRes] = await Promise.all([
+    bizInTownQuery,
+    bizInTownAreasQuery,
+    linkedGuideIds.length > 0
+      ? supabase
+          .from("guides_view")
+          .select("id, slug, title")
+          .in("id", linkedGuideIds)
+          .is("archived_at", null)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN)
+          .limit(50)
+      : Promise.resolve({ data: [] as { id: string; slug: string; title: string }[] | null }),
+    directAreaBizTownQuery,
+    directAreaBizInAreasQuery,
+    townAreaIds.length > 0
+      ? supabase.from("area_businesses").select("area_id, business_id").in("area_id", townAreaIds)
+      : Promise.resolve({ data: [] as { area_id: string; business_id: string }[] | null }),
+  ]);
+
+  const businessById = new Map<string, BrowseBusinessCard>();
+  for (const row of [...(bizTownRes.data ?? []), ...(bizAreaRes.data ?? [])]) {
+    const r = row as Record<string, unknown>;
+    const id = String(r.id);
+    if (!businessById.has(id)) {
+      businessById.set(id, toBrowseBusinessCard(r));
+    }
+  }
+  const hasTownBusinesses = businessById.size > 0;
+  const businesses = shuffleWithDailySeed([...businessById.values()]).slice(0, 6);
+
+  const areaIdsWithBusiness = new Set<string>();
+  for (const row of daTownRes.data ?? []) {
+    const aid = (row as { area_id: string | null }).area_id;
+    if (aid && townAreaIdSet.has(aid)) areaIdsWithBusiness.add(aid);
+  }
+  for (const row of daAreaRes.data ?? []) {
+    const aid = (row as { area_id: string | null }).area_id;
+    if (aid) areaIdsWithBusiness.add(aid);
+  }
+
+  const junctionRows = junctionRes.data ?? [];
+  const junctionBusinessIds = [
+    ...new Set(
+      junctionRows.map((r) => String((r as { business_id: string }).business_id)).filter(Boolean),
+    ),
+  ];
+  if (junctionBusinessIds.length > 0) {
+    const chunkSize = 120;
+    const chunks: string[][] = [];
+    for (let i = 0; i < junctionBusinessIds.length; i += chunkSize) {
+      chunks.push(junctionBusinessIds.slice(i, i + chunkSize));
+    }
+    const visResults = await Promise.all(
+      chunks.map((chunk) =>
+        supabase
+          .from("businesses_view")
+          .select("id")
+          .in("id", chunk)
+          .is("archived_at", null)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN),
+      ),
+    );
+    const visibleBusiness = new Set<string>();
+    for (const { data: vis } of visResults) {
+      for (const v of vis ?? []) visibleBusiness.add(String((v as { id: string }).id));
+    }
+    for (const r of junctionRows) {
+      const row = r as { area_id: string; business_id: string };
+      if (visibleBusiness.has(row.business_id)) areaIdsWithBusiness.add(row.area_id);
+    }
+  }
+
+  const withBiz = townAreaRows.filter((a) => areaIdsWithBusiness.has(String(a.id)));
+  const areaRowsForSidebar =
+    withBiz.length > 0
+      ? withBiz
+      : hasTownBusinesses && townAreaRows.length > 0
+        ? townAreaRows
+        : [];
+
   const areas: SidebarArea[] = shuffleWithDailySeed(
-    (areasRes.data ?? []).map((a) => ({
-      id: String((a as { id: string }).id),
-      name: String((a as { title: string }).title),
-      slug: String((a as { slug: string }).slug),
+    areaRowsForSidebar.map((a) => ({
+      id: String(a.id),
+      name: String(a.title),
+      slug: String(a.slug),
     }))
-  ).slice(0, 8);
+  ).slice(0, SIDEBAR_AREAS_LIMIT);
 
-  const guides: SidebarGuide[] = shuffleWithDailySeed(
-    (guidesRes.data ?? []).map((g) => ({
-      slug: String((g as { slug: string }).slug),
-      title: String((g as { title: string }).title),
-    }))
-  ).slice(0, 6);
-
-  const businesses: SidebarBusiness[] = shuffleWithDailySeed(
-    (bizRes.data ?? []).map((b) => ({
-      id: String((b as { id: string }).id),
-      name: String((b as { title: string }).title),
-      slug: String((b as { slug: string }).slug),
-    }))
-  ).slice(0, 6);
+  const guideById = new Map<string, SidebarGuide>();
+  for (const row of primaryGuidesRes.data ?? []) {
+    const g = row as { id: string; slug: string; title: string };
+    guideById.set(g.id, { slug: g.slug, title: g.title });
+  }
+  for (const row of linkedGuidesRes.data ?? []) {
+    const g = row as { id: string; slug: string; title: string };
+    if (!guideById.has(g.id)) guideById.set(g.id, { slug: g.slug, title: g.title });
+  }
+  const guides: SidebarGuide[] = shuffleWithDailySeed([...guideById.values()]).slice(0, 6);
 
   return { areas, guides, businesses };
 }
@@ -136,7 +284,7 @@ export default async function TownPage({ params }: Props) {
 
   const town = await getTownBySlug(townSlug);
   if (town) {
-    const sidebar = await getSidebarData();
+    const sidebar = await getSidebarData(town.id);
     return <BasicTownPage town={town} sidebar={sidebar} />;
   }
 
@@ -150,7 +298,7 @@ type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 type SidebarData = {
   areas: SidebarArea[];
   guides: SidebarGuide[];
-  businesses: SidebarBusiness[];
+  businesses: BrowseBusinessCard[];
 };
 
 function BasicTownPage({
@@ -257,8 +405,8 @@ function BasicTownPage({
             <aside className="space-y-6">
               {/* Explore Areas */}
               {sidebar.areas.length > 0 && (
-                <div>
-                  <h3 className="text-eyebrow mb-4">Explore Areas</h3>
+                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                  <h2 className="text-eyebrow mb-4">Explore Areas</h2>
                   <ul className="space-y-2">
                     {sidebar.areas.map((area) => (
                       <li key={area.id}>
@@ -274,13 +422,13 @@ function BasicTownPage({
                       </li>
                     ))}
                   </ul>
-                </div>
+                </section>
               )}
 
               {/* Featured Guides */}
               {sidebar.guides.length > 0 && (
-                <div className="border-t border-[var(--color-border)] pt-6">
-                  <h3 className="text-eyebrow mb-4">Featured Guides</h3>
+                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                  <h2 className="text-eyebrow mb-4">Featured Guides</h2>
                   <ul className="space-y-2">
                     {sidebar.guides.map((guide) => (
                       <li key={guide.slug}>
@@ -296,28 +444,28 @@ function BasicTownPage({
                       </li>
                     ))}
                   </ul>
-                </div>
+                </section>
               )}
 
               {/* Featured Businesses */}
               {sidebar.businesses.length > 0 && (
-                <div className="border-t border-[var(--color-border)] pt-6">
-                  <h3 className="text-eyebrow mb-4">Featured Businesses</h3>
-                  <ul className="space-y-2">
-                    {sidebar.businesses.map((biz) => (
-                      <li key={biz.id}>
-                        <Link
-                          href={`/business/${biz.slug}`}
-                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                        >
-                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                            storefront
-                          </span>
-                          {biz.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                <div
+                  className={
+                    sidebar.areas.length > 0 || sidebar.guides.length > 0
+                      ? "border-t border-[var(--color-border)] pt-6"
+                      : ""
+                  }
+                >
+                  <BusinessBrowseLinksList title="Featured Businesses" items={sidebar.businesses} />
+                  <p className="mt-4">
+                    <Link
+                      href={`/search?${new URLSearchParams({ town_id: town.id }).toString()}`}
+                      className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
+                      aria-label={`View more businesses in ${town.name}`}
+                    >
+                      View more
+                    </Link>
+                  </p>
                 </div>
               )}
             </aside>

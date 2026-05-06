@@ -395,7 +395,15 @@ export function SearchPageClient({
                 </p>
                 <h1 className="text-editorial-headline text-3xl text-[var(--color-text-primary)] sm:text-4xl">
                   {browseMode === "business"
-                    ? `${totalResults} ${totalResults === 1 ? "business" : "businesses"}`
+                    ? `${totalResults} ${totalResults === 1 ? "business" : "businesses"}${
+                        townName && areaName
+                          ? ` in ${areaName} · ${townName}`
+                          : townName
+                            ? ` in ${townName}`
+                            : areaName
+                              ? ` in ${areaName}`
+                              : ""
+                      }`
                     : headingSecondary}
                 </h1>
                 {(() => {

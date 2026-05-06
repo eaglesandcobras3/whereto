@@ -41,7 +41,7 @@
 | `ENABLE_SUPABASE_DIAG_UI` | Set to `1` on a **hosted** preview if you need `/dev/supabase-check` there. | **Off in production by default.** In `NODE_ENV=development` the page is available without this. |
 | `ADMIN_USER_IDS` | Comma-separated Supabase Auth user UUIDs | Who can open `/admin` in the Next app (optional in-app shell). |
 | `ADMIN_EMAILS` | Comma-separated emails | Alternative to `ADMIN_USER_IDS` for `/admin` access. |
-| `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). Keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. Optional `ff_overrides` cookie merges the same shape (dev). |
+| `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). Keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. **`services_nav`**: set **`true`** to show the **Services** item in the header browse nav (default **off**). Optional `ff_overrides` cookie merges the same shape (dev). |
 | `HOME_HERO_TITLE`, `HOME_HERO_SUBTITLE`, `HOME_HERO_IMAGE_URL`, `HOME_SEARCH_PLACEHOLDER` | Local / Vercel env | Override homepage hero when not using legacy `site_settings`. |
 
 ---
@@ -93,6 +93,7 @@ After deploying the premium redesign code, complete these steps to enable new to
 
 | Date | What changed |
 |------|----------------|
+| 2026-05-06 | **Header Services nav:** Browse nav **Services** link is hidden by default. Set **`FEATURE_FLAGS_JSON`** to include **`"services_nav":true`** (or use the `ff_overrides` cookie in dev) when you are ready to show it. |
 | 2026-04-29 | **SEO canonical URLs:** App sets root `metadataBase` from `getSiteUrl()` + `alternates.canonical` on major routes (home, search with sorted query keys, towns/areas/guides/events/business/town/intent SEO pages, legal). **`/business/{uuid}`** 308-redirects to **`/business/{slug}`** when a slug exists. Set **`NEXT_PUBLIC_SITE_URL`** to your real production origin (one hostname) so canonicals match Search Console property. |
 | 2026-04-24 | **Default Storage bucket:** Public image URLs default to **`whereto30a-media`** (not `whereto-media`). Apply **`20260425120000_whereto30a_media_bucket.sql`** so `resolve_directus_file_url` and `*_view` image URLs use the correct bucket; app rewrites legacy `/object/public/supabase/` and `/object/public/whereto-media/` paths when present. |
 | 2026-04-24 | **Supabase diagnostics UI:** `/dev/supabase-check` (dev only) shows the same step-by-step checks as `pnpm run diagnose:supabase`. Optional **`ENABLE_SUPABASE_DIAG_UI=1`** enables that page on non-dev deploys (e.g. staging). |

@@ -14,7 +14,8 @@ export const DEFAULT_FLAGS: Record<string, boolean> = {
   auth: true,
   /** Saved places, collections, `/api/saves`, `/api/collections`. */
   saved: true,
-  experimental: false,
+  /** When `true`, header browse nav includes **Services** (`/search?type=services`). Default off until listings are ready. */
+  services_nav: false,
 };
 
 function mergeFromJson(

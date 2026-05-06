@@ -187,20 +187,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const sortMode =
     sortParam === "updated" ? "updated" : sortParam === "name" ? "name" : "relevance";
 
-  const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
-  const trimmedQ = q?.trim() ?? "";
-  const effectiveQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey].query : "") || "";
-
-  if (!effectiveQuery) {
-    redirect("/");
-  }
-
-  const supabase = await createSupabaseServerClient();
   const serviceSupabase = getServiceSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
   let townName = "";
   let constrainTownId: string | undefined;
@@ -214,11 +201,6 @@ export default async function SearchPage({ searchParams }: Props) {
       constrainTownId = (town as { id: string }).id;
       townName = (town as { title: string }).title;
     }
-  }
-
-  let constrainCategorySlug: string | undefined;
-  if (categoryParam && /^[a-z0-9_]+$/.test(categoryParam.trim())) {
-    constrainCategorySlug = categoryParam.trim();
   }
 
   let constrainAreaId: string | undefined;
@@ -239,7 +221,40 @@ export default async function SearchPage({ searchParams }: Props) {
     }
   }
 
-  const displayQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey!]!.label : "") || effectiveQuery;
+  const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
+  const trimmedQ = q?.trim() ?? "";
+  let effectiveQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey].query : "") || "";
+  if (!effectiveQuery && constrainTownId) {
+    effectiveQuery = TYPE_FILTERS.businesses.query;
+  }
+  if (!effectiveQuery && constrainAreaId) {
+    effectiveQuery = TYPE_FILTERS.businesses.query;
+  }
+
+  if (!effectiveQuery) {
+    redirect("/");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+
+  let constrainCategorySlug: string | undefined;
+  if (categoryParam && /^[a-z0-9_]+$/.test(categoryParam.trim())) {
+    constrainCategorySlug = categoryParam.trim();
+  }
+
+  const displayQuery =
+    trimmedQ ||
+    (typeKey ? TYPE_FILTERS[typeKey].label : "") ||
+    (constrainAreaId && !trimmedQ && !typeKey && areaName
+      ? `Businesses in ${areaName}`
+      : constrainTownId && !trimmedQ && !typeKey && townName
+        ? `Businesses in ${townName}`
+        : "") ||
+    effectiveQuery;
   const currentPage = Math.max(1, Number(page) || 1);
 
   const { data: sidebarRows } = await serviceSupabase
@@ -658,16 +673,22 @@ export default async function SearchPage({ searchParams }: Props) {
     );
   }
 
+  const townOnlyBrowse = Boolean(constrainTownId && !trimmedQ && !typeKey);
+  const areaOnlyBrowse = Boolean(constrainAreaId && !trimmedQ && !typeKey);
   const skipIlikeTextFilter =
-    (typeKey === "businesses" || typeKey === "services") && !trimmedQ;
+    ((typeKey === "businesses" || typeKey === "services") && !trimmedQ) ||
+    townOnlyBrowse ||
+    areaOnlyBrowse;
   /**
    * Text match uses a single `ilike` on title/excerpt/search_keywords. Do not append
    * " in {townName}" when `town_id` is already a column filter — that would require one
    * field to contain the whole phrase (e.g. "donuts in Rosemary Beach") and hides real matches.
    */
   const runSearchRawQuery = skipIlikeTextFilter
-    ? (typeKey ? TYPE_FILTERS[typeKey].label : effectiveQuery)
-    : constrainTownId
+    ? typeKey === "services"
+      ? TYPE_FILTERS.services.label
+      : TYPE_FILTERS.businesses.label
+    : constrainTownId || constrainAreaId
       ? (trimmedQ || effectiveQuery)
       : townName
         ? `${effectiveQuery} in ${townName}`
