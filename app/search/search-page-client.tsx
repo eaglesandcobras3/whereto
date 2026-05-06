@@ -330,7 +330,7 @@ export function SearchPageClient({
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       {/* Editorial search header */}
       {browseMode === "business" ? (
-        <div className="sticky top-[var(--site-header-offset)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md">
+        <div className="sticky top-[var(--site-header-offset-mobile)] z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 py-4 backdrop-blur-md md:top-[var(--site-header-offset)]">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             {/* Discovery chips - horizontal scroll */}
             <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">

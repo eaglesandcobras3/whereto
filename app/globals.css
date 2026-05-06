@@ -17,6 +17,8 @@
   --color-primary-light: #004b54;
   --color-primary-dark: #001f24;
   --color-brand-wordmark: #004b50;
+  /* Logo script (#102333 in public/whereto30a.svg) — nav hover / active */
+  --color-logo-navy: #102333;
   /* Header / footer shell */
   --color-site-chrome: #f7f3ee;
   --color-primary-fixed: #a7eefc;
@@ -75,8 +77,9 @@
   --accent: var(--color-primary);
   --accent-soft: rgba(0, 50, 57, 0.08);
 
-  /* Sticky site header: keep in sync with Navbar compact row height */
-  --site-header-offset: 3.5rem;
+  /* Sticky header offset (main bar, panels closed). Mobile matches compact Navbar; md+ matches taller bar. */
+  --site-header-offset-mobile: 3.5rem;
+  --site-header-offset: 4.75rem;
 }
 
 /* --------------------------------------------------------------------------

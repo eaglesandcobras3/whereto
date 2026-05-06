@@ -9,8 +9,8 @@ function navLinkClassMobile(active: boolean) {
   const base =
     "block rounded-lg px-3 py-2.5 text-sm font-semibold tracking-tight font-headline transition-colors";
   return active
-    ? `${base} bg-[var(--color-primary)]/10 text-[var(--color-primary)]`
-    : `${base} text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]`;
+    ? `${base} bg-[var(--color-logo-navy)]/10 text-[var(--color-logo-navy)]`
+    : `${base} text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-logo-navy)]`;
 }
 
 type Props = {

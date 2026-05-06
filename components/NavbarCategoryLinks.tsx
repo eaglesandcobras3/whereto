@@ -8,8 +8,8 @@ function navLinkClass(active: boolean) {
   const base =
     "inline-flex items-center px-2.5 py-2 text-sm font-semibold tracking-tight font-headline border-b-2 transition-premium-fast md:px-3";
   return active
-    ? `${base} text-[var(--color-primary)] border-[var(--color-primary)]`
-    : `${base} text-[var(--color-text-secondary)] border-transparent hover:border-[var(--color-outline-variant)] hover:text-[var(--color-primary)]`;
+    ? `${base} text-[var(--color-logo-navy)] border-[var(--color-logo-navy)]`
+    : `${base} text-[var(--color-text-secondary)] border-transparent hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]`;
 }
 
 type Props = {

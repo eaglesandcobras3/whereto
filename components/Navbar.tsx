@@ -29,8 +29,8 @@ function navLinkClass(active: boolean) {
   const base =
     "inline-flex items-center px-3 py-2 text-sm font-semibold tracking-tight font-headline border-b-2 transition-premium-fast";
   return active
-    ? `${base} text-[var(--color-primary)] border-[var(--color-primary)]`
-    : `${base} text-[var(--color-text-secondary)] border-transparent hover:border-[var(--color-outline-variant)] hover:text-[var(--color-primary)]`;
+    ? `${base} text-[var(--color-logo-navy)] border-[var(--color-logo-navy)]`
+    : `${base} text-[var(--color-text-secondary)] border-transparent hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]`;
 }
 
 export function Navbar({
@@ -118,19 +118,19 @@ export function Navbar({
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-site-chrome)] shadow-[var(--shadow-nav)] ${
-        compact ? "py-2" : "py-4 md:py-5"
-      } min-h-[var(--site-header-offset)]`}
+        compact ? "py-2 md:py-2.5" : "py-3 md:py-4"
+      } min-h-0 md:min-h-[var(--site-header-offset)]`}
     >
-      <div className="relative z-[120] mx-auto flex w-full max-w-7xl items-center gap-2 px-4 md:gap-4 md:px-10">
-        <div className="flex min-w-0 shrink-0 items-center gap-2">
+      <div className="relative z-[120] mx-auto flex w-full max-w-7xl items-center px-4 md:gap-3 md:px-10">
+        <div className="flex min-w-0 shrink-0 items-center md:flex-1">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <img
               src="/whereto30a.svg"
               alt="WhereTo30A"
               className={
                 compact
-                  ? "h-7 w-auto shrink-0 md:h-8"
-                  : "h-8 w-auto shrink-0 md:h-10"
+                  ? "h-10 w-auto shrink-0 md:h-12"
+                  : "h-11 w-auto shrink-0 md:h-14"
               }
               width={1384}
               height={627}
@@ -142,16 +142,17 @@ export function Navbar({
               </span>
             )}
           </Link>
-          <Suspense
-            fallback={
-              <span className="hidden h-9 w-48 animate-pulse rounded-md bg-[var(--color-surface-secondary)] md:block" />
-            }
-          >
-            <NavbarCategoryLinks items={browseNavItems} />
-          </Suspense>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+        <Suspense
+          fallback={
+            <span className="hidden h-12 w-48 shrink-0 animate-pulse rounded-md bg-[var(--color-surface-secondary)] md:block" />
+          }
+        >
+          <NavbarCategoryLinks items={browseNavItems} />
+        </Suspense>
+
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
           {showSearchInNavbar ? (
             <button
               type="button"
@@ -164,7 +165,7 @@ export function Navbar({
               className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-premium-fast ${
                 searchOpen
                   ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                  : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]"
               }`}
               title="Search"
             >
@@ -174,7 +175,7 @@ export function Navbar({
 
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)] md:hidden"
             aria-expanded={mobileMenuOpen}
             aria-controls="navbar-mobile-menu"
             onClick={() => {
