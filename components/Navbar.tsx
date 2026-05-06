@@ -117,20 +117,25 @@ export function Navbar({
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full glass-nav ${
+      className={`sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-site-chrome)] shadow-[var(--shadow-nav)] ${
         compact ? "py-2" : "py-4 md:py-5"
       } min-h-[var(--site-header-offset)]`}
     >
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 md:gap-4 md:px-10">
+      <div className="relative z-[120] mx-auto flex w-full max-w-7xl items-center gap-2 px-4 md:gap-4 md:px-10">
         <div className="flex min-w-0 shrink-0 items-center gap-2">
           <Link href="/" className="flex min-w-0 items-center gap-2">
-            <span
-              className={`font-headline font-extrabold tracking-tighter text-[var(--color-brand-wordmark)] ${
-                compact ? "text-lg" : "text-xl md:text-2xl"
-              }`}
-            >
-              WhereTo30A
-            </span>
+            <img
+              src="/whereto30a.svg"
+              alt="WhereTo30A"
+              className={
+                compact
+                  ? "h-7 w-auto shrink-0 md:h-8"
+                  : "h-8 w-auto shrink-0 md:h-10"
+              }
+              width={1384}
+              height={627}
+              decoding="async"
+            />
             {!compact && (
               <span className="hidden text-sm font-medium text-[var(--color-text-tertiary)] lg:inline">
                 Discover the coast
@@ -205,7 +210,7 @@ export function Navbar({
       {searchOpen && showSearchInNavbar ? (
         <div
           id="navbar-search-panel"
-          className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/98 backdrop-blur-md"
+          className="border-t border-[var(--color-border)] bg-[var(--color-site-chrome)] backdrop-blur-md"
         >
           <div className="mx-auto max-w-7xl px-4 py-3 md:px-10">
             <form onSubmit={internalSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">

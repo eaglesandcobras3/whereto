@@ -17,6 +17,8 @@
   --color-primary-light: #004b54;
   --color-primary-dark: #001f24;
   --color-brand-wordmark: #004b50;
+  /* Header / footer shell */
+  --color-site-chrome: #f7f3ee;
   --color-primary-fixed: #a7eefc;
   --color-on-primary-fixed: #001f24;
   --color-on-primary: #ffffff;

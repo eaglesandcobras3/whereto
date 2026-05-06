@@ -87,6 +87,10 @@ export const metadata: Metadata = {
     // google: "your-google-verification-code",
     // yandex: "your-yandex-verification-code",
   },
+  icons: {
+    icon: [{ url: "/siteicon.png", type: "image/png" }],
+    apple: [{ url: "/siteicon.png", type: "image/png" }],
+  },
 };
 
 /** Organization and WebSite schema for the entire site */
@@ -98,7 +102,7 @@ const organizationSchema = {
   url: siteUrl,
   logo: {
     "@type": "ImageObject",
-    url: `${siteUrl}/favicon.ico`,
+    url: `${siteUrl}/siteicon.png`,
   },
   sameAs: [],
   description:
@@ -140,7 +144,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=swap"
           rel="stylesheet"
         />
-        <meta name="theme-color" content="#0d9488" />
+        <meta name="theme-color" content="#F7F3EE" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

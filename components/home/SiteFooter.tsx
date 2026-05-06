@@ -36,7 +36,7 @@ export async function SiteFooter() {
   const showTowns = townLinks.length > 0;
 
   return (
-    <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
+    <footer className="border-t border-[var(--color-border)] bg-[var(--color-site-chrome)]">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
         {/* Main footer content */}
         <div
@@ -45,9 +45,14 @@ export async function SiteFooter() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <span className="font-headline text-lg font-extrabold tracking-tighter text-[var(--color-brand-wordmark)] md:text-xl">
-                WhereTo30A
-              </span>
+              <img
+                src="/whereto30a.svg"
+                alt="WhereTo30A"
+                className="h-10 w-auto md:h-12"
+                width={1384}
+                height={627}
+                decoding="async"
+              />
             </div>
             <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
               Your local guide to 30A and Florida&apos;s Emerald Coast.

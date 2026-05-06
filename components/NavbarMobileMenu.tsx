@@ -53,7 +53,7 @@ export function NavbarMobileMenu({
       />
       <div
         id="navbar-mobile-menu"
-        className="relative z-[110] border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg md:hidden"
+        className="absolute left-0 right-0 top-full z-[110] max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-[var(--color-border)] bg-[var(--color-site-chrome)] shadow-lg md:hidden"
       >
         <div className="mx-auto max-w-7xl space-y-1 px-4 py-3">
           {browseNavItems.map((item) => (
