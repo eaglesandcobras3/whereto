@@ -9,6 +9,7 @@ import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
@@ -99,12 +100,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (isReservedRootSlug(townSlug)) return {};
   const fullSlug = `${townSlug}/${intentSlug}`;
   const row = await loadSeoPage(fullSlug);
-  if (!row) return { title: "WhereTo30A" };
+  if (!row) return { title: metadataTitleSiteOnly };
   const ts = normalizeUrlSegment(townSlug);
   const ins = normalizeUrlSegment(intentSlug);
   return {
     ...canonicalAlternates(`/${ts}/${ins}`),
-    title: row.title,
+    title: titleSegmentForLayoutTemplate(row.title),
     description: row.meta_description ?? row.intro.slice(0, 160),
   };
 }

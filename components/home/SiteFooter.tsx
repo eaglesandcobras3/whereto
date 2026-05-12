@@ -24,6 +24,7 @@ async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
 
 const companyLinks = [
   { name: "About", href: "/about" },
+  { name: "List your business", href: "/list-your-business" },
   { name: "Privacy", href: "/privacy" },
   { name: "Terms", href: "/terms" },
 ];

@@ -15,6 +15,7 @@ import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-titl
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
@@ -249,8 +250,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { townSlug: raw } = await params;
   const townSlug = normalizeUrlSegment(raw);
-  if (!townSlug) return { title: "WhereTo30A" };
-  if (isReservedRootSlug(townSlug)) return { title: "WhereTo30A" };
+  if (!townSlug) return { title: metadataTitleSiteOnly };
+  if (isReservedRootSlug(townSlug)) return { title: metadataTitleSiteOnly };
   const town = await getTownBySlug(townSlug);
   if (town) {
     const desc =
@@ -259,7 +260,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const og = businessListingImageUrl(town.hero_image_thumb_url as string | null);
     return {
       ...canonicalAlternates(`/${town.slug}`),
-      title: `${town.name} | WhereTo30A`,
+      title: town.name,
       description: desc,
       openGraph: og
         ? { title: `${town.name} | WhereTo30A`, description: desc, images: [{ url: og }] }
@@ -269,7 +270,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         : { card: "summary", description: desc },
     };
   }
-  return { title: "WhereTo30A" };
+  return { title: metadataTitleSiteOnly };
 }
 
 export default async function TownPage({ params }: Props) {

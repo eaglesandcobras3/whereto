@@ -7,6 +7,7 @@ import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -81,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     ...canonicalAlternates(`/guide/${seg}`),
-    title: page.seo_title || `${page.title} | WhereTo30A`,
+    title: titleSegmentForLayoutTemplate(page.seo_title || page.title),
     description: page.seo_description,
     openGraph: {
       title: page.seo_title || page.title,

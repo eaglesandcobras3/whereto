@@ -13,6 +13,7 @@ export const RESERVED_ROOT_SLUGS = new Set([
   "towns",
   "_next",
   "favicon.ico",
+  "list-your-business",
 ]);
 
 export function isReservedRootSlug(slug: string): boolean {

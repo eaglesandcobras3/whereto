@@ -11,7 +11,7 @@ const HUB_FEATURED_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/guide"),
-  title: "Complete Guide to Visiting 30A, Florida (2026) | WhereTo30A",
+  title: "Complete Guide to Visiting 30A, Florida (2026)",
   description:
     "A local-style guide to South Walton's 30A corridor: what it is, how to pick a town, beach access, airports, where to eat, and a simple first-trip rhythm. Straight talk for first-time visitors.",
   keywords: [

@@ -351,6 +351,118 @@ export type Database = {
           },
         ]
       }
+      business_listing_requests: {
+        Row: {
+          id: string
+          status: string
+          submitter_name: string
+          submitter_email: string
+          submitter_phone: string | null
+          title: string
+          town_id: string | null
+          primary_category_id: string | null
+          address: string | null
+          website: string | null
+          phone: string | null
+          email: string | null
+          description: string | null
+          is_storefront: boolean
+          is_service_business: boolean
+          service_area: string | null
+          map_lat: number | null
+          map_lng: number | null
+          possible_duplicate_business_ids: string[]
+          admin_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          resulting_business_id: string | null
+          source_ip: string | null
+          user_agent: string | null
+          date_created: string
+          date_updated: string
+        }
+        Insert: {
+          id?: string
+          status?: string
+          submitter_name: string
+          submitter_email: string
+          submitter_phone?: string | null
+          title: string
+          town_id?: string | null
+          primary_category_id?: string | null
+          address?: string | null
+          website?: string | null
+          phone?: string | null
+          email?: string | null
+          description?: string | null
+          is_storefront?: boolean
+          is_service_business?: boolean
+          service_area?: string | null
+          map_lat?: number | null
+          map_lng?: number | null
+          possible_duplicate_business_ids?: string[]
+          admin_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          resulting_business_id?: string | null
+          source_ip?: string | null
+          user_agent?: string | null
+          date_created?: string
+          date_updated?: string
+        }
+        Update: {
+          id?: string
+          status?: string
+          submitter_name?: string
+          submitter_email?: string
+          submitter_phone?: string | null
+          title?: string
+          town_id?: string | null
+          primary_category_id?: string | null
+          address?: string | null
+          website?: string | null
+          phone?: string | null
+          email?: string | null
+          description?: string | null
+          is_storefront?: boolean
+          is_service_business?: boolean
+          service_area?: string | null
+          map_lat?: number | null
+          map_lng?: number | null
+          possible_duplicate_business_ids?: string[]
+          admin_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          resulting_business_id?: string | null
+          source_ip?: string | null
+          user_agent?: string | null
+          date_created?: string
+          date_updated?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_listing_requests_primary_category_id_fkey"
+            columns: ["primary_category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_listing_requests_resulting_business_id_fkey"
+            columns: ["resulting_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_listing_requests_town_id_fkey"
+            columns: ["town_id"]
+            isOneToOne: false
+            referencedRelation: "towns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           address: string | null

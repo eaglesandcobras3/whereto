@@ -139,7 +139,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const seg = normalizeUrlSegment(slug);
   return {
     ...canonicalAlternates(`/events/${seg}`),
-    title: `${event.title} | WhereTo30A`,
+    title: event.title,
     description: event.description?.slice(0, 160) ?? `Event on 30A: ${event.title}`,
   };
 }

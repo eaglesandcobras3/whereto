@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getShareSnapshotMeta } from "@/lib/data/share-meta";
+import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { getSiteUrl } from "@/lib/site-url";
 
 type MetaProps = { params: Promise<{ id: string }> };
@@ -11,12 +12,12 @@ export async function generateMetadata({ params }: MetaProps): Promise<Metadata>
   const url = `${base}/share/${id}`;
   if (!meta) {
     return {
-      title: "Shared results | WhereTo30A",
+      title: titleSegmentForLayoutTemplate("Shared results | WhereTo30A"),
       openGraph: { url, siteName: "WhereTo30A", type: "website" },
     };
   }
   return {
-    title: meta.title,
+    title: titleSegmentForLayoutTemplate(meta.title),
     description: meta.description,
     openGraph: {
       title: meta.title,

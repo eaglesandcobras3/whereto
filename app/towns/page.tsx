@@ -12,7 +12,7 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/towns"),
-  title: "Beach towns | WhereTo30A",
+  title: "Beach towns",
   description: "Explore beach towns along 30A and the Emerald Coast.",
 };
 

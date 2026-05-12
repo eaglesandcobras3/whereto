@@ -156,19 +156,19 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   if (type && TYPE_FILTERS[type]) {
     return {
       ...canon,
-      title: `${TYPE_FILTERS[type].label} | WhereTo30A`,
+      title: TYPE_FILTERS[type].label,
       description: `Explore ${TYPE_FILTERS[type].label.toLowerCase()} across 30A and Florida's Emerald Coast.`,
     };
   }
   if (!q?.trim()) {
     return {
       ...canon,
-      title: "Search | WhereTo30A",
+      title: "Search",
     };
   }
   return {
     ...canon,
-    title: `Search results for "${q}" | WhereTo30A`,
+    title: `Search results for "${q}"`,
     description: `Find towns, businesses, events, guides, and local favorites on 30A for "${q}".`,
   };
 }

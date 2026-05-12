@@ -14,6 +14,7 @@ const STATIC_PAGES = [
   { path: "/guide", priority: 0.95, changeFreq: "weekly" as const },
   { path: PRIMARY_REGION_HUB_PATH, priority: 0.9, changeFreq: "weekly" as const },
   { path: "/about", priority: 0.5, changeFreq: "monthly" as const },
+  { path: "/list-your-business", priority: 0.45, changeFreq: "monthly" as const },
   { path: "/terms", priority: 0.3, changeFreq: "yearly" as const },
   { path: "/privacy", priority: 0.3, changeFreq: "yearly" as const },
 ] as const;

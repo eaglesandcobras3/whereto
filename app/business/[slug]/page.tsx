@@ -195,7 +195,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonicalPath = `/business/${encodeURIComponent(canonicalSegment)}`;
   return {
     ...canonicalAlternates(canonicalPath),
-    title: `${b.name as string} | WhereTo30A`,
+    title: b.name as string,
     description: desc,
     openGraph: ogUrl
       ? { title: `${b.name as string} | WhereTo30A`, description: desc, images: [{ url: ogUrl }] }

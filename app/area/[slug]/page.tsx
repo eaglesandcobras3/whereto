@@ -161,13 +161,13 @@ function areaTypeLabel(areaType: string | null): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug: raw } = await params;
   const place = await getPublicPlaceBySlug(raw);
-  if (!place) return { title: "Area | WhereTo30A" };
+  if (!place) return { title: "Area" };
   const desc = place.excerpt || `Explore ${place.title} on 30A.`;
   const og = businessListingImageUrl(place.hero_image_url);
   const pathSeg = normalizeUrlSegment(place.slug);
   return {
     ...canonicalAlternates(`/area/${pathSeg}`),
-    title: `${place.title} | WhereTo30A`,
+    title: place.title,
     description: desc,
     openGraph: og
       ? { title: `${place.title} | WhereTo30A`, description: desc, images: [{ url: og }] }
