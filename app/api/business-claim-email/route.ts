@@ -57,17 +57,47 @@ export async function POST(request: NextRequest) {
 
   const resendKey = process.env.RESEND_API_KEY?.trim();
   const fromEmail =
-    process.env.CLAIM_NOTIFICATION_FROM_EMAIL?.trim() ?? process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ?? "";
+    process.env.CLAIM_NOTIFICATION_FROM_EMAIL?.trim() ||
+    process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    "";
   const toRaw = process.env.CLAIM_NOTIFICATION_TO_EMAIL?.trim();
   const toEmail = toRaw || CLAIM_NOTIFICATION_TO_EMAIL_DEFAULT;
 
   if (!resendKey || !fromEmail) {
-    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    console.error(
+      "[business-claim-email] Missing email send config: RESEND_API_KEY or From address " +
+        "(CLAIM_NOTIFICATION_FROM_EMAIL, LISTING_NOTIFICATION_FROM_EMAIL, or RESEND_FROM_EMAIL)",
+    );
+    const devNote =
+      process.env.NODE_ENV === "development"
+        ? " [Dev: add RESEND_API_KEY and a verified From env to .env.local]"
+        : "";
+    return NextResponse.json(
+      {
+        error:
+          `We can't send this message electronically right now.${devNote} Please email claim@whereto30a.com instead.`,
+      },
+      { status: 503 },
+    );
   }
 
   const supabase = getServiceSupabaseOrNull();
   if (!supabase) {
-    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    console.error(
+      "[business-claim-email] Supabase service client unavailable — check NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SECRET_KEY",
+    );
+    const devNote =
+      process.env.NODE_ENV === "development"
+        ? " [Dev: copy Supabase URL + secret/service key into .env.local]"
+        : "";
+    return NextResponse.json(
+      {
+        error:
+          `Something went wrong validating this listing.${devNote} Try again shortly or email claim@whereto30a.com.`,
+      },
+      { status: 503 },
+    );
   }
 
   const { data: bizRow, error: bizErr } = await supabase

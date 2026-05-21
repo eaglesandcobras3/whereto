@@ -91,17 +91,46 @@ export async function POST(request: NextRequest) {
   }
 
   const resendKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail = process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim();
+  const fromEmail =
+    process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
+    process.env.RESEND_FROM_EMAIL?.trim();
   const toRaw = process.env.LISTING_NOTIFICATION_TO_EMAIL?.trim();
   const toEmail = toRaw || LISTING_NOTIFICATION_TO_EMAIL_DEFAULT;
 
   if (!resendKey || !fromEmail) {
-    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    console.error(
+      "[listing-requests] Missing email send config: RESEND_API_KEY or From address " +
+        "(set LISTING_NOTIFICATION_FROM_EMAIL or RESEND_FROM_EMAIL to a verified Resend sender)",
+    );
+    const devNote =
+      process.env.NODE_ENV === "development"
+        ? " [Dev: add RESEND_API_KEY and LISTING_NOTIFICATION_FROM_EMAIL (or RESEND_FROM_EMAIL) to .env.local]"
+        : "";
+    return NextResponse.json(
+      {
+        error:
+          `We can't accept submissions through this form right now.${devNote} Please email add@whereto30a.com with your listing instead.`,
+      },
+      { status: 503 },
+    );
   }
 
   const supabase = getServiceSupabaseOrNull();
   if (!supabase) {
-    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    console.error(
+      "[listing-requests] Supabase service client unavailable — check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)",
+    );
+    const devNote =
+      process.env.NODE_ENV === "development"
+        ? " [Dev: copy Supabase URL + secret/service key into .env.local]"
+        : "";
+    return NextResponse.json(
+      {
+        error:
+          `Something went wrong validating your request.${devNote} Try again shortly or email add@whereto30a.com.`,
+      },
+      { status: 503 },
+    );
   }
 
   if (!d.is_storefront && !d.is_service_business) {

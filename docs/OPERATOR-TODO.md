@@ -44,9 +44,10 @@
 | `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). Keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. **`services_nav`**: set **`true`** to show the **Services** item in the header browse nav (default **off**). Optional `ff_overrides` cookie merges the same shape (dev). |
 | `HOME_HERO_TITLE`, `HOME_HERO_SUBTITLE`, `HOME_HERO_IMAGE_URL`, `HOME_SEARCH_PLACEHOLDER` | Local / Vercel env | Override homepage hero when not using legacy `site_settings`. |
 | `RESEND_API_KEY` | [Resend](https://resend.com/) → API keys | **Server only.** Required for **`POST /api/listing-requests`** and **`POST /api/business-claim-email`** (sidebar “Claim or update listing” on business pages). |
-| `LISTING_NOTIFICATION_FROM_EMAIL` | Resend-verified sender | **Required** with `RESEND_API_KEY` for list-your-business. Same domain works for claims; see **`CLAIM_NOTIFICATION_FROM_EMAIL`** to override sender for claims only. |
+| `RESEND_FROM_EMAIL` | Resend-verified sender | Optional shorthand: used if **`LISTING_NOTIFICATION_FROM_EMAIL`** is unset (same verified domain rules). |
+| `LISTING_NOTIFICATION_FROM_EMAIL` | Resend-verified sender | **Required** with `RESEND_API_KEY` for list-your-business (unless **`RESEND_FROM_EMAIL`** is set to the same verified address). Optionally add a RFC “Name &lt;addr&gt;” **`From`** value. |
 | `LISTING_NOTIFICATION_TO_EMAIL` | Your inbox | Optional; defaults **`add@whereto30a.com`**. Overrides listing-request recipient only. |
-| `CLAIM_NOTIFICATION_FROM_EMAIL` | Resend-verified sender | Optional. If unset, **`LISTING_NOTIFICATION_FROM_EMAIL`** is used for **`POST /api/business-claim-email`**. |
+| `CLAIM_NOTIFICATION_FROM_EMAIL` | Resend-verified sender | Optional **`From`** override for **`POST /api/business-claim-email`**. If unset: **`LISTING_NOTIFICATION_FROM_EMAIL`**, then **`RESEND_FROM_EMAIL`**. |
 | `CLAIM_NOTIFICATION_TO_EMAIL` | Your inbox | Optional; defaults **`claim@whereto30a.com`**. Recipient for claim / correction emails from listing pages. |
 
 ---
