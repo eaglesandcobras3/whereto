@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
+import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 
 type Rec = {
   business_id: string;
@@ -571,6 +572,8 @@ export function HomePage({
             </div>
           </section>
         )}
+
+        <ListBusinessHomeCta />
 
         {featureFlags["categories"] === true && (
           <section
