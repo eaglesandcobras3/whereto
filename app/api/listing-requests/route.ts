@@ -8,6 +8,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { getSiteUrl } from "@/lib/site-url";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { escapeHtml } from "@/lib/string/escape-html";
+import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
 
 const LISTING_NOTIFICATION_TO_EMAIL_DEFAULT = "add@whereto30a.com";
 
@@ -93,18 +94,16 @@ export async function POST(request: NextRequest) {
   const resendKey = process.env.RESEND_API_KEY?.trim();
   const fromEmail =
     process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim();
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    OUTBOUND_CONTACT_FROM_DEFAULT;
   const toRaw = process.env.LISTING_NOTIFICATION_TO_EMAIL?.trim();
   const toEmail = toRaw || LISTING_NOTIFICATION_TO_EMAIL_DEFAULT;
 
-  if (!resendKey || !fromEmail) {
-    console.error(
-      "[listing-requests] Missing email send config: RESEND_API_KEY or From address " +
-        "(set LISTING_NOTIFICATION_FROM_EMAIL or RESEND_FROM_EMAIL to a verified Resend sender)",
-    );
+  if (!resendKey) {
+    console.error("[listing-requests] Missing RESEND_API_KEY");
     const devNote =
       process.env.NODE_ENV === "development"
-        ? " [Dev: add RESEND_API_KEY and LISTING_NOTIFICATION_FROM_EMAIL (or RESEND_FROM_EMAIL) to .env.local]"
+        ? " [Dev: add RESEND_API_KEY to .env.local]"
         : "";
     return NextResponse.json(
       {

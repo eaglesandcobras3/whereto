@@ -7,6 +7,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { getSiteUrl } from "@/lib/site-url";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { escapeHtml } from "@/lib/string/escape-html";
+import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
 
 const CLAIM_NOTIFICATION_TO_EMAIL_DEFAULT = "claim@whereto30a.com";
 
@@ -60,18 +61,15 @@ export async function POST(request: NextRequest) {
     process.env.CLAIM_NOTIFICATION_FROM_EMAIL?.trim() ||
     process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
     process.env.RESEND_FROM_EMAIL?.trim() ||
-    "";
+    OUTBOUND_CONTACT_FROM_DEFAULT;
   const toRaw = process.env.CLAIM_NOTIFICATION_TO_EMAIL?.trim();
   const toEmail = toRaw || CLAIM_NOTIFICATION_TO_EMAIL_DEFAULT;
 
-  if (!resendKey || !fromEmail) {
-    console.error(
-      "[business-claim-email] Missing email send config: RESEND_API_KEY or From address " +
-        "(CLAIM_NOTIFICATION_FROM_EMAIL, LISTING_NOTIFICATION_FROM_EMAIL, or RESEND_FROM_EMAIL)",
-    );
+  if (!resendKey) {
+    console.error("[business-claim-email] Missing RESEND_API_KEY");
     const devNote =
       process.env.NODE_ENV === "development"
-        ? " [Dev: add RESEND_API_KEY and a verified From env to .env.local]"
+        ? " [Dev: add RESEND_API_KEY to .env.local]"
         : "";
     return NextResponse.json(
       {
