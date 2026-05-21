@@ -51,6 +51,8 @@ export function rateLimitKeyFromRequest(request: Request): string {
 
 /* --------------------------------------------------------------------------
    Listing request form (public /api/listing-requests)
+   Claim / correction email from business pages (public /api/business-claim-email)
+   Separate bucket keys (`listing-req:…`, `biz-claim-email:…`), same LISTING_REQUEST_* tuneables.
    -------------------------------------------------------------------------- */
 
 const listingBuckets = new Map<string, Bucket>();

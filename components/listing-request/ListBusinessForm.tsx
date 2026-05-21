@@ -4,20 +4,18 @@ import Link from "next/link";
 import { useState } from "react";
 
 export type ListBusinessTownOption = { id: string; title: string; slug: string };
-export type ListBusinessCategoryOption = { id: string; title: string; slug: string };
 
 type SimilarHit = { id: string; title: string; slug: string; similarity: number };
 
 type Props = {
   towns: ListBusinessTownOption[];
-  categories: ListBusinessCategoryOption[];
 };
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
 const labelClass = "block text-sm font-medium text-[var(--color-text-secondary)]";
 
-export function ListBusinessForm({ towns, categories }: Props) {
+export function ListBusinessForm({ towns }: Props) {
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -32,7 +30,6 @@ export function ListBusinessForm({ towns, categories }: Props) {
     setSimilar(null);
 
     const fd = new FormData(e.currentTarget);
-    const primaryCategory = String(fd.get("primary_category_id") ?? "").trim();
     const latRaw = String(fd.get("map_lat") ?? "").trim();
     const lngRaw = String(fd.get("map_lng") ?? "").trim();
     const map_lat = latRaw === "" ? undefined : Number(latRaw);
@@ -45,7 +42,6 @@ export function ListBusinessForm({ towns, categories }: Props) {
       submitter_phone: String(fd.get("submitter_phone") ?? ""),
       title: String(fd.get("title") ?? ""),
       town_id: String(fd.get("town_id") ?? ""),
-      primary_category_id: primaryCategory || null,
       address: String(fd.get("address") ?? ""),
       website: String(fd.get("website") ?? ""),
       phone: String(fd.get("phone") ?? ""),
@@ -106,7 +102,7 @@ export function ListBusinessForm({ towns, categories }: Props) {
               Possible matches already on WhereTo30A
             </h2>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-              We still saved your request. If one of these is your business, mention it when we email you — or{" "}
+              If one of these is your business, mention it when we follow up — or{" "}
               <Link href="/search" className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline">
                 open search
               </Link>{" "}
@@ -147,8 +143,8 @@ export function ListBusinessForm({ towns, categories }: Props) {
   return (
     <form onSubmit={submit} className="mt-10 space-y-6">
       <p className="-mt-2 text-sm text-[var(--color-text-secondary)]">
-        Requests are queued for review. Nothing appears on the public site until an operator approves and publishes it
-        (often via Directus or your admin tools).
+        Requests are emailed to our team for review. Nothing appears on the public site until someone approves and
+        publishes a listing (often via Directus or your admin tools).
       </p>
 
       <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden>
@@ -198,35 +194,20 @@ export function ListBusinessForm({ towns, categories }: Props) {
         <input id="title" name="title" required className={`${inputClass} mt-1.5`} />
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="town_id">
-            Primary town
-          </label>
-          <select id="town_id" name="town_id" required className={`${inputClass} mt-1.5`} defaultValue="">
-            <option value="" disabled>
-              Choose a town
+      <div className="sm:max-w-md">
+        <label className={labelClass} htmlFor="town_id">
+          Primary town
+        </label>
+        <select id="town_id" name="town_id" required className={`${inputClass} mt-1.5`} defaultValue="">
+          <option value="" disabled>
+            Choose a town
+          </option>
+          {towns.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.title}
             </option>
-            {towns.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.title}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="primary_category_id">
-            Category <span className="font-normal text-[var(--color-text-tertiary)]">(optional)</span>
-          </label>
-          <select id="primary_category_id" name="primary_category_id" className={`${inputClass} mt-1.5`} defaultValue="">
-            <option value="">Not sure / other</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
-        </div>
+          ))}
+        </select>
       </div>
 
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">

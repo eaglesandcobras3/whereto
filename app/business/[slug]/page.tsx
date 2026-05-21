@@ -8,6 +8,7 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
+import { ClaimBusinessEmailForm } from "@/components/business/ClaimBusinessEmailForm";
 import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
@@ -614,6 +615,8 @@ export default async function BusinessPage({ params }: Props) {
 
             {/* Sidebar */}
             <aside className="space-y-5">
+              <ClaimBusinessEmailForm businessSlug={b.slug as string} businessTitle={b.title as string} />
+
               {/* Primary CTA */}
               {typeof b.website === "string" && b.website && (
                 <a
