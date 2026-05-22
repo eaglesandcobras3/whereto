@@ -362,13 +362,3 @@ The best trip is the one where the town matches the pace we actually wanted.
 We pick the area that fits our crew, hold a few plans lightly, rent bikes, get up early once or twice, take the long walk, say yes to extra ice cream for the kids, and watch the sunset even when we saw it the night before.
 
 That rhythm is what brings us back.
-
-## Sources
-
-- [Visit South Walton](https://www.visitsouthwalton.com/)
-- [Visit Florida: Scenic Highway 30A](https://www.visitflorida.com/travel-ideas/articles/scenic-florida-drive-highway-30a/)
-- [ECP / Northwest Florida Beaches International Airport](https://www.iflybeaches.com/)
-- [South Walton beach and bay access locations](https://www.visitsouthwalton.com/beach-bay-access-locations/)
-- [South Walton: coastal dune lakes](https://www.visitsouthwalton.com/blog/coastal-dune-lakes/)
-- [South Walton beach access FAQ](https://www.visitsouthwalton.com/beach-access-faq/)
-- [Southern Living on Santa Rosa Beach](https://www.southernliving.com/santa-rosa-beach-fl-11871845)
