@@ -9,6 +9,7 @@ import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 import { ClaimBusinessEmailForm } from "@/components/business/ClaimBusinessEmailForm";
+import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
@@ -48,6 +49,7 @@ async function loadBusiness(slug: string) {
     const isUuid = UUID_RE.test(slug);
     const sel = `
         id, slug, title, address, town_id, area_id, primary_category_id, map_lat, map_lng, phone, website,
+        email, menu_url, booking_url, service_area, hours,
         excerpt, content, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
         claim_status, intent_tags, status, published_at,
@@ -512,6 +514,19 @@ export default async function BusinessPage({ params }: Props) {
                 <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
               )}
 
+              <BusinessQuickFacts
+                address={b.address as string | null}
+                email={(b.email as string | null) ?? null}
+                phone={b.phone as string | null}
+                website={b.website as string | null}
+                menuUrl={(b.menu_url as string | null) ?? null}
+                bookingUrl={(b.booking_url as string | null) ?? null}
+                serviceArea={(b.service_area as string | null) ?? null}
+                lat={b.lat as number | null}
+                lng={b.lng as number | null}
+                hours={(b.hours as unknown) ?? null}
+              />
+
               {/* Score badges inline */}
               {(familyScore || dateScore || valueScore) && (
                 <div className="mt-4 flex gap-5">
@@ -611,12 +626,29 @@ export default async function BusinessPage({ params }: Props) {
                   />
                 </section>
               )}
+
+              <section
+                id="listing-update-request"
+                className={`border-t border-zinc-100 pt-10 ${flags["claims"] === true ? "mt-10" : ""}`}
+                aria-label="Request listing updates"
+              >
+                <details className="group">
+                  <summary className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2">
+                    Claim or correct this listing by email
+                  </summary>
+                  <div className="mt-6 max-w-xl">
+                    <ClaimBusinessEmailForm
+                      embedded
+                      businessSlug={b.slug as string}
+                      businessTitle={b.title as string}
+                    />
+                  </div>
+                </details>
+              </section>
             </div>
 
             {/* Sidebar */}
             <aside className="space-y-5">
-              <ClaimBusinessEmailForm businessSlug={b.slug as string} businessTitle={b.title as string} />
-
               {/* Primary CTA */}
               {typeof b.website === "string" && b.website && (
                 <a

@@ -6,16 +6,25 @@ type Props = {
   /** Current public slug (`/business/[slug]`). */
   businessSlug: string;
   businessTitle: string;
+  /** Lighter styling when disclosed under main narrative (sidebar card uses default). */
+  embedded?: boolean;
 };
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
 const labelClass = "block text-xs font-medium text-[var(--color-text-secondary)]";
 
-export function ClaimBusinessEmailForm({ businessSlug, businessTitle }: Props) {
+export function ClaimBusinessEmailForm({ businessSlug, businessTitle, embedded = false }: Props) {
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  const outerClass = embedded
+    ? "rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/50 p-5 sm:p-6"
+    : "rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm";
+  const headingClass = embedded
+    ? "font-headline text-base font-semibold text-zinc-900"
+    : "font-headline text-base font-bold text-zinc-900";
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -64,8 +73,8 @@ export function ClaimBusinessEmailForm({ businessSlug, businessTitle }: Props) {
 
   if (done) {
     return (
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-        <h2 className="font-headline text-base font-bold text-zinc-900">Thanks — message sent</h2>
+      <div className={outerClass}>
+        <h2 className={headingClass}>Thanks — message sent</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed">
           We routed your note to our team by email for <span className="font-medium">{businessTitle}</span>. If you
           typed your email correctly, we can reply from there once we&apos;ve reviewed it.
@@ -82,8 +91,8 @@ export function ClaimBusinessEmailForm({ businessSlug, businessTitle }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-      <h2 className="font-headline text-base font-bold text-zinc-900">Claim or update listing</h2>
+    <div className={`relative ${outerClass}`}>
+      <h2 className={headingClass}>Claim or update listing</h2>
       <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
         Owners and authorized contacts: tell us what&apos;s wrong or what should change. We review manually—no automated
         verification from this form.
