@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { findSimilarBusinessesForListingRequest } from "@/lib/listing-requests/find-similar-businesses";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteUrl } from "@/lib/site-url";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { escapeHtml } from "@/lib/string/escape-html";
@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
     .select("id, title")
     .eq("id", d.town_id)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .maybeSingle();
 

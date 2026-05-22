@@ -11,6 +11,7 @@ import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
+import { filterEnrichedToPublishedBusinesses } from "@/lib/shop/filter-enriched-published-businesses";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
 export const revalidate = 3600;
@@ -68,6 +69,7 @@ async function loadSeoPage(fullSlug: string) {
     const response = cache?.response_json as
       | EnrichedRecommendationPayload
       | undefined;
+    const enriched = await filterEnrichedToPublishedBusinesses(supabase, response ?? undefined);
 
     let related: { slug: string; title: string }[] = [];
     if (row.town_id != null) {
@@ -85,8 +87,8 @@ async function loadSeoPage(fullSlug: string) {
     return {
       title: row.title,
       meta_description: row.meta_description,
-      intro: row.content_intro ?? response?.summary ?? "",
-      enriched: response ?? null,
+      intro: row.content_intro ?? enriched?.summary ?? response?.summary ?? "",
+      enriched,
       related,
       townId: row.town_id,
     };

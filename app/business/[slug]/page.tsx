@@ -13,7 +13,10 @@ import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { selectBusinessHighlights } from "@/lib/business/highlights";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
@@ -63,6 +66,7 @@ async function loadBusiness(slug: string) {
           .from("businesses_view")
           .select(sel)
           .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("id", slug)
           .maybeSingle()
@@ -70,6 +74,7 @@ async function loadBusiness(slug: string) {
           .from("businesses_view")
           .select(sel)
           .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("slug", slug)
           .maybeSingle();
@@ -108,6 +113,7 @@ async function loadBusiness(slug: string) {
         .select("title, slug")
         .eq("id", rawAreaId)
         .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
         .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .maybeSingle();
       const a = ar as { title?: string; slug?: string } | null;
@@ -133,6 +139,7 @@ async function loadBusiness(slug: string) {
           .select("title, slug")
           .eq("id", jid)
           .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .maybeSingle();
         const a = ar as { title?: string; slug?: string } | null;

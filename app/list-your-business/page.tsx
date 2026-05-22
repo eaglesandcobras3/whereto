@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { ListBusinessForm, type ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
@@ -20,6 +20,7 @@ async function loadTowns(): Promise<ListBusinessTownOption[]> {
       .from("towns")
       .select("id, title, slug")
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title");
     if (townsRes.error) {

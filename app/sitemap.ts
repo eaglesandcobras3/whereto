@@ -4,7 +4,7 @@ import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_DB_SLUG, PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 /** PostgREST often caps a single response at ~1000 rows; paginate to include full catalogs. */
 const SITEMAP_PAGE_SIZE = 1000;
@@ -154,6 +154,7 @@ async function fetchSitemapBusinessRows(supabase: SupabaseClient): Promise<Recor
       .from("businesses")
       .select("id, slug, date_updated, published_at, date_created, featured")
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);
     if (error) {
@@ -218,6 +219,7 @@ async function fetchBrowseableRows(
       .from(table)
       .select(select)
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);

@@ -3,7 +3,10 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { distanceMeters, nameSimilarity } from "@/lib/admin/duplicate-detection";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 
 export type SimilarBusinessHit = {
   id: string;
@@ -31,6 +34,7 @@ export async function findSimilarBusinessesForListingRequest(
     .select("id, title, slug, town_id, map_lat, map_lng")
     .eq("town_id", params.townId)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(500);
 

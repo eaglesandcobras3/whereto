@@ -1,7 +1,10 @@
 import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
 
 const BROWSE_SELECT =
@@ -51,6 +54,7 @@ function baseBrowseListQuery({ supabase, excludeId }: BrowseQuery) {
     .from("businesses_view")
     .select(BROWSE_SELECT)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("date_updated", { ascending: false, nullsFirst: false });
   if (excludeId) q = q.neq("id", excludeId);

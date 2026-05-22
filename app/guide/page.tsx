@@ -6,6 +6,7 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { loadHubMainGuideMarkdown } from "@/lib/data/load-hub-main-guide-markdown";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 
 const HUB_FEATURED_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
@@ -69,7 +70,8 @@ async function getOtherGuides() {
 }
 
 export default async function GuidePage() {
-  const [towns, otherGuides, hubBody, heroSettings] = await Promise.all([
+  const [flags, towns, otherGuides, hubBody, heroSettings] = await Promise.all([
+    getAllFeatureFlags(),
     getTowns(),
     getOtherGuides(),
     loadHubMainGuideMarkdown(),
@@ -369,24 +371,25 @@ export default async function GuidePage() {
           </section>
         )}
 
-        {/* CTA */}
-        <section className="bg-[var(--color-primary)] py-16">
-          <div className="mx-auto max-w-3xl px-6 text-center">
-            <h2 className="font-headline text-3xl font-extrabold text-white">
-              Ready to Explore?
-            </h2>
-            <p className="mt-4 text-lg text-white/80">
-              Search towns, restaurants, events, and local favorites across 30A.
-            </p>
-            <Link
-              href="/"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-bold text-[var(--color-primary)] transition-all hover:shadow-lg"
-            >
-              <span className="material-symbols-outlined">search</span>
-              Start Searching
-            </Link>
-          </div>
-        </section>
+        {flags["guide_hub_search_callout"] === true ? (
+          <section className="bg-[var(--color-primary)] py-16">
+            <div className="mx-auto max-w-3xl px-6 text-center">
+              <h2 className="font-headline text-3xl font-extrabold text-white">
+                Ready to Explore?
+              </h2>
+              <p className="mt-4 text-lg text-white/80">
+                Search towns, restaurants, events, and local favorites across 30A.
+              </p>
+              <Link
+                href="/"
+                className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-bold text-[var(--color-primary)] transition-all hover:shadow-lg"
+              >
+                <span className="material-symbols-outlined">search</span>
+                Start Searching
+              </Link>
+            </div>
+          </section>
+        ) : null}
     </>
   );
 }

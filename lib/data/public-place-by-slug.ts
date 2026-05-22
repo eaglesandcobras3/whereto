@@ -1,7 +1,7 @@
 import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 
 /**
@@ -43,6 +43,7 @@ export async function getPublicPlaceBySlug(
     )
     .eq("slug", key)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(1);
 
@@ -87,6 +88,7 @@ export async function getPublicPlaceBySlug(
     )
     .eq("slug", key)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(1);
 

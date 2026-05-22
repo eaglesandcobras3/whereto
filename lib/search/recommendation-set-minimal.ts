@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 import type { BusinessPayload, SearchResultPayload } from "@/lib/search/types";
 import type { SearchCandidateRankOrder } from "@/lib/scoring";
 
@@ -80,6 +83,7 @@ export async function buildMinimalSearchResult(
       { count: "exact" },
     )
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (!options.skipIlikeTextFilter) {

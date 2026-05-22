@@ -1,6 +1,9 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
@@ -54,6 +57,7 @@ export async function getTownBySlug(slug: string) {
     .select("id, title, slug, region, excerpt, content, main_image, hero_image, status, main_image_url, hero_image_url")
     .eq("slug", key)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .limit(1);
 
   if (error) {
@@ -112,6 +116,8 @@ export async function getTownGuidePreview(slug: string): Promise<TownGuidePrevie
     .from("towns")
     .select("id, title, excerpt, content, intent_tags")
     .eq("slug", key)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .is("archived_at", null)
     .maybeSingle();
   if (!town) return null;
   const t = town as { id: string; title: string; excerpt: string | null; content: string | null };
@@ -177,6 +183,7 @@ export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeat
     .select("slug, title, excerpt, main_image, hero_image, status")
     .in("id", gids)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(8);
   return (guides ?? []).map((g) => {
@@ -204,6 +211,7 @@ export async function getTownAreasForLocalGuide(
     .select("id, title, slug, area_type, excerpt, town_id, status")
     .eq("town_id", townId)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
 
@@ -288,6 +296,7 @@ export async function getTownsInRegion(regionId: string) {
     .select("title, slug, status")
     .eq("region_id", regionId)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
   return (data ?? []).map((t) => ({

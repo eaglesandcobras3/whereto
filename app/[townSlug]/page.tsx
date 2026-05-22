@@ -18,7 +18,7 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
@@ -76,6 +76,7 @@ async function getSidebarData(townId: string) {
       .select("id, title, slug")
       .eq("town_id", townId)
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
       .limit(TOWN_AREAS_CANDIDATE_CAP),
@@ -84,6 +85,7 @@ async function getSidebarData(townId: string) {
       .select("id, slug, title")
       .eq("primary_town_id", townId)
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .limit(50),
   ]);
@@ -107,6 +109,7 @@ async function getSidebarData(townId: string) {
     )
     .eq("town_id", townId)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(150);
 
@@ -119,6 +122,7 @@ async function getSidebarData(townId: string) {
           )
           .in("area_id", townAreaIds)
           .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .limit(150)
       : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
@@ -129,6 +133,7 @@ async function getSidebarData(townId: string) {
     .eq("town_id", townId)
     .not("area_id", "is", null)
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const directAreaBizInAreasQuery =
@@ -138,6 +143,7 @@ async function getSidebarData(townId: string) {
           .select("area_id")
           .in("area_id", townAreaIds)
           .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
       : Promise.resolve({ data: [] as { area_id: string }[] | null });
 
@@ -150,6 +156,7 @@ async function getSidebarData(townId: string) {
           .select("id, slug, title")
           .in("id", linkedGuideIds)
           .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .limit(50)
       : Promise.resolve({ data: [] as { id: string; slug: string; title: string }[] | null }),
@@ -200,6 +207,7 @@ async function getSidebarData(townId: string) {
           .select("id")
           .in("id", chunk)
           .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .or(BROWSE_VISIBLE_NOT_HIDDEN),
       ),
     );

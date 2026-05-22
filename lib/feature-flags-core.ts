@@ -16,6 +16,8 @@ export const DEFAULT_FLAGS: Record<string, boolean> = {
   saved: true,
   /** When `true`, header browse nav includes **Services** (`/search?type=services`). Default off until listings are ready. */
   services_nav: false,
+  /** When `true`, `/guide` shows the teal “Ready to Explore?” search CTA at the bottom. Default off. */
+  guide_hub_search_callout: false,
 };
 
 function mergeFromJson(

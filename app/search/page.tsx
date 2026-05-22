@@ -3,7 +3,7 @@ import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { SearchPageClient, type DiscoveryTag } from "./search-page-client";
 import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
@@ -196,6 +196,8 @@ export default async function SearchPage({ searchParams }: Props) {
       .from("towns")
       .select("id, title")
       .eq("id", town_id.trim())
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .maybeSingle();
     if (town) {
       constrainTownId = (town as { id: string }).id;
@@ -211,6 +213,7 @@ export default async function SearchPage({ searchParams }: Props) {
       .select("id, title, town_id")
       .eq("id", areaIdParam.trim())
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .maybeSingle();
     if (arow) {
       const a = arow as { id: string; title: string; town_id: string | null };
@@ -261,6 +264,7 @@ export default async function SearchPage({ searchParams }: Props) {
     .from("towns")
     .select("id, title, slug")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title")
     .limit(50);
@@ -274,6 +278,7 @@ export default async function SearchPage({ searchParams }: Props) {
     .from("business_categories")
     .select("title, slug")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
   const categoryOptions = (categoryRows ?? []).map((c) => ({
@@ -285,6 +290,7 @@ export default async function SearchPage({ searchParams }: Props) {
     .from("areas_view")
     .select("id, title, town_id")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title")
     .limit(500);
@@ -302,6 +308,7 @@ export default async function SearchPage({ searchParams }: Props) {
     .from("areas_view")
     .select("id, title, slug")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title")
     .limit(50);
@@ -318,6 +325,7 @@ export default async function SearchPage({ searchParams }: Props) {
     .from("guides_view")
     .select("slug, title")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(50);
   const allGuides = (guideRows ?? []).map((g) => ({
@@ -331,6 +339,7 @@ export default async function SearchPage({ searchParams }: Props) {
     .from("businesses_view")
     .select("id, title, slug")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("has_physical_location", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(100);
@@ -346,6 +355,7 @@ export default async function SearchPage({ searchParams }: Props) {
     .from("businesses_view")
     .select("id, title, slug")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_service_business", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(100);
@@ -392,6 +402,7 @@ export default async function SearchPage({ searchParams }: Props) {
       .from("events_view")
       .select("id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, starts_at, ends_at, location_name, cost_notes, ticket_url, recurrence_rule, status")
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("starts_at", { ascending: true, nullsFirst: false })
       .limit(100);
@@ -428,6 +439,7 @@ export default async function SearchPage({ searchParams }: Props) {
       .from("towns_view")
       .select("id, title, slug, excerpt, status, main_image, hero_image, main_image_url, hero_image_url")
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
       .limit(100);
@@ -484,6 +496,7 @@ export default async function SearchPage({ searchParams }: Props) {
       .from("guides_view")
       .select("slug, title, excerpt, seo_description, main_image, hero_image, main_image_url, hero_image_url, status")
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
       .limit(100);
@@ -543,6 +556,7 @@ export default async function SearchPage({ searchParams }: Props) {
         .from("points_of_interest_view")
         .select("id, title, slug, excerpt, poi_type, town_id, main_image, hero_image, main_image_url, hero_image_url, towns(slug, title)")
         .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
         .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .order("title")
         .limit(100);
@@ -607,6 +621,7 @@ export default async function SearchPage({ searchParams }: Props) {
       .from("areas_view")
       .select("id, title, slug, excerpt, area_type, town_id, is_shopping_area, main_image, hero_image, main_image_url, hero_image_url, towns(slug, title)")
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
       .limit(100);

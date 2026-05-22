@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
   const supabase = getServiceSupabase();
@@ -9,6 +9,7 @@ async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
     .from("towns")
     .select("title, slug")
     .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
   if (error) {

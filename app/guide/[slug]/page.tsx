@@ -4,7 +4,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
@@ -32,6 +32,7 @@ async function loadGuide(slug: string) {
       .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, status")
       .eq("slug", slug)
       .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .maybeSingle();
     if (g) {
