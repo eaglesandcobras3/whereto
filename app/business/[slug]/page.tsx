@@ -3,7 +3,6 @@ import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getSiteUrl } from "@/lib/site-url";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
@@ -19,6 +18,7 @@ import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
+import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -397,6 +397,8 @@ export default async function BusinessPage({ params }: Props) {
   ];
   const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
+  const websiteHref = externalWebsiteHref(b.website as string | null);
+
   const businessSchema = generateLocalBusinessSchema({
     name: b.name as string,
     slug: (b.slug as string) || (b.id as string),
@@ -650,9 +652,9 @@ export default async function BusinessPage({ params }: Props) {
             {/* Sidebar */}
             <aside className="space-y-5">
               {/* Primary CTA */}
-              {typeof b.website === "string" && b.website && (
+              {websiteHref && (
                 <a
-                  href={b.website}
+                  href={websiteHref}
                   target="_blank"
                   rel="noreferrer"
                   className="group flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-4 font-semibold text-white transition-all hover:bg-[var(--color-primary-light)]"

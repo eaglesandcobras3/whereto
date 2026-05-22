@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
+import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 type Props = { enriched: EnrichedRecommendationPayload };
 
@@ -25,6 +26,7 @@ export function TownRecList({ enriched }: Props) {
           image_url?: string | null;
         };
         const seed = b.slug ?? r.business_id;
+        const websiteHref = externalWebsiteHref(b.website ?? null);
         return (
           <li
             key={r.business_id}
@@ -64,9 +66,9 @@ export function TownRecList({ enriched }: Props) {
                 max={5}
               />
               <div className="flex flex-wrap gap-3 text-sm pt-1">
-                {b.website ? (
+                {websiteHref ? (
                   <a
-                    href={b.website}
+                    href={websiteHref}
                     target="_blank"
                     rel="noreferrer"
                     className="text-[var(--color-primary)] hover:underline"

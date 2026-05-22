@@ -5,6 +5,7 @@ import { TagPills } from "@/components/discovery/TagPills";
 import { SaveButton } from "@/components/discovery/SaveButton";
 import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 import type { BusinessPayload } from "@/lib/search/types";
+import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 export type BusinessCardBusiness = BusinessPayload & {
   /** When true, omit listing rating stars on consumer surfaces (policy). */
@@ -54,7 +55,7 @@ export function BusinessCard({
   const showStars = variant === "admin" && b.listing_rating != null && !b.hideRatings;
   const isCompact = variant === "compact";
   const slug = b.slug ?? b.id ?? rec.business_id;
-
+  const websiteHref = externalWebsiteHref(b.website ?? null);
   const hasImage = !!b.image_url;
 
   return (
@@ -140,9 +141,9 @@ export function BusinessCard({
         ) : null}
 
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          {b.website ? (
+          {websiteHref ? (
             <a
-              href={b.website}
+              href={websiteHref}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"

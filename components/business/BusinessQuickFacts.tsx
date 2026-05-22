@@ -1,4 +1,5 @@
 import { summarizeBusinessHours } from "@/lib/business/format-business-hours";
+import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 type Props = {
   address?: string | null;
@@ -14,20 +15,16 @@ type Props = {
   hours?: unknown;
 };
 
-function ensureHttpUrl(raw: string): string {
-  const t = raw.trim();
-  if (!t) return "";
-  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
-}
-
 function telHref(phone: string): string | null {
   const core = phone.replace(/[^\d+]/g, "");
   return core.length >= 3 ? `tel:${core}` : null;
 }
 
 function hostnameLabel(raw: string): string {
+  const href = externalWebsiteHref(raw);
+  if (!href) return raw.trim();
   try {
-    const u = new URL(ensureHttpUrl(raw));
+    const u = new URL(href);
     return u.hostname.replace(/^www\./i, "");
   } catch {
     return raw.trim();
@@ -175,7 +172,7 @@ export function BusinessQuickFacts({
               <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">Website</h3>
               <p className="mt-1 break-all">
                 <a
-                  href={ensureHttpUrl(site)}
+                  href={externalWebsiteHref(site) ?? "#"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
@@ -211,7 +208,7 @@ export function BusinessQuickFacts({
               {menu ? (
                 <p>
                   <a
-                    href={ensureHttpUrl(menu)}
+                    href={externalWebsiteHref(menu) ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"
@@ -224,7 +221,7 @@ export function BusinessQuickFacts({
               {booking ? (
                 <p>
                   <a
-                    href={ensureHttpUrl(booking)}
+                    href={externalWebsiteHref(booking) ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"

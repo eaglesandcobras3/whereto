@@ -1,4 +1,5 @@
 import { getSiteUrl } from "@/lib/site-url";
+import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 export type BreadcrumbItem = {
   name: string;
@@ -195,8 +196,9 @@ export function generateLocalBusinessSchema(business: {
     schema.telephone = business.phone;
   }
 
-  if (business.website) {
-    schema.sameAs = [business.website];
+  const sameAs = externalWebsiteHref(business.website);
+  if (sameAs) {
+    schema.sameAs = [sameAs];
   }
 
   if (business.rating != null && business.reviewCount != null && business.reviewCount > 0) {

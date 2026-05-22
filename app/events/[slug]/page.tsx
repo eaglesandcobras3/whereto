@@ -7,6 +7,7 @@ import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -152,6 +153,8 @@ export default async function EventDetailPage({ params }: Props) {
   const heroIsRemote =
     event.hero_image_url?.startsWith("https://") || event.hero_image_url?.startsWith("http://");
 
+  const ticketWebsiteHref = externalWebsiteHref(event.website);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 md:py-14">
       <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
@@ -212,9 +215,9 @@ export default async function EventDetailPage({ params }: Props) {
           {event.address ? <span>{event.address}</span> : null}
           {event.price ? <span className="font-medium text-[var(--color-text-primary)]">{event.price}</span> : null}
         </div>
-        {event.website ? (
+        {ticketWebsiteHref ? (
           <a
-            href={event.website}
+            href={ticketWebsiteHref}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
