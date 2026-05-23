@@ -22,6 +22,7 @@ import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLi
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
+import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -817,6 +818,8 @@ export default async function BusinessPage({ params }: Props) {
                   </ul>
                 </section>
               )}
+
+              <BusinessDirectoryDisclaimer businessSlug={String(b.slug)} />
             </aside>
           </div>
         </div>

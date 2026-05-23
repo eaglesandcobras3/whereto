@@ -524,10 +524,10 @@ export function HomePage({
                   </h2>
                 </div>
                 <Link
-                  href={PRIMARY_REGION_HUB_PATH}
+                  href="/search?type=towns"
                   className="group flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3"
                 >
-                  Explore all Towns
+                  Explore all towns
                   <MsIcon name="arrow_forward" className="!text-lg transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>

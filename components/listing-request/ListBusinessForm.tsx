@@ -143,8 +143,8 @@ export function ListBusinessForm({ towns }: Props) {
   return (
     <form onSubmit={submit} className="mt-10 space-y-6">
       <p className="-mt-2 text-sm text-[var(--color-text-secondary)]">
-        Requests are emailed to our team for review. Nothing appears on the public site until someone approves and
-        publishes a listing (often via Directus or your admin tools).
+        Requests are emailed to our team for review. Nothing appears on the public site until editorial staff publish the
+        listing after approval.
       </p>
 
       <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden>

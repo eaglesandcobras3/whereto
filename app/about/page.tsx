@@ -9,11 +9,11 @@ export const metadata: Metadata = {
   ...canonicalAlternates("/about"),
   title: "About",
   description:
-    "WhereTo30A helps you discover restaurants, events, guides, and places along Florida's 30A and the Emerald Coast.",
+    "Why WhereTo30A exists, how listings are informational (not audited), corrections, architecture, data security.",
   openGraph: {
     title: "About | WhereTo30A",
     description:
-    "Local discovery for 30A and the Emerald Coast with curated listings, search, and town guides.",
+      "A practical guide and directory for Highway 30A and the Emerald Coast — built responsibly and served securely.",
     type: "website",
     url: `${siteUrl}/about`,
   },
@@ -23,44 +23,114 @@ export default function AboutPage() {
   return (
     <SiteDocument
       title="About WhereTo30A"
-      description="Local discovery for Florida’s Emerald Coast, built for travelers and residents alike."
+      description="A reader-first guide to the beach towns and local scene along Scenic Highway 30A — curated listings, editorial guides, and search without losing the nuance of the place."
     >
       <p>
-        WhereTo30A is a guide to the beach towns, businesses, events, and experiences along Highway 30A and the
-        surrounding Emerald Coast. We combine curated listings with search and AI-assisted summaries so you can
-        explore in plain language — whether you are planning a trip or looking for something new nearby.
+        Trip planning shouldn&apos;t rely only on fragmented reviews and mystery algorithms. WhereTo30A exists because we wanted a steadier compass for the Emerald Coast — town context, standout businesses, editorial guides, and discovery flows that favor clarity over hype. Human curation anchors the catalog; assistive tooling tightens summaries once factual inputs are ours to control. The goal is quicker orientation, not telling you how to enjoy your week.
       </p>
 
-      <h2>What you will find</h2>
+      <aside className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-4 py-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+        Disclaimers, caps on monetary damages, and indemnities that apply when we depict businesses appear in{" "}
+        <Link href="/terms#directory-and-business-listings" className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
+          Terms&nbsp;§&nbsp;6–8
+        </Link>{" "}
+        (effective May&nbsp;21,&nbsp;2026). This narrative is explanatory only—it{" "}
+        <strong className="text-[var(--color-text-primary)]">does not modify those Terms.</strong> Operators with commercial or regulatory stakes should consult qualified advisers and rely on Sections 6–8 for binding language where it matters commercially.
+      </aside>
+
+      <h2>What you&apos;ll find</h2>
       <ul>
-        <li>Town pages and guides that highlight character, dining, and things to do.</li>
-        <li>Business listings with descriptions, tags, and links when provided by listing owners or sources.</li>
-        <li>Events and editorial content aimed at helping you decide where to go next.</li>
+        <li>Town pages that stress character, pacing, and beach-access reality.</li>
+        <li>Listings built from operator data and editorial notes — curated, not an open review firehose.</li>
+        <li>Events, guides, and search that narrow the gap between curiosity and a verified plan.</li>
       </ul>
+
+      <h2>Listings &amp; what we disclaim</h2>
+      <p>
+        Venues evolve faster than editorial cycles can refresh. Listing content—including automation-assisted summaries, tags,
+        heuristic scores, imagery, ingestion fields, excerpts of licensed data—is provided for{" "}
+        <strong>traveler orientation</strong>; it{" "}
+        <strong>is not</strong> audited truth or an invitation to waive your own confirmations with operators and professionals about allergens,
+        tides, ADA accommodations, minors, alcohol service, staffing or licensing assertions, mooring rules, ticketing and pricing commitments,
+        or other decisive facts covered by statute contract or prudent risk management elsewhere.
+      </p>
+      <p>
+        <strong>Readers.</strong> Confirm load-bearing specifics onsite, by telephone, ticketing channels, landowners, harbormasters, or municipalities—not solely from our synopsis.
+      </p>
+      <p>
+        <strong>Owners &amp; operators.</strong> Facts you submit through onboarding, claims, corrections, imagery, attribution, or rebranding inquiries must be accurate to the best of your knowledge after reasonable inquiry. Knowing misrepresentation may void good-faith cooperation and can trigger indemnities described beside representation clauses inside{" "}
+        <Link href="/terms#directory-and-business-listings" className="font-medium underline-offset-4 hover:underline">
+          Terms&nbsp;§&nbsp;5–8
+        </Link>
+        .
+      </p>
+      <p>
+        <strong>Corrections.</strong> Flag inaccuracies scraped duplicates ingestion mismatches likeness disputes omitted lawful disclosures discriminatory classifications or other harmful erroneous material—with details—via{" "}
+        <Link href="/feedback" className="font-medium underline-offset-4 hover:underline">
+          /feedback
+        </Link>{" "}
+        or{" "}
+        <a href="mailto:feedback@whereto30a.com" className="font-medium underline-offset-4 hover:underline">
+          feedback@whereto30a.com
+        </a>
+        . We review credible requests with commercially reasonable diligence subject to discretionary editorial pacing; see procedure at{" "}
+        <Link href="/terms#listing-information-scope" className="font-medium underline-offset-4 hover:underline">
+          Terms&nbsp;§&nbsp;6.2
+        </Link>
+        .
+      </p>
+      <p>
+        To the fullest extent permitted by law—including disappointed expectations, reputational disagreement, ranking placement, automation-assisted tone, or ingestion latency—we disclaim economic fallout beyond monetary caps enumerated in{" "}
+        <Link href="/terms#limitation-of-liability" className="font-medium underline-offset-4 hover:underline">
+          Terms&nbsp;§&nbsp;7
+        </Link>
+        {" "}
+        (together with Sections 8–11 on indemnity, survival, governing law, revisions, contact).
+      </p>
 
       <h2>How we describe places</h2>
       <p>
-        Some descriptions are drafted or refined with automated tools from factual inputs we control (for example,
-        public business details and our own editorial notes). They are meant as a starting point for discovery, not
-        as a substitute for checking hours, menus, pricing, or availability directly with a venue.
+        Some blurbs pair editor notes with automation to stay readable at scale. They remain fallible — verify anything load-bearing on-site or over the phone.
       </p>
 
-      <h2>Listings and accuracy</h2>
+      <h2>Architecture &amp; data access</h2>
+      <pre className="whitespace-pre-wrap rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-4 py-3 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+        {`Visitor browser
+↓
+Next.js routes (React Server Components + Route Handlers)
+↓ privileged queries & secrets remain on the server
+Supabase Postgres + Storage`}
+      </pre>
       <p>
-        Information changes quickly. We work to keep data useful and up to date, but we do not guarantee that every
-        detail on the site is current. Always confirm important details with the business or event organizer.
+        Public browsing does <strong>not</strong> open direct Supabase Postgres access from raw browser JavaScript with service-role credentials — listing payloads, aggregates,
+        transactional email, and other sensitive flows run through Next.js on the server. The publishable browser key Supabase exposes is confined to narrowly scoped behaviors (such as refreshing auth cookies in middleware) and never replaces that server boundary for editorial data.
+      </p>
+
+      <h2>List your business</h2>
+      <p>
+        New listings funnel through{" "}
+        <Link href="/list-your-business" className="font-medium underline-offset-4 hover:underline">
+          List your business
+        </Link>
+        . Editors review submissions before anything goes live inside our publishing workflow.
       </p>
 
       <h2>Contact</h2>
       <p>
-        Questions about the site or a listing? Reach us at{" "}
-        <a href="mailto:hello@whereto30a.com">hello@whereto30a.com</a>.
+        General inbox:{" "}
+        <a href="mailto:hello@whereto30a.com" className="font-medium underline-offset-4 hover:underline">
+          hello@whereto30a.com
+        </a>
       </p>
-
       <p>
-        <Link href="/search">Try search</Link>
-        {" · "}
-        <Link href="/guide">Browse the guide</Link>
+        Listing QA / experiential feedback:{" "}
+        <a href="mailto:feedback@whereto30a.com" className="font-medium underline-offset-4 hover:underline">
+          feedback@whereto30a.com
+        </a>{" "}
+        ·{" "}
+        <Link href="/feedback" className="font-medium underline-offset-4 hover:underline">
+          /feedback
+        </Link>
       </p>
     </SiteDocument>
   );

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/site-url";
+import { getSiteUrl, canonicalSiteHostname } from "@/lib/site-url";
 
 export default function robots(): MetadataRoute.Robots {
   const base = getSiteUrl();
@@ -37,6 +37,6 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${base}/sitemap.xml`,
-    host: base,
+    host: canonicalSiteHostname(),
   };
 }

@@ -21,7 +21,7 @@ export default function TermsPage() {
   return (
     <SiteDocument
       title="Terms of Service"
-      description="Last updated: April 14, 2026. By accessing or using WhereTo30A (“the Service”), you agree to these terms."
+      description="Last updated: May 21, 2026. By accessing or using WhereTo30A (“the Service”), you agree to these terms."
     >
       <h2>1. The Service</h2>
       <p>
@@ -64,20 +64,79 @@ export default function TermsPage() {
         do so and you grant us a license to use, host, reproduce, and display that content as needed to operate and
         improve the Service.
       </p>
-
-      <h2>6. Disclaimers</h2>
       <p>
-        The Service is provided <strong>“as is”</strong> and <strong>“as available”</strong>. Hours, prices, menus,
-        availability, and event details change. We do not warrant that information on the site is complete, accurate,
-        or current. Decisions you make based on the Service are your own; verify important details with venues and
-        organizers.
-      </p>
-      <p>
-        AI-assisted or generated text is informational only and may contain errors. It is not professional advice
-        (including legal, medical, or financial advice).
+        If you operate a business shown on WhereTo30A and you submit listing requests, corrections, ownership or claim correspondence,
+        or branding materials, you represent that factual statements about your authority to act for the business, licensing,
+        location, imagery rights, URLs, trademarks, allergens, ADA-related claims you ask us to publish, suitability claims, affiliation,
+        accreditation, staffing, food-handling or sanitary assertions you invite us to echo—or other concrete factual assertions—are materially accurate to the best of your
+        knowledge after reasonable inquiry. Knowing misrepresentations are misuse of the Service and may void good-faith cooperation.
       </p>
 
-      <h2>7. Limitation of liability</h2>
+      <h2 id="directory-and-business-listings">6. Disclaimers</h2>
+
+      <h3>6.1 General</h3>
+      <p>
+        The Service is provided <strong>“as is”</strong> and <strong>“as available”</strong>. Except where expressly stated in writing
+        in a separate contract with you, we disclaim warranties implied by law or otherwise—including implied warranties of merchantability,
+        fitness for a particular purpose, accuracy, completeness, uninterrupted operation, non-infringement, title, interoperability, latent
+        defects, and conformity to descriptions—to the fullest extent permitted by applicable law.
+      </p>
+      <p>
+        Operational facts (hours, prices, closures, tides, sanitation, allergens, ticketing, blackout dates, capacity, zoning, alcohol
+        service rules, staffing, ADA accommodations, contractual terms, permitting, marina rules—the list is illustrative) often change faster
+        than listings update. Readers should independently verify anything load-bearing directly with venues, organizers, licensees, landowners,
+        municipalities and, when appropriate, professional advisers.
+      </p>
+
+      <h3 id="listing-information-scope">6.2 Business listings &amp; third-party information</h3>
+      <p>
+        Listings assemble names, excerpts, logistic fields, tagging, heuristic scores, illustrative imagery/icons, excerpts from licensees,
+        ingestion partners, OCR, imports—and tooling-assisted rewriting. Taken together this material remains{" "}
+        <strong>informational commentary and directory metadata</strong>, not inspected truth.
+      </p>
+      <ul>
+        <li>
+          WhereTo30A does <strong>not</strong> warrant that listings are current, truthful, omission-free, non-defamatory, allergen-perfect,
+          safety-certified, medically sound, staffed as described, licensed as described, ADA-accurate, alcohol-regulation accurate for your
+          situation, geographically correct, competitively ranked objective truth—or free of infringement.
+        </li>
+        <li>
+          Inclusion, ordering, illustrative photography, typography, heuristic scores, conversational labels such as “Great for…” or comparative
+          adjectives are editorial or automated convenience—not proof of endorsement, audited inspection or sponsorship unless a disclosure
+          immediately adjacent plainly marks paid amplification.
+        </li>
+        <li>
+          Tooling-assisted summaries can misstate logistical details beside otherwise accurate fields. Automation output is informational only—not
+          legal, tax, medical, maritime-regulatory or other professional advice—even when tone sounds prescriptive.
+        </li>
+      </ul>
+      <p>
+        <strong>Correction policy.</strong> We welcome credible reports—including via{" "}
+        <Link href="/feedback">/feedback</Link>—about inaccuracies; deceptive comparative statements; likeness disputes; scraped, imported,
+        OCR or ingestion duplicates; suspected impersonations; discriminatory taxonomy that ought not remain; infringing or unlawful
+        editorial copy; omission of plainly required disclosures when you identify the statute or rule and furnish substantiation—we
+        review good-faith requests with commercially reasonable diligence and endeavor to annotate, downgrade prominence, correct—or remove
+        offending material when warranted consistent with applicable law.
+      </p>
+      <p>
+        Nothing in this policy guarantees a resolution, timetable, prominence, wording—or continued publication. Editors retain editorial
+        discretion—including around speech equities, neutrality, contradictory records—or legal counsel—without committing to any particular
+        result.
+      </p>
+      <p>Repeated abusive or duplicative demands do not accelerate review.</p>
+
+      <p>
+        <strong>Third-party dealings.</strong> Reservations, purchases, ticketing, contractor engagements, HOA or condominium matters,
+        mooring bookings, employment decisions—or similar dealings—are solely between you and counterparties you independently select.
+        WhereTo30A is not your broker, escrow agent, fiduciary, or insurer unless we separately execute a written agreement plainly stating otherwise.
+      </p>
+
+      <h2 id="limitation-of-liability">7. Limitation of liability</h2>
+      <p>
+        To the maximum extent permitted by law, neither WhereTo30A nor its suppliers or licensors will be liable for your reliance on—or
+        omissions within—business listings—including reputational portrayal, illustrative ranking—or automation errors—even ordinary
+        negligence—except where applicable law forbids such exclusion (such as gross negligence, willful misconduct, or fraud as defined locally).
+      </p>
       <p>
         To the fullest extent permitted by law, WhereTo30A and its suppliers will not be liable for any indirect,
         incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred
@@ -89,13 +148,19 @@ export default function TermsPage() {
         (a) the amount you paid us for the Service in the twelve months before the claim or (b) one hundred U.S.
         dollars (USD $100), if you have not paid us.
       </p>
-      <p>Some jurisdictions do not allow certain limitations; in those cases, our liability is limited to the maximum permitted by law.</p>
+      <p>
+        Some jurisdictions do not allow certain limitations; in those cases, our liability is limited to the maximum permitted by law.
+      </p>
 
       <h2>8. Indemnity</h2>
       <p>
-        You will defend and indemnify WhereTo30A and its affiliates, officers, and employees from any claims, damages,
-        losses, or expenses (including reasonable attorneys’ fees) arising from your misuse of the Service or violation
-        of these Terms.
+        You will defend and indemnify WhereTo30A and its affiliates, directors, officers, employees, contractors, successors, and assigns from
+        third-party claims, damages, judgments, settlements, liabilities, fines, and expenses—including reasonable attorneys’ fees—to the extent arising from your misuse of the Service or breach of these Terms.
+      </p>
+      <p>
+        Operators who supply materials covered by Section 5—including onboarding forms, correction or claim correspondence, imagery,
+        or factual statements about licensing, allergens, ADA suitability, alcohol service, minors, staffing, affiliation, accreditation,
+        sanitary practices for regulated foodservice establishments, mooring authority, ticketing authority, franchisor instructions—or other fields you ask us to publish—must honor the accuracy obligations described there. Knowingly false, materially misleading, or infringing submissions that contribute to third-party claims may trigger defense and indemnification obligations to the widest extent enforced under Florida law and applicable federal statutes, excluding categories expressly declared non-indemnifiable.
       </p>
 
       <h2>9. Termination</h2>

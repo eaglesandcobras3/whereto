@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { ListBusinessForm, type ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -44,6 +45,13 @@ export default async function ListYourBusinessPage() {
       title="List your business"
       description="Submit a request to add or update a local listing. We review every submission before it appears on the site."
     >
+      <p className="text-sm text-[var(--color-text-secondary)]">
+        By submitting you represent you are authorized to request the listing and that operational facts you supply are accurate to the best of your knowledge—see representation and indemnity language in{" "}
+        <Link href="/terms#directory-and-business-listings" className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
+          Terms&nbsp;§&nbsp;5–8
+        </Link>
+        .
+      </p>
       {towns.length === 0 ? (
         <p className="text-sm text-[var(--color-text-secondary)]">
           Town directory is temporarily unavailable. Please try again later or email{" "}

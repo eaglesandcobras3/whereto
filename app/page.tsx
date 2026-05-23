@@ -32,7 +32,7 @@ export default async function Home() {
     .order("featured", { ascending: false, nullsFirst: true })
     .order("sort", { ascending: true, nullsFirst: false })
     .order("title", { ascending: true })
-    .limit(12);
+    .limit(200);
 
   if (townErr) {
     console.error("home: towns query", townErr);

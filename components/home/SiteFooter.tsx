@@ -2,6 +2,12 @@ import Link from "next/link";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
+
+const PUBLIC_SEARCH_TOWNS_URL = "/search?type=towns";
+
+/** Footer town list generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
+const FOOTER_TOWNS_LIMIT = 500;
 
 async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
   const supabase = getServiceSupabase();
@@ -11,9 +17,9 @@ async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title");
+    .order("title")
+    .limit(FOOTER_TOWNS_LIMIT);
   if (error) {
-    // eslint-disable-next-line no-console
     console.error("SiteFooter getFooterTowns", error);
     return [];
   }
@@ -26,24 +32,29 @@ async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
 const companyLinks = [
   { name: "About", href: "/about" },
   { name: "List your business", href: "/list-your-business" },
+  { name: "Listing feedback", href: "/feedback" },
   { name: "Privacy", href: "/privacy" },
   { name: "Terms", href: "/terms" },
 ];
 
 export async function SiteFooter() {
-  const [flags, townLinks] = await Promise.all([
+  const [flags, townLinks, instagramUrl, tiktokUrl] = await Promise.all([
     getAllFeatureFlags(),
     getFooterTowns(),
+    Promise.resolve(getSiteInstagramUrl()),
+    Promise.resolve(getSiteTikTokUrl()),
   ]);
   const showTowns = townLinks.length > 0;
+  const socials = [
+    instagramUrl ? { label: "Instagram", href: instagramUrl } : null,
+    tiktokUrl ? { label: "TikTok", href: tiktokUrl } : null,
+  ].filter(Boolean) as { label: string; href: string }[];
 
   return (
     <footer className="border-t border-[var(--color-border)] bg-[var(--color-site-chrome)]">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
         {/* Main footer content */}
-        <div
-          className={`grid gap-8 sm:grid-cols-2 ${showTowns ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}
-        >
+        <div className={`grid gap-10 sm:gap-12 ${showTowns ? "lg:grid-cols-[1fr_1fr_1fr]" : "lg:grid-cols-2"}`}>
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -65,7 +76,7 @@ export async function SiteFooter() {
           {showTowns ? (
             <div>
               <h3 className="text-eyebrow mb-4">Towns</h3>
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <ul className="flex flex-col gap-2">
                 {townLinks.map((town) => (
                   <li key={town.slug}>
                     <Link
@@ -77,17 +88,23 @@ export async function SiteFooter() {
                   </li>
                 ))}
               </ul>
+              <p className="mt-4">
+                <Link
+                  href={PUBLIC_SEARCH_TOWNS_URL}
+                  className="text-sm font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
+                >
+                  Explore all towns
+                </Link>
+              </p>
             </div>
           ) : null}
 
-          {/* Newsletter / Company */}
-          <div className="space-y-6">
+          {/* Newsletter + Company (stacked) */}
+          <div className="flex flex-col gap-8">
             {flags["newsletter"] === true && (
               <div>
                 <h3 className="text-eyebrow mb-4">Stay updated</h3>
-                <p className="text-sm text-[var(--color-text-secondary)] mb-3">
-                  Get the best local picks in your inbox.
-                </p>
+                <p className="mb-3 text-sm text-[var(--color-text-secondary)]">Get the best local picks in your inbox.</p>
                 <form className="flex gap-2">
                   <input
                     type="email"
@@ -96,7 +113,7 @@ export async function SiteFooter() {
                   />
                   <button
                     type="submit"
-                    className="shrink-0 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] transition-colors"
+                    className="shrink-0 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-light)]"
                   >
                     Join
                   </button>
@@ -106,7 +123,7 @@ export async function SiteFooter() {
 
             <div>
               <h3 className="text-eyebrow mb-3">Company</h3>
-              <ul className="flex flex-wrap gap-x-4 gap-y-1">
+              <ul className="flex flex-col gap-2">
                 {companyLinks.map((link) => (
                   <li key={link.href}>
                     <Link
@@ -118,14 +135,53 @@ export async function SiteFooter() {
                   </li>
                 ))}
               </ul>
+
+              {socials.length > 0 ? (
+                <div className="mt-6">
+                  <h4 className="text-eyebrow mb-2 text-[var(--color-text-tertiary)]">Social</h4>
+                  <ul className="flex flex-col gap-2">
+                    {socials.map((s) => (
+                      <li key={s.href}>
+                        <a
+                          href={s.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                        >
+                          {s.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
 
-        {/* Bottom bar */}
         <div className="mt-12 border-t border-[var(--color-border)] pt-8">
-          <p className="text-xs text-[var(--color-text-tertiary)] text-center sm:text-left">
-            © {new Date().getFullYear()} WhereTo30A. Discover the Emerald Coast.
+          <p className="text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
+            Directory material—including summaries, tags, heuristic scores and automation-assisted wording—may be inaccurate, condensed,
+            or stale. Inclusion is ordinarily <strong className="text-[var(--color-text-secondary)]">not</strong> an endorsement,
+            inspection, ADA suitability, allergen, licensing—or similar suitability—claims unless contiguous text plainly flags paid amplification or plainly attributes authoritative third-party data. Credible submissions via{" "}
+            <Link href="/feedback" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+              /feedback
+            </Link>{" "}
+            are reviewed in good faith when practicable—without guaranteeing timelines or outcomes. Disclaimers, liability caps, and indemnities about how we portray operators appear in{" "}
+            <Link href="/terms#directory-and-business-listings" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+              Terms&nbsp;§&nbsp;6–8
+            </Link>
+            .
+          </p>
+          <p className="mt-4 text-xs text-[var(--color-text-tertiary)]">
+            © {new Date().getFullYear()} WhereTo30A ·{" "}
+            <Link href="/terms" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+              Terms
+            </Link>
+            {" · "}
+            <Link href="/privacy" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+              Privacy
+            </Link>
           </p>
         </div>
       </div>
