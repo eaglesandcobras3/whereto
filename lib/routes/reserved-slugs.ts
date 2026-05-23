@@ -3,17 +3,31 @@
  * Keep in sync with `app/` static routes.
  */
 export const RESERVED_ROOT_SLUGS = new Set([
-  "api",
+  "_next",
+  "about",
   "admin",
-  "login",
-  "saved",
-  "share",
+  "api",
+  "area",
   "auth",
   "business",
-  "towns",
-  "_next",
+  "dev",
+  "events",
   "favicon.ico",
+  "feedback",
+  "forgot-password",
+  "guide",
   "list-your-business",
+  "login",
+  "privacy",
+  "profile",
+  "reset-password",
+  "saved",
+  "search",
+  "share",
+  "signup",
+  "terms",
+  "towns",
+  "verify",
 ]);
 
 export function isReservedRootSlug(slug: string): boolean {
