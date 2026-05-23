@@ -111,9 +111,9 @@ export default function TermsPage() {
         </li>
       </ul>
       <p>
-        <strong>Correction policy.</strong> We welcome credible reports—including via{" "}
-        <Link href="/feedback">/feedback</Link>—about inaccuracies; deceptive comparative statements; likeness disputes; scraped, imported,
-        OCR or ingestion duplicates; suspected impersonations; discriminatory taxonomy that ought not remain; infringing or unlawful
+        <strong>Correction policy.</strong> Share credible corrections through our{" "}
+        <Link href="/feedback">listing feedback form</Link>—whether you&apos;re flagging inaccuracies, misleading comparisons, likeness disputes,
+        scraped or imported duplicates, OCR or ingestion issues, suspected impersonations, discriminatory taxonomy that ought not remain, infringing or unlawful
         editorial copy; omission of plainly required disclosures when you identify the statute or rule and furnish substantiation—we
         review good-faith requests with commercially reasonable diligence and endeavor to annotate, downgrade prominence, correct—or remove
         offending material when warranted consistent with applicable law.

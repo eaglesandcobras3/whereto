@@ -644,7 +644,7 @@ export default async function BusinessPage({ params }: Props) {
               >
                 <details className="group">
                   <summary className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2">
-                    Claim or correct this listing by email
+                    Claim or correct this listing
                   </summary>
                   <div className="mt-6 max-w-xl">
                     <ClaimBusinessEmailForm

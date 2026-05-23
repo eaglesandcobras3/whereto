@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import { feedbackPageHref } from "@/lib/feedback/feedback-query";
 
 const linkCn =
   "font-medium text-[var(--color-primary)] underline-offset-2 hover:underline";
@@ -16,17 +18,22 @@ export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, cl
   const claimHref =
     businessSlug !== undefined ? `/business/${businessSlug}#listing-update-request` : null;
 
+  const feedbackHref =
+    businessSlug !== undefined && String(businessSlug).trim().length > 0
+      ? feedbackPageHref(`/business/${normalizeUrlSegment(String(businessSlug).trim())}`)
+      : "/feedback";
+
   const body = (
     <>
-      <strong className="font-semibold text-zinc-700">Listing information is informational—not verified truth.</strong> Descriptions,
+      Listing information is informational—not verified truth. Descriptions,
       suitability cues, heuristic scores, photos, excerpts, imports, licensee feeds—and tooling-assisted narratives—often move faster than
-      we can reconcile. Appearance here is typically <strong className="font-semibold text-zinc-700">not</strong> an endorsement, inspection
+      we can reconcile. Appearance here is typically not an endorsement, inspection
       certification, ADA or allergen guarantee, minors or alcohol-compliance guarantee, audited licensing statement—or other professional suitability
       claim—unless contiguous text plainly marks paid amplification or plainly attributes authoritative third-party data.
 
       <span className="mt-3 block">
         We invite corrections through{" "}
-        <Link href="/feedback" className={linkCn}>
+        <Link href={feedbackHref} className={linkCn}>
           /feedback
         </Link>
         {claimHref !== null ? (
@@ -34,7 +41,7 @@ export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, cl
             {" "}
             and the{" "}
             <Link href={claimHref} className={linkCn}>
-              claim or correct email section
+              claim or correct section
             </Link>
           </>
         ) : null}

@@ -32,7 +32,7 @@ async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
 const companyLinks = [
   { name: "About", href: "/about" },
   { name: "List your business", href: "/list-your-business" },
-  { name: "Listing feedback", href: "/feedback" },
+  { name: "Correct a listing", href: "/feedback" },
   { name: "Privacy", href: "/privacy" },
   { name: "Terms", href: "/terms" },
 ];
@@ -159,21 +159,24 @@ export async function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-[var(--color-border)] pt-8">
+        <div className="mt-12 border-t border-[var(--color-border)] pt-8 space-y-4">
           <p className="text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
-            Directory material—including summaries, tags, heuristic scores and automation-assisted wording—may be inaccurate, condensed,
-            or stale. Inclusion is ordinarily <strong className="text-[var(--color-text-secondary)]">not</strong> an endorsement,
-            inspection, ADA suitability, allergen, licensing—or similar suitability—claims unless contiguous text plainly flags paid amplification or plainly attributes authoritative third-party data. Credible submissions via{" "}
+            Directory pages mix editorial notes, licensee fields, imports, and automation—things slip: hours change, wording ages, or a summary
+            overreaches. Spots listed here aren&apos;t a blanket endorsement unless we plainly say otherwise (for example paid placement next to copy).
+          </p>
+          <p className="text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
+            If you see something wrong and want our editors to review it—whether you visited or run the place—you can{" "}
             <Link href="/feedback" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
-              /feedback
-            </Link>{" "}
-            are reviewed in good faith when practicable—without guaranteeing timelines or outcomes. Disclaimers, liability caps, and indemnities about how we portray operators appear in{" "}
-            <Link href="/terms#directory-and-business-listings" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
-              Terms&nbsp;§&nbsp;6–8
+              send a correction
+            </Link>
+            . We work through messages when we can, but nothing here promises a swift fix, exact wording, or that a listing stays published. The full
+            story on disclaimers and liability sits in{" "}
+            <Link href="/terms#listing-information-scope" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+              Terms&nbsp;§§6–8
             </Link>
             .
           </p>
-          <p className="mt-4 text-xs text-[var(--color-text-tertiary)]">
+          <p className="text-xs text-[var(--color-text-tertiary)]">
             © {new Date().getFullYear()} WhereTo30A ·{" "}
             <Link href="/terms" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
               Terms

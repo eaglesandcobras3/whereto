@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { BusinessFeedbackForm } from "@/components/feedback/BusinessFeedbackForm";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { prefilledListingContextLine } from "@/lib/feedback/feedback-query";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/feedback"),
@@ -12,12 +13,25 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function FeedbackPage() {
+export default async function FeedbackPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const prefilled = prefilledListingContextLine(sp);
+
   return (
     <SiteDocument
       title="Listing feedback"
       description='Tell us what went wrong or what needs updating.'
     >
+      {prefilled ? (
+        <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+          To save you typing, we&apos;ll start the &quot;listing link&quot; field with{' '}
+          <span className="text-[var(--color-text-primary)]">{prefilled}</span>. Feel free to edit it before you send.
+        </p>
+      ) : null}
       <p>
         We read every submission. If something on a listing doesn&apos;t match reality, describe it below and we&apos;ll route
         it to the team for review (we may follow up).
@@ -34,7 +48,7 @@ export default function FeedbackPage() {
         and related sections.
       </p>
       <h2>Feedback form</h2>
-      <BusinessFeedbackForm />
+      <BusinessFeedbackForm initialListingContext={prefilled} />
     </SiteDocument>
   );
 }

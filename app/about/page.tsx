@@ -67,7 +67,7 @@ export default function AboutPage() {
       <p>
         <strong>Corrections.</strong> Flag inaccuracies scraped duplicates ingestion mismatches likeness disputes omitted lawful disclosures discriminatory classifications or other harmful erroneous material—with details—via{" "}
         <Link href="/feedback" className="font-medium underline-offset-4 hover:underline">
-          /feedback
+          the corrections form
         </Link>{" "}
         or{" "}
         <a href="mailto:feedback@whereto30a.com" className="font-medium underline-offset-4 hover:underline">
@@ -129,7 +129,7 @@ Supabase Postgres + Storage`}
         </a>{" "}
         ·{" "}
         <Link href="/feedback" className="font-medium underline-offset-4 hover:underline">
-          /feedback
+          corrections form
         </Link>
       </p>
     </SiteDocument>
