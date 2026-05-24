@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import type { SearchResultPayload } from "@/lib/search/types";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { gaEvent } from "@/lib/analytics/gtag-runner";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -221,6 +223,7 @@ export function SearchPageClient({
 
   const setSearchSort = (next: "relevance" | "name" | "updated") => {
     if (browseMode !== "business") return;
+    gaEvent("search_filter_change", { filter: "sort", value: next });
     const params = new URLSearchParams(searchParams.toString());
     if (next === "relevance") params.delete("sort");
     else params.set("sort", next);
@@ -230,6 +233,7 @@ export function SearchPageClient({
 
   const setLocationTownFilter = (townId: string) => {
     if (browseMode !== "business") return;
+    gaEvent("search_filter_change", { filter: "town_id", value: townId || "clear" });
     const params = new URLSearchParams(searchParams.toString());
     if (!townId) params.delete("town_id");
     else params.set("town_id", townId);
@@ -240,6 +244,7 @@ export function SearchPageClient({
 
   const setCategoryFilter = (slug: string) => {
     if (browseMode !== "business") return;
+    gaEvent("search_filter_change", { filter: "category", value: slug || "clear" });
     const params = new URLSearchParams(searchParams.toString());
     if (!slug) params.delete("category");
     else params.set("category", slug);
@@ -249,6 +254,7 @@ export function SearchPageClient({
 
   const setAreaFilter = (areaId: string) => {
     if (browseMode !== "business") return;
+    gaEvent("search_filter_change", { filter: "area_id", value: areaId || "clear" });
     const params = new URLSearchParams(searchParams.toString());
     if (!areaId) params.delete("area_id");
     else params.set("area_id", areaId);
@@ -318,6 +324,7 @@ export function SearchPageClient({
   );
 
   const handleDiscoveryTagClick = (tag: DiscoveryTag) => {
+    gaEvent("search_discovery_chip", { tag_slug: tag.slug, tag_name: tag.name.slice(0, 80) });
     const newQuery = tag.name.toLowerCase() + " 30A";
     setQ(newQuery);
     const params = new URLSearchParams(searchParams.toString());
@@ -339,6 +346,11 @@ export function SearchPageClient({
                 <button
                   key={tag.slug}
                   type="button"
+                  {...gaClickProps({
+                    event: "cta_click",
+                    category: "search_discovery_chips",
+                    label: tag.slug,
+                  })}
                   onClick={() => handleDiscoveryTagClick(tag)}
                   className={`discovery-chip ${
                     activeDiscoveryTag?.slug === tag.slug ? "discovery-chip-active" : ""
@@ -355,6 +367,7 @@ export function SearchPageClient({
                     value={searchSort}
                     onChange={(e) => {
                       const v = e.target.value;
+                      gaEvent("search_filter_change", { filter: "sort_ui", value: v });
                       setSearchSort(v === "updated" || v === "name" ? v : "relevance");
                     }}
                     className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
@@ -437,6 +450,11 @@ export function SearchPageClient({
                             <Link
                               href={`/business/${rec.business.slug}`}
                               className="card-horizontal"
+                              {...gaClickProps({
+                                event: "nav_click",
+                                category: "search_results_business",
+                                label: String(rec.business.slug ?? rec.business_id).slice(0, 120),
+                              })}
                             >
                               {/* Portrait image - left side, flush with content (no radius on trailing edge) */}
                               <div className="card-horizontal-image">
@@ -516,6 +534,11 @@ export function SearchPageClient({
                           <Link
                             href={`/events/${ev.slug}`}
                             className="card-horizontal"
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_results_events",
+                              label: ev.slug,
+                            })}
                           >
                             <div className="card-horizontal-image">
                               <div className="card-horizontal-image-inner">
@@ -559,7 +582,15 @@ export function SearchPageClient({
                           key={t.id}
                           className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                         >
-                          <Link href={`/${t.slug}`} className="card-horizontal">
+                          <Link
+                            href={`/${t.slug}`}
+                            className="card-horizontal"
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_results_towns",
+                              label: t.slug,
+                            })}
+                          >
                             <div className="card-horizontal-image">
                               <div className="card-horizontal-image-inner">
                                 <RemoteCoverImage
@@ -600,7 +631,15 @@ export function SearchPageClient({
                           key={a.id}
                           className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                         >
-                          <Link href={`/area/${a.slug}`} className="card-horizontal">
+                          <Link
+                            href={`/area/${a.slug}`}
+                            className="card-horizontal"
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_results_areas",
+                              label: a.slug,
+                            })}
+                          >
                             <div className="card-horizontal-image">
                               <div className="card-horizontal-image-inner">
                                 <RemoteCoverImage
@@ -644,7 +683,15 @@ export function SearchPageClient({
                           key={g.slug}
                           className="editorial-card group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/30 hover:shadow-md"
                         >
-                          <Link href={`/guide/${g.slug}`} className="card-horizontal">
+                          <Link
+                            href={`/guide/${g.slug}`}
+                            className="card-horizontal"
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_results_guides",
+                              label: g.slug,
+                            })}
+                          >
                             <div className="card-horizontal-image">
                               <div className="card-horizontal-image-inner">
                                 <RemoteCoverImage
@@ -691,6 +738,11 @@ export function SearchPageClient({
                     type="button"
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
+                    {...gaClickProps({
+                      event: "pagination_click",
+                      category: "search_pagination",
+                      label: "prev",
+                    })}
                     className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-secondary)] disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Previous page"
                   >
@@ -721,6 +773,11 @@ export function SearchPageClient({
                           key={page}
                           type="button"
                           onClick={() => goToPage(page)}
+                          {...gaClickProps({
+                            event: "pagination_click",
+                            category: "search_pagination",
+                            label: `page_${page}`,
+                          })}
                           className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                             page === currentPage
                               ? "bg-[var(--color-primary)] text-white"
@@ -738,6 +795,11 @@ export function SearchPageClient({
                     type="button"
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
+                    {...gaClickProps({
+                      event: "pagination_click",
+                      category: "search_pagination",
+                      label: "next",
+                    })}
                     className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-secondary)] disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Next page"
                   >
@@ -765,6 +827,11 @@ export function SearchPageClient({
                         <li key={town.slug}>
                           <Link
                             href={`/${town.slug}`}
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_sidebar",
+                              label: `town:${town.slug}`,
+                            })}
                             className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                           >
                             <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -787,6 +854,11 @@ export function SearchPageClient({
                         <li key={area.id}>
                           <Link
                             href={`/area/${area.slug}`}
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_sidebar",
+                              label: `area:${area.slug}`,
+                            })}
                             className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                           >
                             <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -809,6 +881,11 @@ export function SearchPageClient({
                         <li key={guide.slug}>
                           <Link
                             href={`/guide/${guide.slug}`}
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_sidebar",
+                              label: `guide:${guide.slug}`,
+                            })}
                             className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                           >
                             <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -831,6 +908,11 @@ export function SearchPageClient({
                         <li key={biz.id}>
                           <Link
                             href={`/business/${biz.slug}`}
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_sidebar",
+                              label: `business:${biz.slug}`,
+                            })}
                             className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                           >
                             <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -853,6 +935,11 @@ export function SearchPageClient({
                         <li key={svc.id}>
                           <Link
                             href={`/business/${svc.slug}`}
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "search_sidebar",
+                              label: `service:${svc.slug}`,
+                            })}
                             className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                           >
                             <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
