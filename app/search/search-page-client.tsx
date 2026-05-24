@@ -223,7 +223,6 @@ export function SearchPageClient({
 
   const setSearchSort = (next: "relevance" | "name" | "updated") => {
     if (browseMode !== "business") return;
-    gaEvent("search_filter_change", { filter: "sort", value: next });
     const params = new URLSearchParams(searchParams.toString());
     if (next === "relevance") params.delete("sort");
     else params.set("sort", next);

@@ -282,6 +282,7 @@ export function HomePage({
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!q.trim()) return;
+    gaEvent("search", { search_term: q.trim().slice(0, 200), source: "home_hero" });
     window.location.href = `/search?q=${encodeURIComponent(q)}`;
   }
 
@@ -290,6 +291,7 @@ export function HomePage({
   }
 
   function scrollToHero() {
+    gaEvent("cta_click", { source: "home_plan_section", label: "start_searching_scroll" });
     document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
     requestAnimationFrame(() => heroInputRef.current?.focus());
   }
@@ -334,6 +336,7 @@ export function HomePage({
             <div className="mb-10 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row sm:gap-4">
               <Link
                 href="/guide"
+                {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-lg font-bold text-primary shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"
               >
                 <MsIcon name="menu_book" className="!text-xl" />
@@ -341,6 +344,7 @@ export function HomePage({
               </Link>
               <Link
                 href="/search?type=towns"
+                {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
                 className="inline-flex items-center justify-center rounded-full border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
               >
                 Browse towns
@@ -374,6 +378,7 @@ export function HomePage({
                     <button
                       type="submit"
                       disabled={loading}
+                      {...gaClickProps({ event: "search_click", category: "home_hero", label: "submit_inline" })}
                       className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-primary px-6 font-semibold text-white transition-all hover:bg-primary-light active:scale-[0.98] disabled:opacity-60"
                     >
                       Search
@@ -386,6 +391,11 @@ export function HomePage({
                     <Link
                       key={label}
                       href={`/search?q=${encodeURIComponent(label.toLowerCase() + " 30A")}`}
+                      {...gaClickProps({
+                        event: "cta_click",
+                        category: "home_hero_quick",
+                        label: label.replace(/\s+/g, "_").toLowerCase(),
+                      })}
                       className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
                     >
                       {label}
@@ -419,6 +429,7 @@ export function HomePage({
               <div className="mt-10 flex justify-center md:mt-12">
                 <Link
                   href="/search?type=businesses"
+                  {...gaClickProps({ event: "nav_click", category: "home_featured", label: "view_more_businesses" })}
                   className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-8 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
                 >
                   View more
@@ -498,6 +509,11 @@ export function HomePage({
 
                         <Link
                           href={card.ctaHref}
+                          {...gaClickProps({
+                            event: "cta_click",
+                            category: "home_curator",
+                            label: card.title.replace(/\s+/g, "_").toLowerCase(),
+                          })}
                           className="mt-auto flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary-light"
                         >
                           {card.cta}

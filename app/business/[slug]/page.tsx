@@ -23,6 +23,7 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
+import { BusinessFeedbackForm } from "@/components/feedback/BusinessFeedbackForm";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -655,6 +656,17 @@ export default async function BusinessPage({ params }: Props) {
                   </div>
                 </details>
               </section>
+
+              <section className="border-t border-zinc-100 mt-10 pt-10" aria-label="Visitor feedback">
+                <details className="group">
+                  <summary className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2">
+                    Something wrong with this listing?
+                  </summary>
+                  <div className="mt-6 max-w-xl">
+                    <BusinessFeedbackForm initialListingContext={`/business/${String(b.slug)}`} />
+                  </div>
+                </details>
+              </section>
             </div>
 
             {/* Sidebar */}
@@ -819,7 +831,7 @@ export default async function BusinessPage({ params }: Props) {
                 </section>
               )}
 
-              <BusinessDirectoryDisclaimer businessSlug={String(b.slug)} />
+              <BusinessDirectoryDisclaimer variant="flag" businessSlug={String(b.slug)} />
             </aside>
           </div>
         </div>
