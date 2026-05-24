@@ -7,7 +7,6 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
-import { ClaimBusinessEmailForm } from "@/components/business/ClaimBusinessEmailForm";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
@@ -22,7 +21,6 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
-import { BusinessFeedbackForm } from "@/components/feedback/BusinessFeedbackForm";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -619,50 +617,6 @@ export default async function BusinessPage({ params }: Props) {
                   />
                 </section>
               )}
-
-              <section
-                id="listing-update-request"
-                className={`border-t border-zinc-100 pt-10 ${flags["claims"] === true ? "mt-10" : ""}`}
-                aria-label="Request listing updates"
-              >
-                <details className="group">
-                  <summary
-                    {...gaClickProps({
-                      event: "ui_open",
-                      category: "business_detail",
-                      label: `${gaBiz}_claim_toggle`,
-                    })}
-                    className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-                  >
-                    Claim or correct this listing
-                  </summary>
-                  <div className="mt-6 max-w-xl">
-                    <ClaimBusinessEmailForm
-                      embedded
-                      businessSlug={b.slug as string}
-                      businessTitle={b.title as string}
-                    />
-                  </div>
-                </details>
-              </section>
-
-              <section className="border-t border-zinc-100 mt-10 pt-10" aria-label="Visitor feedback">
-                <details className="group">
-                  <summary
-                    {...gaClickProps({
-                      event: "ui_open",
-                      category: "business_detail",
-                      label: `${gaBiz}_feedback_toggle`,
-                    })}
-                    className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-                  >
-                    Something wrong with this listing?
-                  </summary>
-                  <div className="mt-6 max-w-xl">
-                    <BusinessFeedbackForm initialListingContext={`/business/${String(b.slug)}`} />
-                  </div>
-                </details>
-              </section>
             </div>
 
             {/* Sidebar */}
