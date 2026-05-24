@@ -12,7 +12,6 @@ import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
-import { selectBusinessHighlights } from "@/lib/business/highlights";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
@@ -238,30 +237,6 @@ function ScoreBadge({ score, label }: { score: number | null; label: string }) {
   );
 }
 
-function highlightIconName(label: string): string {
-  const normalized = label.trim().toLowerCase();
-  const iconMap: Record<string, string> = {
-    family: "family_restroom",
-    "kid-friendly": "child_friendly",
-    "kid friendly": "child_friendly",
-    "pet-friendly": "pets",
-    "pet friendly": "pets",
-    casual: "deck",
-    upscale: "diamond",
-    "outdoor seating": "deck",
-    waterfront: "water",
-    "sunset views": "wb_twilight",
-    "date night": "favorite",
-    "live music": "music_note",
-    "quick bite": "lunch_dining",
-    brunch: "brunch_dining",
-    breakfast: "free_breakfast",
-    dinner: "dinner_dining",
-    groups: "groups",
-  };
-  return iconMap[normalized] ?? "check_circle";
-}
-
 export default async function BusinessPage({ params }: Props) {
   const { slug } = await params;
   const b = await loadBusiness(slug);
@@ -387,14 +362,6 @@ export default async function BusinessPage({ params }: Props) {
   const notIdealFor = b.ai_not_ideal_for as string[] | null;
   const oneLiner = b.ai_one_liner as string | null;
   const localTip = b.ai_local_tip as string | null;
-  const highlights = b.ai_highlights as string[] | null;
-  const displayHighlights = selectBusinessHighlights({
-    aiHighlights: highlights,
-    tags: tagItems,
-    categoryName: category?.name ?? null,
-    categorySlug: category?.slug ?? null,
-    max: 6,
-  });
   const familyScore = b.ai_family_score as number | null;
   const dateScore = b.ai_date_score as number | null;
   const valueScore = b.ai_value_score as number | null;
@@ -535,22 +502,6 @@ export default async function BusinessPage({ params }: Props) {
                   </span>
                 )}
               </div>
-
-              {displayHighlights.length > 0 ? (
-                <div className="mt-5 rounded-2xl bg-[var(--color-surface-container-low)] p-4 sm:p-5">
-                  <h2 className="font-headline text-lg font-bold text-zinc-900 mb-3">Highlights</h2>
-                  <ul className="grid gap-2 sm:grid-cols-2 sm:gap-x-6">
-                    {displayHighlights.map((h) => (
-                      <li key={h} className="flex items-center gap-2.5 text-zinc-700">
-                        <span className="material-symbols-outlined !text-[18px] text-[var(--color-primary)]">
-                          {highlightIconName(h)}
-                        </span>
-                        <span>{h}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
 
               {oneLiner && (
                 <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
