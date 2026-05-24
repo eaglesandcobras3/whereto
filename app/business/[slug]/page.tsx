@@ -24,6 +24,7 @@ import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { BusinessFeedbackForm } from "@/components/feedback/BusinessFeedbackForm";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -433,6 +434,8 @@ export default async function BusinessPage({ params }: Props) {
     : "";
   const hasMarkdown = cleanedMarkdown.length > 0;
 
+  const gaBiz = String(b.slug);
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
@@ -448,11 +451,31 @@ export default async function BusinessPage({ params }: Props) {
 
           {/* Editorial Breadcrumb */}
           <nav className="mb-6 flex items-center gap-2 text-sm">
-            <Link href="/" className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">Home</Link>
+            <Link
+              href="/"
+              {...gaClickProps({
+                event: "nav_click",
+                category: "business_detail_breadcrumb",
+                label: `${gaBiz}_home`,
+              })}
+              className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
+            >
+              Home
+            </Link>
             {town?.slug && (
               <>
                 <span className="text-zinc-300">/</span>
-                <Link href={`/${town.slug}`} className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">{town.name}</Link>
+                <Link
+                  href={`/${town.slug}`}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "business_detail_breadcrumb",
+                    label: `${gaBiz}_town_${town.slug}`,
+                  })}
+                  className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
+                >
+                  {town.name}
+                </Link>
               </>
             )}
             {breadcrumbCategoryLabel && (
@@ -492,7 +515,15 @@ export default async function BusinessPage({ params }: Props) {
               {/* Quick meta row */}
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-zinc-500">
                 {town?.name && (
-                  <Link href={`/${town.slug}`} className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]">
+                  <Link
+                    href={`/${town.slug}`}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "business_detail_meta",
+                      label: `${gaBiz}_town_pin`,
+                    })}
+                    className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
+                  >
                     <span className="material-symbols-outlined !text-base">place</span>
                     {town.name}
                   </Link>
@@ -644,7 +675,14 @@ export default async function BusinessPage({ params }: Props) {
                 aria-label="Request listing updates"
               >
                 <details className="group">
-                  <summary className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2">
+                  <summary
+                    {...gaClickProps({
+                      event: "ui_open",
+                      category: "business_detail",
+                      label: `${gaBiz}_claim_toggle`,
+                    })}
+                    className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                  >
                     Claim or correct this listing
                   </summary>
                   <div className="mt-6 max-w-xl">
@@ -659,7 +697,14 @@ export default async function BusinessPage({ params }: Props) {
 
               <section className="border-t border-zinc-100 mt-10 pt-10" aria-label="Visitor feedback">
                 <details className="group">
-                  <summary className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2">
+                  <summary
+                    {...gaClickProps({
+                      event: "ui_open",
+                      category: "business_detail",
+                      label: `${gaBiz}_feedback_toggle`,
+                    })}
+                    className="cursor-pointer list-none text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 decoration-zinc-400/55 hover:decoration-[var(--color-logo-navy)] hover:underline [&::-webkit-details-marker]:hidden outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                  >
                     Something wrong with this listing?
                   </summary>
                   <div className="mt-6 max-w-xl">
@@ -675,6 +720,11 @@ export default async function BusinessPage({ params }: Props) {
               {websiteHref && (
                 <a
                   href={websiteHref}
+                  {...gaClickProps({
+                    event: "outbound_click",
+                    category: "business_detail_sidebar",
+                    label: `${gaBiz}_visit_website_cta`,
+                  })}
                   target="_blank"
                   rel="noreferrer"
                   className="group flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-4 font-semibold text-white transition-all hover:bg-[var(--color-primary-light)]"
@@ -757,6 +807,11 @@ export default async function BusinessPage({ params }: Props) {
                       <li>
                         <Link
                           href={`/${town.slug}`}
+                          {...gaClickProps({
+                            event: "nav_click",
+                            category: "business_detail_sidebar",
+                            label: `${gaBiz}_town_link`,
+                          })}
                           className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                         >
                           <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -770,6 +825,11 @@ export default async function BusinessPage({ params }: Props) {
                       <li>
                         <Link
                           href={`/area/${primaryArea.slug}`}
+                          {...gaClickProps({
+                            event: "nav_click",
+                            category: "business_detail_sidebar",
+                            label: `${gaBiz}_area_${primaryArea.slug}`,
+                          })}
                           className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                         >
                           <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -790,12 +850,18 @@ export default async function BusinessPage({ params }: Props) {
                     <BusinessBrowseLinksList
                       title={town?.name ? `Similar in ${town.name}` : "Similar places"}
                       items={relatedBusinesses}
+                      analyticsCategory={`business_similar_${gaBiz}`}
                     />
                   ) : null}
                   {townId ? (
                     <p className={relatedBusinesses.length > 0 ? "mt-4" : ""}>
                       <Link
                         href={`/search?${new URLSearchParams({ town_id: townId }).toString()}`}
+                        {...gaClickProps({
+                          event: "nav_click",
+                          category: "business_detail_sidebar",
+                          label: `${gaBiz}_view_more_town_search`,
+                        })}
                         className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
                         aria-label={
                           town?.name
@@ -817,7 +883,15 @@ export default async function BusinessPage({ params }: Props) {
                   <ul className="space-y-4">
                     {townGuides.slice(0, 3).map((g) => (
                       <li key={g.slug}>
-                        <Link href={`/guide/${g.slug}`} className="group block">
+                        <Link
+                          href={`/guide/${g.slug}`}
+                          {...gaClickProps({
+                            event: "nav_click",
+                            category: "business_detail_sidebar",
+                            label: `${gaBiz}_guide_${g.slug}`,
+                          })}
+                          className="group block"
+                        >
                           <p className="font-headline text-sm font-bold leading-snug text-zinc-900 transition-colors group-hover:text-[var(--color-primary)]">
                             {g.title}
                           </p>

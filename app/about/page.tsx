@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const siteUrl = "https://whereto30a.com";
 
@@ -31,7 +32,11 @@ export default function AboutPage() {
 
       <aside className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-4 py-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
         Disclaimers, caps on monetary damages, and indemnities that apply when we depict businesses appear in{" "}
-        <Link href="/terms#directory-and-business-listings" className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
+        <Link
+          href="/terms#directory-and-business-listings"
+          {...gaClickProps({ event: "nav_click", category: "about", label: "terms_section_6-8" })}
+          className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
+        >
           Terms&nbsp;§&nbsp;6–8
         </Link>{" "}
         (effective May&nbsp;21,&nbsp;2026). This narrative is explanatory only—it{" "}
@@ -59,29 +64,49 @@ export default function AboutPage() {
       </p>
       <p>
         <strong>Owners &amp; operators.</strong> Facts you submit through onboarding, claims, corrections, imagery, attribution, or rebranding inquiries must be accurate to the best of your knowledge after reasonable inquiry. Knowing misrepresentation may void good-faith cooperation and can trigger indemnities described beside representation clauses inside{" "}
-        <Link href="/terms#directory-and-business-listings" className="font-medium underline-offset-4 hover:underline">
+        <Link
+          href="/terms#directory-and-business-listings"
+          {...gaClickProps({ event: "nav_click", category: "about", label: "terms_owners" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           Terms&nbsp;§&nbsp;5–8
         </Link>
         .
       </p>
       <p>
         <strong>Corrections.</strong> Flag inaccuracies scraped duplicates ingestion mismatches likeness disputes omitted lawful disclosures discriminatory classifications or other harmful erroneous material—with details—via{" "}
-        <Link href="/feedback" className="font-medium underline-offset-4 hover:underline">
+        <Link
+          href="/feedback"
+          {...gaClickProps({ event: "nav_click", category: "about", label: "feedback_form" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           the corrections form
         </Link>{" "}
         or{" "}
-        <a href="mailto:feedback@whereto30a.com" className="font-medium underline-offset-4 hover:underline">
+        <a
+          href="mailto:feedback@whereto30a.com"
+          {...gaClickProps({ event: "contact_click", category: "about", label: "email_feedback" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           feedback@whereto30a.com
         </a>
         . We review credible requests with commercially reasonable diligence subject to discretionary editorial pacing; see procedure at{" "}
-        <Link href="/terms#listing-information-scope" className="font-medium underline-offset-4 hover:underline">
+        <Link
+          href="/terms#listing-information-scope"
+          {...gaClickProps({ event: "nav_click", category: "about", label: "terms_listing_scope" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           Terms&nbsp;§&nbsp;6.2
         </Link>
         .
       </p>
       <p>
         To the fullest extent permitted by law—including disappointed expectations, reputational disagreement, ranking placement, automation-assisted tone, or ingestion latency—we disclaim economic fallout beyond monetary caps enumerated in{" "}
-        <Link href="/terms#limitation-of-liability" className="font-medium underline-offset-4 hover:underline">
+        <Link
+          href="/terms#limitation-of-liability"
+          {...gaClickProps({ event: "nav_click", category: "about", label: "terms_liability" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           Terms&nbsp;§&nbsp;7
         </Link>
         {" "}
@@ -109,7 +134,11 @@ Supabase Postgres + Storage`}
       <h2>List your business</h2>
       <p>
         New listings funnel through{" "}
-        <Link href="/list-your-business" className="font-medium underline-offset-4 hover:underline">
+        <Link
+          href="/list-your-business"
+          {...gaClickProps({ event: "nav_click", category: "about", label: "list_business" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           List your business
         </Link>
         . Editors review submissions before anything goes live inside our publishing workflow.
@@ -118,17 +147,29 @@ Supabase Postgres + Storage`}
       <h2>Contact</h2>
       <p>
         General inbox:{" "}
-        <a href="mailto:hello@whereto30a.com" className="font-medium underline-offset-4 hover:underline">
+        <a
+          href="mailto:hello@whereto30a.com"
+          {...gaClickProps({ event: "contact_click", category: "about", label: "email_hello" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           hello@whereto30a.com
         </a>
       </p>
       <p>
         Listing QA / experiential feedback:{" "}
-        <a href="mailto:feedback@whereto30a.com" className="font-medium underline-offset-4 hover:underline">
+        <a
+          href="mailto:feedback@whereto30a.com"
+          {...gaClickProps({ event: "contact_click", category: "about", label: "email_feedback_contact" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           feedback@whereto30a.com
         </a>{" "}
         ·{" "}
-        <Link href="/feedback" className="font-medium underline-offset-4 hover:underline">
+        <Link
+          href="/feedback"
+          {...gaClickProps({ event: "nav_click", category: "about", label: "feedback_form_contact" })}
+          className="font-medium underline-offset-4 hover:underline"
+        >
           corrections form
         </Link>
       </p>

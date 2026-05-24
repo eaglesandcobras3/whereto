@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const siteUrl = "https://whereto30a.com";
 
@@ -112,7 +113,12 @@ export default function TermsPage() {
       </ul>
       <p>
         <strong>Correction policy.</strong> Share credible corrections through our{" "}
-        <Link href="/feedback">listing feedback form</Link>—whether you&apos;re flagging inaccuracies, misleading comparisons, likeness disputes,
+        <Link
+          href="/feedback"
+          {...gaClickProps({ event: "nav_click", category: "terms", label: "feedback_form" })}
+        >
+          listing feedback form
+        </Link>—whether you&apos;re flagging inaccuracies, misleading comparisons, likeness disputes,
         scraped or imported duplicates, OCR or ingestion issues, suspected impersonations, discriminatory taxonomy that ought not remain, infringing or unlawful
         editorial copy; omission of plainly required disclosures when you identify the statute or rule and furnish substantiation—we
         review good-faith requests with commercially reasonable diligence and endeavor to annotate, downgrade prominence, correct—or remove
@@ -185,10 +191,21 @@ export default function TermsPage() {
 
       <h2>12. Contact</h2>
       <p>
-        Questions about these Terms: <a href="mailto:hello@whereto30a.com">hello@whereto30a.com</a>
+        Questions about these Terms:{" "}
+        <a
+          href="mailto:hello@whereto30a.com"
+          {...gaClickProps({ event: "contact_click", category: "terms", label: "email_terms" })}
+        >
+          hello@whereto30a.com
+        </a>
       </p>
       <p>
-        <Link href="/privacy">Privacy Policy</Link>
+        <Link
+          href="/privacy"
+          {...gaClickProps({ event: "nav_click", category: "terms", label: "privacy" })}
+        >
+          Privacy Policy
+        </Link>
       </p>
     </SiteDocument>
   );

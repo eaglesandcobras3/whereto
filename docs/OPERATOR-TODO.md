@@ -39,6 +39,8 @@
 | `NEXT_PUBLIC_INCLUDE_DRAFT_CONTENT` | *(legacy / unused)* | No longer read by the app: browse and content slugs are **not** filtered by `status` in code. You can remove this from env if set. |
 | `NEXT_PUBLIC_DIRECTUS_URL` | (Optional) Directus origin if you use it for editing only | **Not used for public image URLs** at runtime. |
 | `ENABLE_SUPABASE_DIAG_UI` | Set to `1` on a **hosted** preview if you need `/dev/supabase-check` there. | **Off in production by default.** In `NODE_ENV=development` the page is available without this. |
+| **`FTS_SEARCH_ENABLED`** | Set to `true` (server-side only) | Switches search from ilike to Postgres full-text search (`search_vector`). Requires migration **`20260524120000_fts_businesses.sql`** to be applied first. |
+| **`OPENAI_API_KEY`** | OpenAI | Already required for intent parsing. Also used by **`local/generate-embeddings.ts`** for `text-embedding-3-small` embeddings. |
 | `ADMIN_USER_IDS` | Comma-separated Supabase Auth user UUIDs | Who can open `/admin` in the Next app (optional in-app shell). |
 | `ADMIN_EMAILS` | Comma-separated emails | Alternative to `ADMIN_USER_IDS` for `/admin` access. |
 | `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). Keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. **`services_nav`**: set **`true`** to show the **Services** item in the header browse nav (default **off**). **`guide_hub_search_callout`**: set **`true`** to show the **“Ready to Explore?” / Start Searching** block at the bottom of **`/guide`** (default **off**). Optional `ff_overrides` cookie merges the same shape (dev). |
@@ -96,6 +98,43 @@ After deploying the premium redesign code, complete these steps to enable new to
 
 ---
 
+## Search quality enrichment (run once, in order)
+
+These one-time scripts populate fields that power NL search, FTS, and semantic similarity. Run them after Directus data is loaded.
+
+### 1. Backfill `town_id` on businesses
+```bash
+npx tsx local/backfill-town-id.ts --dry-run   # preview
+npx tsx local/backfill-town-id.ts             # write
+```
+Matches businesses to towns via address → slug → title. Unmatched businesses can be set manually in Directus.
+
+### 2. Enrich categories, keywords, intent tags, and price level
+```bash
+npx tsx local/enrich-categories-and-keywords.ts --dry-run   # preview
+npx tsx local/enrich-categories-and-keywords.ts             # write
+```
+Uses OpenAI `gpt-4o-mini` to assign `primary_category_id`, `search_keywords`, `intent_tags` (JSON array), and `price_level` (`1`–`4`). Requires `OPENAI_API_KEY`. Creates the 6 standard categories in DB if missing.
+
+### 3. Apply Postgres FTS migration
+In Supabase SQL Editor, run **`supabase/migrations/20260524120000_fts_businesses.sql`**. This adds `search_vector tsvector` to `businesses` with a weighted trigger (title=A, keywords=B, excerpt=C, content=D), a GIN index, and a backfill of existing rows. The `businesses_view` picks it up automatically (uses `SELECT b.*`).
+
+Then set **`FTS_SEARCH_ENABLED=true`** in your environment (Vercel + `.env.local`) to switch search from ilike to FTS.
+
+### 4. Enable pgvector and apply embeddings migration
+- In Supabase **Dashboard → Database → Extensions**, search "vector" and enable **pgvector**.
+- In SQL Editor, run **`supabase/migrations/20260524130000_pgvector_embeddings.sql`**. This adds `embedding vector(1536)`, an HNSW index, and the `hybrid_search_businesses()` RPC function.
+
+### 5. Generate embeddings
+```bash
+npx tsx local/generate-embeddings.ts --dry-run   # preview (no API calls)
+npx tsx local/generate-embeddings.ts             # write
+npx tsx local/generate-embeddings.ts --force     # regenerate all
+```
+Uses `text-embedding-3-small` (1536 dims). Run this after enrichment so keywords are baked into the embedding text. Re-run whenever you add or edit a significant number of listings.
+
+---
+
 ## Not done in code yet (optional follow-ups)
 
 - **Stricter rate limits:** move from in-memory per instance to Vercel KV / edge if you need global quotas.
@@ -107,6 +146,7 @@ After deploying the premium redesign code, complete these steps to enable new to
 
 | Date | What changed |
 |------|----------------|
+| 2026-05-24 | **Search enrichment + NL search fix:** (1) NL intent town resolution — `intent.location.town` now resolves to a `town_id` filter so "restaurants near Seaside" returns Seaside results. (2) Focused ilike token — attributes from intent (not the full NL phrase) drive the text match; category+town-only queries skip ilike entirely. (3) **Postgres FTS:** apply `20260524120000_fts_businesses.sql`; set `FTS_SEARCH_ENABLED=true` to activate. (4) **pgvector embeddings:** enable pgvector extension in Supabase dashboard; apply `20260524130000_pgvector_embeddings.sql`; run `npx tsx local/generate-embeddings.ts`. (5) **Enrichment scripts:** `local/backfill-town-id.ts` sets `town_id`; `local/enrich-categories-and-keywords.ts` sets `primary_category_id`, `search_keywords`, `intent_tags`, `price_level` via OpenAI. See **Search quality enrichment** section above. |
 | 2026-05-23 | **Sitemap / robots / canonical URL resilience:** `/sitemap.xml` business URLs now come from **`businesses_view`** using the **same browse-visibility filters** as **`/business/[slug]`** (no more sitemap URLs that **`notFound`**). Wrapped sitemap assembly in **try/catch** with **static-hub-only fallback** to avoid crawler 500 spikes; **`revalidate = 3600`** on the route. **`getSiteUrl()`** falls back to **`VERCEL_PROJECT_PRODUCTION_URL`** on Vercel **production** when **`NEXT_PUBLIC_SITE_URL`** is unset. **`robots.txt`** **`Host:`** uses hostname only (**`canonicalSiteHostname()`**). |
 | 2026-05-21 | **Social defaults:** Footer **Instagram** / **TikTok** default to **@whereto30a** (`lib/site-social.ts`). Override or hide via **`NEXT_PUBLIC_INSTAGRAM_URL`** / **`NEXT_PUBLIC_TIKTOK_URL`** per env table. |
 | 2026-05-21 | **Terms refresh (operators & listings):** **`/terms`** Section 6 now documents directory disclaimers—including automation-assisted copy correction discretion third-party dealings liability carve-outs—with anchors **`#directory-and-business-listings`** and **`#listing-information-scope`**. **`#limitation-of-liability`** anchors Section&nbsp;7. Expanded operator representations + indemnities (§§5&nbsp;&&nbsp;8). **`/about`**, **`/feedback`**, **`/list-your-business`**, **`SiteFooter`**, **`BusinessDirectoryDisclaimer`** (business sidebar) cite those sections. Operators should sanity-check copy with counsel before relying on storefront language alone. |

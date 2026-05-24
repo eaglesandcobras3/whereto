@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   name: string;
@@ -8,6 +9,8 @@ type Props = {
   imageUrl?: string | null;
   /** Show compact variant */
   compact?: boolean;
+  /** GA4 delegated click **`event_category`** */
+  analyticsCategory?: string;
 };
 
 function heroGradient(slug: string): string {
@@ -24,10 +27,18 @@ function heroGradient(slug: string): string {
   return palettes[h % palettes.length];
 }
 
-export function TownCard({ name, slug, subtitle, imageUrl, compact = false }: Props) {
+export function TownCard({
+  name,
+  slug,
+  subtitle,
+  imageUrl,
+  compact = false,
+  analyticsCategory = "town_card",
+}: Props) {
   return (
     <Link
       href={`/${slug}`}
+      {...gaClickProps({ event: "nav_click", category: analyticsCategory, label: slug })}
       className={`
         group block overflow-hidden rounded-[var(--radius-listing)]
         border border-[var(--color-border)] bg-[var(--color-surface)]

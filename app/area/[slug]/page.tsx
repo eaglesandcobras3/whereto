@@ -6,6 +6,7 @@ import {
   type BrowseBusinessCard,
 } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
@@ -229,7 +230,11 @@ export default async function AreaPage({ params }: Props) {
           />
 
           <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm">
-            <Link href="/" className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">
+            <Link
+              href="/"
+              {...gaClickProps({ event: "nav_click", category: "area_breadcrumb", label: "home" })}
+              className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
+            >
               Home
             </Link>
             {area.town_slug && area.town_name && (
@@ -237,6 +242,11 @@ export default async function AreaPage({ params }: Props) {
                 <span className="text-zinc-300">/</span>
                 <Link
                   href={`/${area.town_slug}`}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "area_breadcrumb",
+                    label: area.town_slug,
+                  })}
                   className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
                 >
                   {area.town_name}
@@ -276,6 +286,11 @@ export default async function AreaPage({ params }: Props) {
                 <div className="mt-3 text-sm text-zinc-500">
                   <Link
                     href={`/${area.town_slug}`}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "area_header",
+                      label: area.town_slug,
+                    })}
                     className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
                   >
                     <span className="material-symbols-outlined !text-base">place</span>
@@ -308,6 +323,11 @@ export default async function AreaPage({ params }: Props) {
                     <li>
                       <Link
                         href={`/${sidebar.townLink.slug}`}
+                        {...gaClickProps({
+                          event: "nav_click",
+                          category: "area_sidebar",
+                          label: sidebar.townLink.slug,
+                        })}
                         className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                       >
                         <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -329,6 +349,11 @@ export default async function AreaPage({ params }: Props) {
                       <li key={guide.slug}>
                         <Link
                           href={`/guide/${guide.slug}`}
+                          {...gaClickProps({
+                            event: "nav_click",
+                            category: "area_sidebar",
+                            label: guide.slug,
+                          })}
                           className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                         >
                           <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -352,12 +377,21 @@ export default async function AreaPage({ params }: Props) {
                   }
                 >
                   {sidebar.businesses.length > 0 ? (
-                    <BusinessBrowseLinksList title="Featured Businesses" items={sidebar.businesses} />
+                    <BusinessBrowseLinksList
+                      title="Featured Businesses"
+                      items={sidebar.businesses}
+                      analyticsCategory={`area_sidebar_businesses_${area.slug}`}
+                    />
                   ) : null}
                   {sidebar.viewMoreHref ? (
                     <p className={sidebar.businesses.length > 0 ? "mt-4" : ""}>
                       <Link
                         href={sidebar.viewMoreHref}
+                        {...gaClickProps({
+                          event: "nav_click",
+                          category: "area_sidebar",
+                          label: "view_more_search",
+                        })}
                         className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
                         aria-label={`View more businesses in ${area.title}`}
                       >

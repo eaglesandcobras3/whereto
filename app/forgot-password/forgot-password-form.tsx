@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -32,7 +33,11 @@ export function ForgotPasswordForm() {
     return (
       <div className="mt-6">
         <p className="text-sm text-zinc-600">{message}</p>
-        <Link href="/login" className="mt-4 block text-sm text-teal-700 hover:underline">
+        <Link
+          href="/login"
+          {...gaClickProps({ event: "nav_click", category: "auth_forgot", label: "back_to_login_success" })}
+          className="mt-4 block text-sm text-teal-700 hover:underline"
+        >
           ← Back to sign in
         </Link>
       </div>
@@ -53,6 +58,7 @@ export function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={status === "loading"}
+          {...gaClickProps({ event: "cta_click", category: "auth_forgot", label: "submit" })}
           className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-50"
         >
           {status === "loading" ? "Sending..." : "Send reset link"}
@@ -61,7 +67,11 @@ export function ForgotPasswordForm() {
       {message ? (
         <p className="mt-4 text-sm text-red-600">{message}</p>
       ) : null}
-      <Link href="/login" className="mt-4 text-sm text-teal-700 hover:underline">
+      <Link
+        href="/login"
+        {...gaClickProps({ event: "nav_click", category: "auth_forgot", label: "back_to_login" })}
+        className="mt-4 text-sm text-teal-700 hover:underline"
+      >
         ← Back to sign in
       </Link>
     </>

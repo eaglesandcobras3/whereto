@@ -13,6 +13,7 @@ import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
 import { filterEnrichedToPublishedBusinesses } from "@/lib/shop/filter-enriched-published-businesses";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
 
@@ -138,6 +139,11 @@ export default async function SeoIntentPage({ params }: Props) {
           <nav className="mb-6 flex items-center gap-2 text-sm">
             <Link
               href="/"
+              {...gaClickProps({
+                event: "nav_click",
+                category: "intent_breadcrumb",
+                label: "home",
+              })}
               className="text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
             >
               Home
@@ -157,6 +163,11 @@ export default async function SeoIntentPage({ params }: Props) {
             </svg>
             <Link
               href={`/${townSlug}`}
+              {...gaClickProps({
+                event: "nav_click",
+                category: "intent_breadcrumb",
+                label: townSlug,
+              })}
               className="text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
             >
               {townLabel}
@@ -209,7 +220,15 @@ export default async function SeoIntentPage({ params }: Props) {
           <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-[var(--color-text-secondary)]">
             <li>
               Use{" "}
-              <Link href="/" className="text-[var(--color-primary)] hover:underline">
+              <Link
+                href="/"
+                {...gaClickProps({
+                  event: "nav_click",
+                  category: "intent_tips",
+                  label: "ai_search",
+                })}
+                className="text-[var(--color-primary)] hover:underline"
+              >
                 AI search
               </Link>{" "}
               to refine by vibe, dietary needs, or time of day.
@@ -218,6 +237,11 @@ export default async function SeoIntentPage({ params }: Props) {
               Town guides cover broader picks — see the{" "}
               <Link
                 href={`/${townSlug}`}
+                {...gaClickProps({
+                  event: "nav_click",
+                  category: "intent_tips",
+                  label: townSlug,
+                })}
                 className="text-[var(--color-primary)] hover:underline"
               >
                 {townLabel} guide
@@ -242,6 +266,11 @@ export default async function SeoIntentPage({ params }: Props) {
                 <Link
                   key={r.slug}
                   href={`/${r.slug}`}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "intent_related",
+                    label: r.slug,
+                  })}
                   className="
                     rounded-xl border border-[var(--color-border)]
                     bg-[var(--color-surface)] p-4
@@ -263,6 +292,11 @@ export default async function SeoIntentPage({ params }: Props) {
         <footer className="flex flex-wrap items-center justify-center gap-6 border-t border-[var(--color-border)] pt-8">
           <Link
             href={`/${townSlug}`}
+            {...gaClickProps({
+              event: "nav_click",
+              category: "intent_footer",
+              label: townSlug,
+            })}
             className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
           >
             <svg
@@ -282,6 +316,11 @@ export default async function SeoIntentPage({ params }: Props) {
           </Link>
           <Link
             href="/"
+            {...gaClickProps({
+              event: "nav_click",
+              category: "intent_footer",
+              label: "ask_ai",
+            })}
             className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
           >
             <svg
@@ -301,6 +340,11 @@ export default async function SeoIntentPage({ params }: Props) {
           </Link>
           <Link
             href={PRIMARY_REGION_HUB_PATH}
+            {...gaClickProps({
+              event: "nav_click",
+              category: "intent_footer",
+              label: "region_overview",
+            })}
             className="text-sm font-medium text-[var(--color-primary)] hover:underline"
           >
             Region overview

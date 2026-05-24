@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MarkdownBusinessCardData } from "@/lib/data/markdown-business-cards";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   slug: string;
@@ -22,7 +23,15 @@ export function MarkdownBusinessCard({ slug, markdownNote, business }: Props) {
 
   return (
     <div className="not-prose my-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-premium-sm transition-shadow hover:shadow-md">
-      <Link href={href} className="group flex gap-4 p-4 sm:gap-5 sm:p-5">
+      <Link
+        href={href}
+        {...gaClickProps({
+          event: "nav_click",
+          category: "markdown_card",
+          label: business?.slug ?? slug,
+        })}
+        className="group flex gap-4 p-4 sm:gap-5 sm:p-5"
+      >
         {thumb ? (
           <Image
             src={thumb}

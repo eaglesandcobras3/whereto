@@ -2,15 +2,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   title: string;
   items: BrowseBusinessCard[];
   /** e.g. `mb-0` to align with a section that adds its own spacing */
   className?: string;
+  /** GA4 delegated click **`event_category`** — identifies placement on the site */
+  analyticsCategory?: string;
 };
 
-export function BusinessBrowseLinksList({ title, items, className = "" }: Props) {
+export function BusinessBrowseLinksList({
+  title,
+  items,
+  className = "",
+  analyticsCategory = "browse_business_list",
+}: Props) {
   if (items.length === 0) return null;
   return (
     <section className={className}>
@@ -26,6 +34,7 @@ export function BusinessBrowseLinksList({ title, items, className = "" }: Props)
             <li key={rb.id}>
               <Link
                 href={`/business/${rb.slug}`}
+                {...gaClickProps({ event: "nav_click", category: analyticsCategory, label: rb.slug })}
                 className="group flex gap-3 rounded-xl p-1 transition-colors hover:bg-[var(--color-surface-container-low)]"
               >
                 {thumb ? (

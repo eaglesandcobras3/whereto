@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const siteUrl = "https://whereto30a.com";
 
@@ -93,10 +94,21 @@ export default function PrivacyPage() {
 
       <h2>Contact</h2>
       <p>
-        Privacy questions: <a href="mailto:hello@whereto30a.com">hello@whereto30a.com</a>
+        Privacy questions:{" "}
+        <a
+          href="mailto:hello@whereto30a.com"
+          {...gaClickProps({ event: "contact_click", category: "privacy", label: "email_privacy" })}
+        >
+          hello@whereto30a.com
+        </a>
       </p>
       <p>
-        <Link href="/terms">Terms of Service</Link>
+        <Link
+          href="/terms"
+          {...gaClickProps({ event: "nav_click", category: "privacy", label: "terms" })}
+        >
+          Terms of Service
+        </Link>
       </p>
     </SiteDocument>
   );

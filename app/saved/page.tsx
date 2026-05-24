@@ -2,6 +2,7 @@
 
 import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Collection = { id: number; name: string; sort_order: number };
 type SaveRow = {
@@ -85,7 +86,15 @@ export default function SavedPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <p className="text-zinc-700">Sign in to see saved places.</p>
-        <Link href="/login" className="mt-4 inline-block text-teal-700 underline">
+        <Link
+          href="/login"
+          {...gaClickProps({
+            event: "nav_click",
+            category: "saved_auth",
+            label: "login",
+          })}
+          className="mt-4 inline-block text-teal-700 underline"
+        >
           Sign in
         </Link>
       </div>
@@ -96,7 +105,15 @@ export default function SavedPage() {
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-zinc-900">Saved</h1>
-        <Link href="/" className="text-sm text-[var(--accent)] hover:underline">
+        <Link
+          href="/"
+          {...gaClickProps({
+            event: "nav_click",
+            category: "saved_list",
+            label: "search",
+          })}
+          className="text-sm text-[var(--accent)] hover:underline"
+        >
           Search
         </Link>
       </div>
@@ -140,6 +157,11 @@ export default function SavedPage() {
           />
           <button
             type="submit"
+            {...gaClickProps({
+              event: "cta_click",
+              category: "saved_collections",
+              label: "add_collection",
+            })}
             className="shrink-0 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
             Add
@@ -181,6 +203,11 @@ export default function SavedPage() {
                   {s.businesses.slug ? (
                     <Link
                       href={`/business/${s.businesses.slug}`}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "saved_list",
+                        label: s.businesses.slug,
+                      })}
                       className="text-sm text-[var(--accent)] hover:underline"
                     >
                       Details

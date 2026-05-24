@@ -23,6 +23,7 @@ import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 /** Deterministic shuffle using mulberry32 PRNG with daily seed */
 function shuffleWithDailySeed<T>(items: T[]): T[] {
@@ -355,7 +356,15 @@ function BasicTownPage({
           />
 
           <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm">
-            <Link href="/" className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]">
+            <Link
+              href="/"
+              {...gaClickProps({
+                event: "nav_click",
+                category: "town_guide_breadcrumb",
+                label: `${town.slug}_home`,
+              })}
+              className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
+            >
               Home
             </Link>
             <span className="text-zinc-300">/</span>
@@ -421,6 +430,11 @@ function BasicTownPage({
                       <li key={area.id}>
                         <Link
                           href={`/area/${area.slug}`}
+                          {...gaClickProps({
+                            event: "nav_click",
+                            category: "town_guide_sidebar",
+                            label: `${town.slug}_area_${area.slug}`,
+                          })}
                           className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                         >
                           <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -443,6 +457,11 @@ function BasicTownPage({
                       <li key={guide.slug}>
                         <Link
                           href={`/guide/${guide.slug}`}
+                          {...gaClickProps({
+                            event: "nav_click",
+                            category: "town_guide_sidebar",
+                            label: `${town.slug}_guide_${guide.slug}`,
+                          })}
                           className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                         >
                           <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
@@ -465,10 +484,19 @@ function BasicTownPage({
                       : ""
                   }
                 >
-                  <BusinessBrowseLinksList title="Featured Businesses" items={sidebar.businesses} />
+                  <BusinessBrowseLinksList
+                    title="Featured Businesses"
+                    items={sidebar.businesses}
+                    analyticsCategory={`town_sidebar_businesses_${town.slug}`}
+                  />
                   <p className="mt-4">
                     <Link
                       href={`/search?${new URLSearchParams({ town_id: town.id }).toString()}`}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "town_guide_sidebar",
+                        label: `${town.slug}_view_more_search`,
+                      })}
                       className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
                       aria-label={`View more businesses in ${town.name}`}
                     >

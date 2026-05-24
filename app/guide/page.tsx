@@ -7,6 +7,7 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { loadHubMainGuideMarkdown } from "@/lib/data/load-hub-main-guide-markdown";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const HUB_FEATURED_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
@@ -149,6 +150,11 @@ export default async function GuidePage() {
                 <Link
                   key={town.id}
                   href={`/${town.slug}`}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_towns",
+                    label: town.slug,
+                  })}
                   className="group flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
                 >
                   <div className="flex flex-1 flex-col gap-3">
@@ -230,6 +236,11 @@ export default async function GuidePage() {
               <div className="mt-4 flex gap-2">
                 <Link
                   href="/alys-beach"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "alys-beach",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Alys Beach
@@ -237,6 +248,11 @@ export default async function GuidePage() {
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
                   href="/rosemary-beach"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "rosemary-beach",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Rosemary Beach
@@ -260,6 +276,11 @@ export default async function GuidePage() {
               <div className="mt-4 flex gap-2">
                 <Link
                   href="/seaside"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "seaside",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Seaside
@@ -267,6 +288,11 @@ export default async function GuidePage() {
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
                   href="/watercolor"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "watercolor",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   WaterColor
@@ -290,6 +316,11 @@ export default async function GuidePage() {
               <div className="mt-4 flex gap-2">
                 <Link
                   href="/grayton-beach"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "grayton-beach",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Grayton Beach
@@ -297,6 +328,11 @@ export default async function GuidePage() {
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
                   href="/seaside"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "seaside",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Seaside
@@ -320,6 +356,11 @@ export default async function GuidePage() {
               <div className="mt-4 flex gap-2">
                 <Link
                   href="/santa-rosa-beach"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "santa-rosa-beach",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Santa Rosa Beach
@@ -327,6 +368,11 @@ export default async function GuidePage() {
                 <span className="text-[var(--color-text-tertiary)]">•</span>
                 <Link
                   href="/inlet-beach"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_best_for",
+                    label: "inlet-beach",
+                  })}
                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Inlet Beach
@@ -347,6 +393,11 @@ export default async function GuidePage() {
                 <Link
                   key={guide.slug}
                   href={`/guide/${guide.slug}`}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_resources",
+                    label: guide.slug,
+                  })}
                   className="group flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm transition-all hover:shadow-md hover:border-[var(--color-primary)]"
                 >
                   <div className="flex items-center gap-4">
@@ -382,6 +433,11 @@ export default async function GuidePage() {
               </p>
               <Link
                 href="/"
+                {...gaClickProps({
+                  event: "cta_click",
+                  category: "guide_cta",
+                  label: "start_searching",
+                })}
                 className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-bold text-[var(--color-primary)] transition-all hover:shadow-lg"
               >
                 <span className="material-symbols-outlined">search</span>

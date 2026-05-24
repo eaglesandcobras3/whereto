@@ -67,6 +67,12 @@ export async function buildMinimalSearchResult(
      * ilike pattern — it matched nothing. When true, list visible non-archived rows without a text match.
      */
     skipIlikeTextFilter?: boolean;
+    /**
+     * Focused search term derived from intent attributes or a de-noised query, replacing
+     * the raw query for the ilike so NL phrases like "restaurants near Seaside" don't get
+     * matched verbatim against listing text.
+     */
+    searchTermOverride?: string;
   },
 ): Promise<SearchResultPayload> {
   const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 12));
@@ -74,7 +80,11 @@ export async function buildMinimalSearchResult(
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  const q = sanitizeIlikeToken(options.rawQuery) || sanitizeIlikeToken(options.normalizedQuery) || "a";
+  const ilikeSource = options.searchTermOverride ?? options.rawQuery;
+  const searchToken = sanitizeIlikeToken(ilikeSource) || sanitizeIlikeToken(options.normalizedQuery) || "";
+  const q = searchToken || "a";
+
+  const FTS_ENABLED = process.env.FTS_SEARCH_ENABLED === "true";
 
   let query = supabase
     .from("businesses_view")
@@ -87,9 +97,16 @@ export async function buildMinimalSearchResult(
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (!options.skipIlikeTextFilter) {
-    query = query.or(
-      `title.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%,content.ilike.%${q}%`,
-    );
+    if (FTS_ENABLED && searchToken) {
+      query = query.textSearch("search_vector", searchToken, {
+        type: "websearch",
+        config: "english",
+      });
+    } else {
+      query = query.or(
+        `title.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%,content.ilike.%${q}%`,
+      );
+    }
   }
 
   if (options.constrainTownId) {

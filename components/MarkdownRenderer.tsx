@@ -6,6 +6,7 @@ import {
   extractBusinessCardSlugs,
   preprocessMarkdownForBusinessCards,
 } from "@/lib/markdown/business-cards-syntax";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   content: string;
@@ -57,7 +58,16 @@ export async function MarkdownRenderer({ content, className = "" }: Props) {
               );
             }
             return (
-              <a href={href} title={title} {...rest}>
+              <a
+                href={href}
+                title={title}
+                {...gaClickProps({
+                  event: "nav_click",
+                  category: "markdown_link",
+                  label: href,
+                })}
+                {...rest}
+              >
                 {children}
               </a>
             );

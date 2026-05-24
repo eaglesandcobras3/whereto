@@ -110,6 +110,47 @@ export async function runSearch(options: {
     if (cat?.id) filterCategoryId = cat.id as string;
   }
 
+  // Resolve town name from intent when no explicit town filter was provided via URL.
+  let resolvedTownId = options.constrainTownId;
+  if (!resolvedTownId && intent.location?.town && !options.skipIlikeTextFilter) {
+    const townName = intent.location.town;
+    const townSlug = townName.toLowerCase().replace(/\s+/g, "-");
+    const { data: townRow } = await supabase
+      .from("towns")
+      .select("id")
+      .or(`slug.eq.${townSlug},title.ilike.${townName}`)
+      .maybeSingle();
+    if (townRow?.id) resolvedTownId = String(townRow.id);
+  }
+
+  // Build a focused ilike term so the query doesn't try to match the full NL phrase.
+  // When intent parsed attributes ("kid-friendly", "family"), use those as the search
+  // token. If town/category were resolved from intent but no attributes remain, skip
+  // the ilike entirely so filters alone drive results.
+  let searchTermOverride: string | undefined;
+  let skipIlike = options.skipIlikeTextFilter;
+  if (!skipIlike) {
+    const intentResolved = !!(resolvedTownId !== options.constrainTownId || filterCategoryId);
+    if (intent.attributes.length > 0) {
+      searchTermOverride = intent.attributes.join(" ");
+    } else if (intentResolved) {
+      // Category and/or town resolved from NL — strip noise words so the ilike doesn't
+      // consume the whole phrase. If nothing meaningful remains, let filters drive results.
+      const noisePattern = /\b(near|in|at|by|for|around|the|a|an|and|of|with|some|any|good|best|great|top)\b/gi;
+      const townName = intent.location?.town ?? "";
+      const stripped = options.rawQuery
+        .replace(new RegExp(`\\b${townName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"), "")
+        .replace(noisePattern, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!stripped) {
+        skipIlike = true;
+      } else {
+        searchTermOverride = stripped;
+      }
+    }
+  }
+
   return buildMinimalSearchResult(supabase, {
     rawQuery: options.rawQuery,
     normalizedQuery: normalized,
@@ -118,11 +159,12 @@ export async function runSearch(options: {
     openaiKey: options.openaiKey,
     page: options.page,
     pageSize: options.pageSize,
-    constrainTownId: options.constrainTownId,
+    constrainTownId: resolvedTownId,
     constrainAreaId: options.constrainAreaId,
     requiredHasPhysicalLocation: options.requiredHasPhysicalLocation,
     sortMode: options.sortMode,
     primaryCategoryId: filterCategoryId,
-    skipIlikeTextFilter: options.skipIlikeTextFilter,
+    skipIlikeTextFilter: skipIlike,
+    searchTermOverride,
   });
 }

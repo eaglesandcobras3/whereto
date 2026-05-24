@@ -3,6 +3,7 @@ import { SectionBlock } from "@/components/discovery/SectionBlock";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getRegionDescriptor, getTownDescriptor } from "@/lib/data/town-descriptors";
 import type { AdjacentTown } from "@/lib/data/town-hub";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type RegionRecord = { id: string; name: string; slug: string };
 
@@ -28,6 +29,7 @@ export function RegionHubView({
             <div className="flex justify-center gap-4 pt-2">
               <Link
                 href="/"
+                {...gaClickProps({ event: "nav_click", category: "region_hub", label: "ai_search" })}
                 className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] transition-colors"
               >
                 <svg

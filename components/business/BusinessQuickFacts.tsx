@@ -1,5 +1,6 @@
 import { summarizeBusinessHours } from "@/lib/business/format-business-hours";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   address?: string | null;
@@ -117,6 +118,11 @@ export function BusinessQuickFacts({
                   <p>
                     <a
                       href={mapsHref}
+                      {...gaClickProps({
+                        event: "outbound_click",
+                        category: "business_essentials",
+                        label: "maps",
+                      })}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
@@ -140,6 +146,11 @@ export function BusinessQuickFacts({
                 {phoneLink ? (
                   <a
                     href={phoneLink}
+                    {...gaClickProps({
+                      event: "contact_click",
+                      category: "business_essentials",
+                      label: "phone",
+                    })}
                     className="break-all text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
                   >
                     {phon}
@@ -173,6 +184,11 @@ export function BusinessQuickFacts({
               <p className="mt-1 break-all">
                 <a
                   href={externalWebsiteHref(site) ?? "#"}
+                  {...gaClickProps({
+                    event: "outbound_click",
+                    category: "business_essentials",
+                    label: "website",
+                  })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
@@ -192,6 +208,11 @@ export function BusinessQuickFacts({
               <p className="mt-1 break-all">
                 <a
                   href={`mailto:${encodeURIComponent(mail)}`}
+                  {...gaClickProps({
+                    event: "contact_click",
+                    category: "business_essentials",
+                    label: "email",
+                  })}
                   className="text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
                 >
                   {mail}
@@ -209,6 +230,11 @@ export function BusinessQuickFacts({
                 <p>
                   <a
                     href={externalWebsiteHref(menu) ?? "#"}
+                    {...gaClickProps({
+                      event: "outbound_click",
+                      category: "business_essentials",
+                      label: "menu",
+                    })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"
@@ -222,6 +248,11 @@ export function BusinessQuickFacts({
                 <p>
                   <a
                     href={externalWebsiteHref(booking) ?? "#"}
+                    {...gaClickProps({
+                      event: "outbound_click",
+                      category: "business_essentials",
+                      label: "book",
+                    })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"

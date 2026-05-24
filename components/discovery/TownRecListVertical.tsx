@@ -3,11 +3,16 @@ import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-
 import { TagPills } from "@/components/discovery/TagPills";
 import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
-type Props = { enriched: EnrichedRecommendationPayload };
+type Props = {
+  enriched: EnrichedRecommendationPayload;
+  /** GA4 delegated click **`event_category`** — e.g. SEO intent page vs town guide */
+  analyticsListKey?: string;
+};
 
 /** SEO-friendly vertical stack of picks (no prominent stars). */
-export function TownRecListVertical({ enriched }: Props) {
+export function TownRecListVertical({ enriched, analyticsListKey = "town_intent_recs" }: Props) {
   if (!enriched.recommendations.length) {
     return (
       <p className="text-sm text-[var(--color-text-tertiary)]">
@@ -26,6 +31,7 @@ export function TownRecListVertical({ enriched }: Props) {
           image_url?: string | null;
         };
         const seed = b.slug ?? r.business_id;
+        const listLabel = String(b.slug ?? r.business_id);
         const websiteHref = externalWebsiteHref(b.website ?? null);
         return (
           <li
@@ -35,6 +41,11 @@ export function TownRecListVertical({ enriched }: Props) {
             {b.slug ? (
               <Link
                 href={`/business/${b.slug}`}
+                {...gaClickProps({
+                  event: "nav_click",
+                  category: analyticsListKey,
+                  label: `${listLabel}_thumb`,
+                })}
                 className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
               >
                 <ListingThumbnail
@@ -58,6 +69,11 @@ export function TownRecListVertical({ enriched }: Props) {
                   {b.slug ? (
                     <Link
                       href={`/business/${b.slug}`}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: analyticsListKey,
+                        label: `${listLabel}_title`,
+                      })}
                       className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition-colors"
                     >
                       {b.name ?? "Business"}
@@ -74,6 +90,11 @@ export function TownRecListVertical({ enriched }: Props) {
                 {b.slug ? (
                   <Link
                     href={`/business/${b.slug}`}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: analyticsListKey,
+                      label: `${listLabel}_view_btn`,
+                    })}
                     className="shrink-0 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-secondary)] transition-colors"
                   >
                     View
@@ -91,6 +112,11 @@ export function TownRecListVertical({ enriched }: Props) {
                 {websiteHref ? (
                   <a
                     href={websiteHref}
+                    {...gaClickProps({
+                      event: "outbound_click",
+                      category: analyticsListKey,
+                      label: listLabel,
+                    })}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:underline"

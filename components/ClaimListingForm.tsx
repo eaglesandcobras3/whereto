@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { gaEvent } from "@/lib/analytics/gtag-runner";
 
 type Props = {
   businessId: string;
@@ -33,7 +35,11 @@ export function ClaimListingForm({
     }
     return (
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-        <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
+        <Link
+          href="/login"
+          {...gaClickProps({ event: "nav_click", category: "business_claim", label: "login" })}
+          className="font-medium text-[var(--accent)] hover:underline"
+        >
           Sign in
         </Link>{" "}
         to submit a listing ownership request (reviewed by operators).
@@ -75,6 +81,7 @@ export function ClaimListingForm({
       setMsg(j.error ?? "Request failed");
       return;
     }
+    gaEvent("claim_submit_success", { business_id: businessId });
     setMsg("Request submitted. Operators will review — no automated verification.");
     setNote("");
   }
@@ -96,6 +103,11 @@ export function ClaimListingForm({
         <button
           type="submit"
           disabled={pending}
+          {...gaClickProps({
+            event: "cta_click",
+            category: "business_claim",
+            label: "submit",
+          })}
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
         >
           {pending ? "Sending…" : "Request review"}

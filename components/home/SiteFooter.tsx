@@ -180,31 +180,7 @@ export async function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-[var(--color-border)] pt-8 space-y-4">
-          <p className="text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
-            Directory pages mix editorial notes, licensee fields, imports, and automation—things slip: hours change, wording ages, or a summary
-            overreaches. Spots listed here aren&apos;t a blanket endorsement unless we plainly say otherwise (for example paid placement next to copy).
-          </p>
-          <p className="text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
-            If you see something wrong and want our editors to review it—whether you visited or run the place—you can{" "}
-            <Link
-              href="/feedback"
-              {...gaClickProps({ event: "cta_click", category: "footer_strip", label: "send_correction" })}
-              className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline"
-            >
-              send a correction
-            </Link>
-            . We work through messages when we can, but nothing here promises a swift fix, exact wording, or that a listing stays published. The full
-            story on disclaimers and liability sits in{" "}
-            <Link
-              href="/terms#listing-information-scope"
-              {...gaClickProps({ event: "nav_click", category: "footer_strip", label: "terms_listings_scope" })}
-              className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline"
-            >
-              Terms&nbsp;§§6–8
-            </Link>
-            .
-          </p>
+        <div className="mt-12 border-t border-[var(--color-border)] pt-8">
           <p className="text-xs text-[var(--color-text-tertiary)]">
             © {new Date().getFullYear()} WhereTo30A ·{" "}
             <Link

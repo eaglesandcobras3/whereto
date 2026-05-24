@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();
@@ -54,6 +55,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         <button
           type="submit"
           disabled={status === "loading"}
+          {...gaClickProps({ event: "cta_click", category: "auth_login", label: "submit" })}
           className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-50"
         >
           {status === "loading" ? "Signing in..." : "Sign in"}
@@ -63,17 +65,29 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         <p className="mt-4 text-sm text-red-600">{message}</p>
       ) : null}
       <div className="mt-4 flex flex-col gap-2 text-sm">
-        <Link href="/forgot-password" className="text-teal-700 hover:underline">
+        <Link
+          href="/forgot-password"
+          {...gaClickProps({ event: "nav_click", category: "auth_login", label: "forgot_password" })}
+          className="text-teal-700 hover:underline"
+        >
           Forgot password?
         </Link>
         <p className="text-zinc-600">
           Don&apos;t have an account?{" "}
-          <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="text-teal-700 hover:underline">
+          <Link
+            href={`/signup?next=${encodeURIComponent(nextPath)}`}
+            {...gaClickProps({ event: "nav_click", category: "auth_login", label: "signup_redirect" })}
+            className="text-teal-700 hover:underline"
+          >
             Sign up
           </Link>
         </p>
       </div>
-      <Link href="/" className="mt-4 text-sm text-teal-700 hover:underline">
+      <Link
+        href="/"
+        {...gaClickProps({ event: "nav_click", category: "auth_login", label: "back_to_search" })}
+        className="mt-4 text-sm text-teal-700 hover:underline"
+      >
         ← Back to search
       </Link>
     </>

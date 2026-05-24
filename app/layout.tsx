@@ -95,9 +95,13 @@ export async function generateMetadata(): Promise<Metadata> {
       // google: "paste-tag-here",
     },
     icons: {
-      icon: [{ url: "/siteicon.png", type: "image/png" }],
+      icon: [
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/siteicon.png", type: "image/png" },
+      ],
       apple: [{ url: "/siteicon.png", type: "image/png" }],
     },
+
   };
 }
 
@@ -116,7 +120,7 @@ export default function RootLayout({
     url: siteUrl,
     logo: {
       "@type": "ImageObject",
-      url: `${siteUrl}/siteicon.png`,
+      url: `${siteUrl}/whereto30a.svg`,
     },
     sameAs: [] as string[],
     description:
