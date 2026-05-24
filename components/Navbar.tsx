@@ -9,6 +9,8 @@ import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
 import { isAuthEnabled } from "@/lib/feature-flags-core";
 import type { User } from "@supabase/supabase-js";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { gaEvent } from "@/lib/analytics/gtag-runner";
 
 type Props = {
   /** Show compact variant (no tagline, smaller padding) */
@@ -98,13 +100,15 @@ export function Navbar({
       onSearchSubmit(e);
     } else {
       const q = searchValue || internalSearch;
-      if (!q.trim()) return;
+      const term = q.trim();
+      if (!term) return;
+      gaEvent("search", {
+        search_term: term.slice(0, 200),
+        source: pathname === "/" ? "home_nav_overlap" : "navbar",
+      });
       if (pathname === "/search" && typeof window !== "undefined") {
         const next = new URLSearchParams(window.location.search);
-        next.set("q", q.trim());
-        window.location.href = `/search?${next.toString()}`;
-      } else {
-        window.location.href = `/search?q=${encodeURIComponent(q)}`;
+        window.location.href = `/search?q=${encodeURIComponent(term)}`;
       }
     }
     setSearchOpen(false);
@@ -123,7 +127,11 @@ export function Navbar({
     >
       <div className="relative z-[120] mx-auto flex w-full max-w-7xl items-center px-4 md:gap-3 md:px-10">
         <div className="flex min-w-0 shrink-0 items-center md:flex-1">
-          <Link href="/" className="flex min-w-0 items-center gap-2">
+          <Link
+            href="/"
+            {...gaClickProps({ event: "nav_click", category: "header", label: "logo_home" })}
+            className="flex min-w-0 items-center gap-2"
+          >
             <img
               src="/whereto30a.svg"
               alt="WhereTo30A"
@@ -156,6 +164,7 @@ export function Navbar({
           {showSearchInNavbar ? (
             <button
               type="button"
+              {...gaClickProps({ event: "ui_open", category: "header", label: "search_panel" })}
               aria-expanded={searchOpen}
               aria-controls="navbar-search-panel"
               onClick={() => {
@@ -175,6 +184,7 @@ export function Navbar({
 
           <button
             type="button"
+            {...gaClickProps({ event: "ui_open", category: "header", label: "mobile_menu" })}
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)] md:hidden"
             aria-expanded={mobileMenuOpen}
             aria-controls="navbar-mobile-menu"
@@ -191,16 +201,24 @@ export function Navbar({
 
           <nav className="hidden items-center gap-0.5 md:flex sm:gap-1">
             {showSaved ? (
-              <Link href="/saved" className={navLinkClass(isSaved)}>
+              <Link {...gaClickProps({ event: "nav_click", category: "header_auth", label: "saved" })} href="/saved" className={navLinkClass(isSaved)}>
                 Saved
               </Link>
             ) : null}
             {showAuth && user ? (
-              <Link href="/profile" className={navLinkClass(isProfile)}>
+              <Link
+                {...gaClickProps({ event: "nav_click", category: "header_auth", label: "profile" })}
+                href="/profile"
+                className={navLinkClass(isProfile)}
+              >
                 Profile
               </Link>
             ) : showAuth && showHeaderLogin ? (
-              <Link href="/login" className={navLinkClass(pathname === "/login")}>
+              <Link
+                {...gaClickProps({ event: "nav_click", category: "header_auth", label: "login" })}
+                href="/login"
+                className={navLinkClass(pathname === "/login")}
+              >
                 Login
               </Link>
             ) : null}
@@ -235,6 +253,7 @@ export function Navbar({
               <div className="flex shrink-0 gap-2">
                 <button
                   type="submit"
+                  {...gaClickProps({ event: "search_click", category: "header_search", label: "submit_panel" })}
                   disabled={searchLoading}
                   className="rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] disabled:opacity-50"
                 >

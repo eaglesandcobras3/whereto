@@ -9,6 +9,8 @@ import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { gaEvent } from "@/lib/analytics/gtag-runner";
 
 type Rec = {
   business_id: string;

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Manrope, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { AnalyticsClickCapture } from "@/components/analytics/AnalyticsClickCapture";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { NavbarServer } from "@/components/NavbarServer";
 import { SiteFooter } from "@/components/home/SiteFooter";
@@ -184,7 +186,9 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <SiteFooter />
         </ThemeProvider>
+        <GoogleAnalytics />
         <Analytics />
+        <AnalyticsClickCapture />
       </body>
     </html>
   );

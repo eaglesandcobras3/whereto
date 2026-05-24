@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { BROWSE_NAV_ITEMS, isBrowseNavActive, type BrowseNavItem } from "@/lib/nav/browse-links";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 function navLinkClass(active: boolean) {
   const base =
@@ -28,6 +29,11 @@ export function NavbarCategoryLinks({ items = BROWSE_NAV_ITEMS }: Props) {
         <Link
           key={item.label}
           href={item.href}
+          {...gaClickProps({
+            event: "nav_click",
+            category: "header_browse",
+            label: item.label.replace(/\s+/g, "_").toLowerCase(),
+          })}
           className={navLinkClass(isSearch && isBrowseNavActive(type, item))}
         >
           {item.label}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { BROWSE_NAV_ITEMS, isBrowseNavActive, type BrowseNavItem } from "@/lib/nav/browse-links";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 function navLinkClassMobile(active: boolean) {
   const base =
@@ -61,22 +62,37 @@ export function NavbarMobileMenu({
               key={item.label}
               href={item.href}
               onClick={onClose}
+              {...gaClickProps({
+                event: "nav_click",
+                category: "header_browse_mobile",
+                label: item.label.replace(/\s+/g, "_").toLowerCase(),
+              })}
               className={navLinkClassMobile(isSearch && isBrowseNavActive(type, item))}
             >
               {item.label}
             </Link>
           ))}
           {showSaved ? (
-            <Link href="/saved" onClick={onClose} className={navLinkClassMobile(isSaved)}>
+            <Link {...gaClickProps({ event: "nav_click", category: "header_auth_mobile", label: "saved" })} href="/saved" onClick={onClose} className={navLinkClassMobile(isSaved)}>
               Saved
             </Link>
           ) : null}
           {showAuth && user ? (
-            <Link href="/profile" onClick={onClose} className={navLinkClassMobile(isProfile)}>
+            <Link
+              {...gaClickProps({ event: "nav_click", category: "header_auth_mobile", label: "profile" })}
+              href="/profile"
+              onClick={onClose}
+              className={navLinkClassMobile(isProfile)}
+            >
               Profile
             </Link>
           ) : showAuth && showLogin ? (
-            <Link href="/login" onClick={onClose} className={navLinkClassMobile(pathname === "/login")}>
+            <Link
+              {...gaClickProps({ event: "nav_click", category: "header_auth_mobile", label: "login" })}
+              href="/login"
+              onClick={onClose}
+              className={navLinkClassMobile(pathname === "/login")}
+            >
               Login
             </Link>
           ) : null}

@@ -3,6 +3,7 @@ import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const PUBLIC_SEARCH_TOWNS_URL = "/search?type=towns";
 
@@ -30,11 +31,15 @@ async function getFooterTowns(): Promise<{ name: string; slug: string }[]> {
 }
 
 const companyLinks = [
-  { name: "About", href: "/about" },
-  { name: "List your business", href: "/list-your-business" },
-  { name: "Correct a listing", href: "/feedback" },
-  { name: "Privacy", href: "/privacy" },
-  { name: "Terms", href: "/terms" },
+  { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "about" }), name: "About", href: "/about" },
+  {
+    ...gaClickProps({ event: "cta_click", category: "footer_company", label: "list_your_business" }),
+    name: "List your business",
+    href: "/list-your-business",
+  },
+  { ...gaClickProps({ event: "cta_click", category: "footer_company", label: "correct_listing" }), name: "Correct a listing", href: "/feedback" },
+  { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "privacy" }), name: "Privacy", href: "/privacy" },
+  { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "terms" }), name: "Terms", href: "/terms" },
 ];
 
 export async function SiteFooter() {
@@ -81,6 +86,11 @@ export async function SiteFooter() {
                   <li key={town.slug}>
                     <Link
                       href={`/${town.slug}`}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "footer_towns",
+                        label: town.slug,
+                      })}
                       className="text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
                     >
                       {town.name}
@@ -91,6 +101,7 @@ export async function SiteFooter() {
               <p className="mt-4">
                 <Link
                   href={PUBLIC_SEARCH_TOWNS_URL}
+                  {...gaClickProps({ event: "nav_click", category: "footer_towns", label: "explore_all_towns" })}
                   className="text-sm font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
                 >
                   Explore all towns
@@ -113,6 +124,7 @@ export async function SiteFooter() {
                   />
                   <button
                     type="submit"
+                    {...gaClickProps({ event: "cta_click", category: "footer_newsletter", label: "join" })}
                     className="shrink-0 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-light)]"
                   >
                     Join
@@ -124,16 +136,20 @@ export async function SiteFooter() {
             <div>
               <h3 className="text-eyebrow mb-3">Company</h3>
               <ul className="flex flex-col gap-2">
-                {companyLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
+                {companyLinks.map((link) => {
+                  const { name, href, ...analytics } = link;
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        {...analytics}
+                        className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                      >
+                        {name}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
 
               {socials.length > 0 ? (
@@ -146,6 +162,11 @@ export async function SiteFooter() {
                           href={s.href}
                           target="_blank"
                           rel="noopener noreferrer"
+                          {...gaClickProps({
+                            event: "outbound_click",
+                            category: "footer_social",
+                            label: s.label.toLowerCase(),
+                          })}
                           className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
                         >
                           {s.label}
@@ -166,23 +187,39 @@ export async function SiteFooter() {
           </p>
           <p className="text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
             If you see something wrong and want our editors to review it—whether you visited or run the place—you can{" "}
-            <Link href="/feedback" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+            <Link
+              href="/feedback"
+              {...gaClickProps({ event: "cta_click", category: "footer_strip", label: "send_correction" })}
+              className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline"
+            >
               send a correction
             </Link>
             . We work through messages when we can, but nothing here promises a swift fix, exact wording, or that a listing stays published. The full
             story on disclaimers and liability sits in{" "}
-            <Link href="/terms#listing-information-scope" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+            <Link
+              href="/terms#listing-information-scope"
+              {...gaClickProps({ event: "nav_click", category: "footer_strip", label: "terms_listings_scope" })}
+              className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline"
+            >
               Terms&nbsp;§§6–8
             </Link>
             .
           </p>
           <p className="text-xs text-[var(--color-text-tertiary)]">
             © {new Date().getFullYear()} WhereTo30A ·{" "}
-            <Link href="/terms" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+            <Link
+              href="/terms"
+              {...gaClickProps({ event: "nav_click", category: "footer_legal_row", label: "terms" })}
+              className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline"
+            >
               Terms
             </Link>
             {" · "}
-            <Link href="/privacy" className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline">
+            <Link
+              href="/privacy"
+              {...gaClickProps({ event: "nav_click", category: "footer_legal_row", label: "privacy" })}
+              className="underline-offset-4 hover:text-[var(--color-text-secondary)] hover:underline"
+            >
               Privacy
             </Link>
           </p>
