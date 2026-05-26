@@ -10,7 +10,7 @@ export type HomeHeroSettings = {
 const DEFAULTS: HomeHeroSettings = {
   imageUrl:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCsXovFV1neXjTq-4mDbgPnbeulhSJTjrnA8HjhYxq8ia7daxCG_LgukxpGv4QFsulirvaswIA6YRwYJFSNId1ug0GSb0xSB5vMk2oIfL018BIDjnqCxf8mngM3LnJVaLLOz3m0qpr65y-xGAT3ZUZZY-fO437YIwlfzKPcpingFhsBIKN7sgwtVTuDefQ2_q6okMXgBEOT4EPmHvjNaVcN3NqSIl8bkXfWsg_h-MxXYQMT-vBNtntZc6L7fARzSUTdkBnVQMREwlc",
-  title: "I'm looking for…",
+  title: "The complete guide to visiting 30A, Florida",
   subtitle:
     "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
   searchPlaceholder: "Search anything on 30A...",

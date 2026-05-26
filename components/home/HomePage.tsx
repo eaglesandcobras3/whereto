@@ -199,7 +199,7 @@ export function HomePage({
   towns = [],
   heroSettings = {
     imageUrl: IMG.hero,
-    title: "I'm looking for...",
+    title: "The complete guide to visiting 30A, Florida",
     subtitle:
       "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
   },
@@ -247,11 +247,11 @@ export function HomePage({
               </span>
             </div>
 
-            <h1 className="text-editorial-hero mb-5 max-w-4xl text-white drop-shadow-lg">
-              The complete guide to visiting 30A, Florida
+            <h1 className="text-balance mb-5 max-w-2xl font-headline text-3xl font-extrabold leading-snug tracking-tight text-white drop-shadow-lg sm:max-w-3xl sm:text-4xl md:text-[2.35rem] md:leading-[1.12] lg:max-w-[40rem] lg:text-[2.5rem]">
+              {heroSettings.title}
             </h1>
 
-            <p className="mb-8 max-w-2xl text-lg leading-relaxed text-white/90 md:text-xl">
+            <p className="text-balance mb-8 max-w-md text-[0.95rem] leading-relaxed text-white/90 sm:max-w-lg sm:text-base md:max-w-xl md:text-[1.05rem]">
               {heroSettings.subtitle}
             </p>
 
