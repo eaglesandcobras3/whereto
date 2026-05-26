@@ -239,7 +239,7 @@ export function HomePage({
             <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-background" />
           </div>
 
-          <div className="relative z-10 flex w-full max-w-4xl flex-col items-center px-4 pb-10 pt-8 text-center md:px-6">
+          <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-12 pt-8 text-center sm:px-6 lg:px-8">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur-md">
               <MsIcon name="menu_book" className="!text-sm text-white" filled />
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-white">
@@ -247,15 +247,15 @@ export function HomePage({
               </span>
             </div>
 
-            <h1 className="text-balance mb-5 max-w-2xl font-headline text-3xl font-extrabold leading-snug tracking-tight text-white drop-shadow-lg sm:max-w-3xl sm:text-4xl md:text-[2.35rem] md:leading-[1.12] lg:max-w-[40rem] lg:text-[2.5rem]">
+            <h1 className="text-balance mb-5 w-full max-w-6xl font-headline text-4xl font-extrabold leading-[1.06] tracking-tight text-white drop-shadow-lg sm:text-5xl sm:leading-[1.05] md:text-6xl md:leading-[1.04] lg:text-[clamp(3.25rem,5.5vw,4.25rem)] lg:leading-[1.05]">
               {heroSettings.title}
             </h1>
 
-            <p className="text-balance mb-8 max-w-md text-[0.95rem] leading-relaxed text-white/90 sm:max-w-lg sm:text-base md:max-w-xl md:text-[1.05rem]">
+            <p className="text-balance mb-10 w-full max-w-4xl text-lg leading-relaxed text-white/90 md:text-xl lg:max-w-5xl">
               {heroSettings.subtitle}
             </p>
 
-            <div className="mb-10 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+            <div className="mb-10 flex w-full max-w-2xl flex-col justify-center gap-3 sm:flex-row sm:gap-5">
               <Link
                 href="/guide"
                 {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
