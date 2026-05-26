@@ -463,7 +463,7 @@ export async function resolveIntent(
   let intent: SearchIntent;
   try {
     if (openaiKey) {
-      intent = await parseIntentWithOpenAI(model, openaiKey, normalized);
+      intent = await parseIntentWithOpenAI(model, openaiKey, rawQuery, normalized);
     } else {
       intent = fallbackIntentFromKeywords(normalized);
     }

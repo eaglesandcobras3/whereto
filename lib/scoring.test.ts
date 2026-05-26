@@ -96,6 +96,7 @@ describe("scoreAndRankCandidates", () => {
       sort_preference: "quality" as const,
       price_level: null,
       result_count: 5,
+      query_type: "keyword" as const,
     };
     const townSlugToId = new Map([["seaside", 1]]);
     const categorySlugToId = new Map([["restaurants", 1]]);
@@ -164,6 +165,7 @@ describe("scoreAndRankCandidates", () => {
       sort_preference: "quality" as const,
       price_level: null,
       result_count: 5,
+      query_type: "keyword" as const,
     };
     const townSlugToId = new Map([
       ["rosemary-beach", 10],
@@ -235,6 +237,7 @@ describe("scoreAndRankCandidates", () => {
       sort_preference: "quality" as const,
       price_level: null,
       result_count: 10,
+      query_type: "keyword" as const,
     };
     const townSlugToId = new Map([["seaside", 1]]);
     const categorySlugToId = new Map([["restaurants", 1]]);

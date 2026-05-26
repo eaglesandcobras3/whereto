@@ -43,7 +43,7 @@
 | **`OPENAI_API_KEY`** | OpenAI | Already required for intent parsing. Also used by **`local/generate-embeddings.ts`** for `text-embedding-3-small` embeddings. |
 | `ADMIN_USER_IDS` | Comma-separated Supabase Auth user UUIDs | Who can open `/admin` in the Next app (optional in-app shell). |
 | `ADMIN_EMAILS` | Comma-separated emails | Alternative to `ADMIN_USER_IDS` for `/admin` access. |
-| `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). Keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. **`services_nav`**: set **`true`** to show the **Services** item in the header browse nav (default **off**). **`guide_hub_search_callout`**: set **`true`** to show the **“Ready to Explore?” / Start Searching** block at the bottom of **`/guide`** (default **off**). Optional `ff_overrides` cookie merges the same shape (dev). |
+| `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). **`search`** gates the homepage hero search and related UI (defaults **off** in production unless you set **`"search":true`**). In **`NODE_ENV=development`** (`next dev`), **`search` defaults to on** whenever **`FEATURE_FLAGS_JSON` omits a `search` key; set **`"search":false`** in JSON to hide search locally. Other keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. **`services_nav`**: set **`true`** to show the **Services** item in the header browse nav (default **off**). **`guide_hub_search_callout`**: set **`true`** to show the **“Ready to Explore?” / Start Searching** block at the bottom of **`/guide`** (default **off**). Optional `ff_overrides` cookie merges the same shape (dev). |
 | `HOME_HERO_TITLE`, `HOME_HERO_SUBTITLE`, `HOME_HERO_IMAGE_URL`, `HOME_SEARCH_PLACEHOLDER` | Local / Vercel env | Override homepage hero when not using legacy `site_settings`. |
 | `RESEND_API_KEY` | [Resend](https://resend.com/) → API keys | **Server only.** Required for **`POST /api/listing-requests`** and **`POST /api/business-claim-email`** (sidebar “Claim or update listing” on business pages). |
 | `RESEND_FROM_EMAIL` | Resend-verified sender | Optional shorthand: used if **`LISTING_NOTIFICATION_FROM_EMAIL`** is unset (same verified domain rules). |
@@ -125,13 +125,25 @@ Then set **`FTS_SEARCH_ENABLED=true`** in your environment (Vercel + `.env.local
 - In Supabase **Dashboard → Database → Extensions**, search "vector" and enable **pgvector**.
 - In SQL Editor, run **`supabase/migrations/20260524130000_pgvector_embeddings.sql`**. This adds `embedding vector(1536)`, an HNSW index, and the `hybrid_search_businesses()` RPC function.
 
-### 5. Generate embeddings
+### 5. Apply business intelligence migration
+In Supabase SQL Editor, run **`supabase/migrations/20260526120000_business_intelligence.sql`**. This adds structured facet columns (`business_type`, `item_tags`, `dietary_tags`, `meal_period_tags`, `atmosphere_tags`, `occasion_tags`, `qa_document`, `qa_document_updated_at`) and replaces `hybrid_search_businesses` with a version that supports multi-town filtering and returns new columns for composite scoring.
+
+### 6. Generate business intelligence (tags + Q&A documents)
+```bash
+npx tsx local/generate-business-intelligence.ts --dry-run   # preview
+npx tsx local/generate-business-intelligence.ts             # write
+npx tsx local/generate-business-intelligence.ts --force     # regenerate all
+npx tsx local/generate-business-intelligence.ts --id <id>   # single business
+```
+Uses `gpt-4o-mini`. One call per business. Writes `business_type`, all tag arrays, and a `qa_document` — the Q&A-format text used as the embedding source. Run `DEBUG_INTEL=1 npx tsx local/generate-business-intelligence.ts --id <id>` to inspect output for a single listing.
+
+### 7. Generate embeddings
 ```bash
 npx tsx local/generate-embeddings.ts --dry-run   # preview (no API calls)
 npx tsx local/generate-embeddings.ts             # write
 npx tsx local/generate-embeddings.ts --force     # regenerate all
 ```
-Uses `text-embedding-3-small` (1536 dims). Run this after enrichment so keywords are baked into the embedding text. Re-run whenever you add or edit a significant number of listings.
+Uses `text-embedding-3-small` (1536 dims). Now prefers the `qa_document` over `search_profile` as the embedding source — Q&A format bridges the query-document asymmetry gap so similarity scores are higher and more discriminating. Run after step 6 so new Q&A documents are baked in. Re-run whenever you add or significantly edit listings.
 
 ---
 
@@ -146,6 +158,11 @@ Uses `text-embedding-3-small` (1536 dims). Run this after enrichment so keywords
 
 | Date | What changed |
 |------|----------------|
+| 2026-05-27 | **hybrid_search_businesses RPC ambiguity:** Apply **`20260527103000_drop_duplicate_hybrid_search.sql`** if PostgREST / `supabase.rpc('hybrid_search_businesses', …)` fails with **`Could not choose the best candidate function`**—the town-adjacency migration introduced a duplicate overload `(text, vector, int, text, text, text[], text)` (category **before** `town_ids[]`) alongside the canonical business-intelligence signature `(…, text, text[], text, text)`. The new migration **`DROP`s** only the stale ordering so one function remains. |
+| 2026-05-26 | **Business intelligence + composite search scoring:** Apply **`20260526120000_business_intelligence.sql`** — adds `business_type`, `item_tags`, `dietary_tags`, `meal_period_tags`, `atmosphere_tags`, `occasion_tags`, `qa_document` columns; replaces `hybrid_search_businesses` RPC with multi-town support (`p_town_ids[]`) and new column returns. Run **`local/generate-business-intelligence.ts`** (gpt-4o-mini, one call/business) to populate structured tags + Q&A documents, then **`local/generate-embeddings.ts --force`** to re-embed from Q&A docs. Intent schema expanded: `specific_items[]`, `dietary_needs[]`, `meal_period`, `atmosphere_needs[]`, `occasion`, `query_type`. Search now uses **composite scoring**: `structuredMatch × 0.60 + vecSim × 0.30 + quality × 0.10` when structured intent fields are present; `vecSim × 0.90 + quality × 0.10` for simple keyword queries. Dev mode shows `c:0.xxx v:0.xxx` on result cards. |
+| 2026-05-24 | **FTS slug tokens:** New migration **`20260524140000_fts_include_business_slug.sql`** — `search_vector` now includes **`slug`** words (hyphens → spaces) at weight **A** beside title. Apply after **`20260524120000_fts_businesses.sql`** if you use full-text search later. |
+| 2026-05-24 | **FTS slug tokens:** Migration **`20260524140000_fts_include_business_slug.sql`** adds **`slug`**-derived tokens to **`businesses.search_vector`** (hyphens → spaces, weight **A**). Run after **`20260524120000_fts_businesses.sql`** if you use FTS. |
+| 2026-05-24 | **Local search feature flag:** `next dev` turns **`search` on** automatically when **`FEATURE_FLAGS_JSON`** does **not** include a **`search`** key (`lib/feature-flags-core.ts`). Set **`FEATURE_FLAGS_JSON={"search":false}`** if you need search hidden locally. **`next build && next start`** uses **`NODE_ENV=production`**—search stays off until you enable it in **`FEATURE_FLAGS_JSON`** (or **`ff_overrides`**). |
 | 2026-05-24 | **Search enrichment + NL search fix:** (1) NL intent town resolution — `intent.location.town` now resolves to a `town_id` filter so "restaurants near Seaside" returns Seaside results. (2) Focused ilike token — attributes from intent (not the full NL phrase) drive the text match; category+town-only queries skip ilike entirely. (3) **Postgres FTS:** apply `20260524120000_fts_businesses.sql`; set `FTS_SEARCH_ENABLED=true` to activate. (4) **pgvector embeddings:** enable pgvector extension in Supabase dashboard; apply `20260524130000_pgvector_embeddings.sql`; run `npx tsx local/generate-embeddings.ts`. (5) **Enrichment scripts:** `local/backfill-town-id.ts` sets `town_id`; `local/enrich-categories-and-keywords.ts` sets `primary_category_id`, `search_keywords`, `intent_tags`, `price_level` via OpenAI. See **Search quality enrichment** section above. |
 | 2026-05-23 | **Sitemap / robots / canonical URL resilience:** `/sitemap.xml` business URLs now come from **`businesses_view`** using the **same browse-visibility filters** as **`/business/[slug]`** (no more sitemap URLs that **`notFound`**). Wrapped sitemap assembly in **try/catch** with **static-hub-only fallback** to avoid crawler 500 spikes; **`revalidate = 3600`** on the route. **`getSiteUrl()`** falls back to **`VERCEL_PROJECT_PRODUCTION_URL`** on Vercel **production** when **`NEXT_PUBLIC_SITE_URL`** is unset. **`robots.txt`** **`Host:`** uses hostname only (**`canonicalSiteHostname()`**). |
 | 2026-05-21 | **Social defaults:** Footer **Instagram** / **TikTok** default to **@whereto30a** (`lib/site-social.ts`). Override or hide via **`NEXT_PUBLIC_INSTAGRAM_URL`** / **`NEXT_PUBLIC_TIKTOK_URL`** per env table. |

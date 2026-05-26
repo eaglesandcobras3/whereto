@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { startTransition, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, Suspense, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
@@ -46,10 +46,12 @@ export function Navbar({
   browseNavItems = BROWSE_NAV_ITEMS,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [internalSearch, setInternalSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isNavSearchPending, startNavSearchTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isHome = pathname === "/";
   const showSearchInNavbar = featureFlags["search"] !== false && (showSearch || !isHome);
@@ -106,10 +108,15 @@ export function Navbar({
         search_term: term.slice(0, 200),
         source: pathname === "/" ? "home_nav_overlap" : "navbar",
       });
-      if (pathname === "/search" && typeof window !== "undefined") {
-        const next = new URLSearchParams(window.location.search);
-        window.location.href = `/search?q=${encodeURIComponent(term)}`;
-      }
+      startNavSearchTransition(() => {
+        if (pathname === "/search" && typeof window !== "undefined") {
+          const nextParams = new URLSearchParams(window.location.search);
+          nextParams.set("q", term);
+          router.push(`/search?${nextParams.toString()}`);
+        } else {
+          router.push(`/search?q=${encodeURIComponent(term)}`);
+        }
+      });
     }
     setSearchOpen(false);
   };
@@ -254,10 +261,11 @@ export function Navbar({
                 <button
                   type="submit"
                   {...gaClickProps({ event: "search_click", category: "header_search", label: "submit_panel" })}
-                  disabled={searchLoading}
+                  disabled={Boolean(searchLoading) || (!onSearchSubmit && isNavSearchPending)}
+                  aria-busy={Boolean(searchLoading) || (!onSearchSubmit && isNavSearchPending) || undefined}
                   className="rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] disabled:opacity-50"
                 >
-                  {searchLoading ? "…" : "Search"}
+                  {searchLoading || (!onSearchSubmit && isNavSearchPending) ? "Searching…" : "Search"}
                 </button>
                 <button
                   type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
@@ -107,6 +107,44 @@ export type BrowseAreaRow = {
 
 type BrowseMode = "business" | "events" | "towns" | "guides" | "areas" | "access";
 
+const VIBE_TAGS = [
+  // Occasion & mood
+  { slug: "romantic", label: "Romantic" },
+  { slug: "kid_friendly", label: "Kid Friendly" },
+  { slug: "group_friendly", label: "Group Friendly" },
+  { slug: "date_night", label: "Date Night" },
+  { slug: "solo_friendly", label: "Solo Friendly" },
+  // Setting
+  { slug: "waterfront", label: "Waterfront" },
+  { slug: "beachfront", label: "Beachfront" },
+  { slug: "outdoor_seating", label: "Outdoor Seating" },
+  { slug: "scenic_views", label: "Scenic Views" },
+  // Experience
+  { slug: "upscale", label: "Upscale" },
+  { slug: "casual", label: "Casual" },
+  { slug: "local_favorite", label: "Local Favorite" },
+  { slug: "hidden_gem", label: "Hidden Gem" },
+  { slug: "instagrammable", label: "Instagrammable" },
+  // Meal & timing
+  { slug: "breakfast", label: "Breakfast" },
+  { slug: "brunch", label: "Brunch" },
+  { slug: "quick_bite", label: "Quick Bite" },
+  { slug: "late_night", label: "Late Night" },
+  { slug: "happy_hour", label: "Happy Hour" },
+  // Amenities
+  { slug: "live_music", label: "Live Music" },
+  { slug: "pet_friendly", label: "Pet Friendly" },
+  { slug: "parking", label: "Easy Parking" },
+  { slug: "walkable", label: "Walkable" },
+  { slug: "free_entry", label: "Free Entry" },
+  // Activity type
+  { slug: "outdoor_activities", label: "Outdoor Activities" },
+  { slug: "water_sports", label: "Water Sports" },
+  { slug: "shopping", label: "Shopping" },
+  { slug: "art_culture", label: "Art & Culture" },
+  { slug: "spa_wellness", label: "Spa & Wellness" },
+];
+
 function areaTypeLabel(areaType: string): string {
   if (areaType === "point_of_interest") return "Landmark / park / access";
   return areaType.replace(/_/g, " ");
@@ -188,23 +226,46 @@ export function SearchPageClient({
   const isAreasLike = browseMode === "areas" || browseMode === "access";
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const [q, setQ] = useState(() => searchParams.get("q") ?? "");
-  const [isSearching, setIsSearching] = useState(false);
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const urlQ = searchParams.get("q");
   const sortP = searchParams.get("sort");
   const searchSort: "relevance" | "name" | "updated" =
     sortP === "updated" ? "updated" : sortP === "name" ? "name" : "relevance";
-  const filterTownId = searchParams.get("town_id");
-  const filterCategory = searchParams.get("category") ?? "";
-  const filterAreaId = searchParams.get("area_id") ?? "";
 
+  // Multi-select URL state
+  const filterTownIds: string[] = (() => {
+    const raw = searchParams.get("town_id");
+    return raw ? raw.split(",").filter(Boolean) : [];
+  })();
+  const filterTownId = filterTownIds[0] ?? null; // single-town anchor (scope/area logic)
+  const filterCategorySlugs: string[] = (() => {
+    const raw = searchParams.get("category");
+    return raw ? raw.split(",").filter(Boolean) : [];
+  })();
+  const filterCategory = filterCategorySlugs[0] ?? ""; // backward compat
+  const filterVibeTags: string[] = (() => {
+    const raw = searchParams.get("tags");
+    return raw ? raw.split(",").filter(Boolean) : [];
+  })();
+  const filterAreaId = searchParams.get("area_id") ?? "";
+  const filterScope = searchParams.get("scope") ?? "";
+  const filterPrice = searchParams.get("price") ?? "";
+
+  // AI-detected filters from server (resolved_filters minus what's already in URL)
+  const resolvedFilters = results.resolved_filters;
+  const aiTownIds = resolvedFilters?.town_ids.filter((id) => !filterTownIds.includes(id)) ?? [];
+  const aiCategorySlugs = resolvedFilters?.category_slugs.filter((s) => !filterCategorySlugs.includes(s)) ?? [];
+  const aiVibeTags = resolvedFilters?.vibe_tags.filter((t) => !filterVibeTags.includes(t)) ?? [];
+  const aiPriceBucket = !filterPrice && resolvedFilters?.price_bucket ? resolvedFilters.price_bucket : null;
+
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [lastUrlQ, setLastUrlQ] = useState(urlQ);
   if (urlQ !== lastUrlQ) {
     setLastUrlQ(urlQ);
     setQ(urlQ ?? "");
-    setIsSearching(false);
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -217,8 +278,7 @@ export function SearchPageClient({
     } else {
       params.set("q", trimmed);
     }
-    setIsSearching(true);
-    router.push(`/search?${params.toString()}`);
+    startTransition(() => router.push(`/search?${params.toString()}`));
   };
 
   const setSearchSort = (next: "relevance" | "name" | "updated") => {
@@ -227,28 +287,69 @@ export function SearchPageClient({
     if (next === "relevance") params.delete("sort");
     else params.set("sort", next);
     params.delete("page");
-    router.push(`/search?${params.toString()}`);
+    startTransition(() => router.push(`/search?${params.toString()}`));
   };
 
-  const setLocationTownFilter = (townId: string) => {
+  const toggleTownFilter = (townId: string) => {
     if (browseMode !== "business") return;
-    gaEvent("search_filter_change", { filter: "town_id", value: townId || "clear" });
+    gaEvent("search_filter_change", { filter: "town_id", value: townId });
     const params = new URLSearchParams(searchParams.toString());
-    if (!townId) params.delete("town_id");
-    else params.set("town_id", townId);
+    const next = filterTownIds.includes(townId)
+      ? filterTownIds.filter((id) => id !== townId)
+      : [...filterTownIds, townId];
+    if (!next.length) {
+      params.delete("town_id");
+      params.delete("scope");
+    } else {
+      params.set("town_id", next.join(","));
+      if (next.length !== 1) params.delete("scope"); // scope only valid for single town
+    }
     params.delete("area_id");
     params.delete("page");
-    router.push(`/search?${params.toString()}`);
+    startTransition(() => router.push(`/search?${params.toString()}`));
   };
 
-  const setCategoryFilter = (slug: string) => {
+  const clearTownFilter = () => {
     if (browseMode !== "business") return;
-    gaEvent("search_filter_change", { filter: "category", value: slug || "clear" });
     const params = new URLSearchParams(searchParams.toString());
-    if (!slug) params.delete("category");
-    else params.set("category", slug);
+    params.delete("town_id");
+    params.delete("scope");
+    params.delete("area_id");
     params.delete("page");
-    router.push(`/search?${params.toString()}`);
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const toggleCategoryFilter = (slug: string) => {
+    if (browseMode !== "business") return;
+    gaEvent("search_filter_change", { filter: "category", value: slug });
+    const params = new URLSearchParams(searchParams.toString());
+    const next = filterCategorySlugs.includes(slug)
+      ? filterCategorySlugs.filter((s) => s !== slug)
+      : [...filterCategorySlugs, slug];
+    if (!next.length) params.delete("category");
+    else params.set("category", next.join(","));
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const clearCategoryFilter = () => {
+    if (browseMode !== "business") return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("category");
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const toggleVibeTag = (slug: string) => {
+    gaEvent("search_filter_change", { filter: "tags", value: slug });
+    const params = new URLSearchParams(searchParams.toString());
+    const next = filterVibeTags.includes(slug)
+      ? filterVibeTags.filter((t) => t !== slug)
+      : [...filterVibeTags, slug];
+    if (!next.length) params.delete("tags");
+    else params.set("tags", next.join(","));
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
   };
 
   const setAreaFilter = (areaId: string) => {
@@ -258,7 +359,25 @@ export function SearchPageClient({
     if (!areaId) params.delete("area_id");
     else params.set("area_id", areaId);
     params.delete("page");
-    router.push(`/search?${params.toString()}`);
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const setScopeFilter = (scope: string) => {
+    gaEvent("search_filter_change", { filter: "scope", value: scope || "in" });
+    const params = new URLSearchParams(searchParams.toString());
+    if (!scope || scope === "in") params.delete("scope");
+    else params.set("scope", scope);
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const setPriceFilter = (price: string) => {
+    gaEvent("search_filter_change", { filter: "price", value: price || "any" });
+    const params = new URLSearchParams(searchParams.toString());
+    if (!price) params.delete("price");
+    else params.set("price", price);
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
   };
 
   const totalResults =
@@ -289,7 +408,7 @@ export function SearchPageClient({
     } else {
       params.set("page", page.toString());
     }
-    router.push(`/search?${params.toString()}`);
+    startTransition(() => router.push(`/search?${params.toString()}`));
   };
 
   const headingSecondary =
@@ -329,7 +448,7 @@ export function SearchPageClient({
     const params = new URLSearchParams(searchParams.toString());
     params.set("q", newQuery);
     params.delete("page");
-    router.push(`/search?${params.toString()}`);
+    startTransition(() => router.push(`/search?${params.toString()}`));
   };
 
   return (
@@ -360,10 +479,21 @@ export function SearchPageClient({
               ))}
 
               <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3">
+                {isPending && (
+                  <span
+                    className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary)]"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
+                    Searching…
+                  </span>
+                )}
                 <label className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
                   <span className="shrink-0">Sort</span>
                   <select
                     value={searchSort}
+                    disabled={isPending}
                     onChange={(e) => {
                       const v = e.target.value;
                       gaEvent("search_filter_change", { filter: "sort_ui", value: v });
@@ -387,9 +517,27 @@ export function SearchPageClient({
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-8 lg:flex-row">
             {/* Main content - wider on desktop */}
-            <div className="flex-1 lg:w-3/4">
+            <div
+              className={`relative flex-1 lg:w-3/4 transition-opacity duration-150 ${isPending ? "pointer-events-none opacity-55" : "opacity-100"}`}
+              aria-busy={isPending && browseMode === "business" ? true : undefined}
+            >
               {/* Editorial heading */}
               <div className="mb-8">
+                {browseMode === "business" && isPending ? (
+                  <div
+                    className="mb-4 flex items-center gap-3 rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 px-4 py-3"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span
+                      className="inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent"
+                      aria-hidden
+                    />
+                    <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                      Updating results…
+                    </span>
+                  </div>
+                ) : null}
                 <p className="text-eyebrow mb-2">
                   {browseMode === "business"
                     ? (townName && areaName
@@ -436,6 +584,56 @@ export function SearchPageClient({
                 })()}
               </div>
 
+              {process.env.NODE_ENV === "development" && results._debug && (
+                <details className="mb-6 rounded border border-amber-300 bg-amber-50 text-xs">
+                  <summary className="cursor-pointer px-3 py-2 font-mono font-semibold text-amber-800 select-none">
+                    🔍 Search debug
+                  </summary>
+                  <div className="space-y-2 px-3 pb-3 pt-1">
+                    <div>
+                      <span className="font-semibold text-amber-900">rawQuery:</span>{" "}
+                      <code className="text-amber-800">{results.query}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">normalizedQuery:</span>{" "}
+                      <code className="text-amber-800">{results.normalized_query}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">filterCategoryId:</span>{" "}
+                      <code className="text-amber-800">{results._debug.filterCategoryId ?? "null"}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">resolvedTownId:</span>{" "}
+                      <code className="text-amber-800">{results._debug.resolvedTownId ?? "undefined"}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">nearTownIds:</span>{" "}
+                      <code className="text-amber-800">{results._debug.nearTownIds ? results._debug.nearTownIds.join(", ") : "undefined"}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">searchTermOverride:</span>{" "}
+                      <code className="text-amber-800">{results._debug.searchTermOverride ?? "undefined"}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">pageBrowseWithoutQuery:</span>{" "}
+                      <code className="text-amber-800">
+                        {String(results._debug.pageBrowseWithoutQuery)}
+                      </code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">skipIlike:</span>{" "}
+                      <code className="text-amber-800">{String(results._debug.skipIlike)}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-amber-900">intent:</span>
+                      <pre className="mt-1 overflow-x-auto rounded bg-amber-100 p-2 text-amber-800">
+                        {JSON.stringify(results._debug.intent, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </details>
+              )}
+
               {hasRows ? (
                 <div className="space-y-4">
                   {browseMode === "business"
@@ -480,6 +678,16 @@ export function SearchPageClient({
                                   )}
                                   {rec.business.price_level && (
                                     <span>{"$".repeat(rec.business.price_level)}</span>
+                                  )}
+                                  {process.env.NODE_ENV === "development" && (rec._vec_similarity != null || rec._composite != null) && (
+                                    <>
+                                      <span>·</span>
+                                      <span className="font-mono text-[10px] text-amber-600">
+                                        {rec._composite != null ? `c:${rec._composite.toFixed(3)}` : ""}
+                                        {rec._composite != null && rec._vec_similarity != null ? " " : ""}
+                                        {rec._vec_similarity != null ? `v:${rec._vec_similarity.toFixed(3)}` : ""}
+                                      </span>
+                                    </>
                                   )}
                                 </div>
 
@@ -812,145 +1020,302 @@ export function SearchPageClient({
                   Showing {startIndex + 1}–{Math.min(endIndex, totalResults)} of {totalResults} results
                 </p>
               ) : null}
+
+              {/* Scope expansion / narrowing suggestion */}
+              {browseMode === "business" && filterTownIds.length === 1 && townName && (() => {
+                const scope = filterScope || "in";
+                if (totalResults < 3 && scope === "in") {
+                  return (
+                    <p className="mt-3 text-center text-sm">
+                      <button onClick={() => setScopeFilter("near")} className="text-[var(--color-primary)] hover:underline">
+                        Not finding it? Search near {townName} →
+                      </button>
+                    </p>
+                  );
+                }
+                if (totalResults < 3 && scope === "near") {
+                  return (
+                    <p className="mt-3 text-center text-sm">
+                      <button onClick={() => setScopeFilter("anywhere")} className="text-[var(--color-primary)] hover:underline">
+                        Try searching all of 30A →
+                      </button>
+                    </p>
+                  );
+                }
+                if (totalResults > 8 && scope === "near") {
+                  return (
+                    <p className="mt-3 text-center text-sm text-[var(--color-text-tertiary)]">
+                      Too many results?{" "}
+                      <button onClick={() => setScopeFilter("in")} className="text-[var(--color-primary)] hover:underline">
+                        Narrow to just {townName}
+                      </button>
+                    </p>
+                  );
+                }
+                if (totalResults > 8 && scope === "anywhere") {
+                  return (
+                    <p className="mt-3 text-center text-sm text-[var(--color-text-tertiary)]">
+                      Too many results?{" "}
+                      <button onClick={() => setScopeFilter("near")} className="text-[var(--color-primary)] hover:underline">
+                        Narrow to near {townName}
+                      </button>
+                    </p>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
-            {/* Minimal sidebar */}
+            {/* Filter sidebar */}
             <aside className="hidden lg:block lg:w-1/4">
-              <div className="space-y-6">
-                {/* Towns - clean list */}
-                {towns.length > 0 && (
+              <div className="sticky top-[calc(var(--site-header-offset)+5rem)] space-y-6 max-h-[calc(100vh-10rem)] overflow-y-auto pr-1">
+
+                {/* Search input */}
+                <form onSubmit={handleSearch}>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-2 !text-[1.1rem] text-[var(--color-text-tertiary)]">search</span>
+                    <input
+                      type="text"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder={urlQ ? "Edit search…" : "Search 30A…"}
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-8 pr-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none"
+                    />
+                  </div>
+                </form>
+
+                {/* Location filter */}
+                {browseMode === "business" && towns.length > 0 && (
                   <div>
-                    <h3 className="text-eyebrow mb-4">Explore Towns</h3>
-                    <ul className="space-y-2">
-                      {towns.map((town) => (
-                        <li key={town.slug}>
-                          <Link
-                            href={`/${town.slug}`}
-                            {...gaClickProps({
-                              event: "nav_click",
-                              category: "search_sidebar",
-                              label: `town:${town.slug}`,
-                            })}
-                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                          >
-                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                              place
-                            </span>
-                            {town.name}
-                          </Link>
-                        </li>
-                      ))}
+                    <div className="mb-2 flex items-center justify-between">
+                      <h3 className="text-eyebrow">Location</h3>
+                      {filterTownIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={clearTownFilter}
+                          className="text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <ul className="space-y-0.5">
+                      {towns.map((town) => {
+                        const isExplicit = filterTownIds.includes(town.id);
+                        const isAiDetected = aiTownIds.includes(town.id);
+                        return (
+                          <li key={town.id}>
+                            <button
+                              type="button"
+                              onClick={() => toggleTownFilter(town.id)}
+                              className={`group flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                                isExplicit
+                                  ? "bg-[var(--color-primary)]/10 font-semibold text-[var(--color-primary)]"
+                                  : isAiDetected
+                                    ? "bg-[var(--color-primary)]/5 text-[var(--color-primary)]/75"
+                                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-primary)]"
+                              }`}
+                            >
+                              <span>{town.name}</span>
+                              {isExplicit && (
+                                <span className="material-symbols-outlined !text-sm text-[var(--color-primary)]">check</span>
+                              )}
+                              {!isExplicit && isAiDetected && (
+                                <span className="rounded bg-[var(--color-primary)]/10 px-1 py-0.5 text-[10px] font-medium text-[var(--color-primary)]/70">
+                                  suggested
+                                </span>
+                              )}
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
+                    {filterTownIds.length > 0 && (
+                      <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                        Showing results in {filterTownIds.length === 1 ? "1 town" : `${filterTownIds.length} towns`}
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {/* Explore Areas */}
-                {sidebarAreas.length > 0 && (
-                  <div className="border-t border-[var(--color-border)] pt-6">
-                    <h3 className="text-eyebrow mb-4">Explore Areas</h3>
-                    <ul className="space-y-2">
-                      {sidebarAreas.map((area) => (
-                        <li key={area.id}>
-                          <Link
-                            href={`/area/${area.slug}`}
-                            {...gaClickProps({
-                              event: "nav_click",
-                              category: "search_sidebar",
-                              label: `area:${area.slug}`,
-                            })}
-                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                {/* Scope toggle — only when a single town is selected */}
+                {browseMode === "business" && filterTownIds.length === 1 && (
+                  <div>
+                    <h3 className="text-eyebrow mb-2">Search radius</h3>
+                    <div className="flex overflow-hidden rounded-lg border border-[var(--color-border)]">
+                      {(["in", "near", "anywhere"] as const).map((s) => {
+                        const label = s === "in" ? "In town" : s === "near" ? "Nearby" : "All 30A";
+                        const active = (filterScope || "in") === s;
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setScopeFilter(s === "in" ? "" : s)}
+                            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${active ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"}`}
                           >
-                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                              explore
-                            </span>
-                            {area.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
-                {/* Featured Guides */}
-                {sidebarGuides.length > 0 && (
-                  <div className="border-t border-[var(--color-border)] pt-6">
-                    <h3 className="text-eyebrow mb-4">Featured Guides</h3>
-                    <ul className="space-y-2">
-                      {sidebarGuides.map((guide) => (
-                        <li key={guide.slug}>
-                          <Link
-                            href={`/guide/${guide.slug}`}
-                            {...gaClickProps({
-                              event: "nav_click",
-                              category: "search_sidebar",
-                              label: `guide:${guide.slug}`,
+                {/* Category filter */}
+                {browseMode === "business" && categoryOptions.length > 0 && (
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <h3 className="text-eyebrow">Category</h3>
+                      {filterCategorySlugs.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={clearCategoryFilter}
+                          className="text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {(() => {
+                      const VISIBLE_COUNT = 8;
+                      // Always show selected + AI-detected + first N others
+                      const prioritized = categoryOptions.filter(
+                        (c) => filterCategorySlugs.includes(c.slug) || aiCategorySlugs.includes(c.slug),
+                      );
+                      const rest = categoryOptions.filter(
+                        (c) => !filterCategorySlugs.includes(c.slug) && !aiCategorySlugs.includes(c.slug),
+                      );
+                      const visible = showAllCategories
+                        ? categoryOptions
+                        : [...prioritized, ...rest].slice(0, VISIBLE_COUNT);
+                      const hiddenCount = categoryOptions.length - visible.length;
+                      return (
+                        <>
+                          <ul className="space-y-0.5">
+                            {visible.map((cat) => {
+                              const isExplicit = filterCategorySlugs.includes(cat.slug);
+                              const isAiDetected = aiCategorySlugs.includes(cat.slug);
+                              return (
+                                <li key={cat.slug}>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleCategoryFilter(cat.slug)}
+                                    className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                                      isExplicit
+                                        ? "bg-[var(--color-primary)]/10 font-semibold text-[var(--color-primary)]"
+                                        : isAiDetected
+                                          ? "bg-[var(--color-primary)]/5 text-[var(--color-primary)]/75"
+                                          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-primary)]"
+                                    }`}
+                                  >
+                                    <span>{cat.title}</span>
+                                    {isExplicit && (
+                                      <span className="material-symbols-outlined !text-sm text-[var(--color-primary)]">check</span>
+                                    )}
+                                    {!isExplicit && isAiDetected && (
+                                      <span className="rounded bg-[var(--color-primary)]/10 px-1 py-0.5 text-[10px] font-medium text-[var(--color-primary)]/70">
+                                        suggested
+                                      </span>
+                                    )}
+                                  </button>
+                                </li>
+                              );
                             })}
-                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                          >
-                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                              menu_book
-                            </span>
-                            {guide.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                          </ul>
+                          {!showAllCategories && hiddenCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllCategories(true)}
+                              className="mt-1 w-full rounded-md px-2 py-1 text-left text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+                            >
+                              + {hiddenCount} more categories
+                            </button>
+                          )}
+                          {showAllCategories && categoryOptions.length > VISIBLE_COUNT && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllCategories(false)}
+                              className="mt-1 w-full rounded-md px-2 py-1 text-left text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+                            >
+                              Show fewer
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
 
-                {/* Featured Businesses */}
-                {sidebarBusinesses.length > 0 && (
-                  <div className="border-t border-[var(--color-border)] pt-6">
-                    <h3 className="text-eyebrow mb-4">Featured Businesses</h3>
-                    <ul className="space-y-2">
-                      {sidebarBusinesses.map((biz) => (
-                        <li key={biz.id}>
-                          <Link
-                            href={`/business/${biz.slug}`}
-                            {...gaClickProps({
-                              event: "nav_click",
-                              category: "search_sidebar",
-                              label: `business:${biz.slug}`,
-                            })}
-                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                {/* Price filter */}
+                {browseMode === "business" && (
+                  <div>
+                    <h3 className="text-eyebrow mb-2">Price range</h3>
+                    <div className="flex flex-col gap-1">
+                      {(
+                        [
+                          ["", "Any price", ""],
+                          ["inexpensive", "Inexpensive", "$ – $$"],
+                          ["moderate", "Moderate", "$$ – $$$"],
+                          ["expensive", "Expensive", "$$$ – $$$$"],
+                        ] as [string, string, string][]
+                      ).map(([val, label, range]) => {
+                        const isActive = filterPrice === val || (!val && !filterPrice);
+                        const isAiActive = !filterPrice && val !== "" && aiPriceBucket === val;
+                        return (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setPriceFilter(val)}
+                            className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
+                              isActive
+                                ? "border-[var(--color-primary)] bg-[var(--color-primary)] font-medium text-white"
+                                : isAiActive
+                                  ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5 text-[var(--color-primary)]/75"
+                                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]/50 hover:text-[var(--color-primary)]"
+                            }`}
                           >
-                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                              storefront
-                            </span>
-                            {biz.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                            <span>{label}</span>
+                            {range && (
+                              <span className={`text-xs ${isActive ? "text-white/70" : "text-[var(--color-text-tertiary)]"}`}>
+                                {range}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
-                {/* Featured Services */}
-                {sidebarServices.length > 0 && (
-                  <div className="border-t border-[var(--color-border)] pt-6">
-                    <h3 className="text-eyebrow mb-4">Featured Services</h3>
-                    <ul className="space-y-2">
-                      {sidebarServices.map((svc) => (
-                        <li key={svc.id}>
-                          <Link
-                            href={`/business/${svc.slug}`}
-                            {...gaClickProps({
-                              event: "nav_click",
-                              category: "search_sidebar",
-                              label: `service:${svc.slug}`,
-                            })}
-                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                {/* Vibe / atmosphere tags */}
+                {browseMode === "business" && (
+                  <div>
+                    <h3 className="text-eyebrow mb-2">Vibe</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {VIBE_TAGS.map(({ slug, label }) => {
+                        const isExplicit = filterVibeTags.includes(slug);
+                        const isAiDetected = aiVibeTags.includes(slug);
+                        return (
+                          <button
+                            key={slug}
+                            type="button"
+                            onClick={() => toggleVibeTag(slug)}
+                            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                              isExplicit
+                                ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                                : isAiDetected
+                                  ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5 text-[var(--color-primary)]/75"
+                                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]/50 hover:text-[var(--color-primary)]"
+                            }`}
                           >
-                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                              handyman
-                            </span>
-                            {svc.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
+
               </div>
             </aside>
           </div>

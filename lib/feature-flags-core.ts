@@ -32,6 +32,16 @@ function mergeFromJson(
   }
 }
 
+/** Returns parsed keys when JSON is valid, else **`null`** (invalid or empty). */
+function featureFlagsJsonKeys(raw: string | undefined): Set<string> | null {
+  if (!raw?.trim()) return null;
+  try {
+    return new Set(Object.keys(JSON.parse(raw) as Record<string, unknown>));
+  } catch {
+    return null;
+  }
+}
+
 /**
  * If `user_features` is false (legacy), force auth and saved off to match old behavior.
  */
@@ -45,9 +55,14 @@ export function applyUserFeaturesLegacy(
 }
 
 export function parseFlagsFromEnv(): Record<string, boolean> {
-  return applyUserFeaturesLegacy(
+  const flags = applyUserFeaturesLegacy(
     mergeFromJson({ ...DEFAULT_FLAGS }, process.env.FEATURE_FLAGS_JSON),
   );
+  const envKeys = featureFlagsJsonKeys(process.env.FEATURE_FLAGS_JSON);
+  if (process.env.NODE_ENV === "development" && !envKeys?.has("search")) {
+    return { ...flags, search: true };
+  }
+  return flags;
 }
 
 export function mergeWithCookieOverride(
@@ -67,10 +82,7 @@ export function mergeWithCookieOverride(
 export function getFeatureFlagsForEdgeRequest(
   getCookie: (name: string) => string | undefined,
 ): Record<string, boolean> {
-  const base = applyUserFeaturesLegacy(
-    mergeFromJson({ ...DEFAULT_FLAGS }, process.env.FEATURE_FLAGS_JSON),
-  );
-  return mergeWithCookieOverride(base, getCookie(FLAG_OVERRIDE_COOKIE));
+  return mergeWithCookieOverride(parseFlagsFromEnv(), getCookie(FLAG_OVERRIDE_COOKIE));
 }
 
 export function isAuthEnabled(flags: Record<string, boolean>): boolean {

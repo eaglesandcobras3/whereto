@@ -20,6 +20,29 @@ export const searchIntentSchema = z.object({
     .default("quality"),
   price_level: z.number().int().min(1).max(4).nullable(),
   result_count: z.number().int().min(1).max(12).default(10),
+  /** Specific products, dishes, or services mentioned ("fish tacos", "cold brew", "paddleboard rental"). */
+  specific_items: z.array(z.string()).optional(),
+  /** Dietary restrictions or needs mentioned ("gluten_free", "vegan", "vegetarian", "dairy_free"). */
+  dietary_needs: z.array(z.string()).optional(),
+  /** Meal time if mentioned. */
+  meal_period: z
+    .enum(["breakfast", "brunch", "lunch", "dinner", "late_night"])
+    .nullable()
+    .optional(),
+  /** Atmosphere descriptors mentioned ("romantic", "waterfront", "outdoor_seating", "quiet"). */
+  atmosphere_needs: z.array(z.string()).optional(),
+  /** Specific occasion mentioned ("date_night", "family_outing", "rainy_day", "girls_trip", "celebration"). */
+  occasion: z.string().nullable().optional(),
+  /**
+   * Query classification for routing:
+   *   keyword  — simple type query ("bookstores", "coffee shops")
+   *   specific — looking for a specific item/feature ("places with fish tacos", "gluten free pizza")
+   *   vibe     — atmosphere or occasion focused ("romantic waterfront dinner", "rainy day activity")
+   */
+  query_type: z
+    .enum(["keyword", "specific", "vibe"])
+    .optional()
+    .transform((q) => q ?? "keyword"),
 });
 
 export type SearchIntent = z.infer<typeof searchIntentSchema>;

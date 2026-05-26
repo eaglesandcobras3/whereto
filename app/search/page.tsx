@@ -40,6 +40,12 @@ type Props = {
     category?: string;
     /** `areas.id` (UUID) */
     area_id?: string;
+    /** Scope override: "in" | "near" | "anywhere" */
+    scope?: string;
+    /** Price bucket: "inexpensive" | "moderate" | "expensive" */
+    price?: string;
+    /** Comma-separated intent tag slugs */
+    tags?: string;
   }>;
 };
 
@@ -182,7 +188,26 @@ export default async function SearchPage({ searchParams }: Props) {
     sort: sortParam,
     category: categoryParam,
     area_id: areaIdParam,
+    scope: scopeParam,
+    price: priceParam,
+    tags: tagsParam,
   } = await searchParams;
+  const scopeOverride = (["in", "near", "anywhere"] as const).find((s) => s === scopeParam);
+  const constrainPriceBucket = (["inexpensive", "moderate", "expensive"] as const).find(
+    (b) => b === priceParam,
+  ) ?? null;
+  // town_id may be comma-separated for multi-select
+  const constrainTownIds = town_id?.trim()
+    ? town_id.trim().split(",").filter(Boolean)
+    : [];
+  // category may be comma-separated for multi-select
+  const constrainCategorySlugs = categoryParam?.trim()
+    ? categoryParam.trim().split(",").filter(s => /^[a-z0-9_]+$/.test(s))
+    : [];
+  // tags may be comma-separated
+  const constrainVibeTags = tagsParam?.trim()
+    ? tagsParam.trim().split(",").filter(s => /^[a-z0-9_]+$/.test(s))
+    : [];
   const type = normalizeSearchType(rawType);
   const sortMode =
     sortParam === "updated" ? "updated" : sortParam === "name" ? "name" : "relevance";
@@ -191,17 +216,19 @@ export default async function SearchPage({ searchParams }: Props) {
 
   let townName = "";
   let constrainTownId: string | undefined;
-  if (town_id?.trim()) {
-    const { data: town } = await serviceSupabase
+  if (constrainTownIds.length > 0) {
+    const { data: townRows } = await serviceSupabase
       .from("towns")
       .select("id, title")
-      .eq("id", town_id.trim())
+      .in("id", constrainTownIds)
       .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .maybeSingle();
-    if (town) {
-      constrainTownId = (town as { id: string }).id;
-      townName = (town as { title: string }).title;
+      .eq("status", DIRECTUS_PUBLISHED_STATUS);
+    if (townRows?.length) {
+      const validIds = new Set((townRows).map((t) => String(t.id)));
+      const orderedValid = constrainTownIds.filter((id) => validIds.has(id));
+      const titleMap = new Map((townRows).map((t) => [String(t.id), String((t as { title: string }).title)]));
+      constrainTownId = orderedValid[0];
+      townName = constrainTownId ? (titleMap.get(constrainTownId) ?? "") : "";
     }
   }
 
@@ -244,11 +271,6 @@ export default async function SearchPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-  let constrainCategorySlug: string | undefined;
-  if (categoryParam && /^[a-z0-9_]+$/.test(categoryParam.trim())) {
-    constrainCategorySlug = categoryParam.trim();
-  }
-
   const displayQuery =
     trimmedQ ||
     (typeKey ? TYPE_FILTERS[typeKey].label : "") ||
@@ -261,7 +283,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const currentPage = Math.max(1, Number(page) || 1);
 
   const { data: sidebarRows } = await serviceSupabase
-    .from("towns")
+    .from("towns_view")
     .select("id, title, slug")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -718,10 +740,14 @@ export default async function SearchPage({ searchParams }: Props) {
     pageSize: 12,
     requiredHasPhysicalLocation: type === "services" ? false : undefined,
     constrainTownId,
+    constrainTownIds: constrainTownIds.length > 1 ? constrainTownIds : undefined,
     constrainAreaId,
-    constrainCategorySlug: constrainCategorySlug ?? null,
+    constrainCategorySlugs: constrainCategorySlugs.length ? constrainCategorySlugs : undefined,
     sortMode,
     skipIlikeTextFilter,
+    scopeOverride,
+    constrainPriceBucket,
+    constrainVibeTags: constrainVibeTags.length ? constrainVibeTags : undefined,
   });
 
   return (

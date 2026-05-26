@@ -21,6 +21,25 @@ export type BusinessPayload = {
   has_physical_location?: boolean;
 };
 
+export type SearchDebugInfo = {
+  intent: unknown;
+  filterCategoryId: string | null;
+  resolvedTownId: string | undefined;
+  nearTownIds: string[] | undefined;
+  searchTermOverride: string | undefined;
+  skipIlike: boolean;
+  /** True only for `/search` directory browse chips with no typed `q`. Typed NL clears this. */
+  pageBrowseWithoutQuery: boolean;
+};
+
+/** Effective filters resolved from AI intent + explicit URL params. Always populated in production. */
+export type ResolvedFilters = {
+  town_ids: string[];        // town IDs constraining results (AI-detected or explicit)
+  category_slugs: string[];  // category slugs constraining results
+  vibe_tags: string[];       // intent tag slugs constraining results (kid_friendly, romantic, etc.)
+  price_bucket: "inexpensive" | "moderate" | "expensive" | null;
+};
+
 export type SearchResultPayload = {
   query: string;
   query_hash: string;
@@ -36,8 +55,14 @@ export type SearchResultPayload = {
     explanation: string;
     highlighted_tags: string[];
     business: BusinessPayload;
+    /** Dev-only: cosine similarity from vector search (0–1). */
+    _vec_similarity?: number;
+    /** Dev-only: composite score (structuredMatch + vecSim + quality). */
+    _composite?: number;
   }>;
   suggestions?: string[];
   cached: boolean;
   cache_id?: string;
+  resolved_filters?: ResolvedFilters;
+  _debug?: SearchDebugInfo;
 };

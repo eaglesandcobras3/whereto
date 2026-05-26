@@ -24,8 +24,9 @@ CREATE INDEX IF NOT EXISTS businesses_embedding_hnsw_idx
   USING hnsw (embedding vector_cosine_ops)
   WITH (m = 16, ef_construction = 64);
 
--- RPC: hybrid search — FTS pre-filter + vector re-ranking.
--- Returns up to `match_count` businesses ordered by combined score.
+-- RPC: vector similarity search for businesses.
+-- Returns up to `match_count` businesses ordered by cosine similarity to the query embedding,
+-- with featured and rating signals as tiebreakers.
 CREATE OR REPLACE FUNCTION public.hybrid_search_businesses(
   query_text      text,
   query_embedding vector(1536),
@@ -54,68 +55,45 @@ RETURNS TABLE (
   date_updated          timestamptz,
   town_id               text,
   primary_category_id   text,
-  fts_rank              real,
   vec_similarity        real
 )
 LANGUAGE sql
 STABLE
 AS $$
-  WITH candidates AS (
-    SELECT
-      b.id,
-      b.slug,
-      b.title,
-      b.excerpt,
-      b.address,
-      b.phone,
-      b.website,
-      b.map_lat,
-      b.map_lng,
-      b.review_rating_cached,
-      b.review_count_cached,
-      b.main_image,
-      b.hero_image,
-      resolve_directus_file_url(b.main_image)  AS main_image_url,
-      resolve_directus_file_url(b.hero_image)  AS hero_image_url,
-      b.status,
-      b.featured,
-      b.date_updated,
-      b.town_id::text,
-      b.primary_category_id::text,
-      CASE
-        WHEN query_text <> '' AND b.search_vector IS NOT NULL
-        THEN ts_rank(b.search_vector, websearch_to_tsquery('english', query_text))
-        ELSE 0
-      END AS fts_rank,
-      CASE
-        WHEN b.embedding IS NOT NULL
-        THEN 1 - (b.embedding <=> query_embedding)
-        ELSE 0
-      END AS vec_similarity
-    FROM public.businesses b
-    WHERE
-      b.archived_at IS NULL
-      AND b.is_hidden_from_search IS NOT TRUE
-      AND (p_town_id IS NULL OR b.town_id::text = p_town_id)
-      AND (p_category_id IS NULL OR b.primary_category_id::text = p_category_id)
-      AND (
-        query_text = ''
-        OR b.search_vector @@ websearch_to_tsquery('english', query_text)
-        OR (b.embedding IS NOT NULL AND 1 - (b.embedding <=> query_embedding) > 0.65)
-      )
-  )
   SELECT
-    c.id, c.slug, c.title, c.excerpt, c.address, c.phone, c.website,
-    c.map_lat, c.map_lng, c.review_rating_cached, c.review_count_cached,
-    c.main_image, c.hero_image, c.main_image_url, c.hero_image_url,
-    c.status, c.featured, c.date_updated, c.town_id, c.primary_category_id,
-    c.fts_rank,
-    c.vec_similarity
-  FROM candidates c
+    b.id::text,
+    b.slug,
+    b.title,
+    b.excerpt,
+    b.address,
+    b.phone,
+    b.website,
+    b.map_lat,
+    b.map_lng,
+    b.review_rating_cached,
+    b.review_count_cached,
+    b.main_image,
+    b.hero_image,
+    resolve_directus_file_url(b.main_image)  AS main_image_url,
+    resolve_directus_file_url(b.hero_image)  AS hero_image_url,
+    b.status,
+    b.featured,
+    b.date_updated,
+    b.town_id::text,
+    b.primary_category_id::text,
+    (1 - (b.embedding <=> query_embedding))::real AS vec_similarity
+  FROM public.businesses b
+  WHERE
+    b.archived_at IS NULL
+    AND b.status = 'published'
+    AND b.is_hidden_from_search IS NOT TRUE
+    AND b.embedding IS NOT NULL
+    AND (p_town_id IS NULL OR b.town_id::text = p_town_id)
+    AND (p_category_id IS NULL OR b.primary_category_id::text = p_category_id)
   ORDER BY
-    COALESCE(c.featured, false) DESC,
-    (0.4 * c.fts_rank + 0.6 * c.vec_similarity) DESC,
-    COALESCE(c.review_rating_cached, 0) DESC,
-    c.title
+    COALESCE(b.featured, false) DESC,
+    b.embedding <=> query_embedding,
+    COALESCE(b.review_rating_cached, 0) DESC,
+    b.title
   LIMIT match_count;
 $$;

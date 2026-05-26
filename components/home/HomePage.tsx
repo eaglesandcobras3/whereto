@@ -1,59 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { nanoid } from "nanoid";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { gaEvent } from "@/lib/analytics/gtag-runner";
-
-type Rec = {
-  business_id: string;
-  rank: number;
-  headline: string;
-  explanation: string;
-  highlighted_tags: string[];
-  business: {
-    id?: string;
-    name?: string;
-    address?: string | null;
-    lat?: number;
-    lng?: number;
-    phone?: string | null;
-    website?: string | null;
-    listing_rating?: number | null;
-    slug?: string;
-    tags?: string[];
-    ai_summary?: string | null;
-    image_url?: string | null;
-  };
-};
-
-type SearchJson = {
-  query: string;
-  query_hash: string;
-  summary: string;
-  recommendations: Rec[];
-  suggestions?: string[];
-  cached: boolean;
-  cache_id?: string;
-  error?: string;
-};
-
-function sessionKey() {
-  if (typeof window === "undefined") return "";
-  let s = localStorage.getItem("whereto30a_session");
-  if (!s) {
-    s = nanoid();
-    localStorage.setItem("whereto30a_session", s);
-  }
-  return s;
-}
 
 /** Placeholder assets from design/homepage.html (wire real URLs later). */
 const IMG = {
@@ -234,7 +190,6 @@ type Props = {
     imageUrl: string;
     title: string;
     subtitle: string;
-    searchPlaceholder: string;
   };
 };
 
@@ -247,30 +202,9 @@ export function HomePage({
     title: "I'm looking for...",
     subtitle:
       "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
-    searchPlaceholder: "Search anything on 30A...",
   },
 }: Props) {
   const searchParams = useSearchParams();
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const heroInputRef = useRef<HTMLInputElement>(null);
-
-  const logImpressions = useCallback(async (payload: SearchJson) => {
-    const session_id = sessionKey();
-    await fetch("/api/impressions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_id,
-        items: payload.recommendations.map((r, i) => ({
-          business_id: r.business_id,
-          query_hash: payload.query_hash,
-          rank_position: i + 1,
-        })),
-      }),
-    });
-  }, []);
 
   useEffect(() => {
     const initial = searchParams.get("q");
@@ -279,21 +213,9 @@ export function HomePage({
     }
   }, [searchParams]);
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!q.trim()) return;
-    gaEvent("search", { search_term: q.trim().slice(0, 200), source: "home_hero" });
-    window.location.href = `/search?q=${encodeURIComponent(q)}`;
-  }
-
-  function onChangeInput(v: string) {
-    setQ(v);
-  }
-
   function scrollToHero() {
     gaEvent("cta_click", { source: "home_plan_section", label: "start_searching_scroll" });
     document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
-    requestAnimationFrame(() => heroInputRef.current?.focus());
   }
 
   return (
@@ -350,60 +272,6 @@ export function HomePage({
                 Browse towns
               </Link>
             </div>
-
-            {featureFlags["search"] === true ? (
-              <>
-                <p className="mb-4 text-sm font-medium uppercase tracking-widest text-white/70">
-                  Or search the coast
-                </p>
-                <form
-                  onSubmit={onSubmit}
-                  className="mx-auto w-full max-w-[640px]"
-                >
-                  <div className="relative">
-                    <MsIcon
-                      name="search"
-                      className="absolute left-6 top-1/2 -translate-y-1/2 !text-xl text-zinc-400"
-                    />
-                    <input
-                      ref={heroInputRef}
-                      name="q"
-                      value={q}
-                      onChange={(e) => onChangeInput(e.target.value)}
-                      className="h-16 w-full rounded-full border-none bg-white/95 pl-14 pr-32 text-lg text-zinc-900 shadow-xl backdrop-blur-md transition-all placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-white/30"
-                      placeholder={heroSettings.searchPlaceholder}
-                      type="search"
-                      autoComplete="off"
-                    />
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      {...gaClickProps({ event: "search_click", category: "home_hero", label: "submit_inline" })}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-primary px-6 font-semibold text-white transition-all hover:bg-primary-light active:scale-[0.98] disabled:opacity-60"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </form>
-
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                  {["Restaurants", "Coffee", "Activities", "Guides"].map((label) => (
-                    <Link
-                      key={label}
-                      href={`/search?q=${encodeURIComponent(label.toLowerCase() + " 30A")}`}
-                      {...gaClickProps({
-                        event: "cta_click",
-                        category: "home_hero_quick",
-                        label: label.replace(/\s+/g, "_").toLowerCase(),
-                      })}
-                      className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
-                    >
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-              </>
-            ) : null}
           </div>
 
           <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
@@ -442,14 +310,6 @@ export function HomePage({
             </div>
           </section>
         )}
-
-        {err ? (
-          <div className="mx-auto max-w-screen-xl px-6 py-4">
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {err}
-            </div>
-          </div>
-        ) : null}
 
         {featureFlags["curator"] === true && (
           <section
