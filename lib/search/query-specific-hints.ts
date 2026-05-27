@@ -22,7 +22,10 @@ export function inferRestaurantsSlugWhenSpecificItemsNeedCategory(
     /\b(kayak|paddleboard|paddleboards|sup\b|surfboard|surfboards|bicycle|scooter|parasail|charter)\b/i.test(
       blob,
     ) ||
-    /\b(books?|bookstores?|novels?|sunscreen|jewelry|souvenirs?)\b/i.test(blob)
+    /\b(books?|bookstores?|novels?|sunscreen|jewelry|souvenirs?)\b/i.test(blob) ||
+    /\b(clothing|clothes|apparel|fashion|boutique|swimwear|dress|dresses|footwear|sandals|retail|gifts?)\b/i.test(
+      blob,
+    )
   ) {
     return null;
   }

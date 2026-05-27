@@ -128,22 +128,44 @@ Then set **`FTS_SEARCH_ENABLED=true`** in your environment (Vercel + `.env.local
 ### 5. Apply business intelligence migration
 In Supabase SQL Editor, run **`supabase/migrations/20260526120000_business_intelligence.sql`**. This adds structured facet columns (`business_type`, `item_tags`, `dietary_tags`, `meal_period_tags`, `atmosphere_tags`, `occasion_tags`, `qa_document`, `qa_document_updated_at`) and replaces `hybrid_search_businesses` with a version that supports multi-town filtering and returns new columns for composite scoring.
 
-### 6. Generate business intelligence (tags + Q&A documents)
+### 6. Search enrichment pipeline (recommended: BI + embeddings, minimal GPT calls)
+
+```bash
+npx tsx local/enrich-search-pipeline.ts --dry-run   # preview
+npx tsx local/enrich-search-pipeline.ts             # gap-only: rows missing qa AND/OR embedding timestamps
+npx tsx local/enrich-search-pipeline.ts --force     # regenerate BI + embeddings for every row in scope
+npx tsx local/enrich-search-pipeline.ts --id <id>   # single business
+npx tsx local/enrich-search-pipeline.ts --published-only   # limit to published (default is published + draft)
+```
+
+**Why use this:** One command walks each listing in order. It calls **GPT-4o-mini only when `qa_document_updated_at` is null** (or with `--force`). It **does not** call chat completion for rows that already have a Q&A doc but still need a vector. Embeddings use the same **batched** `text-embedding-3-small` requests as `local/generate-embeddings.ts` (up to 100 texts per call). Shared logic lives under `local/lib/search-enrichment/`.
+
+**Scope:** Default **`status IN ('published','draft')`**, not archived. **`--published-only`** matches the old “published-only” behavior.
+
+**Gap-only (no `--force`):** Selects rows where **`qa_document_updated_at` OR `embedding_updated_at`** is NULL (PostgREST `or` filter).
+
+### 7. Generate business intelligence only (standalone)
+
 ```bash
 npx tsx local/generate-business-intelligence.ts --dry-run   # preview
 npx tsx local/generate-business-intelligence.ts             # write
 npx tsx local/generate-business-intelligence.ts --force     # regenerate all
 npx tsx local/generate-business-intelligence.ts --id <id>   # single business
+npx tsx local/generate-business-intelligence.ts --published-only   # published only (default includes drafts)
 ```
 Uses `gpt-4o-mini`. One call per business. Writes `business_type`, all tag arrays, and a `qa_document` — the Q&A-format text used as the embedding source. Run `DEBUG_INTEL=1 npx tsx local/generate-business-intelligence.ts --id <id>` to inspect output for a single listing.
 
-### 7. Generate embeddings
+### 8. Generate embeddings only (standalone)
+
 ```bash
 npx tsx local/generate-embeddings.ts --dry-run   # preview (no API calls)
 npx tsx local/generate-embeddings.ts             # write
 npx tsx local/generate-embeddings.ts --force     # regenerate all
+npx tsx local/generate-embeddings.ts --published-only   # published only (default includes drafts)
 ```
-Uses `text-embedding-3-small` (1536 dims). Now prefers the `qa_document` over `search_profile` as the embedding source — Q&A format bridges the query-document asymmetry gap so similarity scores are higher and more discriminating. Run after step 6 so new Q&A documents are baked in. Re-run whenever you add or significantly edit listings.
+Uses `text-embedding-3-small` (1536 dims). Prefers the `qa_document` over `search_profile` as the embedding source. After standalone step 7, run this for any rows still missing **`embedding_updated_at`**, or use **step 6** instead for a single pass.
+
+**Gap-only runs (no `--force`) on standalone scripts:** Each loads rows where the matching `*_updated_at` is NULL (`qa_document_updated_at` in step 7, `search_profile_updated_at` in `local/generate-search-profiles.ts`, `embedding_updated_at` in step 8). Default status is **`published` + `draft`**; **`--published-only`** restricts to published.
 
 ---
 
@@ -158,6 +180,7 @@ Uses `text-embedding-3-small` (1536 dims). Now prefers the `qa_document` over `s
 
 | Date | What changed |
 |------|----------------|
+| 2026-05-24 | **Search enrichment:** Added **`local/enrich-search-pipeline.ts`** — one pass runs BI (GPT) only when `qa_document` is missing, then **batched** embeddings. **`local/generate-business-intelligence.ts`**, **`local/generate-embeddings.ts`**, **`local/generate-search-profiles.ts`** default to **`published` + `draft`**; **`--published-only`** narrows scope (replaces **`--include-drafts`**). Shared helpers: **`local/lib/search-enrichment/`**. |
 | 2026-05-27 | **hybrid_search_businesses RPC ambiguity:** Apply **`20260527103000_drop_duplicate_hybrid_search.sql`** if PostgREST / `supabase.rpc('hybrid_search_businesses', …)` fails with **`Could not choose the best candidate function`**—the town-adjacency migration introduced a duplicate overload `(text, vector, int, text, text, text[], text)` (category **before** `town_ids[]`) alongside the canonical business-intelligence signature `(…, text, text[], text, text)`. The new migration **`DROP`s** only the stale ordering so one function remains. |
 | 2026-05-26 | **Business intelligence + composite search scoring:** Apply **`20260526120000_business_intelligence.sql`** — adds `business_type`, `item_tags`, `dietary_tags`, `meal_period_tags`, `atmosphere_tags`, `occasion_tags`, `qa_document` columns; replaces `hybrid_search_businesses` RPC with multi-town support (`p_town_ids[]`) and new column returns. Run **`local/generate-business-intelligence.ts`** (gpt-4o-mini, one call/business) to populate structured tags + Q&A documents, then **`local/generate-embeddings.ts --force`** to re-embed from Q&A docs. Intent schema expanded: `specific_items[]`, `dietary_needs[]`, `meal_period`, `atmosphere_needs[]`, `occasion`, `query_type`. Search now uses **composite scoring**: `structuredMatch × 0.60 + vecSim × 0.30 + quality × 0.10` when structured intent fields are present; `vecSim × 0.90 + quality × 0.10` for simple keyword queries. Dev mode shows `c:0.xxx v:0.xxx` on result cards. |
 | 2026-05-24 | **FTS slug tokens:** New migration **`20260524140000_fts_include_business_slug.sql`** — `search_vector` now includes **`slug`** words (hyphens → spaces) at weight **A** beside title. Apply after **`20260524120000_fts_businesses.sql`** if you use full-text search later. |

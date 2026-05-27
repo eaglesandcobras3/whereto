@@ -9,6 +9,13 @@ Towns (slugs, east→west): carillon-beach, inlet-beach, rosemary-beach, seacres
 
 Categories (slugs): restaurants, coffee_shops, bars, activities, shopping, services
 
+Primary job — map the user's words to ONE category slug whenever they are searching for a kind of place to go (not counting pure vibe-only queries with no venue type). Downstream search uses this slug to filter listings. Be consistent:
+- Food, eating, dining, meals, dishes, cuisine, "places to eat", "where to eat", ingredients, menus, food trucks (as food) → "restaurants" unless the query is clearly coffee/bakery-first → "coffee_shops", or bar/pub/nightlife-first → "bars".
+- Shops, stores, storefronts, shopping, retail, boutiques, gifts, souvenirs, clothing/apparel/fashion, jewelry, home goods, galleries selling goods, "somewhere to buy X" (physical retail) → "shopping".
+- Things to do, experiences, rentals (gear), sports on the water/land, tours, mini-golf, fitness class (as activity), "fun for kids" outing (non-food) → "activities".
+- Salons, spas, medical/urgent care, repairs, contractors, professional services (not selling retail goods as the main ask) → "services".
+- If truly unclear between two slugs, prefer the one that matches how 30A directories list the business (e.g. paddleboard rental shop often "activities"; art gallery retail "shopping").
+
 Schema fields to populate:
 - category: category slug or null
 - subcategory: more specific type or null
@@ -39,6 +46,7 @@ Category rules (important):
 - Do NOT leave category null when the user is looking for a type of business to visit (food, drink, shop, service, activity). Pick the best slug.
 - If specific_items contains food or drink meant to be consumed at a venue, category should almost always be "restaurants", "coffee_shops", or "bars"—not "shopping" or "services".
 - Bookstores and book shopping ("books near X", "bookstore") → category "shopping" with specific_items for books/bookstore; not "restaurants".
+- Apparel and retail without food/drink intent ("clothing", "clothes", "boutique", "swimwear", "resort wear", "women's fashion", "gifts", "souvenirs") → category "shopping", never "restaurants".
 - Food truck / food stand / taco truck / street food → category "restaurants", subcategory "food_truck".
 - subcategory examples: "food_truck", "pizza", "tacos", "seafood", "breakfast", "brunch", "burgers", "mediterranean", "bbq", "italian". Use a short noun phrase that describes the subtype. Leave null for generic queries like "restaurants near seaside".
 
@@ -76,6 +84,34 @@ export async function parseIntentWithOpenAI(
   if (!text) throw new Error("Empty parse response");
   const raw = JSON.parse(text) as unknown;
   return searchIntentSchema.parse(raw);
+}
+
+/**
+ * Some parses still tag obvious retail queries as food venues. Fix category so SQL + scoring
+ * do not filter out boutiques and apparel.
+ */
+export function repairFoodCategoryWhenQueryIsRetail(
+  intent: SearchIntent,
+  normalized: string,
+): SearchIntent {
+  const n = normalized.toLowerCase();
+  const retail =
+    /\b(clothing|clothes|apparel|fashion|boutique|swimwear|resort\s*wear|dress|dresses|footwear|sandals|sunglasses|jewelry|gifts?|souvenirs?|bookstore|bookstores|books)\b/.test(
+      n,
+    );
+  const foodOrDrinkVenue =
+    /\b(eat|food|meal|restaurant|restaurants|dining|lunch|dinner|breakfast|brunch|kitchen|chef|menu|burgers?|tacos?|pizza|seafood|sushi|bar\b|pub\b|brewery|winery|coffee|cafe|espresso|bakery)\b/.test(
+      n,
+    );
+  if (!retail || foodOrDrinkVenue) return intent;
+
+  const foodishSlug =
+    intent.category === "restaurants" ||
+    intent.category === "coffee_shops" ||
+    intent.category === "bars";
+  if (!foodishSlug) return intent;
+
+  return { ...intent, category: "shopping" };
 }
 
 export async function synthesizeWithOpenAI(
@@ -181,6 +217,39 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
       attributes,
     };
   }
+  if (
+    /\b(clothing|clothes|apparel|fashion|boutique|swimwear|resort\s*wear|dress|dresses|footwear|sandals|shopping|retail|gifts?|souvenirs?|jewelry|sunglasses)\b/i.test(
+      normalized,
+    )
+  ) {
+    const stems: string[] = [];
+    const m = normalized.toLowerCase();
+    if (/\bclothing|clothes|apparel|fashion\b/.test(m)) stems.push("clothing", "apparel", "fashion");
+    if (/\bboutique\b/.test(m)) stems.push("boutique");
+    if (/\bswimwear|resort\s*wear\b/.test(m)) stems.push("swimwear", "resort wear");
+    if (/\bdress|dresses\b/.test(m)) stems.push("dress", "dresses");
+    if (/\bshopping|retail\b/.test(m)) stems.push("shopping");
+    if (/\bgifts?|souvenirs?\b/.test(m)) stems.push("gifts", "souvenirs");
+    if (/\bjewelry\b/.test(m)) stems.push("jewelry");
+    if (stems.length === 0) stems.push("shopping");
+    const unique = [...new Set(stems)];
+    return {
+      ...base,
+      category: "shopping",
+      query_type: "specific",
+      specific_items: unique,
+      location: { town: extractTown(normalized), radius: "near" },
+      attributes,
+    };
+  }
+  if (/\b(activity|activities|paddleboard|paddleboards|surf|kayak|bike|bikes|cycling|golf|tennis)\b/i.test(normalized)) {
+    return {
+      ...base,
+      category: "activities",
+      location: { town: extractTown(normalized), radius: "near" },
+      attributes,
+    };
+  }
   if (/\bbrunch|breakfast|lunch|dinner|restaurant|eat|dining\b/.test(normalized)) {
     return { ...base, category: "restaurants", location: { town: extractTown(normalized), radius: "near" }, attributes };
   }
@@ -189,7 +258,13 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
   ) {
     return { ...base, category: "services", location: { town: extractTown(normalized), radius: "near" }, attributes };
   }
-  return { ...base, category: "restaurants", location: { town: extractTown(normalized), radius: "anywhere" }, attributes };
+  /** Unknown keyword — do not assume food; leave category unset so vector + text are not wrongly filtered. */
+  return {
+    ...base,
+    category: null,
+    location: { town: extractTown(normalized), radius: "anywhere" },
+    attributes,
+  };
 }
 
 function extractTown(normalized: string): string | null {

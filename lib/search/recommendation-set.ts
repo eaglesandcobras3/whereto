@@ -13,6 +13,7 @@ import {
 import {
   fallbackIntentFromKeywords,
   parseIntentWithOpenAI,
+  repairFoodCategoryWhenQueryIsRetail,
   synthesizeWithOpenAI,
 } from "@/lib/ai/search-ai";
 import { loadLocationRankingScope } from "@/lib/search/location-scope";
@@ -470,6 +471,7 @@ export async function resolveIntent(
   } catch {
     intent = fallbackIntentFromKeywords(normalized);
   }
+  intent = repairFoodCategoryWhenQueryIsRetail(intent, normalized);
   return searchIntentSchema.parse(intent);
 }
 

@@ -5,8 +5,6 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
-const PUBLIC_SEARCH_TOWNS_URL = "/search?type=towns";
-
 /** Footer town list generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
 const FOOTER_TOWNS_LIMIT = 500;
 
@@ -98,15 +96,6 @@ export async function SiteFooter() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4">
-                <Link
-                  href={PUBLIC_SEARCH_TOWNS_URL}
-                  {...gaClickProps({ event: "nav_click", category: "footer_towns", label: "explore_all_towns" })}
-                  className="text-sm font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
-                >
-                  Explore all towns
-                </Link>
-              </p>
             </div>
           ) : null}
 

@@ -109,7 +109,9 @@ export async function runSearch(options: {
       : null;
 
   // --- Category resolution ---
-  // Explicit slugs from URL override AI intent.
+  // User-chosen sidebar/URL categories win. Otherwise use AI intent.category from parseIntentWithOpenAI
+  // (see lib/ai/search-ai.ts PARSE_SYSTEM) plus a narrow "infer restaurants when dish terms lack category"
+  // backstop in query-specific-hints. Keyword fallback + repair runs only without OpenAI or on parse failure.
   let filterCategoryIds: string[] = []; // used for DB filter
   let explicitCategoryId: string | null = null; // used for vector search (single, only when explicit)
   let resolvedCategorySlugs: string[] = []; // for resolved_filters
