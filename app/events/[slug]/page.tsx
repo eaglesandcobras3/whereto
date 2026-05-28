@@ -9,6 +9,8 @@ import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
+export const revalidate = 1800;
+
 type Props = { params: Promise<{ slug: string }> };
 
 type EventRow = {

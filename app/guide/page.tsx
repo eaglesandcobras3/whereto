@@ -9,6 +9,8 @@ import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
+export const revalidate = 3600;
+
 const HUB_FEATURED_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
 export const metadata: Metadata = {

@@ -19,6 +19,28 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 
+export const revalidate = 3600;
+
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  try {
+    const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
+    const supabase = getServiceSupabaseOrNull();
+    if (!supabase) return [];
+    const [areas, pois] = await Promise.all([
+      supabase.from("areas").select("slug").is("archived_at", null).eq("status", "published"),
+      supabase.from("points_of_interest").select("slug").is("archived_at", null).eq("status", "published"),
+    ]);
+    const slugs = new Set<string>();
+    for (const r of [...(areas.data ?? []), ...(pois.data ?? [])]) {
+      const s = String((r as { slug: string }).slug);
+      if (s) slugs.add(s);
+    }
+    return [...slugs].map((slug) => ({ slug }));
+  } catch {
+    return [];
+  }
+}
+
 /** Deterministic shuffle using mulberry32 PRNG with daily seed */
 function shuffleWithDailySeed<T>(items: T[]): T[] {
   const seed = chicagoCalendarDaySeed();

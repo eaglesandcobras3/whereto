@@ -10,8 +10,9 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
-/** Fresh `Date` each request so daily featured picks advance. Shuffle seed uses `America/Chicago` calendar dates. */
-export const dynamic = "force-dynamic";
+// Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
+// ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/"),

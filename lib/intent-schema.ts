@@ -10,7 +10,7 @@ export const searchIntentSchema = z.object({
     })
     .nullable()
     .transform(
-      (v) => v ?? { town: null as string | null, radius: "near" as const },
+      (v) => v ?? { town: null as string | null, radius: "anywhere" as const },
     ),
   attributes: z.array(z.string()).default([]),
   exclude_attributes: z.array(z.string()).default([]),

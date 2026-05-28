@@ -1,0 +1,521 @@
+[
+  {
+    "query": "coffee",
+    "notExpect": ["Sundog", "Pescado", "Amor Boutique", "ONO Surf"],
+    "note": "STRESS: single-word coffee — no restaurants/boutiques in pure vector results"
+  },
+  {
+    "query": "coffee shop espresso cafe",
+    "expect": ["Amavida", "3rd Cup", "Turbo Coffee"],
+    "notExpect": ["ONO Surf", "Sundog"],
+    "note": "Core coffee query — coffee shops only"
+  },
+  {
+    "query": "coffee in rosemary beach",
+    "expect": ["3rd Cup", "Amavida", "Charlies"],
+    "note": "Rosemary-specific coffee spots"
+  },
+  {
+    "query": "morning coffee latte cappuccino",
+    "expect": ["Amavida", "3rd Cup", "Turbo"],
+    "notExpect": ["Kilwins", "Sundog", "Faherty"],
+    "note": "Morning coffee — cafes only, no ice cream or boutiques"
+  },
+  {
+    "query": "best place to work remote laptop wifi",
+    "expect": ["Amavida", "3rd Cup"],
+    "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
+    "note": "Remote-work cafe — should surface cafes known for atmosphere"
+  },
+  {
+    "query": "ice cream",
+    "expect": ["b.f.f.", "Kilwins", "Frost Bites"],
+    "notExpect": ["Sundog Books", "Amavida Coffee", "Charleston Shoe"],
+    "note": "STRESS: ice cream must not bleed into unrelated categories"
+  },
+  {
+    "query": "ice cream shop",
+    "expect": ["b.f.f.", "Kilwins", "Frost Bites", "Dawson's"],
+    "notExpect": ["Sundog", "Amavida Coffee"],
+    "note": "All ice cream shops surface, no unrelated results"
+  },
+  {
+    "query": "frozen yogurt soft serve",
+    "intent": { "specificItems": ["frozen yogurt", "soft serve"] },
+    "expect": ["Dawson's"],
+    "note": "Frozen dessert"
+  },
+  {
+    "query": "donuts",
+    "intent": { "specificItems": ["donuts"] },
+    "expect": ["Charlies"],
+    "note": "Charlies Cafe at Rosemary has donuts in item_tags"
+  },
+  {
+    "query": "donuts near rosemary",
+    "intent": { "category": "restaurants", "specificItems": ["donuts", "doughnuts"] },
+    "expect": ["Charlies"],
+    "note": "Production path: donut keyword sets category=restaurants + both spellings as items"
+  },
+  {
+    "query": "something sweet dessert treat",
+    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
+    "note": "Dessert query — only food/dessert venues, no shopping or fitness"
+  },
+  {
+    "query": "acai bowls smoothie bowls",
+    "intent": { "specificItems": ["acai bowls"] },
+    "expect": ["Playa"],
+    "note": "Acai bowls — Playa Bowls only"
+  },
+  {
+    "query": "fresh juice smoothie healthy drink",
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf"],
+    "note": "Juice/smoothie bar — no retail or fitness studios"
+  },
+  {
+    "query": "restaurant",
+    "notExpect": ["Sundog", "Faherty", "ONO Surf", "Lala Links", "Power Movement"],
+    "note": "STRESS: 'restaurant' alone — no bookstores, clothing, or surf shops"
+  },
+  {
+    "query": "best restaurants 30a",
+    "notExpect": ["Sundog", "Faherty", "ONO Surf", "Lala Links", "Power Movement"],
+    "note": "Top restaurants — should be restaurants only"
+  },
+  {
+    "query": "casual lunch spot",
+    "notExpect": ["Power Movement", "Spa Pearl", "Jonah Allen", "Faherty", "Lala Links"],
+    "note": "Casual lunch — no fitness/spa/gallery/boutique"
+  },
+  {
+    "query": "grab a quick bite to eat",
+    "notExpect": ["Power Movement", "Spa Pearl", "Sundog", "Faherty"],
+    "note": "Quick food — no fitness/spa/retail"
+  },
+  {
+    "query": "where can I get crepes",
+    "intent": { "specificItems": ["crepes"], "category": "restaurants" },
+    "expect": ["Crêpes du Soleil"],
+    "note": "Only one crepe place — should rank #1"
+  },
+  {
+    "query": "burgers and fries",
+    "intent": { "specificItems": ["burgers", "fries"], "category": "restaurants" },
+    "expect": ["Pickle"],
+    "note": "Burger joint"
+  },
+  {
+    "query": "bbq brisket smoked meat",
+    "intent": { "specificItems": ["bbq", "brisket"], "category": "restaurants" },
+    "expect": ["Barefoot BBQ"],
+    "note": "BBQ restaurant"
+  },
+  {
+    "query": "gyros greek food",
+    "intent": { "specificItems": ["gyros"], "category": "restaurants" },
+    "expect": ["Mr. Gyro"],
+    "note": "Very specific niche — should rank #1"
+  },
+  {
+    "query": "tacos mexican food",
+    "intent": { "specificItems": ["tacos"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "note": "Tacos — no bookstores, ice cream, coffee, or boutiques"
+  },
+  {
+    "query": "pizza slice",
+    "intent": { "specificItems": ["pizza"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Faherty", "Kilwins", "Amavida"],
+    "note": "Pizza — no unrelated categories"
+  },
+  {
+    "query": "sushi rolls japanese food",
+    "intent": { "specificItems": ["sushi", "rolls"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Faherty", "Kilwins", "Power Movement"],
+    "note": "Sushi — no retail, ice cream, or fitness"
+  },
+  {
+    "query": "pancakes waffles french toast",
+    "intent": { "specificItems": ["pancakes", "waffles"], "mealPeriod": "breakfast" },
+    "notExpect": ["Sundog", "Faherty", "Kilwins", "Lala Links"],
+    "note": "Pancake/waffle spots — only breakfast-serving food venues"
+  },
+  {
+    "query": "breakfast sandwich eggs bacon",
+    "intent": { "specificItems": ["eggs", "breakfast sandwich"], "mealPeriod": "breakfast" },
+    "notExpect": ["Sundog", "Faherty", "ONO Surf"],
+    "note": "Breakfast items — no shopping or activity results"
+  },
+  {
+    "query": "fresh seafood oysters shrimp",
+    "intent": { "specificItems": ["seafood", "shrimp"], "category": "restaurants" },
+    "expect": ["Pescado", "Shrimp Shack"],
+    "note": "Seafood restaurants"
+  },
+  {
+    "query": "waterfront restaurant gulf views",
+    "intent": { "atmosphereNeeds": ["waterfront"], "category": "restaurants" },
+    "expect": ["Pescado", "Havana"],
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Waterfront dining — no retail or fitness"
+  },
+  {
+    "query": "fresh fish local catch",
+    "intent": { "specificItems": ["fish", "seafood"] },
+    "expect": ["Pescado", "Shrimp Shack"],
+    "notExpect": ["Sundog", "Faherty", "Power Movement"],
+    "note": "Fresh local fish — only seafood venues"
+  },
+  {
+    "query": "best place to watch the sunset with drinks",
+    "intent": { "atmosphereNeeds": ["waterfront", "outdoor"] },
+    "expect": ["Pescado", "Havana"],
+    "notExpect": ["Sundog", "Power Movement", "Faherty"],
+    "note": "Sunset/waterfront spots"
+  },
+  {
+    "query": "wine bar cocktails",
+    "expect": ["Cork", "Edward"],
+    "note": "Wine/cocktail bar"
+  },
+  {
+    "query": "nightlife bars live music",
+    "expect": ["Cork", "Edward"],
+    "notExpect": ["Sundog", "Power Movement", "Kilwins", "Spa Pearl"],
+    "note": "Nightlife — no daytime-only venues"
+  },
+  {
+    "query": "craft beer local brewery tap room",
+    "intent": { "specificItems": ["craft beer", "beer"] },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Beer/brewery — no retail or dessert-only venues"
+  },
+  {
+    "query": "happy hour drinks seagrove",
+    "notExpect": ["Sundog", "Lala Links", "Power Movement", "Latitude 25"],
+    "note": "Happy hour near Seagrove — no bookstores, jewelry, fitness, or clothing"
+  },
+  {
+    "query": "margaritas tropical cocktails",
+    "intent": { "specificItems": ["margaritas", "cocktails"] },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Cocktail bars only — no retail or dessert shops"
+  },
+  {
+    "query": "best place for brunch",
+    "intent": { "mealPeriod": "brunch" },
+    "expect": ["Great Southern", "Canopy"],
+    "note": "Brunch spots"
+  },
+  {
+    "query": "best breakfast seaside florida",
+    "intent": { "mealPeriod": "breakfast" },
+    "expect": ["Black Bear", "Great Southern", "Canopy"],
+    "note": "Breakfast near Seaside"
+  },
+  {
+    "query": "early morning breakfast open early",
+    "intent": { "mealPeriod": "breakfast" },
+    "notExpect": ["Sundog", "Faherty", "Cork", "Spa Pearl"],
+    "note": "Early morning — no late-night bars or shopping venues"
+  },
+  {
+    "query": "clothing boutique women's fashion",
+    "expect": ["Faherty", "Amor"],
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement"],
+    "note": "Clothing boutiques must rank for clothing queries — key positive test"
+  },
+  {
+    "query": "swimwear beach clothes",
+    "expect": ["Faherty", "Free People"],
+    "notExpect": ["Sundog", "Amavida", "Power Movement", "Kilwins"],
+    "note": "Swimwear/beachwear boutiques"
+  },
+  {
+    "query": "upscale boutique designer fashion",
+    "expect": ["Luminary", "Faherty"],
+    "notExpect": ["Sundog", "Kilwins", "Power Movement"],
+    "note": "Upscale boutique"
+  },
+  {
+    "query": "resort wear vacation outfits",
+    "expect": ["Faherty", "Free People"],
+    "notExpect": ["Sundog", "Kilwins", "Amavida"],
+    "note": "Vacation/resort clothing"
+  },
+  {
+    "query": "shoes sandals footwear",
+    "expect": ["Charleston Shoe"],
+    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
+    "note": "Shoe store — Charleston Shoe should dominate"
+  },
+  {
+    "query": "girls trip shopping boutiques",
+    "intent": { "occasion": "girls_trip", "atmosphereNeeds": ["upscale"] },
+    "expect": ["Luminary", "Faherty"],
+    "notExpect": ["Sundog", "Power Movement", "Barefoot BBQ"],
+    "note": "Boutiques for girls trip — avoid food/fitness"
+  },
+  {
+    "query": "men's clothing apparel",
+    "notExpect": ["Sundog", "Kilwins", "Power Movement", "Spa Pearl"],
+    "note": "Men's clothing — no food, fitness, or spa"
+  },
+  {
+    "query": "boutique",
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement", "Pescado"],
+    "note": "STRESS: 'boutique' alone — should return retail, not restaurants or fitness"
+  },
+  {
+    "query": "bookstore",
+    "expect": ["Sundog", "Hidden Lantern"],
+    "notExpect": ["Amor", "Faherty", "Free People", "Charleston Shoe", "Curate"],
+    "note": "Both bookstores in, zero clothing boutiques"
+  },
+  {
+    "query": "bookstore books reading",
+    "expect": ["Sundog", "Hidden Lantern"],
+    "notExpect": ["Amor Boutique", "Free People", "Charleston Shoe", "Colombia", "Faherty"],
+    "note": "STRESS: zero clothing bleeding into bookstore query"
+  },
+  {
+    "query": "jewelry boutique accessories",
+    "expect": ["Lala Links"],
+    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
+    "note": "Jewelry — Lala Links should rank first"
+  },
+  {
+    "query": "gifts souvenirs local",
+    "notExpect": ["Pescado", "Power Movement", "Spa Pearl", "Amavida"],
+    "note": "Gift shop — no restaurants, fitness, or coffee"
+  },
+  {
+    "query": "special occasion gift luxury",
+    "expect": ["Lala Links"],
+    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf"],
+    "note": "Special gift — jewelry/luxury goods should surface"
+  },
+  {
+    "query": "home decor coastal living",
+    "notExpect": ["Kilwins", "Amavida", "Pescado", "Power Movement"],
+    "note": "Home decor — no food or fitness"
+  },
+  {
+    "query": "surf shop paddle board rental",
+    "expect": ["ONO", "YOLO"],
+    "note": "Gear rental / surf"
+  },
+  {
+    "query": "where can I rent a paddleboard",
+    "expect": ["ONO", "YOLO"],
+    "notExpect": ["Sundog", "Kilwins", "Faherty"],
+    "note": "Natural language paddleboard rental"
+  },
+  {
+    "query": "kayak rental water activities",
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
+    "note": "Kayak/water activity rental — no retail or food"
+  },
+  {
+    "query": "bike rental cycling beach path",
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Pescado", "Faherty"],
+    "note": "Bike rental — no unrelated categories"
+  },
+  {
+    "query": "fishing charter boat tour",
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
+    "note": "Fishing/boat charter — water activity only"
+  },
+  {
+    "query": "outdoor adventure things to do",
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Spa Pearl"],
+    "note": "Outdoor activities — no retail or spa"
+  },
+  {
+    "query": "spa massage",
+    "expect": ["Spa Pearl", "Vivo Spa"],
+    "note": "Spa services"
+  },
+  {
+    "query": "massage therapy deep tissue",
+    "expect": ["Spa Pearl", "Vivo Spa"],
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Massage therapy — spa only, not fitness studios"
+  },
+  {
+    "query": "yoga fitness studio",
+    "expect": ["Power Movement"],
+    "notExpect": ["Kilwins", "Sundog", "Faherty", "Spa Pearl"],
+    "note": "Fitness studio — not spa or retail"
+  },
+  {
+    "query": "workout gym exercise class",
+    "expect": ["Power Movement"],
+    "notExpect": ["Kilwins", "Sundog", "Faherty", "Spa Pearl"],
+    "note": "Gym/fitness — not spa or retail"
+  },
+  {
+    "query": "hair salon blowout styling",
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
+    "note": "Hair salon — no retail, food, or fitness"
+  },
+  {
+    "query": "nail salon manicure pedicure",
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement", "Faherty"],
+    "note": "Nail salon only — no food or fitness"
+  },
+  {
+    "query": "art gallery",
+    "expect": ["Jonah Allen"],
+    "note": "Art gallery — Artful Eye is eyewear, not a gallery"
+  },
+  {
+    "query": "local art paintings sculptures",
+    "expect": ["Jonah Allen"],
+    "notExpect": ["Amavida", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Local art — gallery only, no food or retail"
+  },
+  {
+    "query": "photography studio portraits",
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
+    "note": "Photography studio — not retail or food"
+  },
+  {
+    "query": "romantic waterfront dinner",
+    "intent": {
+      "atmosphereNeeds": ["romantic", "waterfront"],
+      "mealPeriod": "dinner",
+      "category": "restaurants"
+    },
+    "expect": ["Pescado", "Havana"],
+    "notExpect": ["Sundog", "Kilwins"],
+    "note": "Romantic dinner spots — waterfront restaurants"
+  },
+  {
+    "query": "anniversary dinner special night out",
+    "intent": { "occasion": "anniversary", "mealPeriod": "dinner" },
+    "expect": ["Pescado", "Havana"],
+    "notExpect": ["Sundog", "Kilwins", "Charlies", "Power Movement"],
+    "note": "Anniversary dinner — fine dining, not casual or retail"
+  },
+  {
+    "query": "date night ideas",
+    "intent": { "atmosphereNeeds": ["romantic"] },
+    "expect": ["Cork", "Pescado"],
+    "notExpect": ["Power Movement", "Sundog"],
+    "note": "Date night — wine bars and romantic restaurants"
+  },
+  {
+    "query": "rainy day activities things to do inside",
+    "intent": { "occasion": "rainy_day" },
+    "expect": ["Hidden Lantern", "Sundog"],
+    "note": "Rainy day — bookstores are the classic answer"
+  },
+  {
+    "query": "what should I do on a rainy afternoon",
+    "expect": ["Sundog", "Hidden Lantern"],
+    "notExpect": ["ONO Surf", "YOLO"],
+    "note": "Rainy day NL — bookstores and indoor activities, not outdoor sports"
+  },
+  {
+    "query": "kid friendly family lunch",
+    "intent": {
+      "atmosphereNeeds": ["family_friendly", "kid_friendly"],
+      "mealPeriod": "lunch"
+    },
+    "notExpect": ["Edward", "Pescado", "Disco"],
+    "note": "Fine dining should NOT dominate family queries"
+  },
+  {
+    "query": "something fun to do with kids",
+    "notExpect": ["Edward", "Pescado", "Disco", "Spa Pearl", "Vivo Spa"],
+    "note": "Family activity — fine dining and spa should not dominate"
+  },
+  {
+    "query": "dog friendly patio outdoor dining",
+    "intent": { "atmosphereNeeds": ["dog_friendly", "outdoor"] },
+    "notExpect": ["Power Movement", "Spa Pearl", "Sundog", "Lala Links"],
+    "note": "Dog-friendly outdoor dining — no fitness/spa/bookstore/jewelry"
+  },
+  {
+    "query": "best place to watch the sunset with drinks",
+    "intent": { "atmosphereNeeds": ["waterfront", "outdoor"] },
+    "expect": ["Pescado", "Havana"],
+    "notExpect": ["Sundog", "Power Movement", "Faherty"],
+    "note": "Sunset/waterfront spots"
+  },
+  {
+    "query": "gluten free food options",
+    "intent": { "dietaryNeeds": ["gluten_free"] },
+    "notExpect": ["Sundog", "ONO Surf", "Faherty"],
+    "note": "Gluten-free filter — only food venues, no retail or sports"
+  },
+  {
+    "query": "vegan vegetarian restaurant",
+    "intent": { "dietaryNeeds": ["vegan", "vegetarian"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf"],
+    "note": "Vegan/vegetarian options — food only"
+  },
+  {
+    "query": "healthy food clean eating",
+    "notExpect": ["Sundog", "Faherty", "ONO Surf", "Lala Links"],
+    "note": "Healthy food — restaurants and cafes only"
+  },
+  {
+    "query": "alys beach restaurants dining",
+    "notExpect": ["Sundog", "Power Movement", "Faherty", "ONO Surf"],
+    "note": "Alys Beach area dining — restaurants only, no retail or fitness"
+  },
+  {
+    "query": "watercolor seaside coffee shop",
+    "expect": ["Amavida"],
+    "notExpect": ["ONO Surf", "Faherty", "Lala Links"],
+    "note": "WaterColor/Seaside area coffee"
+  },
+  {
+    "query": "grayton beach bar",
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Grayton Beach bar — no bookstore, ice cream, clothing, or fitness"
+  },
+  {
+    "query": "blue mountain beach food",
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "Spa Pearl"],
+    "note": "Blue Mountain area food — restaurants only"
+  },
+  {
+    "query": "where can I get coffee this morning",
+    "expect": ["Amavida", "3rd Cup", "Turbo"],
+    "notExpect": ["Kilwins", "Faherty", "ONO Surf"],
+    "note": "Conversational morning coffee"
+  },
+  {
+    "query": "I'm looking for a nice dinner spot tonight",
+    "intent": { "mealPeriod": "dinner" },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Conversational dinner query — no retail or fitness"
+  },
+  {
+    "query": "need a gift for someone special",
+    "expect": ["Lala Links"],
+    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf"],
+    "note": "Gift shopping NL — jewelry should surface"
+  },
+  {
+    "query": "where can I find a good book",
+    "expect": ["Sundog", "Hidden Lantern"],
+    "notExpect": ["Faherty", "Amor", "Free People"],
+    "note": "Conversational bookstore query — no clothing"
+  },
+  {
+    "query": "looking for somewhere to relax and decompress",
+    "notExpect": ["Sundog", "Faherty", "ONO Surf"],
+    "note": "Relaxation query — spa and wellness venues should dominate"
+  },
+  {
+    "query": "what's a good spot for a business meeting",
+    "expect": ["Amavida", "3rd Cup"],
+    "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
+    "note": "Business meeting — cafes with atmosphere, not ice cream or surf shops"
+  }
+]

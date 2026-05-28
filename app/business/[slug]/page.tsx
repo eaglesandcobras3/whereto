@@ -23,6 +23,8 @@ import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
+export const revalidate = 3600;
+
 type Props = { params: Promise<{ slug: string }> };
 
 const UUID_RE =
@@ -203,9 +205,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const bizId = row.id != null ? String(row.id) : "";
   const canonicalSegment = dbSlug || bizId;
   const canonicalPath = `/business/${encodeURIComponent(canonicalSegment)}`;
+
+  const metaTown = (b.towns as { name?: string } | null)?.name ?? null;
+  const metaCategory = (b.categories as { name?: string } | null)?.name ?? null;
+  const titleSuffix = [metaCategory, metaTown ? `in ${metaTown}` : null]
+    .filter(Boolean)
+    .join(" ");
+  const pageTitle = titleSuffix ? `${b.name as string} | ${titleSuffix}` : (b.name as string);
+
   return {
     ...canonicalAlternates(canonicalPath),
-    title: b.name as string,
+    title: pageTitle,
     description: desc,
     openGraph: ogUrl
       ? { title: `${b.name as string} | WhereTo30A`, description: desc, images: [{ url: ogUrl }] }
@@ -446,7 +456,21 @@ export default async function BusinessPage({ params }: Props) {
             {breadcrumbCategoryLabel && (
               <>
                 <span className="text-zinc-300">/</span>
-                <span className="text-zinc-500">{breadcrumbCategoryLabel}</span>
+                {category?.slug ? (
+                  <Link
+                    href={`/search?${new URLSearchParams({ category: category.slug }).toString()}`}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "business_detail_breadcrumb",
+                      label: `${gaBiz}_category_${category.slug}`,
+                    })}
+                    className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
+                  >
+                    {breadcrumbCategoryLabel}
+                  </Link>
+                ) : (
+                  <span className="text-zinc-500">{breadcrumbCategoryLabel}</span>
+                )}
               </>
             )}
           </nav>

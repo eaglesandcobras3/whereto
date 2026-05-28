@@ -14,8 +14,11 @@ import {
   fallbackIntentFromKeywords,
   parseIntentWithOpenAI,
   repairFoodCategoryWhenQueryIsRetail,
+  shouldSkipOpenAiIntentParse,
   synthesizeWithOpenAI,
+  tryKeywordIntentMatch,
 } from "@/lib/ai/search-ai";
+import { searchOpenAiIntentParseEnabled } from "@/lib/search/search-openai-flags";
 import { loadLocationRankingScope } from "@/lib/search/location-scope";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 
@@ -286,7 +289,9 @@ export type EnrichedRecommendationPayload = {
 };
 
 /**
- * Shared path: rank + AI/template synthesis + enrichment. Used by `runSearch` and crons.
+ * Legacy path: rank + OpenAI synthesis + enrichment for `query_cache` / SEO payloads.
+ * **Not used by live `/search`** — see `runSearch` → `buildMinimalSearchResult` and [docs/search-legacy.md](../../docs/search-legacy.md).
+ * Still referenced by `lib/cron/recommendation-precompute.ts` (cron route disabled).
  */
 export async function buildRecommendationSet(options: {
   supabase: SupabaseClient;
@@ -464,7 +469,13 @@ export async function resolveIntent(
   let intent: SearchIntent;
   try {
     if (openaiKey) {
-      intent = await parseIntentWithOpenAI(model, openaiKey, rawQuery, normalized);
+      if (!searchOpenAiIntentParseEnabled()) {
+        intent = fallbackIntentFromKeywords(normalized);
+      } else if (shouldSkipOpenAiIntentParse(normalized)) {
+        intent = tryKeywordIntentMatch(normalized)!;
+      } else {
+        intent = await parseIntentWithOpenAI(model, openaiKey, rawQuery, normalized);
+      }
     } else {
       intent = fallbackIntentFromKeywords(normalized);
     }

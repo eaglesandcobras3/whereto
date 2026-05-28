@@ -1,11 +1,28 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import {
+  applyHybridVectorPostRanking,
+  DEFAULT_SEARCH_RANK_CONFIG,
+  isApparelFashionRetailQuery,
+  isMinimalApparelRetailKeywordQuery,
+  itemMatchesTaggedRow,
+  type HybridVectorPostRankingInput,
+  type ScoredVecRow,
+} from "@/lib/search/hybrid-vector-postprocess";
+import { resolveIlikeOrClause } from "@/lib/search/ilike-text-search";
+import { getSearchQueryEmbedding } from "@/lib/search/query-embedding";
+import { loadLearningBoostMap } from "@/lib/search/learning-boost";
+import { deriveQueryClusterKey } from "@/lib/search/query-cluster";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
-import type { BusinessPayload, SearchResultPayload } from "@/lib/search/types";
+import type {
+  BusinessPayload,
+  SearchResultPayload,
+  SearchRetrievalMetrics,
+  SearchRetrievalPath,
+} from "@/lib/search/types";
 import type { SearchCandidateRankOrder } from "@/lib/scoring";
 
 // ---------------------------------------------------------------------------
@@ -26,103 +43,6 @@ type ScoringIntent = {
   occasion?: string | null;
 };
 
-/** Strip Unicode diacritics so "crepe" matches "crêpe", "cafe" matches "café", etc. */
-function stripDiacritics(s: string): string {
-  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-}
-
-/** Lightweight synonym expansion so "hamburger" matches row tag "burger" / "burgers". */
-function variantsForFoodItemPhrase(item: string): string[] {
-  const raw = stripDiacritics(item.toLowerCase().trim());
-  const out = new Set<string>([raw]);
-  const addPhrase = (...phrases: string[]) => phrases.forEach((p) => out.add(p));
-
-  // Burgers — user rarely says "beef patty sandwich"; tags often say burger(s).
-  if (/\bhamburgers?\b|\bburgers?\b|\bcheeseburgers?\b/.test(raw)) {
-    addPhrase("hamburger", "hamburgers", "burger", "burgers", "cheeseburger", "cheeseburgers");
-  }
-
-  // Common sandwich / handheld wording
-  if (/\bsandwich(es)?\b|\bsubs?\b|\bpo[\s]?boy(s)?\b/i.test(raw)) {
-    addPhrase("sandwich", "sandwiches", "sub", "subs", "po boy", "po-boy");
-  }
-
-  return [...out];
-}
-
-function itemMatchesTaggedRow(intentItem: string, rowTagsLower: string[]): boolean {
-  const tagsNorm = rowTagsLower.map(stripDiacritics);
-  for (const v of variantsForFoodItemPhrase(intentItem)) {
-    if (
-      tagsNorm.some(
-        (t) => v.length >= 3 && (t.includes(v) || v.includes(t) || t.includes(v.replace(/\s+/g, ""))),
-      )
-    )
-      return true;
-  }
-  return false;
-}
-
-function escapeRegexToken(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Match variant in listing text: long tokens as substring; short tokens as whole words. */
-function haystackMatchesVariant(haystackLower: string, variant: string): boolean {
-  const v = variant.toLowerCase().trim();
-  if (v.length < 2) return false;
-  if (v.length >= 5 || /\s/.test(v)) return haystackLower.includes(v);
-  return new RegExp(`\\b${escapeRegexToken(v)}\\b`, "i").test(haystackLower);
-}
-
-/** True if mined menu tags OR public title/excerpt/slug text supports the dish/product terms. */
-function dishListingEvidence(row: Record<string, unknown>, intentItems: string[]): {
-  tagMatch: boolean;
-  textMatch: boolean;
-} {
-  const rowItemsRaw = ((row.item_tags as string[] | null) ?? []).map((t) => String(t).trim());
-  const rowItems = rowItemsRaw.map((t) => t.toLowerCase());
-  const hasTypedMenu = rowItemsRaw.some((t) => t.length > 0);
-  const tagMatch =
-    hasTypedMenu && intentItems.some((item) => itemMatchesTaggedRow(item, rowItems));
-
-  const slugText = String(row.slug ?? "")
-    .toLowerCase()
-    .replace(/-/g, " ");
-  const haystack = `${String(row.title ?? "").toLowerCase()} ${String(row.excerpt ?? "").toLowerCase()} ${slugText}`;
-
-  const textMatch = intentItems.some((item) =>
-    variantsForFoodItemPhrase(item).some((v) => haystackMatchesVariant(haystack, v)),
-  );
-
-  return { tagMatch, textMatch };
-}
-
-/**
- * Dish/product queries over "restaurants" should not fill with generic embedding matches.
- * Require tag or on-listing text signal, unless vector similarity is clearly about the dish.
- * Emergency bypass: if the gate would produce zero results, skip it entirely — returning
- * nothing is always worse than returning the best available nearby restaurants.
- */
-function applyRestaurantDishSpecificityGate<
-  T extends Record<string, unknown> & { vec_similarity?: unknown },
->(rows: T[], intentCategory: string | null | undefined, intentItems: string[] | undefined): T[] {
-  // Lower bar vs original 0.46 — many valid restaurants score 0.38-0.44 for specific dishes
-  // but genuinely serve them (especially when item_tags coverage is incomplete for newer listings).
-  const DISH_NO_EVIDENCE_MIN_VEC = 0.38;
-  if (intentCategory !== "restaurants" || !intentItems?.length) return rows;
-  const filtered = rows.filter((r) => {
-    const { tagMatch, textMatch } = dishListingEvidence(r, intentItems);
-    if (tagMatch || textMatch) return true;
-    const v = Number(r.vec_similarity ?? 0);
-    return v >= DISH_NO_EVIDENCE_MIN_VEC;
-  });
-  // Emergency: never return fewer results than input when that would cause a zero-result page.
-  // If the gate eliminates everything, the area simply has no exact-match listing —
-  // show the closest available restaurants rather than nothing.
-  return filtered.length > 0 ? filtered : rows;
-}
-
 function computeStructuredMatch(row: Record<string, unknown>, intent: ScoringIntent): { score: number; hasSignal: boolean } {
   const components: { weight: number; score: number }[] = [];
 
@@ -132,19 +52,38 @@ function computeStructuredMatch(row: Record<string, unknown>, intent: ScoringInt
     const businessType = String(row.business_type ?? "").trim().toLowerCase();
     if (businessType) {
       const catNorm = intent.category.replace(/_/g, " ").toLowerCase();
-      // Food-service umbrella: food trucks, taco bars, stands, etc. are all "restaurants"
-      // for categorization purposes but rarely contain the word "restaurant" in their type.
-      const FOOD_SERVICE_TYPES =
-        /restaurant|cafe|diner|bistro|grill|eatery|food.truck|food.stand|taqueria|pizzeria|taco.bar|hot.dog|ice.cream|dessert|bakery|donut|smoothie|juice.bar|bar$/i;
-      const isRestaurantCategory = catNorm.includes("restaurant");
-      // Strip trailing 's' to handle plurals: 'restaurants' → 'restaurant', 'coffee_shops' → 'coffee shop'
+
+      // Per-category regex maps category intent to the vocabulary used in business_type.
+      // This prevents vocabulary mismatch (e.g. "café" not matching "coffee_shops") from
+      // silently filtering out correct results in the composite scoring step.
+      const CATEGORY_TYPE_PATTERNS: Record<string, RegExp> = {
+        restaurants:
+          /restaurant|cafe|café|diner|bistro|grill|eatery|food.?truck|food.?stand|taqueria|pizzeria|taco|hot.?dog|ice.?cream|dessert|bakery|donut|doughnut|smoothie|juice.?bar|kitchen|brasserie|steakhouse|seafood|sushi|bar$|pub$|bbq|barbecue|creperie|ramen|poke|sandwich/i,
+        coffee_shops:
+          /coffee|cafe|café|espresso|coffeehouse|coffee.?house|tea|latte|cappuccino|barista|roaster|brew/i,
+        bars:
+          /bar|pub|tavern|brewery|brewpub|winery|lounge|cocktail|nightclub|dive.?bar|sports.?bar|taproom/i,
+        activities:
+          /activit|rental|tour|fitness|gym|studio|sport|outdoor|water.?sport|bike|paddl|surf|yoga|pilates|marina|charter|excursion|kayak|snorkel|dive|golf|tennis|pickleball/i,
+        shopping:
+          /boutique|shop|store|retail|gallery|clothing|apparel|fashion|gift|jewelry|jewellery|market|souvenir|consignment|thrift/i,
+        services:
+          /salon|spa|wellness|beauty|medical|dental|repair|service|contractor|studio|therapy|massage|realtor|insurance|legal/i,
+      };
+
+      const catKey = intent.category.toLowerCase();
+      const categoryPattern = CATEGORY_TYPE_PATTERNS[catKey];
+
+      // Word-level fallback: split category name into stems and check inclusion.
+      // Strip trailing 's' to handle plurals: 'restaurants' → 'restaurant'
       const wordMatch = catNorm.split(" ").some((w) => {
         if (w.length <= 3) return false;
         const stem = w.replace(/s$/, "");
         return businessType.includes(w) || businessType.includes(stem);
       });
+
       const matchScore =
-        (isRestaurantCategory && FOOD_SERVICE_TYPES.test(businessType)) || wordMatch ? 1.0 : 0.0;
+        (categoryPattern && categoryPattern.test(businessType)) || wordMatch ? 1.0 : 0.0;
       components.push({ weight: 40, score: matchScore });
     }
   }
@@ -201,35 +140,6 @@ function computeComposite(row: Record<string, unknown>, intent: ScoringIntent, v
     return vecSim * 0.90 + quality * 0.10;
   }
   return structuredScore * 0.60 + vecSim * 0.30 + quality * 0.10;
-}
-
-/** Title rescue: match query token or a crude singular (donuts → donut) in listing title. */
-function titleRescueMatchesTitle(titleLower: string, token: string): boolean {
-  const t = token.toLowerCase();
-  if (titleLower.includes(t)) return true;
-  if (t.length >= 5 && t.endsWith("s")) {
-    const stem = t.slice(0, -1);
-    if (stem.length >= 4 && titleLower.includes(stem)) return true;
-  }
-  return false;
-}
-
-function sanitizeIlikeToken(raw: string): string {
-  return raw.replace(/[%_,\\]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
-}
-
-async function embedQuery(query: string, openaiKey: string): Promise<number[] | null> {
-  try {
-    const openai = new OpenAI({ apiKey: openaiKey });
-    const res = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: query.slice(0, 8000),
-      dimensions: 1536,
-    });
-    return res.data[0]?.embedding ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function businessPayload(
@@ -292,10 +202,133 @@ function rowToRec(
   };
 }
 
+type MinimalSearchBuildOptions = {
+  rawQuery: string;
+  normalizedQuery: string;
+  queryHash: string;
+  model: string;
+  openaiKey: string | undefined;
+  precomputedQueryEmbedding?: number[] | null;
+  page?: number;
+  pageSize?: number;
+  constrainTownId?: string;
+  nearTownIds?: string[];
+  constrainAreaId?: string;
+  requiredHasPhysicalLocation?: boolean;
+  sortMode?: SearchCandidateRankOrder;
+  primaryCategoryId?: string | null;
+  explicitCategoryId?: string | null;
+  pageBrowseWithoutQuery?: boolean;
+  skipIlikeTextFilter?: boolean;
+  searchTermOverride?: string;
+  constrainPriceBucket?: "inexpensive" | "moderate" | "expensive" | null;
+  primaryCategoryIds?: string[];
+  constrainVibeTags?: string[];
+  intentCategory?: string | null;
+  intentSpecificItems?: string[];
+  intentDietaryNeeds?: string[];
+  intentMealPeriod?: string | null;
+  intentAtmosphereNeeds?: string[];
+  intentOccasion?: string | null;
+};
+
+function filterRowsBySidebar(
+  rows: ScoredVecRow[],
+  options: MinimalSearchBuildOptions,
+): ScoredVecRow[] {
+  let filtered = rows;
+  if (options.constrainPriceBucket) {
+    filtered = filtered.filter((r) => {
+      const p = Number(r.price_level);
+      if (options.constrainPriceBucket === "inexpensive") return p === 1 || p === 2;
+      if (options.constrainPriceBucket === "moderate") return p === 2 || p === 3;
+      return p === 3 || p === 4;
+    });
+  }
+  if (options.primaryCategoryIds?.length) {
+    filtered = filtered.filter((r) =>
+      options.primaryCategoryIds!.includes(String(r.primary_category_id)),
+    );
+  } else if (options.primaryCategoryId) {
+    filtered = filtered.filter(
+      (r) => String(r.primary_category_id) === options.primaryCategoryId,
+    );
+  }
+  if (options.constrainVibeTags?.length) {
+    filtered = filtered.filter((r) => {
+      const tags = (r.intent_tags as string[] | null) ?? [];
+      return options.constrainVibeTags!.every((t) => tags.includes(t));
+    });
+  }
+  return filtered;
+}
+
+function attachRetrievalDiagnostics(
+  payload: SearchResultPayload,
+  metrics: SearchRetrievalMetrics,
+): SearchResultPayload {
+  if (process.env.NODE_ENV !== "development") return payload;
+  return { ...payload, _retrieval: metrics };
+}
+
+function buildPayloadFromRankedRows(
+  options: MinimalSearchBuildOptions,
+  rows: ScoredVecRow[],
+  total: number,
+  from: number,
+  page: number,
+  pageSize: number,
+  retrieval: SearchRetrievalMetrics,
+): SearchResultPayload {
+  const recs = rows.map((row, i) => {
+    const r = row as {
+      main_image?: string | null;
+      hero_image?: string | null;
+      main_image_url?: string | null;
+      hero_image_url?: string | null;
+    };
+    const img = getPublicImageUrlWithView(
+      r.main_image_url,
+      r.hero_image_url,
+      r.main_image,
+      r.hero_image,
+    );
+    const bp = businessPayload(row, img);
+    const rec: SearchResultPayload["recommendations"][number] = {
+      business_id: String(row.id),
+      rank: from + i + 1,
+      headline: String((row as { title?: string }).title ?? "Listing"),
+      explanation: (row.excerpt as string | null) ?? "",
+      highlighted_tags: [],
+      business: bp,
+    };
+    if (process.env.NODE_ENV === "development") {
+      rec._vec_similarity = (row.vec_similarity as number | null) ?? undefined;
+      rec._composite = row._composite ?? undefined;
+    }
+    return rec;
+  });
+
+  return attachRetrievalDiagnostics(
+    {
+      query: options.rawQuery,
+      query_hash: options.queryHash,
+      normalized_query: options.normalizedQuery,
+      summary: `Found ${total} local picks for "${options.rawQuery}".`,
+      total_results: total,
+      page,
+      page_size: pageSize,
+      recommendations: recs,
+      suggestions: [],
+      cached: false,
+    },
+    retrieval,
+  );
+}
+
 /**
  * Simplified search over `businesses` (Directus-synced) without query_cache, scoring, or old joins.
- * Uses vector similarity search (hybrid_search_businesses RPC) when an OpenAI key is available
- * and embeddings exist; falls back to ILIKE otherwise.
+ * Degradation ladder: hybrid_strict → hybrid_relaxed → ILIKE (`SearchRetrievalMetrics` in dev).
  */
 export async function buildMinimalSearchResult(
   supabase: SupabaseClient,
@@ -305,6 +338,8 @@ export async function buildMinimalSearchResult(
     queryHash: string;
     model: string;
     openaiKey: string | undefined;
+    /** When set (including `null`), skip the embed API call — caller prefetched in parallel with intent. */
+    precomputedQueryEmbedding?: number[] | null;
     page?: number;
     pageSize?: number;
     constrainTownId?: string;
@@ -368,16 +403,15 @@ export async function buildMinimalSearchResult(
 
   // --- Vector search path ---
   // Use embeddings when OpenAI key is available and browse is **not** a page-level empty-query
-  // directory listing. Omitting ILIKE for resolved town/category does NOT imply we skip embeddings.
+  // directory listing. `getSearchQueryEmbedding` no-ops when `SEARCH_QUERY_EMBEDDINGS=false`.
 
   // Scoring strategy: composite score = structuredMatch * 0.60 + vecSim * 0.30 + quality * 0.10
   //   when structured intent fields (specific_items, dietary_needs, etc.) are present.
   // For simple keyword queries with no structured intent: vecSim * 0.90 + quality * 0.10.
   //
-  // MIN_VEC_FLOOR: discard anything too semantically distant regardless of composite score.
-  // COMPOSITE_THRESHOLD: minimum composite score to include a result.
-  const MIN_VEC_FLOOR = 0.22;
-  const COMPOSITE_THRESHOLD = 0.36;
+  // Post-RPC composite / salvage / gates: thresholds in `DEFAULT_SEARCH_RANK_CONFIG`
+  // (`lib/search/hybrid-vector-postprocess.ts`).
+  const rankConfig = DEFAULT_SEARCH_RANK_CONFIG;
 
   const scoringIntent: ScoringIntent = {
     category:        options.intentCategory,
@@ -390,18 +424,35 @@ export async function buildMinimalSearchResult(
 
   const canUseVector =
     !!options.openaiKey && !options.constrainAreaId && options.pageBrowseWithoutQuery !== true;
+  let hybridAttemptedPaths: SearchRetrievalPath[] = [];
+
   if (canUseVector) {
     // Always embed the full user query — searchTermOverride is an ILIKE optimisation only.
     const searchText = options.normalizedQuery;
-    const embedding = await embedQuery(searchText, options.openaiKey!);
+    const minimalApparelKw = isMinimalApparelRetailKeywordQuery(searchText);
+    const isApparelShoppingQuery =
+      options.intentCategory === "shopping" && isApparelFashionRetailQuery(searchText);
+    const embedding =
+      options.precomputedQueryEmbedding !== undefined
+        ? options.precomputedQueryEmbedding
+        : await getSearchQueryEmbedding(searchText, options.openaiKey!);
     if (embedding) {
-      // Use explicitCategoryId for vector search — AI-inferred categories are too broad
-      // (e.g. "donuts" → restaurants) and let similarity narrow results instead.
+      // Only restrict the RPC to a specific category when the user explicitly selected one via the
+      // URL sidebar. AI-inferred categories must NOT pre-filter p_category_id — that would exclude
+      // cross-category businesses that sell the requested item (e.g. a coffee shop selling donuts
+      // being excluded from a "donuts" restaurant-intent query). Composite scoring handles ranking.
       const vectorCategoryId = options.explicitCategoryId ?? null;
+      // Larger candidate pool lets composite scoring consider more semantically-adjacent
+      // businesses before applying the threshold — important when category matching is tight
+      // (e.g. querying "coffee shops" but some cafés are ranked 50-80 by raw cosine distance).
+      const rpcMatchCount =
+        minimalApparelKw && vectorCategoryId && isApparelShoppingQuery
+          ? Math.max(from + pageSize * 8, 100)
+          : Math.max(from + pageSize * 6, 60);
       const { data: rpcRows, error } = await supabase.rpc("hybrid_search_businesses", {
         query_text: searchText,
         query_embedding: `[${embedding.join(",")}]`,
-        match_count: from + pageSize * 4, // fetch extra — composite scoring reorders and filters
+        match_count: rpcMatchCount,
         p_town_id: options.nearTownIds ? null : (options.constrainTownId ?? null),
         p_town_ids: options.nearTownIds ?? null,
         p_anchor_town_id: options.constrainTownId ?? null,
@@ -418,10 +469,19 @@ export async function buildMinimalSearchResult(
           ? allRows
           : allRows.filter((r) => !ACCOMMODATION_TYPES.test(String(r.business_type ?? "")));
 
-        // 1. Hard floor on raw vector similarity — drop semantically irrelevant results
-        const vecFloorFiltered = vectorCategoryId
-          ? nonAccommodationRows  // category already constrains candidates; trust the DB filter
-          : nonAccommodationRows.filter((r) => ((r.vec_similarity as number) ?? 0) >= MIN_VEC_FLOOR);
+        // 1. Vector similarity floor: always when uncategorized RPC; also when shopping scope +
+        //    apparel/fashion query so weak gift-shop neighbors do not flood the list.
+        const apparelScopedShopping =
+          Boolean(vectorCategoryId) &&
+          options.intentCategory === "shopping" &&
+          isApparelFashionRetailQuery(searchText);
+        const vecFloorForRows =
+          apparelScopedShopping && minimalApparelKw
+            ? Math.min(rankConfig.minVecFloor, rankConfig.vecFloorMinimalApparelScoped)
+            : rankConfig.minVecFloor;
+        const vecFloorFiltered = !vectorCategoryId || apparelScopedShopping
+          ? nonAccommodationRows.filter((r) => ((r.vec_similarity as number) ?? 0) >= vecFloorForRows)
+          : nonAccommodationRows;
 
         // 2. Compute composite score and attach it; re-sort by composite DESC
         type ScoredRow = Record<string, unknown> & { _composite: number };
@@ -431,148 +491,95 @@ export async function buildMinimalSearchResult(
         }));
         scored.sort((a, b) => b._composite - a._composite);
 
-        // 3. Composite threshold filter
-        let compositeFiltered = scored.filter((r) => r._composite >= COMPOSITE_THRESHOLD);
-
-        // 4. Title rescue: if a business's title contains a query word and it's above MIN_VEC_FLOOR
-        //    but fell below the composite threshold (unusual), pull it back in.
-        //    Use length ≥ 5 — short tokens like "shop" match unrelated titles ("surf shop").
-        let queryWords = searchText.split(/\s+/).filter((w) => w.length >= 5);
-        if ((options.intentSpecificItems?.length ?? 0) > 0) {
-          const items = options.intentSpecificItems!.map((i) => i.toLowerCase());
-          queryWords = queryWords.filter((w) => {
-            const lw = w.toLowerCase();
-            return items.some(
-              (it) => lw.includes(it) || it.includes(lw) || titleRescueMatchesTitle(lw, it),
-            );
-          });
-        }
-        if (queryWords.length > 0) {
-          const includedIds = new Set(compositeFiltered.map((r) => r.id));
-          const rescued = scored.filter((r) => {
-            if (includedIds.has(r.id)) return false;
-            if (((r.vec_similarity as number) ?? 0) < MIN_VEC_FLOOR) return false;
-            const title = String(r.title ?? "").toLowerCase();
-            return queryWords.some((w) => titleRescueMatchesTitle(title, w));
-          });
-          if (rescued.length > 0) compositeFiltered = [...compositeFiltered, ...rescued];
-        }
-
-        // If every row fell below threshold (often strong structured intent vs sparse tags),
-        // show the strongest composite rows instead of an empty SERP.
-        // If structured intent is active, do not salvage the full weak list — we'd surface
-        // hotels/restaurants whose only signal is raw vec×0.9 + quality (prior empty specific_items).
-        const salvageDisabled =
-          (options.intentSpecificItems?.length ?? 0) > 0 ||
-          (options.intentDietaryNeeds?.length ?? 0) > 0 ||
-          (options.intentAtmosphereNeeds?.length ?? 0) > 0 ||
-          !!(options.intentOccasion && String(options.intentOccasion).trim()) ||
-          !!(options.intentMealPeriod && String(options.intentMealPeriod).trim());
-
-        if (compositeFiltered.length === 0 && scored.length > 0 && !salvageDisabled) {
-          compositeFiltered = scored.slice(0, scored.length);
-        }
-
-        // Dish / menu terms set `salvageDisabled` so we do not dump the whole weak tail.
-        // When `item_tags` is still sparse in the directory, composite can clear everything;
-        // prefer **high vector similarity** rows (still town/category filtered upstream) over an empty SERP.
-        const STRUCTURED_INTENT_VEC_SALVAGE_FLOOR = 0.34;
-        if (compositeFiltered.length === 0 && scored.length > 0 && salvageDisabled) {
-          compositeFiltered = scored
-            .filter((r) => ((r.vec_similarity as number) ?? 0) >= STRUCTURED_INTENT_VEC_SALVAGE_FLOOR)
-            .sort(
-              (a, b) =>
-                ((b.vec_similarity as number) ?? 0) - ((a.vec_similarity as number) ?? 0),
-            );
-        }
-
-        compositeFiltered = applyRestaurantDishSpecificityGate(
-          compositeFiltered,
-          options.intentCategory ?? null,
-          options.intentSpecificItems,
-        );
-
-        // 5. Apply user-selected sidebar filters (price, category, vibe tags)
-        const priceFiltered = (() => {
-          if (!options.constrainPriceBucket) return compositeFiltered;
-          return compositeFiltered.filter((r) => {
-            const p = Number(r.price_level);
-            if (options.constrainPriceBucket === "inexpensive") return p === 1 || p === 2;
-            if (options.constrainPriceBucket === "moderate") return p === 2 || p === 3;
-            return p === 3 || p === 4;
-          });
-        })();
-        const catFiltered = (() => {
-          if (options.primaryCategoryIds?.length) {
-            return priceFiltered.filter((r) =>
-              options.primaryCategoryIds!.includes(String(r.primary_category_id)),
-            );
-          }
-          if (options.primaryCategoryId) {
-            return priceFiltered.filter(
-              (r) => String(r.primary_category_id) === options.primaryCategoryId,
-            );
-          }
-          return priceFiltered;
-        })();
-        const filtered = options.constrainVibeTags?.length
-          ? catFiltered.filter((r) => {
-              const tags = (r.intent_tags as string[] | null) ?? [];
-              return options.constrainVibeTags!.every((t) => tags.includes(t));
-            })
-          : catFiltered;
-
-        const rows = filtered.slice(from, from + pageSize);
-        const total = filtered.length;
-        const recs = rows.map((row, i) => {
-          const r = row as {
-            main_image?: string | null;
-            hero_image?: string | null;
-            main_image_url?: string | null;
-            hero_image_url?: string | null;
-          };
-          const img = getPublicImageUrlWithView(
-            r.main_image_url,
-            r.hero_image_url,
-            r.main_image,
-            r.hero_image,
-          );
-          const bp = businessPayload(row, img);
-          const rec: SearchResultPayload["recommendations"][number] = {
-            business_id: String(row.id),
-            rank: from + i + 1,
-            headline: String((row as { title?: string }).title ?? "Listing"),
-            explanation: (row.excerpt as string | null) ?? "",
-            highlighted_tags: [],
-            business: bp,
-          };
-          if (process.env.NODE_ENV === "development") {
-            rec._vec_similarity = (row.vec_similarity as number | null) ?? undefined;
-            rec._composite = (row as ScoredRow)._composite ?? undefined;
-          }
-          return rec;
+        // 3. Apply per-cluster CTR learning boost (additive, capped, threshold-gated)
+        const clusterKey = deriveQueryClusterKey({
+          normalizedQuery: options.normalizedQuery,
+          intentCategory: options.intentCategory ?? null,
+          resolvedCategorySlugs: options.intentCategory ? [options.intentCategory] : [],
+          townIds: options.nearTownIds ?? (options.constrainTownId ? [options.constrainTownId] : []),
         });
-        return {
-          query: options.rawQuery,
-          query_hash: options.queryHash,
-          normalized_query: options.normalizedQuery,
-          summary: `Found ${total} local picks for "${options.rawQuery}".`,
-          total_results: total,
-          page,
-          page_size: pageSize,
-          recommendations: recs,
-          suggestions: [],
-          cached: false,
+        const boostMap = await loadLearningBoostMap(supabase, clusterKey);
+        if (boostMap.size > 0) {
+          for (const row of scored) {
+            const boost = boostMap.get(String(row.id));
+            if (boost) row._composite = Math.min(1, row._composite + boost);
+          }
+          scored.sort((a, b) => b._composite - a._composite);
+        }
+
+        const postRankingBase: Omit<HybridVectorPostRankingInput, "relaxationTier"> = {
+          scored,
+          searchText,
+          intentCategory: options.intentCategory ?? null,
+          intentSpecificItems: options.intentSpecificItems,
+          intentDietaryNeeds: options.intentDietaryNeeds,
+          intentAtmosphereNeeds: options.intentAtmosphereNeeds,
+          intentOccasion: options.intentOccasion ?? null,
+          intentMealPeriod: options.intentMealPeriod ?? null,
+          pageSize,
+          vectorCategoryId,
+          minimalApparelKw,
+          isApparelShoppingQuery,
+          titleRescueMinVec: rankConfig.minVecFloor,
         };
+
+        hybridAttemptedPaths = ["hybrid_strict"];
+        const metrics: SearchRetrievalMetrics = {
+          path: "hybrid_strict",
+          attempted_paths: hybridAttemptedPaths,
+          rpc_row_count: allRows.length,
+          after_accommodation_filter: nonAccommodationRows.length,
+          after_vec_floor: scored.length,
+        };
+
+        let postRanked = applyHybridVectorPostRanking(
+          { ...postRankingBase, relaxationTier: "strict" },
+          rankConfig,
+        );
+        metrics.after_post_rank_strict = postRanked.length;
+
+        let filtered = filterRowsBySidebar(postRanked, options);
+        metrics.after_sidebar_filters = filtered.length;
+
+        if (filtered.length === 0 && scored.length > 0) {
+          hybridAttemptedPaths = [...hybridAttemptedPaths, "hybrid_relaxed"];
+          metrics.attempted_paths = hybridAttemptedPaths;
+          postRanked = applyHybridVectorPostRanking(
+            { ...postRankingBase, relaxationTier: "relaxed" },
+            rankConfig,
+          );
+          metrics.after_post_rank_relaxed = postRanked.length;
+          filtered = filterRowsBySidebar(postRanked, options);
+          metrics.after_sidebar_filters = filtered.length;
+          if (filtered.length > 0) metrics.path = "hybrid_relaxed";
+        }
+
+        if (filtered.length > 0) {
+          const rows = filtered.slice(from, from + pageSize);
+          return buildPayloadFromRankedRows(
+            options,
+            rows,
+            filtered.length,
+            from,
+            page,
+            pageSize,
+            metrics,
+          );
+        }
       }
       // Fall through to ILIKE on RPC error
     }
   }
 
   // --- ILIKE fallback path ---
-  const ilikeSource = options.searchTermOverride ?? options.rawQuery;
-  const searchToken = sanitizeIlikeToken(ilikeSource) || sanitizeIlikeToken(options.normalizedQuery) || "";
-  const q = searchToken || "a";
+  const ilikeOrClause = resolveIlikeOrClause({
+    normalizedQuery: options.normalizedQuery,
+    rawQuery: options.rawQuery,
+    searchTermOverride: options.searchTermOverride,
+    intentCategory: options.intentCategory,
+    intentSpecificItems: options.intentSpecificItems,
+    skipIlikeTextFilter: Boolean(options.skipIlikeTextFilter),
+  });
 
   let query = supabase
     .from("businesses_view")
@@ -584,11 +591,8 @@ export async function buildMinimalSearchResult(
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
-  if (!options.skipIlikeTextFilter) {
-    // Include slug — many editorial titles omit type words (“bookstore”) that live only in SEO slugs.
-    query = query.or(
-      `title.ilike.%${q}%,slug.ilike.%${q}%,excerpt.ilike.%${q}%,search_keywords.ilike.%${q}%,content.ilike.%${q}%`,
-    );
+  if (ilikeOrClause) {
+    query = query.or(ilikeOrClause);
   }
 
   if (options.nearTownIds?.length) {
@@ -659,16 +663,28 @@ export async function buildMinimalSearchResult(
   const list = (rows ?? []) as Record<string, unknown>[];
   const recs = list.map((row, i) => rowToRec(row, from + i + 1));
 
-  return {
-    query: options.rawQuery,
-    query_hash: options.queryHash,
-    normalized_query: options.normalizedQuery,
-    summary: `Found ${count ?? recs.length} local picks for "${options.rawQuery}".`,
-    total_results: count ?? recs.length,
-    page,
-    page_size: pageSize,
-    recommendations: recs,
-    suggestions: [],
-    cached: false,
-  };
+  const ilikePath: SearchRetrievalPath = options.pageBrowseWithoutQuery
+    ? "browse_no_text"
+    : "ilike";
+
+  return attachRetrievalDiagnostics(
+    {
+      query: options.rawQuery,
+      query_hash: options.queryHash,
+      normalized_query: options.normalizedQuery,
+      summary: `Found ${count ?? recs.length} local picks for "${options.rawQuery}".`,
+      total_results: count ?? recs.length,
+      page,
+      page_size: pageSize,
+      recommendations: recs,
+      suggestions: [],
+      cached: false,
+    },
+    {
+      path: ilikePath,
+      attempted_paths: [...hybridAttemptedPaths, ilikePath],
+      ilike_applied: Boolean(ilikeOrClause),
+      after_sidebar_filters: count ?? recs.length,
+    },
+  );
 }

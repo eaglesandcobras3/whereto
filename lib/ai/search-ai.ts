@@ -68,7 +68,8 @@ export async function parseIntentWithOpenAI(
   const openai = new OpenAI({ apiKey });
   const res = await openai.chat.completions.create({
     model,
-    temperature: 0.2,
+    /** Deterministic parse — avoids flip-flopping category / specific_items on identical queries. */
+    temperature: 0,
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: PARSE_SYSTEM },
@@ -87,8 +88,10 @@ export async function parseIntentWithOpenAI(
 }
 
 /**
- * Some parses still tag obvious retail queries as food venues. Fix category so SQL + scoring
- * do not filter out boutiques and apparel.
+ * Retail queries must use `shopping` for category filters + vector RPC to stay stable.
+ * - Fixes wrong food slugs from the model.
+ * - Fills **null** category when the model omits it (otherwise global vector top‑K + post-filter
+ *   yields inconsistent 0 vs many hits for the same string).
  */
 export function repairFoodCategoryWhenQueryIsRetail(
   intent: SearchIntent,
@@ -105,13 +108,18 @@ export function repairFoodCategoryWhenQueryIsRetail(
     );
   if (!retail || foodOrDrinkVenue) return intent;
 
+  if (intent.category === "shopping") return intent;
+
   const foodishSlug =
     intent.category === "restaurants" ||
     intent.category === "coffee_shops" ||
     intent.category === "bars";
-  if (!foodishSlug) return intent;
+  if (foodishSlug) return { ...intent, category: "shopping" };
 
-  return { ...intent, category: "shopping" };
+  const cat = intent.category?.trim();
+  if (!cat) return { ...intent, category: "shopping" };
+
+  return intent;
 }
 
 export async function synthesizeWithOpenAI(
@@ -153,25 +161,63 @@ export async function synthesizeWithOpenAI(
   return JSON.parse(text) as unknown;
 }
 
-/** Keyword fallback when OpenAI parse is unavailable. */
-export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
+function extractTown(normalized: string): string | null {
+  const towns: [string, string][] = [
+    ["carillon", "carillon-beach"],
+    ["inlet", "inlet-beach"],
+    ["rosemary", "rosemary-beach"],
+    ["seacrest", "seacrest-beach"],
+    ["alys", "alys-beach"],
+    ["watersound", "watersound"],
+    ["seagrove", "seagrove-beach"],
+    ["seaside", "seaside"],
+    ["watercolor", "watercolor"],
+    ["grayton", "grayton-beach"],
+    ["blue mountain", "blue-mountain-beach"],
+    ["santa rosa", "santa-rosa-beach"],
+    ["gulf place", "gulf-place"],
+    ["dune allen", "dune-allen-beach"],
+    ["sandestin", "sandestin"],
+  ];
+  for (const [needle, slug] of towns) {
+    if (normalized.includes(needle)) return slug;
+  }
+  return null;
+}
+
+/** When a town token appears in the query, assume proximity search; otherwise corridor-wide. */
+function keywordIntentLocation(normalized: string): {
+  town: string | null;
+  radius: "near" | "anywhere";
+} {
+  const town = extractTown(normalized);
+  return town ? { town, radius: "near" } : { town: null, radius: "anywhere" };
+}
+
+/** Max words in normalized query to allow skipping chat intent parse when keyword heuristics hit. */
+const INTENT_KEYWORD_FAST_PATH_MAX_WORDS = 10;
+
+/**
+ * Deterministic intent from keyword patterns. Returns `null` when unknown — caller may use OpenAI.
+ */
+export function tryKeywordIntentMatch(normalized: string): SearchIntent | null {
   const base = {
     subcategory: null,
-    exclude_attributes: [],
+    exclude_attributes: [] as string[],
     sort_preference: "quality" as const,
     price_level: null,
     result_count: 10,
-    specific_items: [],
-    dietary_needs: [],
+    specific_items: [] as string[],
+    dietary_needs: [] as string[],
     meal_period: null,
-    atmosphere_needs: [],
+    atmosphere_needs: [] as string[],
     occasion: null,
     query_type: "keyword" as const,
   };
   const attributes: string[] = [];
   if (/\bkid|family|children\b/.test(normalized)) attributes.push("kid_friendly");
   if (/\bcoffee|cafe|espresso\b/.test(normalized)) {
-    return { ...base, category: "coffee_shops", location: { town: extractTown(normalized), radius: "near" }, attributes };
+    return { ...base, category: "coffee_shops", location: keywordIntentLocation(normalized), attributes };
   }
   if (/\b(hamburgers?|cheeseburgers?|burgers?)\b/i.test(normalized)) {
     const stems = ["hamburger", "burger"];
@@ -181,7 +227,7 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
       category: "restaurants",
       query_type: "specific",
       specific_items: stems,
-      location: { town: extractTown(normalized), radius: "near" },
+      location: keywordIntentLocation(normalized),
       attributes,
     };
   }
@@ -191,7 +237,7 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
       category: "restaurants",
       query_type: "specific",
       specific_items: ["ice cream", "gelato", "frozen yogurt"],
-      location: { town: extractTown(normalized), radius: "near" },
+      location: keywordIntentLocation(normalized),
       attributes,
     };
   }
@@ -201,7 +247,7 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
       category: "restaurants",
       query_type: "specific",
       specific_items: ["donuts", "doughnuts"],
-      location: { town: extractTown(normalized), radius: "near" },
+      location: keywordIntentLocation(normalized),
       attributes,
     };
   }
@@ -213,7 +259,7 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
       category: "shopping",
       query_type: "specific",
       specific_items: ["books", "bookstore", "reading"],
-      location: { town: extractTown(normalized), radius: "near" },
+      location: keywordIntentLocation(normalized),
       attributes,
     };
   }
@@ -238,7 +284,7 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
       category: "shopping",
       query_type: "specific",
       specific_items: unique,
-      location: { town: extractTown(normalized), radius: "near" },
+      location: keywordIntentLocation(normalized),
       attributes,
     };
   }
@@ -246,47 +292,46 @@ export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
     return {
       ...base,
       category: "activities",
-      location: { town: extractTown(normalized), radius: "near" },
+      location: keywordIntentLocation(normalized),
       attributes,
     };
   }
   if (/\bbrunch|breakfast|lunch|dinner|restaurant|eat|dining\b/.test(normalized)) {
-    return { ...base, category: "restaurants", location: { town: extractTown(normalized), radius: "near" }, attributes };
+    return { ...base, category: "restaurants", location: keywordIntentLocation(normalized), attributes };
   }
   if (
     /\b(landscap|lawn care|handyman|painter|paint(ing)?|plumb|electric|contractor|hvac|cleaning|pressure wash|home repair|trades?|spa|salon|wellness|beauty)\b/.test(normalized)
   ) {
-    return { ...base, category: "services", location: { town: extractTown(normalized), radius: "near" }, attributes };
-  }
-  /** Unknown keyword — do not assume food; leave category unset so vector + text are not wrongly filtered. */
-  return {
-    ...base,
-    category: null,
-    location: { town: extractTown(normalized), radius: "anywhere" },
-    attributes,
-  };
-}
-
-function extractTown(normalized: string): string | null {
-  const towns: [string, string][] = [
-    ["carillon", "carillon-beach"],
-    ["inlet", "inlet-beach"],
-    ["rosemary", "rosemary-beach"],
-    ["seacrest", "seacrest-beach"],
-    ["alys", "alys-beach"],
-    ["watersound", "watersound"],
-    ["seagrove", "seagrove-beach"],
-    ["seaside", "seaside"],
-    ["watercolor", "watercolor"],
-    ["grayton", "grayton-beach"],
-    ["blue mountain", "blue-mountain-beach"],
-    ["santa rosa", "santa-rosa-beach"],
-    ["gulf place", "gulf-place"],
-    ["dune allen", "dune-allen-beach"],
-    ["sandestin", "sandestin"],
-  ];
-  for (const [needle, slug] of towns) {
-    if (normalized.includes(needle)) return slug;
+    return { ...base, category: "services", location: keywordIntentLocation(normalized), attributes };
   }
   return null;
+}
+
+/** True when `resolveIntent` can skip `parseIntentWithOpenAI` (saves one chat completion per search). */
+export function shouldSkipOpenAiIntentParse(normalized: string): boolean {
+  const wc = normalized.trim().split(/\s+/).filter(Boolean).length;
+  if (wc > INTENT_KEYWORD_FAST_PATH_MAX_WORDS) return false;
+  return tryKeywordIntentMatch(normalized) != null;
+}
+
+/** Keyword fallback when OpenAI parse is unavailable. */
+export function fallbackIntentFromKeywords(normalized: string): SearchIntent {
+  return (
+    tryKeywordIntentMatch(normalized) ?? {
+      subcategory: null,
+      exclude_attributes: [],
+      sort_preference: "quality" as const,
+      price_level: null,
+      result_count: 10,
+      specific_items: [],
+      dietary_needs: [],
+      meal_period: null,
+      atmosphere_needs: [],
+      occasion: null,
+      query_type: "keyword" as const,
+      category: null,
+      location: keywordIntentLocation(normalized),
+      attributes: [] as string[],
+    }
+  );
 }

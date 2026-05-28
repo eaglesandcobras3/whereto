@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
@@ -228,6 +228,18 @@ export function SearchPageClient({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [q, setQ] = useState(() => searchParams.get("q") ?? "");
+  const sessionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = "whereto_sid";
+    let sid = sessionStorage.getItem(key);
+    if (!sid) {
+      sid = crypto.randomUUID();
+      sessionStorage.setItem(key, sid);
+    }
+    sessionIdRef.current = sid;
+    // Make session ID available to server components via cookie (short-lived, non-auth)
+    document.cookie = `whereto_sid=${sid};path=/;max-age=86400;SameSite=Lax`;
+  }, []);
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const urlQ = searchParams.get("q");
@@ -647,6 +659,21 @@ export function SearchPageClient({
                             <Link
                               href={`/business/${rec.business.slug}`}
                               className="card-horizontal"
+                              onClick={() => {
+                                if (results.impression_id) {
+                                  fetch("/api/search/click", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      impression_id: results.impression_id,
+                                      business_id: rec.business_id,
+                                      rank: rec.rank,
+                                      session_id: sessionIdRef.current,
+                                    }),
+                                    keepalive: true,
+                                  });
+                                }
+                              }}
                               {...gaClickProps({
                                 event: "nav_click",
                                 category: "search_results_business",

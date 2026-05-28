@@ -23,11 +23,13 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
 
     const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+    const sessionId = request.headers.get("x-session-id") ?? null;
     const result = await runSearch({
       rawQuery: q,
       userId: user?.id ?? null,
       model,
       openaiKey: process.env.OPENAI_API_KEY,
+      sessionId,
     });
 
     return NextResponse.json(result);

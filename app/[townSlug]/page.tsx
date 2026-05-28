@@ -254,7 +254,25 @@ async function getSidebarData(townId: string) {
 
 type Props = { params: Promise<{ townSlug: string }> };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
+  try {
+    const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
+    const supabase = getServiceSupabaseOrNull();
+    if (!supabase) return [];
+    const { data } = await supabase
+      .from("towns")
+      .select("slug")
+      .is("archived_at", null)
+      .order("slug");
+    return (data ?? [])
+      .map((r) => ({ townSlug: String((r as { slug: string }).slug) }))
+      .filter((r) => r.townSlug && !isReservedRootSlug(r.townSlug));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { townSlug: raw } = await params;

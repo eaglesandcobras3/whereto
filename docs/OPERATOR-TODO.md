@@ -32,6 +32,9 @@
 | *(legacy)* `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page, legacy section | Still accepted if publishable is unset |
 | *(legacy)* `SUPABASE_SERVICE_ROLE_KEY` | Same page, legacy section | Still accepted if secret is unset |
 | `OPENAI_API_KEY` | OpenAI | Optional for local; without it, search uses keyword + template fallbacks |
+| **`SEARCH_QUERY_EMBEDDINGS`** | `true` / `false` (default **`true`**) | When **`false`**, `/search` and **`/api/search`** skip OpenAI **`embeddings.create`** for the user query (no per-search embedding charge; hybrid RPC is skipped, ILIKE path only). In-memory cache still applies when enabled. |
+| **`SEARCH_OPENAI_INTENT_PARSE`** | `true` / `false` (default **`true`**) | When **`false`**, user search never calls **`parseIntentWithOpenAI`** (no intent chat completion); keyword heuristics + retail repair only. Combine with **`SEARCH_QUERY_EMBEDDINGS=false`** for zero OpenAI on interactive search while keeping **`OPENAI_API_KEY`** for scripts or other features. |
+| **`SEARCH_LEARNING_ENABLED`** | `true` / `false` (default **`false`**) | Enables the self-learning search loop: impression logging (`search_impressions`), click tracking (`search_clicks`), and CTR-based ranking boost (`search_cluster_business_stats`). Requires migrations `20260528120000`, `20260529000000`, and `20260529000100` applied in Supabase. The learning boost only activates after ≥20 impressions + ≥2 clicks per cluster (sparse-data safe). Set **`true`** in both `.env.local` and Vercel after applying migrations. |
 | `GEOAPIFY_API_KEY` | [Geoapify MyProjects](https://myprojects.geoapify.com/) | Optional; without it, discovery and directory refresh crons skip external calls (discovery leaves jobs pending). Places + Place Details use OSM-derived data under Geoapify’s and ODbL terms — keep attribution (see `business_sources`). |
 | `CRON_SECRET` | Generate a long random string | Required in **production** for `/api/cron/*`; omitted in `NODE_ENV=development` the app allows cron without secret |
 | `NEXT_PUBLIC_SITE_URL` | Your canonical origin (e.g. `https://whereto30a.com`) | **Strongly recommended in production.** Sets `metadataBase`, canonical URLs, **`/sitemap.xml`** `<loc>` values, **`robots.txt`** `Sitemap:` line (`lib/site-url.ts`). Prefer your **apex** or **`www`**—not both—with Vercel redirecting alternate host. If omitted on Vercel **production**, the app falls back to **`VERCEL_PROJECT_PRODUCTION_URL`** (production hostname configured in Vercel); previews still prefer **`VERCEL_URL`**. |
@@ -169,6 +172,78 @@ Uses `text-embedding-3-small` (1536 dims). Prefers the `qa_document` over `searc
 
 ---
 
+## Search quality evals + self-learning loop
+
+The full feedback loop is built. Follow these steps to activate it.
+
+### Step 1: Apply migrations (Supabase SQL Editor, in order)
+
+1. **`supabase/migrations/20260528120000_search_learning_signals.sql`** — creates `search_impressions`, `search_clicks`, `search_cluster_business_stats`, and the `refresh_search_cluster_business_stats()` RPC.
+2. **`supabase/migrations/20260529000000_search_eval_runs.sql`** — creates `search_eval_runs` for LLM-as-judge scores and golden-set CI results.
+3. **`supabase/migrations/20260529000100_search_monitoring_views.sql`** — creates three read-only monitoring views (see below).
+
+### Step 2: Set env var
+
+- [ ] Set **`SEARCH_LEARNING_ENABLED=true`** in `.env.local` **and** Vercel → Environment Variables (Production + Preview).
+
+### Step 3: Verify the hourly stats cron
+
+- [ ] Confirm `/api/cron/search-stats` is listed in `vercel.json` crons (it is — runs `0 * * * *`).
+- [ ] Confirm **`CRON_SECRET`** is set in Vercel (shared with all cron routes).
+- [ ] After the first hour of traffic, check `search_cluster_business_stats` is being populated.
+
+### Step 4: Backfill business intelligence (if not already done)
+
+The learning boost only helps if base results are correct. The eval CI will expose gaps in `item_tags`, `business_type`, and `qa_document`. If many businesses are missing these fields:
+
+```bash
+# Step A — generate Q&A documents + structured tags (GPT-4o-mini, one call/business)
+npx tsx local/generate-business-intelligence.ts
+
+# Step B — re-embed from qa_document (text-embedding-3-small)
+npx tsx local/generate-embeddings.ts --force
+```
+
+Or use the combined pipeline (recommended — skips BI calls for rows that already have a Q&A doc):
+```bash
+npx tsx local/enrich-search-pipeline.ts
+```
+
+### Step 5: Wire GitLab CI eval gate
+
+- [ ] In GitLab → Settings → CI/CD → Variables, add:
+  - `STAGING_SUPABASE_URL` — staging Supabase project URL
+  - `STAGING_SUPABASE_KEY` — staging Supabase **secret** key
+  - `OPENAI_API_KEY` — already set if using OpenAI elsewhere
+- [ ] `.gitlab-ci.yml` is already committed. MRs touching `lib/search/**` will automatically run `npx tsx local/eval-search.ts --ci` against staging.
+
+### Monitoring views (query in Supabase dashboard)
+
+After migration `20260529000100` is applied, three views are available:
+
+| View | What it shows |
+|------|---------------|
+| `v_search_zero_result_rate` | Daily zero-result % by category (30-day window) |
+| `v_search_path_mix` | Daily retrieval path breakdown (hybrid/ilike) with avg result counts |
+| `v_search_top_failing_queries` | Top 100 zero-result queries in last 30 days |
+
+### LLM-as-judge eval (run manually for trend data)
+
+```bash
+npx tsx local/eval-search-llm.ts                    # last 7 days, 50 samples
+npx tsx local/eval-search-llm.ts --days 14 --sample 100
+npx tsx local/eval-search-llm.ts --dry-run           # print scores, don't write to DB
+```
+
+Scores (1–4) are stored in `search_eval_runs` for month-over-month comparison. Run before/after major search changes.
+
+### Maintaining the golden set
+
+- [ ] Add cases to **`eval/search-golden.json`** when fixing search bugs so regressions are caught in CI.
+- [ ] The golden eval also runs locally: `npx tsx local/eval-search.ts` (requires `OPENAI_API_KEY` + Supabase access).
+
+---
+
 ## Not done in code yet (optional follow-ups)
 
 - **Stricter rate limits:** move from in-memory per instance to Vercel KV / edge if you need global quotas.
@@ -180,6 +255,10 @@ Uses `text-embedding-3-small` (1536 dims). Prefers the `qa_document` over `searc
 
 | Date | What changed |
 |------|----------------|
+| 2026-05-27 | **Self-learning search loop (full implementation):** Apply migrations `20260528120000_search_learning_signals.sql` (impressions + clicks + cluster stats), `20260529000000_search_eval_runs.sql` (LLM-judge score table), and `20260529000100_search_monitoring_views.sql` (3 monitoring views). Set `SEARCH_LEARNING_ENABLED=true` in Vercel + `.env.local`. New hourly cron `/api/cron/search-stats` calls `refresh_search_cluster_business_stats()` — confirm `CRON_SECRET` is set. New click API: `POST /api/search/click`. GitLab CI gate in `.gitlab-ci.yml` runs golden eval (`eval/search-golden.json`) on every MR touching `lib/search/**` — add `STAGING_SUPABASE_URL`, `STAGING_SUPABASE_KEY`, `OPENAI_API_KEY` to GitLab CI/CD variables. Run `npx tsx local/generate-business-intelligence.ts && npx tsx local/generate-embeddings.ts --force` to backfill BI data if not done (required for composite scoring to fire). See **Search quality evals + self-learning loop** section for full runbook. |
+| 2026-05-24 | **Search evals plan:** [search-evals-plan.md](./search-evals-plan.md) — DS framework for logging searches/results, golden-set offline evals, online KPIs, and closed-loop tuning via **`SearchRankConfig`**, data backfill, and future RPC modes. **`search_impressions` table not built yet.** |
+| 2026-05-24 | **Search API spend:** New env toggles **`SEARCH_QUERY_EMBEDDINGS`** (default on) and **`SEARCH_OPENAI_INTENT_PARSE`** (default on). Query embeddings are LRU-cached per process (identical normalized strings reuse one embedding). **`recommendation-precompute`** and legacy **`buildRecommendationSet`** synthesis are unchanged — they are separate OpenAI usage. |
+| 2026-05-24 | **Search / OpenAI usage:** Short queries (≤10 words) that match deterministic keyword intent patterns skip **`parseIntentWithOpenAI`** (no chat completion for that request). **Embeddings** for vector search are unchanged. Longer or unmatched queries still use the model for intent. |
 | 2026-05-24 | **Search enrichment:** Added **`local/enrich-search-pipeline.ts`** — one pass runs BI (GPT) only when `qa_document` is missing, then **batched** embeddings. **`local/generate-business-intelligence.ts`**, **`local/generate-embeddings.ts`**, **`local/generate-search-profiles.ts`** default to **`published` + `draft`**; **`--published-only`** narrows scope (replaces **`--include-drafts`**). Shared helpers: **`local/lib/search-enrichment/`**. |
 | 2026-05-27 | **hybrid_search_businesses RPC ambiguity:** Apply **`20260527103000_drop_duplicate_hybrid_search.sql`** if PostgREST / `supabase.rpc('hybrid_search_businesses', …)` fails with **`Could not choose the best candidate function`**—the town-adjacency migration introduced a duplicate overload `(text, vector, int, text, text, text[], text)` (category **before** `town_ids[]`) alongside the canonical business-intelligence signature `(…, text, text[], text, text)`. The new migration **`DROP`s** only the stale ordering so one function remains. |
 | 2026-05-26 | **Business intelligence + composite search scoring:** Apply **`20260526120000_business_intelligence.sql`** — adds `business_type`, `item_tags`, `dietary_tags`, `meal_period_tags`, `atmosphere_tags`, `occasion_tags`, `qa_document` columns; replaces `hybrid_search_businesses` RPC with multi-town support (`p_town_ids[]`) and new column returns. Run **`local/generate-business-intelligence.ts`** (gpt-4o-mini, one call/business) to populate structured tags + Q&A documents, then **`local/generate-embeddings.ts --force`** to re-embed from Q&A docs. Intent schema expanded: `specific_items[]`, `dietary_needs[]`, `meal_period`, `atmosphere_needs[]`, `occasion`, `query_type`. Search now uses **composite scoring**: `structuredMatch × 0.60 + vecSim × 0.30 + quality × 0.10` when structured intent fields are present; `vecSim × 0.90 + quality × 0.10` for simple keyword queries. Dev mode shows `c:0.xxx v:0.xxx` on result cards. |

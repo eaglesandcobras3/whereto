@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { runSearch } from "@/lib/search/run-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -266,9 +267,6 @@ export default async function SearchPage({ searchParams }: Props) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
   const displayQuery =
@@ -282,32 +280,6 @@ export default async function SearchPage({ searchParams }: Props) {
     effectiveQuery;
   const currentPage = Math.max(1, Number(page) || 1);
 
-  const { data: sidebarRows } = await serviceSupabase
-    .from("towns_view")
-    .select("id, title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title")
-    .limit(50);
-  const sidebarTowns = (sidebarRows ?? []).map((t) => ({
-    id: t.id,
-    name: (t as { title: string }).title,
-    slug: t.slug,
-  }));
-
-  const { data: categoryRows } = await serviceSupabase
-    .from("business_categories")
-    .select("title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title");
-  const categoryOptions = (categoryRows ?? []).map((c) => ({
-    title: (c as { title: string }).title,
-    slug: (c as { slug: string }).slug,
-  }));
-
   let areaListQuery = serviceSupabase
     .from("areas_view")
     .select("id, title, town_id")
@@ -319,52 +291,106 @@ export default async function SearchPage({ searchParams }: Props) {
   if (constrainTownId) {
     areaListQuery = areaListQuery.eq("town_id", constrainTownId);
   }
-  const { data: areaListRows } = await areaListQuery;
+
+  const [
+    authResult,
+    sidebarRowsResult,
+    categoryRowsResult,
+    areaListRowsResult,
+    sidebarAreaRowsResult,
+    guideRowsResult,
+    bizRowsResult,
+    serviceRowsResult,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    serviceSupabase
+      .from("towns_view")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .order("title")
+      .limit(50),
+    serviceSupabase
+      .from("business_categories")
+      .select("title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .order("title"),
+    areaListQuery,
+    serviceSupabase
+      .from("areas_view")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .order("title")
+      .limit(50),
+    serviceSupabase
+      .from("guides_view")
+      .select("slug, title")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(50),
+    serviceSupabase
+      .from("businesses_view")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .eq("has_physical_location", true)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(100),
+    serviceSupabase
+      .from("businesses_view")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .eq("is_service_business", true)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(100),
+  ]);
+  const {
+    data: { user },
+  } = authResult;
+  const { data: sidebarRows } = sidebarRowsResult;
+  const { data: categoryRows } = categoryRowsResult;
+  const { data: areaListRows } = areaListRowsResult;
+  const { data: sidebarAreaRows } = sidebarAreaRowsResult;
+  const { data: guideRows } = guideRowsResult;
+  const { data: bizRows } = bizRowsResult;
+  const { data: serviceRows } = serviceRowsResult;
+
+  const sidebarTowns = (sidebarRows ?? []).map((t) => ({
+    id: t.id,
+    name: (t as { title: string }).title,
+    slug: t.slug,
+  }));
+
+  const categoryOptions = (categoryRows ?? []).map((c) => ({
+    title: (c as { title: string }).title,
+    slug: (c as { slug: string }).slug,
+  }));
+
   const areaOptions = (areaListRows ?? []).map((a) => ({
     id: String((a as { id: string }).id),
     title: String((a as { title: string }).title),
   }));
 
-  // Sidebar: Explore Areas (random selection)
-  const { data: sidebarAreaRows } = await serviceSupabase
-    .from("areas_view")
-    .select("id, title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title")
-    .limit(50);
   const allSidebarAreas = (sidebarAreaRows ?? []).map((a) => ({
     id: String((a as { id: string }).id),
     name: String((a as { title: string }).title),
     slug: String((a as { slug: string }).slug),
   }));
-  // Pick 8 random areas with daily rotation
   const sidebarAreas = shuffleWithDailySeed(allSidebarAreas).slice(0, 8);
 
-  // Sidebar: Featured Guides (daily random selection)
-  const { data: guideRows } = await serviceSupabase
-    .from("guides_view")
-    .select("slug, title")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .limit(50);
   const allGuides = (guideRows ?? []).map((g) => ({
     slug: String((g as { slug: string }).slug),
     title: String((g as { title: string }).title),
   }));
   const sidebarGuides = shuffleWithDailySeed(allGuides).slice(0, 6);
 
-  // Sidebar: Featured Businesses (daily random, has_physical_location = true)
-  const { data: bizRows } = await serviceSupabase
-    .from("businesses_view")
-    .select("id, title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("has_physical_location", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .limit(100);
   const allBiz = (bizRows ?? []).map((b) => ({
     id: String((b as { id: string }).id),
     name: String((b as { title: string }).title),
@@ -372,15 +398,6 @@ export default async function SearchPage({ searchParams }: Props) {
   }));
   const sidebarBusinesses = shuffleWithDailySeed(allBiz).slice(0, 6);
 
-  // Sidebar: Featured Services (daily random, is_service_business = true)
-  const { data: serviceRows } = await serviceSupabase
-    .from("businesses_view")
-    .select("id, title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("is_service_business", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .limit(100);
   const allServices = (serviceRows ?? []).map((s) => ({
     id: String((s as { id: string }).id),
     name: String((s as { title: string }).title),
@@ -731,9 +748,13 @@ export default async function SearchPage({ searchParams }: Props) {
         ? `${effectiveQuery} in ${townName}`
         : effectiveQuery;
 
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("whereto_sid")?.value ?? null;
+
   const searchResult = await runSearch({
     rawQuery: runSearchRawQuery,
     userId: user?.id ?? null,
+    sessionId,
     model,
     openaiKey: process.env.OPENAI_API_KEY,
     page: currentPage,
