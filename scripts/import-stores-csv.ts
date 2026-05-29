@@ -203,11 +203,13 @@ async function main() {
     throw bErr ?? aErr ?? tErr ?? cErr ?? new Error("fetch failed");
   }
 
-  writeExistingList(businesses, towns);
+  const townRows = towns;
+
+  writeExistingList(businesses, townRows);
 
   if (LIST_ONLY) return;
 
-  const townByTitle = new Map(towns.map((t) => [norm(t.title), t]));
+  const townByTitle = new Map(townRows.map((t) => [norm(t.title), t]));
   const catBySlug = new Map(cats.map((c) => [c.slug, c]));
   const dbSlugSet = new Set(businesses.map((b) => b.slug));
   const dbByTownTitle = new Map<string, typeof businesses>();
@@ -233,7 +235,7 @@ async function main() {
     const title = AREA_ALIASES[csvLabel] ?? csvLabel;
     const slugBase = slugify(title);
     const slug = townId
-      ? `${slugBase}-${towns.find((t) => t.id === townId)?.slug ?? "area"}`
+      ? `${slugBase}-${townRows.find((t) => t.id === townId)?.slug ?? "area"}`
       : slugBase;
 
     const payload = {

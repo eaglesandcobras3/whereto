@@ -203,7 +203,17 @@ async function loadRows(): Promise<Row[]> {
     .neq("status", "archived");
 
   if (error) throw error;
-  return (data ?? []) as Row[];
+  return (data ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    const townsRaw = r.towns;
+    const towns =
+      townsRaw == null
+        ? null
+        : Array.isArray(townsRaw)
+          ? ((townsRaw[0] as { title?: string } | undefined) ?? null)
+          : (townsRaw as { title: string });
+    return { ...r, towns } as Row;
+  });
 }
 
 async function main() {
