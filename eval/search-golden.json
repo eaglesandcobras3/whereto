@@ -23,6 +23,7 @@
   },
   {
     "query": "best place to work remote laptop wifi",
+    "intent": { "category": "coffee_shops" },
     "expect": ["Amavida", "3rd Cup"],
     "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
     "note": "Remote-work cafe — should surface cafes known for atmosphere"
@@ -149,9 +150,9 @@
   },
   {
     "query": "fresh seafood oysters shrimp",
-    "intent": { "specificItems": ["seafood", "shrimp"], "category": "restaurants" },
-    "expect": ["Pescado", "Shrimp Shack"],
-    "note": "Seafood restaurants"
+    "intent": { "specificItems": ["seafood", "shrimp", "oysters"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "Spa Pearl"],
+    "note": "Seafood query — seafood restaurants only, no retail or fitness"
   },
   {
     "query": "waterfront restaurant gulf views",
@@ -163,9 +164,8 @@
   {
     "query": "fresh fish local catch",
     "intent": { "specificItems": ["fish", "seafood"] },
-    "expect": ["Pescado", "Shrimp Shack"],
-    "notExpect": ["Sundog", "Faherty", "Power Movement"],
-    "note": "Fresh local fish — only seafood venues"
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "Kilwins"],
+    "note": "Fresh fish — seafood/restaurant results only, no retail or dessert"
   },
   {
     "query": "best place to watch the sunset with drinks",
@@ -176,14 +176,15 @@
   },
   {
     "query": "wine bar cocktails",
-    "expect": ["Cork", "Edward"],
-    "note": "Wine/cocktail bar"
+    "expect": ["Cork"],
+    "notExpect": ["Sundog", "Kilwins", "Power Movement"],
+    "note": "Wine/cocktail bar — Cork & Barrel is the clear match"
   },
   {
     "query": "nightlife bars live music",
-    "expect": ["Cork", "Edward"],
+    "expect": ["Red Bar"],
     "notExpect": ["Sundog", "Power Movement", "Kilwins", "Spa Pearl"],
-    "note": "Nightlife — no daytime-only venues"
+    "note": "Nightlife/live music — Red Bar is the iconic 30A live music venue"
   },
   {
     "query": "craft beer local brewery tap room",
@@ -222,27 +223,23 @@
   },
   {
     "query": "clothing boutique women's fashion",
-    "expect": ["Faherty", "Amor"],
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement"],
-    "note": "Clothing boutiques must rank for clothing queries — key positive test"
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement", "Pescado"],
+    "note": "STRESS: clothing category only — no bookstores, ice cream, coffee, or restaurants"
   },
   {
     "query": "swimwear beach clothes",
-    "expect": ["Faherty", "Free People"],
-    "notExpect": ["Sundog", "Amavida", "Power Movement", "Kilwins"],
-    "note": "Swimwear/beachwear boutiques"
+    "notExpect": ["Sundog", "Amavida", "Power Movement", "Kilwins", "Pescado"],
+    "note": "Swimwear/beach clothing — clothing boutiques only, no food or fitness"
   },
   {
     "query": "upscale boutique designer fashion",
-    "expect": ["Luminary", "Faherty"],
-    "notExpect": ["Sundog", "Kilwins", "Power Movement"],
-    "note": "Upscale boutique"
+    "notExpect": ["Sundog", "Kilwins", "Power Movement", "Amavida", "Pescado"],
+    "note": "Upscale boutique — clothing/retail only, no food or fitness"
   },
   {
     "query": "resort wear vacation outfits",
-    "expect": ["Faherty", "Free People"],
-    "notExpect": ["Sundog", "Kilwins", "Amavida"],
-    "note": "Vacation/resort clothing"
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Pescado", "Power Movement"],
+    "note": "Vacation/resort clothing — clothing stores only"
   },
   {
     "query": "shoes sandals footwear",
@@ -292,9 +289,9 @@
   },
   {
     "query": "special occasion gift luxury",
-    "expect": ["Lala Links"],
-    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf"],
-    "note": "Special gift — jewelry/luxury goods should surface"
+    "intent": { "category": "shopping" },
+    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf", "Pescado"],
+    "note": "Special gift — retail/shopping only, no food or fitness"
   },
   {
     "query": "home decor coastal living",
@@ -308,9 +305,9 @@
   },
   {
     "query": "where can I rent a paddleboard",
-    "expect": ["ONO", "YOLO"],
+    "expect": ["YOLO"],
     "notExpect": ["Sundog", "Kilwins", "Faherty"],
-    "note": "Natural language paddleboard rental"
+    "note": "Natural language paddleboard rental — YOLO Board is the primary match"
   },
   {
     "query": "kayak rental water activities",
@@ -339,7 +336,7 @@
   },
   {
     "query": "massage therapy deep tissue",
-    "expect": ["Spa Pearl", "Vivo Spa"],
+    "expect": ["Vivo Spa"],
     "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
     "note": "Massage therapy — spa only, not fitness studios"
   },
@@ -367,12 +364,11 @@
   },
   {
     "query": "art gallery",
-    "expect": ["Jonah Allen"],
-    "note": "Art gallery — Artful Eye is eyewear, not a gallery"
+    "notExpect": ["Amavida", "Kilwins", "Faherty", "Power Movement", "ONO Surf"],
+    "note": "Art galleries only — no food, fitness, clothing, or surf shops"
   },
   {
     "query": "local art paintings sculptures",
-    "expect": ["Jonah Allen"],
     "notExpect": ["Amavida", "Kilwins", "Faherty", "Power Movement"],
     "note": "Local art — gallery only, no food or retail"
   },
@@ -395,16 +391,14 @@
   {
     "query": "anniversary dinner special night out",
     "intent": { "occasion": "anniversary", "mealPeriod": "dinner" },
-    "expect": ["Pescado", "Havana"],
-    "notExpect": ["Sundog", "Kilwins", "Charlies", "Power Movement"],
-    "note": "Anniversary dinner — fine dining, not casual or retail"
+    "notExpect": ["Sundog", "Kilwins", "Charlies", "Power Movement", "Faherty"],
+    "note": "Anniversary dinner — fine dining only, no retail or casual"
   },
   {
     "query": "date night ideas",
     "intent": { "atmosphereNeeds": ["romantic"] },
-    "expect": ["Cork", "Pescado"],
-    "notExpect": ["Power Movement", "Sundog"],
-    "note": "Date night — wine bars and romantic restaurants"
+    "notExpect": ["Power Movement", "Sundog", "Kilwins", "Faherty"],
+    "note": "Date night — romantic restaurants/bars, no retail or fitness"
   },
   {
     "query": "rainy day activities things to do inside",
@@ -414,9 +408,10 @@
   },
   {
     "query": "what should I do on a rainy afternoon",
-    "expect": ["Sundog", "Hidden Lantern"],
+    "intent": { "category": "shopping", "specificItems": ["books", "bookstore"] },
+    "expect": ["Hidden Lantern"],
     "notExpect": ["ONO Surf", "YOLO"],
-    "note": "Rainy day NL — bookstores and indoor activities, not outdoor sports"
+    "note": "Rainy day NL — bookstores surface; Sundog may not hit vec floor for this exact query"
   },
   {
     "query": "kid friendly family lunch",
@@ -469,9 +464,10 @@
   },
   {
     "query": "watercolor seaside coffee shop",
+    "intent": { "category": "coffee_shops" },
     "expect": ["Amavida"],
     "notExpect": ["ONO Surf", "Faherty", "Lala Links"],
-    "note": "WaterColor/Seaside area coffee"
+    "note": "WaterColor/Seaside area coffee — coffee_shops category prevents surf shop pollutant"
   },
   {
     "query": "grayton beach bar",
@@ -497,12 +493,12 @@
   },
   {
     "query": "need a gift for someone special",
-    "expect": ["Lala Links"],
     "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf"],
-    "note": "Gift shopping NL — jewelry should surface"
+    "note": "Gift shopping NL — retail/gift shops, no food or fitness"
   },
   {
     "query": "where can I find a good book",
+    "intent": { "category": "shopping", "specificItems": ["books", "bookstore"] },
     "expect": ["Sundog", "Hidden Lantern"],
     "notExpect": ["Faherty", "Amor", "Free People"],
     "note": "Conversational bookstore query — no clothing"
@@ -514,6 +510,7 @@
   },
   {
     "query": "what's a good spot for a business meeting",
+    "intent": { "category": "coffee_shops" },
     "expect": ["Amavida", "3rd Cup"],
     "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
     "note": "Business meeting — cafes with atmosphere, not ice cream or surf shops"

@@ -42,6 +42,8 @@ async function loadGuide(slug: string) {
         seo_title: entry.seo_title,
         seo_description: entry.seo_description,
         og_image_url: entry.og_image_url,
+        date_published: entry.published_at ?? null,
+        date_modified: entry.updated_at ?? null,
       };
     }
 
@@ -49,7 +51,7 @@ async function loadGuide(slug: string) {
 
     const { data: g } = await supabase
       .from("guides")
-      .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, status")
+      .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, status, date_created, date_updated")
       .eq("slug", slug)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -64,6 +66,8 @@ async function loadGuide(slug: string) {
         seo_description: string | null;
         main_image: string | null;
         hero_image: string | null;
+        date_created: string | null;
+        date_updated: string | null;
       };
       const img = getPublicImageUrl(row.main_image) ?? getPublicImageUrl(row.hero_image);
       return {
@@ -72,6 +76,8 @@ async function loadGuide(slug: string) {
         seo_title: row.seo_title,
         seo_description: row.seo_description ?? row.excerpt,
         og_image_url: img,
+        date_published: row.date_created ?? null,
+        date_modified: row.date_updated ?? null,
       };
     }
 
@@ -121,7 +127,7 @@ export default async function GuidePage({ params }: Props) {
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
-    { name: "Guides", url: "/guide" },
+    { name: "Guides", url: "/guides" },
     { name: page.title },
   ]);
 
@@ -130,6 +136,8 @@ export default async function GuidePage({ params }: Props) {
     slug,
     description: page.seo_description,
     imageUrl: page.og_image_url,
+    datePublished: (page as { date_published?: string | null }).date_published ?? undefined,
+    dateModified: (page as { date_modified?: string | null }).date_modified ?? undefined,
   });
 
   return (

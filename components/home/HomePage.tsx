@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
@@ -204,15 +202,6 @@ export function HomePage({
       "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
   },
 }: Props) {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const initial = searchParams.get("q");
-    if (initial?.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(initial)}`;
-    }
-  }, [searchParams]);
-
   function scrollToHero() {
     gaEvent("cta_click", { source: "home_plan_section", label: "start_searching_scroll" });
     document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
@@ -265,7 +254,7 @@ export function HomePage({
                 Explore the guide
               </Link>
               <Link
-                href="/search?type=towns"
+                href="/towns"
                 {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
                 className="inline-flex items-center justify-center rounded-full border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
               >
@@ -296,7 +285,7 @@ export function HomePage({
               <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
               <div className="mt-10 flex justify-center md:mt-12">
                 <Link
-                  href="/search?type=businesses"
+                  href="/businesses"
                   {...gaClickProps({ event: "nav_click", category: "home_featured", label: "view_more_businesses" })}
                   className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-8 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
                 >
@@ -402,7 +391,7 @@ export function HomePage({
                   </h2>
                 </div>
                 <Link
-                  href="/search?type=towns"
+                  href="/towns"
                   className="group flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3"
                 >
                   Explore all towns
@@ -466,7 +455,7 @@ export function HomePage({
                 </h2>
               </div>
               <Link
-                href={PRIMARY_REGION_HUB_PATH}
+                href="/categories"
                 className="group flex items-center gap-2 font-semibold text-primary transition-all"
               >
                 View all

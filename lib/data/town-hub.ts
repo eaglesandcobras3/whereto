@@ -7,7 +7,7 @@ import {
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
 
-/** Town hub: browse row for an `areas` table record (links to /search?type=areas). */
+/** Town hub: browse row for an `areas` table record (links to `/area/[slug]`). */
 export type TownAreaBrowseRow = {
   id: string;
   name: string;
@@ -54,7 +54,7 @@ export async function getTownBySlug(slug: string) {
   // `towns_view` adds `main_image_url` / `hero_image_url` via `resolve_directus_file_url` → Supabase Storage
   const { data: rows, error } = await supabase
     .from("towns_view")
-    .select("id, title, slug, region, excerpt, content, main_image, hero_image, status, main_image_url, hero_image_url")
+    .select("id, title, slug, region, excerpt, content, main_image, hero_image, status, main_image_url, hero_image_url, seo_title, seo_description")
     .eq("slug", key)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -173,28 +173,94 @@ export type TownFeaturedGuide = {
   og_image_url: string | null;
 };
 
-export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeaturedGuide[]> {
+export type TownGuideCard = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  hero_image_url: string | null;
+};
+
+const GUIDE_VIEW_SELECT =
+  "id, slug, title, excerpt, seo_description, guide_type, main_image, hero_image, main_image_url, hero_image_url";
+
+function mapTownGuideRow(row: Record<string, unknown>): TownGuideCard {
+  const heroUrl = getPublicImageUrlWithView(
+    row.main_image_url as string | null,
+    row.hero_image_url as string | null,
+    row.main_image as string | null,
+    row.hero_image as string | null,
+  );
+  const excerpt = (row.excerpt as string | null) ?? null;
+  const seo = (row.seo_description as string | null) ?? null;
+  const guideType = (row.guide_type as string | null) ?? null;
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    title: String((row as { title: string }).title),
+    subtitle:
+      excerpt?.trim() ||
+      seo?.trim() ||
+      (guideType ? guideType.replace(/_/g, " ") : null),
+    hero_image_url: heroUrl,
+  };
+}
+
+/** Guides linked via `primary_town_id` and/or `guide_towns` for this town. */
+export async function getGuidesForTown(townId: string): Promise<TownGuideCard[]> {
   const supabase = getServiceSupabase();
-  const { data: links } = await supabase.from("guide_towns").select("guide_id").eq("town_id", townId).limit(20);
-  const gids = (links ?? []).map((l) => (l as { guide_id: string }).guide_id).filter(Boolean);
-  if (!gids.length) return [];
-  const { data: guides } = await supabase
-    .from("guides")
-    .select("slug, title, excerpt, main_image, hero_image, status")
-    .in("id", gids)
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .limit(8);
-  return (guides ?? []).map((g) => {
-    const row = g as { slug: string; title: string; excerpt: string | null; main_image: string | null; hero_image: string | null };
-    return {
-      slug: row.slug,
-      title: row.title,
-      excerpt: row.excerpt,
-      og_image_url: getPublicImageUrl(row.main_image) ?? getPublicImageUrl(row.hero_image),
-    };
-  });
+
+  const [linksRes, primaryRes] = await Promise.all([
+    supabase.from("guide_towns").select("guide_id").eq("town_id", townId),
+    supabase
+      .from("guides_view")
+      .select(GUIDE_VIEW_SELECT)
+      .eq("primary_town_id", townId)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN),
+  ]);
+
+  const guideById = new Map<string, TownGuideCard>();
+  for (const row of primaryRes.data ?? []) {
+    const g = mapTownGuideRow(row as Record<string, unknown>);
+    guideById.set(g.id, g);
+  }
+
+  const linkedIds = [
+    ...new Set(
+      (linksRes.data ?? [])
+        .map((r) => String((r as { guide_id: string }).guide_id))
+        .filter(Boolean),
+    ),
+  ];
+
+  if (linkedIds.length > 0) {
+    const { data: linked } = await supabase
+      .from("guides_view")
+      .select(GUIDE_VIEW_SELECT)
+      .in("id", linkedIds)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN);
+
+    for (const row of linked ?? []) {
+      const g = mapTownGuideRow(row as Record<string, unknown>);
+      if (!guideById.has(g.id)) guideById.set(g.id, g);
+    }
+  }
+
+  return [...guideById.values()].sort((a, b) => a.title.localeCompare(b.title));
+}
+
+export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeaturedGuide[]> {
+  const guides = await getGuidesForTown(townId);
+  return guides.slice(0, 8).map((g) => ({
+    slug: g.slug,
+    title: g.title,
+    excerpt: g.subtitle,
+    og_image_url: g.hero_image_url,
+  }));
 }
 
 /**

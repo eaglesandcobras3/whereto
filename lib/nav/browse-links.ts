@@ -1,24 +1,35 @@
-/** Primary browse destinations (search with type filter). Used by header + mobile menu. */
+/** Primary browse destinations. Used by header + mobile menu. */
 export type BrowseNavItem = {
   label: string;
   href: string;
-  /** `searchParams.get("type")` values that count as active for this link */
-  activeTypes: string[];
+  /** Pathnames that count as active (exact match or prefix for nested routes). */
+  activePaths?: string[];
+  /** Legacy: `searchParams.get("type")` on `/search` when no dedicated hub exists. */
+  activeTypes?: string[];
 };
 
 export const BROWSE_NAV_ITEMS: BrowseNavItem[] = [
-  { label: "Towns", href: "/search?type=towns", activeTypes: ["towns"] },
-  { label: "Areas", href: "/search?type=areas", activeTypes: ["areas"] },
+  { label: "Towns", href: "/towns", activePaths: ["/towns"] },
+  { label: "Areas", href: "/areas", activePaths: ["/areas", "/area"] },
   {
     label: "Businesses",
-    href: "/search?type=businesses",
-    activeTypes: ["businesses", "stores"],
+    href: "/businesses",
+    activePaths: ["/businesses", "/business"],
   },
   { label: "Services", href: "/search?type=services", activeTypes: ["services"] },
-  { label: "Guides", href: "/search?type=guides", activeTypes: ["guides"] },
+  { label: "Guides", href: "/guides", activePaths: ["/guides", "/guide"] },
 ];
 
-export function isBrowseNavActive(type: string | null, item: BrowseNavItem): boolean {
-  if (!type) return false;
-  return item.activeTypes.includes(type);
+export function isBrowseNavActive(
+  pathname: string,
+  type: string | null,
+  item: BrowseNavItem,
+): boolean {
+  if (item.activePaths?.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return true;
+  }
+  if (pathname === "/search" && type && item.activeTypes?.includes(type)) {
+    return true;
+  }
+  return false;
 }

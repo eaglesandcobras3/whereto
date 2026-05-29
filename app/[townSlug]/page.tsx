@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { getTownBySlug } from "@/lib/data/town-hub";
+import { getGuidesForTown, getTownBySlug, type TownGuideCard } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import {
@@ -19,13 +19,110 @@ import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
+import { chicagoCalendarDaySeed, pickDailySubsetWithSalt } from "@/lib/home/daily-featured-pick";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
-import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
+import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
+import { GuideCard } from "@/components/discovery/GuideCard";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
-/** Deterministic shuffle using mulberry32 PRNG with daily seed */
+const PER_CATEGORY_PREVIEW = 4;
+
+/** Town pages: fixed category order (slug keys from `business_categories`). */
+const TOWN_CATEGORY_SLUG_ORDER = [
+  "restaurants",
+  "shopping",
+  "coffee_shops",
+  "activities",
+] as const;
+
+const CATEGORY_ICONS: Record<string, string> = {
+  restaurants: "restaurant",
+  coffee_shops: "coffee",
+  bars: "local_bar",
+  activities: "kayaking",
+  shopping: "shopping_bag",
+  services: "home_repair_service",
+  events: "event",
+  beaches: "beach_access",
+};
+
+type SidebarArea = { id: string; name: string; slug: string };
+
+type TownBusiness = BrowseBusinessCard & {
+  categoryId: string | null;
+  categoryTitle: string | null;
+  categorySlug: string | null;
+};
+
+type TownCategorySection = {
+  id: string;
+  title: string;
+  slug: string;
+  businesses: BrowseBusinessCard[];
+  totalCount: number;
+};
+
+function toTownBusiness(row: Record<string, unknown>): TownBusiness {
+  const hero = getPublicImageUrlWithView(
+    row.main_image_url as string | null,
+    row.hero_image_url as string | null,
+    row.main_image as string | null,
+    row.hero_image as string | null,
+  );
+  const excerpt = (row.excerpt as string | null) ?? null;
+  const cat = row.business_categories as { id?: string; title?: string; slug?: string } | null;
+  return {
+    id: String(row.id),
+    name: String((row as { title: string }).title),
+    slug: String((row as { slug: string }).slug),
+    hero_image_url: hero,
+    ai_one_liner: excerpt,
+    ai_summary: excerpt,
+    categoryId: cat?.id ?? (row.primary_category_id as string | null) ?? null,
+    categoryTitle: cat?.title ?? null,
+    categorySlug: cat?.slug ?? null,
+  };
+}
+
+function groupBusinessesByCategory(
+  businesses: TownBusiness[],
+  townSlug: string,
+): TownCategorySection[] {
+  const allowed = new Set<string>(TOWN_CATEGORY_SLUG_ORDER);
+  const map = new Map<string, { id: string; title: string; slug: string; pool: TownBusiness[] }>();
+
+  for (const b of businesses) {
+    if (!b.categorySlug || !b.categoryTitle || !b.categoryId) continue;
+    if (!allowed.has(b.categorySlug)) continue;
+    if (!map.has(b.categoryId)) {
+      map.set(b.categoryId, {
+        id: b.categoryId,
+        title: b.categoryTitle,
+        slug: b.categorySlug,
+        pool: [],
+      });
+    }
+    map.get(b.categoryId)!.pool.push(b);
+  }
+
+  const bySlug = new Map([...map.values()].map((cat) => [cat.slug, cat]));
+
+  return TOWN_CATEGORY_SLUG_ORDER.flatMap((slug) => {
+    const cat = bySlug.get(slug);
+    if (!cat || cat.pool.length === 0) return [];
+    return [
+      {
+        id: cat.id,
+        title: cat.title,
+        slug: cat.slug,
+        totalCount: cat.pool.length,
+        businesses: pickDailySubsetWithSalt(cat.pool, PER_CATEGORY_PREVIEW, `${townSlug}:${cat.slug}`),
+      },
+    ];
+  });
+}
+
 function shuffleWithDailySeed<T>(items: T[]): T[] {
   const seed = chicagoCalendarDaySeed();
   let a = seed >>> 0;
@@ -43,35 +140,17 @@ function shuffleWithDailySeed<T>(items: T[]): T[] {
   return copy;
 }
 
-type SidebarArea = { id: string; name: string; slug: string };
-type SidebarGuide = { slug: string; title: string };
-
-function toBrowseBusinessCard(row: Record<string, unknown>): BrowseBusinessCard {
-  const hero = getPublicImageUrlWithView(
-    row.main_image_url as string | null,
-    row.hero_image_url as string | null,
-    row.main_image as string | null,
-    row.hero_image as string | null,
-  );
-  const excerpt = (row.excerpt as string | null) ?? null;
-  return {
-    id: String(row.id),
-    name: String((row as { title: string }).title),
-    slug: String((row as { slug: string }).slug),
-    hero_image_url: hero,
-    ai_one_liner: excerpt,
-    ai_summary: excerpt,
-  };
-}
+const BIZ_SELECT =
+  "id, title, slug, area_id, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( id, title, slug )";
 
 const SIDEBAR_AREAS_LIMIT = 8;
 const TOWN_AREAS_CANDIDATE_CAP = 50;
 
-async function getSidebarData(townId: string) {
+async function getTownPageData(townId: string, townSlug: string) {
   const supabase = getServiceSupabase();
 
-  const [guideTownLinksRes, areasRes, primaryGuidesRes] = await Promise.all([
-    supabase.from("guide_towns").select("guide_id").eq("town_id", townId),
+  const [guides, areasRes] = await Promise.all([
+    getGuidesForTown(townId),
     supabase
       .from("areas_view")
       .select("id, title, slug")
@@ -81,33 +160,15 @@ async function getSidebarData(townId: string) {
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
       .limit(TOWN_AREAS_CANDIDATE_CAP),
-    supabase
-      .from("guides_view")
-      .select("id, slug, title")
-      .eq("primary_town_id", townId)
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .limit(50),
   ]);
 
   const townAreaRows = (areasRes.data ?? []) as { id: string; title: string; slug: string }[];
   const townAreaIds = townAreaRows.map((a) => String(a.id));
   const townAreaIdSet = new Set(townAreaIds);
 
-  const linkedGuideIds = [
-    ...new Set(
-      (guideTownLinksRes.data ?? [])
-        .map((r) => String((r as { guide_id: string }).guide_id))
-        .filter(Boolean),
-    ),
-  ];
-
   const bizInTownQuery = supabase
     .from("businesses_view")
-    .select(
-      "id, title, slug, area_id, excerpt, main_image, hero_image, main_image_url, hero_image_url",
-    )
+    .select(BIZ_SELECT)
     .eq("town_id", townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -118,9 +179,7 @@ async function getSidebarData(townId: string) {
     townAreaIds.length > 0
       ? supabase
           .from("businesses_view")
-          .select(
-            "id, title, slug, area_id, excerpt, main_image, hero_image, main_image_url, hero_image_url",
-          )
+          .select(BIZ_SELECT)
           .in("area_id", townAreaIds)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -148,19 +207,9 @@ async function getSidebarData(townId: string) {
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
       : Promise.resolve({ data: [] as { area_id: string }[] | null });
 
-  const [bizTownRes, bizAreaRes, linkedGuidesRes, daTownRes, daAreaRes, junctionRes] = await Promise.all([
+  const [bizTownRes, bizAreaRes, daTownRes, daAreaRes, junctionRes] = await Promise.all([
     bizInTownQuery,
     bizInTownAreasQuery,
-    linkedGuideIds.length > 0
-      ? supabase
-          .from("guides_view")
-          .select("id, slug, title")
-          .in("id", linkedGuideIds)
-          .is("archived_at", null)
-          .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN)
-          .limit(50)
-      : Promise.resolve({ data: [] as { id: string; slug: string; title: string }[] | null }),
     directAreaBizTownQuery,
     directAreaBizInAreasQuery,
     townAreaIds.length > 0
@@ -168,16 +217,16 @@ async function getSidebarData(townId: string) {
       : Promise.resolve({ data: [] as { area_id: string; business_id: string }[] | null }),
   ]);
 
-  const businessById = new Map<string, BrowseBusinessCard>();
+  const businessById = new Map<string, TownBusiness>();
   for (const row of [...(bizTownRes.data ?? []), ...(bizAreaRes.data ?? [])]) {
     const r = row as Record<string, unknown>;
     const id = String(r.id);
     if (!businessById.has(id)) {
-      businessById.set(id, toBrowseBusinessCard(r));
+      businessById.set(id, toTownBusiness(r));
     }
   }
   const hasTownBusinesses = businessById.size > 0;
-  const businesses = shuffleWithDailySeed([...businessById.values()]).slice(0, 6);
+  const categorySections = groupBusinessesByCategory([...businessById.values()], townSlug);
 
   const areaIdsWithBusiness = new Set<string>();
   for (const row of daTownRes.data ?? []) {
@@ -238,18 +287,7 @@ async function getSidebarData(townId: string) {
     }))
   ).slice(0, SIDEBAR_AREAS_LIMIT);
 
-  const guideById = new Map<string, SidebarGuide>();
-  for (const row of primaryGuidesRes.data ?? []) {
-    const g = row as { id: string; slug: string; title: string };
-    guideById.set(g.id, { slug: g.slug, title: g.title });
-  }
-  for (const row of linkedGuidesRes.data ?? []) {
-    const g = row as { id: string; slug: string; title: string };
-    if (!guideById.has(g.id)) guideById.set(g.id, { slug: g.slug, title: g.title });
-  }
-  const guides: SidebarGuide[] = shuffleWithDailySeed([...guideById.values()]).slice(0, 6);
-
-  return { areas, guides, businesses };
+  return { areas, guides, categorySections };
 }
 
 type Props = { params: Promise<{ townSlug: string }> };
@@ -281,13 +319,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (isReservedRootSlug(townSlug)) return { title: metadataTitleSiteOnly };
   const town = await getTownBySlug(townSlug);
   if (town) {
+    const seoTitle = (town as unknown as { seo_title?: string | null }).seo_title;
+    const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
+    const title = seoTitle?.trim() || `${town.name} | Local Guide to 30A`;
     const desc =
+      seoDesc?.trim() ||
       (typeof town.excerpt === "string" && town.excerpt) ||
-      `Local guide: ${town.name} on 30A.`;
+      `Local guide: ${town.name} on 30A — restaurants, beaches, areas, and what the week actually feels like.`;
     const og = businessListingImageUrl(town.hero_image_thumb_url as string | null);
     return {
       ...canonicalAlternates(`/${town.slug}`),
-      title: town.name,
+      title,
       description: desc,
       openGraph: og
         ? { title: `${town.name} | WhereTo30A`, description: desc, images: [{ url: og }] }
@@ -312,8 +354,8 @@ export default async function TownPage({ params }: Props) {
 
   const town = await getTownBySlug(townSlug);
   if (town) {
-    const sidebar = await getSidebarData(town.id);
-    return <BasicTownPage town={town} sidebar={sidebar} />;
+    const pageData = await getTownPageData(town.id, town.slug);
+    return <BasicTownPage town={town} pageData={pageData} />;
   }
 
   const asPlace = await getPublicPlaceBySlug(townSlug);
@@ -323,18 +365,18 @@ export default async function TownPage({ params }: Props) {
 
 type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 
-type SidebarData = {
+type TownPageData = {
   areas: SidebarArea[];
-  guides: SidebarGuide[];
-  businesses: BrowseBusinessCard[];
+  guides: TownGuideCard[];
+  categorySections: TownCategorySection[];
 };
 
 function BasicTownPage({
   town,
-  sidebar,
+  pageData,
 }: {
   town: TownRecord;
-  sidebar: SidebarData;
+  pageData: TownPageData;
 }) {
   const descriptor = getTownDescriptor(town.slug);
   const blurb = town.excerpt?.trim() || null;
@@ -426,25 +468,150 @@ function BasicTownPage({
             </div>
           </header>
 
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
-            <div className="min-w-0">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-10">
+            <div className="min-w-0 space-y-12">
+              {pageData.categorySections.length > 0 ? (
+                <div className="space-y-12">
+                  <div>
+                    <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
+                      Local businesses in {town.name}
+                    </h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                      Browse by category — picks rotate daily.
+                    </p>
+                  </div>
+                  {pageData.categorySections.map((section) => {
+                    const icon = section.slug
+                      ? (CATEGORY_ICONS[section.slug] ?? "storefront")
+                      : "storefront";
+                    const searchParams = new URLSearchParams({ town_id: town.id });
+                    if (section.slug) searchParams.set("category", section.slug);
+
+                    return (
+                      <section key={section.id} aria-labelledby={`town-cat-${section.id}`}>
+                        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-container-high)] text-[var(--color-primary)]">
+                              <span className="material-symbols-outlined text-xl">{icon}</span>
+                            </span>
+                            <div>
+                              <h3
+                                id={`town-cat-${section.id}`}
+                                className="font-headline text-xl font-bold text-[var(--color-text-primary)]"
+                              >
+                                {section.title}
+                              </h3>
+                              <p className="text-xs text-[var(--color-text-tertiary)]">
+                                {section.totalCount}{" "}
+                                {section.totalCount === 1 ? "listing" : "listings"}
+                              </p>
+                            </div>
+                          </div>
+                          {section.totalCount > PER_CATEGORY_PREVIEW ? (
+                            <Link
+                              href={`/search?${searchParams.toString()}`}
+                              {...gaClickProps({
+                                event: "nav_click",
+                                category: "town_guide_category",
+                                label: `${town.slug}_${section.slug}`,
+                              })}
+                              className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
+                            >
+                              View all {section.totalCount}
+                            </Link>
+                          ) : null}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                          {section.businesses.map((b) => (
+                            <BusinessPreviewCard
+                              key={b.id}
+                              name={b.name}
+                              slug={b.slug}
+                              excerpt={b.ai_summary}
+                              heroImageUrl={b.hero_image_url}
+                              analyticsCategory="town_guide_business"
+                              analyticsLabel={`${town.slug}_${b.slug}`}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-[var(--color-text-secondary)]">
+                  No business listings in {town.name} yet.{" "}
+                  <Link
+                    href={`/search?${new URLSearchParams({ town_id: town.id }).toString()}`}
+                    className="font-medium text-[var(--color-primary)] hover:underline"
+                  >
+                    Search all of 30A
+                  </Link>
+                </p>
+              )}
+
+              {pageData.guides.length > 0 ? (
+                <section
+                  className={
+                    pageData.categorySections.length > 0
+                      ? "border-t border-[var(--color-border)] pt-10"
+                      : ""
+                  }
+                >
+                  <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
+                        Guides for {town.name}
+                      </h2>
+                      <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                        Editorial guides linked to this town.
+                      </p>
+                    </div>
+                    <Link
+                      href="/guides"
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "town_guide_guides_hub",
+                        label: town.slug,
+                      })}
+                      className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
+                    >
+                      All guides
+                    </Link>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {pageData.guides.map((guide) => (
+                      <GuideCard
+                        key={guide.id}
+                        title={guide.title}
+                        slug={guide.slug}
+                        subtitle={guide.subtitle ?? undefined}
+                        imageUrl={guide.hero_image_url}
+                        analyticsCategory="town_guide_guides"
+                      />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
               {hasBodyMarkdown ? (
-                <MarkdownRenderer content={bodyMarkdown} />
-              ) : !blurb ? (
+                <section className="border-t border-[var(--color-border)] pt-10">
+                  <h2 className="text-eyebrow mb-6">Town guide</h2>
+                  <MarkdownRenderer content={bodyMarkdown} />
+                </section>
+              ) : !blurb && pageData.categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
-                  A full local guide for this town is coming soon—search below for businesses and
-                  nearby spots.
+                  A full local guide for this town is coming soon.
                 </p>
               ) : null}
             </div>
 
             <aside className="space-y-6">
-              {/* Explore Areas */}
-              {sidebar.areas.length > 0 && (
+              {pageData.areas.length > 0 && (
                 <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                   <h2 className="text-eyebrow mb-4">Explore Areas</h2>
                   <ul className="space-y-2">
-                    {sidebar.areas.map((area) => (
+                    {pageData.areas.map((area) => (
                       <li key={area.id}>
                         <Link
                           href={`/area/${area.slug}`}
@@ -467,62 +634,6 @@ function BasicTownPage({
               )}
 
               {/* Featured Guides */}
-              {sidebar.guides.length > 0 && (
-                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                  <h2 className="text-eyebrow mb-4">Featured Guides</h2>
-                  <ul className="space-y-2">
-                    {sidebar.guides.map((guide) => (
-                      <li key={guide.slug}>
-                        <Link
-                          href={`/guide/${guide.slug}`}
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "town_guide_sidebar",
-                            label: `${town.slug}_guide_${guide.slug}`,
-                          })}
-                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                        >
-                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                            menu_book
-                          </span>
-                          {guide.title}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {/* Featured Businesses */}
-              {sidebar.businesses.length > 0 && (
-                <div
-                  className={
-                    sidebar.areas.length > 0 || sidebar.guides.length > 0
-                      ? "border-t border-[var(--color-border)] pt-6"
-                      : ""
-                  }
-                >
-                  <BusinessBrowseLinksList
-                    title="Featured Businesses"
-                    items={sidebar.businesses}
-                    analyticsCategory={`town_sidebar_businesses_${town.slug}`}
-                  />
-                  <p className="mt-4">
-                    <Link
-                      href={`/search?${new URLSearchParams({ town_id: town.id }).toString()}`}
-                      {...gaClickProps({
-                        event: "nav_click",
-                        category: "town_guide_sidebar",
-                        label: `${town.slug}_view_more_search`,
-                      })}
-                      className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
-                      aria-label={`View more businesses in ${town.name}`}
-                    >
-                      View more
-                    </Link>
-                  </p>
-                </div>
-              )}
             </aside>
           </div>
         </div>

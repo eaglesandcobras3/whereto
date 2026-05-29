@@ -15,7 +15,11 @@ export const revalidate = 3600;
 const STATIC_PAGES = [
   { path: "/", priority: 1.0, changeFreq: "daily" as const },
   { path: "/guide", priority: 0.95, changeFreq: "weekly" as const },
+  { path: "/guides", priority: 0.88, changeFreq: "weekly" as const },
   { path: PRIMARY_REGION_HUB_PATH, priority: 0.9, changeFreq: "weekly" as const },
+  { path: "/towns", priority: 0.9, changeFreq: "weekly" as const },
+  { path: "/businesses", priority: 0.88, changeFreq: "weekly" as const },
+  { path: "/areas", priority: 0.85, changeFreq: "weekly" as const },
   { path: "/about", priority: 0.5, changeFreq: "monthly" as const },
   { path: "/feedback", priority: 0.4, changeFreq: "monthly" as const },
   { path: "/list-your-business", priority: 0.45, changeFreq: "monthly" as const },
@@ -47,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return staticUrlsOnly(base, now);
     }
 
-    const [towns, businesses, guides, events, areas, pointsOfInterest] = await Promise.all([
+    const [towns, businesses, guides, events, areas, pointsOfInterest, seoPages, categories] = await Promise.all([
       fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
       fetchSitemapBusinessRows(supabase),
       fetchBrowseableRows(supabase, "guides", "slug, date_updated, published_at, date_created"),
@@ -58,9 +62,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         "points_of_interest",
         "slug, date_updated, published_at, date_created",
       ),
+      fetchSeoPageRows(supabase),
+      fetchBrowseableRows(supabase, "business_categories", "slug, date_updated, published_at, date_created"),
     ]);
 
     const entries: MetadataRoute.Sitemap = [];
+
+    entries.push({
+      url: `${base}/categories`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    });
 
     for (const p of STATIC_PAGES) {
       entries.push({
@@ -128,6 +141,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: pickDate(poi, now),
         changeFrequency: "monthly",
         priority: 0.6,
+      });
+    }
+
+    for (const cat of categories ?? []) {
+      const slug = cat.slug as string;
+      if (!slug) continue;
+      entries.push({
+        url: `${base}/categories/${slug}`,
+        lastModified: pickDate(cat, now),
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
+    }
+
+    // SEO intent pages: /{townSlug}/{intentSlug} (e.g. /rosemary-beach/restaurants)
+    for (const p of seoPages ?? []) {
+      const full = p.slug as string;
+      if (!full) continue;
+      const i = full.indexOf("/");
+      if (i <= 0 || i >= full.length - 1) continue;
+      const townSlug = full.slice(0, i);
+      if (isReservedRootSlug(townSlug)) continue;
+      entries.push({
+        url: `${base}/${full}`,
+        lastModified: pickDate(p, now),
+        changeFrequency: "weekly",
+        priority: 0.8,
       });
     }
 
@@ -200,6 +240,28 @@ function buildBusinessSitemapEntries(
     });
   }
 
+  return out;
+}
+
+async function fetchSeoPageRows(supabase: SupabaseClient): Promise<Record<string, unknown>[]> {
+  const out: Record<string, unknown>[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("seo_pages")
+      .select("slug, date_updated")
+      .eq("published", true)
+      .order("slug", { ascending: true })
+      .range(from, from + SITEMAP_PAGE_SIZE - 1);
+    if (error) {
+      console.error("sitemap: seo_pages", error);
+      break;
+    }
+    const batch = ((data ?? []) as unknown) as Record<string, unknown>[];
+    out.push(...batch);
+    if (batch.length < SITEMAP_PAGE_SIZE) break;
+    from += SITEMAP_PAGE_SIZE;
+  }
   return out;
 }
 

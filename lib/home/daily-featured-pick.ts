@@ -60,3 +60,26 @@ export function pickDailySubset<T>(pool: T[], limit: number, now = new Date()): 
   const seed = chicagoCalendarDaySeed(now);
   return shuffleDeterministic(pool, seed).slice(0, limit);
 }
+
+function hashSaltIntoSeed(baseSeed: number, salt: string): number {
+  let h = baseSeed >>> 0;
+  for (let i = 0; i < salt.length; i++) {
+    h = Math.imul(h ^ salt.charCodeAt(i), 0x5bd1e995);
+    h ^= h >>> 15;
+  }
+  return h >>> 0;
+}
+
+/**
+ * Daily subset with a stable salt (e.g. category slug) so each bucket shuffles independently.
+ */
+export function pickDailySubsetWithSalt<T>(
+  pool: T[],
+  limit: number,
+  salt: string,
+  now = new Date(),
+): T[] {
+  if (pool.length <= limit) return pool;
+  const seed = hashSaltIntoSeed(chicagoCalendarDaySeed(now), salt);
+  return shuffleDeterministic(pool, seed).slice(0, limit);
+}

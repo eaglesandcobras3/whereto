@@ -21,7 +21,6 @@ export function NavbarCategoryLinks({ items = BROWSE_NAV_ITEMS }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const type = searchParams.get("type");
-  const isSearch = pathname === "/search";
 
   return (
     <div className="hidden min-w-0 shrink-0 flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-hide md:flex md:max-w-none md:gap-1">
@@ -34,7 +33,7 @@ export function NavbarCategoryLinks({ items = BROWSE_NAV_ITEMS }: Props) {
             category: "header_browse",
             label: item.label.replace(/\s+/g, "_").toLowerCase(),
           })}
-          className={navLinkClass(isSearch && isBrowseNavActive(type, item))}
+          className={navLinkClass(isBrowseNavActive(pathname, type, item))}
         >
           {item.label}
         </Link>

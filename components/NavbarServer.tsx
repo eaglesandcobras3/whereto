@@ -18,7 +18,7 @@ export async function NavbarServer({ compact, showSearch }: Props) {
   ]);
   let browseNavItems = mergeBrowseNavItems(showLandmarksParks);
   if (featureFlags["services_nav"] !== true) {
-    browseNavItems = browseNavItems.filter((item) => !item.activeTypes.includes("services"));
+    browseNavItems = browseNavItems.filter((item) => !item.activeTypes?.includes("services"));
   }
 
   return (

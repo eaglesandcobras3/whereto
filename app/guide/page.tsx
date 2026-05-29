@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { Metadata } from "next";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { getSiteUrl } from "@/lib/site-url";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { loadHubMainGuideMarkdown } from "@/lib/data/load-hub-main-guide-markdown";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     description:
       "Plan a first 30A trip with clear town picks, beach-access reality, and pacing that matches your crew.",
     type: "website",
-    url: "https://whereto30a.com/guide",
+    url: `${getSiteUrl()}/guide`,
   },
 };
 

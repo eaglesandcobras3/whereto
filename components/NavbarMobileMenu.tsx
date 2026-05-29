@@ -40,7 +40,6 @@ export function NavbarMobileMenu({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const type = searchParams.get("type");
-  const isSearch = pathname === "/search";
 
   if (!open) return null;
 
@@ -67,7 +66,7 @@ export function NavbarMobileMenu({
                 category: "header_browse_mobile",
                 label: item.label.replace(/\s+/g, "_").toLowerCase(),
               })}
-              className={navLinkClassMobile(isSearch && isBrowseNavActive(type, item))}
+              className={navLinkClassMobile(isBrowseNavActive(pathname, type, item))}
             >
               {item.label}
             </Link>

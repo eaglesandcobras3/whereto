@@ -58,7 +58,7 @@ function computeStructuredMatch(row: Record<string, unknown>, intent: ScoringInt
       // silently filtering out correct results in the composite scoring step.
       const CATEGORY_TYPE_PATTERNS: Record<string, RegExp> = {
         restaurants:
-          /restaurant|cafe|café|diner|bistro|grill|eatery|food.?truck|food.?stand|taqueria|pizzeria|taco|hot.?dog|ice.?cream|dessert|bakery|donut|doughnut|smoothie|juice.?bar|kitchen|brasserie|steakhouse|seafood|sushi|bar$|pub$|bbq|barbecue|creperie|ramen|poke|sandwich/i,
+          /restaurant|coffee|cafe|café|diner|bistro|grill|eatery|food.?truck|food.?stand|taqueria|pizzeria|taco|hot.?dog|ice.?cream|dessert|bakery|donut|doughnut|smoothie|juice.?bar|kitchen|brasserie|steakhouse|seafood|sushi|bar$|pub$|bbq|barbecue|creperie|ramen|poke|sandwich/i,
         coffee_shops:
           /coffee|cafe|café|espresso|coffeehouse|coffee.?house|tea|latte|cappuccino|barista|roaster|brew/i,
         bars:
@@ -74,16 +74,15 @@ function computeStructuredMatch(row: Record<string, unknown>, intent: ScoringInt
       const catKey = intent.category.toLowerCase();
       const categoryPattern = CATEGORY_TYPE_PATTERNS[catKey];
 
-      // Word-level fallback: split category name into stems and check inclusion.
-      // Strip trailing 's' to handle plurals: 'restaurants' → 'restaurant'
-      const wordMatch = catNorm.split(" ").some((w) => {
+      // Word-level fallback only when no pattern is defined — prevents stem "shop" from
+      // "coffee_shops" matching unrelated business types like "surf shop" or "art shop".
+      const wordMatch = !categoryPattern && catNorm.split(" ").some((w) => {
         if (w.length <= 3) return false;
         const stem = w.replace(/s$/, "");
         return businessType.includes(w) || businessType.includes(stem);
       });
 
-      const matchScore =
-        (categoryPattern && categoryPattern.test(businessType)) || wordMatch ? 1.0 : 0.0;
+      const matchScore = (categoryPattern ? categoryPattern.test(businessType) : wordMatch) ? 1.0 : 0.0;
       components.push({ weight: 40, score: matchScore });
     }
   }

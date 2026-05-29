@@ -1,5 +1,5 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { HomePage } from "@/components/home/HomePage";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -14,11 +14,53 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
 export const revalidate = 3600;
 
+const HOME_TITLE = "WhereTo30A | Local Guide to Florida's 30A & Emerald Coast";
+const HOME_DESCRIPTION =
+  "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips from Rosemary Beach to Seaside.";
+
 export const metadata: Metadata = {
   ...canonicalAlternates("/"),
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  keywords: [
+    "30A",
+    "30A Florida",
+    "Emerald Coast",
+    "Rosemary Beach",
+    "Seaside Florida",
+    "Alys Beach",
+    "Grayton Beach",
+    "30A restaurants",
+    "30A things to do",
+    "30A vacation",
+    "30A beach towns",
+    "Florida panhandle beaches",
+  ],
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "WhereTo30A | Local Guide to 30A",
+    description:
+      "Your complete local guide to 30A and Florida's Emerald Coast.",
+  },
 };
 
-export default async function Home() {
+type HomeProps = {
+  searchParams: Promise<{ q?: string | string[] }>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
+  const { q } = await searchParams;
+  const query = typeof q === "string" ? q : Array.isArray(q) ? q[0] : undefined;
+  if (query?.trim()) {
+    redirect(`/search?q=${encodeURIComponent(query.trim())}`);
+  }
+
   const flags = await getAllFeatureFlags();
   const heroSettings = await getHomeHeroSettings();
   const supabase = getServiceSupabase();
@@ -120,15 +162,11 @@ export default async function Home() {
   }
 
   return (
-    <Suspense
-      fallback={<div className="min-h-screen bg-background" aria-hidden />}
-    >
-      <HomePage
-        featureFlags={flags}
-        featuredBusinesses={featuredBusinesses}
-        towns={townList}
-        heroSettings={heroSettings}
-      />
-    </Suspense>
+    <HomePage
+      featureFlags={flags}
+      featuredBusinesses={featuredBusinesses}
+      towns={townList}
+      heroSettings={heroSettings}
+    />
   );
 }

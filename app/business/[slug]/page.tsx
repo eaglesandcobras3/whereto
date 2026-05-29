@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
@@ -24,6 +24,44 @@ import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirector
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
+
+/** Allow on-demand ISR for slugs not returned at build time (e.g. newly published). */
+export const dynamicParams = true;
+
+const STATIC_PARAMS_PAGE_SIZE = 1000;
+
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  try {
+    const supabase = getServiceSupabaseOrNull();
+    if (!supabase) return [];
+    const out: { slug: string }[] = [];
+    let from = 0;
+    for (;;) {
+      const { data, error } = await supabase
+        .from("businesses_view")
+        .select("slug")
+        .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
+        .or(BROWSE_VISIBLE_NOT_HIDDEN)
+        .order("id", { ascending: true })
+        .range(from, from + STATIC_PARAMS_PAGE_SIZE - 1);
+      if (error) {
+        console.error("business generateStaticParams:", error);
+        break;
+      }
+      const batch = data ?? [];
+      for (const row of batch) {
+        const slug = String((row as { slug: string }).slug ?? "").trim();
+        if (slug) out.push({ slug });
+      }
+      if (batch.length < STATIC_PARAMS_PAGE_SIZE) break;
+      from += STATIC_PARAMS_PAGE_SIZE;
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -57,7 +95,7 @@ async function loadBusiness(slug: string) {
         email, menu_url, booking_url, service_area, hours,
         excerpt, content, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
-        claim_status, intent_tags, status, published_at,
+        claim_status, intent_tags, status, published_at, price_level,
         towns ( title, slug ),
         areas ( title, slug ),
         business_categories ( title, slug )
@@ -384,6 +422,11 @@ export default async function BusinessPage({ params }: Props) {
 
   const websiteHref = externalWebsiteHref(b.website as string | null);
 
+  const priceLevel = b.price_level as number | null;
+  const priceRange = priceLevel != null && priceLevel >= 1 && priceLevel <= 4
+    ? "$".repeat(priceLevel)
+    : null;
+
   const businessSchema = generateLocalBusinessSchema({
     name: b.name as string,
     slug: (b.slug as string) || (b.id as string),
@@ -399,6 +442,7 @@ export default async function BusinessPage({ params }: Props) {
     categoryName: category?.name,
     rating: b.listing_rating as number | null,
     reviewCount: b.listing_review_count as number | null,
+    priceRange,
   });
 
   const fromContent = typeof b.content === "string" && b.content.trim() ? b.content.trim() : "";

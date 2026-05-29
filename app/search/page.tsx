@@ -173,10 +173,13 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       title: "Search",
     };
   }
+  // Query-specific search results are unique to the session and have no stable
+  // canonical content — noindex prevents them from fragmenting the crawl budget.
   return {
     ...canon,
     title: `Search results for "${q}"`,
     description: `Find towns, businesses, events, guides, and local favorites on 30A for "${q}".`,
+    robots: { index: false, follow: true },
   };
 }
 
@@ -210,6 +213,27 @@ export default async function SearchPage({ searchParams }: Props) {
     ? tagsParam.trim().split(",").filter(s => /^[a-z0-9_]+$/.test(s))
     : [];
   const type = normalizeSearchType(rawType);
+  const trimmedQ = q?.trim() ?? "";
+
+  // Legacy browse URLs → dedicated hub pages when there are no extra filters.
+  const hasExtraFilters = Boolean(
+    trimmedQ ||
+      town_id?.trim() ||
+      categoryParam?.trim() ||
+      areaIdParam?.trim() ||
+      scopeParam ||
+      priceParam ||
+      tagsParam ||
+      (page?.trim() && page.trim() !== "1") ||
+      sortParam,
+  );
+  if (!hasExtraFilters && type) {
+    if (type === "towns") redirect("/towns");
+    if (type === "areas") redirect("/areas");
+    if (type === "businesses" || type === "stores") redirect("/businesses");
+    if (type === "guides") redirect("/guides");
+  }
+
   const sortMode =
     sortParam === "updated" ? "updated" : sortParam === "name" ? "name" : "relevance";
 
@@ -253,7 +277,6 @@ export default async function SearchPage({ searchParams }: Props) {
   }
 
   const typeKey = type && TYPE_FILTERS[type] ? type : undefined;
-  const trimmedQ = q?.trim() ?? "";
   let effectiveQuery = trimmedQ || (typeKey ? TYPE_FILTERS[typeKey].query : "") || "";
   if (!effectiveQuery && constrainTownId) {
     effectiveQuery = TYPE_FILTERS.businesses.query;
