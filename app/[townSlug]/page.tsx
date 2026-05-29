@@ -15,7 +15,7 @@ import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-titl
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
+import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -321,7 +321,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (town) {
     const seoTitle = (town as unknown as { seo_title?: string | null }).seo_title;
     const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
-    const title = seoTitle?.trim() || `${town.name} | Local Guide to 30A`;
+    const title = titleSegmentForLayoutTemplate(
+      seoTitle?.trim() || `${town.name} | Local Guide to 30A`,
+    );
     const desc =
       seoDesc?.trim() ||
       (typeof town.excerpt === "string" && town.excerpt) ||

@@ -155,6 +155,11 @@ function mapEventToBrowseRow(
   };
 }
 
+/** Search is a utility surface; hub routes (`/towns`, `/categories`, …) are the indexable landing pages. */
+const SEARCH_NOINDEX: Pick<Metadata, "robots"> = {
+  robots: { index: false, follow: true },
+};
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const sp = await searchParams;
   const canon = canonicalAlternates(sortedSearchCanonicalPath(sp));
@@ -163,6 +168,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   if (type && TYPE_FILTERS[type]) {
     return {
       ...canon,
+      ...SEARCH_NOINDEX,
       title: TYPE_FILTERS[type].label,
       description: `Explore ${TYPE_FILTERS[type].label.toLowerCase()} across 30A and Florida's Emerald Coast.`,
     };
@@ -170,16 +176,15 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   if (!q?.trim()) {
     return {
       ...canon,
+      ...SEARCH_NOINDEX,
       title: "Search",
     };
   }
-  // Query-specific search results are unique to the session and have no stable
-  // canonical content — noindex prevents them from fragmenting the crawl budget.
   return {
     ...canon,
+    ...SEARCH_NOINDEX,
     title: `Search results for "${q}"`,
     description: `Find towns, businesses, events, guides, and local favorites on 30A for "${q}".`,
-    robots: { index: false, follow: true },
   };
 }
 

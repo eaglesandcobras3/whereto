@@ -17,7 +17,6 @@ const STATIC_PAGES = [
   { path: "/guide", priority: 0.95, changeFreq: "weekly" as const },
   { path: "/guides", priority: 0.88, changeFreq: "weekly" as const },
   { path: PRIMARY_REGION_HUB_PATH, priority: 0.9, changeFreq: "weekly" as const },
-  { path: "/towns", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/businesses", priority: 0.88, changeFreq: "weekly" as const },
   { path: "/areas", priority: 0.85, changeFreq: "weekly" as const },
   { path: "/about", priority: 0.5, changeFreq: "monthly" as const },
@@ -244,12 +243,12 @@ function buildBusinessSitemapEntries(
 }
 
 async function fetchSeoPageRows(supabase: SupabaseClient): Promise<Record<string, unknown>[]> {
-  const out: Record<string, unknown>[] = [];
+  const candidates: Record<string, unknown>[] = [];
   let from = 0;
   for (;;) {
     const { data, error } = await supabase
       .from("seo_pages")
-      .select("slug, date_updated")
+      .select("slug, date_updated, recommendation_set_id")
       .eq("published", true)
       .order("slug", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);
@@ -258,9 +257,54 @@ async function fetchSeoPageRows(supabase: SupabaseClient): Promise<Record<string
       break;
     }
     const batch = ((data ?? []) as unknown) as Record<string, unknown>[];
-    out.push(...batch);
+    candidates.push(...batch);
     if (batch.length < SITEMAP_PAGE_SIZE) break;
     from += SITEMAP_PAGE_SIZE;
+  }
+
+  /** Only list intent URLs that resolve (published row + non-empty `query_cache` recommendations). */
+  const out: Record<string, unknown>[] = [];
+  const CACHE_ID_CHUNK = 100;
+  for (let i = 0; i < candidates.length; i += CACHE_ID_CHUNK) {
+    const chunk = candidates.slice(i, i + CACHE_ID_CHUNK);
+    const cacheIds = [
+      ...new Set(
+        chunk
+          .map((row) => row.recommendation_set_id)
+          .filter((id): id is string => id != null && String(id).trim() !== ""),
+      ),
+    ];
+    if (cacheIds.length === 0) continue;
+
+    const { data: caches, error: cacheErr } = await supabase
+      .from("query_cache")
+      .select("id, response_json")
+      .in("id", cacheIds);
+    if (cacheErr) {
+      console.error("sitemap: query_cache for seo_pages", cacheErr);
+      continue;
+    }
+
+    const renderableCacheIds = new Set<string>();
+    for (const row of caches ?? []) {
+      const id = String((row as { id: string }).id);
+      const response = (row as { response_json?: unknown }).response_json;
+      if (
+        response &&
+        typeof response === "object" &&
+        Array.isArray((response as { recommendations?: unknown[] }).recommendations) &&
+        (response as { recommendations: unknown[] }).recommendations.length > 0
+      ) {
+        renderableCacheIds.add(id);
+      }
+    }
+
+    for (const row of chunk) {
+      const cacheId = row.recommendation_set_id != null ? String(row.recommendation_set_id) : "";
+      if (cacheId && renderableCacheIds.has(cacheId)) {
+        out.push(row);
+      }
+    }
   }
   return out;
 }
