@@ -33,6 +33,7 @@ export async function runSearch(options: {
   forcedCategorySlug?: string | null;
   excludedCategorySlug?: string | null;
   requiredHasPhysicalLocation?: boolean;
+  requiredIsServiceBusiness?: boolean;
   constrainTownId?: string;
   constrainTownIds?: string[];
   constrainAreaId?: string;

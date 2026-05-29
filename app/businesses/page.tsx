@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import {
+  applyFeaturedListingPoolFilters,
+  filterFeaturedListingPool,
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import type { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
@@ -71,12 +76,14 @@ async function getCategories(): Promise<CategoryRow[]> {
 
 async function getDailyFeaturedBusinesses(): Promise<BusinessPayload[]> {
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("businesses_view")
-    .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+  const { data, error } = await applyFeaturedListingPoolFilters(
+    supabase
+      .from("businesses_view")
+      .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN),
+  )
     .order("sort", { ascending: true, nullsFirst: false })
     .order("title", { ascending: true })
     .order("id", { ascending: true })
@@ -87,7 +94,7 @@ async function getDailyFeaturedBusinesses(): Promise<BusinessPayload[]> {
     return [];
   }
 
-  const dailyPicks = pickDailySubset(data ?? [], DAILY_FEATURED_LIMIT);
+  const dailyPicks = pickDailySubset(filterFeaturedListingPool(data ?? []), DAILY_FEATURED_LIMIT);
 
   return dailyPicks.map((row) => {
     const r = row as {

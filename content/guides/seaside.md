@@ -33,7 +33,7 @@ Seaside rewards a light plan. I pick a few meals worth reserving, I expect the s
 
 ## Food worth planning
 
-[[bud-and-alleys-seaside]] is an easy name people throw around for a reason, but the whole town is dense with options. I aim for one “nice” reservation, one casual night, and one flexible night where we can pivot if the kids melt down.
+[[bud-and-alleys-waterfront-restaurant]] is an easy name people throw around for a reason, but the whole town is dense with options. I aim for one “nice” reservation, one casual night, and one flexible night where we can pivot if the kids melt down.
 
 ## Beach days and getting around
 

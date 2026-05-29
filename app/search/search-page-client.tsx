@@ -155,6 +155,8 @@ type AreaOption = { id: string; title: string };
 
 type Props = {
   browseMode?: BrowseMode;
+  /** `?type=services` — regional/mobile service listings only. */
+  servicesOnly?: boolean;
   browseEvents?: BrowseEventRow[];
   browseTowns?: BrowseTownRow[];
   browseGuides?: BrowseGuideRow[];
@@ -206,6 +208,7 @@ function formatEventBrowseWhen(ev: BrowseEventRow): string {
 
 export function SearchPageClient({
   browseMode = "business",
+  servicesOnly = false,
   browseEvents = [],
   browseTowns = [],
   browseGuides = [],
@@ -265,6 +268,8 @@ export function SearchPageClient({
   const filterAreaId = searchParams.get("area_id") ?? "";
   const filterScope = searchParams.get("scope") ?? "";
   const filterPrice = searchParams.get("price") ?? "";
+  const filterType = searchParams.get("type") ?? "";
+  const listingServices = servicesOnly || filterType === "services";
 
   // AI-detected filters from server (resolved_filters minus what's already in URL)
   const resolvedFilters = results.resolved_filters;
@@ -348,6 +353,27 @@ export function SearchPageClient({
     if (browseMode !== "business") return;
     const params = new URLSearchParams(searchParams.toString());
     params.delete("category");
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const setListingType = (next: "storefront" | "services") => {
+    if (browseMode !== "business") return;
+    gaEvent("search_filter_change", {
+      filter: "listing_type",
+      value: next,
+    });
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "services") {
+      params.set("type", "services");
+      const cats = params.get("category")?.split(",").filter(Boolean) ?? [];
+      if (cats.length && !cats.includes("services")) {
+        params.delete("category");
+      }
+    } else {
+      params.delete("type");
+      if (params.get("category") === "services") params.delete("category");
+    }
     params.delete("page");
     startTransition(() => router.push(`/search?${params.toString()}`));
   };
@@ -471,6 +497,30 @@ export function SearchPageClient({
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             {/* Discovery chips - horizontal scroll */}
             <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
+              <div className="flex shrink-0 overflow-hidden rounded-full border border-[var(--color-border)]">
+                {(
+                  [
+                    ["storefront", "Businesses"],
+                    ["services", "Services"],
+                  ] as const
+                ).map(([value, label]) => {
+                  const active = value === "services" ? listingServices : !listingServices;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setListingType(value)}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                        active
+                          ? "bg-[var(--color-primary)] text-white"
+                          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
               {/* Discovery tags as editorial prompts */}
               {discoveryTags.map((tag) => (
                 <button
@@ -552,13 +602,17 @@ export function SearchPageClient({
                 ) : null}
                 <p className="text-eyebrow mb-2">
                   {browseMode === "business"
-                    ? (townName && areaName
+                    ? listingServices
+                      ? townName
+                        ? `Services · ${townName}`
+                        : "Local Services"
+                      : townName && areaName
                         ? `Discovering ${areaName} · ${townName}`
                         : townName
                           ? `Discovering ${townName}`
                           : areaName
                             ? `Discovering ${areaName}`
-                            : "Local Businesses")
+                            : "Local Businesses"
                     : browseMode === "events"
                       ? "Upcoming Events"
                       : browseMode === "guides"
@@ -567,7 +621,15 @@ export function SearchPageClient({
                 </p>
                 <h1 className="text-editorial-headline text-3xl text-[var(--color-text-primary)] sm:text-4xl">
                   {browseMode === "business"
-                    ? `${totalResults} ${totalResults === 1 ? "business" : "businesses"}${
+                    ? `${totalResults} ${
+                        listingServices
+                          ? totalResults === 1
+                            ? "service"
+                            : "services"
+                          : totalResults === 1
+                            ? "business"
+                            : "businesses"
+                      }${
                         townName && areaName
                           ? ` in ${areaName} · ${townName}`
                           : townName
@@ -1111,6 +1173,38 @@ export function SearchPageClient({
                   </div>
                 </form>
 
+                {/* Storefront vs services */}
+                {browseMode === "business" && (
+                  <div>
+                    <h3 className="text-eyebrow mb-2">Listing type</h3>
+                    <div className="flex overflow-hidden rounded-lg border border-[var(--color-border)]">
+                      {(
+                        [
+                          ["storefront", "Businesses"],
+                          ["services", "Services"],
+                        ] as const
+                      ).map(([value, label]) => {
+                        const active =
+                          value === "services" ? listingServices : !listingServices;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setListingType(value)}
+                            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
+                              active
+                                ? "bg-[var(--color-primary)] text-white"
+                                : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Location filter */}
                 {browseMode === "business" && towns.length > 0 && (
                   <div>
@@ -1188,8 +1282,8 @@ export function SearchPageClient({
                   </div>
                 )}
 
-                {/* Category filter */}
-                {browseMode === "business" && categoryOptions.length > 0 && (
+                {/* Category filter (storefront categories only; services use listing type above) */}
+                {browseMode === "business" && !listingServices && categoryOptions.length > 0 && (
                   <div>
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="text-eyebrow">Category</h3>

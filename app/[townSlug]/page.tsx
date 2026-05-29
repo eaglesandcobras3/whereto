@@ -18,7 +18,11 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import {
+  applyFeaturedListingPoolFilters,
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { GuideCard } from "@/components/discovery/GuideCard";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
@@ -72,25 +76,27 @@ async function getTownPageData(townId: string, townSlug: string) {
   const townAreaIds = townAreaRows.map((a) => String(a.id));
   const townAreaIdSet = new Set(townAreaIds);
 
-  const bizInTownQuery = supabase
-    .from("businesses_view")
-    .select(BIZ_CATEGORY_SELECT)
-    .eq("town_id", townId)
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .limit(150);
+  const bizInTownQuery = applyFeaturedListingPoolFilters(
+    supabase
+      .from("businesses_view")
+      .select(BIZ_CATEGORY_SELECT)
+      .eq("town_id", townId)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN),
+  ).limit(150);
 
   const bizInTownAreasQuery =
     townAreaIds.length > 0
-      ? supabase
-          .from("businesses_view")
-          .select(BIZ_CATEGORY_SELECT)
-          .in("area_id", townAreaIds)
-          .is("archived_at", null)
-          .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN)
-          .limit(150)
+      ? applyFeaturedListingPoolFilters(
+          supabase
+            .from("businesses_view")
+            .select(BIZ_CATEGORY_SELECT)
+            .in("area_id", townAreaIds)
+            .is("archived_at", null)
+            .eq("status", DIRECTUS_PUBLISHED_STATUS)
+            .or(BROWSE_VISIBLE_NOT_HIDDEN),
+        ).limit(150)
       : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
 
   const directAreaBizTownQuery = supabase

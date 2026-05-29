@@ -248,7 +248,7 @@ For the iconic square experience, I send people to Seaside at least once. Food t
 
 For a sunset meal in Seaside, Bud and Alley's is the name everyone knows.
 
-- [[bud-and-alleys-seaside]]
+- [[bud-and-alleys-waterfront-restaurant]]
 
 For a loud, casual Grayton night, we still end up at Red Bar sometimes.
 

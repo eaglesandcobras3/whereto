@@ -6,7 +6,12 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import {
+  applyFeaturedListingPoolFilters,
+  filterFeaturedListingPool,
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 
@@ -115,12 +120,16 @@ export default async function Home({ searchParams }: HomeProps) {
   })[] = [];
 
   if (flags["featured_business"]) {
-    const { data: businessRows, error: bizErr } = await supabase
-      .from("businesses_view")
-      .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    const { data: businessRows, error: bizErr } = await applyFeaturedListingPoolFilters(
+      supabase
+        .from("businesses_view")
+        .select(
+          "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated",
+        )
+        .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
+        .or(BROWSE_VISIBLE_NOT_HIDDEN),
+    )
       .order("sort", { ascending: true, nullsFirst: false })
       .order("title", { ascending: true })
       .order("id", { ascending: true })
@@ -130,7 +139,7 @@ export default async function Home({ searchParams }: HomeProps) {
       console.error("home: businesses query", bizErr);
     }
 
-    const dailyPicks = pickDailySubset(businessRows ?? [], 8);
+    const dailyPicks = pickDailySubset(filterFeaturedListingPool(businessRows ?? []), 8);
 
     featuredBusinesses = dailyPicks.map((b) => {
       const row = b as {

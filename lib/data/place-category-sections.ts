@@ -2,6 +2,8 @@ import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
+  applyFeaturedListingPoolFilters,
+  filterFeaturedListingPool,
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
@@ -102,7 +104,7 @@ export function groupBusinessesByCategorySections(
         slug: cat.slug,
         totalCount: cat.pool.length,
         businesses: pickDailySubsetWithSalt(
-          cat.pool,
+          filterFeaturedListingPool(cat.pool),
           PER_PLACE_CATEGORY_PREVIEW,
           `${dailyPickSaltPrefix}:${cat.slug}`,
         ),
@@ -130,12 +132,14 @@ export async function getCategorySectionsForPublicPlace(
   const cap = 150;
 
   const browseQuery = () =>
-    supabase
-      .from("businesses_view")
-      .select(BIZ_CATEGORY_SELECT)
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN);
+    applyFeaturedListingPoolFilters(
+      supabase
+        .from("businesses_view")
+        .select(BIZ_CATEGORY_SELECT)
+        .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
+        .or(BROWSE_VISIBLE_NOT_HIDDEN),
+    );
 
   if (place.source === "area") {
     const { data: byColumn } = await browseQuery().eq("area_id", place.id).limit(cap);

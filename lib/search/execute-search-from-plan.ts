@@ -25,6 +25,7 @@ export async function executeSearchFromPlan(
     nearTownIds: town.nearTownIds,
     constrainAreaId: explicit.constrainAreaId,
     requiredHasPhysicalLocation: explicit.requiredHasPhysicalLocation,
+    requiredIsServiceBusiness: explicit.requiredIsServiceBusiness,
     sortMode: explicit.sortMode,
     // Hard category filter — explicit user URL selection only.
     // AI-inferred categories skip this; composite scoring handles ranking instead.

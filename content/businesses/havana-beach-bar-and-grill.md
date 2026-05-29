@@ -1,25 +1,25 @@
 ---
-title: "Bud and Alley's"
+title: "Havana Beach Bar and Grill"
 type: business
 entity_type: restaurant
-slug: bud-and-alleys-seaside
+slug: havana-beach-bar-and-grill
 status: published
 region: 30a
-town: seaside
+town: rosemary-beach
 state: florida
 country: usa
 
 # Approximate map point (verify before publish)
-latitude: 30.3211
-longitude: -86.1396
+latitude: 30.2799
+longitude: -86.016
 
 category: restaurant
 price_range: $$
-seo_title: "Bud and Alley's | 30A Restaurant Guide"
-seo_description: "A local guide to Bud and Alley's on 30A, including what to order, who it is best for, and planning notes before you go."
+seo_title: "Havana Beach Bar and Grill | 30A Restaurant Guide"
+seo_description: "A local guide to Havana Beach Bar and Grill on 30A, including what to order, who it is best for, and planning notes before you go."
 seo_keywords:
-  - bud and alley's
-  - seaside restaurant
+  - havana beach bar and grill
+  - rosemary beach restaurant
   - 30a restaurants
 tags:
   - restaurant
@@ -29,13 +29,13 @@ featured: false
 last_updated: 2026-04-16
 ---
 
-## Bud and Alley's
+## Havana Beach Bar and Grill
 
 For our family, this is one of those places that works because it keeps the night easy. I can bring the kids, order quickly, and still feel like I am getting a real 30A meal instead of just filling time.
 
 ## WHY PEOPLE GO
 
-Classic seaside option with strong location and social dinner vibe.
+Hotel-adjacent upscale option with polished service and cocktails.
 
 On girls-trip nights, this is usually the kind of place where we stay for a second round instead of rushing out. On family nights, it is easy to keep everyone happy without overthinking the menu.
 

@@ -214,6 +214,7 @@ type MinimalSearchBuildOptions = {
   nearTownIds?: string[];
   constrainAreaId?: string;
   requiredHasPhysicalLocation?: boolean;
+  requiredIsServiceBusiness?: boolean;
   sortMode?: SearchCandidateRankOrder;
   primaryCategoryId?: string | null;
   explicitCategoryId?: string | null;
@@ -236,6 +237,11 @@ function filterRowsBySidebar(
   options: MinimalSearchBuildOptions,
 ): ScoredVecRow[] {
   let filtered = rows;
+  if (typeof options.requiredIsServiceBusiness === "boolean") {
+    filtered = filtered.filter(
+      (r) => Boolean(r.is_service_business) === options.requiredIsServiceBusiness,
+    );
+  }
   if (options.constrainPriceBucket) {
     filtered = filtered.filter((r) => {
       const p = Number(r.price_level);
@@ -347,6 +353,7 @@ export async function buildMinimalSearchResult(
     /** `areas.id`: `businesses.area_id` or `area_businesses` for this area. */
     constrainAreaId?: string;
     requiredHasPhysicalLocation?: boolean;
+    requiredIsServiceBusiness?: boolean;
     sortMode?: SearchCandidateRankOrder;
     /** When set, filter `businesses.primary_category_id`. */
     primaryCategoryId?: string | null;
@@ -456,6 +463,10 @@ export async function buildMinimalSearchResult(
         p_town_ids: options.nearTownIds ?? null,
         p_anchor_town_id: options.constrainTownId ?? null,
         p_category_id: vectorCategoryId,
+        p_is_service_business:
+          typeof options.requiredIsServiceBusiness === "boolean"
+            ? options.requiredIsServiceBusiness
+            : null,
       });
       if (!error && rpcRows) {
         const allRows = rpcRows as Record<string, unknown>[];
@@ -624,6 +635,10 @@ export async function buildMinimalSearchResult(
 
   if (options.requiredHasPhysicalLocation === true) {
     query = query.not("map_lat", "is", null).not("map_lng", "is", null);
+  }
+
+  if (typeof options.requiredIsServiceBusiness === "boolean") {
+    query = query.eq("is_service_business", options.requiredIsServiceBusiness);
   }
 
   if (options.constrainPriceBucket) {

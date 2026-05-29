@@ -218,6 +218,7 @@ export default async function SearchPage({ searchParams }: Props) {
     ? tagsParam.trim().split(",").filter(s => /^[a-z0-9_]+$/.test(s))
     : [];
   const type = normalizeSearchType(rawType);
+  const servicesOnly = type === "services";
   const trimmedQ = q?.trim() ?? "";
 
   // Legacy browse URLs → dedicated hub pages when there are no extra filters.
@@ -396,10 +397,12 @@ export default async function SearchPage({ searchParams }: Props) {
     slug: t.slug,
   }));
 
-  const categoryOptions = (categoryRows ?? []).map((c) => ({
-    title: (c as { title: string }).title,
-    slug: (c as { slug: string }).slug,
-  }));
+  const categoryOptions = (categoryRows ?? [])
+    .map((c) => ({
+      title: (c as { title: string }).title,
+      slug: (c as { slug: string }).slug,
+    }))
+    .filter((c) => !servicesOnly || c.slug === "services");
 
   const areaOptions = (areaListRows ?? []).map((a) => ({
     id: String((a as { id: string }).id),
@@ -787,7 +790,7 @@ export default async function SearchPage({ searchParams }: Props) {
     openaiKey: process.env.OPENAI_API_KEY,
     page: currentPage,
     pageSize: 12,
-    requiredHasPhysicalLocation: type === "services" ? false : undefined,
+    requiredIsServiceBusiness: servicesOnly ? true : false,
     constrainTownId,
     constrainTownIds: constrainTownIds.length > 1 ? constrainTownIds : undefined,
     constrainAreaId,
@@ -802,6 +805,7 @@ export default async function SearchPage({ searchParams }: Props) {
   return (
     <SearchPageClient
       browseMode="business"
+      servicesOnly={servicesOnly}
       initialQuery={displayQuery}
       results={searchResult}
       townName={townName}

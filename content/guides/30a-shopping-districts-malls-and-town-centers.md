@@ -38,7 +38,7 @@ Rosemary’s center is walkable, layered, and easy to return to all week. It is 
 - [[pescado-rosemary-beach]] when we want a rooftop-style dinner night
 - [[la-crema-rosemary-beach]] for shareable plates and dessert energy
 - [[edwards-fine-food-and-wine-rosemary-beach]] when we want a classic reservation night
-- [[havana-beach-bar-and-grill-rosemary-beach]] for a polished beach-town meal
+- [[havana-beach-bar-and-grill]] for a polished beach-town meal
 - [[playa-bowls-rosemary-beach]] when the kids want something cold and easy after the beach
 
 Boutiques and gift shops rotate, so I skim what is open this season instead of chasing an old list from a screenshot.
@@ -97,7 +97,7 @@ Seaside is the town people picture when they say pastel cottages and airstream f
 
 **Anchors we lean on**
 
-- [[bud-and-alleys-seaside]] for a classic Seaside name on a casual night
+- [[bud-and-alleys-waterfront-restaurant]] for a classic Seaside name on a casual night
 - [[great-southern-cafe-seaside]] for a long-running brunch and comfort-food vibe
 
 Seaside gets busy in peak weeks. I go early for coffee, late for a walk, or I accept that I am sharing the square with everyone else who had the same idea.

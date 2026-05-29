@@ -123,7 +123,7 @@ The Town Center holds most of what you come to Rosemary for.
 - [[pescado-rosemary-beach]] for a rooftop-style dinner
 - [[la-crema-rosemary-beach]] for shareable plates and dessert
 - [[edwards-fine-food-and-wine-rosemary-beach]] for a classic reservation night
-- [[havana-beach-bar-and-grill-rosemary-beach]] for a polished beach-town meal
+- [[havana-beach-bar-and-grill]] for a polished beach-town meal
 - [[playa-bowls-rosemary-beach]] for cold bowls after the beach
 
 Smaller boutiques and gift shops rotate with the season. I walk the loop and let something catch me instead of chasing an old list.

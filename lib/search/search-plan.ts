@@ -14,6 +14,8 @@ export type ExplicitSearchConstraints = {
   constrainAreaId?: string;
   excludedCategorySlug?: string | null;
   requiredHasPhysicalLocation?: boolean;
+  /** When set, restrict to service (`true`) or storefront (`false`) listings. */
+  requiredIsServiceBusiness?: boolean;
   scopeOverride?: "in" | "near" | "anywhere";
   constrainPriceBucket: SearchPriceBucket | null;
   constrainVibeTags: string[];
@@ -91,6 +93,7 @@ export function normalizeExplicitConstraints(options: {
   constrainAreaId?: string;
   excludedCategorySlug?: string | null;
   requiredHasPhysicalLocation?: boolean;
+  requiredIsServiceBusiness?: boolean;
   scopeOverride?: "in" | "near" | "anywhere";
   constrainPriceBucket?: SearchPriceBucket | null;
   constrainVibeTags?: string[];
@@ -119,6 +122,7 @@ export function normalizeExplicitConstraints(options: {
     constrainAreaId: options.constrainAreaId,
     excludedCategorySlug: options.excludedCategorySlug,
     requiredHasPhysicalLocation: options.requiredHasPhysicalLocation,
+    requiredIsServiceBusiness: options.requiredIsServiceBusiness,
     scopeOverride: options.scopeOverride,
     constrainPriceBucket: options.constrainPriceBucket ?? null,
     constrainVibeTags: options.constrainVibeTags ?? [],
@@ -144,6 +148,9 @@ export function buildSearchQueryHash(
   if (explicit.excludedCategorySlug) cacheBasis += `::__excl_cat__:${explicit.excludedCategorySlug}`;
   if (typeof explicit.requiredHasPhysicalLocation === "boolean") {
     cacheBasis += `::__physical__:${explicit.requiredHasPhysicalLocation ? "yes" : "no"}`;
+  }
+  if (typeof explicit.requiredIsServiceBusiness === "boolean") {
+    cacheBasis += `::__service__:${explicit.requiredIsServiceBusiness ? "yes" : "no"}`;
   }
   if (explicit.sortMode && explicit.sortMode !== "relevance") {
     cacheBasis += `::__sort__:${explicit.sortMode}`;
