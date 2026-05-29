@@ -1,0 +1,185 @@
+import "server-only";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import {
+  BROWSE_VISIBLE_NOT_HIDDEN,
+  DIRECTUS_PUBLISHED_STATUS,
+} from "@/lib/shop/public-listing-filters";
+import { pickDailySubsetWithSalt } from "@/lib/home/daily-featured-pick";
+import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
+import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
+
+/** Town + area pages: fixed category order (`business_categories.slug`). */
+export const PLACE_CATEGORY_SLUG_ORDER = [
+  "restaurants",
+  "shopping",
+  "coffee_shops",
+  "activities",
+] as const;
+
+export const PLACE_CATEGORY_ICONS: Record<string, string> = {
+  restaurants: "restaurant",
+  coffee_shops: "coffee",
+  bars: "local_bar",
+  activities: "kayaking",
+  shopping: "shopping_bag",
+  services: "home_repair_service",
+  events: "event",
+  beaches: "beach_access",
+};
+
+export const PER_PLACE_CATEGORY_PREVIEW = 4;
+
+export const BIZ_CATEGORY_SELECT =
+  "id, title, slug, area_id, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( id, title, slug )";
+
+export type CategoryBusiness = BrowseBusinessCard & {
+  categoryId: string | null;
+  categoryTitle: string | null;
+  categorySlug: string | null;
+};
+
+export type PlaceCategorySection = {
+  id: string;
+  title: string;
+  slug: string;
+  businesses: BrowseBusinessCard[];
+  totalCount: number;
+};
+
+export function rowToCategoryBusiness(row: Record<string, unknown>): CategoryBusiness {
+  const hero = getPublicImageUrlWithView(
+    row.main_image_url as string | null,
+    row.hero_image_url as string | null,
+    row.main_image as string | null,
+    row.hero_image as string | null,
+  );
+  const excerpt = (row.excerpt as string | null) ?? null;
+  const cat = row.business_categories as { id?: string; title?: string; slug?: string } | null;
+  return {
+    id: String(row.id),
+    name: String((row as { title: string }).title),
+    slug: String((row as { slug: string }).slug),
+    hero_image_url: hero,
+    ai_one_liner: excerpt,
+    ai_summary: excerpt,
+    categoryId: cat?.id ?? (row.primary_category_id as string | null) ?? null,
+    categoryTitle: cat?.title ?? null,
+    categorySlug: cat?.slug ?? null,
+  };
+}
+
+export function groupBusinessesByCategorySections(
+  businesses: CategoryBusiness[],
+  dailyPickSaltPrefix: string,
+): PlaceCategorySection[] {
+  const allowed = new Set<string>(PLACE_CATEGORY_SLUG_ORDER);
+  const map = new Map<string, { id: string; title: string; slug: string; pool: CategoryBusiness[] }>();
+
+  for (const b of businesses) {
+    if (!b.categorySlug || !b.categoryTitle || !b.categoryId) continue;
+    if (!allowed.has(b.categorySlug)) continue;
+    if (!map.has(b.categoryId)) {
+      map.set(b.categoryId, {
+        id: b.categoryId,
+        title: b.categoryTitle,
+        slug: b.categorySlug,
+        pool: [],
+      });
+    }
+    map.get(b.categoryId)!.pool.push(b);
+  }
+
+  const bySlug = new Map([...map.values()].map((cat) => [cat.slug, cat]));
+
+  return PLACE_CATEGORY_SLUG_ORDER.flatMap((slug) => {
+    const cat = bySlug.get(slug);
+    if (!cat || cat.pool.length === 0) return [];
+    return [
+      {
+        id: cat.id,
+        title: cat.title,
+        slug: cat.slug,
+        totalCount: cat.pool.length,
+        businesses: pickDailySubsetWithSalt(
+          cat.pool,
+          PER_PLACE_CATEGORY_PREVIEW,
+          `${dailyPickSaltPrefix}:${cat.slug}`,
+        ),
+      },
+    ];
+  });
+}
+
+function mergeCategoryBusinessRows(
+  rows: Record<string, unknown>[],
+  into: Map<string, CategoryBusiness>,
+) {
+  for (const row of rows) {
+    const id = String(row.id);
+    if (!into.has(id)) into.set(id, rowToCategoryBusiness(row));
+  }
+}
+
+/** Businesses linked to an area hub or POI (column + `area_businesses` join). */
+export async function getCategorySectionsForPublicPlace(
+  place: PublicPlacePage,
+): Promise<PlaceCategorySection[]> {
+  const supabase = getServiceSupabase();
+  const byId = new Map<string, CategoryBusiness>();
+  const cap = 150;
+
+  const browseQuery = () =>
+    supabase
+      .from("businesses_view")
+      .select(BIZ_CATEGORY_SELECT)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN);
+
+  if (place.source === "area") {
+    const { data: byColumn } = await browseQuery().eq("area_id", place.id).limit(cap);
+    mergeCategoryBusinessRows((byColumn as Record<string, unknown>[]) ?? [], byId);
+
+    const { data: links } = await supabase
+      .from("area_businesses")
+      .select("business_id")
+      .eq("area_id", place.id);
+    const ids = (links ?? [])
+      .map((l) => (l as { business_id: string }).business_id)
+      .filter(Boolean);
+    if (ids.length > 0) {
+      const { data: fromJoin } = await browseQuery().in("id", ids).limit(cap);
+      mergeCategoryBusinessRows((fromJoin as Record<string, unknown>[]) ?? [], byId);
+    }
+  } else {
+    if (place.parent_area_id && place.town_id) {
+      const { data: wide } = await browseQuery()
+        .or(`area_id.eq.${place.parent_area_id},town_id.eq.${place.town_id}`)
+        .limit(cap);
+      mergeCategoryBusinessRows((wide as Record<string, unknown>[]) ?? [], byId);
+    } else if (place.parent_area_id) {
+      const { data: byA } = await browseQuery().eq("area_id", place.parent_area_id).limit(cap);
+      mergeCategoryBusinessRows((byA as Record<string, unknown>[]) ?? [], byId);
+    } else if (place.town_id) {
+      const { data: byT } = await browseQuery().eq("town_id", place.town_id).limit(cap);
+      mergeCategoryBusinessRows((byT as Record<string, unknown>[]) ?? [], byId);
+    }
+
+    if (place.parent_area_id) {
+      const { data: links } = await supabase
+        .from("area_businesses")
+        .select("business_id")
+        .eq("area_id", place.parent_area_id);
+      const ids = (links ?? [])
+        .map((l) => (l as { business_id: string }).business_id)
+        .filter(Boolean);
+      if (ids.length > 0) {
+        const { data: fromJoin } = await browseQuery().in("id", ids).limit(cap);
+        mergeCategoryBusinessRows((fromJoin as Record<string, unknown>[]) ?? [], byId);
+      }
+    }
+  }
+
+  return groupBusinessesByCategorySections([...byId.values()], `area:${place.slug}`);
+}

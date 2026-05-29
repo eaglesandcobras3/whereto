@@ -1,16 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublicPlaceBySlug, type PublicPlacePage } from "@/lib/data/public-place-by-slug";
-import {
-  getBrowseBusinessesForPublicPlace,
-  type BrowseBusinessCard,
-} from "@/lib/data/business-browse-cards";
-import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
+import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
+import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
-import { getSiteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
@@ -66,13 +62,9 @@ type SidebarTownLink = { name: string; slug: string };
 type AreaSidebarData = {
   townLink: SidebarTownLink | null;
   guides: SidebarGuide[];
-  businesses: BrowseBusinessCard[];
-  viewMoreHref: string | null;
 };
 
 const SIDEBAR_GUIDES_CAP = 6;
-const SIDEBAR_BUSINESSES_CAP = 6;
-const BROWSE_BUSINESSES_POOL = 36;
 
 async function resolveTownLink(place: PublicPlacePage): Promise<SidebarTownLink | null> {
   if (place.town_slug?.trim() && place.town_name?.trim()) {
@@ -138,7 +130,24 @@ async function getGuidesForPlace(place: PublicPlacePage): Promise<SidebarGuide[]
   return shuffleWithDailySeed(guides).slice(0, SIDEBAR_GUIDES_CAP);
 }
 
-function viewMoreSearchHref(place: PublicPlacePage): string | null {
+function areaSectionSearchHref(
+  place: PublicPlacePage,
+  categorySlug: string,
+): string | null {
+  const params = new URLSearchParams();
+  if (place.source === "area") {
+    params.set("area_id", place.id);
+  } else if (place.parent_area_id) {
+    params.set("area_id", place.parent_area_id);
+  } else if (!place.town_id) {
+    return null;
+  }
+  if (place.town_id?.trim()) params.set("town_id", place.town_id.trim());
+  params.set("category", categorySlug);
+  return `/search?${params.toString()}`;
+}
+
+function areaBrowseSearchHref(place: PublicPlacePage): string | null {
   const params = new URLSearchParams();
   if (place.source === "area") {
     params.set("area_id", place.id);
@@ -150,27 +159,17 @@ function viewMoreSearchHref(place: PublicPlacePage): string | null {
   } else {
     return null;
   }
-  if (place.town_id?.trim()) {
-    params.set("town_id", place.town_id.trim());
-  }
+  if (place.town_id?.trim()) params.set("town_id", place.town_id.trim());
   return `/search?${params.toString()}`;
 }
 
 async function getAreaSidebarData(place: PublicPlacePage): Promise<AreaSidebarData> {
-  const [townLink, businessCards, guides] = await Promise.all([
+  const [townLink, guides] = await Promise.all([
     resolveTownLink(place),
-    getBrowseBusinessesForPublicPlace(place, BROWSE_BUSINESSES_POOL),
     getGuidesForPlace(place),
   ]);
 
-  const businesses = shuffleWithDailySeed(businessCards).slice(0, SIDEBAR_BUSINESSES_CAP);
-
-  return {
-    townLink,
-    guides,
-    businesses,
-    viewMoreHref: viewMoreSearchHref(place),
-  };
+  return { townLink, guides };
 }
 
 type Props = { params: Promise<{ slug: string }> };
@@ -207,7 +206,10 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) notFound();
 
-  const sidebar = await getAreaSidebarData(area);
+  const [sidebar, categorySections] = await Promise.all([
+    getAreaSidebarData(area),
+    getCategorySectionsForPublicPlace(area),
+  ]);
 
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
   const typeLabel = areaTypeLabel(area.areaTypeLabel);
@@ -216,9 +218,6 @@ export default async function AreaPage({ params }: Props) {
     ? stripLeadingH1MatchingTitle(rawMarkdown, area.title).trim()
     : "";
   const hasMarkdown = bodyMarkdown.length > 0;
-
-  const browseSearchType = area.source === "point_of_interest" ? "access" : "areas";
-  const browseSearchLabel = area.source === "point_of_interest" ? "Landmarks & parks" : "Areas & districts";
 
   const breadcrumbItems = [
     { name: "Home", url: "/" },
@@ -327,12 +326,48 @@ export default async function AreaPage({ params }: Props) {
           </header>
 
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
-            <div className="min-w-0">
+            <div className="min-w-0 space-y-12">
+              <PlaceCategoryBusinessSections
+                placeName={area.title}
+                placeSlug={area.slug}
+                sections={categorySections}
+                analyticsCategoryPrefix="area_guide_category"
+                buildSectionSearchHref={(section) =>
+                  areaSectionSearchHref(area, section.slug) ?? "/search"
+                }
+                emptyMessage={
+                  areaBrowseSearchHref(area) ? (
+                    <p className="text-[var(--color-text-secondary)]">
+                      No business listings in {area.title} yet.{" "}
+                      <Link
+                        href={areaBrowseSearchHref(area)!}
+                        className="font-medium text-[var(--color-primary)] hover:underline"
+                      >
+                        Search nearby
+                      </Link>
+                    </p>
+                  ) : (
+                    <p className="text-[var(--color-text-secondary)]">
+                      No business listings in {area.title} yet.
+                    </p>
+                  )
+                }
+              />
+
               {hasMarkdown ? (
-                <MarkdownRenderer content={bodyMarkdown} />
-              ) : !area.excerpt ? (
+                <section
+                  className={
+                    categorySections.length > 0
+                      ? "border-t border-[var(--color-border)] pt-10"
+                      : ""
+                  }
+                >
+                  <MarkdownRenderer content={bodyMarkdown} />
+                </section>
+              ) : !area.excerpt && categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
-                  Full write-up for this place is on the way—browse the town or nearby spots in the meantime.
+                  Full write-up for this place is on the way—browse the town or nearby spots in the
+                  meantime.
                 </p>
               ) : null}
             </div>
@@ -389,40 +424,6 @@ export default async function AreaPage({ params }: Props) {
                 </div>
               )}
 
-              {/* Featured Businesses */}
-              {(sidebar.businesses.length > 0 || sidebar.viewMoreHref) && (
-                <div
-                  className={
-                    sidebar.townLink || sidebar.guides.length > 0
-                      ? "border-t border-[var(--color-border)] pt-6"
-                      : ""
-                  }
-                >
-                  {sidebar.businesses.length > 0 ? (
-                    <BusinessBrowseLinksList
-                      title="Featured Businesses"
-                      items={sidebar.businesses}
-                      analyticsCategory={`area_sidebar_businesses_${area.slug}`}
-                    />
-                  ) : null}
-                  {sidebar.viewMoreHref ? (
-                    <p className={sidebar.businesses.length > 0 ? "mt-4" : ""}>
-                      <Link
-                        href={sidebar.viewMoreHref}
-                        {...gaClickProps({
-                          event: "nav_click",
-                          category: "area_sidebar",
-                          label: "view_more_search",
-                        })}
-                        className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
-                        aria-label={`View more businesses in ${area.title}`}
-                      >
-                        View more
-                      </Link>
-                    </p>
-                  ) : null}
-                </div>
-              )}
             </aside>
           </div>
         </div>

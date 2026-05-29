@@ -19,109 +19,18 @@ import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { chicagoCalendarDaySeed, pickDailySubsetWithSalt } from "@/lib/home/daily-featured-pick";
-import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
-import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
+import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { GuideCard } from "@/components/discovery/GuideCard";
+import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
+import {
+  BIZ_CATEGORY_SELECT,
+  groupBusinessesByCategorySections,
+  rowToCategoryBusiness,
+  type PlaceCategorySection,
+} from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
-const PER_CATEGORY_PREVIEW = 4;
-
-/** Town pages: fixed category order (slug keys from `business_categories`). */
-const TOWN_CATEGORY_SLUG_ORDER = [
-  "restaurants",
-  "shopping",
-  "coffee_shops",
-  "activities",
-] as const;
-
-const CATEGORY_ICONS: Record<string, string> = {
-  restaurants: "restaurant",
-  coffee_shops: "coffee",
-  bars: "local_bar",
-  activities: "kayaking",
-  shopping: "shopping_bag",
-  services: "home_repair_service",
-  events: "event",
-  beaches: "beach_access",
-};
-
 type SidebarArea = { id: string; name: string; slug: string };
-
-type TownBusiness = BrowseBusinessCard & {
-  categoryId: string | null;
-  categoryTitle: string | null;
-  categorySlug: string | null;
-};
-
-type TownCategorySection = {
-  id: string;
-  title: string;
-  slug: string;
-  businesses: BrowseBusinessCard[];
-  totalCount: number;
-};
-
-function toTownBusiness(row: Record<string, unknown>): TownBusiness {
-  const hero = getPublicImageUrlWithView(
-    row.main_image_url as string | null,
-    row.hero_image_url as string | null,
-    row.main_image as string | null,
-    row.hero_image as string | null,
-  );
-  const excerpt = (row.excerpt as string | null) ?? null;
-  const cat = row.business_categories as { id?: string; title?: string; slug?: string } | null;
-  return {
-    id: String(row.id),
-    name: String((row as { title: string }).title),
-    slug: String((row as { slug: string }).slug),
-    hero_image_url: hero,
-    ai_one_liner: excerpt,
-    ai_summary: excerpt,
-    categoryId: cat?.id ?? (row.primary_category_id as string | null) ?? null,
-    categoryTitle: cat?.title ?? null,
-    categorySlug: cat?.slug ?? null,
-  };
-}
-
-function groupBusinessesByCategory(
-  businesses: TownBusiness[],
-  townSlug: string,
-): TownCategorySection[] {
-  const allowed = new Set<string>(TOWN_CATEGORY_SLUG_ORDER);
-  const map = new Map<string, { id: string; title: string; slug: string; pool: TownBusiness[] }>();
-
-  for (const b of businesses) {
-    if (!b.categorySlug || !b.categoryTitle || !b.categoryId) continue;
-    if (!allowed.has(b.categorySlug)) continue;
-    if (!map.has(b.categoryId)) {
-      map.set(b.categoryId, {
-        id: b.categoryId,
-        title: b.categoryTitle,
-        slug: b.categorySlug,
-        pool: [],
-      });
-    }
-    map.get(b.categoryId)!.pool.push(b);
-  }
-
-  const bySlug = new Map([...map.values()].map((cat) => [cat.slug, cat]));
-
-  return TOWN_CATEGORY_SLUG_ORDER.flatMap((slug) => {
-    const cat = bySlug.get(slug);
-    if (!cat || cat.pool.length === 0) return [];
-    return [
-      {
-        id: cat.id,
-        title: cat.title,
-        slug: cat.slug,
-        totalCount: cat.pool.length,
-        businesses: pickDailySubsetWithSalt(cat.pool, PER_CATEGORY_PREVIEW, `${townSlug}:${cat.slug}`),
-      },
-    ];
-  });
-}
 
 function shuffleWithDailySeed<T>(items: T[]): T[] {
   const seed = chicagoCalendarDaySeed();
@@ -139,9 +48,6 @@ function shuffleWithDailySeed<T>(items: T[]): T[] {
   }
   return copy;
 }
-
-const BIZ_SELECT =
-  "id, title, slug, area_id, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( id, title, slug )";
 
 const SIDEBAR_AREAS_LIMIT = 8;
 const TOWN_AREAS_CANDIDATE_CAP = 50;
@@ -168,7 +74,7 @@ async function getTownPageData(townId: string, townSlug: string) {
 
   const bizInTownQuery = supabase
     .from("businesses_view")
-    .select(BIZ_SELECT)
+    .select(BIZ_CATEGORY_SELECT)
     .eq("town_id", townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -179,7 +85,7 @@ async function getTownPageData(townId: string, townSlug: string) {
     townAreaIds.length > 0
       ? supabase
           .from("businesses_view")
-          .select(BIZ_SELECT)
+          .select(BIZ_CATEGORY_SELECT)
           .in("area_id", townAreaIds)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -217,16 +123,19 @@ async function getTownPageData(townId: string, townSlug: string) {
       : Promise.resolve({ data: [] as { area_id: string; business_id: string }[] | null }),
   ]);
 
-  const businessById = new Map<string, TownBusiness>();
+  const businessById = new Map<string, ReturnType<typeof rowToCategoryBusiness>>();
   for (const row of [...(bizTownRes.data ?? []), ...(bizAreaRes.data ?? [])]) {
     const r = row as Record<string, unknown>;
     const id = String(r.id);
     if (!businessById.has(id)) {
-      businessById.set(id, toTownBusiness(r));
+      businessById.set(id, rowToCategoryBusiness(r));
     }
   }
   const hasTownBusinesses = businessById.size > 0;
-  const categorySections = groupBusinessesByCategory([...businessById.values()], townSlug);
+  const categorySections = groupBusinessesByCategorySections(
+    [...businessById.values()],
+    townSlug,
+  );
 
   const areaIdsWithBusiness = new Set<string>();
   for (const row of daTownRes.data ?? []) {
@@ -370,7 +279,7 @@ type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 type TownPageData = {
   areas: SidebarArea[];
   guides: TownGuideCard[];
-  categorySections: TownCategorySection[];
+  categorySections: PlaceCategorySection[];
 };
 
 function BasicTownPage({
@@ -472,85 +381,28 @@ function BasicTownPage({
 
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-10">
             <div className="min-w-0 space-y-12">
-              {pageData.categorySections.length > 0 ? (
-                <div className="space-y-12">
-                  <div>
-                    <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
-                      Local businesses in {town.name}
-                    </h2>
-                    <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                      Browse by category — picks rotate daily.
-                    </p>
-                  </div>
-                  {pageData.categorySections.map((section) => {
-                    const icon = section.slug
-                      ? (CATEGORY_ICONS[section.slug] ?? "storefront")
-                      : "storefront";
-                    const searchParams = new URLSearchParams({ town_id: town.id });
-                    if (section.slug) searchParams.set("category", section.slug);
-
-                    return (
-                      <section key={section.id} aria-labelledby={`town-cat-${section.id}`}>
-                        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-container-high)] text-[var(--color-primary)]">
-                              <span className="material-symbols-outlined text-xl">{icon}</span>
-                            </span>
-                            <div>
-                              <h3
-                                id={`town-cat-${section.id}`}
-                                className="font-headline text-xl font-bold text-[var(--color-text-primary)]"
-                              >
-                                {section.title}
-                              </h3>
-                              <p className="text-xs text-[var(--color-text-tertiary)]">
-                                {section.totalCount}{" "}
-                                {section.totalCount === 1 ? "listing" : "listings"}
-                              </p>
-                            </div>
-                          </div>
-                          {section.totalCount > PER_CATEGORY_PREVIEW ? (
-                            <Link
-                              href={`/search?${searchParams.toString()}`}
-                              {...gaClickProps({
-                                event: "nav_click",
-                                category: "town_guide_category",
-                                label: `${town.slug}_${section.slug}`,
-                              })}
-                              className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-                            >
-                              View all {section.totalCount}
-                            </Link>
-                          ) : null}
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                          {section.businesses.map((b) => (
-                            <BusinessPreviewCard
-                              key={b.id}
-                              name={b.name}
-                              slug={b.slug}
-                              excerpt={b.ai_summary}
-                              heroImageUrl={b.hero_image_url}
-                              analyticsCategory="town_guide_business"
-                              analyticsLabel={`${town.slug}_${b.slug}`}
-                            />
-                          ))}
-                        </div>
-                      </section>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-[var(--color-text-secondary)]">
-                  No business listings in {town.name} yet.{" "}
-                  <Link
-                    href={`/search?${new URLSearchParams({ town_id: town.id }).toString()}`}
-                    className="font-medium text-[var(--color-primary)] hover:underline"
-                  >
-                    Search all of 30A
-                  </Link>
-                </p>
-              )}
+              <PlaceCategoryBusinessSections
+                placeName={town.name}
+                placeSlug={town.slug}
+                sections={pageData.categorySections}
+                analyticsCategoryPrefix="town_guide_category"
+                buildSectionSearchHref={(section) => {
+                  const searchParams = new URLSearchParams({ town_id: town.id });
+                  if (section.slug) searchParams.set("category", section.slug);
+                  return `/search?${searchParams.toString()}`;
+                }}
+                emptyMessage={
+                  <p className="text-[var(--color-text-secondary)]">
+                    No business listings in {town.name} yet.{" "}
+                    <Link
+                      href={`/search?${new URLSearchParams({ town_id: town.id }).toString()}`}
+                      className="font-medium text-[var(--color-primary)] hover:underline"
+                    >
+                      Search all of 30A
+                    </Link>
+                  </p>
+                }
+              />
 
               {pageData.guides.length > 0 ? (
                 <section
