@@ -186,11 +186,11 @@ The full feedback loop is built. Follow these steps to activate it.
 
 - [ ] Set **`SEARCH_LEARNING_ENABLED=true`** in `.env.local` **and** Vercel → Environment Variables (Production + Preview).
 
-### Step 3: Verify the hourly stats cron
+### Step 3: Verify the daily stats cron
 
-- [ ] Confirm `/api/cron/search-stats` is listed in `vercel.json` crons (it is — runs `0 * * * *`).
+- [ ] Confirm `/api/cron/search-stats` is listed in `vercel.json` crons (runs once daily at **11:00 UTC**, `0 11 * * *`; Hobby plan cannot use hourly schedules).
 - [ ] Confirm **`CRON_SECRET`** is set in Vercel (shared with all cron routes).
-- [ ] After the first hour of traffic, check `search_cluster_business_stats` is being populated.
+- [ ] After the first scheduled run (or a manual `GET` with the cron secret), check `search_cluster_business_stats` is being populated.
 
 ### Step 4: Backfill business intelligence (if not already done)
 
@@ -255,6 +255,7 @@ Scores (1–4) are stored in `search_eval_runs` for month-over-month comparison.
 
 | Date | What changed |
 |------|----------------|
+| 2026-05-29 | **Vercel Hobby cron:** `/api/cron/search-stats` schedule changed from hourly (`0 * * * *`) to **once daily at 11:00 UTC** (`0 11 * * *`). Hobby only allows cron expressions that fire once per day; use Pro or an external scheduler if you need hourly `refresh_search_cluster_business_stats()`. |
 | 2026-05-27 | **Self-learning search loop (full implementation):** Apply migrations `20260528120000_search_learning_signals.sql` (impressions + clicks + cluster stats), `20260529000000_search_eval_runs.sql` (LLM-judge score table), and `20260529000100_search_monitoring_views.sql` (3 monitoring views). Set `SEARCH_LEARNING_ENABLED=true` in Vercel + `.env.local`. New hourly cron `/api/cron/search-stats` calls `refresh_search_cluster_business_stats()` — confirm `CRON_SECRET` is set. New click API: `POST /api/search/click`. GitLab CI gate in `.gitlab-ci.yml` runs golden eval (`eval/search-golden.json`) on every MR touching `lib/search/**` — add `STAGING_SUPABASE_URL`, `STAGING_SUPABASE_KEY`, `OPENAI_API_KEY` to GitLab CI/CD variables. Run `npx tsx local/generate-business-intelligence.ts && npx tsx local/generate-embeddings.ts --force` to backfill BI data if not done (required for composite scoring to fire). See **Search quality evals + self-learning loop** section for full runbook. |
 | 2026-05-24 | **Search evals plan:** [search-evals-plan.md](./search-evals-plan.md) — DS framework for logging searches/results, golden-set offline evals, online KPIs, and closed-loop tuning via **`SearchRankConfig`**, data backfill, and future RPC modes. **`search_impressions` table not built yet.** |
 | 2026-05-24 | **Search API spend:** New env toggles **`SEARCH_QUERY_EMBEDDINGS`** (default on) and **`SEARCH_OPENAI_INTENT_PARSE`** (default on). Query embeddings are LRU-cached per process (identical normalized strings reuse one embedding). **`recommendation-precompute`** and legacy **`buildRecommendationSet`** synthesis are unchanged — they are separate OpenAI usage. |
