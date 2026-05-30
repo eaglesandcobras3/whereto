@@ -9,6 +9,8 @@ import type { SearchResultPayload } from "@/lib/search/types";
 export async function executeSearchFromPlan(
   supabase: SupabaseClient,
   plan: SearchPlan,
+  /** When true, always populate _debug (for admin debugger). */
+  includeDebug = false,
 ): Promise<SearchResultPayload> {
   const { category, town, text, explicit, scoring } = plan;
 
@@ -27,8 +29,6 @@ export async function executeSearchFromPlan(
     requiredHasPhysicalLocation: explicit.requiredHasPhysicalLocation,
     requiredIsServiceBusiness: explicit.requiredIsServiceBusiness,
     sortMode: explicit.sortMode,
-    // Hard category filter — explicit user URL selection only.
-    // AI-inferred categories skip this; composite scoring handles ranking instead.
     primaryCategoryId: category.explicitCategoryId,
     primaryCategoryIds:
       explicit.explicitCategorySlugs.length > 1 ? category.filterCategoryIds : undefined,
@@ -44,6 +44,8 @@ export async function executeSearchFromPlan(
     intentMealPeriod: scoring.intentMealPeriod,
     intentAtmosphereNeeds: scoring.intentAtmosphereNeeds,
     intentOccasion: scoring.intentOccasion,
+    userLat: plan.userLat,
+    userLng: plan.userLng,
   });
 
   result.resolved_filters = resolvedFiltersFromPlan(plan);
@@ -57,7 +59,7 @@ export async function executeSearchFromPlan(
   );
   if (logged) result.impression_id = logged.impressionId;
 
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "development" || includeDebug) {
     result._debug = {
       intent: plan.intent,
       pageBrowseWithoutQuery: explicit.pageBrowseWithoutQuery,

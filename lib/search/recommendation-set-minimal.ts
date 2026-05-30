@@ -1,11 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
+  computeCompositeWithBreakdown,
+  type ScoringIntent,
+  type ScoreBreakdown,
+} from "@/lib/search/scoring";
+import {
   applyHybridVectorPostRanking,
   DEFAULT_SEARCH_RANK_CONFIG,
   isApparelFashionRetailQuery,
   isMinimalApparelRetailKeywordQuery,
-  itemMatchesTaggedRow,
   type HybridVectorPostRankingInput,
   type ScoredVecRow,
 } from "@/lib/search/hybrid-vector-postprocess";
@@ -19,6 +23,7 @@ import {
 } from "@/lib/shop/public-listing-filters";
 import type {
   BusinessPayload,
+  SearchConfidence,
   SearchResultPayload,
   SearchRetrievalMetrics,
   SearchRetrievalPath,
@@ -26,120 +31,51 @@ import type {
 import type { SearchCandidateRankOrder } from "@/lib/scoring";
 
 // ---------------------------------------------------------------------------
-// Composite scoring
+// Confidence scoring
 // ---------------------------------------------------------------------------
-// Combines structured facet matching + semantic similarity + listing quality.
-// When no structured intent fields are present (simple keyword query),
-// composite collapses to: vecSim * 0.90 + quality * 0.10 — so semantic similarity
-// does the heavy lifting. When intent has specific_items, dietary_needs, etc.,
-// structured matching amplifies the right results and penalises the wrong ones.
 
-type ScoringIntent = {
-  category?: string | null;
-  specificItems?: string[];
-  dietaryNeeds?: string[];
-  mealPeriod?: string | null;
-  atmosphereNeeds?: string[];
-  occasion?: string | null;
-};
+function computeSearchConfidence(
+  retrieval: SearchRetrievalMetrics,
+  topComposite: number,
+  totalResults: number,
+  avgDataQuality: number,
+  hasCategory: boolean,
+  hasLocation: boolean,
+): SearchConfidence {
+  let score = 1.0;
+  const reasons: string[] = [];
 
-function computeStructuredMatch(row: Record<string, unknown>, intent: ScoringIntent): { score: number; hasSignal: boolean } {
-  const components: { weight: number; score: number }[] = [];
-
-  // When BI `business_type` is empty we have no corroborating text — omit this component rather
-  // than scoring 0 against every row (category is often already enforced by SQL filters).
-  if (intent.category) {
-    const businessType = String(row.business_type ?? "").trim().toLowerCase();
-    if (businessType) {
-      const catNorm = intent.category.replace(/_/g, " ").toLowerCase();
-
-      // Per-category regex maps category intent to the vocabulary used in business_type.
-      // This prevents vocabulary mismatch (e.g. "café" not matching "coffee_shops") from
-      // silently filtering out correct results in the composite scoring step.
-      const CATEGORY_TYPE_PATTERNS: Record<string, RegExp> = {
-        restaurants:
-          /restaurant|coffee|cafe|café|diner|bistro|grill|eatery|food.?truck|food.?stand|taqueria|pizzeria|taco|hot.?dog|ice.?cream|dessert|bakery|donut|doughnut|smoothie|juice.?bar|kitchen|brasserie|steakhouse|seafood|sushi|bar$|pub$|bbq|barbecue|creperie|ramen|poke|sandwich/i,
-        coffee_shops:
-          /coffee|cafe|café|espresso|coffeehouse|coffee.?house|tea|latte|cappuccino|barista|roaster|brew/i,
-        bars:
-          /bar|pub|tavern|brewery|brewpub|winery|lounge|cocktail|nightclub|dive.?bar|sports.?bar|taproom/i,
-        activities:
-          /activit|rental|tour|fitness|gym|studio|sport|outdoor|water.?sport|bike|paddl|surf|yoga|pilates|marina|charter|excursion|kayak|snorkel|dive|golf|tennis|pickleball/i,
-        shopping:
-          /boutique|shop|store|retail|gallery|clothing|apparel|fashion|gift|jewelry|jewellery|market|souvenir|consignment|thrift/i,
-        services:
-          /salon|spa|wellness|beauty|medical|dental|repair|service|contractor|studio|therapy|massage|realtor|insurance|legal/i,
-      };
-
-      const catKey = intent.category.toLowerCase();
-      const categoryPattern = CATEGORY_TYPE_PATTERNS[catKey];
-
-      // Word-level fallback only when no pattern is defined — prevents stem "shop" from
-      // "coffee_shops" matching unrelated business types like "surf shop" or "art shop".
-      const wordMatch = !categoryPattern && catNorm.split(" ").some((w) => {
-        if (w.length <= 3) return false;
-        const stem = w.replace(/s$/, "");
-        return businessType.includes(w) || businessType.includes(stem);
-      });
-
-      const matchScore = (categoryPattern ? categoryPattern.test(businessType) : wordMatch) ? 1.0 : 0.0;
-      components.push({ weight: 40, score: matchScore });
-    }
+  if (retrieval.path === "ilike" || retrieval.path === "browse_no_text") {
+    score -= 0.2;
+    reasons.push("no vector search — keyword fallback only");
+  }
+  if (topComposite < 0.45 && topComposite > 0) {
+    score -= 0.15;
+    reasons.push("low top composite score");
+  }
+  if (totalResults < 3) {
+    score -= 0.15;
+    reasons.push("fewer than 3 results");
+  }
+  if (!hasCategory) {
+    score -= 0.1;
+    reasons.push("no category detected");
+  }
+  if (!hasLocation) {
+    score -= 0.1;
+    reasons.push("no location detected");
+  }
+  if (avgDataQuality < 0.5) {
+    score -= 0.1;
+    reasons.push("low average data quality");
   }
 
-  if (intent.specificItems?.length) {
-    const rowItemsRaw = ((row.item_tags as string[] | null) ?? []).map((t) => String(t).trim());
-    const rowItems = rowItemsRaw.map((t) => t.toLowerCase());
-    const hasTypedMenu = rowItemsRaw.some((t) => t.length > 0);
-    // No mined menu on this listing — do not treat "no tag match" as disproof; let vector sim carry.
-    if (hasTypedMenu) {
-      const matched = intent.specificItems.filter((item) => itemMatchesTaggedRow(item, rowItems)).length;
-      components.push({ weight: 35, score: matched / intent.specificItems.length });
-    }
-  }
-
-  if (intent.dietaryNeeds?.length) {
-    const rowDietary = (row.dietary_tags as string[] | null) ?? [];
-    const matched = intent.dietaryNeeds.filter((d) => rowDietary.includes(d)).length;
-    components.push({ weight: 15, score: matched / intent.dietaryNeeds.length });
-  }
-
-  if (intent.mealPeriod) {
-    const rowMeal = (row.meal_period_tags as string[] | null) ?? [];
-    components.push({ weight: 5, score: rowMeal.includes(intent.mealPeriod) ? 1.0 : 0.0 });
-  }
-
-  if (intent.atmosphereNeeds?.length || intent.occasion) {
-    const rowAtm = (row.atmosphere_tags as string[] | null) ?? [];
-    const rowOcc = (row.occasion_tags as string[] | null) ?? [];
-    const rowAll = [...rowAtm, ...rowOcc].map((t) => t.toLowerCase());
-    const needed = [...(intent.atmosphereNeeds ?? []), ...(intent.occasion ? [intent.occasion] : [])];
-    const matched = needed.filter((n) => rowAll.some((r) => r.includes(n.toLowerCase()))).length;
-    components.push({ weight: 5, score: matched / needed.length });
-  }
-
-  if (components.length === 0) return { score: 0, hasSignal: false };
-  const totalWeight = components.reduce((s, c) => s + c.weight, 0);
-  const weightedScore = components.reduce((s, c) => s + c.weight * c.score, 0);
-  return { score: weightedScore / totalWeight, hasSignal: true };
+  return { score: Math.max(0, Math.round(score * 100) / 100), low_confidence_reasons: reasons };
 }
 
-function computeQuality(row: Record<string, unknown>): number {
-  const featured = (row.featured as boolean | null) ? 1.0 : 0.0;
-  const rating = Math.min(1.0, ((row.review_rating_cached as number | null) ?? 0) / 5.0);
-  const reviews = Math.min(1.0, ((row.review_count_cached as number | null) ?? 0) / 50);
-  return featured * 0.5 + rating * 0.3 + reviews * 0.2;
-}
-
-function computeComposite(row: Record<string, unknown>, intent: ScoringIntent, vecSim: number): number {
-  const quality = computeQuality(row);
-  const { score: structuredScore, hasSignal } = computeStructuredMatch(row, intent);
-  if (!hasSignal) {
-    // No structured intent — let semantic similarity drive results
-    return vecSim * 0.90 + quality * 0.10;
-  }
-  return structuredScore * 0.60 + vecSim * 0.30 + quality * 0.10;
-}
+// ---------------------------------------------------------------------------
+// Business payload builder
+// ---------------------------------------------------------------------------
 
 function businessPayload(
   row: Record<string, unknown>,
@@ -172,22 +108,14 @@ function businessPayload(
   };
 }
 
-function rowToRec(
-  row: Record<string, unknown>,
-  rank: number,
-): SearchResultPayload["recommendations"][number] {
+function rowToRec(row: Record<string, unknown>, rank: number): SearchResultPayload["recommendations"][number] {
   const r = row as {
     main_image?: string | null;
     hero_image?: string | null;
     main_image_url?: string | null;
     hero_image_url?: string | null;
   };
-  const img = getPublicImageUrlWithView(
-    r.main_image_url,
-    r.hero_image_url,
-    r.main_image,
-    r.hero_image,
-  );
+  const img = getPublicImageUrlWithView(r.main_image_url, r.hero_image_url, r.main_image, r.hero_image);
   const categories = row.business_categories as { title?: string; slug?: string } | null;
   const bp = businessPayload(row, img);
   if (categories?.title) bp.category_name = categories.title;
@@ -200,6 +128,10 @@ function rowToRec(
     business: bp,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Options type
+// ---------------------------------------------------------------------------
 
 type MinimalSearchBuildOptions = {
   rawQuery: string;
@@ -230,17 +162,19 @@ type MinimalSearchBuildOptions = {
   intentMealPeriod?: string | null;
   intentAtmosphereNeeds?: string[];
   intentOccasion?: string | null;
+  /** User coordinates for geo-distance scoring. */
+  userLat?: number | null;
+  userLng?: number | null;
 };
 
-function filterRowsBySidebar(
-  rows: ScoredVecRow[],
-  options: MinimalSearchBuildOptions,
-): ScoredVecRow[] {
+// ---------------------------------------------------------------------------
+// Sidebar filter
+// ---------------------------------------------------------------------------
+
+function filterRowsBySidebar(rows: ScoredVecRow[], options: MinimalSearchBuildOptions): ScoredVecRow[] {
   let filtered = rows;
   if (typeof options.requiredIsServiceBusiness === "boolean") {
-    filtered = filtered.filter(
-      (r) => Boolean(r.is_service_business) === options.requiredIsServiceBusiness,
-    );
+    filtered = filtered.filter((r) => Boolean(r.is_service_business) === options.requiredIsServiceBusiness);
   }
   if (options.constrainPriceBucket) {
     filtered = filtered.filter((r) => {
@@ -251,13 +185,9 @@ function filterRowsBySidebar(
     });
   }
   if (options.primaryCategoryIds?.length) {
-    filtered = filtered.filter((r) =>
-      options.primaryCategoryIds!.includes(String(r.primary_category_id)),
-    );
+    filtered = filtered.filter((r) => options.primaryCategoryIds!.includes(String(r.primary_category_id)));
   } else if (options.primaryCategoryId) {
-    filtered = filtered.filter(
-      (r) => String(r.primary_category_id) === options.primaryCategoryId,
-    );
+    filtered = filtered.filter((r) => String(r.primary_category_id) === options.primaryCategoryId);
   }
   if (options.constrainVibeTags?.length) {
     filtered = filtered.filter((r) => {
@@ -268,22 +198,21 @@ function filterRowsBySidebar(
   return filtered;
 }
 
-function attachRetrievalDiagnostics(
-  payload: SearchResultPayload,
-  metrics: SearchRetrievalMetrics,
-): SearchResultPayload {
-  if (process.env.NODE_ENV !== "development") return payload;
-  return { ...payload, _retrieval: metrics };
-}
+// ---------------------------------------------------------------------------
+// Payload builder from ranked rows
+// ---------------------------------------------------------------------------
 
 function buildPayloadFromRankedRows(
   options: MinimalSearchBuildOptions,
   rows: ScoredVecRow[],
+  breakdowns: Map<unknown, ScoreBreakdown>,
   total: number,
   from: number,
   page: number,
   pageSize: number,
   retrieval: SearchRetrievalMetrics,
+  intentCategory: string | null,
+  hasLocation: boolean,
 ): SearchResultPayload {
   const recs = rows.map((row, i) => {
     const r = row as {
@@ -292,131 +221,69 @@ function buildPayloadFromRankedRows(
       main_image_url?: string | null;
       hero_image_url?: string | null;
     };
-    const img = getPublicImageUrlWithView(
-      r.main_image_url,
-      r.hero_image_url,
-      r.main_image,
-      r.hero_image,
-    );
+    const img = getPublicImageUrlWithView(r.main_image_url, r.hero_image_url, r.main_image, r.hero_image);
     const bp = businessPayload(row, img);
-    const rec: SearchResultPayload["recommendations"][number] = {
+    const breakdown = breakdowns.get(row.id) ?? undefined;
+    return {
       business_id: String(row.id),
       rank: from + i + 1,
       headline: String((row as { title?: string }).title ?? "Listing"),
       explanation: (row.excerpt as string | null) ?? "",
       highlighted_tags: [],
       business: bp,
+      score_breakdown: breakdown,
     };
-    if (process.env.NODE_ENV === "development") {
-      rec._vec_similarity = (row.vec_similarity as number | null) ?? undefined;
-      rec._composite = row._composite ?? undefined;
-    }
-    return rec;
   });
 
-  return attachRetrievalDiagnostics(
-    {
-      query: options.rawQuery,
-      query_hash: options.queryHash,
-      normalized_query: options.normalizedQuery,
-      summary: `Found ${total} local picks for "${options.rawQuery}".`,
-      total_results: total,
-      page,
-      page_size: pageSize,
-      recommendations: recs,
-      suggestions: [],
-      cached: false,
-    },
+  const topComposite = recs[0]?.score_breakdown?.composite ?? 0;
+  const avgDataQuality =
+    rows.length > 0
+      ? rows.reduce((s, r) => s + (typeof r.data_quality_score === "number" ? (r.data_quality_score as number) : 0.5), 0) / rows.length
+      : 0.5;
+
+  const confidence = computeSearchConfidence(
     retrieval,
+    topComposite,
+    total,
+    avgDataQuality,
+    Boolean(intentCategory),
+    hasLocation,
   );
+
+  return {
+    query: options.rawQuery,
+    query_hash: options.queryHash,
+    normalized_query: options.normalizedQuery,
+    summary: `Found ${total} local picks for "${options.rawQuery}".`,
+    total_results: total,
+    page,
+    page_size: pageSize,
+    recommendations: recs,
+    suggestions: [],
+    cached: false,
+    confidence,
+    _retrieval: retrieval,
+  };
 }
 
+// ---------------------------------------------------------------------------
+// Main entry point
+// ---------------------------------------------------------------------------
+
 /**
- * Simplified search over `businesses` (Directus-synced) without query_cache, scoring, or old joins.
- * Degradation ladder: hybrid_strict → hybrid_relaxed → ILIKE (`SearchRetrievalMetrics` in dev).
+ * Simplified search over `businesses` without query_cache or legacy scoring.
+ * Degradation ladder: hybrid_strict → hybrid_relaxed → ILIKE.
+ * Returns score_breakdown and confidence always (not dev-only).
  */
 export async function buildMinimalSearchResult(
   supabase: SupabaseClient,
-  options: {
-    rawQuery: string;
-    normalizedQuery: string;
-    queryHash: string;
-    model: string;
-    openaiKey: string | undefined;
-    /** When set (including `null`), skip the embed API call — caller prefetched in parallel with intent. */
-    precomputedQueryEmbedding?: number[] | null;
-    page?: number;
-    pageSize?: number;
-    constrainTownId?: string;
-    /** Multiple town IDs for "near <town>" queries — anchor + adjacent towns. */
-    nearTownIds?: string[];
-    /** `areas.id`: `businesses.area_id` or `area_businesses` for this area. */
-    constrainAreaId?: string;
-    requiredHasPhysicalLocation?: boolean;
-    requiredIsServiceBusiness?: boolean;
-    sortMode?: SearchCandidateRankOrder;
-    /** When set, filter `businesses.primary_category_id`. */
-    primaryCategoryId?: string | null;
-    /**
-     * Category the user explicitly selected via URL (dropdown). Used in vector search instead
-     * of `primaryCategoryId` so AI-inferred categories don't over-constrain results.
-     */
-    explicitCategoryId?: string | null;
-    /**
-     * True only when `/search` loads a browse mode with **no typed `q`** (`skipIlikeTextFilter`
-     * from the page route). Omit embeddings — directory browse stays a cheap listing.
-     *
-     * **Not** coupled to `skipIlikeTextFilter` after intent merge: NL queries ("books near Rosemary")
-     * still set omit-ILIKE internally but MUST run vector search — otherwise there is zero text signal.
-     */
-    pageBrowseWithoutQuery?: boolean;
-    /**
-     * `?type=businesses` (or services) with no `q` used to pass a long placeholder string as one
-     * ilike pattern — it matched nothing. When true, list visible non-archived rows without a text match.
-     */
-    skipIlikeTextFilter?: boolean;
-    /**
-     * Focused search term derived from intent attributes or a de-noised query, replacing
-     * the raw query for the ilike so NL phrases like "restaurants near Seaside" don't get
-     * matched verbatim against listing text.
-     */
-    searchTermOverride?: string;
-    /** Natural-language price bucket. "inexpensive"=1, "moderate"=2-3, "expensive"=4. */
-    constrainPriceBucket?: "inexpensive" | "moderate" | "expensive" | null;
-    /** Filter to multiple explicit category IDs (OR logic). */
-    primaryCategoryIds?: string[];
-    /** Intent tag slugs to filter by (AND logic — business must have all selected). */
-    constrainVibeTags?: string[];
-    // --- Composite scoring signals (from AI intent) ---
-    /** AI-detected category slug — used to score business_type alignment. */
-    intentCategory?: string | null;
-    /** Specific items/dishes/services mentioned in the query ("fish tacos", "cold brew"). */
-    intentSpecificItems?: string[];
-    /** Dietary restrictions mentioned ("gluten_free", "vegan"). */
-    intentDietaryNeeds?: string[];
-    /** Meal period detected ("breakfast", "dinner", etc.). */
-    intentMealPeriod?: string | null;
-    /** Atmosphere descriptors detected ("romantic", "waterfront"). */
-    intentAtmosphereNeeds?: string[];
-    /** Occasion detected ("date_night", "rainy_day", etc.). */
-    intentOccasion?: string | null;
-  },
+  options: MinimalSearchBuildOptions,
 ): Promise<SearchResultPayload> {
   const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 12));
   const page = Math.max(1, options.page ?? 1);
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // --- Vector search path ---
-  // Use embeddings when OpenAI key is available and browse is **not** a page-level empty-query
-  // directory listing. `getSearchQueryEmbedding` no-ops when `SEARCH_QUERY_EMBEDDINGS=false`.
-
-  // Scoring strategy: composite score = structuredMatch * 0.60 + vecSim * 0.30 + quality * 0.10
-  //   when structured intent fields (specific_items, dietary_needs, etc.) are present.
-  // For simple keyword queries with no structured intent: vecSim * 0.90 + quality * 0.10.
-  //
-  // Post-RPC composite / salvage / gates: thresholds in `DEFAULT_SEARCH_RANK_CONFIG`
-  // (`lib/search/hybrid-vector-postprocess.ts`).
   const rankConfig = DEFAULT_SEARCH_RANK_CONFIG;
 
   const scoringIntent: ScoringIntent = {
@@ -428,12 +295,12 @@ export async function buildMinimalSearchResult(
     occasion:        options.intentOccasion,
   };
 
+  const hasLocation = !!(options.constrainTownId || options.nearTownIds?.length || options.constrainAreaId);
   const canUseVector =
     !!options.openaiKey && !options.constrainAreaId && options.pageBrowseWithoutQuery !== true;
   let hybridAttemptedPaths: SearchRetrievalPath[] = [];
 
   if (canUseVector) {
-    // Always embed the full user query — searchTermOverride is an ILIKE optimisation only.
     const searchText = options.normalizedQuery;
     const minimalApparelKw = isMinimalApparelRetailKeywordQuery(searchText);
     const isApparelShoppingQuery =
@@ -442,20 +309,15 @@ export async function buildMinimalSearchResult(
       options.precomputedQueryEmbedding !== undefined
         ? options.precomputedQueryEmbedding
         : await getSearchQueryEmbedding(searchText, options.openaiKey!);
+
     if (embedding) {
-      // Only restrict the RPC to a specific category when the user explicitly selected one via the
-      // URL sidebar. AI-inferred categories must NOT pre-filter p_category_id — that would exclude
-      // cross-category businesses that sell the requested item (e.g. a coffee shop selling donuts
-      // being excluded from a "donuts" restaurant-intent query). Composite scoring handles ranking.
       const vectorCategoryId = options.explicitCategoryId ?? null;
-      // Larger candidate pool lets composite scoring consider more semantically-adjacent
-      // businesses before applying the threshold — important when category matching is tight
-      // (e.g. querying "coffee shops" but some cafés are ranked 50-80 by raw cosine distance).
       const rpcMatchCount =
         minimalApparelKw && vectorCategoryId && isApparelShoppingQuery
           ? Math.max(from + pageSize * 8, 100)
           : Math.max(from + pageSize * 6, 60);
-      const { data: rpcRows, error } = await supabase.rpc("hybrid_search_businesses", {
+
+      const rpcParams: Record<string, unknown> = {
         query_text: searchText,
         query_embedding: `[${embedding.join(",")}]`,
         match_count: rpcMatchCount,
@@ -467,20 +329,24 @@ export async function buildMinimalSearchResult(
           typeof options.requiredIsServiceBusiness === "boolean"
             ? options.requiredIsServiceBusiness
             : null,
-      });
+      };
+
+      // Pass user coordinates when available for geo-distance scoring
+      if (options.userLat != null && options.userLng != null) {
+        rpcParams.p_user_lat = options.userLat;
+        rpcParams.p_user_lng = options.userLng;
+      }
+
+      const { data: rpcRows, error } = await supabase.rpc("hybrid_search_businesses", rpcParams);
+
       if (!error && rpcRows) {
         const allRows = rpcRows as Record<string, unknown>[];
 
-        // 0. Filter out accommodation / venue types — hotels, inns, event venues surface due to
-        //    location-token overlap ("Rosemary Beach Inn" matches "coffee in Rosemary Beach") but
-        //    are almost never the intended result for food/shopping/activity searches.
         const ACCOMMODATION_TYPES = /hotel|inn|resort|event venue|venue|convention/i;
         const nonAccommodationRows = options.intentCategory === "accommodations"
           ? allRows
           : allRows.filter((r) => !ACCOMMODATION_TYPES.test(String(r.business_type ?? "")));
 
-        // 1. Vector similarity floor: always when uncategorized RPC; also when shopping scope +
-        //    apparel/fashion query so weak gift-shop neighbors do not flood the list.
         const apparelScopedShopping =
           Boolean(vectorCategoryId) &&
           options.intentCategory === "shopping" &&
@@ -493,15 +359,7 @@ export async function buildMinimalSearchResult(
           ? nonAccommodationRows.filter((r) => ((r.vec_similarity as number) ?? 0) >= vecFloorForRows)
           : nonAccommodationRows;
 
-        // 2. Compute composite score and attach it; re-sort by composite DESC
-        type ScoredRow = Record<string, unknown> & { _composite: number };
-        const scored: ScoredRow[] = vecFloorFiltered.map((r) => ({
-          ...r,
-          _composite: computeComposite(r, scoringIntent, (r.vec_similarity as number) ?? 0),
-        }));
-        scored.sort((a, b) => b._composite - a._composite);
-
-        // 3. Apply per-cluster CTR learning boost (additive, capped, threshold-gated)
+        // Load CTR boosts before scoring
         const clusterKey = deriveQueryClusterKey({
           normalizedQuery: options.normalizedQuery,
           intentCategory: options.intentCategory ?? null,
@@ -509,13 +367,18 @@ export async function buildMinimalSearchResult(
           townIds: options.nearTownIds ?? (options.constrainTownId ? [options.constrainTownId] : []),
         });
         const boostMap = await loadLearningBoostMap(supabase, clusterKey);
-        if (boostMap.size > 0) {
-          for (const row of scored) {
-            const boost = boostMap.get(String(row.id));
-            if (boost) row._composite = Math.min(1, row._composite + boost);
-          }
-          scored.sort((a, b) => b._composite - a._composite);
-        }
+
+        // Score with full breakdown
+        const breakdowns = new Map<unknown, ScoreBreakdown>();
+        type ScoredRow = Record<string, unknown> & { _composite: number };
+        const scored: ScoredRow[] = vecFloorFiltered.map((r) => {
+          const vecSim = (r.vec_similarity as number) ?? 0;
+          const learningBoost = boostMap.get(String(r.id)) ?? 0;
+          const breakdown = computeCompositeWithBreakdown(r, scoringIntent, vecSim, learningBoost);
+          breakdowns.set(r.id, breakdown);
+          return { ...r, _composite: breakdown.composite };
+        });
+        scored.sort((a, b) => b._composite - a._composite);
 
         const postRankingBase: Omit<HybridVectorPostRankingInput, "relaxationTier"> = {
           scored,
@@ -542,10 +405,7 @@ export async function buildMinimalSearchResult(
           after_vec_floor: scored.length,
         };
 
-        let postRanked = applyHybridVectorPostRanking(
-          { ...postRankingBase, relaxationTier: "strict" },
-          rankConfig,
-        );
+        let postRanked = applyHybridVectorPostRanking({ ...postRankingBase, relaxationTier: "strict" }, rankConfig);
         metrics.after_post_rank_strict = postRanked.length;
 
         let filtered = filterRowsBySidebar(postRanked, options);
@@ -554,10 +414,7 @@ export async function buildMinimalSearchResult(
         if (filtered.length === 0 && scored.length > 0) {
           hybridAttemptedPaths = [...hybridAttemptedPaths, "hybrid_relaxed"];
           metrics.attempted_paths = hybridAttemptedPaths;
-          postRanked = applyHybridVectorPostRanking(
-            { ...postRankingBase, relaxationTier: "relaxed" },
-            rankConfig,
-          );
+          postRanked = applyHybridVectorPostRanking({ ...postRankingBase, relaxationTier: "relaxed" }, rankConfig);
           metrics.after_post_rank_relaxed = postRanked.length;
           filtered = filterRowsBySidebar(postRanked, options);
           metrics.after_sidebar_filters = filtered.length;
@@ -569,19 +426,25 @@ export async function buildMinimalSearchResult(
           return buildPayloadFromRankedRows(
             options,
             rows,
+            breakdowns,
             filtered.length,
             from,
             page,
             pageSize,
             metrics,
+            options.intentCategory ?? null,
+            hasLocation,
           );
         }
       }
-      // Fall through to ILIKE on RPC error
+      // Fall through to ILIKE on RPC error or empty
     }
   }
 
-  // --- ILIKE fallback path ---
+  // ---------------------------------------------------------------------------
+  // ILIKE fallback
+  // ---------------------------------------------------------------------------
+
   const ilikeOrClause = resolveIlikeOrClause({
     normalizedQuery: options.normalizedQuery,
     rawQuery: options.rawQuery,
@@ -601,9 +464,7 @@ export async function buildMinimalSearchResult(
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
-  if (ilikeOrClause) {
-    query = query.or(ilikeOrClause);
-  }
+  if (ilikeOrClause) query = query.or(ilikeOrClause);
 
   if (options.nearTownIds?.length) {
     query = query.in("town_id", options.nearTownIds);
@@ -652,7 +513,6 @@ export async function buildMinimalSearchResult(
   }
 
   if (options.constrainVibeTags?.length) {
-    // Postgres array containment: business must have all selected tags (@> operator)
     query = query.contains("intent_tags", options.constrainVibeTags);
   }
 
@@ -669,36 +529,41 @@ export async function buildMinimalSearchResult(
   }
 
   const { data: rows, error, count } = await query.range(from, to);
-
-  if (error) {
-    console.error("buildMinimalSearchResult", error);
-  }
+  if (error) console.error("buildMinimalSearchResult ILIKE", error);
 
   const list = (rows ?? []) as Record<string, unknown>[];
   const recs = list.map((row, i) => rowToRec(row, from + i + 1));
 
-  const ilikePath: SearchRetrievalPath = options.pageBrowseWithoutQuery
-    ? "browse_no_text"
-    : "ilike";
+  const ilikePath: SearchRetrievalPath = options.pageBrowseWithoutQuery ? "browse_no_text" : "ilike";
+  const ilikeMetrics: SearchRetrievalMetrics = {
+    path: ilikePath,
+    attempted_paths: [...hybridAttemptedPaths, ilikePath],
+    ilike_applied: Boolean(ilikeOrClause),
+    after_sidebar_filters: count ?? recs.length,
+  };
 
-  return attachRetrievalDiagnostics(
-    {
-      query: options.rawQuery,
-      query_hash: options.queryHash,
-      normalized_query: options.normalizedQuery,
-      summary: `Found ${count ?? recs.length} local picks for "${options.rawQuery}".`,
-      total_results: count ?? recs.length,
-      page,
-      page_size: pageSize,
-      recommendations: recs,
-      suggestions: [],
-      cached: false,
-    },
-    {
-      path: ilikePath,
-      attempted_paths: [...hybridAttemptedPaths, ilikePath],
-      ilike_applied: Boolean(ilikeOrClause),
-      after_sidebar_filters: count ?? recs.length,
-    },
+  const totalResults = count ?? recs.length;
+  const confidence = computeSearchConfidence(
+    ilikeMetrics,
+    0,
+    totalResults,
+    0.5,
+    Boolean(options.intentCategory),
+    hasLocation,
   );
+
+  return {
+    query: options.rawQuery,
+    query_hash: options.queryHash,
+    normalized_query: options.normalizedQuery,
+    summary: `Found ${totalResults} local picks for "${options.rawQuery}".`,
+    total_results: totalResults,
+    page,
+    page_size: pageSize,
+    recommendations: recs,
+    suggestions: [],
+    cached: false,
+    confidence,
+    _retrieval: ilikeMetrics,
+  };
 }

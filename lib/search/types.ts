@@ -1,3 +1,7 @@
+import type { ScoreBreakdown } from "@/lib/search/scoring";
+
+export type { ScoreBreakdown } from "@/lib/search/scoring";
+
 export type BusinessPayload = {
   id: string;
   name: string;
@@ -21,7 +25,7 @@ export type BusinessPayload = {
   has_physical_location?: boolean;
 };
 
-/** How results were retrieved after the degradation ladder (dev / sampled diagnostics). */
+/** How results were retrieved after the degradation ladder. */
 export type SearchRetrievalPath =
   | "hybrid_strict"
   | "hybrid_relaxed"
@@ -48,17 +52,24 @@ export type SearchDebugInfo = {
   nearTownIds: string[] | undefined;
   searchTermOverride: string | undefined;
   skipIlike: boolean;
-  /** True only for `/search` directory browse chips with no typed `q`. Typed NL clears this. */
   pageBrowseWithoutQuery: boolean;
   retrieval?: SearchRetrievalMetrics;
 };
 
-/** Effective filters resolved from AI intent + explicit URL params. Always populated in production. */
+/** Effective filters resolved from AI intent + explicit URL params. Always populated. */
 export type ResolvedFilters = {
-  town_ids: string[];        // town IDs constraining results (AI-detected or explicit)
-  category_slugs: string[];  // category slugs constraining results
-  vibe_tags: string[];       // intent tag slugs constraining results (kid_friendly, romantic, etc.)
+  town_ids: string[];
+  category_slugs: string[];
+  vibe_tags: string[];
   price_bucket: "inexpensive" | "moderate" | "expensive" | null;
+};
+
+/** Overall search confidence — always returned, not dev-only. */
+export type SearchConfidence = {
+  /** 0.0 (very low) – 1.0 (high). */
+  score: number;
+  /** Human-readable signals used to compute the score. */
+  low_confidence_reasons: string[];
 };
 
 export type SearchResultPayload = {
@@ -76,18 +87,20 @@ export type SearchResultPayload = {
     explanation: string;
     highlighted_tags: string[];
     business: BusinessPayload;
-    /** Dev-only: cosine similarity from vector search (0–1). */
+    /** Scoring breakdown — always present (not dev-only). */
+    score_breakdown?: ScoreBreakdown;
+    /** @deprecated Use score_breakdown.vec_similarity */
     _vec_similarity?: number;
-    /** Dev-only: composite score (structuredMatch + vecSim + quality). */
+    /** @deprecated Use score_breakdown.composite */
     _composite?: number;
   }>;
   suggestions?: string[];
   cached: boolean;
   cache_id?: string;
   resolved_filters?: ResolvedFilters;
+  /** Overall search confidence — always present. */
+  confidence?: SearchConfidence;
   _debug?: SearchDebugInfo;
-  /** Dev-only mirror of `_debug.retrieval` for quick inspection in API responses. */
   _retrieval?: SearchRetrievalMetrics;
-  /** Set when `SEARCH_LEARNING_ENABLED` — client sends back on result click. */
   impression_id?: string;
 };

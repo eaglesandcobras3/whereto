@@ -45,6 +45,11 @@ export async function runSearch(options: {
   constrainPriceBucket?: SearchPriceBucket | null;
   constrainVibeTags?: string[];
   sessionId?: string | null;
+  /** User device coordinates for geo-distance scoring (WGS-84 decimal degrees). */
+  userLat?: number | null;
+  userLng?: number | null;
+  /** Include full _debug info in the response (admin debugger only). */
+  includeDebug?: boolean;
 }): Promise<SearchResultPayload> {
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
@@ -91,7 +96,9 @@ export async function runSearch(options: {
     openaiKey: options.openaiKey,
     sessionId: options.sessionId,
     userId: options.userId,
+    userLat: options.userLat,
+    userLng: options.userLng,
   });
 
-  return executeSearchFromPlan(supabase, plan);
+  return executeSearchFromPlan(supabase, plan, options.includeDebug ?? false);
 }

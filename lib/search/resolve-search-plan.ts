@@ -103,6 +103,8 @@ export async function assembleSearchPlan(
     openaiKey: string | undefined;
     sessionId?: string | null;
     userId?: string | null;
+    userLat?: number | null;
+    userLng?: number | null;
   },
 ): Promise<SearchPlan> {
   const { rawQuery, normalizedQuery, queryHash, intent, explicit, prefetchVectorEmbedding } =
@@ -157,5 +159,7 @@ export async function assembleSearchPlan(
     openaiKey: input.openaiKey,
     sessionId: input.sessionId,
     userId: input.userId,
+    userLat: input.userLat,
+    userLng: input.userLng,
   };
 }

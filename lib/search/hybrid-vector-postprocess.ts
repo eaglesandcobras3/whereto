@@ -1,8 +1,23 @@
 /**
  * Post-RPC ranking for `hybrid_search_businesses` — composite cut, salvages, title rescue,
- * and intent-specific gates. Centralised here (Phase 2 refactor) so `recommendation-set-minimal`
+ * and intent-specific gates. Centralised here so `recommendation-set-minimal`
  * stays orchestration + ILIKE fallback; tune thresholds via {@link DEFAULT_SEARCH_RANK_CONFIG}.
+ *
+ * Text-matching utilities (stripDiacritics, variantsForFoodItemPhrase, itemMatchesTaggedRow)
+ * live in scoring.ts and are re-exported from here for backwards compatibility.
  */
+
+import {
+  stripDiacritics,
+  variantsForFoodItemPhrase,
+  itemMatchesTaggedRow,
+} from "@/lib/search/scoring";
+
+export {
+  stripDiacritics,
+  variantsForFoodItemPhrase,
+  itemMatchesTaggedRow,
+} from "@/lib/search/scoring";
 
 export type ScoredVecRow = Record<string, unknown> & { _composite: number };
 
@@ -49,46 +64,8 @@ export type HybridVectorPostRankingInput = {
 };
 
 // ---------------------------------------------------------------------------
-// Tag / dish helpers (also used by composite scoring via `itemMatchesTaggedRow` export)
+// Tag / dish helpers
 // ---------------------------------------------------------------------------
-
-function stripDiacritics(s: string): string {
-  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-}
-
-function variantsForFoodItemPhrase(item: string): string[] {
-  const raw = stripDiacritics(item.toLowerCase().trim());
-  const out = new Set<string>([raw]);
-  const addPhrase = (...phrases: string[]) => phrases.forEach((p) => out.add(p));
-
-  if (/\bhamburgers?\b|\bburgers?\b|\bcheeseburgers?\b/.test(raw)) {
-    addPhrase("hamburger", "hamburgers", "burger", "burgers", "cheeseburger", "cheeseburgers");
-  }
-
-  if (/\bsandwich(es)?\b|\bsubs?\b|\bpo[\s]?boy(s)?\b/i.test(raw)) {
-    addPhrase("sandwich", "sandwiches", "sub", "subs", "po boy", "po-boy");
-  }
-
-  if (/\bdonuts?\b|\bdoughnuts?\b/.test(raw)) {
-    addPhrase("donut", "donuts", "doughnut", "doughnuts");
-  }
-
-  return [...out];
-}
-
-/** Exported for `computeStructuredMatch` in `recommendation-set-minimal.ts`. */
-export function itemMatchesTaggedRow(intentItem: string, rowTagsLower: string[]): boolean {
-  const tagsNorm = rowTagsLower.map(stripDiacritics);
-  for (const v of variantsForFoodItemPhrase(intentItem)) {
-    if (
-      tagsNorm.some(
-        (t) => v.length >= 3 && (t.includes(v) || v.includes(t) || t.includes(v.replace(/\s+/g, ""))),
-      )
-    )
-      return true;
-  }
-  return false;
-}
 
 function escapeRegexToken(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -101,21 +78,17 @@ function haystackMatchesVariant(haystackLower: string, variant: string): boolean
   return new RegExp(`\\b${escapeRegexToken(v)}\\b`, "i").test(haystackLower);
 }
 
-function dishListingEvidence(row: Record<string, unknown>, intentItems: string[]): {
-  tagMatch: boolean;
-  textMatch: boolean;
-} {
+function dishListingEvidence(
+  row: Record<string, unknown>,
+  intentItems: string[],
+): { tagMatch: boolean; textMatch: boolean } {
   const rowItemsRaw = ((row.item_tags as string[] | null) ?? []).map((t) => String(t).trim());
   const rowItems = rowItemsRaw.map((t) => t.toLowerCase());
   const hasTypedMenu = rowItemsRaw.some((t) => t.length > 0);
-  const tagMatch =
-    hasTypedMenu && intentItems.some((item) => itemMatchesTaggedRow(item, rowItems));
+  const tagMatch = hasTypedMenu && intentItems.some((item) => itemMatchesTaggedRow(item, rowItems));
 
-  const slugText = String(row.slug ?? "")
-    .toLowerCase()
-    .replace(/-/g, " ");
+  const slugText = String(row.slug ?? "").toLowerCase().replace(/-/g, " ");
   const haystack = `${String(row.title ?? "").toLowerCase()} ${String(row.excerpt ?? "").toLowerCase()} ${slugText}`;
-
   const textMatch = intentItems.some((item) =>
     variantsForFoodItemPhrase(item).some((v) => haystackMatchesVariant(haystack, v)),
   );
@@ -131,8 +104,7 @@ function applyRestaurantDishSpecificityGate<
   const filtered = rows.filter((r) => {
     const { tagMatch, textMatch } = dishListingEvidence(r, intentItems);
     if (tagMatch || textMatch) return true;
-    const v = Number(r.vec_similarity ?? 0);
-    return v >= DISH_NO_EVIDENCE_MIN_VEC;
+    return Number(r.vec_similarity ?? 0) >= DISH_NO_EVIDENCE_MIN_VEC;
   });
   return filtered.length > 0 ? filtered : rows;
 }
@@ -153,9 +125,7 @@ const APPAREL_LISTING_SIGNAL =
   /\b(clothing|apparel|fashion|boutique|wear|swimwear|swim|resort\s*wear|dresses?|footwear|sandals|womenswear|menswear|beachwear|activewear|lingerie|jeans|boutiques)\b/i;
 
 function apparelRetailEvidence(row: Record<string, unknown>): boolean {
-  const slug = String(row.slug ?? "")
-    .toLowerCase()
-    .replace(/-/g, " ");
+  const slug = String(row.slug ?? "").toLowerCase().replace(/-/g, " ");
   const tags = ((row.item_tags as string[] | null) ?? []).join(" ").toLowerCase();
   const hay = `${String(row.title ?? "").toLowerCase()} ${String(row.excerpt ?? "").toLowerCase()} ${String(row.business_type ?? "").toLowerCase()} ${slug} ${tags}`;
   return APPAREL_LISTING_SIGNAL.test(hay);
@@ -170,8 +140,7 @@ function applyShoppingApparelRetailGate<
   relaxationTier: HybridRelaxationTier,
 ): T[] {
   if (intentCategory !== "shopping" || !isApparelFashionRetailQuery(normalizedQuery)) return rows;
-  const relaxed =
-    relaxationTier === "relaxed" && isMinimalApparelRetailKeywordQuery(normalizedQuery);
+  const relaxed = relaxationTier === "relaxed" && isMinimalApparelRetailKeywordQuery(normalizedQuery);
   const MIN_VEC_NO_APPAREL_SIGNAL = relaxed ? 0.24 : 0.32;
   const filtered = rows.filter((r) => {
     if (apparelRetailEvidence(r as Record<string, unknown>)) return true;
@@ -233,9 +202,7 @@ export function applyHybridVectorPostRanking(
     const items = intentSpecificItems!.map((i) => i.toLowerCase());
     queryWords = queryWords.filter((w) => {
       const lw = w.toLowerCase();
-      return items.some(
-        (it) => lw.includes(it) || it.includes(lw) || titleRescueMatchesTitle(lw, it),
-      );
+      return items.some((it) => lw.includes(it) || it.includes(lw) || titleRescueMatchesTitle(lw, it));
     });
   }
   if (queryWords.length > 0) {
@@ -272,39 +239,18 @@ export function applyHybridVectorPostRanking(
     if (compositeFiltered.length === 0 && scored.length > 0 && salvageDisabled) {
       compositeFiltered = scored
         .filter((r) => ((r.vec_similarity as number) ?? 0) >= structuredSalvageFloor)
-        .sort(
-          (a, b) =>
-            ((b.vec_similarity as number) ?? 0) - ((a.vec_similarity as number) ?? 0),
-        );
+        .sort((a, b) => ((b.vec_similarity as number) ?? 0) - ((a.vec_similarity as number) ?? 0));
     }
 
-    if (
-      compositeFiltered.length === 0 &&
-      scored.length > 0 &&
-      isApparelShoppingQuery &&
-      minimalApparelKw
-    ) {
+    if (compositeFiltered.length === 0 && scored.length > 0 && isApparelShoppingQuery && minimalApparelKw) {
       compositeFiltered = scored
         .filter((r) => ((r.vec_similarity as number) ?? 0) >= config.apparelVecFallbackFloor)
-        .sort(
-          (a, b) =>
-            ((b.vec_similarity as number) ?? 0) - ((a.vec_similarity as number) ?? 0),
-        );
+        .sort((a, b) => ((b.vec_similarity as number) ?? 0) - ((a.vec_similarity as number) ?? 0));
     }
   }
 
-  compositeFiltered = applyRestaurantDishSpecificityGate(
-    compositeFiltered,
-    intentCategory,
-    intentSpecificItems,
-  );
-
-  compositeFiltered = applyShoppingApparelRetailGate(
-    compositeFiltered,
-    intentCategory,
-    searchText,
-    relaxationTier,
-  );
+  compositeFiltered = applyRestaurantDishSpecificityGate(compositeFiltered, intentCategory, intentSpecificItems);
+  compositeFiltered = applyShoppingApparelRetailGate(compositeFiltered, intentCategory, searchText, relaxationTier);
 
   return compositeFiltered;
 }

@@ -75,6 +75,9 @@ export type SearchPlan = {
   openaiKey: string | undefined;
   sessionId?: string | null;
   userId?: string | null;
+  /** Optional user coordinates for geo-distance scoring (WGS-84 decimal degrees). */
+  userLat?: number | null;
+  userLng?: number | null;
 };
 
 export function priceLevelToBucket(level: number | null | undefined): SearchPriceBucket | null {

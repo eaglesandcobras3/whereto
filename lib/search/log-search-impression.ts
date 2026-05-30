@@ -34,6 +34,7 @@ export async function logSearchImpression(
   const top = result.recommendations.slice(0, 12);
   const top_business_ids = top.map((r) => r.business_id);
   const top_ranks = top.map((r) => r.rank);
+  const totalResults = result.total_results ?? result.recommendations.length;
 
   const row = {
     session_id: options?.sessionId ?? null,
@@ -52,7 +53,7 @@ export async function logSearchImpression(
           : [],
     retrieval_path: retrieval?.path ?? "ilike",
     attempted_paths: retrieval?.attempted_paths ?? [retrieval?.path ?? "ilike"],
-    total_results: result.total_results ?? result.recommendations.length,
+    total_results: totalResults,
     rpc_row_count: retrieval?.rpc_row_count ?? null,
     after_post_rank_strict: retrieval?.after_post_rank_strict ?? null,
     after_post_rank_relaxed: retrieval?.after_post_rank_relaxed ?? null,
@@ -73,5 +74,19 @@ export async function logSearchImpression(
     return null;
   }
 
-  return { impressionId: String(data.id), clusterKey };
+  const impressionId = String(data.id);
+
+  // Create zero-result quality issue when the same query returns nothing.
+  // The upsert_zero_result_issue function increments occurrence_count for repeat failures.
+  if (totalResults === 0 && plan.normalizedQuery.trim().length > 0) {
+    supabase.rpc("upsert_zero_result_issue", {
+      p_raw_query: plan.rawQuery,
+      p_normalized_query: plan.normalizedQuery,
+      p_impression_id: impressionId,
+    }).then(({ error: rpcErr }) => {
+      if (rpcErr) console.error("upsert_zero_result_issue", rpcErr.message);
+    });
+  }
+
+  return { impressionId, clusterKey };
 }

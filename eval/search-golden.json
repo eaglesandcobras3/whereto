@@ -514,5 +514,334 @@
     "expect": ["Amavida", "3rd Cup"],
     "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
     "note": "Business meeting — cafes with atmosphere, not ice cream or surf shops"
+  },
+
+
+  {
+    "query": "kayak rental paddleboard",
+    "intent": { "category": "activities", "specificItems": ["kayak", "paddleboard"] },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "note": "Water sport rentals — activities category only"
+  },
+  {
+    "query": "bike rental bicycle 30a",
+    "intent": { "category": "activities", "specificItems": ["bike rental", "bicycle"] },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Spa Pearl"],
+    "note": "Bike rental — activities only, no food or spa"
+  },
+  {
+    "query": "surf lessons beginner surfing",
+    "intent": { "category": "activities", "specificItems": ["surf lessons"] },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
+    "note": "Surf lessons — activities/water sports"
+  },
+  {
+    "query": "fishing charter boat trip",
+    "intent": { "category": "activities", "specificItems": ["fishing charter"] },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "note": "Fishing charter — marine activities"
+  },
+  {
+    "query": "yoga class studio 30a",
+    "intent": { "category": "activities", "specificItems": ["yoga"] },
+    "notExpect": ["Sundog", "Amavida", "Kilwins", "Faherty"],
+    "note": "Yoga studio — fitness/wellness activities"
+  },
+  {
+    "query": "golf course tee time",
+    "intent": { "category": "activities", "specificItems": ["golf"] },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
+    "note": "Golf — activities only"
+  },
+  {
+    "query": "pickleball tennis courts",
+    "intent": { "category": "activities" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "note": "Racket sports courts — activities"
+  },
+  {
+    "query": "snorkeling scuba diving",
+    "intent": { "category": "activities", "specificItems": ["snorkeling", "scuba"] },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "note": "Underwater activities — no food or shopping"
+  },
+  {
+    "query": "dolphin cruise boat tour",
+    "intent": { "category": "activities", "specificItems": ["boat tour", "dolphin"] },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Boat tour — marine/charter activities"
+  },
+  {
+    "query": "axe throwing escape room",
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
+    "note": "Entertainment activities — not typical food/retail"
+  },
+
+
+  {
+    "query": "private chef catering dinner",
+    "intent": { "category": "services" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
+    "note": "Private chef / catering service — services category, not restaurants"
+  },
+  {
+    "query": "photographer vacation photos",
+    "intent": { "category": "services" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
+    "note": "Vacation photographer — services category"
+  },
+  {
+    "query": "hair salon blowout styling",
+    "intent": { "category": "services" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
+    "note": "Hair salon — services/beauty category"
+  },
+  {
+    "query": "spa massage facial treatment",
+    "intent": { "category": "services", "atmosphereNeeds": ["relaxing"] },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
+    "note": "Spa services — not food or retail"
+  },
+  {
+    "query": "wedding venue ceremony location",
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
+    "note": "Wedding venue — event spaces and unique venues"
+  },
+  {
+    "query": "real estate agent home rental",
+    "intent": { "category": "services" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
+    "note": "Real estate services — no food or retail"
+  },
+
+
+  {
+    "query": "coffee",
+    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Pescado", "Lala Links"],
+    "note": "SMS: single word — coffee shops only, no restaurants or retail"
+  },
+  {
+    "query": "food",
+    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Lala Links", "Power Movement"],
+    "note": "SMS: single word food — restaurants only"
+  },
+  {
+    "query": "bar",
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "SMS: single word bar — bars only, no retail"
+  },
+  {
+    "query": "pizza 30a",
+    "intent": { "specificItems": ["pizza"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Amavida", "Kilwins", "Faherty"],
+    "note": "SMS: short pizza query with location suffix"
+  },
+  {
+    "query": "best coffee inlet beach",
+    "intent": { "category": "coffee_shops" },
+    "notExpect": ["Kilwins", "ONO Surf", "Faherty", "Power Movement"],
+    "note": "SMS-style location + category"
+  },
+  {
+    "query": "tacos seaside",
+    "intent": { "specificItems": ["tacos"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "SMS: food + location"
+  },
+
+
+  {
+    "query": "where can I get a really good steak",
+    "intent": { "specificItems": ["steak"], "category": "restaurants" },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "NL steak query — steakhouse or upscale restaurants"
+  },
+  {
+    "query": "best upscale dinner 30a special occasion",
+    "intent": { "occasion": "celebration", "mealPeriod": "dinner" },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Upscale dinner — fine dining venues only"
+  },
+  {
+    "query": "where should we go for our anniversary dinner",
+    "intent": { "occasion": "date_night", "mealPeriod": "dinner" },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "ONO Surf"],
+    "note": "Anniversary NL — upscale/romantic restaurants"
+  },
+  {
+    "query": "we need a place for a large group dinner",
+    "intent": { "mealPeriod": "dinner" },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Group dinner NL — restaurants with capacity"
+  },
+  {
+    "query": "I want to try something new for breakfast",
+    "intent": { "mealPeriod": "breakfast" },
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf"],
+    "note": "NL breakfast exploration — breakfast restaurants/cafes"
+  },
+  {
+    "query": "somewhere to take out-of-town guests",
+    "notExpect": ["Power Movement", "Spa Pearl"],
+    "note": "NL hosting query — iconic / notable 30A spots"
+  },
+  {
+    "query": "what are the most popular restaurants on 30a",
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf", "Lala Links"],
+    "note": "Discovery query — should return well-known restaurants"
+  },
+
+
+  {
+    "query": "restaurants in inlet beach",
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf", "Lala Links"],
+    "note": "Inlet Beach area — restaurants only, no retail or fitness"
+  },
+  {
+    "query": "coffee near watercolor",
+    "intent": { "category": "coffee_shops" },
+    "notExpect": ["ONO Surf", "Faherty", "Lala Links", "Power Movement"],
+    "note": "WaterColor-adjacent coffee — cafes only"
+  },
+  {
+    "query": "things to do in seagrove",
+    "notExpect": ["Power Movement", "Spa Pearl"],
+    "note": "Seagrove discovery — activities and dining"
+  },
+  {
+    "query": "rosemary beach shopping boutiques",
+    "intent": { "category": "shopping" },
+    "notExpect": ["Amavida", "Power Movement", "Kilwins"],
+    "note": "Rosemary Beach boutiques — shopping only"
+  },
+  {
+    "query": "santa rosa beach bars",
+    "intent": { "category": "bars" },
+    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "note": "Santa Rosa Beach bars — bars/nightlife only"
+  },
+  {
+    "query": "dune allen beach activities",
+    "intent": { "category": "activities" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "note": "Dune Allen area activities"
+  },
+
+
+  {
+    "query": "women's clothing beach resort wear",
+    "intent": { "category": "shopping" },
+    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
+    "note": "Women's clothing — shopping boutiques only"
+  },
+  {
+    "query": "swimwear bathing suit beach",
+    "intent": { "category": "shopping" },
+    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
+    "note": "Swimwear — clothing/retail only"
+  },
+  {
+    "query": "jewelry accessories gifts",
+    "intent": { "category": "shopping" },
+    "notExpect": ["Amavida", "Power Movement", "ONO Surf"],
+    "note": "Jewelry and accessories — shopping only"
+  },
+  {
+    "query": "art gallery local artist",
+    "intent": { "category": "shopping" },
+    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf"],
+    "note": "Art gallery — shopping/gallery category"
+  },
+
+
+  {
+    "query": "gluten free breakfast rosemary beach",
+    "intent": { "dietaryNeeds": ["gluten_free"], "mealPeriod": "breakfast" },
+    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
+    "note": "Gluten-free + location + meal period"
+  },
+  {
+    "query": "dairy free options 30a",
+    "intent": { "dietaryNeeds": ["dairy_free"] },
+    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
+    "note": "Dairy-free — food venues only"
+  },
+  {
+    "query": "kid friendly gluten free food",
+    "intent": { "dietaryNeeds": ["gluten_free"], "atmosphereNeeds": ["family_friendly"] },
+    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
+    "note": "Multi-filter: dietary + family"
+  },
+
+
+  {
+    "query": "what's better for coffee 3rd cup or amavida",
+    "expect": ["Amavida", "3rd Cup"],
+    "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
+    "note": "Direct comparison — both named businesses should appear"
+  },
+  {
+    "query": "cheapest lunch option near me",
+    "intent": { "mealPeriod": "lunch" },
+    "notExpect": ["Sundog", "Faherty", "Power Movement", "Spa Pearl"],
+    "note": "Budget lunch — food only, casual spots"
+  },
+
+
+  {
+    "query": "bachelorette party activities fun",
+    "notExpect": ["Sundog", "Power Movement"],
+    "note": "Bachelorette — fun social activities, bars, unique experiences"
+  },
+  {
+    "query": "girls trip shopping lunch cocktails",
+    "intent": { "occasion": "girls_trip" },
+    "notExpect": ["Power Movement", "ONO Surf"],
+    "note": "Girls trip combo query — shopping + dining"
+  },
+  {
+    "query": "beach vacation family fun 30a",
+    "notExpect": ["Disco", "Pescado", "Edward", "Spa Pearl"],
+    "note": "Family vacation — family-appropriate activities and dining"
+  },
+  {
+    "query": "honeymoon romantic getaway",
+    "intent": { "occasion": "date_night", "atmosphereNeeds": ["romantic"] },
+    "notExpect": ["Sundog", "Kilwins", "Power Movement", "ONO Surf"],
+    "note": "Honeymoon/romantic — upscale dining and spa"
+  },
+  {
+    "query": "things to do on a budget 30a free",
+    "notExpect": ["Pescado", "Edward", "Disco", "Spa Pearl"],
+    "note": "Budget travel — affordable activities and casual dining"
+  },
+
+
+  {
+    "query": "bookstore",
+    "expect": ["Sundog", "Hidden Lantern"],
+    "notExpect": ["Amavida", "Kilwins", "ONO Surf", "Faherty", "Power Movement"],
+    "note": "Single-word bookstore — only book shops, nothing else"
+  },
+  {
+    "query": "grocery store market",
+    "notExpect": ["Amavida", "Kilwins", "ONO Surf", "Faherty", "Power Movement"],
+    "note": "Grocery/market — food market stores only"
+  },
+  {
+    "query": "gym fitness workout",
+    "intent": { "category": "activities" },
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "note": "Fitness/gym — activities/health only"
+  },
+  {
+    "query": "florist flowers bouquet",
+    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
+    "note": "Florist — specialty service, no food or clothing"
+  },
+  {
+    "query": "children activities toddlers indoor play",
+    "notExpect": ["Disco", "Pescado", "Spa Pearl", "Vivo Spa", "Red Bar"],
+    "note": "Children's activities — no adult nightlife or fine dining"
   }
 ]
