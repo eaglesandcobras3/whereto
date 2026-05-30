@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import type { AskToolContext } from "@/lib/ask/tools";
 
 vi.mock("server-only", () => ({}));
 
@@ -45,7 +46,7 @@ describe("searchBusinesses tool", () => {
 
   it("returns only businesses from runSearch payload", async () => {
     const { createAskTools } = await import("@/lib/ask/tools");
-    const ctx = {
+    const ctx: AskToolContext = {
       conversationId: "conv-1",
       activeFilters: {},
       sources: [],

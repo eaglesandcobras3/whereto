@@ -171,7 +171,7 @@ async function main() {
   const unmatchedSlugs: string[] = [];
 
   for (const row of csv) {
-    const match = findExistingBusinessMatch(row, existing);
+    const match = findExistingBusinessMatch(row as unknown as import("@/lib/admin/match-existing-business").DedupeCandidate, existing);
     if (!match) {
       unmatched++;
       unmatchedSlugs.push(row.slug);
