@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getFeatureFlagsForEdgeRequest,
+  isAskEnabled,
   isAuthEnabled,
   isSavedEnabled,
 } from "@/lib/feature-flags-core";
@@ -31,6 +32,9 @@ export async function middleware(request: NextRequest) {
     !isSavedEnabled(flags) &&
     (pathname === "/saved" || pathname.startsWith("/saved/"))
   ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+  if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -82,6 +86,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public files (images, etc)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.well-known/workflow|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

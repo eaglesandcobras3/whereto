@@ -1,15 +1,18 @@
 /**
- * Import service businesses from docs/services.csv.
+ * Import service businesses from a services/vendor CSV (same columns).
  * Deep dedupe against existing listings (slug, core slug, name, phone, website).
  *
  * Usage:
- *   npx tsx scripts/import-services-csv.ts           # dry-run
- *   npx tsx scripts/import-services-csv.ts --report    # write docs/services-import-report.md
- *   npx tsx scripts/import-services-csv.ts --apply
+ *   npx tsx scripts/import-services-csv.ts                    # dry-run services.csv
+ *   npx tsx scripts/import-services-csv.ts --vendors          # dry-run vendors.csv
+ *   npx tsx scripts/import-services-csv.ts --file path.csv    # custom CSV
+ *   npx tsx scripts/import-services-csv.ts --vendors --apply
+ *   npx tsx scripts/import-services-csv.ts --vendors --apply --embeddings
  */
 
 import { randomUUID } from "node:crypto";
 import { readFileSync, writeFileSync } from "fs";
+import { spawnSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import {
@@ -20,8 +23,31 @@ import {
 
 dotenv.config({ path: ".env.local" });
 
-const CSV_PATH = "docs/services.csv";
+function resolveCsvPath(): { csvPath: string; reportPath: string; label: string } {
+  const fileIdx = process.argv.indexOf("--file");
+  if (fileIdx !== -1) {
+    const p = process.argv[fileIdx + 1];
+    if (!p) throw new Error("--file requires a path");
+    const base = p.replace(/^.*\//, "").replace(/\.csv$/, "");
+    return { csvPath: p, reportPath: `docs/${base}-import-report.md`, label: base };
+  }
+  if (process.argv.includes("--vendors")) {
+    return {
+      csvPath: "docs/vendors.csv",
+      reportPath: "docs/vendors-import-report.md",
+      label: "vendors",
+    };
+  }
+  return {
+    csvPath: "docs/services.csv",
+    reportPath: "docs/services-import-report.md",
+    label: "services",
+  };
+}
+
+const { csvPath: CSV_PATH, reportPath: REPORT_PATH, label: CSV_LABEL } = resolveCsvPath();
 const APPLY = process.argv.includes("--apply");
+const RUN_EMBEDDINGS = process.argv.includes("--embeddings");
 const REPORT = process.argv.includes("--report") || APPLY;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -171,7 +197,9 @@ function writeReport(
   }
 
   const lines = [
-    "# Services CSV import report",
+    `# ${CSV_LABEL} CSV import report`,
+    "",
+    `Source: \`${CSV_PATH}\``,
     "",
     `Generated: ${new Date().toISOString().slice(0, 10)}`,
     "",
@@ -216,8 +244,20 @@ function writeReport(
       `| ${row.title.replace(/\|/g, "\\|")} | ${row.slug} | ${(row.category || "").replace(/\|/g, "\\|")} | ${(row.business_type || "").replace(/\|/g, "\\|")} |`,
     );
   }
-  writeFileSync("docs/services-import-report.md", lines.join("\n") + "\n");
-  console.log("Wrote docs/services-import-report.md");
+  writeFileSync(REPORT_PATH, lines.join("\n") + "\n");
+  console.log(`Wrote ${REPORT_PATH}`);
+}
+
+function runEmbeddingsAfterImport() {
+  console.log("\nRunning embeddings for rows missing embedding_updated_at…");
+  const r = spawnSync("npx", ["tsx", "local/generate-embeddings.ts"], {
+    cwd: process.cwd(),
+    stdio: "inherit",
+    env: process.env,
+  });
+  if (r.status !== 0) {
+    throw new Error(`generate-embeddings exited with ${r.status ?? "unknown"}`);
+  }
 }
 
 async function main() {
@@ -368,7 +408,14 @@ async function main() {
     console.log(`  inserted ${inserted} / ${toInsert.length}`);
   }
 
-  console.log("\nDone. Run: npx tsx local/generate-embeddings.ts");
+  console.log(`\nInserted ${inserted} service listings (category: services).`);
+
+  if (RUN_EMBEDDINGS) {
+    runEmbeddingsAfterImport();
+  } else {
+    console.log("Run: npx tsx local/generate-embeddings.ts");
+    console.log("Or re-run with --embeddings to import + embed in one step.");
+  }
 }
 
 main().catch((e) => {

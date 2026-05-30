@@ -1,0 +1,25 @@
+{
+  "description": "Golden refinement turns for Ask Engine — run manually against staging with ask enabled.",
+  "cases": [
+    {
+      "id": "refine-dietary",
+      "turns": [
+        { "message": "seafood restaurants near Seaside", "expectTool": "searchBusinesses" },
+        { "message": "gluten free options", "expectIntent": "refine", "expectTool": "searchBusinesses" }
+      ]
+    },
+    {
+      "id": "pivot-coffee",
+      "turns": [
+        { "message": "dinner in Rosemary Beach", "expectTool": "searchBusinesses" },
+        { "message": "show coffee instead", "expectIntent": "pivot", "expectTool": "searchBusinesses" }
+      ]
+    },
+    {
+      "id": "town-guide",
+      "turns": [
+        { "message": "what is Grayton Beach like for families", "expectTool": "searchTowns" }
+      ]
+    }
+  ]
+}

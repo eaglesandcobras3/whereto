@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
+import { isAskEnabled } from "@/lib/feature-flags-core";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
@@ -253,13 +254,24 @@ export function HomePage({
                 <MsIcon name="menu_book" className="!text-xl" />
                 Explore the guide
               </Link>
-              <Link
-                href="/towns"
-                {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
-                className="inline-flex items-center justify-center rounded-full border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
-              >
-                Browse towns
-              </Link>
+              {isAskEnabled(featureFlags) ? (
+                <Link
+                  href="/ask"
+                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "ask_concierge" })}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                >
+                  <MsIcon name="chat" className="!text-xl" />
+                  Ask WhereTo30A
+                </Link>
+              ) : (
+                <Link
+                  href="/towns"
+                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
+                  className="inline-flex items-center justify-center rounded-full border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                >
+                  Browse towns
+                </Link>
+              )}
             </div>
           </div>
 

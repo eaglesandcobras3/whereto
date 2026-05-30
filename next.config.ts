@@ -1,3 +1,4 @@
+import { withWorkflow } from "workflow/next";
 import type { NextConfig } from "next";
 
 const supabaseHost = (() => {
@@ -45,4 +46,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withWorkflow(nextConfig);

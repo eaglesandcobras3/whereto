@@ -18,6 +18,8 @@ export const DEFAULT_FLAGS: Record<string, boolean> = {
   services_nav: true,
   /** When `true`, `/guide` shows the teal “Ready to Explore?” search CTA at the bottom. Default off. */
   guide_hub_search_callout: false,
+  /** AI concierge at `/ask` and `/api/ask/*`. Default off in production. */
+  ask: false,
 };
 
 function mergeFromJson(
@@ -59,8 +61,11 @@ export function parseFlagsFromEnv(): Record<string, boolean> {
     mergeFromJson({ ...DEFAULT_FLAGS }, process.env.FEATURE_FLAGS_JSON),
   );
   const envKeys = featureFlagsJsonKeys(process.env.FEATURE_FLAGS_JSON);
-  if (process.env.NODE_ENV === "development" && !envKeys?.has("search")) {
-    return { ...flags, search: true };
+  if (process.env.NODE_ENV === "development") {
+    const dev = { ...flags };
+    if (!envKeys?.has("search")) dev.search = true;
+    if (!envKeys?.has("ask")) dev.ask = true;
+    return dev;
   }
   return flags;
 }
@@ -93,4 +98,8 @@ export function isAuthEnabled(flags: Record<string, boolean>): boolean {
 export function isSavedEnabled(flags: Record<string, boolean>): boolean {
   if (flags.user_features === false) return false;
   return flags.saved !== false;
+}
+
+export function isAskEnabled(flags: Record<string, boolean>): boolean {
+  return flags.ask === true;
 }

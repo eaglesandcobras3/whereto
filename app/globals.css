@@ -80,6 +80,43 @@
   /* Sticky header offset (main bar, panels closed). Mobile matches compact Navbar; md+ matches taller bar. */
   --site-header-offset-mobile: 3.5rem;
   --site-header-offset: 4.75rem;
+
+  /* --------------------------------------------------------------------------
+     shadcn/ui semantic tokens (aligned with WhereTo30A — used by components/ui)
+     -------------------------------------------------------------------------- */
+  --radius: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-md: var(--radius-listing);
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+
+  --background: var(--color-background);
+  --foreground: var(--color-text-primary);
+
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text-primary);
+
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+
+  --secondary: var(--color-surface-secondary);
+  --secondary-foreground: var(--color-text-primary);
+
+  --muted: var(--color-surface-secondary);
+  --muted-foreground: var(--color-text-secondary);
+
+  --accent: var(--accent-soft);
+  --accent-foreground: var(--color-primary);
+
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+
+  --border: var(--color-border-strong);
+  --input: var(--color-border-strong);
+  --ring: var(--color-primary);
 }
 
 /* --------------------------------------------------------------------------
@@ -127,6 +164,23 @@
   --surface-elevated: var(--color-surface);
   --accent: var(--color-primary);
   --accent-soft: rgba(139, 210, 223, 0.12);
+
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-surface-secondary);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-surface-secondary);
+  --muted-foreground: var(--color-text-secondary);
+  --accent-foreground: var(--color-primary);
+  --destructive: #f87171;
+  --destructive-foreground: var(--color-text-primary);
+  --border: var(--color-border-strong);
+  --input: var(--color-border-strong);
+  --ring: var(--color-primary);
 }
 
 /* --------------------------------------------------------------------------
@@ -134,9 +188,29 @@
    Exports design/homepage.html color & font names as utilities.
    -------------------------------------------------------------------------- */
 @theme inline {
-  --color-background: var(--color-background);
-  --color-foreground: var(--color-text-primary);
-  --color-primary: var(--color-primary);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
   --color-on-primary: var(--color-on-primary);
   --color-primary-container: var(--color-primary-container);
   --color-on-primary-container: var(--color-on-primary-container);

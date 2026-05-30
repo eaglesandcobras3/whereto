@@ -5,6 +5,7 @@ import {
   FLAG_OVERRIDE_COOKIE,
   applyUserFeaturesLegacy,
   getFeatureFlagsForEdgeRequest,
+  isAskEnabled,
   isAuthEnabled,
   isSavedEnabled,
   mergeWithCookieOverride,
@@ -16,6 +17,7 @@ export {
   FLAG_OVERRIDE_COOKIE,
   applyUserFeaturesLegacy,
   getFeatureFlagsForEdgeRequest,
+  isAskEnabled,
   isAuthEnabled,
   isSavedEnabled,
 } from "@/lib/feature-flags-core";
@@ -51,6 +53,14 @@ export async function authApiBlocked(): Promise<NextResponse | null> {
 /** For route handlers: returns a 404 response when the saved-places feature is off. */
 export async function savedApiBlocked(): Promise<NextResponse | null> {
   if (!isSavedEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 response when the ask concierge feature is off. */
+export async function askApiBlocked(): Promise<NextResponse | null> {
+  if (!isAskEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;
