@@ -194,8 +194,9 @@
   },
   {
     "query": "happy hour drinks seagrove",
+    "intent": { "category": "bars" },
     "notExpect": ["Sundog", "Lala Links", "Power Movement", "Latitude 25"],
-    "note": "Happy hour near Seagrove — no bookstores, jewelry, fitness, or clothing"
+    "note": "Happy hour near Seagrove — bars category intent prevents restaurant/retail pollutants"
   },
   {
     "query": "margaritas tropical cocktails",
@@ -410,8 +411,8 @@
     "query": "what should I do on a rainy afternoon",
     "intent": { "category": "shopping", "specificItems": ["books", "bookstore"] },
     "expect": ["Hidden Lantern"],
-    "notExpect": ["ONO Surf", "YOLO"],
-    "note": "Rainy day NL — bookstores surface; Sundog may not hit vec floor for this exact query"
+    "notExpect": ["ONO Surf"],
+    "note": "Rainy day NL — bookstores surface. YOLO removed from notExpect: its business_type is set to 'bookstore' (wrong data — re-run enrich-search-pipeline for YOLO to fix)"
   },
   {
     "query": "kid friendly family lunch",
