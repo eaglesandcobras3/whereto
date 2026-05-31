@@ -14,6 +14,8 @@ import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcru
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { discoveryHref } from "@/lib/nav/discovery-links";
 
 export const revalidate = 3600;
 

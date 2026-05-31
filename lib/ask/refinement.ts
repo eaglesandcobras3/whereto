@@ -16,8 +16,10 @@ const FORM_PATTERNS =
 export function classifyRefinementIntent(
   message: string,
   hasActiveArtifact: boolean,
+  artifactType?: AskArtifact["type"],
 ): RefinementIntent {
   const m = message.trim().toLowerCase();
+  if (artifactType === "clarification_form") return "refine";
   if (FORM_PATTERNS.test(m)) {
     if (/list|add|submit/.test(m)) return "form";
     if (/wrong|incorrect|feedback|report/.test(m)) return "form";

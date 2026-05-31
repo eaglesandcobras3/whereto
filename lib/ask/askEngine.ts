@@ -13,7 +13,6 @@ import {
 } from "@/lib/ask/conversation-store";
 import { formatForWeb, formatForSms, compressArtifactForChannel } from "@/lib/ask/channelAdapters";
 import { generateArtifactSummary } from "@/lib/ask/shareArtifacts";
-import { followUpSuggested } from "@/lib/ask/confidence";
 import {
   classifyRefinementIntent,
   isSearchResultsArtifact,
@@ -28,6 +27,19 @@ import type {
   RefinementHistoryEntry,
   SearchContext,
 } from "@/lib/ask/types";
+import {
+  buildClarifyingQuestions,
+  composeClarificationSearchQuery,
+  detectCapabilityMismatch,
+  formatClarifyingQuestionsForPrompt,
+  isClarificationFollowUp,
+} from "@/lib/ask/clarifying-questions";
+import { deriveSessionHints } from "@/lib/ask/session-context";
+import {
+  getAmbientContext,
+  formatAmbientContextForPrompt,
+  type AmbientContext,
+} from "@/lib/ask/ambient-context";
 
 const MAX_TOOL_STEPS = 5;
 
@@ -70,10 +82,41 @@ function buildMessages(
   history: ModelMessage[],
   userMessage: string,
   refinementHint?: string,
+  clarifyingQuestions?: string,
+  capabilityDisclosure?: string,
+  ambientContext?: AmbientContext,
+  clarificationAnswered?: boolean,
 ): ModelMessage[] {
-  const systemExtra = refinementHint
-    ? `\n\nRefinement context: ${refinementHint}`
-    : "";
+  let systemExtra = refinementHint ? `\n\nRefinement context: ${refinementHint}` : "";
+
+  if (ambientContext) {
+    const contextText = formatAmbientContextForPrompt(ambientContext);
+    if (contextText) systemExtra += contextText;
+  }
+
+  if (capabilityDisclosure) {
+    systemExtra +=
+      `\n\nCAPABILITY DISCLOSURE REQUIRED — before searching or answering, disclose this limitation ` +
+      `in 1-2 warm sentences, then ask if the user still wants to search:\n${capabilityDisclosure}\n` +
+      `If they confirm (or imply yes), immediately call searchBusinesses. If they say no, don't search.`;
+  }
+
+  if (clarifyingQuestions) {
+    // The actual questions are shown as a UI form in the artifact panel.
+    // The LLM only needs to write a warm 1-sentence intro — DO NOT list the questions in text.
+    systemExtra +=
+      `\n\nCLARIFY MODE — A question form has been shown to the user in the results panel. ` +
+      `Write ONE warm sentence inviting them to fill it out (e.g. "Just a couple of quick questions to find you the best match!"). ` +
+      `Do NOT call searchBusinesses. Do NOT list the questions. Keep it to one sentence.`;
+  }
+
+  if (clarificationAnswered) {
+    systemExtra +=
+      `\n\nCLARIFICATION ANSWERED — The user submitted answers from the question form. ` +
+      `Their latest message combines those answers with their original request (see conversation history). ` +
+      `Call searchBusinesses NOW with the full combined intent. Do NOT ask more clarifying questions.`;
+  }
+
   return [
     { role: "system", content: ASK_SYSTEM_PROMPT + systemExtra },
     ...history,
@@ -97,7 +140,12 @@ async function prepareTurn(input: AskTurnInput) {
 
   const prior = await loadTurnContext(input.artifactSessionId);
   const hasArtifact = isSearchResultsArtifact(prior.existingArtifact);
-  const refinementIntent = classifyRefinementIntent(input.message, hasArtifact);
+  const clarificationFollowUp = isClarificationFollowUp(prior.existingArtifact);
+  const refinementIntent = classifyRefinementIntent(
+    input.message,
+    hasArtifact || clarificationFollowUp,
+    prior.existingArtifact?.type,
+  );
   const refined = refineSearch({
     message: input.message,
     intent: refinementIntent,
@@ -110,9 +158,46 @@ async function prepareTurn(input: AskTurnInput) {
   const history = await loadConversationMessages(conversationId);
   const historyForModel = history.slice(0, -1);
 
+  const isNewSearch =
+    (refinementIntent === "new_search" || (!input.artifactSessionId && !refined.forkSession)) &&
+    !clarificationFollowUp;
+
+  // Fetch ambient context (weather + season) in parallel with capability check.
+  // Cached 30 min — never throws.
+  const [ambientContext, capabilityMismatch] = await Promise.all([
+    getAmbientContext(),
+    Promise.resolve(isNewSearch ? detectCapabilityMismatch(input.message) : null),
+  ]);
+  const capabilityDisclosureText = capabilityMismatch?.disclosure ?? undefined;
+
+  const sessionHints = deriveSessionHints({
+    message: input.message,
+    activeFilters: prior.activeFilters,
+    searchContext: prior.searchContext,
+    refinementHistory: prior.refinementHistory,
+  });
+
+  // Clarifying questions: only when no capability issue is blocking us.
+  const clarifyQuestions =
+    !capabilityMismatch && isNewSearch && !clarificationFollowUp
+      ? buildClarifyingQuestions(input.message, isNewSearch, ambientContext, sessionHints)
+      : [];
+  const clarifyingQuestionsText = clarifyQuestions.length
+    ? formatClarifyingQuestionsForPrompt(clarifyQuestions)
+    : undefined;
+
+  const clarificationOriginalQuery =
+    clarificationFollowUp && prior.existingArtifact?.type === "clarification_form"
+      ? prior.existingArtifact.originalQuery
+      : undefined;
+  const combinedSearchMessage = clarificationOriginalQuery
+    ? composeClarificationSearchQuery(clarificationOriginalQuery, input.message)
+    : input.message;
+
   const toolCtx: AskToolContext = {
     conversationId,
     artifactSessionId: refined.forkSession ? undefined : input.artifactSessionId,
+    userMessage: combinedSearchMessage,
     ipKey: input.ipKey,
     userAgent: input.userAgent,
     activeFilters: refined.activeFilters,
@@ -120,7 +205,20 @@ async function prepareTurn(input: AskTurnInput) {
     confidenceScore: 0.5,
     handoffRequired: false,
     followUps: [],
+    ambientContext,
+    clarifyMode: clarifyQuestions.length > 0,
+    sessionHints,
   };
+
+  // Pre-populate the artifact with the clarification form.
+  // The LLM just needs to say a brief intro — the form does the actual work.
+  if (clarifyQuestions.length > 0) {
+    toolCtx.artifact = {
+      type: "clarification_form",
+      questions: clarifyQuestions,
+      originalQuery: input.message,
+    };
+  }
 
   return {
     conversationId,
@@ -129,6 +227,10 @@ async function prepareTurn(input: AskTurnInput) {
     refined,
     historyForModel,
     toolCtx,
+    clarifyingQuestionsText,
+    capabilityDisclosureText,
+    ambientContext,
+    clarificationFollowUp,
   };
 }
 
@@ -190,7 +292,7 @@ async function persistTurnResult(opts: {
 
 export async function runAskTurn(input: AskTurnInput): Promise<AskEngineResult> {
   const started = Date.now();
-  const { conversationId, refinementIntent, refined, historyForModel, toolCtx } =
+  const { conversationId, refinementIntent, refined, historyForModel, toolCtx, clarifyingQuestionsText, capabilityDisclosureText, ambientContext, clarificationFollowUp } =
     await prepareTurn(input);
 
   const tools = createAskTools(toolCtx);
@@ -198,7 +300,15 @@ export async function runAskTurn(input: AskTurnInput): Promise<AskEngineResult> 
 
   const { text } = await generateText({
     model,
-    messages: buildMessages(historyForModel, input.message, refined.refinementHint),
+    messages: buildMessages(
+      historyForModel,
+      input.message,
+      refined.refinementHint,
+      clarifyingQuestionsText,
+      capabilityDisclosureText,
+      ambientContext,
+      clarificationFollowUp,
+    ),
     tools,
     stopWhen: stepCountIs(MAX_TOOL_STEPS),
   });
@@ -220,22 +330,13 @@ export async function runAskTurn(input: AskTurnInput): Promise<AskEngineResult> 
     ? generateArtifactSummary(toolCtx.artifact)
     : undefined;
 
-  let followUps = toolCtx.followUps;
-  if (followUpSuggested(toolCtx.confidenceScore) && followUps.length === 0) {
-    followUps = [
-      "Want something more casual?",
-      "Narrow by town?",
-      "Any dietary needs?",
-    ];
-  }
-
   const result: AskEngineResult = {
     conversationId,
     artifactSessionId,
     message: assistantText,
     artifact: compressArtifactForChannel(toolCtx.artifact, input.channel),
     shareableArtifactSummary,
-    followUps: followUps.slice(0, 3),
+    followUps: toolCtx.followUps.slice(0, 3),
     confidenceScore: toolCtx.confidenceScore,
     handoffRequired: toolCtx.handoffRequired,
     sources: toolCtx.sources,
@@ -250,7 +351,7 @@ export async function runAskTurn(input: AskTurnInput): Promise<AskEngineResult> 
 
 export async function streamAskTurn(input: AskTurnInput) {
   const started = Date.now();
-  const { conversationId, refinementIntent, refined, historyForModel, toolCtx } =
+  const { conversationId, refinementIntent, refined, historyForModel, toolCtx, clarifyingQuestionsText, capabilityDisclosureText, ambientContext, clarificationFollowUp } =
     await prepareTurn(input);
 
   const tools = createAskTools(toolCtx);
@@ -260,7 +361,15 @@ export async function streamAskTurn(input: AskTurnInput) {
 
   const result = streamText({
     model,
-    messages: buildMessages(historyForModel, input.message, refined.refinementHint),
+    messages: buildMessages(
+      historyForModel,
+      input.message,
+      refined.refinementHint,
+      clarifyingQuestionsText,
+      capabilityDisclosureText,
+      ambientContext,
+      clarificationFollowUp,
+    ),
     tools,
     stopWhen: stepCountIs(MAX_TOOL_STEPS),
     onFinish: async ({ text }) => {

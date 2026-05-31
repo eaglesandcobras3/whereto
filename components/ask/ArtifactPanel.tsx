@@ -1,8 +1,9 @@
 "use client";
 
-import { Map } from "lucide-react";
+import { ChevronLeft, Map, X } from "lucide-react";
 import type { AskArtifact, ActiveFilters } from "@/lib/ask/types";
 import type { ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
+import { artifactShortLabel } from "@/components/ask/artifact-label";
 import { BusinessResultsArtifactView } from "@/components/ask/BusinessResultsArtifact";
 import { GuideResultsArtifactView } from "@/components/ask/GuideResultsArtifact";
 import { TownResultsArtifactView } from "@/components/ask/TownResultsArtifact";
@@ -10,10 +11,12 @@ import { AreaResultsArtifactView } from "@/components/ask/AreaResultsArtifact";
 import { BusinessSubmissionArtifact } from "@/components/ask/BusinessSubmissionArtifact";
 import { FeedbackArtifact } from "@/components/ask/FeedbackArtifact";
 import { HumanHandoffArtifact } from "@/components/ask/HumanHandoffArtifact";
+import { ClarificationFormArtifact } from "@/components/ask/ClarificationFormArtifact";
 import { ShareArtifactButton } from "@/components/ask/ShareArtifactButton";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 type Props = {
   artifact: AskArtifact | undefined;
@@ -26,6 +29,8 @@ type Props = {
   onClearFilters: () => void;
   onRefine: (message: string) => void;
   onStartOver: () => void;
+  onClose?: () => void;
+  className?: string;
 };
 
 export function ArtifactPanel({
@@ -39,16 +44,45 @@ export function ArtifactPanel({
   onClearFilters,
   onRefine,
   onStartOver,
+  onClose,
+  className,
 }: Props) {
   return (
-    <aside className="flex h-full min-h-0 flex-col bg-card">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <p className="text-section text-foreground">Results</p>
-        <Button variant="ghost" size="sm" type="button" onClick={onStartOver}>
-          Start over
-        </Button>
-      </div>
-      <ScrollArea className="flex-1 px-4 py-4">
+    <div className={cn("flex h-full min-h-0 flex-col bg-card", className)}>
+      {onClose ? (
+        <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            className="gap-1 px-2"
+            onClick={onClose}
+          >
+            <ChevronLeft className="size-4" aria-hidden />
+            Back
+          </Button>
+          <p className="min-w-0 flex-1 truncate text-center text-sm font-medium text-foreground">
+            {artifact ? artifactShortLabel(artifact) : "Results"}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            onClick={onClose}
+            aria-label="Close results"
+          >
+            <X className="size-4" aria-hidden />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <p className="text-section text-foreground">Results</p>
+          <Button variant="ghost" size="sm" type="button" onClick={onStartOver}>
+            Start over
+          </Button>
+        </div>
+      )}
+      <ScrollArea className="min-h-0 flex-1 px-4 py-4">
         {!artifact ? (
           <div className="flex h-full min-h-[240px] flex-col items-center justify-center text-center">
             <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
@@ -81,40 +115,32 @@ export function ArtifactPanel({
           <FeedbackArtifact artifact={artifact} />
         ) : artifact.type === "human_handoff_status" ? (
           <HumanHandoffArtifact artifact={artifact} />
+        ) : artifact.type === "clarification_form" ? (
+          <ClarificationFormArtifact artifact={artifact} onSubmit={onRefine} />
         ) : (
           <div className="space-y-2">
             <h2 className="text-section text-foreground">{artifact.title}</h2>
             <p className="text-sm text-muted-foreground">{artifact.message}</p>
-            {artifact.suggestions?.length ? (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {artifact.suggestions.map((s) => (
-                  <Button
-                    key={s}
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={() => onRefine(s)}
-                  >
-                    {s}
-                  </Button>
-                ))}
-              </div>
-            ) : null}
           </div>
         )}
       </ScrollArea>
       {artifact ? (
         <>
           <Separator />
-          <div className="px-4 py-3">
+          <div className="flex shrink-0 items-center gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <ShareArtifactButton
               artifact={artifact}
               artifactSessionId={artifactSessionId}
               shareableSummary={shareableSummary}
             />
+            {onClose ? (
+              <Button variant="outline" size="sm" type="button" className="ml-auto" onClick={onStartOver}>
+                Start over
+              </Button>
+            ) : null}
           </div>
         </>
       ) : null}
-    </aside>
+    </div>
   );
 }

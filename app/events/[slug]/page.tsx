@@ -8,6 +8,8 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { discoveryHref } from "@/lib/nav/discovery-links";
 
 export const revalidate = 1800;
 
@@ -150,7 +152,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventDetailPage({ params }: Props) {
   const { slug } = await params;
-  const event = await loadEvent(slug);
+  const [event, featureFlags] = await Promise.all([loadEvent(slug), getAllFeatureFlags()]);
   if (!event) notFound();
 
   const heroIsRemote =
@@ -165,7 +167,7 @@ export default async function EventDetailPage({ params }: Props) {
           Home
         </Link>
         <span className="material-symbols-outlined !text-xs opacity-40">chevron_right</span>
-        <Link href="/search?type=events" className="hover:text-[var(--color-primary)]">
+        <Link href={discoveryHref(featureFlags, { type: "events" })} className="hover:text-[var(--color-primary)]">
           Events
         </Link>
         <span className="material-symbols-outlined !text-xs opacity-40">chevron_right</span>

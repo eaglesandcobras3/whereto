@@ -32,13 +32,22 @@ async function loadTowns(): Promise<ListBusinessTownOption[]> {
   }));
 }
 
-export default async function AskPage() {
+export default async function AskPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string | string[] }>;
+}) {
   const flags = await getAllFeatureFlags();
   if (!isAskEnabled(flags)) {
     redirect("/");
   }
 
+  const sp = await searchParams;
+  const rawQ = sp.q;
+  const initialQuery =
+    typeof rawQ === "string" ? rawQ : Array.isArray(rawQ) ? rawQ[0] : undefined;
+
   const towns = await loadTowns();
 
-  return <AskSession towns={towns} />;
+  return <AskSession towns={towns} initialQuery={initialQuery} />;
 }

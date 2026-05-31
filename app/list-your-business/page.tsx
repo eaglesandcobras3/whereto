@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { ListBusinessForm, type ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
@@ -38,7 +39,7 @@ async function loadTowns(): Promise<ListBusinessTownOption[]> {
 }
 
 export default async function ListYourBusinessPage() {
-  const towns = await loadTowns();
+  const [towns, featureFlags] = await Promise.all([loadTowns(), getAllFeatureFlags()]);
 
   return (
     <SiteDocument
@@ -64,7 +65,7 @@ export default async function ListYourBusinessPage() {
           .
         </p>
       ) : (
-        <ListBusinessForm towns={towns} />
+        <ListBusinessForm towns={towns} featureFlags={featureFlags} />
       )}
     </SiteDocument>
   );

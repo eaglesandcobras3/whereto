@@ -16,6 +16,12 @@ describe("classifyRefinementIntent", () => {
     expect(classifyRefinementIntent("more casual please", true)).toBe("refine");
   });
 
+  it("treats clarification form answers as refine", () => {
+    expect(classifyRefinementIntent("Seaside • Ice cream", true, "clarification_form")).toBe(
+      "refine",
+    );
+  });
+
   it("pivots on explicit instead language", () => {
     expect(classifyRefinementIntent("show coffee instead", true)).toBe("pivot");
   });

@@ -1,20 +1,23 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
 import { ChatPanel } from "@/components/ask/ChatPanel";
 import { ArtifactPanel } from "@/components/ask/ArtifactPanel";
 import { SelectedBusinessDrawer } from "@/components/ask/SelectedBusinessDrawer";
-import { Separator } from "@/components/ui/separator";
+import type { AskSearchDebug } from "@/lib/ask/search-debug";
 import type { AskArtifact, ActiveFilters, BusinessResultCard } from "@/lib/ask/types";
 import { buildFeedbackFormArtifact } from "@/lib/ask/artifacts";
+import { isRichArtifact } from "@/lib/ask/artifact-rich-card";
+import { cn } from "@/lib/utils";
 
 type Props = {
   towns: ListBusinessTownOption[];
   sessionKey: string;
+  initialQuery?: string;
 };
 
-export function AskPageClient({ towns, sessionKey }: Props) {
+export function AskPageClient({ towns, sessionKey, initialQuery }: Props) {
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [artifactSessionId, setArtifactSessionId] = useState<string | undefined>();
   const [artifact, setArtifact] = useState<AskArtifact | undefined>();
@@ -22,6 +25,8 @@ export function AskPageClient({ towns, sessionKey }: Props) {
   const [selectedCard, setSelectedCard] = useState<BusinessResultCard | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [refineQueue, setRefineQueue] = useState<string | null>(null);
+  const [artifactPanelOpen, setArtifactPanelOpen] = useState(false);
+  const [searchDebug, setSearchDebug] = useState<AskSearchDebug | undefined>();
 
   const businessCards = useMemo(() => {
     if (artifact?.type !== "business_results") return [];
@@ -32,16 +37,38 @@ export function AskPageClient({ towns, sessionKey }: Props) {
     (data: {
       conversationId?: string;
       artifactSessionId?: string;
-      artifact?: AskArtifact;
+      artifact?: AskArtifact | null;
       shareableArtifactSummary?: string;
+      searchDebug?: AskSearchDebug | null;
     }) => {
       if (data.conversationId) setConversationId(data.conversationId);
       if (data.artifactSessionId) setArtifactSessionId(data.artifactSessionId);
-      if (data.artifact) setArtifact(data.artifact);
+      if ("artifact" in data) {
+        const next = data.artifact ?? undefined;
+        setArtifact(next);
+        if (next?.type === "clarification_form") {
+          setArtifactPanelOpen(true);
+        } else if (!next || !isRichArtifact(next)) {
+          setArtifactPanelOpen(false);
+        }
+      }
       if (data.shareableArtifactSummary) setShareableSummary(data.shareableArtifactSummary);
+      if ("searchDebug" in data) {
+        setSearchDebug(data.searchDebug ?? undefined);
+      }
     },
     [],
   );
+
+  const openArtifactPanel = useCallback(() => {
+    if (artifact && isRichArtifact(artifact)) {
+      setArtifactPanelOpen(true);
+    }
+  }, [artifact]);
+
+  const closeArtifactPanel = useCallback(() => {
+    setArtifactPanelOpen(false);
+  }, []);
 
   const onSelectBusiness = useCallback(
     (id: string) => {
@@ -57,12 +84,12 @@ export function AskPageClient({ towns, sessionKey }: Props) {
   const onReportBusiness = useCallback(
     (id: string) => {
       const card = businessCards.find((c) => c.id === id);
-      setArtifact(
-        buildFeedbackFormArtifact({
-          businessId: id,
-          listingContext: card ? `/business/${card.slug}` : undefined,
-        }),
-      );
+      const next = buildFeedbackFormArtifact({
+        businessId: id,
+        listingContext: card ? `/business/${card.slug}` : undefined,
+      });
+      setArtifact(next);
+      if (isRichArtifact(next)) setArtifactPanelOpen(true);
     },
     [businessCards],
   );
@@ -108,44 +135,69 @@ export function AskPageClient({ towns, sessionKey }: Props) {
     setArtifactSessionId(undefined);
     setShareableSummary(undefined);
     setSelectedCard(null);
+    setArtifactPanelOpen(false);
   }, []);
 
+  const panelCallbacks = {
+    artifact,
+    artifactSessionId,
+    shareableSummary,
+    towns,
+    onSelectBusiness,
+    onReportBusiness,
+    onRemoveFilter,
+    onClearFilters,
+    onRefine: (message: string) => {
+      setRefineQueue(message);
+      closeArtifactPanel();
+    },
+    onStartOver,
+  };
+
+  const showArtifactPanel = artifactPanelOpen && artifact && isRichArtifact(artifact);
+
   return (
-    <div className="flex h-[calc(100dvh-var(--site-header-offset))] min-h-[560px] flex-col bg-background lg:flex-row">
-      <section className="flex min-h-0 flex-1 flex-col lg:border-r lg:border-border">
-        <header className="border-b border-border px-4 py-4">
-          <h1 className="text-page-title text-foreground">Ask WhereTo30A</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Local discovery from verified listings only
-          </p>
-        </header>
-        <ChatPanel
-          sessionKey={sessionKey}
-          conversationId={conversationId}
-          artifactSessionId={artifactSessionId}
-          onMetaUpdate={handleMetaUpdate}
-          refineMessage={refineQueue}
-          onRefineConsumed={() => setRefineQueue(null)}
-        />
-      </section>
+    <div className="relative flex h-full min-h-0 flex-col bg-background lg:h-[calc(100dvh-var(--site-header-offset))]">
+      <ChatPanel
+        sessionKey={sessionKey}
+        conversationId={conversationId}
+        artifactSessionId={artifactSessionId}
+        onMetaUpdate={handleMetaUpdate}
+        refineMessage={refineQueue}
+        onRefineConsumed={() => setRefineQueue(null)}
+        artifact={artifact}
+        artifactPanelOpen={artifactPanelOpen}
+        onOpenArtifactPanel={openArtifactPanel}
+        searchDebug={searchDebug}
+        initialQuery={initialQuery}
+      />
 
-      <Separator orientation="horizontal" className="lg:hidden" />
-      <Separator orientation="vertical" className="hidden lg:block" />
-
-      <section className="min-h-[320px] flex-1 lg:max-w-[50%]">
-        <ArtifactPanel
-          artifact={artifact}
-          artifactSessionId={artifactSessionId}
-          shareableSummary={shareableSummary}
-          towns={towns}
-          onSelectBusiness={onSelectBusiness}
-          onReportBusiness={onReportBusiness}
-          onRemoveFilter={onRemoveFilter}
-          onClearFilters={onClearFilters}
-          onRefine={(message) => setRefineQueue(message)}
-          onStartOver={onStartOver}
-        />
-      </section>
+      {showArtifactPanel ? (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:bg-black/10"
+            aria-label="Close results"
+            onClick={closeArtifactPanel}
+          />
+          <div
+            className={cn(
+              "fixed z-50 flex min-h-0 flex-col bg-background shadow-premium-lg",
+              "inset-0 lg:inset-y-0 lg:left-auto lg:w-[min(100%,28rem)] lg:border-l lg:border-border xl:w-[32rem]",
+            )}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Recommendations"
+          >
+            <ArtifactPanel
+              {...panelCallbacks}
+              className="h-full"
+              onClose={closeArtifactPanel}
+              onStartOver={onStartOver}
+            />
+          </div>
+        </>
+      ) : null}
 
       <SelectedBusinessDrawer
         card={selectedCard}

@@ -1,5 +1,6 @@
-import { getAllFeatureFlags, isAskEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { hasPointOfInterestAreas, mergeBrowseNavItems } from "@/lib/data/browse-nav";
+import { applyDiscoveryBrowseNav } from "@/lib/nav/discovery-links";
 import { Navbar } from "./Navbar";
 
 type Props = {
@@ -20,12 +21,7 @@ export async function NavbarServer({ compact, showSearch }: Props) {
   if (featureFlags["services_nav"] !== true) {
     browseNavItems = browseNavItems.filter((item) => !item.activeTypes?.includes("services"));
   }
-  if (isAskEnabled(featureFlags)) {
-    browseNavItems = [
-      ...browseNavItems,
-      { label: "Ask", href: "/ask", activePaths: ["/ask"] },
-    ];
-  }
+  browseNavItems = applyDiscoveryBrowseNav(browseNavItems, featureFlags);
 
   return (
     <Navbar

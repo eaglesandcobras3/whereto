@@ -1,12 +1,12 @@
 import "server-only";
 import { tool } from "ai";
 import { z } from "zod";
-import { runSearch } from "@/lib/search/run-search";
-import { priceLevelToBucket } from "@/lib/search/search-plan";
+import { captureAskSearchDebug, type AskSearchDebug } from "@/lib/ask/search-debug";
+import { runAskBusinessSearch } from "@/lib/ask/run-ask-business-search";
+import { getAmbientContext, type AmbientContext } from "@/lib/ask/ambient-context";
 import {
   buildAreaResultsArtifact,
   buildBusinessResultsArtifact,
-  buildEmptyArtifact,
   buildFeedbackFormArtifact,
   buildGuideResultsArtifact,
   buildHandoffArtifact,
@@ -20,10 +20,13 @@ import { searchTownsInDb } from "@/lib/ask/search-towns";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { ActiveFilters, AskArtifact, SourceReference } from "@/lib/ask/types";
 import { startWorkflowByName } from "@/lib/ask/workflow-triggers";
+import type { SessionSearchHints } from "@/lib/ask/session-context";
 
 export type AskToolContext = {
   conversationId: string;
   artifactSessionId?: string;
+  /** Latest user message for this turn — enriches search query beyond tool args */
+  userMessage?: string;
   ipKey?: string;
   userAgent?: string | null;
   /** Updated by tools during a turn */
@@ -34,17 +37,52 @@ export type AskToolContext = {
   handoffRequired: boolean;
   followUps: string[];
   shareableSummary?: string;
+  /** Last searchBusinesses run — dev only */
+  searchDebug?: AskSearchDebug;
+  /** Search progress events from the last searchBusinesses call — surfaced to client. */
+  searchProgress?: Array<{ stage: string; message: string }>;
+  /** Search summary from multi-strategy run — given to LLM for grounded explanations. */
+  searchSummary?: string;
+  /** Ambient context fetched at turn start (shared with search). */
+  ambientContext?: AmbientContext;
+  /** When true, searchBusinesses is blocked until the user answers clarifying questions. */
+  clarifyMode?: boolean;
+  /** Prior-turn search memory (town, dietary, nearby follow-ups). */
+  sessionHints?: SessionSearchHints;
 };
 
 const searchBusinessesSchema = z.object({
-  query: z.string().describe("Natural language search query"),
-  town_or_area: z.string().optional(),
-  category: z.string().optional(),
-  tags: z.array(z.string()).optional(),
+  query: z
+    .string()
+    .describe(
+      "Full natural-language search from the user (not a one-word keyword). Include food/drink, vibe, and who it's for.",
+    ),
+  town_or_area: z
+    .string()
+    .optional()
+    .describe("Specific town only (e.g. Seaside, Rosemary Beach). Omit for corridor-wide 30A."),
+  category: z
+    .string()
+    .optional()
+    .describe(
+      "Optional: restaurants, coffee_shops, bars, shopping, activities, services. Coffee/cafes → coffee_shops.",
+    ),
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "Optional canonical vibe slugs only: kid_friendly, family_friendly, pet_friendly, casual, etc. Never use freeform words like treats or kids.",
+    ),
   dietary_tags: z.array(z.string()).optional(),
   atmosphere_tags: z.array(z.string()).optional(),
   occasion_tags: z.array(z.string()).optional(),
-  price_level: z.number().int().min(1).max(4).optional(),
+  price_level: z
+    .number()
+    .int()
+    .min(1)
+    .max(4)
+    .optional()
+    .describe("Only when the user explicitly asked about budget or price."),
   limit: z.number().int().min(1).max(12).optional(),
 });
 
@@ -89,58 +127,108 @@ export function createAskTools(ctx: AskToolContext) {
   return {
     searchBusinesses: tool({
       description:
-        "Search verified WhereTo30A business listings. Always use before recommending places.",
+        "Search verified WhereTo30A listings. Runs multiple internal search strategies from the user's question, merges and ranks results. Always use before recommending places. Read discovery.reviewNotes in the response to explain picks.",
       inputSchema: searchBusinessesSchema,
       execute: async (input) => {
+        if (ctx.clarifyMode) {
+          return {
+            blocked: true,
+            reason:
+              "Clarifying questions are shown in the results panel. Wait for the user to answer before searching.",
+          };
+        }
+
         const limit = Math.min(input.limit ?? 10, 12);
+        const supabase = getServiceSupabase();
+
+        const progressEvents: Array<{ stage: string; message: string }> = [];
+
+        // Ambient context: use the one already fetched at turn start if available,
+        // otherwise fetch now (will be cache-hit 99% of the time).
+        const ambient = ctx.ambientContext ?? await getAmbientContext();
+
+        const search = await runAskBusinessSearch({
+          input,
+          userMessage: ctx.userMessage,
+          model,
+          openaiKey,
+          limit,
+          resolveTownId: async (townOrArea) => {
+            const slug = townOrArea.toLowerCase().replace(/\s+/g, "-");
+            const { data: town } = await supabase
+              .from("towns")
+              .select("id")
+              .or(`slug.eq.${slug},title.ilike.${townOrArea}`)
+              .maybeSingle();
+            return town?.id ? String(town.id) : undefined;
+          },
+          onProgress: (event) => progressEvents.push(event),
+          ambient,
+          sessionHints: ctx.sessionHints,
+        });
+
+        ctx.searchProgress = progressEvents;
+        ctx.searchSummary = search.discovery.searchSummary;
+
+        const {
+          payload,
+          categorySlug,
+          constrainTownId,
+          rawQuery,
+          vibeTags,
+          priceLevel,
+          discovery,
+        } = search;
+
         const filters: ActiveFilters = {
-          query: input.query,
+          query: rawQuery,
           town_or_area: input.town_or_area,
-          category: input.category,
-          tags: input.tags,
+          category: categorySlug ?? undefined,
+          tags: vibeTags,
           dietary_tags: input.dietary_tags,
           atmosphere_tags: input.atmosphere_tags,
           occasion_tags: input.occasion_tags,
-          price_level: input.price_level,
+          price_level: priceLevel,
         };
         ctx.activeFilters = { ...ctx.activeFilters, ...filters };
-
-        let constrainTownId: string | undefined;
-        if (input.town_or_area) {
-          const supabase = getServiceSupabase();
-          const slug = input.town_or_area.toLowerCase().replace(/\s+/g, "-");
-          const { data: town } = await supabase
-            .from("towns")
-            .select("id")
-            .or(`slug.eq.${slug},title.ilike.${input.town_or_area}`)
-            .maybeSingle();
-          if (town?.id) constrainTownId = String(town.id);
-        }
-
-        const payload = await runSearch({
-          rawQuery: input.query,
-          model,
-          openaiKey,
-          pageSize: limit,
-          constrainTownId,
-          constrainCategorySlug: input.category ?? null,
-          constrainPriceBucket: priceLevelToBucket(input.price_level),
-          constrainVibeTags: input.tags,
-        });
 
         ctx.confidenceScore = confidenceFromSearchPayload(payload);
         ctx.handoffRequired = handoffRequired(ctx.confidenceScore);
         ctx.followUps = payload.suggestions ?? [];
 
-        if (!payload.recommendations.length) {
-          ctx.artifact = buildEmptyArtifact(
-            "No verified listings matched. Try broadening the area or category.",
-            payload.suggestions,
-          );
-          return { resultCount: 0, summary: payload.summary };
+        const resultCount = payload.recommendations.length;
+        ctx.searchDebug = captureAskSearchDebug({
+          toolInput: input,
+          categorySlug,
+          constrainTownId,
+          payload,
+          resultCount,
+          attempts: search.attempts,
+          effectiveQuery: rawQuery,
+          effectiveVibeTags: vibeTags,
+          discoveryThemes: discovery.themes,
+          reviewNotes: discovery.reviewNotes,
+        });
+
+        if (!resultCount) {
+          ctx.artifact = undefined;
+          ctx.followUps = [];
+          return {
+            resultCount: 0,
+            summary: payload.summary,
+            discovery: {
+              themes: discovery.themes,
+              strategiesUsed: discovery.strategyLabels,
+              reviewNotes: [],
+            },
+          };
         }
 
-        const artifact = buildBusinessResultsArtifact(payload, ctx.activeFilters);
+        const artifact = buildBusinessResultsArtifact(
+          payload,
+          ctx.activeFilters,
+          `Picks for your search`,
+        );
         ctx.artifact = artifact;
         ctx.sources = payload.recommendations.map((r) => ({
           type: "business" as const,
@@ -150,9 +238,17 @@ export function createAskTools(ctx: AskToolContext) {
         }));
 
         return {
-          resultCount: payload.recommendations.length,
+          resultCount,
           summary: payload.summary,
           confidence: ctx.confidenceScore,
+          discovery: {
+            themes: discovery.themes,
+            strategiesUsed: discovery.strategyLabels,
+            searchSummary: discovery.searchSummary,
+            reviewNotes: discovery.reviewNotes,
+            guidance:
+              "Explain using reviewNotes only. Mention why each place fits using the 'why' field — do not invent details. If the search was expanded (searchSummary mentions 'expanded'), briefly note that you widened the search to find options.",
+          },
         };
       },
     }),
@@ -164,7 +260,8 @@ export function createAskTools(ctx: AskToolContext) {
       execute: async (input) => {
         const guides = await searchGuidesInDb({ query: input.query, limit: input.limit });
         if (!guides.length) {
-          ctx.artifact = buildEmptyArtifact("No guides matched that query.");
+          ctx.artifact = undefined;
+          ctx.followUps = [];
           return { resultCount: 0 };
         }
         ctx.artifact = buildGuideResultsArtifact(
@@ -190,7 +287,8 @@ export function createAskTools(ctx: AskToolContext) {
       execute: async (input) => {
         const towns = await searchTownsInDb({ query: input.query, limit: input.limit });
         if (!towns.length) {
-          ctx.artifact = buildEmptyArtifact("No town guides matched that query.");
+          ctx.artifact = undefined;
+          ctx.followUps = [];
           return { resultCount: 0 };
         }
         ctx.artifact = buildTownResultsArtifact(
@@ -216,7 +314,8 @@ export function createAskTools(ctx: AskToolContext) {
       execute: async (input) => {
         const areas = await searchAreasInDb({ query: input.query, limit: input.limit });
         if (!areas.length) {
-          ctx.artifact = buildEmptyArtifact("No area guides matched that query.");
+          ctx.artifact = undefined;
+          ctx.followUps = [];
           return { resultCount: 0 };
         }
         ctx.artifact = buildAreaResultsArtifact(

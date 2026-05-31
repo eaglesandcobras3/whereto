@@ -3,8 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SearchBar } from "@/components/discovery/SearchBar";
+import { discoveryHref } from "@/lib/nav/discovery-links";
 
-export function BusinessesHubSearch() {
+type Props = {
+  featureFlags?: Record<string, boolean>;
+};
+
+export function BusinessesHubSearch({ featureFlags = {} }: Props) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,7 +18,7 @@ export function BusinessesHubSearch() {
     e.preventDefault();
     const query = q.trim() || "best local businesses on 30A";
     setLoading(true);
-    router.push(`/search?q=${encodeURIComponent(query)}&type=businesses`);
+    router.push(discoveryHref(featureFlags, { q: query, type: "businesses" }));
     setLoading(false);
   }
 

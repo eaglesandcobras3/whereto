@@ -13,6 +13,7 @@ import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import type { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { BusinessesHubSearch } from "@/components/BusinessesHubSearch";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
@@ -160,6 +161,7 @@ async function getTowns(): Promise<TownRow[]> {
 }
 
 export default async function BusinessesPage() {
+  const featureFlags = await getAllFeatureFlags();
   const [categories, featuredBusinesses, towns] = await Promise.all([
     getCategories(),
     getDailyFeaturedBusinesses(),
@@ -181,7 +183,7 @@ export default async function BusinessesPage() {
               along Scenic 30A — search by name or describe what you&apos;re looking for.
             </p>
             <div className="mx-auto max-w-2xl pt-2">
-              <BusinessesHubSearch />
+              <BusinessesHubSearch featureFlags={featureFlags} />
             </div>
           </header>
         </div>

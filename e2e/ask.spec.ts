@@ -42,15 +42,15 @@ test.describe("Ask concierge", () => {
     await context.close();
   });
 
-  test("loads /ask with starter prompts when ask is on", async ({ context, page }) => {
+  test("loads /ask when ask is on", async ({ context, page }) => {
     await context.addCookies([askCookie(true)]);
     await page.goto("/ask");
     await expect(page.getByRole("heading", { name: /Ask WhereTo30A/i })).toBeVisible();
-    await expect(page.getByText(/list my business/i)).toBeVisible();
-    await expect(page.getByText(/Your recommendations appear here/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/Ask about 30A/i)).toBeVisible();
+    await expect(page.getByText(/Your recommendations appear here/i)).not.toBeVisible();
   });
 
-  test("starter prompt updates artifact panel (mocked stream)", async ({ context, page }) => {
+  test("chat message opens artifact panel via rich card (mocked stream)", async ({ context, page }) => {
     await context.addCookies([askCookie(true)]);
 
     await page.route("**/api/ask", async (route) => {
@@ -87,9 +87,14 @@ test.describe("Ask concierge", () => {
     });
 
     await page.goto("/ask");
-    await page.getByRole("button", { name: /gluten-free breakfast/i }).click();
-    await expect(page.getByText("Test Cafe")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Coffee near Seaside")).toBeVisible();
+    await page.getByPlaceholder(/Ask about 30A/i).fill("Best gluten-free breakfast on 30A?");
+    await page.getByRole("button", { name: /Send message/i }).click();
+    await expect(page.getByRole("button", { name: /Open Coffee near Seaside/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByRole("button", { name: /Open Coffee near Seaside/i }).click();
+    await expect(page.getByText("Test Cafe")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Coffee near Seaside" })).toBeVisible();
   });
 
   test("share API returns slug (mocked)", async ({ context, page }) => {

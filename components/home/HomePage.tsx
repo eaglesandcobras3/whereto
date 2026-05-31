@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { isAskEnabled } from "@/lib/feature-flags-core";
+import { discoveryHref } from "@/lib/nav/discovery-links";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
@@ -477,7 +478,7 @@ export function HomePage({
 
             <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
               <Link
-                href="/search?q=beachfront+stays+30A"
+                href={discoveryHref(featureFlags, { q: "beachfront stays 30A" })}
                 className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
               >
                 <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">
@@ -506,7 +507,7 @@ export function HomePage({
               </Link>
 
               <Link
-                href="/search?q=seaside+dining+30A"
+                href={discoveryHref(featureFlags, { q: "seaside dining 30A" })}
                 className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
               >
                 <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">
@@ -535,7 +536,7 @@ export function HomePage({
               </Link>
 
               <Link
-                href="/search?q=family+friendly+30A"
+                href={discoveryHref(featureFlags, { q: "family friendly 30A" })}
                 className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
               >
                 <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">
@@ -564,7 +565,7 @@ export function HomePage({
               </Link>
 
               <Link
-                href="/search?q=town+tours+30A"
+                href={discoveryHref(featureFlags, { q: "town tours 30A" })}
                 className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
               >
                 <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">

@@ -8,6 +8,11 @@ import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
 import { isAuthEnabled } from "@/lib/feature-flags-core";
+import {
+  discoveryHref,
+  showNavbarAskUi,
+  showNavbarSearchUi,
+} from "@/lib/nav/discovery-links";
 import type { User } from "@supabase/supabase-js";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { gaEvent } from "@/lib/analytics/gtag-runner";
@@ -54,7 +59,10 @@ export function Navbar({
   const [isNavSearchPending, startNavSearchTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isHome = pathname === "/";
-  const showSearchInNavbar = featureFlags["search"] !== false && (showSearch || !isHome);
+  const showSearchInNavbar =
+    showNavbarSearchUi(featureFlags) && (showSearch || !isHome);
+  const showAskInNavbar = showNavbarAskUi(featureFlags);
+  const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/");
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
   const showAuth = isAuthEnabled(featureFlags);
@@ -109,13 +117,7 @@ export function Navbar({
         source: pathname === "/" ? "home_nav_overlap" : "navbar",
       });
       startNavSearchTransition(() => {
-        if (pathname === "/search" && typeof window !== "undefined") {
-          const nextParams = new URLSearchParams(window.location.search);
-          nextParams.set("q", term);
-          router.push(`/search?${nextParams.toString()}`);
-        } else {
-          router.push(`/search?q=${encodeURIComponent(term)}`);
-        }
+        router.push(discoveryHref(featureFlags, { q: term }));
       });
     }
     setSearchOpen(false);
@@ -168,6 +170,21 @@ export function Navbar({
         </Suspense>
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
+          {showAskInNavbar ? (
+            <Link
+              href="/ask"
+              {...gaClickProps({ event: "nav_click", category: "header", label: "ask_concierge" })}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-premium-fast ${
+                isAskRoute
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                  : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]"
+              }`}
+              title="Ask WhereTo30A"
+            >
+              <span className="material-symbols-outlined text-[22px]">chat</span>
+            </Link>
+          ) : null}
+
           {showSearchInNavbar ? (
             <button
               type="button"

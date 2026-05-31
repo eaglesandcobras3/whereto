@@ -159,6 +159,20 @@ export type EmptyStateArtifact = {
   suggestions?: string[];
 };
 
+export type ClarificationQuestion = {
+  id: string;
+  question: string;
+  /** Shown as tap-to-select chips. If absent, renders a text input. */
+  suggestions?: string[];
+};
+
+export type ClarificationFormArtifact = {
+  type: "clarification_form";
+  questions: ClarificationQuestion[];
+  /** Original user message before clarifying questions were shown. */
+  originalQuery: string;
+};
+
 export type AskArtifact =
   | BusinessResultsArtifact
   | GuideResultsArtifact
@@ -167,7 +181,8 @@ export type AskArtifact =
   | BusinessSubmissionFormArtifact
   | FeedbackFormArtifact
   | HumanHandoffStatusArtifact
-  | EmptyStateArtifact;
+  | EmptyStateArtifact
+  | ClarificationFormArtifact;
 
 export type AskEngineResult = {
   conversationId: string;

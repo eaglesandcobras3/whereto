@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SearchIntent } from "@/lib/intent-schema";
+import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 import { loadTownScope } from "@/lib/search/location-scope";
 import { inferRestaurantsSlugWhenSpecificItemsNeedCategory } from "@/lib/search/query-specific-hints";
 import {
@@ -23,15 +24,28 @@ export async function resolveCategoryFilter(
   let resolvedCategorySlugs: string[] = [];
 
   if (explicit.explicitCategorySlugs.length) {
-    const { data: cats } = await supabase
-      .from("business_categories")
-      .select("id, slug")
-      .in("slug", explicit.explicitCategorySlugs);
-    filterCategoryIds = (cats ?? []).map((c) => (c as { id: string }).id);
-    resolvedCategorySlugs = explicit.explicitCategorySlugs;
-    if (filterCategoryIds.length === 1) explicitCategoryId = filterCategoryIds[0];
-  } else if (!explicit.pageBrowseWithoutQuery) {
-    const slugToResolve = intent.category ?? inferredRestaurantSlug;
+    const normalizedSlugs = [
+      ...new Set(
+        explicit.explicitCategorySlugs
+          .map((s) => normalizeBusinessCategorySlug(s))
+          .filter((s): s is string => Boolean(s)),
+      ),
+    ];
+    if (normalizedSlugs.length) {
+      const { data: cats } = await supabase
+        .from("business_categories")
+        .select("id, slug")
+        .in("slug", normalizedSlugs);
+      filterCategoryIds = (cats ?? []).map((c) => (c as { id: string }).id);
+      resolvedCategorySlugs = (cats ?? []).map((c) => String((c as { slug?: string }).slug));
+      if (filterCategoryIds.length === 1) explicitCategoryId = filterCategoryIds[0];
+    }
+  }
+
+  if (!filterCategoryIds.length && !explicit.pageBrowseWithoutQuery) {
+    const slugToResolve = normalizeBusinessCategorySlug(
+      intent.category ?? inferredRestaurantSlug,
+    );
     if (slugToResolve) {
       const { data: cat } = await supabase
         .from("business_categories")

@@ -101,13 +101,16 @@ export async function POST(request: NextRequest) {
         data: {
           conversationId,
           artifactSessionId,
-          artifact: toolCtx.artifact,
+          artifact: toolCtx.artifact ?? null,
           followUps: toolCtx.followUps.slice(0, 3),
           confidenceScore: toolCtx.confidenceScore,
           handoffRequired: toolCtx.handoffRequired,
           shareableArtifactSummary: toolCtx.artifact
             ? generateArtifactSummary(toolCtx.artifact)
             : undefined,
+          searchDebug: toolCtx.searchDebug ?? null,
+          searchProgress: toolCtx.searchProgress ?? null,
+          searchSummary: toolCtx.searchSummary ?? null,
         },
       } as never);
     },

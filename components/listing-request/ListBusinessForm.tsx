@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { discoveryHref } from "@/lib/nav/discovery-links";
 
 export type ListBusinessTownOption = { id: string; title: string; slug: string };
 
@@ -9,13 +10,14 @@ type SimilarHit = { id: string; title: string; slug: string; similarity: number 
 
 type Props = {
   towns: ListBusinessTownOption[];
+  featureFlags?: Record<string, boolean>;
 };
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
 const labelClass = "block text-sm font-medium text-[var(--color-text-secondary)]";
 
-export function ListBusinessForm({ towns }: Props) {
+export function ListBusinessForm({ towns, featureFlags = {} }: Props) {
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -103,8 +105,8 @@ export function ListBusinessForm({ towns }: Props) {
             </h2>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
               If one of these is your business, mention it when we follow up — or{" "}
-              <Link href="/search" className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline">
-                open search
+              <Link href={discoveryHref(featureFlags)} className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline">
+                {featureFlags.ask ? "open Ask" : "open search"}
               </Link>{" "}
               to find the listing.
             </p>

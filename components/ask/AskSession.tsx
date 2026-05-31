@@ -9,9 +9,10 @@ const SESSION_STORAGE_KEY = "w30a_ask_session";
 
 type Props = {
   towns: ListBusinessTownOption[];
+  initialQuery?: string;
 };
 
-export function AskSession({ towns }: Props) {
+export function AskSession({ towns, initialQuery }: Props) {
   const [sessionKey, setSessionKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,5 +33,9 @@ export function AskSession({ towns }: Props) {
     );
   }
 
-  return <AskPageClient towns={towns} sessionKey={sessionKey} />;
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <AskPageClient towns={towns} sessionKey={sessionKey} initialQuery={initialQuery} />
+    </div>
+  );
 }
