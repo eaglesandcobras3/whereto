@@ -27,6 +27,8 @@ export type ClarifyingQuestion = {
   question: string;
   /** Shown as tap-to-select chips. If absent, renders a text input. */
   suggestions?: string[];
+  /** Show chips AND a free-text input below (e.g. for location). */
+  allowFreeText?: boolean;
   /** Which search param each answer maps to (for LLM and compile step). */
   paramHint?: string;
 };
@@ -48,6 +50,7 @@ const CATEGORY_PATTERNS = {
   activities:   /\b(kayak|paddleboard|surf|bike|bikes?|rental|golf|yoga|tour|boat|fishing|tennis|pickleball|snorkel|charter|class|lesson|workout)\b/i,
   shopping:     /\b(shop|shopping|boutique|store|buy|gift|souvenir|clothes|clothing|jewelry|apparel)\b/i,
   services:     /\b(photographer|photography|chef|catering|spa|massage|salon|hair|nails|wedding|planner|therapist)\b/i,
+  desserts:     /\b(ice cream|gelato|frozen\s+yogurt|froyo|donut|doughnut|bakery|pastry|cookie|cupcake|brownie|sundae|soft\s+serve)\b/i,
 } as const;
 
 type CategorySlug = keyof typeof CATEGORY_PATTERNS;
@@ -191,8 +194,9 @@ const Q_FOOD_TYPE: ClarifyingQuestion = {
 // Location: maps to town_or_area
 const Q_LOCATION: ClarifyingQuestion = {
   id: "location",
-  question: "Are you near a specific town, or open to all of 30A?",
-  suggestions: ["Seaside / WaterColor", "Rosemary Beach", "Grayton / Santa Rosa", "Alys Beach", "Anywhere on 30A"],
+  question: "Where on 30A?",
+  suggestions: ["Seaside / WaterColor", "Rosemary Beach", "Grayton / Santa Rosa", "Alys Beach", "Anywhere"],
+  allowFreeText: true,
   paramHint: "town_or_area",
 };
 
@@ -425,6 +429,12 @@ export function buildClarifyingQuestions(
     if (!hasKnownLocation) push(Q_LOCATION);
   }
 
+  // ── Desserts / sweet treats ──
+  else if (cat === "desserts") {
+    if (!hasKnownLocation) push(Q_LOCATION);
+    // No Q_GROUP — dessert spots are universally family-friendly
+  }
+
   // ── Shopping ──
   else if (cat === "shopping") {
     push(Q_SHOPPING_TYPE);
@@ -440,7 +450,7 @@ export function buildClarifyingQuestions(
   // ── No clear category detected ──
   else {
     if (!hasKnownLocation) push(Q_LOCATION);
-    if (!ctx.hasGroup) push(Q_GROUP);
+    // Q_GROUP omitted — without a category context, adults vs kids doesn't change results
   }
 
   return questions.slice(0, 4);

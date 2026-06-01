@@ -164,6 +164,8 @@ export type ClarificationQuestion = {
   question: string;
   /** Shown as tap-to-select chips. If absent, renders a text input. */
   suggestions?: string[];
+  /** Show chips AND a free-text input below (e.g. for location). */
+  allowFreeText?: boolean;
 };
 
 export type ClarificationFormArtifact = {
