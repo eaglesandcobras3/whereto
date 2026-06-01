@@ -1,14 +1,18 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
+import { guideHeroGradient } from "@/lib/guides/hero-gradient";
+import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
 
@@ -125,6 +129,10 @@ export default async function GuidePage({ params }: Props) {
 
   if (!page) notFound();
 
+  const bodyMarkdown = stripLeadingH1MatchingTitle(page.body_markdown || "", page.title).trim();
+  const hasHeroImage = Boolean(page.og_image_url);
+  const lead = page.seo_description?.trim() || null;
+
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Guides", url: "/guides" },
@@ -143,7 +151,65 @@ export default async function GuidePage({ params }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
-        <article className="mx-auto max-w-6xl px-5 py-12 sm:px-6 md:py-16 lg:px-8">
+        {!hasHeroImage ? (
+          <div className="coastal-hero border-b border-[var(--color-border)]">
+            <div className="mx-auto max-w-3xl px-5 py-10 sm:px-6 md:py-14">
+              <nav
+                className="mb-8 flex flex-wrap items-center gap-2 text-sm"
+                aria-label="Breadcrumb"
+              >
+                <Link
+                  href="/"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_breadcrumb",
+                    label: "home",
+                  })}
+                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
+                >
+                  Home
+                </Link>
+                <span className="text-[var(--color-border-strong)]" aria-hidden>
+                  /
+                </span>
+                <Link
+                  href="/guides"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_breadcrumb",
+                    label: "guides",
+                  })}
+                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
+                >
+                  Guides
+                </Link>
+              </nav>
+
+              <div
+                className={`mb-8 h-1 w-full rounded-full bg-gradient-to-r ${guideHeroGradient(slug)}`}
+                aria-hidden
+              />
+
+              <header>
+                <p className="text-eyebrow mb-3">Guide</p>
+                <h1 className="text-editorial-headline text-3xl text-[var(--color-text-primary)] sm:text-4xl lg:text-[2.75rem]">
+                  {page.title}
+                </h1>
+                {lead ? (
+                  <p className="prose-editorial mt-6 max-w-2xl text-lg text-[var(--color-text-secondary)]">
+                    {lead}
+                  </p>
+                ) : null}
+              </header>
+            </div>
+          </div>
+        ) : null}
+
+        <article
+          className={`mx-auto max-w-3xl px-5 sm:px-6 ${
+            hasHeroImage ? "py-10 md:py-14" : "pb-14 pt-10 md:pb-16 md:pt-12"
+          }`}
+        >
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
@@ -152,57 +218,65 @@ export default async function GuidePage({ params }: Props) {
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(guideSchema) }}
           />
-          {/* Hero Section - Full width image with overlay */}
-          {page.og_image_url && (
-            <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-2xl sm:aspect-[21/9] lg:aspect-[3/1]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={page.og_image_url}
-                alt={page.title}
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-              {/* Title overlay on image */}
-              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-12">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-                  Guide
-                </p>
-                <h1 className="text-editorial-headline max-w-4xl text-3xl text-white sm:text-4xl lg:text-5xl">
-                  {page.title}
-                </h1>
+          {hasHeroImage ? (
+            <>
+              <nav
+                className="mb-8 flex flex-wrap items-center gap-2 text-sm"
+                aria-label="Breadcrumb"
+              >
+                <Link
+                  href="/"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_breadcrumb",
+                    label: "home",
+                  })}
+                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
+                >
+                  Home
+                </Link>
+                <span className="text-[var(--color-border-strong)]" aria-hidden>
+                  /
+                </span>
+                <Link
+                  href="/guides"
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "guide_breadcrumb",
+                    label: "guides",
+                  })}
+                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
+                >
+                  Guides
+                </Link>
+              </nav>
+
+              <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl sm:aspect-[2/1]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={page.og_image_url!}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                  <p className="text-eyebrow mb-2 text-white/85">Guide</p>
+                  <h1 className="text-editorial-headline text-2xl text-white sm:text-3xl lg:text-4xl">
+                    {page.title}
+                  </h1>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Article Header (when no image) */}
-          {!page.og_image_url && (
-            <header className="mb-10 max-w-3xl">
-              <p className="text-eyebrow mb-3">Guide</p>
-              <h1 className="text-editorial-headline text-4xl text-[var(--color-text-primary)] sm:text-5xl">
-                {page.title}
-              </h1>
-              {page.seo_description && (
-                <p className="mt-5 text-xl leading-relaxed text-[var(--color-text-secondary)]">
-                  {page.seo_description}
+              {lead ? (
+                <p className="prose-editorial mb-10 text-lg text-[var(--color-text-secondary)]">
+                  {lead}
                 </p>
-              )}
-            </header>
-          )}
+              ) : null}
+            </>
+          ) : null}
 
-          {/* Lead paragraph if we have image */}
-          {page.og_image_url && page.seo_description && (
-            <div className="mb-10 max-w-3xl">
-              <p className="prose-editorial text-xl leading-relaxed text-[var(--color-text-secondary)]">
-                {page.seo_description}
-              </p>
-            </div>
-          )}
-
-          {/* Article Body - Rich prose styling */}
-          <div className="prose prose-lg prose-zinc mx-auto max-w-3xl prose-headings:font-headline prose-headings:tracking-tight prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6 prose-h3:text-xl prose-p:leading-relaxed prose-a:text-[var(--color-primary)] prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-blockquote:border-l-[var(--color-primary)] prose-blockquote:bg-[var(--color-surface-container-low)] prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic">
-            <MarkdownRenderer content={page.body_markdown || ""} />
-          </div>
+          <MarkdownRenderer content={bodyMarkdown} />
         </article>
       </main>
     </div>

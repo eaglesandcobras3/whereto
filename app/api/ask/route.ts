@@ -80,7 +80,10 @@ export async function POST(request: NextRequest) {
 
   const sessionKey = sessionKeyFromRequest(request, parsed.data.sessionKey);
 
-  const { conversationId, toolCtx, result, artifactSessionId } = await streamAskTurn({
+  // Keep the full result object — don't destructure artifactSessionId here.
+  // The getter returns resolvedSessionId which is only finalized inside onFinish
+  // (a db write). We read it after awaiting `ready` to ensure correct ordering.
+  const streamResult = await streamAskTurn({
     channel: "web",
     message: userMessage,
     conversationId: parsed.data.conversationId,
@@ -90,17 +93,21 @@ export async function POST(request: NextRequest) {
     ipKey,
     userAgent: request.headers.get("user-agent"),
   });
+  const { conversationId, toolCtx, result, ready } = streamResult;
 
   const stream = createUIMessageStream<UIMessage>({
     execute: async ({ writer }) => {
       writer.merge(result.toUIMessageStream());
       await result.text;
+      // Explicitly wait for onFinish (and its db write) to complete before
+      // reading the session ID — result.text may resolve before onFinish does.
+      await ready;
 
       writer.write({
         type: "data-ask-artifact",
         data: {
           conversationId,
-          artifactSessionId,
+          artifactSessionId: streamResult.artifactSessionId,
           artifact: toolCtx.artifact ?? null,
           followUps: toolCtx.followUps.slice(0, 3),
           confidenceScore: toolCtx.confidenceScore,

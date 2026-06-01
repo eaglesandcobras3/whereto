@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import type { Metadata } from "next";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { getSiteUrl } from "@/lib/site-url";
@@ -67,8 +68,12 @@ async function getOtherGuides() {
   const { data } = await supabase
     .from("guides")
     .select("title, slug, guide_type")
-    .is("primary_town_id", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .is("archived_at", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .neq("slug", HUB_FEATURED_GUIDE_SLUG)
+    .neq("guide_type", "town")
+    .order("title")
     .limit(10);
   return data ?? [];
 }

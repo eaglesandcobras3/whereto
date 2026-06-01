@@ -7,6 +7,7 @@
  * Usage:
  *   npm run content:compile          # Process NEW/UPDATED files only
  *   npm run content:compile -- --all # Force recompile all published files
+ *   npm run content:compile:guides # Sync all markdown guides to public.guides
  *
  * Workflow:
  *   1. Create/edit .md file, set status: NEW or status: UPDATED
@@ -14,8 +15,10 @@
  *   3. File syncs to DB, status changes to "published"
  */
 
+import { randomUUID } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import { stripLeadingH1MatchingTitle } from "../lib/markdown/strip-duplicate-title";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const matter = require("gray-matter");
 import { createClient } from "@supabase/supabase-js";
@@ -77,6 +80,7 @@ interface FrontmatterData {
   latitude?: number;
   longitude?: number;
   guide_type?: string;
+  reading_time?: number;
   season?: string;
   price_range?: string;
   hours?: string;
@@ -203,14 +207,14 @@ async function getRegionId(regionSlug: string | undefined): Promise<number | nul
 /**
  * Get town ID by slug
  */
-async function getTownId(townSlug: string | undefined): Promise<number | null> {
+async function getTownId(townSlug: string | undefined): Promise<string | null> {
   if (!townSlug) return null;
   const { data } = await supabase
     .from("towns")
     .select("id")
     .eq("slug", townSlug)
     .single();
-  return data?.id || null;
+  return data?.id ? String(data.id) : null;
 }
 
 /**
@@ -390,51 +394,87 @@ async function syncArea(parsed: ParsedContent): Promise<boolean> {
 }
 
 /**
- * Sync GUIDE to guides table
+ * Link a guide to its primary town via guide_towns (slug has no unique constraint on guides).
+ */
+async function syncGuideTowns(guideId: string, townId: string | null): Promise<boolean> {
+  const { error: delErr } = await supabase.from("guide_towns").delete().eq("guide_id", guideId);
+  if (delErr) {
+    console.error(`  ✗ guide_towns cleanup failed: ${delErr.message}`);
+    return false;
+  }
+  if (!townId) return true;
+
+  const { error: insErr } = await supabase.from("guide_towns").insert({
+    id: randomUUID(),
+    guide_id: guideId,
+    town_id: townId,
+  });
+  if (insErr) {
+    console.error(`  ✗ guide_towns insert failed: ${insErr.message}`);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Sync GUIDE to public.guides (Directus-shaped schema; no pages table).
  */
 async function syncGuide(parsed: ParsedContent): Promise<boolean> {
   const { frontmatter, content } = parsed;
   const townId = await getTownId(frontmatter.town);
+  const bodyContent = stripLeadingH1MatchingTitle(content, frontmatter.title).trim();
 
-  // First sync to guides table
-  const { error: guideError } = await supabase.from("guides").upsert(
-    {
-      slug: frontmatter.slug,
-      title: frontmatter.title,
-      guide_type: frontmatter.guide_type || "editorial",
-      primary_town_id: townId,
-      season: frontmatter.season,
-      featured: frontmatter.featured || false,
-    },
-    { onConflict: "slug" }
-  );
+  const payload = {
+    slug: frontmatter.slug,
+    title: frontmatter.title,
+    content: bodyContent,
+    seo_title: frontmatter.seo_title ?? null,
+    seo_description: frontmatter.seo_description ?? null,
+    excerpt: frontmatter.seo_description ?? null,
+    guide_type: frontmatter.guide_type || "editorial",
+    featured: frontmatter.featured ?? false,
+    reading_time_minutes: frontmatter.reading_time ?? null,
+    search_keywords: frontmatter.seo_keywords?.length
+      ? frontmatter.seo_keywords.join(", ")
+      : null,
+    status: "published",
+    is_hidden_from_search: null,
+  };
 
-  if (guideError) {
-    console.error(`  ✗ Guide sync failed: ${guideError.message}`);
+  const { data: existing, error: lookupErr } = await supabase
+    .from("guides")
+    .select("id")
+    .eq("slug", frontmatter.slug)
+    .maybeSingle();
+
+  if (lookupErr) {
+    console.error(`  ✗ Guide lookup failed: ${lookupErr.message}`);
     return false;
   }
 
-  // Also sync to pages table for rendering
-  const { error: pageError } = await supabase.from("pages").upsert(
-    {
-      slug: frontmatter.slug,
-      page_type: "guide",
-      title: frontmatter.title,
-      body_markdown: content,
-      seo_title: frontmatter.seo_title,
-      seo_description: frontmatter.seo_description,
-      seo_keywords: frontmatter.seo_keywords,
-      status: "published",
-    },
-    { onConflict: "slug" }
-  );
+  let guideId: string;
 
-  if (pageError) {
-    console.error(`  ✗ Page sync failed: ${pageError.message}`);
-    return false;
+  if (existing?.id) {
+    guideId = String(existing.id);
+    const { error: updateErr } = await supabase.from("guides").update(payload).eq("id", guideId);
+    if (updateErr) {
+      console.error(`  ✗ Guide update failed: ${updateErr.message}`);
+      return false;
+    }
+  } else {
+    guideId = randomUUID();
+    const { error: insertErr } = await supabase.from("guides").insert({
+      id: guideId,
+      ...payload,
+      published_at: new Date().toISOString(),
+    });
+    if (insertErr) {
+      console.error(`  ✗ Guide insert failed: ${insertErr.message}`);
+      return false;
+    }
   }
 
-  return true;
+  return syncGuideTowns(guideId, townId);
 }
 
 /**
@@ -558,12 +598,22 @@ async function syncToDatabase(parsed: ParsedContent): Promise<boolean> {
 /**
  * Main compiler
  */
+function isGuideMarkdown(parsed: ParsedContent): boolean {
+  const t = parsed.frontmatter.type;
+  return t === "guide" || t === "seasonal";
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const forceAll = args.includes("--all");
+  const guidesOnly = args.includes("--guides-only");
 
   console.log("\n🚀 Content Compiler\n" + "=".repeat(40));
-  console.log(forceAll ? "Mode: Full recompile (--all)\n" : "Mode: NEW/UPDATED only\n");
+  if (guidesOnly) {
+    console.log(forceAll ? "Mode: All guides (--guides-only --all)\n" : "Mode: NEW/UPDATED guides only\n");
+  } else {
+    console.log(forceAll ? "Mode: Full recompile (--all)\n" : "Mode: NEW/UPDATED only\n");
+  }
 
   const stats: CompileStats = { scanned: 0, processed: 0, skipped: 0, errors: [] };
 
@@ -581,6 +631,12 @@ async function main() {
 
     const { frontmatter } = parsed;
     const fileName = path.basename(filePath);
+
+    if (guidesOnly && !isGuideMarkdown(parsed)) {
+      stats.skipped++;
+      continue;
+    }
+
     const shouldProcess = forceAll || PROCESS_STATUSES.includes(frontmatter.status);
 
     if (!shouldProcess) {

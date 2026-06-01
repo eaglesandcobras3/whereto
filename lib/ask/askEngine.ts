@@ -180,7 +180,7 @@ async function prepareTurn(input: AskTurnInput) {
   // Clarifying questions: only when no capability issue is blocking us.
   const clarifyQuestions =
     !capabilityMismatch && isNewSearch && !clarificationFollowUp
-      ? buildClarifyingQuestions(input.message, isNewSearch, ambientContext, sessionHints)
+      ? await buildClarifyingQuestions(input.message, isNewSearch, ambientContext, sessionHints)
       : [];
   const clarifyingQuestionsText = clarifyQuestions.length
     ? formatClarifyingQuestionsForPrompt(clarifyQuestions)
@@ -362,6 +362,12 @@ export async function streamAskTurn(input: AskTurnInput) {
 
   let resolvedSessionId = refined.forkSession ? undefined : input.artifactSessionId;
 
+  // Resolves after onFinish completes (including the db write).
+  // The API route must await this before reading artifactSessionId — the getter
+  // returns the correct value only after persistTurnResult has run.
+  let _onFinishDone!: () => void;
+  const ready = new Promise<void>((resolve) => { _onFinishDone = resolve; });
+
   const result = streamText({
     model,
     messages: buildMessages(
@@ -389,6 +395,7 @@ export async function streamAskTurn(input: AskTurnInput) {
         assistantText,
         started,
       });
+      _onFinishDone();
     },
   });
 
@@ -397,6 +404,7 @@ export async function streamAskTurn(input: AskTurnInput) {
     toolCtx,
     refined,
     result,
+    ready,
     get artifactSessionId() {
       return resolvedSessionId;
     },

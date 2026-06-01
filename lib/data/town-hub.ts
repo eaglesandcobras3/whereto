@@ -206,26 +206,11 @@ function mapTownGuideRow(row: Record<string, unknown>): TownGuideCard {
   };
 }
 
-/** Guides linked via `primary_town_id` and/or `guide_towns` for this town. */
+/** Guides linked via `guide_towns` for this town. */
 export async function getGuidesForTown(townId: string): Promise<TownGuideCard[]> {
   const supabase = getServiceSupabase();
 
-  const [linksRes, primaryRes] = await Promise.all([
-    supabase.from("guide_towns").select("guide_id").eq("town_id", townId),
-    supabase
-      .from("guides_view")
-      .select(GUIDE_VIEW_SELECT)
-      .eq("primary_town_id", townId)
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN),
-  ]);
-
-  const guideById = new Map<string, TownGuideCard>();
-  for (const row of primaryRes.data ?? []) {
-    const g = mapTownGuideRow(row as Record<string, unknown>);
-    guideById.set(g.id, g);
-  }
+  const linksRes = await supabase.from("guide_towns").select("guide_id").eq("town_id", townId);
 
   const linkedIds = [
     ...new Set(
@@ -235,19 +220,20 @@ export async function getGuidesForTown(townId: string): Promise<TownGuideCard[]>
     ),
   ];
 
-  if (linkedIds.length > 0) {
-    const { data: linked } = await supabase
-      .from("guides_view")
-      .select(GUIDE_VIEW_SELECT)
-      .in("id", linkedIds)
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN);
+  if (linkedIds.length === 0) return [];
 
-    for (const row of linked ?? []) {
-      const g = mapTownGuideRow(row as Record<string, unknown>);
-      if (!guideById.has(g.id)) guideById.set(g.id, g);
-    }
+  const { data: linked } = await supabase
+    .from("guides_view")
+    .select(GUIDE_VIEW_SELECT)
+    .in("id", linkedIds)
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN);
+
+  const guideById = new Map<string, TownGuideCard>();
+  for (const row of linked ?? []) {
+    const g = mapTownGuideRow(row as Record<string, unknown>);
+    guideById.set(g.id, g);
   }
 
   return [...guideById.values()].sort((a, b) => a.title.localeCompare(b.title));

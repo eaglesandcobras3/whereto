@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "content:compile": "npx tsx scripts/content-compiler.ts",
+    "content:compile:guides": "npx tsx scripts/content-compiler.ts -- --guides-only --all",
     "content:migrate:db": "npx tsx scripts/migrate-pages-to-content-entries.ts",
     "supabase:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
     "supabase:types:remote": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > lib/supabase/database.types.ts",

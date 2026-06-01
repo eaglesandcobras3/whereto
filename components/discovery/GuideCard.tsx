@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { guideHeroGradient } from "@/lib/guides/hero-gradient";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
@@ -8,20 +9,6 @@ type Props = {
   imageUrl?: string | null;
   analyticsCategory?: string;
 };
-
-function heroGradient(slug: string): string {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) h = (h + slug.charCodeAt(i) * (i + 3)) % 360;
-  const palettes = [
-    "from-cyan-300/80 via-sky-200/70 to-indigo-200/60",
-    "from-amber-300/70 via-orange-200/60 to-rose-200/55",
-    "from-teal-300/75 via-emerald-200/65 to-cyan-200/60",
-    "from-slate-300/70 via-zinc-200/60 to-stone-200/50",
-    "from-violet-300/70 via-purple-200/60 to-pink-200/55",
-    "from-lime-300/70 via-green-200/60 to-emerald-200/55",
-  ];
-  return palettes[h % palettes.length];
-}
 
 export function GuideCard({
   title,
@@ -48,7 +35,7 @@ export function GuideCard({
         >
           <div
             className={`
-              absolute inset-0 bg-gradient-to-br ${heroGradient(slug)}
+              absolute inset-0 bg-gradient-to-br ${guideHeroGradient(slug)}
               transition-transform duration-700 ease-out
               group-hover:scale-[1.03]
             `}

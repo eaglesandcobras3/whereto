@@ -84,8 +84,6 @@ reading_time: 2
 last_updated: 2026-04-12
 ---
 
-# Nice Dogs, Strange People
-
 If you spend any time in Grayton Beach, you’ll eventually see it—printed on a t-shirt, plastered on a car bumper, or hanging on a wooden sign in a local gallery. "Nice Dogs, Strange People."
 
 It’s the unofficial motto of the town, and while it might sound like a joke to an outsider, to those who live and breathe the Grayton salt air, it’s a badge of honor.
