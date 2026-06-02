@@ -41,6 +41,16 @@ const VIBE_TAG_ALIASES: Record<string, string> = {
 const CORRIDOR_LOCATION =
   /^(30a|30-a|the\s+30a|emerald\s+coast|florida|fl|northwest\s+florida|south\s+walton|walton\s+county)$/i;
 
+/** Town names on 30A — shared with clarify flow; bare "beach" is not matched. */
+export const TOWN_IN_QUERY_REGEX =
+  /\b(seaside|rosemary\s*beach|alys\s*beach|watercolor|water\s*color|watersound|water\s*sound|seagrove|grayton|santa\s*rosa|inlet\s*beach|blue\s*mountain|dune\s*allen|gulf\s*place|prominence)\b/i;
+
+export function extractTownFromText(text: string): string | undefined {
+  const m = text.match(TOWN_IN_QUERY_REGEX);
+  if (!m) return undefined;
+  return m[0].replace(/\s+/g, " ").trim();
+}
+
 export function userMentionedBudget(message: string): boolean {
   return /\b(cheap|budget|inexpensive|affordable|under\s+\$|price[- ]?conscious)\b/i.test(
     message,
@@ -115,6 +125,30 @@ export type AskQueryThemes = {
   bars: boolean;
 };
 
+/** User's treat-type chip / clarify answer — narrows which discovery strategies run. */
+export type TreatPreference = "bakery" | "ice_cream" | "donut" | "coffee_sweet";
+
+/**
+ * Parse treat intent from the full user message (including clarification chips).
+ * Returns null when treat type is still ambiguous.
+ */
+export function detectTreatPreference(text: string): TreatPreference | null {
+  const q = text.toLowerCase();
+  if (/\b(ice\s*cream|gelato|frozen\s+yogurt|fro\s*yo|shaved\s+ice)\b/.test(q)) {
+    return "ice_cream";
+  }
+  if (/\b(donut|doughnut)\b/.test(q) && !/\bbakery\s*item\b/.test(q)) {
+    return "donut";
+  }
+  if (/\b(bakery\s*item|bakery|pastry|pastries|muffin|croissant)\b/.test(q)) {
+    return "bakery";
+  }
+  if (/\bcold\s*brew\b/.test(q) && /\bsweet\b/.test(q)) {
+    return "coffee_sweet";
+  }
+  return null;
+}
+
 export function detectQueryThemes(query: string): AskQueryThemes {
   const q = query.toLowerCase();
   return {
@@ -126,7 +160,8 @@ export function detectQueryThemes(query: string): AskQueryThemes {
     kids: /\b(kid|kids|child|children|family|toddler)\b/.test(q),
     dining: /\b(eat|food|meal|restaurant|lunch|dinner|breakfast|brunch|hungry)\b/.test(q),
     shopping: /\b(shop|shopping|boutique|retail|store)\b/.test(q),
-    activities: /\b(activity|activities|things?\s+to\s+do|kayak|bike|golf|beach)\b/.test(q),
+    // Do not match bare "beach" — town names like Rosemary Beach false-trigger activities.
+    activities: /\b(activity|activities|things?\s+to\s+do|kayak|bike|golf)\b/.test(q),
     bars: /\b(bar|pub|cocktail|wine|brewery|happy\s+hour)\b/.test(q),
   };
 }

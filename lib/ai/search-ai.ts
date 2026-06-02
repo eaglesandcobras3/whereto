@@ -161,7 +161,8 @@ export async function synthesizeWithOpenAI(
   return JSON.parse(text) as unknown;
 }
 
-function extractTown(normalized: string): string | null {
+/** Town slug when a 30A place name appears in normalized query text. */
+export function extractTownFromNormalizedQuery(normalized: string): string | null {
   const towns: [string, string][] = [
     ["carillon", "carillon-beach"],
     ["inlet", "inlet-beach"],
@@ -190,7 +191,7 @@ function keywordIntentLocation(normalized: string): {
   town: string | null;
   radius: "near" | "anywhere";
 } {
-  const town = extractTown(normalized);
+  const town = extractTownFromNormalizedQuery(normalized);
   return town ? { town, radius: "near" } : { town: null, radius: "anywhere" };
 }
 

@@ -23,7 +23,10 @@ export type BusinessResultCard = {
   excerpt: string | null;
   price_level: number | null;
   tags: string[];
+  /** Listing description (AI summary). */
   why_this_matched: string;
+  /** Inspector / merge ranking explanation (shown as match callout). */
+  match_reason?: string;
   confidence_score: number;
   source_status: "verified";
   image_url?: string | null;

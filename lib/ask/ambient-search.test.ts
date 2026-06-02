@@ -4,11 +4,11 @@ import {
   hasExplicitMealPeriod,
   isVagueFoodQuery,
   matchRelevantEvents,
+  planAmbientTimeStrategies,
 } from "@/lib/ask/ambient-search";
 import type { AmbientContext } from "@/lib/ask/ambient-context";
 import { deriveSessionHints } from "@/lib/ask/session-context";
-import { buildClarifyingQuestions } from "@/lib/ask/clarifying-questions";
-import { detectQueryThemes } from "@/lib/ask/search-input";
+import { detectQueryThemes, extractTownFromText } from "@/lib/ask/search-input";
 
 function mockAmbient(overrides: Partial<AmbientContext["searchSignals"]> & {
   timeOfDay?: AmbientContext["timeOfDay"];
@@ -51,29 +51,60 @@ function mockAmbient(overrides: Partial<AmbientContext["searchSignals"]> & {
   };
 }
 
-describe("applyAmbientToSearchQuery", () => {
-  it("steers vague afternoon eat query toward storm-safe options", () => {
-    const q = "where should we eat";
-    const themes = detectQueryThemes(q);
-    const result = applyAmbientToSearchQuery(q, themes, mockAmbient({}));
-    expect(result.toLowerCase()).toMatch(/indoor|cafe|storm|light bite/);
-    expect(isVagueFoodQuery(q)).toBe(true);
-    expect(hasExplicitMealPeriod(result)).toBe(false);
+describe("detectQueryThemes", () => {
+  it("does not treat Rosemary Beach as an activities query", () => {
+    const themes = detectQueryThemes(
+      "coffee with treats for kids in Rosemary Beach",
+    );
+    expect(themes.activities).toBe(false);
+    expect(themes.coffee).toBe(true);
   });
 
-  it("infers breakfast for morning vague food asks", () => {
+  it("extracts town names from clarify answers", () => {
+    expect(extractTownFromText("Rosemary Beach. Bakery item")).toBe("Rosemary Beach");
+  });
+});
+
+describe("applyAmbientToSearchQuery", () => {
+  it("does not append time-of-day words to specific coffee queries", () => {
+    const q = "looking for coffee with treats for kids in Rosemary Beach";
+    const themes = detectQueryThemes(q);
+    const ambient = mockAmbient({
+      timeOfDay: "morning",
+      impliedMealPeriod: "breakfast",
+      preferCoffeePeak: true,
+      preferCold: false,
+    });
+    const result = applyAmbientToSearchQuery(q, themes, ambient);
+    expect(result).toBe(q);
+    expect(result.toLowerCase()).not.toMatch(/\b(morning|breakfast|lunch|dinner|happy hour)\b/);
+  });
+});
+
+describe("planAmbientTimeStrategies", () => {
+  it("adds a breakfast strategy for vague morning food asks without changing query text", () => {
     const q = "somewhere to eat";
     const themes = detectQueryThemes(q);
     const ambient = mockAmbient({
       timeOfDay: "morning",
-      hourLocal: 8,
-      stormWindow: false,
-      suggestLightBite: false,
       impliedMealPeriod: "breakfast",
       preferCoffeePeak: true,
     });
-    const result = applyAmbientToSearchQuery(q, themes, ambient);
-    expect(result.toLowerCase()).toContain("breakfast");
+    const strategies = planAmbientTimeStrategies(ambient, themes, q);
+    expect(strategies.map((s) => s.id)).toContain("ambient_meal_breakfast");
+    expect(strategies[0]?.rawQuery).toBe(q);
+    expect(isVagueFoodQuery(q)).toBe(true);
+    expect(hasExplicitMealPeriod(q)).toBe(false);
+  });
+
+  it("skips meal-period strategy when query already names a meal", () => {
+    const q = "dinner near Seaside";
+    const strategies = planAmbientTimeStrategies(
+      mockAmbient({ impliedMealPeriod: "dinner" }),
+      detectQueryThemes(q),
+      q,
+    );
+    expect(strategies.map((s) => s.id)).not.toContain("ambient_meal_dinner");
   });
 });
 
@@ -92,7 +123,7 @@ describe("matchRelevantEvents", () => {
 });
 
 describe("deriveSessionHints", () => {
-  it("skips location question when user asks what else is nearby", () => {
+  it("sets isNearbyFollowUp when user asks what else is nearby with known town", () => {
     const hints = deriveSessionHints({
       message: "what else is nearby?",
       activeFilters: { town_or_area: "Rosemary Beach", query: "coffee" },
@@ -105,40 +136,5 @@ describe("deriveSessionHints", () => {
     });
     expect(hints.knownTown).toBe("Rosemary Beach");
     expect(hints.isNearbyFollowUp).toBe(true);
-
-    const questions = buildClarifyingQuestions(
-      "what else is nearby?",
-      true,
-      mockAmbient({ stormWindow: false, suggestLightBite: false }),
-      hints,
-    );
-    expect(questions.some((q) => q.id === "location")).toBe(false);
-  });
-
-  it("skips dietary question when session already has gluten-free", () => {
-    const hints = deriveSessionHints({
-      message: "restaurants near seaside",
-      activeFilters: { dietary_tags: ["gluten_free"] },
-      searchContext: { lastQuery: "", lastTool: null, resultCount: 0 },
-      refinementHistory: [],
-    });
-    const questions = buildClarifyingQuestions(
-      "restaurants near seaside",
-      true,
-      mockAmbient({ stormWindow: false, suggestLightBite: false, impliedMealPeriod: "dinner" }),
-      hints,
-    );
-    expect(questions.some((q) => q.id === "dietary")).toBe(false);
-  });
-});
-
-describe("buildClarifyingQuestions time-aware", () => {
-  it("skips meal period at 3pm when storm window is active", () => {
-    const questions = buildClarifyingQuestions(
-      "where should we eat",
-      true,
-      mockAmbient({}),
-    );
-    expect(questions.some((q) => q.id === "meal_period")).toBe(false);
   });
 });

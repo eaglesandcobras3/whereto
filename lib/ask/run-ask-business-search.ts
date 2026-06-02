@@ -6,6 +6,7 @@ import {
   toolCategoryFromInput,
   type DiscoveryStrategy,
 } from "@/lib/ask/discovery-strategies";
+import { primaryFacetFromActive, resolveSearchFacets } from "@/lib/ask/search-facets";
 import { rankMergedDiscoveryResults } from "@/lib/ask/rank-merged-results";
 import {
   buildAskSearchQuery,
@@ -16,7 +17,7 @@ import {
   userMentionedBudget,
 } from "@/lib/ask/search-input";
 import { normalizeQuery } from "@/lib/query-normalize";
-import { resolveIntent } from "@/lib/search/recommendation-set";
+import { resolveAskSearchIntent } from "@/lib/ask/resolve-ask-search-intent";
 import { embedNormalizedSearchQuery } from "@/lib/search/query-embedding";
 import { searchQueryEmbeddingsEnabled } from "@/lib/search/search-openai-flags";
 import { runSearch } from "@/lib/search/run-search";
@@ -29,6 +30,8 @@ import {
   applyAmbientToSearchQuery,
   formatRelevantEventsForDiscovery,
   matchRelevantEvents,
+  mergeDiscoveryStrategies,
+  planAmbientTimeStrategies,
 } from "@/lib/ask/ambient-search";
 import {
   applySessionTownToInput,
@@ -82,6 +85,9 @@ export type AskBusinessSearchResult = {
     reviewNotes: AskDiscoveryReviewNote[];
     /** Human-readable search summary shown to user as "thinking" status. */
     searchSummary: string;
+    /** How shared intent was built (inspect / debug). */
+    intentSource?: import("@/lib/ask/search-facets").IntentSource;
+    searchFacets?: import("@/lib/ask/search-facets").ResolvedSearchFacets;
   };
 };
 
@@ -98,6 +104,22 @@ type RunOpts = {
   ambient?: AmbientContext;
   /** Session memory from prior turns in this conversation. */
   sessionHints?: SessionSearchHints;
+  /** Optional callback fired after each individual strategy completes — for debug/inspect only. */
+  onStrategyResult?: (
+    strategyId: string,
+    label: string,
+    wave: 1 | 2,
+    payload: SearchResultPayload,
+    strategyParams?: {
+      rawQuery: string;
+      categorySlug: string | null;
+      scopeOverride?: DiscoveryStrategy["scopeOverride"];
+      sortMode?: DiscoveryStrategy["sortMode"];
+      vibeTags?: string[];
+    },
+  ) => void;
+  /** Populate `_debug` / retrieval on each strategy payload (inspect / admin). */
+  includeDebug?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -118,6 +140,7 @@ async function runOneSearch(opts: {
   requiredIsServiceBusiness?: boolean;
   precomputedIntent?: SearchIntent;
   precomputedQueryEmbedding?: number[] | null;
+  includeDebug?: boolean;
 }): Promise<SearchResultPayload> {
   return runSearch({
     rawQuery: opts.rawQuery,
@@ -136,6 +159,7 @@ async function runOneSearch(opts: {
     requiredIsServiceBusiness: opts.requiredIsServiceBusiness,
     precomputedIntent: opts.precomputedIntent,
     precomputedQueryEmbedding: opts.precomputedQueryEmbedding,
+    includeDebug: opts.includeDebug ?? false,
   });
 }
 
@@ -177,6 +201,41 @@ function countHighConfidenceResults(
 /** Wave 0 is sufficient if it returned ≥ 3 high-confidence results. */
 const WAVE0_SUFFICIENT_COUNT = 3;
 
+function strategyInspectParams(strategy: DiscoveryStrategy) {
+  return {
+    rawQuery: strategy.rawQuery,
+    categorySlug: strategy.categorySlug,
+    scopeOverride: strategy.scopeOverride,
+    sortMode: strategy.sortMode,
+    vibeTags: strategy.vibeTags,
+  };
+}
+
+/** Parallel near-town passes — ranked below in-town hits via merge scoring. */
+function appendNearTownStrategies(
+  strategies: DiscoveryStrategy[],
+  constrainTownId: string | undefined,
+): DiscoveryStrategy[] {
+  if (!constrainTownId) return strategies;
+  const out = [...strategies];
+  const seen = new Set(strategies.map((s) => s.id));
+  for (const s of strategies) {
+    if (s.scopeOverride || s.id.endsWith("_near")) continue;
+    const nearId = `${s.id}_near`;
+    if (seen.has(nearId)) continue;
+    seen.add(nearId);
+    out.push({
+      ...s,
+      id: nearId,
+      label: `${s.label} (nearby)`,
+      weight: Math.min(s.weight * 0.78, 0.82),
+      scopeOverride: "near",
+      matchHint: `nearby — ${s.matchHint}`,
+    });
+  }
+  return out.slice(0, 6);
+}
+
 // ---------------------------------------------------------------------------
 // Final result builder (shared by Wave 0 early return and full pipeline exit)
 // ---------------------------------------------------------------------------
@@ -194,9 +253,37 @@ function buildFinalResult(args: {
   themeList: string[];
   waveNote: string | null;
   eventNote?: string;
+  intentSource?: import("@/lib/ask/search-facets").IntentSource;
+  searchFacets?: import("@/lib/ask/search-facets").ResolvedSearchFacets;
 }): AskBusinessSearchResult {
-  const { strategyResults, strategies, attempts, opts, rawQuery, toolCategorySlug, constrainTownId, vibeTags, priceLevel, themeList, waveNote, eventNote } = args;
+  const {
+    strategyResults,
+    strategies,
+    attempts,
+    opts,
+    rawQuery,
+    toolCategorySlug,
+    constrainTownId,
+    vibeTags,
+    priceLevel,
+    themeList,
+    waveNote,
+    eventNote,
+    intentSource,
+    searchFacets,
+  } = args;
   const themes = detectQueryThemes(rawQuery);
+  const primaryFacet = searchFacets
+    ? primaryFacetFromActive(searchFacets.active)
+    : primaryFacetFromActive(
+        resolveSearchFacets({
+          effectiveQuery: rawQuery,
+          themes,
+          toolCategorySlug,
+          vibeTags,
+          ambient: opts.ambient,
+        }).active,
+      );
 
   const ranked = rankMergedDiscoveryResults({
     strategies: strategyResults.map((r) => r.strategy),
@@ -205,6 +292,8 @@ function buildFinalResult(args: {
     limit: opts.limit,
     wantKids: themes.kids,
     wantTreats: themes.treats || themes.bakery || themes.iceCream || themes.donuts,
+    primaryFacet,
+    anchorTownName: searchFacets?.constraints.townOrArea ?? null,
     ambientBoosts: opts.ambient ? ambientRankBoostsFromContext(opts.ambient) : undefined,
   });
 
@@ -233,6 +322,8 @@ function buildFinalResult(args: {
       strategyLabels: strategies.map((s) => s.label),
       reviewNotes: ranked.reviewNotes,
       searchSummary,
+      intentSource,
+      searchFacets,
     },
   };
 }
@@ -250,13 +341,13 @@ function buildFinalResult(args: {
 export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSearchResult> {
   const userMessage = opts.userMessage ?? "";
   const searchInput = applySessionTownToInput(opts.input, opts.sessionHints);
-  let rawQuery = enrichQueryForContext(buildAskSearchQuery(searchInput.query, userMessage));
-  let themes = detectQueryThemes(rawQuery);
-
-  if (opts.ambient) {
-    rawQuery = applyAmbientToSearchQuery(rawQuery, themes, opts.ambient);
-    themes = detectQueryThemes(rawQuery);
-  }
+  // Keep the user's full wording (incl. clarification chips); do not strip to keywords.
+  const verbatimQuery = buildAskSearchQuery(searchInput.query, userMessage);
+  let themes = detectQueryThemes(verbatimQuery);
+  // User wording stays intact; only light weather hints may append (never time-of-day).
+  let rawQuery = opts.ambient
+    ? applyAmbientToSearchQuery(enrichQueryForContext(verbatimQuery), themes, opts.ambient)
+    : enrichQueryForContext(verbatimQuery);
 
   const relevantEvents =
     opts.ambient?.todayEvents?.length
@@ -287,7 +378,7 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
   // Resolve intent ONCE — shared across all strategies.
   // ---------------------------------------------------------------------------
 
-  const normalized = normalizeQuery(rawQuery);
+  const normalized = normalizeQuery(verbatimQuery);
   const model = opts.model;
   const openaiKey = opts.openaiKey;
 
@@ -295,30 +386,65 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
 
   let sharedIntent: SearchIntent | undefined;
   let sharedEmbedding: number[] | null | undefined;
+  let intentSource: import("@/lib/ask/search-facets").IntentSource | undefined;
+  let searchFacets: import("@/lib/ask/search-facets").ResolvedSearchFacets | undefined;
 
-  if (openaiKey) {
-    opts.onProgress?.({ stage: "searching", message: "Understanding your search…" });
-    if (canEmbed) {
-      [sharedIntent, sharedEmbedding] = await Promise.all([
-        resolveIntent(rawQuery, normalized, model, openaiKey),
-        embedNormalizedSearchQuery(normalized, openaiKey),
-      ]);
-    } else {
-      sharedIntent = await resolveIntent(rawQuery, normalized, model, openaiKey);
-    }
+  opts.onProgress?.({ stage: "searching", message: "Understanding your search…" });
+  const intentPromise = resolveAskSearchIntent({
+    verbatimQuery,
+    normalized,
+    themes,
+    toolCategorySlug,
+    townOrArea: searchInput.town_or_area,
+    vibeTags,
+    dietaryTags: searchInput.dietary_tags,
+    priceLevel: priceLevel ?? null,
+    occasion: searchInput.occasion_tags?.[0],
+    sessionHints: opts.sessionHints,
+    ambient: opts.ambient,
+    model,
+    openaiKey,
+  });
+
+  if (canEmbed && openaiKey) {
+    const [resolved, embedding] = await Promise.all([
+      intentPromise,
+      embedNormalizedSearchQuery(normalized, openaiKey),
+    ]);
+    sharedIntent = resolved.intent;
+    intentSource = resolved.intentSource;
+    searchFacets = resolved.facets;
+    sharedEmbedding = embedding;
+  } else {
+    const resolved = await intentPromise;
+    sharedIntent = resolved.intent;
+    intentSource = resolved.intentSource;
+    searchFacets = resolved.facets;
+  }
+
+  const facetTown = searchFacets?.constraints.townOrArea;
+  if (!constrainTownId && facetTown && !isCorridorPlaceholder(facetTown)) {
+    constrainTownId = await opts.resolveTownId(facetTown);
   }
 
   // ---------------------------------------------------------------------------
   // Plan strategies
   // ---------------------------------------------------------------------------
 
-  const strategies = planDiscoveryStrategies({
-    effectiveQuery: rawQuery,
+  const coreStrategies = planDiscoveryStrategies({
+    effectiveQuery: verbatimQuery,
     themes,
     toolCategorySlug,
     vibeTags,
     intent: sharedIntent,
   });
+  const ambientStrategies = opts.ambient
+    ? planAmbientTimeStrategies(opts.ambient, themes, verbatimQuery, {
+        facetMealPeriod: searchFacets?.constraints.mealPeriod,
+      })
+    : [];
+  let strategies = mergeDiscoveryStrategies(coreStrategies, ambientStrategies);
+  strategies = appendNearTownStrategies(strategies, constrainTownId);
 
   const perStrategyLimit = Math.min(10, Math.max(6, opts.limit + 2));
   const simple = isSimpleQuery(strategies);
@@ -352,6 +478,7 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
       requiredIsServiceBusiness: primaryStrategy.requiredIsServiceBusiness,
       precomputedIntent: sharedIntent,
       precomputedQueryEmbedding: sharedEmbedding,
+      includeDebug: opts.includeDebug,
     });
 
     attempts.push({
@@ -362,6 +489,14 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
     });
 
     const wave0Confident = countHighConfidenceResults([wave0Payload]);
+
+    opts.onStrategyResult?.(
+      primaryStrategy.id,
+      primaryStrategy.label,
+      1,
+      wave0Payload,
+      strategyInspectParams(primaryStrategy),
+    );
 
     if (wave0Confident >= WAVE0_SUFFICIENT_COUNT) {
       // Wave 0 nailed it — return early, don't run more searches.
@@ -379,6 +514,8 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
         themeList,
         waveNote: null,
         eventNote,
+        intentSource,
+        searchFacets,
       });
     }
 
@@ -414,6 +551,7 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
         requiredIsServiceBusiness: strategy.requiredIsServiceBusiness,
         precomputedIntent: sharedIntent,
         precomputedQueryEmbedding: sharedEmbedding,
+        includeDebug: opts.includeDebug,
       });
       return { strategy, payload };
     }),
@@ -428,6 +566,13 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
         resultCount: payload.recommendations.length,
         wave: 1 as const,
       });
+      opts.onStrategyResult?.(
+        strategy.id,
+        strategy.label,
+        1,
+        payload,
+        strategyInspectParams(strategy),
+      );
     }
   }
 
@@ -469,6 +614,7 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
             requiredIsServiceBusiness: strategy.requiredIsServiceBusiness,
             precomputedIntent: sharedIntent,
             precomputedQueryEmbedding: sharedEmbedding,
+            includeDebug: opts.includeDebug,
           });
           return { strategy, payload };
         }),
@@ -482,39 +628,88 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
           resultCount: payload.recommendations.length,
           wave: 2 as const,
         });
+        opts.onStrategyResult?.(
+          strategy.id,
+          strategy.label,
+          2,
+          payload,
+          strategyInspectParams(strategy),
+        );
       }
     }
   } else if (totalWave1Hits === 0) {
-    // Full zero-result fallback — broad search with no constraints
     opts.onProgress?.({ stage: "expanding", message: "Trying a broader search…" });
 
-    const fallback = await runOneSearch({
-      rawQuery,
-      model,
-      openaiKey,
-      limit: opts.limit,
-      categorySlug: toolCategorySlug,
-      constrainTownId,
-      vibeTags: undefined,
-      priceLevel: undefined,
-      precomputedIntent: sharedIntent,
-      precomputedQueryEmbedding: sharedEmbedding,
-    });
-    attempts.push({ label: "fallback_broad", strategyId: "fallback_broad", resultCount: fallback.recommendations.length, wave: 2 });
-    if (fallback.recommendations.length > 0) {
-      strategyResults = [
-        {
-          strategy: {
-            id: "fallback_broad",
-            label: "Broad fallback",
-            rawQuery,
-            categorySlug: toolCategorySlug,
-            weight: 1,
-            matchHint: "broad match",
+    const runFallback = async (
+      id: string,
+      label: string,
+      params: {
+        categorySlug: string | null;
+        scopeOverride?: DiscoveryStrategy["scopeOverride"];
+      },
+    ) => {
+      const payload = await runOneSearch({
+        rawQuery,
+        model,
+        openaiKey,
+        limit: opts.limit,
+        categorySlug: params.categorySlug,
+        constrainTownId,
+        vibeTags: undefined,
+        priceLevel: undefined,
+        sortMode: undefined,
+        scopeOverride: params.scopeOverride,
+        precomputedIntent: sharedIntent,
+        precomputedQueryEmbedding: sharedEmbedding,
+        includeDebug: opts.includeDebug,
+      });
+      attempts.push({
+        label,
+        strategyId: id,
+        resultCount: payload.recommendations.length,
+        wave: 2,
+      });
+      opts.onStrategyResult?.(id, label, 2, payload, {
+        rawQuery,
+        categorySlug: params.categorySlug,
+        scopeOverride: params.scopeOverride,
+        sortMode: undefined,
+        vibeTags: undefined,
+      });
+      return payload;
+    };
+
+    // Escalate: same town any category → nearby towns with primary category → nearby any category
+    const fallbackSteps: Array<{ id: string; label: string; categorySlug: string | null; scopeOverride?: DiscoveryStrategy["scopeOverride"] }> = [
+      { id: "fallback_town_browse", label: "Same town, any category", categorySlug: null },
+      {
+        id: "fallback_near_category",
+        label: "Nearby areas",
+        categorySlug: toolCategorySlug,
+        scopeOverride: constrainTownId ? "near" : undefined,
+      },
+      { id: "fallback_near_browse", label: "Nearby, any category", categorySlug: null, scopeOverride: constrainTownId ? "near" : undefined },
+    ];
+
+    for (const step of fallbackSteps) {
+      const payload = await runFallback(step.id, step.label, step);
+      if (payload.recommendations.length > 0) {
+        strategyResults = [
+          {
+            strategy: {
+              id: step.id,
+              label: step.label,
+              rawQuery,
+              categorySlug: step.categorySlug,
+              weight: 1,
+              matchHint: "expanded match",
+              scopeOverride: step.scopeOverride,
+            },
+            payload,
           },
-          payload: fallback,
-        },
-      ];
+        ];
+        break;
+      }
     }
   }
 
@@ -537,6 +732,8 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
     themeList,
     waveNote: null,
     eventNote,
+    intentSource,
+    searchFacets,
   });
 
   opts.onProgress?.({ stage: "done", message: `Found ${result.payload.total_results ?? 0} places` });

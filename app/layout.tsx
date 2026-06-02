@@ -158,6 +158,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <meta name="theme-color" content="#F7F3EE" />
+        <meta
+          name="ahrefs-site-verification"
+          content="4273df0f35318589bdf05e806ba5a1c57f13294109fdb9f0443f8463bf00c0fe"
+        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

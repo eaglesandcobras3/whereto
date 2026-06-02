@@ -14,20 +14,25 @@ import type {
 
 export function mapSearchToBusinessCards(
   payload: SearchResultPayload,
+  reviewNotesByTitle?: Map<string, string>,
 ): BusinessResultCard[] {
   return payload.recommendations.map((rec) => {
     const b = rec.business;
     const vec = rec._vec_similarity ?? rec._composite ?? 0.5;
+    const fromReview = reviewNotesByTitle?.get(b.name);
+    const matchReason = fromReview ?? rec.explanation ?? rec.headline;
+    const description = b.ai_summary?.trim() || null;
     return {
       id: rec.business_id,
       title: b.name,
       slug: b.slug ?? rec.business_id,
       town_or_area: b.town_name ?? null,
       category: b.category_name ?? null,
-      excerpt: b.ai_summary ?? rec.explanation ?? null,
+      excerpt: description,
       price_level: b.price_level ?? null,
       tags: rec.highlighted_tags?.length ? rec.highlighted_tags : b.tags ?? [],
-      why_this_matched: rec.explanation || rec.headline,
+      why_this_matched: description || matchReason,
+      match_reason: matchReason,
       confidence_score: Math.round(vec * 100) / 100,
       source_status: "verified" as const,
       image_url: b.hero_image_url ?? b.image_url ?? null,

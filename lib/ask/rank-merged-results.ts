@@ -1,6 +1,10 @@
 import type { SearchResultPayload } from "@/lib/search/types";
 import type { DiscoveryStrategy } from "@/lib/ask/discovery-strategies";
 import {
+  FACET_STRATEGY_ID,
+  type SearchFacetId,
+} from "@/lib/ask/search-facets";
+import {
   listingMatchesAmbientBoost,
   type AmbientRankBoosts,
 } from "@/lib/ask/ambient-search";
@@ -20,6 +24,55 @@ function baseScore(rec: SearchResultPayload["recommendations"][number]): number 
   return 0.45;
 }
 
+function listingText(rec: SearchResultPayload["recommendations"][number]): string {
+  return `${rec.business.name} ${rec.explanation} ${rec.business.ai_summary ?? ""} ${rec.business.category_name ?? ""}`.toLowerCase();
+}
+
+/** Coffee shop category or café/coffee in the listing name. */
+function isCoffeeVenue(rec: SearchResultPayload["recommendations"][number]): boolean {
+  const cat = (rec.business.category_name ?? "").toLowerCase();
+  if (cat.includes("coffee")) return true;
+  const name = (rec.business.name ?? "").toLowerCase();
+  return /\b(coffee|cafe|café|espresso|roaster)\b/.test(name);
+}
+
+function normalizeTownToken(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function listingMatchesAnchorTown(
+  rec: SearchResultPayload["recommendations"][number],
+  anchorTown: string,
+): boolean {
+  const anchor = normalizeTownToken(anchorTown);
+  const listingTown = normalizeTownToken(rec.business.town_name ?? "");
+  if (!listingTown || !anchor) return false;
+  if (listingTown === anchor) return true;
+  if (listingTown.includes(anchor) || anchor.includes(listingTown)) return true;
+  return false;
+}
+
+/** Prefer in-town listings; penalize wrong-town when user named a town. */
+function anchorTownRankingAdjustments(
+  rec: ScoredRec,
+  anchorTown: string | null | undefined,
+): number {
+  if (!anchorTown?.trim()) return 0;
+  const inTown = listingMatchesAnchorTown(rec, anchorTown);
+  const nearScope = rec._strategyIds.some((id) => id.endsWith("_near"));
+  if (inTown) return 0.14;
+  if (nearScope) return -0.04;
+  const listingTown = rec.business.town_name?.trim();
+  if (listingTown) return -0.1;
+  return -0.05;
+}
+
+function isFullServiceRestaurant(rec: SearchResultPayload["recommendations"][number]): boolean {
+  const text = listingText(rec);
+  if (isCoffeeVenue(rec)) return false;
+  return /\b(restaurant|grill|steakhouse|tapas|bistro|lounge|cocktail|dining)\b/.test(text);
+}
+
 function kidFriendlyBoost(
   rec: SearchResultPayload["recommendations"][number],
   wantKids: boolean,
@@ -30,21 +83,54 @@ function kidFriendlyBoost(
     ...(((rec as { intent_tags?: string[] }).intent_tags as string[] | undefined) ?? []),
   ].map((t) => t.toLowerCase());
   if (tags.some((t) => t.includes("kid") || t.includes("family"))) return 0.08;
-  const text = `${rec.business.name} ${rec.explanation} ${rec.business.ai_summary ?? ""}`.toLowerCase();
-  if (/\b(kid|family|children)\b/.test(text)) return 0.05;
+  if (/\b(kid|family|children)\b/.test(listingText(rec))) return 0.05;
   return 0;
 }
 
 function treatsBoost(
   rec: SearchResultPayload["recommendations"][number],
   wantTreats: boolean,
+  primaryFacet: SearchFacetId | null,
 ): number {
   if (!wantTreats) return 0;
-  const text = `${rec.business.name} ${rec.explanation} ${rec.business.ai_summary ?? ""} ${rec.business.category_name ?? ""}`.toLowerCase();
-  if (/\b(bakery|pastry|donut|ice\s*cream|gelato|cookie|sweet|treat|chocolate|cupcake)\b/.test(text)) {
-    return 0.1;
+  const text = listingText(rec);
+  const treatWords =
+    /\b(bakery|pastry|donut|ice\s*cream|gelato|cookie|sweet|treat|cupcake|muffin)\b/.test(text);
+
+  if (primaryFacet === "coffee") {
+    if (isCoffeeVenue(rec) && treatWords) return 0.07;
+    if (isCoffeeVenue(rec)) return 0.03;
+    return 0;
   }
+
+  if (treatWords) return 0.1;
+  if (/\b(chocolate)\b/.test(text) && isCoffeeVenue(rec)) return 0.06;
   return 0;
+}
+
+/**
+ * When the user asked for coffee (primary), prefer coffee-shop hits over
+ * restaurants that only matched the secondary bakery pass.
+ */
+function primaryFacetRankingAdjustments(
+  rec: ScoredRec,
+  primaryFacet: SearchFacetId | null,
+): number {
+  if (primaryFacet !== "coffee") return 0;
+
+  const coffeeStrategyId = FACET_STRATEGY_ID.coffee;
+  const bakeryStrategyId = FACET_STRATEGY_ID.bakery;
+  const coffeeHit = rec._strategyIds.includes(coffeeStrategyId);
+  const bakeryOnlyHit =
+    rec._strategyIds.includes(bakeryStrategyId) && !coffeeHit;
+
+  let adj = 0;
+  if (isCoffeeVenue(rec)) adj += 0.18;
+  if (coffeeHit) adj += 0.05;
+  if (bakeryOnlyHit && !isCoffeeVenue(rec)) adj -= 0.16;
+  if (bakeryOnlyHit && isFullServiceRestaurant(rec)) adj -= 0.1;
+
+  return adj;
 }
 
 function buildRankExplanation(entry: ScoredRec): string {
@@ -97,8 +183,13 @@ export function rankMergedDiscoveryResults(opts: {
   limit: number;
   wantKids: boolean;
   wantTreats: boolean;
+  /** When set, listings matching this facet (e.g. coffee) rank above secondary passes. */
+  primaryFacet?: SearchFacetId | null;
+  /** User-selected or inferred town — in-town ranks above nearby-town results. */
+  anchorTownName?: string | null;
   ambientBoosts?: AmbientRankBoosts;
 }): RankedDiscoveryResult {
+  const primaryFacet = opts.primaryFacet ?? null;
   const byId = new Map<string, ScoredRec>();
 
   for (const { strategy, payload } of opts.payloads) {
@@ -130,7 +221,15 @@ export function rankMergedDiscoveryResults(opts: {
   }
 
   const scored = [...byId.values()].map((rec) => {
-    const multiBonus = rec._strategyIds.length > 1 ? 0.12 : 0;
+    const coffeePrimary = primaryFacet === "coffee";
+    const bakeryOnly =
+      coffeePrimary &&
+      rec._strategyIds.includes(FACET_STRATEGY_ID.bakery) &&
+      !rec._strategyIds.includes(FACET_STRATEGY_ID.coffee);
+    const multiBonus =
+      rec._strategyIds.length > 1 && !(coffeePrimary && bakeryOnly && isFullServiceRestaurant(rec))
+        ? 0.12
+        : 0;
     const ambientBonus = opts.ambientBoosts
       ? listingMatchesAmbientBoost(rec, opts.ambientBoosts)
       : 0;
@@ -138,7 +237,9 @@ export function rankMergedDiscoveryResults(opts: {
       baseScore(rec) * rec._strategyWeight +
       multiBonus +
       kidFriendlyBoost(rec, opts.wantKids) +
-      treatsBoost(rec, opts.wantTreats) +
+      treatsBoost(rec, opts.wantTreats, primaryFacet) +
+      primaryFacetRankingAdjustments(rec, primaryFacet) +
+      anchorTownRankingAdjustments(rec, opts.anchorTownName) +
       ambientBonus;
     return { rec, finalScore };
   });

@@ -59,8 +59,18 @@ export function BusinessResultCard({ card, onSelect, onReport }: Props) {
           </p>
         )}
       </CardHeader>
-      <CardContent className="pt-0">
-        <p className="line-clamp-2 text-sm text-muted-foreground">{card.why_this_matched}</p>
+      <CardContent className="pt-0 space-y-2">
+        {card.excerpt ? (
+          <p className="line-clamp-2 text-sm text-muted-foreground">{card.excerpt}</p>
+        ) : card.why_this_matched ? (
+          <p className="line-clamp-2 text-sm text-muted-foreground">{card.why_this_matched}</p>
+        ) : null}
+        {card.match_reason ? (
+          <p className="rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-2 text-xs leading-relaxed text-sky-950">
+            <span className="font-semibold text-sky-800">Why this pick: </span>
+            {card.match_reason}
+          </p>
+        ) : null}
         {card.tags.length > 0 ? (
           <p className="mt-2 line-clamp-1 text-xs text-primary">{card.tags.slice(0, 4).join(" · ")}</p>
         ) : null}

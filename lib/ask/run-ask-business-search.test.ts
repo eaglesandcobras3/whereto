@@ -39,4 +39,5 @@ describe("planDiscoveryStrategies", () => {
     );
     expect(strategies.length).toBeGreaterThanOrEqual(3);
   });
+
 });

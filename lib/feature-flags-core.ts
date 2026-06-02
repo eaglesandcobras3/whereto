@@ -20,6 +20,8 @@ export const DEFAULT_FLAGS: Record<string, boolean> = {
   guide_hub_search_callout: false,
   /** AI concierge at `/ask` and `/api/ask/*`. Default off in production. */
   ask: false,
+  /** Transparent search inspector at `/ask/inspect`. Default off. */
+  search_inspector: false,
 };
 
 function mergeFromJson(
@@ -65,6 +67,7 @@ export function parseFlagsFromEnv(): Record<string, boolean> {
     const dev = { ...flags };
     if (!envKeys?.has("search")) dev.search = true;
     if (!envKeys?.has("ask")) dev.ask = true;
+    if (!envKeys?.has("search_inspector")) dev.search_inspector = true;
     return dev;
   }
   return flags;
@@ -102,4 +105,8 @@ export function isSavedEnabled(flags: Record<string, boolean>): boolean {
 
 export function isAskEnabled(flags: Record<string, boolean>): boolean {
   return flags.ask === true;
+}
+
+export function isSearchInspectorEnabled(flags: Record<string, boolean>): boolean {
+  return flags.search_inspector === true;
 }

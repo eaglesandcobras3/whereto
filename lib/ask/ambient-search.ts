@@ -1,6 +1,8 @@
 import type { AmbientContext, TimeOfDay, TodayEvent } from "@/lib/ask/ambient-context";
+import type { DiscoveryStrategy } from "@/lib/ask/discovery-strategies";
 import type { AskQueryThemes } from "@/lib/ask/search-input";
 import { enrichQueryForContext } from "@/lib/ask/search-input";
+import type { SearchIntent } from "@/lib/intent-schema";
 
 export type AmbientRankBoosts = {
   preferHiddenGem: boolean;
@@ -38,7 +40,7 @@ export function ambientRankBoostsFromContext(ctx: AmbientContext): AmbientRankBo
 }
 
 /**
- * Enrich search query from time-of-day, weather, and crowd — no extra API calls.
+ * Weather-only query hints (never time-of-day — that uses {@link planAmbientTimeStrategies}).
  */
 export function applyAmbientToSearchQuery(
   rawQuery: string,
@@ -46,9 +48,7 @@ export function applyAmbientToSearchQuery(
   ambient: AmbientContext,
 ): string {
   let q = rawQuery;
-  const { searchSignals, timeOfDay } = ambient;
-  const vagueFood = isVagueFoodQuery(q);
-  const hasMeal = hasExplicitMealPeriod(q);
+  const { searchSignals } = ambient;
 
   if (searchSignals.preferCold && (themes.treats || themes.iceCream || themes.coffee)) {
     q = enrichQueryForContext(`${q} cold refreshing`);
@@ -58,33 +58,125 @@ export function applyAmbientToSearchQuery(
     q = enrichQueryForContext(`${q} indoor`);
   }
 
-  // Time-of-day meal inference for vague "where to eat" asks
-  if (vagueFood && !hasMeal && searchSignals.impliedMealPeriod) {
-    q = enrichQueryForContext(`${q} ${searchSignals.impliedMealPeriod}`);
-  }
-
-  // Afternoon storm window: steer toward cafés / covered patios, not full dinner
-  if (searchSignals.stormWindow && (vagueFood || themes.dining) && !hasMeal) {
-    q = enrichQueryForContext(`${q} indoor covered patio café light bite wait out storm`);
-  }
-
-  if (searchSignals.happyHour && (themes.bars || vagueFood || timeOfDay === "golden_hour")) {
-    q = enrichQueryForContext(`${q} happy hour`);
-  }
-
-  if (searchSignals.preferCoffeePeak && (themes.coffee || vagueFood)) {
-    q = enrichQueryForContext(`${q} coffee café morning`);
-  }
-
-  if (searchSignals.preferNightlife && (themes.bars || vagueFood)) {
-    q = enrichQueryForContext(`${q} bar nightlife late night`);
-  }
-
-  if (timeOfDay === "midday" && vagueFood && !hasMeal) {
-    q = enrichQueryForContext(`${q} lunch casual`);
-  }
-
   return q.trim();
+}
+
+/** Overlay meal period from clock time onto intent — does not mutate the user's query text. */
+export function mergeAmbientMealPeriodIntoIntent(
+  intent: SearchIntent,
+  ambient: AmbientContext | undefined,
+  verbatimQuery: string,
+): SearchIntent {
+  if (!ambient) return intent;
+  const period = ambient.searchSignals.impliedMealPeriod;
+  if (
+    period &&
+    !intent.meal_period &&
+    !hasExplicitMealPeriod(verbatimQuery) &&
+    isVagueFoodQuery(verbatimQuery)
+  ) {
+    return { ...intent, meal_period: period };
+  }
+  return intent;
+}
+
+/**
+ * Optional parallel search passes driven by time-of-day (not appended to query string).
+ */
+export function planAmbientTimeStrategies(
+  ambient: AmbientContext,
+  themes: AskQueryThemes,
+  verbatimQuery: string,
+  opts?: { facetMealPeriod?: string | null },
+): DiscoveryStrategy[] {
+  const strategies: DiscoveryStrategy[] = [];
+  const { searchSignals } = ambient;
+  const vagueFood = isVagueFoodQuery(verbatimQuery);
+  const hasMeal =
+    hasExplicitMealPeriod(verbatimQuery) || Boolean(opts?.facetMealPeriod);
+
+  const push = (s: DiscoveryStrategy) => {
+    if (strategies.some((x) => x.id === s.id)) return;
+    strategies.push(s);
+  };
+
+  if (vagueFood && !hasMeal && searchSignals.impliedMealPeriod) {
+    const period = searchSignals.impliedMealPeriod;
+    const byPeriod: Record<
+      string,
+      { label: string; matchHint: string; categorySlug: string | null }
+    > = {
+      breakfast: {
+        label: "Breakfast (time of day)",
+        matchHint: "breakfast / brunch — morning window",
+        categorySlug: "restaurants",
+      },
+      lunch: {
+        label: "Lunch (time of day)",
+        matchHint: "lunch — midday window",
+        categorySlug: "restaurants",
+      },
+      dinner: {
+        label: "Dinner (time of day)",
+        matchHint: "dinner — evening window",
+        categorySlug: "restaurants",
+      },
+      late_night: {
+        label: "Late night (time of day)",
+        matchHint: "late night food & drinks",
+        categorySlug: "restaurants",
+      },
+    };
+    const meta = byPeriod[period];
+    if (meta) {
+      push({
+        id: `ambient_meal_${period}`,
+        label: meta.label,
+        rawQuery: verbatimQuery,
+        categorySlug: meta.categorySlug,
+        weight: 0.84,
+        matchHint: meta.matchHint,
+      });
+    }
+  }
+
+  if (searchSignals.happyHour && (themes.bars || vagueFood)) {
+    push({
+      id: "ambient_happy_hour",
+      label: "Happy hour (time of day)",
+      rawQuery: verbatimQuery,
+      categorySlug: "bars",
+      weight: 0.86,
+      matchHint: "happy hour / golden hour drinks",
+    });
+  }
+
+  if (searchSignals.preferNightlife && themes.bars) {
+    push({
+      id: "ambient_nightlife",
+      label: "Nightlife (time of day)",
+      rawQuery: verbatimQuery,
+      categorySlug: "bars",
+      weight: 0.84,
+      matchHint: "bars & late night",
+    });
+  }
+
+  return strategies;
+}
+
+/** Merge core discovery strategies with ambient time passes (deduped, capped). */
+export function mergeDiscoveryStrategies(
+  core: DiscoveryStrategy[],
+  ambient: DiscoveryStrategy[],
+  max = 5,
+): DiscoveryStrategy[] {
+  const out = [...core];
+  for (const s of ambient) {
+    if (out.length >= max) break;
+    if (!out.some((x) => x.id === s.id)) out.push(s);
+  }
+  return out.slice(0, max);
 }
 
 const EVENT_TOWN =

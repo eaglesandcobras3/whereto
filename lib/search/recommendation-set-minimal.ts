@@ -14,6 +14,7 @@ import {
   type ScoredVecRow,
 } from "@/lib/search/hybrid-vector-postprocess";
 import { resolveIlikeOrClause } from "@/lib/search/ilike-text-search";
+import { rowMatchesVibeTags } from "@/lib/search/vibe-tag-filter";
 import { getSearchQueryEmbedding } from "@/lib/search/query-embedding";
 import { loadLearningBoostMap } from "@/lib/search/learning-boost";
 import { deriveQueryClusterKey } from "@/lib/search/query-cluster";
@@ -190,10 +191,9 @@ function filterRowsBySidebar(rows: ScoredVecRow[], options: MinimalSearchBuildOp
     filtered = filtered.filter((r) => String(r.primary_category_id) === options.primaryCategoryId);
   }
   if (options.constrainVibeTags?.length) {
-    filtered = filtered.filter((r) => {
-      const tags = (r.intent_tags as string[] | null) ?? [];
-      return options.constrainVibeTags!.every((t) => tags.includes(t));
-    });
+    filtered = filtered.filter((r) =>
+      rowMatchesVibeTags(r.intent_tags as string[] | null, options.constrainVibeTags),
+    );
   }
   return filtered;
 }
@@ -512,10 +512,6 @@ export async function buildMinimalSearchResult(
     }
   }
 
-  if (options.constrainVibeTags?.length) {
-    query = query.contains("intent_tags", options.constrainVibeTags);
-  }
-
   if (options.sortMode === "updated") {
     query = query.order("date_updated", { ascending: false, nullsFirst: false });
   } else if (options.sortMode === "name") {
@@ -531,7 +527,12 @@ export async function buildMinimalSearchResult(
   const { data: rows, error, count } = await query.range(from, to);
   if (error) console.error("buildMinimalSearchResult ILIKE", error);
 
-  const list = (rows ?? []) as Record<string, unknown>[];
+  let list = (rows ?? []) as Record<string, unknown>[];
+  if (options.constrainVibeTags?.length) {
+    list = list.filter((row) =>
+      rowMatchesVibeTags(row.intent_tags as string[] | null, options.constrainVibeTags),
+    );
+  }
   const recs = list.map((row, i) => rowToRec(row, from + i + 1));
 
   const ilikePath: SearchRetrievalPath = options.pageBrowseWithoutQuery ? "browse_no_text" : "ilike";

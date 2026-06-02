@@ -3,7 +3,7 @@ import type { ClarificationFormArtifact } from "@/lib/ask/types";
 import {
   composeClarificationSearchQuery,
   isClarificationFollowUp,
-} from "@/lib/ask/clarifying-questions";
+} from "@/lib/ask/clarifying-query";
 
 describe("clarification follow-up helpers", () => {
   it("detects clarification_form artifacts", () => {

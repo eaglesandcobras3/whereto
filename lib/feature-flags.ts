@@ -20,6 +20,7 @@ export {
   isAskEnabled,
   isAuthEnabled,
   isSavedEnabled,
+  isSearchInspectorEnabled,
 } from "@/lib/feature-flags-core";
 
 /**

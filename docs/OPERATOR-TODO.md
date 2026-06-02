@@ -177,6 +177,22 @@ Uses `text-embedding-3-small` (1536 dims). Prefers the `qa_document` over `searc
 
 **Gap-only runs (no `--force`) on standalone scripts:** Each loads rows where the matching `*_updated_at` is NULL (`qa_document_updated_at` in step 7, `search_profile_updated_at` in `local/generate-search-profiles.ts`, `embedding_updated_at` in step 8). Default status is **`published` + `draft`**; **`--published-only`** restricts to published.
 
+### 9. Regenerate business listing copy (Maps scrape + GPT-4o)
+
+Shared prompt: `local/lib/business-content/` (used by **`local/add-businesses.ts`** for new listings too).
+
+```bash
+npx tsx local/regenerate-business-content.ts --dry-run              # previews → local/previews/regenerated/
+npx tsx local/regenerate-business-content.ts --limit 5              # small live batch
+npx tsx local/regenerate-business-content.ts --id <uuid>            # one listing
+npx tsx local/regenerate-business-content.ts --all-outside-core     # every non–core-town row (incl. with images)
+npx tsx local/regenerate-business-content.ts --include-with-images  # drop “no image” filter
+npx tsx local/regenerate-business-content.ts --include-core-towns    # include seaside / rosemary / grayton / carillon
+npx tsx local/regenerate-business-content.ts --skip-search-pipeline # content/SEO only (no BI + embedding)
+```
+
+**Default scope:** `published` + `draft`, not archived, **no hero/main image**, town **not** in `seaside`, `rosemary-beach`, `grayton-beach`, `carillon-beach`. Requires **`OPENAI_API_KEY`**, Supabase service role, and Playwright (headed browser session under `local/.browser-session`). Each row: Google Maps reviews → **gpt-4o** markdown + SEO → optional **gpt-4o-mini** BI + embedding (unless `--skip-search-pipeline`). Review previews before large live runs.
+
 ---
 
 ## Search quality evals + self-learning loop
@@ -262,6 +278,8 @@ Scores (1–4) are stored in `search_eval_runs` for month-over-month comparison.
 
 | Date | What changed |
 |------|----------------|
+| 2026-06-01 | **Business listing copy regeneration:** **`local/regenerate-business-content.ts`** — Maps scrape + shared **`local/lib/business-content/`** prompt (guide-style, non-template headers). Default: no image, outside seaside/rosemary-beach/grayton-beach/carillon-beach. **`local/add-businesses.ts`** uses the same prompt for new inserts. |
+| 2026-06-01 | **Search Inspector:** New page at **`/ask/inspect`** — a step-by-step transparent search experience with OpenAI result validation. Enable with **`FEATURE_FLAGS_JSON`** `"search_inspector":true` (auto-on in `NODE_ENV=development`). Uses existing `OPENAI_API_KEY` and logs validation failures to the existing `search_quality_issues` table as `bad_result_report` rows. No new migrations required. |
 | 2026-06-03 | **Search quality overhaul (8 phases):** Apply **`20260603000000_search_quality_and_geo.sql`** — adds `businesses.data_quality_score` (default 0.5), updates `hybrid_search_businesses` to return `data_quality_score` + optional `geo_distance_km` (accepts `p_user_lat`/`p_user_lng`). Apply **`20260603120000_search_quality_issues.sql`** — new `search_quality_issues` table + `upsert_zero_result_issue()` function + `v_search_quality_issues_open` view. After applying: (1) `npx tsx local/compute-data-quality.ts` to score existing businesses; (2) `npx tsx local/audit-search-quality.ts` to create initial issue backlog. New admin route: **`/admin/search-debug`** — query debugger showing parsed intent, retrieval path, score breakdowns per result, and confidence score. **Scoring drift fixed:** `lib/search/scoring.ts` is now the canonical shared module for `CATEGORY_TYPE_PATTERNS`, composite scoring, and geo scoring — eval and production use identical logic. Score breakdowns and confidence are **always-on** in API responses (not dev-only). Zero-result searches auto-create `search_quality_issues` rows. Golden test set expanded to **143 cases**. |
 | 2026-06-02 | **Ask editorial search:** Apply **`20260602120000_editorial_search.sql`** after the Ask migration — extends **guides** FTS to include body text, adds **`search_vector`** on **towns** and **areas**. Rebuilds guides index (brief lock on `guides` during `DROP COLUMN search_vector`). |
 | 2026-06-01 | **Ask Engine:** Apply **`20260601120000_ask_engine.sql`** (includes `set_date_updated_to_now()` if **`20260426120000_date_updated_triggers.sql`** was skipped). Also ensure **`20260426120000_date_updated_triggers.sql`** is applied for businesses/towns/guides triggers. — `ask_conversations`, `ask_messages`, `ask_artifact_sessions`, `artifact_shares`, `ai_feedback`, `human_review_tasks`, `conversation_events`, `security_events`, guides FTS. Set **`FEATURE_FLAGS_JSON`** **`"ask":true`**, **`OPENAI_API_KEY`**, optional **`UPSTASH_*`**, **`ASK_API_SECRET`**, **`WORKFLOW_SECRET`**. Install **`workflow`** (Next config uses **`withWorkflow`**). |
