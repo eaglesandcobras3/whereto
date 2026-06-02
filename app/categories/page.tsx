@@ -3,10 +3,11 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { pickDailySubsetWithSalt } from "@/lib/home/daily-featured-pick";
+import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
@@ -28,12 +29,12 @@ export const metadata: Metadata = {
     "South Walton businesses",
     "Emerald Coast dining",
   ],
-  openGraph: {
+  ...openGraphForPage({
+    path: "/categories",
     title: "Browse by Category | 30A Local Businesses | WhereTo30A",
     description:
       "Every category of local business along 30A — restaurants, coffee, bars, activities, shopping, and services.",
-    type: "website",
-  },
+  }),
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -63,6 +64,7 @@ type CategorySection = {
   excerpt: string | null;
   business_count: number;
   preview: PreviewBusiness[];
+  allBusinesses: PreviewBusiness[];
 };
 
 function mapBusinessRow(row: Record<string, unknown>): PreviewBusiness {
@@ -137,11 +139,12 @@ async function getCategorySections(): Promise<CategorySection[]> {
 
   return categories
     .map((cat) => {
-      const pool = byCategory.get(cat.id) ?? [];
+      const pool = sortBrowseBusinesses(byCategory.get(cat.id) ?? []);
       return {
         ...cat,
         business_count: pool.length,
-        preview: pickDailySubsetWithSalt(pool, PREVIEW_PER_CATEGORY, cat.slug),
+        preview: pool.slice(0, PREVIEW_PER_CATEGORY),
+        allBusinesses: pool,
       };
     })
     .filter((cat) => cat.business_count > 0);
@@ -260,6 +263,38 @@ export default async function CategoriesPage() {
                         );
                       })}
                     </div>
+
+                    <nav
+                      aria-label={`All ${cat.title} listings`}
+                      className="mt-8 border-t border-[var(--color-border)] pt-6"
+                    >
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                        All {cat.title.toLowerCase()} listings
+                      </h3>
+                      <ul className="columns-1 gap-x-8 sm:columns-2 lg:columns-3">
+                        {cat.allBusinesses.map((b) => (
+                          <li key={b.id} className="mb-2 break-inside-avoid">
+                            <Link
+                              href={`/business/${b.slug}`}
+                              {...gaClickProps({
+                                event: "nav_click",
+                                category: "categories_hub_index",
+                                label: `${cat.slug}_${b.slug}`,
+                              })}
+                              className="text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                            >
+                              {b.name}
+                              {b.town_name ? (
+                                <span className="text-[var(--color-text-tertiary)]">
+                                  {" "}
+                                  · {b.town_name}
+                                </span>
+                              ) : null}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </nav>
                   </section>
                 );
               })}

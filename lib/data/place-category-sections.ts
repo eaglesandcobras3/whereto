@@ -2,21 +2,22 @@ import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
-  applyFeaturedListingPoolFilters,
-  filterFeaturedListingPool,
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
-import { pickDailySubsetWithSalt } from "@/lib/home/daily-featured-pick";
 import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
 import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
 
 /** Town + area pages: fixed category order (`business_categories.slug`). */
 export const PLACE_CATEGORY_SLUG_ORDER = [
   "restaurants",
-  "shopping",
   "coffee_shops",
+  "bars",
+  "shopping",
   "activities",
+  "services",
+  "events",
+  "beaches",
 ] as const;
 
 export const PLACE_CATEGORY_ICONS: Record<string, string> = {
@@ -30,7 +31,8 @@ export const PLACE_CATEGORY_ICONS: Record<string, string> = {
   beaches: "beach_access",
 };
 
-export const PER_PLACE_CATEGORY_PREVIEW = 4;
+/** Card grid cap on town/area hubs; full pool is still linked when over this count. */
+export const PER_PLACE_CATEGORY_PREVIEW = 8;
 
 export const BIZ_CATEGORY_SELECT =
   "id, title, slug, area_id, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( id, title, slug )";
@@ -71,9 +73,13 @@ export function rowToCategoryBusiness(row: Record<string, unknown>): CategoryBus
   };
 }
 
+export function sortBrowseBusinesses<T extends { name: string }>(businesses: T[]): T[] {
+  return [...businesses].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function groupBusinessesByCategorySections(
   businesses: CategoryBusiness[],
-  dailyPickSaltPrefix: string,
+  _dailyPickSaltPrefix?: string,
 ): PlaceCategorySection[] {
   const allowed = new Set<string>(PLACE_CATEGORY_SLUG_ORDER);
   const map = new Map<string, { id: string; title: string; slug: string; pool: CategoryBusiness[] }>();
@@ -97,17 +103,14 @@ export function groupBusinessesByCategorySections(
   return PLACE_CATEGORY_SLUG_ORDER.flatMap((slug) => {
     const cat = bySlug.get(slug);
     if (!cat || cat.pool.length === 0) return [];
+    const sorted = sortBrowseBusinesses(cat.pool);
     return [
       {
         id: cat.id,
         title: cat.title,
         slug: cat.slug,
-        totalCount: cat.pool.length,
-        businesses: pickDailySubsetWithSalt(
-          filterFeaturedListingPool(cat.pool),
-          PER_PLACE_CATEGORY_PREVIEW,
-          `${dailyPickSaltPrefix}:${cat.slug}`,
-        ),
+        totalCount: sorted.length,
+        businesses: sorted,
       },
     ];
   });
@@ -129,17 +132,15 @@ export async function getCategorySectionsForPublicPlace(
 ): Promise<PlaceCategorySection[]> {
   const supabase = getServiceSupabase();
   const byId = new Map<string, CategoryBusiness>();
-  const cap = 150;
+  const cap = 500;
 
   const browseQuery = () =>
-    applyFeaturedListingPoolFilters(
-      supabase
-        .from("businesses_view")
-        .select(BIZ_CATEGORY_SELECT)
-        .is("archived_at", null)
-        .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN),
-    );
+    supabase
+      .from("businesses_view")
+      .select(BIZ_CATEGORY_SELECT)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (place.source === "area") {
     const { data: byColumn } = await browseQuery().eq("area_id", place.id).limit(cap);

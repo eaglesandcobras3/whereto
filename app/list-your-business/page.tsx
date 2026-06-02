@@ -6,6 +6,7 @@ import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/list-your-business"),
@@ -13,6 +14,12 @@ export const metadata: Metadata = {
   description:
     "Request to add your Emerald Coast business or service to WhereTo30A. Submissions are reviewed before publication.",
   robots: { index: true, follow: true },
+  ...openGraphForPage({
+    path: "/list-your-business",
+    title: "List your business | WhereTo30A",
+    description:
+      "Request to add your Emerald Coast business or service to WhereTo30A. Submissions are reviewed before publication.",
+  }),
 };
 
 async function loadTowns(): Promise<ListBusinessTownOption[]> {

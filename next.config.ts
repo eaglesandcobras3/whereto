@@ -11,6 +11,8 @@ const supabaseHost = (() => {
   }
 })();
 
+const indexNowKey = process.env.INDEXNOW_KEY?.trim();
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -30,6 +32,15 @@ const nextConfig: NextConfig = {
         : []),
     ],
   },
+  async rewrites() {
+    if (!indexNowKey) return [];
+    return [
+      {
+        source: `/${indexNowKey}.txt`,
+        destination: "/api/indexnow/key",
+      },
+    ];
+  },
   async redirects() {
     return [
       {
@@ -41,6 +52,18 @@ const nextConfig: NextConfig = {
         source: "/30a",
         destination: "/towns",
         permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
       },
     ];
   },

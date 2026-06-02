@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import {
-  PER_PLACE_CATEGORY_PREVIEW,
   PLACE_CATEGORY_ICONS,
   type PlaceCategorySection,
 } from "@/lib/data/place-category-sections";
@@ -40,7 +39,7 @@ export function PlaceCategoryBusinessSections({
           {heading ?? `Local businesses in ${placeName}`}
         </h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-          {subheading ?? "Browse by category — picks rotate daily."}
+          {subheading ?? "Browse by category — every listing linked below."}
         </p>
       </div>
       {sections.map((section) => {
@@ -67,7 +66,7 @@ export function PlaceCategoryBusinessSections({
                   </p>
                 </div>
               </div>
-              {section.totalCount > PER_PLACE_CATEGORY_PREVIEW ? (
+              {section.totalCount > section.businesses.length ? (
                 <Link
                   href={buildSectionSearchHref(section)}
                   {...gaClickProps({

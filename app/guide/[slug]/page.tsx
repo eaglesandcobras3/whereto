@@ -10,6 +10,7 @@ import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -111,15 +112,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) return { title: "Guide" };
   const seg = normalizeUrlSegment(slug);
 
+  const ogTitle = page.seo_title || page.title;
+  const ogDescription =
+    page.seo_description?.trim() || `Travel guide for 30A: ${page.title}.`;
+
   return {
     ...canonicalAlternates(`/guide/${seg}`),
     title: titleSegmentForLayoutTemplate(page.seo_title || page.title),
     description: page.seo_description,
-    openGraph: {
-      title: page.seo_title || page.title,
-      description: page.seo_description || undefined,
-      images: page.og_image_url ? [{ url: page.og_image_url }] : [],
-    },
+    ...openGraphForPage({
+      path: `/guide/${seg}`,
+      title: ogTitle,
+      description: ogDescription,
+      imageUrl: page.og_image_url,
+    }),
   };
 }
 
@@ -136,7 +142,7 @@ export default async function GuidePage({ params }: Props) {
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Guides", url: "/guides" },
-    { name: page.title },
+    { name: page.title, url: `/guide/${slug}` },
   ]);
 
   const guideSchema = generateGuideSchema({

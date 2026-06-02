@@ -3,6 +3,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
@@ -26,12 +27,12 @@ export const metadata: Metadata = {
     "30A Florida neighborhoods",
     "Emerald Coast towns",
   ],
-  openGraph: {
+  ...openGraphForPage({
+    path: "/towns",
     title: "30A Beach Towns | Florida's Emerald Coast Communities | WhereTo30A",
     description:
       "Every beach community along Scenic 30A — with local guides covering vibe, restaurants, beaches, and who each town is best for.",
-    type: "website",
-  },
+  }),
 };
 
 type TownRow = {

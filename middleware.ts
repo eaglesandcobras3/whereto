@@ -19,6 +19,40 @@ function isAuthGatedPath(pathname: string): boolean {
   return false;
 }
 
+/** Server-side redirects for legacy /search URLs — avoids 200 HTML + client meta refresh. */
+function maybeRedirectSearch(request: NextRequest): NextResponse | null {
+  if (request.nextUrl.pathname !== "/search") return null;
+
+  const sp = request.nextUrl.searchParams;
+  const rawType = sp.get("type");
+  const type = rawType === "stores" ? "businesses" : rawType;
+
+  const hasExtraFilters = Boolean(
+    sp.get("q")?.trim() ||
+      sp.get("town_id")?.trim() ||
+      sp.get("category")?.trim() ||
+      sp.get("area_id")?.trim() ||
+      sp.get("scope") ||
+      sp.get("price") ||
+      sp.get("tags") ||
+      (sp.get("page")?.trim() && sp.get("page") !== "1") ||
+      sp.get("sort")?.trim(),
+  );
+
+  if (!hasExtraFilters && type) {
+    if (type === "towns") return NextResponse.redirect(new URL("/towns", request.url));
+    if (type === "areas") return NextResponse.redirect(new URL("/areas", request.url));
+    if (type === "businesses") return NextResponse.redirect(new URL("/businesses", request.url));
+    if (type === "guides") return NextResponse.redirect(new URL("/guides", request.url));
+  }
+
+  if (!hasExtraFilters && !type) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  return null;
+}
+
 export async function middleware(request: NextRequest) {
   const flags = getFeatureFlagsForEdgeRequest((name) =>
     request.cookies.get(name)?.value,
@@ -37,6 +71,9 @@ export async function middleware(request: NextRequest) {
   if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
     return NextResponse.redirect(new URL("/", request.url));
   }
+
+  const searchRedirect = maybeRedirectSearch(request);
+  if (searchRedirect) return searchRedirect;
 
   let supabaseResponse = NextResponse.next({
     request,

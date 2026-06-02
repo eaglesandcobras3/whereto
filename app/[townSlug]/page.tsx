@@ -15,11 +15,11 @@ import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-titl
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
-  applyFeaturedListingPoolFilters,
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
@@ -76,27 +76,25 @@ async function getTownPageData(townId: string, townSlug: string) {
   const townAreaIds = townAreaRows.map((a) => String(a.id));
   const townAreaIdSet = new Set(townAreaIds);
 
-  const bizInTownQuery = applyFeaturedListingPoolFilters(
-    supabase
-      .from("businesses_view")
-      .select(BIZ_CATEGORY_SELECT)
-      .eq("town_id", townId)
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN),
-  ).limit(150);
+  const bizInTownQuery = supabase
+    .from("businesses_view")
+    .select(BIZ_CATEGORY_SELECT)
+    .eq("town_id", townId)
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .limit(500);
 
   const bizInTownAreasQuery =
     townAreaIds.length > 0
-      ? applyFeaturedListingPoolFilters(
-          supabase
-            .from("businesses_view")
-            .select(BIZ_CATEGORY_SELECT)
-            .in("area_id", townAreaIds)
-            .is("archived_at", null)
-            .eq("status", DIRECTUS_PUBLISHED_STATUS)
-            .or(BROWSE_VISIBLE_NOT_HIDDEN),
-        ).limit(150)
+      ? supabase
+          .from("businesses_view")
+          .select(BIZ_CATEGORY_SELECT)
+          .in("area_id", townAreaIds)
+          .is("archived_at", null)
+          .eq("status", DIRECTUS_PUBLISHED_STATUS)
+          .or(BROWSE_VISIBLE_NOT_HIDDEN)
+          .limit(500)
       : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
 
   const directAreaBizTownQuery = supabase
@@ -243,17 +241,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       seoDesc?.trim() ||
       (typeof town.excerpt === "string" && town.excerpt) ||
       `Local guide: ${town.name} on 30A — restaurants, beaches, areas, and what the week actually feels like.`;
-    const og = businessListingImageUrl(town.hero_image_thumb_url as string | null);
+    const ogTitle = `${town.name} | WhereTo30A`;
     return {
       ...canonicalAlternates(`/${town.slug}`),
       title,
       description: desc,
-      openGraph: og
-        ? { title: `${town.name} | WhereTo30A`, description: desc, images: [{ url: og }] }
-        : { title: `${town.name} | WhereTo30A`, description: desc },
-      twitter: og
-        ? { card: "summary_large_image", description: desc, images: [og] }
-        : { card: "summary", description: desc },
+      ...openGraphForPage({
+        path: `/${town.slug}`,
+        title: ogTitle,
+        description: desc,
+        imageUrl: businessListingImageUrl(town.hero_image_thumb_url as string | null),
+      }),
     };
   }
   return { title: metadataTitleSiteOnly };
@@ -309,7 +307,7 @@ function BasicTownPage({
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Towns", url: "/towns" },
-    { name: town.name },
+    { name: town.name, url: `/${town.slug}` },
   ]);
 
   const townSchema = generateTownSchema({
@@ -392,11 +390,7 @@ function BasicTownPage({
                 placeSlug={town.slug}
                 sections={pageData.categorySections}
                 analyticsCategoryPrefix="town_guide_category"
-                buildSectionSearchHref={(section) => {
-                  const searchParams = new URLSearchParams({ town_id: town.id });
-                  if (section.slug) searchParams.set("category", section.slug);
-                  return `/search?${searchParams.toString()}`;
-                }}
+                buildSectionSearchHref={(section) => `/categories/${section.slug}`}
                 emptyMessage={
                   <p className="text-[var(--color-text-secondary)]">
                     No business listings in {town.name} yet.{" "}

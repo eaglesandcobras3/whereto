@@ -2,21 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-
-const siteUrl = "https://whereto30a.com";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/privacy"),
   title: "Privacy",
   description:
     "How WhereTo30A collects, uses, and shares information when you use our website and services.",
-  openGraph: {
+  ...openGraphForPage({
+    path: "/privacy",
     title: "Privacy Policy | WhereTo30A",
-  description: "Privacy practices for WhereTo30A covering accounts, analytics, and your choices.",
-    type: "website",
-    url: `${siteUrl}/privacy`,
-  },
+    description: "Privacy practices for WhereTo30A covering accounts, analytics, and your choices.",
+  }),
 };
 
 export default function PrivacyPage() {

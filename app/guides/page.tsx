@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
@@ -32,12 +33,12 @@ export const metadata: Metadata = {
     "Seaside Florida guide",
     "30A local tips",
   ],
-  openGraph: {
+  ...openGraphForPage({
+    path: "/guides",
     title: "30A Travel Guides | WhereTo30A",
     description:
       "Editorial guides for planning your 30A trip — towns, food, beaches, and on-the-ground local advice.",
-    type: "website",
-  },
+  }),
 };
 
 type GuideRow = {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getShareSnapshotMeta } from "@/lib/data/share-meta";
 import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
-import { getSiteUrl } from "@/lib/site-url";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 
 type MetaProps = { params: Promise<{ id: string }> };
 
@@ -13,31 +13,27 @@ const SHARE_NOINDEX: Pick<Metadata, "robots"> = {
 export async function generateMetadata({ params }: MetaProps): Promise<Metadata> {
   const { id } = await params;
   const meta = await getShareSnapshotMeta(id);
-  const base = getSiteUrl();
-  const url = `${base}/share/${id}`;
+  const path = `/share/${id}`;
   if (!meta) {
     return {
       ...SHARE_NOINDEX,
       title: titleSegmentForLayoutTemplate("Shared results | WhereTo30A"),
-      openGraph: { url, siteName: "WhereTo30A", type: "website" },
+      ...openGraphForPage({
+        path,
+        title: "Shared results | WhereTo30A",
+        description: "Shared search results from WhereTo30A.",
+      }),
     };
   }
   return {
     ...SHARE_NOINDEX,
     title: titleSegmentForLayoutTemplate(meta.title),
     description: meta.description,
-    openGraph: {
+    ...openGraphForPage({
+      path,
       title: meta.title,
       description: meta.description,
-      url,
-      siteName: "WhereTo30A",
-      type: "website",
-    },
-    twitter: {
-      card: "summary",
-      title: meta.title,
-      description: meta.description,
-    },
+    }),
   };
 }
 

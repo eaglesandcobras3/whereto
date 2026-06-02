@@ -4,7 +4,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import type { Metadata } from "next";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { getSiteUrl } from "@/lib/site-url";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { loadHubMainGuideMarkdown } from "@/lib/data/load-hub-main-guide-markdown";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
@@ -15,30 +15,38 @@ export const revalidate = 3600;
 
 const HUB_FEATURED_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
-export const metadata: Metadata = {
-  ...canonicalAlternates("/guide"),
-  title: "Complete Guide to Visiting 30A, Florida (2026)",
-  description:
-    "A local-style guide to South Walton's 30A corridor: what it is, how to pick a town, beach access, airports, where to eat, and a simple first-trip rhythm. Straight talk for first-time visitors.",
-  keywords: [
-    "30A Florida",
-    "30A vacation guide",
-    "Emerald Coast",
-    "South Walton beaches",
-    "Seaside Florida",
-    "Rosemary Beach",
-    "Alys Beach",
-    "30A beach access",
-    "where to stay on 30A",
-  ],
-  openGraph: {
-    title: "Complete Guide to Visiting 30A, Florida | WhereTo30A",
-    description:
-      "Plan a first 30A trip with clear town picks, beach-access reality, and pacing that matches your crew.",
-    type: "website",
-    url: `${getSiteUrl()}/guide`,
-  },
-};
+const GUIDE_TITLE = "Complete Guide to Visiting 30A, Florida (2026)";
+const GUIDE_DESCRIPTION =
+  "A local-style guide to South Walton's 30A corridor: what it is, how to pick a town, beach access, airports, where to eat, and a simple first-trip rhythm. Straight talk for first-time visitors.";
+const GUIDE_OG_TITLE = "Complete Guide to Visiting 30A, Florida | WhereTo30A";
+const GUIDE_OG_DESCRIPTION =
+  "Plan a first 30A trip with clear town picks, beach-access reality, and pacing that matches your crew.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const hero = await getHomeHeroSettings();
+  return {
+    ...canonicalAlternates("/guide"),
+    title: GUIDE_TITLE,
+    description: GUIDE_DESCRIPTION,
+    keywords: [
+      "30A Florida",
+      "30A vacation guide",
+      "Emerald Coast",
+      "South Walton beaches",
+      "Seaside Florida",
+      "Rosemary Beach",
+      "Alys Beach",
+      "30A beach access",
+      "where to stay on 30A",
+    ],
+    ...openGraphForPage({
+      path: "/guide",
+      title: GUIDE_OG_TITLE,
+      description: GUIDE_OG_DESCRIPTION,
+      imageUrl: hero.imageUrl,
+    }),
+  };
+}
 
 type Town = {
   id: number;

@@ -18,6 +18,7 @@ import {
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
@@ -235,8 +236,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const b = await loadBusiness(slug);
   if (!b) return { title: "Business" };
   const desc = (b.excerpt as string) || (b.ai_summary as string)?.slice(0, 160) || undefined;
-  const hero = businessListingImageUrl(b.hero_image_url as string | null);
-  const ogUrl = hero ?? undefined;
   const row = b as Record<string, unknown>;
   const rawSlug = row.slug;
   const dbSlug = typeof rawSlug === "string" ? rawSlug.trim() : "";
@@ -250,17 +249,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .filter(Boolean)
     .join(" ");
   const pageTitle = titleSuffix ? `${b.name as string} | ${titleSuffix}` : (b.name as string);
+  const ogTitle = `${b.name as string} | WhereTo30A`;
 
   return {
     ...canonicalAlternates(canonicalPath),
     title: pageTitle,
     description: desc,
-    openGraph: ogUrl
-      ? { title: `${b.name as string} | WhereTo30A`, description: desc, images: [{ url: ogUrl }] }
-      : { title: `${b.name as string} | WhereTo30A`, description: desc },
-    twitter: ogUrl
-      ? { card: "summary_large_image", description: desc, images: [ogUrl] }
-      : { card: "summary", description: desc },
+    ...openGraphForPage({
+      path: canonicalPath,
+      title: ogTitle,
+      description: desc ?? `Local business on 30A: ${b.name as string}.`,
+      imageUrl: businessListingImageUrl(b.hero_image_url as string | null),
+    }),
   };
 }
 
@@ -412,11 +412,24 @@ export default async function BusinessPage({ params }: Props) {
   const dateScore = b.ai_date_score as number | null;
   const valueScore = b.ai_value_score as number | null;
 
+  const bizId = row.id != null ? String(row.id) : "";
+  const canonicalSegment = dbSlug || bizId;
+  const canonicalPath = `/business/${encodeURIComponent(canonicalSegment)}`;
+
   const breadcrumbItems = [
     { name: "Home", url: "/" },
     ...(town?.slug && town?.name ? [{ name: town.name, url: `/${town.slug}` }] : []),
-    ...(breadcrumbCategoryLabel ? [{ name: breadcrumbCategoryLabel }] : []),
-    { name: b.name as string },
+    ...(breadcrumbCategoryLabel
+      ? [
+          {
+            name: breadcrumbCategoryLabel,
+            url: category?.slug
+              ? `/categories/${encodeURIComponent(category.slug)}`
+              : "/categories",
+          },
+        ]
+      : []),
+    { name: b.name as string, url: canonicalPath },
   ];
   const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
@@ -502,7 +515,7 @@ export default async function BusinessPage({ params }: Props) {
                 <span className="text-zinc-300">/</span>
                 {category?.slug ? (
                   <Link
-                    href={`/search?${new URLSearchParams({ category: category.slug }).toString()}`}
+                    href={`/categories/${encodeURIComponent(category.slug)}`}
                     {...gaClickProps({
                       event: "nav_click",
                       category: "business_detail_breadcrumb",

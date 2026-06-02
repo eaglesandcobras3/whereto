@@ -2,20 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-
-const siteUrl = "https://whereto30a.com";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/terms"),
   title: "Terms",
   description: "Terms of Service for using WhereTo30A and whereto30a.com.",
-  openGraph: {
+  ...openGraphForPage({
+    path: "/terms",
     title: "Terms of Service | WhereTo30A",
     description: "Rules and disclaimers for using WhereTo30A.",
-    type: "website",
-    url: `${siteUrl}/terms`,
-  },
+  }),
 };
 
 export default function TermsPage() {

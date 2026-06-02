@@ -4,18 +4,16 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { generateBreadcrumbSchema, generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getSiteUrl } from "@/lib/site-url";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { pickDailySubsetWithSalt } from "@/lib/home/daily-featured-pick";
+import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
-
-/** Max listings shown per town on a category page; full list via search/town links. */
-const PER_TOWN_PREVIEW_LIMIT = 4;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -119,7 +117,7 @@ async function loadBusinessesForCategory(categoryId: string): Promise<BusinessRo
   });
 }
 
-function groupByTown(businesses: BusinessRow[], categorySlug: string): TownGroup[] {
+function groupByTown(businesses: BusinessRow[]): TownGroup[] {
   const map = new Map<string, { name: string; slug: string; townId: string | null; pool: BusinessRow[] }>();
   const noTown: BusinessRow[] = [];
 
@@ -142,27 +140,24 @@ function groupByTown(businesses: BusinessRow[], categorySlug: string): TownGroup
   const groups: TownGroup[] = [...map.values()]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((g) => {
-      const preview = pickDailySubsetWithSalt(
-        g.pool,
-        PER_TOWN_PREVIEW_LIMIT,
-        `${categorySlug}:${g.slug}`,
-      );
+      const sorted = sortBrowseBusinesses(g.pool);
       return {
         name: g.name,
         slug: g.slug,
         townId: g.townId,
-        businesses: preview,
-        totalCount: g.pool.length,
+        businesses: sorted,
+        totalCount: sorted.length,
       };
     });
 
   if (noTown.length > 0) {
+    const sorted = sortBrowseBusinesses(noTown);
     groups.push({
       name: "Other",
       slug: "",
       townId: null,
-      businesses: pickDailySubsetWithSalt(noTown, PER_TOWN_PREVIEW_LIMIT, `${categorySlug}:other`),
-      totalCount: noTown.length,
+      businesses: sorted,
+      totalCount: sorted.length,
     });
   }
   return groups;
@@ -178,6 +173,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     cat.excerpt?.trim() ||
     `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida — browse local options across Rosemary Beach, Seaside, Watercolor, Alys Beach, Inlet Beach, and more.`;
 
+  const ogTitle = `${cat.title} on 30A | WhereTo30A`;
+
   return {
     ...canonicalAlternates(`/categories/${slug}`),
     title,
@@ -190,12 +187,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `${cat.title.toLowerCase()} Seaside Florida`,
       `30A ${cat.title.toLowerCase()}`,
     ],
-    openGraph: {
-      title: `${cat.title} on 30A | WhereTo30A`,
+    ...openGraphForPage({
+      path: `/categories/${slug}`,
+      title: ogTitle,
       description,
-      type: "website",
-      url: `${getSiteUrl()}/categories/${slug}`,
-    },
+    }),
   };
 }
 
@@ -216,26 +212,24 @@ export default async function CategoryPage({ params }: Props) {
   if (!cat) notFound();
 
   const businesses = await loadBusinessesForCategory(cat.id);
-  const townGroups = groupByTown(businesses, cat.slug);
+  const townGroups = groupByTown(businesses);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Categories", url: "/categories" },
-    { name: cat.title },
+    { name: cat.title, url: `/categories/${slug}` },
   ]);
 
   const itemListSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
+    ...generateItemListSchema(
+      businesses.slice(0, 50).map((b) => ({
+        name: b.name,
+        url: `/business/${b.slug}`,
+      })),
+    ),
     name: `${cat.title} on 30A, Florida`,
     description: `Local ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida`,
     numberOfItems: businesses.length,
-    itemListElement: businesses.slice(0, 50).map((b, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      url: `${getSiteUrl()}/business/${b.slug}`,
-      name: b.name,
-    })),
   };
 
   return (
@@ -304,19 +298,7 @@ export default async function CategoryPage({ params }: Props) {
                         group.name
                       )}
                     </h2>
-                    {group.townId && group.totalCount > PER_TOWN_PREVIEW_LIMIT ? (
-                      <Link
-                        href={`/search?category=${cat.slug}&town_id=${group.townId}`}
-                        {...gaClickProps({
-                          event: "nav_click",
-                          category: "category_page_town_filter",
-                          label: `${cat.slug}_${group.slug}`,
-                        })}
-                        className="shrink-0 text-xs font-medium text-[var(--color-primary)] hover:underline"
-                      >
-                        See all {group.totalCount} in {group.name}
-                      </Link>
-                    ) : group.slug ? (
+                    {group.slug ? (
                       <Link
                         href={`/${group.slug}`}
                         {...gaClickProps({
@@ -327,18 +309,6 @@ export default async function CategoryPage({ params }: Props) {
                         className="shrink-0 text-xs font-medium text-[var(--color-primary)] hover:underline"
                       >
                         Town guide
-                      </Link>
-                    ) : group.totalCount > PER_TOWN_PREVIEW_LIMIT ? (
-                      <Link
-                        href={`/search?category=${cat.slug}`}
-                        {...gaClickProps({
-                          event: "nav_click",
-                          category: "category_page_other_filter",
-                          label: cat.slug,
-                        })}
-                        className="shrink-0 text-xs font-medium text-[var(--color-primary)] hover:underline"
-                      >
-                        See all {group.totalCount}
                       </Link>
                     ) : null}
                   </div>

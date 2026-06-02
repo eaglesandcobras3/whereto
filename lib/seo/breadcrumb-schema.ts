@@ -3,12 +3,19 @@ import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 export type BreadcrumbItem = {
   name: string;
-  url?: string;
+  /** Relative path (e.g. `/guide/foo`) or absolute URL — required for valid BreadcrumbList JSON-LD. */
+  url: string;
 };
+
+function toAbsoluteSiteUrl(url: string, siteUrl: string): string {
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  return `${siteUrl}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+}
 
 /**
  * Generate BreadcrumbList JSON-LD schema
- * @param items Array of breadcrumb items (last item is current page, no URL needed)
+ * @param items Array of breadcrumb items — each must include a URL (including the current page).
  */
 export function generateBreadcrumbSchema(items: BreadcrumbItem[]): object {
   const siteUrl = getSiteUrl();
@@ -16,12 +23,20 @@ export function generateBreadcrumbSchema(items: BreadcrumbItem[]): object {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: items.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.name,
-      item: item.url ? `${siteUrl}${item.url}` : undefined,
-    })),
+    itemListElement: items.map((item, index) => {
+      const pageUrl = toAbsoluteSiteUrl(item.url, siteUrl);
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.name,
+        item: {
+          "@type": "WebPage",
+          "@id": pageUrl,
+          name: item.name,
+          url: pageUrl,
+        },
+      };
+    }),
   };
 }
 

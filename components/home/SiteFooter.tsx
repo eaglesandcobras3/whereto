@@ -175,6 +175,16 @@ function FooterBrowseColumn({
 const companyLinks = [
   { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "about" }), name: "About", href: "/about" },
   {
+    ...gaClickProps({ event: "nav_click", category: "footer_company", label: "visitor_guide" }),
+    name: "30A visitor guide",
+    href: "/guide",
+  },
+  {
+    ...gaClickProps({ event: "nav_click", category: "footer_company", label: "all_categories" }),
+    name: "All categories",
+    href: "/categories",
+  },
+  {
     ...gaClickProps({ event: "cta_click", category: "footer_company", label: "list_your_business" }),
     name: "List your business",
     href: "/list-your-business",

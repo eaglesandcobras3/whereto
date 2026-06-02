@@ -7,6 +7,7 @@ import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref } from "@/lib/nav/discovery-links";
@@ -143,10 +144,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const event = await loadEvent(slug);
   if (!event) return { title: "Event" };
   const seg = normalizeUrlSegment(slug);
+  const description = event.description?.slice(0, 160) ?? `Event on 30A: ${event.title}`;
   return {
     ...canonicalAlternates(`/events/${seg}`),
     title: event.title,
-    description: event.description?.slice(0, 160) ?? `Event on 30A: ${event.title}`,
+    description,
+    ...openGraphForPage({
+      path: `/events/${seg}`,
+      title: `${event.title} | WhereTo30A`,
+      description,
+      imageUrl: event.hero_image_url,
+    }),
   };
 }
 

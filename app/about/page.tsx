@@ -2,22 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-
-const siteUrl = "https://whereto30a.com";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/about"),
   title: "About",
   description:
     "Why WhereTo30A exists, how listings are informational (not audited), corrections, architecture, data security.",
-  openGraph: {
+  ...openGraphForPage({
+    path: "/about",
     title: "About | WhereTo30A",
     description:
       "A practical guide and directory for Highway 30A and the Emerald Coast — built responsibly and served securely.",
-    type: "website",
-    url: `${siteUrl}/about`,
-  },
+  }),
 };
 
 export default function AboutPage() {

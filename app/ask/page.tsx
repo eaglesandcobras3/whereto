@@ -4,11 +4,9 @@ import { AskSession } from "@/components/ask/AskSession";
 import type { ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
 import { getAllFeatureFlags, isAskEnabled } from "@/lib/feature-flags";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 export const metadata: Metadata = {
-  ...canonicalAlternates("/ask"),
   title: "Ask WhereTo30A",
   description:
     "AI concierge for 30A — discover verified restaurants, coffee, activities, and local guides.",

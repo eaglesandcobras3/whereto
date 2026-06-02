@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { BusinessFeedbackForm } from "@/components/feedback/BusinessFeedbackForm";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { prefilledListingContextLine } from "@/lib/feedback/feedback-query";
 
 export const metadata: Metadata = {
@@ -11,6 +12,12 @@ export const metadata: Metadata = {
   description:
     "Share feedback about a business listing on WhereTo30A — accuracy, experience, or suggested improvements.",
   robots: { index: true, follow: true },
+  ...openGraphForPage({
+    path: "/feedback",
+    title: "Listing feedback | WhereTo30A",
+    description:
+      "Share feedback about a business listing on WhereTo30A — accuracy, experience, or suggested improvements.",
+  }),
 };
 
 export default async function FeedbackPage({

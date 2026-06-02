@@ -9,6 +9,7 @@ import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
 import { filterEnrichedToPublishedBusinesses } from "@/lib/shop/filter-enriched-published-businesses";
@@ -106,10 +107,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!row) return { title: metadataTitleSiteOnly };
   const ts = normalizeUrlSegment(townSlug);
   const ins = normalizeUrlSegment(intentSlug);
+  const description = row.meta_description ?? row.intro.slice(0, 160);
+  const ogTitle = `${row.title} | WhereTo30A`;
   return {
     ...canonicalAlternates(`/${ts}/${ins}`),
     title: titleSegmentForLayoutTemplate(row.title),
-    description: row.meta_description ?? row.intro.slice(0, 160),
+    description,
+    ...openGraphForPage({
+      path: `/${ts}/${ins}`,
+      title: ogTitle,
+      description,
+    }),
   };
 }
 

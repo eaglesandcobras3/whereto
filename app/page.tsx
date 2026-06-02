@@ -15,6 +15,8 @@ import {
 } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
+import { getHomeHeroSettings } from "@/lib/data/site-settings";
 
 // Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
@@ -24,37 +26,34 @@ const HOME_TITLE = "WhereTo30A | Local Guide to Florida's 30A & Emerald Coast";
 const HOME_DESCRIPTION =
   "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips from Rosemary Beach to Seaside.";
 
-export const metadata: Metadata = {
-  ...canonicalAlternates("/"),
-  title: { absolute: HOME_TITLE },
-  description: HOME_DESCRIPTION,
-  keywords: [
-    "30A",
-    "30A Florida",
-    "Emerald Coast",
-    "Rosemary Beach",
-    "Seaside Florida",
-    "Alys Beach",
-    "Grayton Beach",
-    "30A restaurants",
-    "30A things to do",
-    "30A vacation",
-    "30A beach towns",
-    "Florida panhandle beaches",
-  ],
-  openGraph: {
-    title: HOME_TITLE,
+export async function generateMetadata(): Promise<Metadata> {
+  const hero = await getHomeHeroSettings();
+  return {
+    ...canonicalAlternates("/"),
+    title: { absolute: HOME_TITLE },
     description: HOME_DESCRIPTION,
-    type: "website",
-    url: "/",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "WhereTo30A | Local Guide to 30A",
-    description:
-      "Your complete local guide to 30A and Florida's Emerald Coast.",
-  },
-};
+    keywords: [
+      "30A",
+      "30A Florida",
+      "Emerald Coast",
+      "Rosemary Beach",
+      "Seaside Florida",
+      "Alys Beach",
+      "Grayton Beach",
+      "30A restaurants",
+      "30A things to do",
+      "30A vacation",
+      "30A beach towns",
+      "Florida panhandle beaches",
+    ],
+    ...openGraphForPage({
+      path: "/",
+      title: HOME_TITLE,
+      description: HOME_DESCRIPTION,
+      imageUrl: hero.imageUrl,
+    }),
+  };
+}
 
 type HomeProps = {
   searchParams: Promise<{ q?: string | string[] }>;

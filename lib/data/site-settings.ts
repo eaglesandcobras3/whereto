@@ -16,6 +16,9 @@ const DEFAULTS: HomeHeroSettings = {
   searchPlaceholder: "Search anything on 30A...",
 };
 
+/** Default hero image — used for OG fallbacks when a page has no listing image. */
+export const DEFAULT_HOME_HERO_IMAGE_URL = DEFAULTS.imageUrl;
+
 function fromEnv(k: string, fallback: string): string {
   const v = process.env[k]?.trim();
   if (v) return v;

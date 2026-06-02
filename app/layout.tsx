@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { NavbarServer } from "@/components/NavbarServer";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { getSiteUrl } from "@/lib/site-url";
+import { defaultOpenGraphImageUrl } from "@/lib/seo/social-metadata";
 import "./globals.css";
 
 const inter = Inter({
@@ -33,6 +34,10 @@ const geistMono = Geist_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = getSiteUrl();
   const base = new URL(siteUrl);
+  const ogImage = defaultOpenGraphImageUrl();
+  const ogTitle = "WhereTo30A | Local Guide to Florida's 30A & Emerald Coast";
+  const ogDescription =
+    "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips.";
 
   return {
     metadataBase: base,
@@ -69,15 +74,15 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: "en_US",
       url: siteUrl,
       siteName: "WhereTo30A",
-      title: "WhereTo30A | Local Guide to Florida's 30A & Emerald Coast",
-      description:
-        "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips.",
+      title: ogTitle,
+      description: ogDescription,
+      images: [{ url: ogImage }],
     },
     twitter: {
       card: "summary_large_image",
       title: "WhereTo30A | Local Guide to 30A",
-      description:
-        "Your complete local guide to 30A and Florida's Emerald Coast.",
+      description: ogDescription,
+      images: [ogImage],
     },
     robots: {
       index: true,

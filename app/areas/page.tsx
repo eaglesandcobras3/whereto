@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { AreaCard } from "@/components/discovery/AreaCard";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
@@ -23,12 +24,12 @@ export const metadata: Metadata = {
     "South Walton districts",
     "30A landmarks",
   ],
-  openGraph: {
+  ...openGraphForPage({
+    path: "/areas",
     title: "30A Shopping Districts & Town Centers | WhereTo30A",
     description:
       "Every notable area, district, and gathering spot along 30A — curated with local restaurants, shops, and things to do nearby.",
-    type: "website",
-  },
+  }),
 };
 
 const AREA_TYPE_LABELS: Record<string, string> = {

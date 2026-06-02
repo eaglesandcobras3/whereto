@@ -10,6 +10,7 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
@@ -187,18 +188,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const place = await getPublicPlaceBySlug(raw);
   if (!place) return { title: "Area" };
   const desc = place.excerpt || `Explore ${place.title} on 30A.`;
-  const og = businessListingImageUrl(place.hero_image_url);
   const pathSeg = normalizeUrlSegment(place.slug);
+  const ogTitle = `${place.title} | WhereTo30A`;
   return {
     ...canonicalAlternates(`/area/${pathSeg}`),
     title: place.title,
     description: desc,
-    openGraph: og
-      ? { title: `${place.title} | WhereTo30A`, description: desc, images: [{ url: og }] }
-      : { title: `${place.title} | WhereTo30A`, description: desc },
-    twitter: og
-      ? { card: "summary_large_image", description: desc, images: [og] }
-      : { card: "summary", description: desc },
+    ...openGraphForPage({
+      path: `/area/${pathSeg}`,
+      title: ogTitle,
+      description: desc,
+      imageUrl: businessListingImageUrl(place.hero_image_url),
+    }),
   };
 }
 
@@ -221,12 +222,13 @@ export default async function AreaPage({ params }: Props) {
     : "";
   const hasMarkdown = bodyMarkdown.length > 0;
 
+  const areaPath = `/area/${normalizeUrlSegment(area.slug)}`;
   const breadcrumbItems = [
     { name: "Home", url: "/" },
     ...(area.town_slug && area.town_name
       ? [{ name: area.town_name, url: `/${area.town_slug}` }]
       : []),
-    { name: area.title },
+    { name: area.title, url: areaPath },
   ];
   const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
@@ -334,9 +336,7 @@ export default async function AreaPage({ params }: Props) {
                 placeSlug={area.slug}
                 sections={categorySections}
                 analyticsCategoryPrefix="area_guide_category"
-                buildSectionSearchHref={(section) =>
-                  areaSectionSearchHref(area, section.slug) ?? "/search"
-                }
+                buildSectionSearchHref={(section) => `/categories/${section.slug}`}
                 emptyMessage={
                   areaBrowseSearchHref(area) ? (
                     <p className="text-[var(--color-text-secondary)]">
