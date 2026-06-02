@@ -16,7 +16,6 @@ import {
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { getHomeHeroSettings } from "@/lib/data/site-settings";
 
 // Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.

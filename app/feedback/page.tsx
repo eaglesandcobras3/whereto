@@ -6,19 +6,42 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { prefilledListingContextLine } from "@/lib/feedback/feedback-query";
 
-export const metadata: Metadata = {
-  ...canonicalAlternates("/feedback"),
-  title: "Listing feedback",
-  description:
-    "Share feedback about a business listing on WhereTo30A — accuracy, experience, or suggested improvements.",
-  robots: { index: true, follow: true },
-  ...openGraphForPage({
-    path: "/feedback",
-    title: "Listing feedback | WhereTo30A",
-    description:
-      "Share feedback about a business listing on WhereTo30A — accuracy, experience, or suggested improvements.",
-  }),
-};
+const FEEDBACK_TITLE = "Listing feedback";
+const FEEDBACK_DESCRIPTION =
+  "Share feedback about a business listing on WhereTo30A — accuracy, experience, or suggested improvements.";
+
+function feedbackHasPrefillParams(
+  searchParams: Record<string, string | string[] | undefined>,
+): boolean {
+  return Object.keys(searchParams).some((key) => {
+    const v = searchParams[key];
+    if (typeof v === "string") return v.trim().length > 0;
+    if (Array.isArray(v)) return v.some((part) => part.trim().length > 0);
+    return false;
+  });
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const hasPrefillParams = feedbackHasPrefillParams(sp);
+
+  return {
+    ...canonicalAlternates("/feedback"),
+    title: FEEDBACK_TITLE,
+    description: FEEDBACK_DESCRIPTION,
+    // Bare /feedback is the indexable landing page; ?p= / ?title= variants are form prefill only.
+    robots: hasPrefillParams ? { index: false, follow: true } : { index: true, follow: true },
+    ...openGraphForPage({
+      path: "/feedback",
+      title: "Listing feedback | WhereTo30A",
+      description: FEEDBACK_DESCRIPTION,
+    }),
+  };
+}
 
 export default async function FeedbackPage({
   searchParams,
