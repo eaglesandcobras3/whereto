@@ -19,7 +19,7 @@ export const SERVICE_VENDOR_UI = {
   specialtyMore: "more specialties",
   hubBrowseHeading: "Browse by specialty",
   hubBrowseSubheading:
-    "Landscaping, plumbing, cleaning, and other trades — open a section to search providers in that specialty.",
+    "Browse by section — home trades, professional services, health, marine, and more. Expand a group or filter to find a specialty.",
 } as const;
 
 export function parseSpecialtySlugsFromParams(

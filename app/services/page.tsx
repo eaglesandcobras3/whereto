@@ -5,7 +5,14 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { getServiceVendorsPage } from "@/lib/data/service-vendors-hub";
-import { SERVICE_CATEGORY_ICONS } from "@/lib/service-categories/constants";
+import {
+  ServiceSpecialtyBrowse,
+  toServiceSpecialtyBrowseGroups,
+} from "@/components/services/ServiceSpecialtyBrowse";
+import {
+  findGroupForSpecialtySlug,
+  groupListedServiceCategories,
+} from "@/lib/service-categories/group-listed-categories";
 import {
   parseSpecialtySlugsFromParams,
   SERVICE_VENDOR_UI,
@@ -80,6 +87,9 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
   ]);
 
   const listedSpecialties = categories.filter((c) => c.vendor_count > 0);
+  const specialtyGroups = groupListedServiceCategories(listedSpecialties);
+  const openGroupSlug = findGroupForSpecialtySlug(specialtyGroups, specialtySlug);
+  const browseGroups = toServiceSpecialtyBrowseGroups(specialtyGroups, specialtySlug);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -102,7 +112,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
               Service providers on 30A
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-[var(--color-text-secondary)]">
-              Regional and mobile vendors — contractors, trades, landscaping, cleaning, and
+              Regional and mobile vendors — trades, insurance, legal, medical, marine, and other
               professionals who serve homes and rentals across the corridor. Not the same as
               storefront service businesses with a fixed address (see{" "}
               <Link
@@ -164,50 +174,15 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
 
         <section className="mx-auto max-w-6xl px-6 py-10 md:py-14">
           <div className="mb-8">
-            <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
-              {SERVICE_VENDOR_UI.specialtyHeading}
-            </h2>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              {SERVICE_VENDOR_UI.hubBrowseSubheading}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                href={serviceVendorsHubHref({ query: query || null })}
-                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !specialtySlug
-                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                    : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
-                }`}
-              >
-                All
-              </Link>
-              {listedSpecialties.map((cat) => {
-                const icon = SERVICE_CATEGORY_ICONS[cat.slug] ?? "home_repair_service";
-                const active = specialtySlug === cat.slug;
-                return (
-                  <Link
-                    key={cat.id}
-                    href={serviceVendorsHubHref({ specialtySlug: cat.slug, query: query || null })}
-                    {...gaClickProps({
-                      event: "nav_click",
-                      category: "services_hub_specialty",
-                      label: cat.slug,
-                    })}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                      active
-                        ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                        : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined !text-base">{icon}</span>
-                    {cat.title}
-                    <span className={active ? "opacity-80" : "text-[var(--color-text-tertiary)]"}>
-                      ({cat.vendor_count})
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
+            <ServiceSpecialtyBrowse
+              groups={browseGroups}
+              defaultOpenGroupSlug={openGroupSlug}
+              allHref={serviceVendorsHubHref({ query: query || null })}
+              allActive={!specialtySlug}
+              query={query}
+              specialtyHeading={SERVICE_VENDOR_UI.specialtyHeading}
+              hubBrowseSubheading={SERVICE_VENDOR_UI.hubBrowseSubheading}
+            />
           </div>
 
           {activeCategory ? (
