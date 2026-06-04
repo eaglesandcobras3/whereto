@@ -4,6 +4,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
+import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
@@ -225,7 +226,7 @@ export async function SiteFooter() {
       ? {
           title: "Categories",
           links: categoryLinks,
-          hrefForSlug: (slug: string) => `/categories/${slug}`,
+          hrefForSlug: (slug: string) => categoryHubPath(slug),
           analyticsCategory: "footer_categories",
         }
       : null,

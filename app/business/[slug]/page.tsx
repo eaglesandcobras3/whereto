@@ -23,6 +23,7 @@ import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { categoryHubPath } from "@/lib/routes/category-hub-path";
 
 export const revalidate = 3600;
 
@@ -424,7 +425,7 @@ export default async function BusinessPage({ params }: Props) {
           {
             name: breadcrumbCategoryLabel,
             url: category?.slug
-              ? `/categories/${encodeURIComponent(category.slug)}`
+              ? categoryHubPath(category.slug)
               : "/categories",
           },
         ]
@@ -515,7 +516,7 @@ export default async function BusinessPage({ params }: Props) {
                 <span className="text-zinc-300">/</span>
                 {category?.slug ? (
                   <Link
-                    href={`/categories/${encodeURIComponent(category.slug)}`}
+                    href={categoryHubPath(category.slug)}
                     {...gaClickProps({
                       event: "nav_click",
                       category: "business_detail_breadcrumb",

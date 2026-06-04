@@ -1,3 +1,5 @@
+import { isCategoryHubPublicPath } from "@/lib/routes/category-hub-path";
+import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
   PRIMARY_EDITORIAL_GUIDE_SLUG,
@@ -61,23 +63,21 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
     });
   }
 
-  const requiredHubs = ["/towns", "/areas", "/categories"];
+  const requiredHubs = ["/towns", "/areas", "/categories", SERVICE_VENDORS_HUB_PATH];
   for (const hub of requiredHubs) {
     if (!pathSet.has(hub)) {
       violations.push({ rule: "hub-pages", detail: `Missing hub ${hub}` });
     }
   }
 
-  const hasTown = paths.some(
-    (p) =>
-      p.split("/").length === 2 &&
-      !p.startsWith("/guide/") &&
-      !p.startsWith("/area/") &&
-      !p.startsWith("/categories/") &&
-      p !== "/" &&
-      !requiredHubs.includes(p) &&
-      !isExcludedSitemapPath(p),
-  );
+  const hasTown = paths.some((p) => {
+    if (p.split("/").filter(Boolean).length !== 1) return false;
+    if (p.startsWith("/guide/") || p.startsWith("/area/")) return false;
+    if (p === "/" || requiredHubs.includes(p) || isExcludedSitemapPath(p)) return false;
+    if (isCategoryHubPublicPath(p)) return false;
+    if (p === SERVICE_VENDORS_HUB_PATH) return false;
+    return true;
+  });
   if (!hasTown) {
     violations.push({ rule: "town-pages", detail: "Expected at least one town page" });
   }
@@ -106,8 +106,23 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
     }
   }
 
-  if (!paths.some((p) => p.startsWith("/categories/") && p !== "/categories")) {
-    violations.push({ rule: "category-pages", detail: "Expected at least one /categories/ page" });
+  if (!paths.some((p) => isCategoryHubPublicPath(p))) {
+    violations.push({
+      rule: "category-pages",
+      detail: "Expected at least one category hub (e.g. /restaurants)",
+    });
+  }
+  if (paths.some((p) => p.startsWith("/categories/") && p !== "/categories")) {
+    violations.push({
+      rule: "no-legacy-category-urls",
+      detail: "Legacy /categories/[slug] URLs must not appear in sitemap",
+    });
+  }
+  if (paths.some((p) => p.endsWith("-on-30a") && p.split("/").filter(Boolean).length === 1)) {
+    violations.push({
+      rule: "no-legacy-on-30a-category-urls",
+      detail: "Legacy *-on-30a category URLs must not appear in sitemap",
+    });
   }
 
   return violations;

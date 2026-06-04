@@ -17,6 +17,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref } from "@/lib/nav/discovery-links";
+import { categoryHubPath } from "@/lib/routes/category-hub-path";
 
 export const revalidate = 3600;
 
@@ -336,7 +337,7 @@ export default async function AreaPage({ params }: Props) {
                 placeSlug={area.slug}
                 sections={categorySections}
                 analyticsCategoryPrefix="area_guide_category"
-                buildSectionSearchHref={(section) => `/categories/${section.slug}`}
+                buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
                   areaBrowseSearchHref(area) ? (
                     <p className="text-[var(--color-text-secondary)]">

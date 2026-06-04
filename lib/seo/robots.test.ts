@@ -9,7 +9,12 @@ describe("robots.txt", () => {
   it("allows Next.js assets and blocks utility routes", async () => {
     const robots = (await import("@/app/robots")).default;
     const rules = robots();
-    const star = rules.rules?.find((r) => r.userAgent === "*");
+    const ruleList = Array.isArray(rules.rules)
+      ? rules.rules
+      : rules.rules
+        ? [rules.rules]
+        : [];
+    const star = ruleList.find((r) => r.userAgent === "*");
     const disallow = star?.disallow ?? [];
 
     expect(disallow).not.toContain("/_next/");

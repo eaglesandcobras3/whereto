@@ -42,9 +42,10 @@ describe("validateSitemapStructure", () => {
       `${BASE}/towns`,
       `${BASE}/areas`,
       `${BASE}/categories`,
+      `${BASE}/services`,
       `${BASE}/seaside`,
       `${BASE}/area/x`,
-      `${BASE}/categories/restaurants`,
+      `${BASE}/restaurants`,
     ]);
     expect(violations.some((v) => v.rule === "no-standalone-guide")).toBe(true);
   });

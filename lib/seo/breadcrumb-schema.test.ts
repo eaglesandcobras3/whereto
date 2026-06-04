@@ -17,7 +17,7 @@ describe("generateBreadcrumbSchema", () => {
     const schema = generateBreadcrumbSchema([
       { name: "Home", url: "/" },
       { name: "Watersound", url: "/watersound" },
-      { name: "Coffee Shops", url: "/categories/coffee_shops" },
+      { name: "Coffee Shops", url: "/coffee-shops" },
       { name: "Starbucks Cafe Watersound", url: "/business/starbucks-cafe-watersound" },
     ]) as {
       itemListElement: Array<{
@@ -34,9 +34,9 @@ describe("generateBreadcrumbSchema", () => {
     expect(categoryCrumb.name).toBe("Coffee Shops");
     expect(categoryCrumb.item).toEqual({
       "@type": "WebPage",
-      "@id": "https://whereto30a.com/categories/coffee_shops",
+      "@id": "https://whereto30a.com/coffee-shops",
       name: "Coffee Shops",
-      url: "https://whereto30a.com/categories/coffee_shops",
+      url: "https://whereto30a.com/coffee-shops",
     });
 
     for (const entry of schema.itemListElement) {

@@ -6,6 +6,12 @@ import {
   isAuthEnabled,
   isSavedEnabled,
 } from "@/lib/feature-flags-core";
+import {
+  categoryDbSlugFromLegacyOn30aSegment,
+  categoryHubPath,
+} from "@/lib/routes/category-hub-path";
+import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
+import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 
 function isAuthGatedPath(pathname: string): boolean {
   if (pathname === "/login" || pathname.startsWith("/login/")) return true;
@@ -17,6 +23,25 @@ function isAuthGatedPath(pathname: string): boolean {
   if (pathname === "/profile" || pathname.startsWith("/profile/")) return true;
   if (pathname === "/auth/callback" || pathname.startsWith("/auth/")) return true;
   return false;
+}
+
+/** Legacy `/*-on-30a` category URLs → short canonical paths (e.g. `/restaurants`). */
+function maybeRedirectLegacyCategoryOn30a(request: NextRequest): NextResponse | null {
+  const segment = request.nextUrl.pathname.replace(/^\//, "").split("/")[0] ?? "";
+  const dbSlug = categoryDbSlugFromLegacyOn30aSegment(segment);
+  if (!dbSlug || request.nextUrl.pathname.split("/").filter(Boolean).length !== 1) {
+    return null;
+  }
+  return NextResponse.redirect(new URL(categoryHubPath(dbSlug), request.url), 308);
+}
+
+/** `/categories/[slug]` → canonical category hub (e.g. `/restaurants`). */
+function maybeRedirectLegacyCategory(request: NextRequest): NextResponse | null {
+  const match = request.nextUrl.pathname.match(/^\/categories\/([^/]+)\/?$/);
+  if (!match) return null;
+  const slug = normalizeBusinessCategorySlug(match[1]);
+  if (!slug) return null;
+  return NextResponse.redirect(new URL(categoryHubPath(slug), request.url), 308);
 }
 
 /** Server-side redirects for legacy /search URLs — avoids 200 HTML + client meta refresh. */
@@ -44,6 +69,9 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
     if (type === "areas") return NextResponse.redirect(new URL("/areas", request.url));
     if (type === "businesses") return NextResponse.redirect(new URL("/businesses", request.url));
     if (type === "guides") return NextResponse.redirect(new URL("/guides", request.url));
+    if (type === "services") {
+      return NextResponse.redirect(new URL(SERVICE_VENDORS_HUB_PATH, request.url));
+    }
   }
 
   if (!hasExtraFilters && !type) {
@@ -71,6 +99,12 @@ export async function middleware(request: NextRequest) {
   if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
     return NextResponse.redirect(new URL("/", request.url));
   }
+
+  const legacyOn30aRedirect = maybeRedirectLegacyCategoryOn30a(request);
+  if (legacyOn30aRedirect) return legacyOn30aRedirect;
+
+  const legacyCategoryRedirect = maybeRedirectLegacyCategory(request);
+  if (legacyCategoryRedirect) return legacyCategoryRedirect;
 
   const searchRedirect = maybeRedirectSearch(request);
   if (searchRedirect) return searchRedirect;

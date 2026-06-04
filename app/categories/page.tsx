@@ -9,6 +9,7 @@ import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { categoryHubPath } from "@/lib/routes/category-hub-path";
 
 export const revalidate = 3600;
 
@@ -199,7 +200,7 @@ export default async function CategoriesPage() {
                         </div>
                       </div>
                       <Link
-                        href={`/categories/${cat.slug}`}
+                        href={categoryHubPath(cat.slug)}
                         {...gaClickProps({
                           event: "nav_click",
                           category: "categories_hub",

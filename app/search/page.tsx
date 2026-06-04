@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
 import type { BrowseEventRow, BrowseAreaRow, BrowseGuideRow, BrowseTownRow } from "./search-page-client";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
+import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 
 /** Deterministic shuffle using mulberry32 PRNG with daily seed */
 function shuffleWithDailySeed<T>(items: T[]): T[] {
@@ -209,6 +210,7 @@ export default async function SearchPage({ searchParams }: Props) {
     if (type === "areas") redirect("/areas");
     if (type === "businesses" || type === "stores") redirect("/businesses");
     if (type === "guides") redirect("/guides");
+    if (type === "services") redirect(SERVICE_VENDORS_HUB_PATH);
   }
 
   const sortMode =

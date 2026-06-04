@@ -27,6 +27,7 @@ export const RESERVED_ROOT_SLUGS = new Set([
   "reset-password",
   "saved",
   "search",
+  "services",
   "share",
   "signup",
   "terms",

@@ -52,6 +52,7 @@ describe("sitemap strategy", () => {
     expect(allPaths).toContain("/areas");
     expect(allPaths).toContain("/categories");
     expect(allPaths).toContain("/guides");
+    expect(allPaths).toContain("/services");
     expect(allPaths).not.toContain("/guide");
     expect(allPaths).toContain(PRIMARY_EDITORIAL_GUIDE_PATH);
     expect(allPaths).toContain("/guide/best-coffee-30a");
@@ -62,7 +63,7 @@ describe("sitemap strategy", () => {
     expect(allPaths).toContain("/rosemary-beach");
     expect(allPaths).toContain("/seaside");
     expect(allPaths).toContain("/area/rosemary-beach-town-center");
-    expect(allPaths).toContain("/categories/restaurants");
+    expect(allPaths).toContain("/restaurants");
     expect(allPaths).toContain("/guide/best-coffee-30a");
     expect(allPaths).not.toContain("/guide/rosemary-beach");
   });
@@ -80,7 +81,7 @@ describe("sitemap strategy", () => {
     expect(byPath.get("/towns")).toBe(0.9);
     expect(byPath.get("/rosemary-beach")).toBe(0.85);
     expect(byPath.get(PRIMARY_EDITORIAL_GUIDE_PATH)).toBe(0.8);
-    expect(byPath.get("/categories/restaurants")).toBe(0.75);
+    expect(byPath.get("/restaurants")).toBe(0.75);
     expect(byPath.get("/area/rosemary-beach-town-center")).toBe(0.7);
   });
 

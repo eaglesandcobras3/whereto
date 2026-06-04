@@ -4,6 +4,16 @@ import { getGuidesForTown, getTownBySlug, type TownGuideCard } from "@/lib/data/
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import {
+  categoryDbSlugFromPublicPath,
+  categoryHubPath,
+} from "@/lib/routes/category-hub-path";
+import { listPublishedCategorySlugs } from "@/lib/data/category-hub";
+import {
+  buildCategoryHubMetadata,
+  loadCategoryHubPage,
+} from "@/lib/data/category-hub";
+import { CategoryHubView } from "@/components/browse/CategoryHubView";
+import {
   PRIMARY_REGION_DB_SLUG,
   PRIMARY_REGION_HUB_PATH,
 } from "@/lib/routes/primary-region";
@@ -208,27 +218,38 @@ type Props = { params: Promise<{ townSlug: string }> };
 export const revalidate = 3600;
 
 export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
+  const segments = new Set(
+    (await listPublishedCategorySlugs()).map((slug) => categoryHubPath(slug).replace(/^\//, "")),
+  );
+
   try {
     const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
     const supabase = getServiceSupabaseOrNull();
-    if (!supabase) return [];
-    const { data } = await supabase
-      .from("towns")
-      .select("slug")
-      .is("archived_at", null)
-      .order("slug");
-    return (data ?? [])
-      .map((r) => ({ townSlug: String((r as { slug: string }).slug) }))
-      .filter((r) => r.townSlug && !isReservedRootSlug(r.townSlug));
+    if (supabase) {
+      const { data } = await supabase
+        .from("towns")
+        .select("slug")
+        .is("archived_at", null)
+        .order("slug");
+      for (const row of data ?? []) {
+        const slug = String((row as { slug: string }).slug);
+        if (!slug || isReservedRootSlug(slug) || categoryDbSlugFromPublicPath(slug)) continue;
+        segments.add(slug);
+      }
+    }
   } catch {
-    return [];
+    // category segments only
   }
+
+  return [...segments].map((townSlug) => ({ townSlug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { townSlug: raw } = await params;
   const townSlug = normalizeUrlSegment(raw);
   if (!townSlug) return { title: metadataTitleSiteOnly };
+  const categorySlug = categoryDbSlugFromPublicPath(townSlug);
+  if (categorySlug) return buildCategoryHubMetadata(categorySlug);
   if (isReservedRootSlug(townSlug)) return { title: metadataTitleSiteOnly };
   const town = await getTownBySlug(townSlug);
   if (town) {
@@ -261,6 +282,21 @@ export default async function TownPage({ params }: Props) {
   const { townSlug: raw } = await params;
   const townSlug = normalizeUrlSegment(raw);
   if (!townSlug) notFound();
+
+  const categorySlug = categoryDbSlugFromPublicPath(townSlug);
+  if (categorySlug) {
+    const hub = await loadCategoryHubPage(categorySlug);
+    if (!hub) notFound();
+    return (
+      <CategoryHubView
+        cat={hub.cat}
+        townGroups={hub.townGroups}
+        businesses={hub.businesses}
+        otherCats={hub.otherCats}
+      />
+    );
+  }
+
   if (isReservedRootSlug(townSlug)) notFound();
 
   if (townSlug === PRIMARY_REGION_DB_SLUG) {
@@ -390,7 +426,7 @@ function BasicTownPage({
                 placeSlug={town.slug}
                 sections={pageData.categorySections}
                 analyticsCategoryPrefix="town_guide_category"
-                buildSectionSearchHref={(section) => `/categories/${section.slug}`}
+                buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
                   <p className="text-[var(--color-text-secondary)]">
                     No business listings in {town.name} yet.{" "}

@@ -17,6 +17,7 @@ import { BusinessesHubSearch } from "@/components/BusinessesHubSearch";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
+import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 
 export const revalidate = 3600;
@@ -245,7 +246,7 @@ export default async function BusinessesPage() {
               return (
                 <Link
                   key={cat.slug}
-                  href={`/categories/${cat.slug}`}
+                  href={categoryHubPath(cat.slug)}
                   className="group flex items-center gap-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
                 >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-container-high)] text-[var(--color-primary)]">

@@ -1,4 +1,9 @@
 import type { MetadataRoute } from "next";
+import {
+  categoryHubPath,
+  isCategoryHubPublicPath,
+} from "@/lib/routes/category-hub-path";
+import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_DB_SLUG } from "@/lib/routes/primary-region";
 
@@ -25,6 +30,7 @@ export const SITEMAP_HUB_PAGES = [
   { path: "/towns", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/areas", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/categories", priority: 0.9, changeFreq: "weekly" as const },
+  { path: SERVICE_VENDORS_HUB_PATH, priority: 0.85, changeFreq: "weekly" as const },
   { path: "/guides", priority: 0.9, changeFreq: "weekly" as const },
 ] as const;
 
@@ -136,7 +142,7 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     const slug = String(cat.slug ?? "").trim();
     if (!slug) continue;
     entries.push({
-      url: `${base}/categories/${slug}`,
+      url: `${base}${categoryHubPath(slug)}`,
       lastModified: pickSitemapDate(cat, now),
       changeFrequency: "weekly",
       priority: 0.75,

@@ -8,7 +8,8 @@ function rec(
   name: string,
   composite: number,
   categoryName: string,
-) {
+  townName?: string,
+): SearchResultPayload["recommendations"][number] {
   return {
     business_id: id,
     rank: 1,
@@ -20,11 +21,13 @@ function rec(
       name,
       category_name: categoryName,
       tags: [],
+      ...(townName ? { town_name: townName } : {}),
     },
     score_breakdown: {
       composite,
       vec_similarity: composite,
       structured_match: 0.8,
+      quality: 0.7,
       data_quality: 0.7,
       learning_boost: 0,
       geo_score: 0.5,
@@ -91,10 +94,8 @@ describe("rankMergedDiscoveryResults", () => {
   });
 
   it("ranks in-town coffee above nearby-town coffee when anchor town is set", () => {
-    const inTown = rec("a", "Amavida - Rosemary", 0.62, "Coffee Shops");
-    inTown.business.town_name = "Rosemary Beach";
-    const nearTown = rec("b", "3rd Cup Coffee", 0.68, "Coffee Shops");
-    nearTown.business.town_name = "Seaside";
+    const inTown = rec("a", "Amavida - Rosemary", 0.62, "Coffee Shops", "Rosemary Beach");
+    const nearTown = rec("b", "3rd Cup Coffee", 0.68, "Coffee Shops", "Seaside");
 
     const ranked = rankMergedDiscoveryResults({
       strategies: [

@@ -9,13 +9,13 @@ describe("applyDiscoveryBrowseNav", () => {
     const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, askOn);
     expect(items.some((i) => i.label === "Ask")).toBe(false);
     const services = items.find((i) => i.label === "Services");
-    expect(services?.href).toContain("/ask?q=");
+    expect(services?.href).toBe("/services");
   });
 
-  it("does not mark Services active on generic /ask via activePaths", () => {
+  it("keeps Services activePaths for the vendor hub when Ask is on", () => {
     const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, askOn);
     const services = items.find((i) => i.label === "Services");
-    expect(services?.activePaths).toBeUndefined();
+    expect(services?.activePaths).toContain("/services");
   });
 });
 

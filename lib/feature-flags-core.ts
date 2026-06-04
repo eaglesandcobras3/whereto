@@ -14,7 +14,7 @@ export const DEFAULT_FLAGS: Record<string, boolean> = {
   auth: true,
   /** Saved places, collections, `/api/saves`, `/api/collections`. */
   saved: true,
-  /** When `true`, header browse nav includes **Services** (`/search?type=services`). */
+  /** When `true`, header browse nav includes **Services** (`/services` vendor hub). */
   services_nav: true,
   /** When `true`, `/guide` shows the teal “Ready to Explore?” search CTA at the bottom. Default off. */
   guide_hub_search_callout: false,

@@ -10,6 +10,7 @@ import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { gaEvent } from "@/lib/analytics/gtag-runner";
 
 /** Placeholder assets from design/homepage.html (wire real URLs later). */
 const IMG = {
