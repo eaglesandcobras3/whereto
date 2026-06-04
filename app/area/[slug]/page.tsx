@@ -415,7 +415,11 @@ export default async function AreaPage({ params }: Props) {
                     {sidebar.guides.map((guide) => (
                       <li key={guide.slug}>
                         <Link
-                          href={`/guide/${guide.slug}`}
+                          href={
+                            sidebar.townLink?.slug === guide.slug
+                              ? `/${guide.slug}`
+                              : `/guide/${guide.slug}`
+                          }
                           {...gaClickProps({
                             event: "nav_click",
                             category: "area_sidebar",

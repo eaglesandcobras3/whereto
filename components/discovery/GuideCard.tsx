@@ -5,6 +5,7 @@ import { gaClickProps } from "@/lib/analytics/ga-click-props";
 type Props = {
   title: string;
   slug: string;
+  href?: string;
   subtitle?: string;
   imageUrl?: string | null;
   analyticsCategory?: string;
@@ -13,13 +14,14 @@ type Props = {
 export function GuideCard({
   title,
   slug,
+  href,
   subtitle,
   imageUrl,
   analyticsCategory = "guide_card",
 }: Props) {
   return (
     <Link
-      href={`/guide/${slug}`}
+      href={href ?? `/guide/${slug}`}
       {...gaClickProps({ event: "nav_click", category: analyticsCategory, label: slug })}
       className="
         group block overflow-hidden rounded-[var(--radius-listing)]

@@ -888,7 +888,9 @@ export default async function BusinessPage({ params }: Props) {
                     {townGuides.slice(0, 3).map((g) => (
                       <li key={g.slug}>
                         <Link
-                          href={`/guide/${g.slug}`}
+                          href={
+                            g.slug === town?.slug ? `/${g.slug}` : `/guide/${g.slug}`
+                          }
                           {...gaClickProps({
                             event: "nav_click",
                             category: "business_detail_sidebar",

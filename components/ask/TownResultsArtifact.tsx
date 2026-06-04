@@ -11,7 +11,7 @@ export function TownResultsArtifactView({ artifact }: Props) {
   return (
     <EditorialResultsArtifactView
       title={artifact.title}
-      hrefForSlug={(slug) => `/town/${slug}`}
+      hrefForSlug={(slug) => `/${slug}`}
       results={artifact.results.map((t) => ({
         id: t.id,
         title: t.title,

@@ -481,6 +481,9 @@ function BasicTownPage({
                         key={guide.id}
                         title={guide.title}
                         slug={guide.slug}
+                        href={
+                          guide.slug === town.slug ? `/${guide.slug}` : `/guide/${guide.slug}`
+                        }
                         subtitle={guide.subtitle ?? undefined}
                         imageUrl={guide.hero_image_url}
                         analyticsCategory="town_guide_guides"
