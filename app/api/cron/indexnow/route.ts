@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSiteUrl } from "@/lib/site-url";
+import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { indexNowConfig, submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +20,10 @@ export async function GET(request: Request) {
   const base = getSiteUrl();
   const result = await submitUrlsToIndexNow([
     base,
-    `${base}/guide`,
+    `${base}${PRIMARY_EDITORIAL_GUIDE_PATH}`,
     `${base}/guides`,
     `${base}/categories`,
     `${base}/towns`,
-    `${base}/businesses`,
     `${base}/sitemap.xml`,
   ]);
 

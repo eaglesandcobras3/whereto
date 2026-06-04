@@ -1,0 +1,62 @@
+import { describe, expect, it } from "vitest";
+import {
+  PRIMARY_EDITORIAL_GUIDE_PATH,
+  PRIMARY_EDITORIAL_GUIDE_SLUG,
+  buildSitemapEntries,
+} from "@/lib/seo/sitemap-strategy";
+import {
+  parseSitemapLocs,
+  validateSitemapStructure,
+} from "@/lib/seo/validate-sitemap-urls";
+
+const BASE = "https://whereto30a.com";
+
+describe("validateSitemapStructure", () => {
+  it("passes for a well-formed index sitemap", () => {
+    const entries = buildSitemapEntries({
+      base: BASE,
+      now: new Date(),
+      towns: [{ slug: "seaside" }],
+      guides: [{ slug: PRIMARY_EDITORIAL_GUIDE_SLUG }, { slug: "best-beaches" }],
+      areas: [{ slug: "seaside-town-center" }],
+      categories: [{ slug: "restaurants" }],
+    });
+    const urls = entries.map((e) => e.url);
+    expect(validateSitemapStructure(BASE, urls)).toEqual([]);
+  });
+
+  it("fails when business URLs are present", () => {
+    const violations = validateSitemapStructure(BASE, [
+      `${BASE}/`,
+      `${BASE}/business/foo`,
+    ]);
+    expect(violations.some((v) => v.rule === "no-business-urls")).toBe(true);
+  });
+
+  it("fails when standalone /guide is present", () => {
+    const violations = validateSitemapStructure(BASE, [
+      `${BASE}/`,
+      `${BASE}/guide`,
+      `${BASE}${PRIMARY_EDITORIAL_GUIDE_PATH}`,
+      `${BASE}/guides`,
+      `${BASE}/towns`,
+      `${BASE}/areas`,
+      `${BASE}/categories`,
+      `${BASE}/seaside`,
+      `${BASE}/area/x`,
+      `${BASE}/categories/restaurants`,
+    ]);
+    expect(violations.some((v) => v.rule === "no-standalone-guide")).toBe(true);
+  });
+});
+
+describe("parseSitemapLocs", () => {
+  it("extracts loc elements from XML", () => {
+    const xml = `<?xml version="1.0"?>
+    <urlset>
+      <url><loc>${BASE}/</loc></url>
+      <url><loc>${BASE}/guides</loc></url>
+    </urlset>`;
+    expect(parseSitemapLocs(xml)).toEqual([`${BASE}/`, `${BASE}/guides`]);
+  });
+});

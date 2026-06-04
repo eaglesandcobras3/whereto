@@ -9,14 +9,13 @@ import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { GuidesHubSearch } from "@/components/GuidesHubSearch";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { GuideCard } from "@/components/discovery/GuideCard";
+import { PRIMARY_EDITORIAL_GUIDE_PATH, PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
 
 const DAILY_FEATURED_LIMIT = 6;
 const GUIDE_POOL_LIMIT = 100;
-
-const HUB_PLANNING_GUIDE_SLUG = "ultimate-30a-first-timers-guide";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/guides"),
@@ -101,10 +100,10 @@ async function getGuides(): Promise<GuideRow[]> {
 export default async function GuidesPage() {
   const featureFlags = await getAllFeatureFlags();
   const allGuides = await getGuides();
+  const planningGuide = allGuides.find((g) => g.slug === PRIMARY_EDITORIAL_GUIDE_SLUG);
   const featuredGuides = pickDailySubset(allGuides, DAILY_FEATURED_LIMIT);
   const featuredSlugSet = new Set(featuredGuides.map((g) => g.slug));
   const moreGuides = allGuides.filter((g) => !featuredSlugSet.has(g.slug));
-  const planningGuide = allGuides.find((g) => g.slug === HUB_PLANNING_GUIDE_SLUG);
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -128,7 +127,7 @@ export default async function GuidesPage() {
         <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10">
           <div className="mx-auto max-w-6xl px-4">
             <Link
-              href="/guide"
+              href={PRIMARY_EDITORIAL_GUIDE_PATH}
               {...gaClickProps({
                 event: "nav_click",
                 category: "guides_hub",
@@ -142,11 +141,11 @@ export default async function GuidesPage() {
               <div className="min-w-0 flex-1 text-left">
                 <p className="text-eyebrow mb-1">Start here</p>
                 <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors sm:text-2xl">
-                  The complete guide to visiting 30A
+                  {planningGuide.title}
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  First-timer planning — towns, beach access, airports, where to eat, and how to pace
-                  your week along Scenic 30A.
+                  {planningGuide.subtitle ||
+                    "First-timer planning — towns, beach access, airports, where to eat, and how to pace your week along Scenic 30A."}
                 </p>
               </div>
               <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--color-primary)]">

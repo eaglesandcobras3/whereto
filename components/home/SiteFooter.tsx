@@ -3,6 +3,7 @@ import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
+import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
@@ -177,7 +178,7 @@ const companyLinks = [
   {
     ...gaClickProps({ event: "nav_click", category: "footer_company", label: "visitor_guide" }),
     name: "30A visitor guide",
-    href: "/guide",
+    href: PRIMARY_EDITORIAL_GUIDE_PATH,
   },
   {
     ...gaClickProps({ event: "nav_click", category: "footer_company", label: "all_categories" }),

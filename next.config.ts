@@ -44,6 +44,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/guide",
+        destination: "/guide/ultimate-30a-first-timers-guide",
+        statusCode: 301,
+      },
+      {
         source: "/favicon.ico",
         destination: "/favicon.svg",
         permanent: false,

@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
+import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { isAskEnabled } from "@/lib/feature-flags-core";
 import { discoveryHref } from "@/lib/nav/discovery-links";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { gaEvent } from "@/lib/analytics/gtag-runner";
 
 /** Placeholder assets from design/homepage.html (wire real URLs later). */
 const IMG = {
@@ -248,7 +248,7 @@ export function HomePage({
 
             <div className="mb-10 flex w-full max-w-2xl flex-col justify-center gap-3 sm:flex-row sm:gap-5">
               <Link
-                href="/guide"
+                href={PRIMARY_EDITORIAL_GUIDE_PATH}
                 {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-lg font-bold text-primary shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"
               >

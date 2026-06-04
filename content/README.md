@@ -27,12 +27,11 @@ This is the markdown-first content source for WhereTo30A.
   /beaches        # Beach pages (grayton-beach-state-park.md)
   /areas          # Shopping areas, districts (rosemary-beach-town-center.md)
   /businesses     # Business pages (amavida-coffee-rosemary.md)
-  /guides         # Editorial guides (best-coffee-rosemary-beach.md)
-  /seasonal       # Seasonal guides (summer-2026-30a.md)
+  /seasonal       # Seasonal guides → syncs to guides table (summer-2026-30a.md)
   /events         # Time-limited events (farmers-market-seaside.md)
 ```
 
-**Towns vs town guides:** `content/towns/*.md` powers `/[townSlug]` and should read like a place snapshot (what the town is, how it feels week to week, who tends to stay there). `content/guides/*.md` with the same slug powers `/guide/[slug]` and should read like visitor advice (what to book, where to eat, beach and parking reality). Keep both files; do not copy the same body between them. Every town slug that exists in the product (including Gulf Place, Prominence, and regions such as Destin or Panama City Beach when enabled) should have **both** files so hub and guide routes stay in sync.
+**Towns vs editorial guides:** `content/towns/*.md` powers `/[townSlug]` (place snapshot: feel, who stays, week-to-week rhythm). Visitor guides at `/guide/[slug]` and the `/guides` hub are authored in **Supabase** (admin), not markdown. Do not duplicate town copy into guide bodies.
 
 ## Frontmatter Schema
 

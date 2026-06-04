@@ -7,7 +7,7 @@
  * Usage:
  *   npm run content:compile          # Process NEW/UPDATED files only
  *   npm run content:compile -- --all # Force recompile all published files
- *   npm run content:compile:guides # Sync all markdown guides to public.guides
+ *   npm run content:compile -- --guides-only --all # Seasonal markdown → guides table only
  *
  * Workflow:
  *   1. Create/edit .md file, set status: NEW or status: UPDATED
