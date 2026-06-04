@@ -2,12 +2,15 @@
  * Batch-assign `service_category_id` for regional vendors (`is_service_business=true`).
  * One OpenAI call per batch (~25 listings) to minimize API usage.
  *
- * Prerequisite: apply `supabase/migrations/20260604130000_service_categories.sql`
+ * Prerequisite: apply service_categories migrations through `20260604130400_service_categories_full_taxonomy.sql`
+ * Audit first: `npx tsx scripts/audit-service-vendors.ts --write-report`
+ * Taxonomy: `docs/service-categories-taxonomy.md`
  *
  * Usage:
  *   npx tsx scripts/classify-service-categories.ts --dry-run
  *   npx tsx scripts/classify-service-categories.ts --apply
  *   npx tsx scripts/classify-service-categories.ts --apply --limit 50
+ *   npx tsx scripts/classify-service-categories.ts --apply --reclassify
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -15,12 +18,17 @@ import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import * as dotenv from "dotenv";
 import { z } from "zod";
-import { SERVICE_CATEGORY_SLUGS } from "../lib/service-categories/constants";
+import {
+  SERVICE_CATEGORY_CLASSIFICATION_GUIDE,
+  SERVICE_CATEGORY_SLUGS,
+} from "../lib/service-categories/constants";
 import { normalizeServiceCategorySlug } from "../lib/service-categories/normalize";
+import { suggestServiceCategoryFromListing } from "../lib/service-categories/suggest-from-business-type";
 
 dotenv.config({ path: ".env.local" });
 
 const APPLY = process.argv.includes("--apply");
+const RECLASSIFY = process.argv.includes("--reclassify");
 const BATCH_SIZE = 25;
 const limitIdx = process.argv.indexOf("--limit");
 const LIMIT = limitIdx !== -1 ? Math.max(1, Number(process.argv[limitIdx + 1]) || 0) : null;
@@ -45,8 +53,8 @@ const batchSchema = z.object({
     z.object({
       id: z.string().describe("business UUID from the input list"),
       specialty_slug: z
-        .enum(SERVICE_CATEGORY_SLUGS)
-        .describe("Best matching service_categories.slug"),
+        .string()
+        .describe("Best matching service_categories.slug from the guide"),
     }),
   ),
 });
@@ -80,17 +88,23 @@ async function loadVendorsNeedingCategory(): Promise<VendorRow[]> {
     .is("archived_at", null)
     .eq("status", "published")
     .eq("is_service_business", true)
-    .is("service_category_id", null)
     .order("title");
+  if (!RECLASSIFY) q = q.is("service_category_id", null);
   if (LIMIT) q = q.limit(LIMIT);
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as VendorRow[];
 }
 
+function buildClassificationGuide(): string {
+  return SERVICE_CATEGORY_SLUGS.map(
+    (slug) => `- ${slug}: ${SERVICE_CATEGORY_CLASSIFICATION_GUIDE[slug]}`,
+  ).join("\n");
+}
+
 async function classifyBatch(
   vendors: VendorRow[],
-  slugList: string,
+  guide: string,
 ): Promise<Map<string, string>> {
   const lines = vendors
     .map(
@@ -102,23 +116,42 @@ async function classifyBatch(
   const { object } = await generateObject({
     model: openai(process.env.OPENAI_MODEL ?? "gpt-4o-mini"),
     schema: batchSchema,
-    prompt: `You classify 30A regional service providers (mobile vendors, contractors, trades — not restaurants or shops).
+    prompt: `You classify Emerald Coast service directory listings (trades, insurance, legal, medical, real estate, etc. — not restaurants, retail shops, or hotels).
 
-Pick exactly one specialty_slug per business from this list:
-${slugList}
+Pick exactly one specialty_slug per business. Use the guide below; prefer a specific professional slug over a generic trade when the name clearly indicates insurance, law, dental, CPA, title, etc.
 
-Use "other" only when nothing else fits.
+Specialties:
+${guide}
+
+Rules:
+- Insurance agency names (State Farm, Allstate, Farm Bureau, “insurance agent”) → insurance (slug \`insurance\`, not \`state_farm\`)
+- CPA / accounting / payroll / tax → accounting
+- Attorney / law firm / PLLC → legal
+- Title / escrow / realtor / realty → real_estate
+- Dentist / dental / dermatology / medical / rehab / hospice / home health → health_medical (slug is \`health_medical\`, not \`hospice\`)
+- Therapist / counseling → counseling
+- Cabinets / closets / countertops / blinds → home_improvement
+- Watersports / boat charter → marine_boat
+- Coworking / flexspace → office_workspace
+- Do not invent slugs outside the list.
 
 Businesses:
 ${lines}
 
-Return one assignment per business id listed above.`,
+Return exactly one assignment per business id listed above (same count as input).`,
   });
 
+  const batchIds = new Set(vendors.map((v) => v.id));
   const out = new Map<string, string>();
   for (const a of object.assignments) {
-    const slug = normalizeServiceCategorySlug(a.specialty_slug) ?? "other";
-    out.set(a.id, slug);
+    if (!batchIds.has(a.id)) continue;
+    const slug = normalizeServiceCategorySlug(a.specialty_slug);
+    if (slug) out.set(a.id, slug);
+  }
+  for (const v of vendors) {
+    if (out.has(v.id)) continue;
+    const fallback = suggestServiceCategoryFromListing(v);
+    if (fallback) out.set(v.id, fallback);
   }
   return out;
 }
@@ -126,29 +159,38 @@ Return one assignment per business id listed above.`,
 async function main() {
   const catBySlug = await loadCategories();
   const vendors = await loadVendorsNeedingCategory();
-  console.log(
-    `${APPLY ? "APPLY" : "DRY-RUN"}: ${vendors.length} service vendors without service_category_id`,
-  );
+  const scope = RECLASSIFY ? "all service vendors (--reclassify)" : "vendors missing service_category_id";
+  console.log(`${APPLY ? "APPLY" : "DRY-RUN"}: ${vendors.length} ${scope}`);
   if (!vendors.length) return;
 
-  const slugList = [...SERVICE_CATEGORY_SLUGS].join(", ");
+  const guide = buildClassificationGuide();
   let updated = 0;
   let skipped = 0;
 
   for (let i = 0; i < vendors.length; i += BATCH_SIZE) {
     const batch = vendors.slice(i, i + BATCH_SIZE);
     console.log(`\nBatch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} listings)…`);
-    const assignments = await classifyBatch(batch, slugList);
+    const assignments = await classifyBatch(batch, guide);
 
     for (const v of batch) {
-      const slug = assignments.get(v.id) ?? "other";
+      let slug = assignments.get(v.id);
+      let viaFallback = false;
+      if (!slug) {
+        slug = suggestServiceCategoryFromListing(v) ?? undefined;
+        viaFallback = Boolean(slug);
+      }
+      if (!slug) {
+        console.warn(`  skip ${v.title}: no specialty (model + heuristics)`);
+        skipped++;
+        continue;
+      }
       const categoryId = catBySlug.get(slug);
       if (!categoryId) {
         console.warn(`  skip ${v.title}: unknown slug ${slug}`);
         skipped++;
         continue;
       }
-      console.log(`  ${v.title} → ${slug}`);
+      console.log(`  ${v.title} → ${slug}${viaFallback ? " (title heuristic)" : ""}`);
       if (APPLY) {
         const { error } = await supabase
           .from("businesses")

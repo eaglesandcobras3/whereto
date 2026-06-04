@@ -34,8 +34,7 @@ INSERT INTO public.service_categories (title, slug, excerpt, sort) VALUES
   ('Moving & hauling', 'moving', 'Moves, junk removal, and delivery', 130),
   ('Marine & boat', 'marine_boat', 'Boat service, docks, and marine trades', 140),
   ('Contractors', 'contractors', 'General contracting and remodels', 150),
-  ('Property management', 'property_management', 'Rental and HOA services', 160),
-  ('Other services', 'other', 'Miscellaneous regional service providers', 999)
+  ('Property management', 'property_management', 'Rental and HOA services', 160)
 ON CONFLICT (slug) DO NOTHING;
 
 ALTER TABLE public.businesses
