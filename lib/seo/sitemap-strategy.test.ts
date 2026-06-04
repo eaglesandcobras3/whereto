@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
   PRIMARY_EDITORIAL_GUIDE_SLUG,
@@ -66,6 +68,25 @@ describe("sitemap strategy", () => {
     expect(allPaths).toContain("/restaurants");
     expect(allPaths).toContain("/guide/best-coffee-30a");
     expect(allPaths).not.toContain("/guide/rosemary-beach");
+  });
+
+  it("maps storefront services category and vendor hub to distinct canonical paths", () => {
+    const vendorAndStorefront = buildSitemapEntries({
+      base: BASE,
+      now: new Date("2026-06-01"),
+      towns: [],
+      guides: [],
+      areas: [],
+      categories: [{ slug: "services" }, { slug: "restaurants" }],
+    });
+    const allPaths = paths(vendorAndStorefront);
+    expect(categoryHubPath("services")).toBe("/service-businesses");
+    expect(allPaths).toContain(SERVICE_VENDORS_HUB_PATH);
+    expect(allPaths).toContain("/service-businesses");
+    expect(allPaths.filter((p) => p === "/services")).toHaveLength(1);
+    expect(allPaths).not.toContain("/categories/services");
+    expect(allPaths).not.toContain("/services-on-30a");
+    expect(allPaths).not.toContain("/search");
   });
 
   it("dedupes POI URLs that share an area slug", () => {
