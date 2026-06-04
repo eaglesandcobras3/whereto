@@ -33,13 +33,17 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    if (!indexNowKey) return [];
-    return [
-      {
+    const rules: { source: string; destination: string }[] = [
+      // Avoid `app/[townSlug]` capturing `/sitemap.xml` (production 404).
+      { source: "/sitemap.xml", destination: "/api/sitemap-xml" },
+    ];
+    if (indexNowKey) {
+      rules.push({
         source: `/${indexNowKey}.txt`,
         destination: "/api/indexnow/key",
-      },
-    ];
+      });
+    }
+    return rules;
   },
   async redirects() {
     return [

@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { MetadataRoute } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
@@ -6,55 +8,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { buildSitemapEntries, staticFallbackSitemap } from "@/lib/seo/sitemap-strategy";
 import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
 
-/** PostgREST often caps a single response at ~1000 rows; paginate when tables grow. */
 const SITEMAP_PAGE_SIZE = 1000;
-
-/** Regenerate on each request so CMS archive/publish changes show up immediately. */
-export const dynamic = "force-dynamic";
-
-/**
- * Index-focused sitemap: hubs, towns, areas, categories, and editorial guides.
- * Business URLs are omitted intentionally (still crawlable via internal links).
- */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = getSiteUrl();
-  const now = new Date();
-  try {
-    const supabase = getServiceSupabaseOrNull();
-    if (!supabase) {
-      return staticFallbackSitemap(base, now);
-    }
-
-    const [towns, guides, areas, pointsOfInterest, categories] = await Promise.all([
-      fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
-      fetchSitemapGuides(supabase),
-      fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
-      fetchBrowseableRows(
-        supabase,
-        "points_of_interest",
-        "slug, date_updated, published_at, date_created",
-      ),
-      fetchBrowseableRows(
-        supabase,
-        "business_categories",
-        "slug, date_updated, published_at, date_created",
-      ),
-    ]);
-
-    return buildSitemapEntries({
-      base,
-      now,
-      towns: towns ?? [],
-      guides: guides ?? [],
-      areas: areas ?? [],
-      categories: categories ?? [],
-      pointsOfInterest: pointsOfInterest ?? [],
-    });
-  } catch (err) {
-    console.error("[sitemap] generation failed:", err);
-    return staticFallbackSitemap(base, now);
-  }
-}
 
 async function fetchBrowseableRows(
   supabase: SupabaseClient,
@@ -84,4 +38,45 @@ async function fetchBrowseableRows(
     from += SITEMAP_PAGE_SIZE;
   }
   return out;
+}
+
+/** Build index-focused sitemap entries for `/sitemap.xml` (via `/api/sitemap-xml` rewrite). */
+export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
+  const base = getSiteUrl();
+  const now = new Date();
+  try {
+    const supabase = getServiceSupabaseOrNull();
+    if (!supabase) {
+      return staticFallbackSitemap(base, now);
+    }
+
+    const [towns, guides, areas, pointsOfInterest, categories] = await Promise.all([
+      fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
+      fetchSitemapGuides(supabase),
+      fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
+      fetchBrowseableRows(
+        supabase,
+        "points_of_interest",
+        "slug, date_updated, published_at, date_created",
+      ),
+      fetchBrowseableRows(
+        supabase,
+        "business_categories",
+        "slug, date_updated, published_at, date_created",
+      ),
+    ]);
+
+    return buildSitemapEntries({
+      base,
+      now,
+      towns,
+      guides,
+      areas,
+      categories,
+      pointsOfInterest,
+    });
+  } catch (err) {
+    console.error("[sitemap] generation failed:", err);
+    return staticFallbackSitemap(base, now);
+  }
 }

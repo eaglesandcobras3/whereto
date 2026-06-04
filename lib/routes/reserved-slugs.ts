@@ -28,6 +28,8 @@ export const RESERVED_ROOT_SLUGS = new Set([
   "saved",
   "search",
   "services",
+  "sitemap.xml",
+  "robots.txt",
   "share",
   "signup",
   "terms",
