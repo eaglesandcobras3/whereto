@@ -33,7 +33,7 @@ export function groupListedServiceCategories(
     });
   }
 
-  const assigned = new Set(
+  const assigned = new Set<string>(
     SERVICE_CATEGORY_GROUP_SLUGS.flatMap((g) => [...SERVICE_CATEGORY_GROUP_MEMBERS[g]]),
   );
   const ungrouped = categories.filter((c) => c.vendor_count > 0 && !assigned.has(c.slug));
