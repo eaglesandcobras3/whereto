@@ -10,6 +10,8 @@ import type { Metadata } from "next";
 import type { SearchResultPayload } from "@/lib/search/types";
 import type { BrowseEventRow, BrowseAreaRow, BrowseGuideRow, BrowseTownRow } from "./search-page-client";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
+import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
+import { parseSpecialtySlugsFromParams } from "@/lib/routes/service-vendor-labels";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 
 /** Deterministic shuffle using mulberry32 PRNG with daily seed */
@@ -39,6 +41,10 @@ type Props = {
     sort?: string;
     /** `business_categories.slug` */
     category?: string;
+    /** `service_categories.slug` — user-facing "Specialty" (`specialty=`). */
+    specialty?: string;
+    /** @deprecated Use `specialty`. */
+    service_category?: string;
     /** `areas.id` (UUID) */
     area_id?: string;
     /** Scope override: "in" | "near" | "anywhere" */
@@ -168,6 +174,8 @@ export default async function SearchPage({ searchParams }: Props) {
     type: rawType,
     sort: sortParam,
     category: categoryParam,
+    specialty: specialtyParam,
+    service_category: legacyServiceCategoryParam,
     area_id: areaIdParam,
     scope: scopeParam,
     price: priceParam,
@@ -185,12 +193,21 @@ export default async function SearchPage({ searchParams }: Props) {
   const constrainCategorySlugs = categoryParam?.trim()
     ? categoryParam.trim().split(",").filter(s => /^[a-z0-9_]+$/.test(s))
     : [];
+  const constrainServiceCategorySlugs = parseSpecialtySlugsFromParams((key) => {
+    if (key === "specialty") return specialtyParam;
+    if (key === "service_category") return legacyServiceCategoryParam;
+    return null;
+  });
+  const type = normalizeSearchType(rawType);
+  const servicesOnly = type === "services";
+  const storefrontCategorySlugs = servicesOnly
+    ? constrainCategorySlugs.filter((s) => s !== "services")
+    : constrainCategorySlugs;
+  const specialtySlugsForSearch = servicesOnly ? constrainServiceCategorySlugs : [];
   // tags may be comma-separated
   const constrainVibeTags = tagsParam?.trim()
     ? tagsParam.trim().split(",").filter(s => /^[a-z0-9_]+$/.test(s))
     : [];
-  const type = normalizeSearchType(rawType);
-  const servicesOnly = type === "services";
   const trimmedQ = q?.trim() ?? "";
 
   // Legacy browse URLs → dedicated hub pages when there are no extra filters.
@@ -198,6 +215,8 @@ export default async function SearchPage({ searchParams }: Props) {
     trimmedQ ||
       town_id?.trim() ||
       categoryParam?.trim() ||
+      specialtyParam?.trim() ||
+      legacyServiceCategoryParam?.trim() ||
       areaIdParam?.trim() ||
       scopeParam ||
       priceParam ||
@@ -303,6 +322,7 @@ export default async function SearchPage({ searchParams }: Props) {
     guideRowsResult,
     bizRowsResult,
     serviceRowsResult,
+    serviceCategoryRowsResult,
   ] = await Promise.all([
     supabase.auth.getUser(),
     serviceSupabase
@@ -352,6 +372,12 @@ export default async function SearchPage({ searchParams }: Props) {
       .eq("is_service_business", true)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .limit(100),
+    serviceSupabase
+      .from("service_categories")
+      .select("title, slug, sort")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .order("sort", { ascending: true }),
   ]);
   const {
     data: { user },
@@ -363,6 +389,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const { data: guideRows } = guideRowsResult;
   const { data: bizRows } = bizRowsResult;
   const { data: serviceRows } = serviceRowsResult;
+  const { data: serviceCategoryRows } = serviceCategoryRowsResult;
 
   const sidebarTowns = (sidebarRows ?? []).map((t) => ({
     id: t.id,
@@ -370,12 +397,21 @@ export default async function SearchPage({ searchParams }: Props) {
     slug: t.slug,
   }));
 
-  const categoryOptions = (categoryRows ?? [])
-    .map((c) => ({
-      title: (c as { title: string }).title,
-      slug: (c as { slug: string }).slug,
-    }))
-    .filter((c) => !servicesOnly || c.slug === "services");
+  const categoryOptions = servicesOnly
+    ? []
+    : (categoryRows ?? []).map((c) => {
+        const slug = (c as { slug: string }).slug;
+        const title = (c as { title: string }).title;
+        return {
+          slug,
+          title: displayStorefrontCategoryTitle(slug, title),
+        };
+      });
+
+  const serviceCategoryOptions = (serviceCategoryRows ?? []).map((c) => ({
+    title: (c as { title: string }).title,
+    slug: (c as { slug: string }).slug,
+  }));
 
   const areaOptions = (areaListRows ?? []).map((a) => ({
     id: String((a as { id: string }).id),
@@ -767,7 +803,8 @@ export default async function SearchPage({ searchParams }: Props) {
     constrainTownId,
     constrainTownIds: constrainTownIds.length > 1 ? constrainTownIds : undefined,
     constrainAreaId,
-    constrainCategorySlugs: constrainCategorySlugs.length ? constrainCategorySlugs : undefined,
+    constrainCategorySlugs: storefrontCategorySlugs.length ? storefrontCategorySlugs : undefined,
+    constrainServiceCategorySlugs: specialtySlugsForSearch.length ? specialtySlugsForSearch : undefined,
     sortMode,
     skipIlikeTextFilter,
     scopeOverride,
@@ -785,6 +822,7 @@ export default async function SearchPage({ searchParams }: Props) {
       areaName={areaName}
       towns={sidebarTowns}
       categoryOptions={categoryOptions}
+      serviceCategoryOptions={serviceCategoryOptions}
       areaOptions={areaOptions}
       sidebarAreas={sidebarAreas}
         sidebarGuides={sidebarGuides}

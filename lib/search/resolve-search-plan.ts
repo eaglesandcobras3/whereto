@@ -3,6 +3,7 @@ import type { SearchIntent } from "@/lib/intent-schema";
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 import { loadTownScope } from "@/lib/search/location-scope";
 import { inferRestaurantsSlugWhenSpecificItemsNeedCategory } from "@/lib/search/query-specific-hints";
+import { resolveServiceCategoryFilter } from "@/lib/search/resolve-service-category-filter";
 import {
   buildIntentScoringSignals,
   buildTextSearchPlan,
@@ -129,13 +130,11 @@ export async function assembleSearchPlan(
       ? inferRestaurantsSlugWhenSpecificItemsNeedCategory(intent)
       : null;
 
-  const category = await resolveCategoryFilter(
-    supabase,
-    explicit,
-    intent,
-    inferredRestaurantSlug,
-  );
-  const town = await resolveTownFilter(supabase, explicit, intent);
+  const [category, serviceCategory, town] = await Promise.all([
+    resolveCategoryFilter(supabase, explicit, intent, inferredRestaurantSlug),
+    resolveServiceCategoryFilter(supabase, explicit.explicitServiceCategorySlugs),
+    resolveTownFilter(supabase, explicit, intent),
+  ]);
 
   const text = buildTextSearchPlan({
     rawQuery,
@@ -162,6 +161,7 @@ export async function assembleSearchPlan(
     intent,
     explicit,
     category,
+    serviceCategory,
     town,
     text,
     effectivePriceBucket,

@@ -3,13 +3,16 @@ import type { Metadata } from "next";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
-import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
+import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
+import { getServiceVendorsPage } from "@/lib/data/service-vendors-hub";
+import { SERVICE_CATEGORY_ICONS } from "@/lib/service-categories/constants";
 import {
-  countServiceVendors,
-  getServiceVendorCategorySections,
-} from "@/lib/data/service-vendors-hub";
+  parseSpecialtySlugsFromParams,
+  SERVICE_VENDOR_UI,
+} from "@/lib/routes/service-vendor-labels";
 import {
   SERVICE_VENDORS_HUB_PATH,
+  serviceVendorsHubHref,
   serviceVendorsSearchHref,
 } from "@/lib/routes/service-vendors-hub";
 import { discoveryHref } from "@/lib/nav/discovery-links";
@@ -17,6 +20,15 @@ import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
+
+type Props = {
+  searchParams: Promise<{
+    specialty?: string;
+    service_category?: string;
+    page?: string;
+    q?: string;
+  }>;
+};
 
 export const metadata: Metadata = {
   ...canonicalAlternates(SERVICE_VENDORS_HUB_PATH),
@@ -35,21 +47,39 @@ export const metadata: Metadata = {
     path: SERVICE_VENDORS_HUB_PATH,
     title: "Service Providers on 30A | WhereTo30A",
     description:
-      "Regional and mobile service providers for 30A — browse by category, then filter by town in search.",
+      "Regional and mobile service providers for 30A — browse by specialty, then filter by town in search.",
   }),
 };
 
-export default async function ServiceVendorsHubPage() {
+function paginationHref(page: number, specialty: string | null, query: string): string {
+  return serviceVendorsHubHref({
+    specialtySlug: specialty,
+    page: page > 1 ? page : undefined,
+    query: query || null,
+  });
+}
+
+export default async function ServiceVendorsHubPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const specialtySlugs = parseSpecialtySlugsFromParams((key) => {
+    if (key === "specialty") return sp.specialty;
+    if (key === "service_category") return sp.service_category;
+    return null;
+  });
+  const specialtySlug = specialtySlugs[0] ?? null;
+  const page = Math.max(1, Number(sp.page) || 1);
+  const query = sp.q?.trim() ?? "";
+
   const featureFlags = await getAllFeatureFlags();
-  const [sections, totalCount] = await Promise.all([
-    getServiceVendorCategorySections(),
-    countServiceVendors(),
-  ]);
+  const result = await getServiceVendorsPage({ page, specialtySlug, query });
+  const { vendors, totalCount, totalPages, categories, activeCategory } = result;
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Services", url: SERVICE_VENDORS_HUB_PATH },
   ]);
+
+  const listedSpecialties = categories.filter((c) => c.vendor_count > 0);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -85,46 +115,179 @@ export default async function ServiceVendorsHubPage() {
             </p>
             <p className="mt-3 text-sm text-[var(--color-text-tertiary)]">
               {totalCount} {totalCount === 1 ? "provider" : "providers"}
-              {sections.length > 0
-                ? ` across ${sections.length} ${sections.length === 1 ? "category" : "categories"}`
+              {listedSpecialties.length > 0
+                ? ` across ${listedSpecialties.length} ${listedSpecialties.length === 1 ? "specialty" : "specialties"}`
                 : ""}
             </p>
-            <div className="mt-6">
+            <form
+              action={SERVICE_VENDORS_HUB_PATH}
+              method="get"
+              className="mt-6 flex max-w-md flex-wrap items-center gap-2"
+            >
+              {specialtySlug ? (
+                <input type="hidden" name="specialty" value={specialtySlug} />
+              ) : null}
+              <div className="relative min-w-0 flex-1">
+                <span className="material-symbols-outlined absolute left-3 top-2.5 !text-[1.1rem] text-[var(--color-text-tertiary)]">
+                  search
+                </span>
+                <input
+                  type="search"
+                  name="q"
+                  defaultValue={query}
+                  placeholder="Search providers…"
+                  className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pl-9 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="rounded-full bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-light)]"
+              >
+                Search
+              </button>
+            </form>
+            <div className="mt-4">
               <Link
                 href={discoveryHref(featureFlags, { type: "services" })}
                 {...gaClickProps({
                   event: "cta_click",
                   category: "services_hub",
-                  label: "search_services",
+                  label: "advanced_search",
                 })}
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary-light)]"
+                className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
               >
-                Search service providers
-                <span className="material-symbols-outlined !text-base">search</span>
+                Advanced search (town, filters)
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-6 py-12 md:py-16">
-          <PlaceCategoryBusinessSections
-            placeName="30A"
-            placeSlug="services"
-            sections={sections}
-            buildSectionSearchHref={(section) => serviceVendorsSearchHref(section.slug)}
-            analyticsCategoryPrefix="services_hub_category"
-            heading="Browse by category"
-            subheading="Each section opens search filtered to regional service providers in that category."
-            emptyMessage={
-              <p className="text-[var(--color-text-secondary)]">
-                No service providers listed yet.{" "}
-                <Link href="/list-your-business" className="text-[var(--color-primary)] hover:underline">
-                  List your business
-                </Link>
-                .
-              </p>
-            }
-          />
+        <section className="mx-auto max-w-6xl px-6 py-10 md:py-14">
+          <div className="mb-8">
+            <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
+              {SERVICE_VENDOR_UI.specialtyHeading}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              {SERVICE_VENDOR_UI.hubBrowseSubheading}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href={serviceVendorsHubHref({ query: query || null })}
+                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  !specialtySlug
+                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
+                }`}
+              >
+                All
+              </Link>
+              {listedSpecialties.map((cat) => {
+                const icon = SERVICE_CATEGORY_ICONS[cat.slug] ?? "home_repair_service";
+                const active = specialtySlug === cat.slug;
+                return (
+                  <Link
+                    key={cat.id}
+                    href={serviceVendorsHubHref({ specialtySlug: cat.slug, query: query || null })}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "services_hub_specialty",
+                      label: cat.slug,
+                    })}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                        : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined !text-base">{icon}</span>
+                    {cat.title}
+                    <span className={active ? "opacity-80" : "text-[var(--color-text-tertiary)]"}>
+                      ({cat.vendor_count})
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {activeCategory ? (
+            <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
+              Showing <span className="font-semibold">{activeCategory.title}</span>
+              {query ? (
+                <>
+                  {" "}
+                  matching &ldquo;{query}&rdquo;
+                </>
+              ) : null}
+              {" · "}
+              <Link
+                href={serviceVendorsSearchHref(activeCategory.slug)}
+                className="font-medium text-[var(--color-primary)] hover:underline"
+              >
+                Open in search
+              </Link>
+            </p>
+          ) : null}
+
+          {vendors.length > 0 ? (
+            <>
+              <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {vendors.map((v) => (
+                  <li key={v.id}>
+                    <BusinessPreviewCard
+                      name={v.name}
+                      slug={v.slug}
+                      excerpt={v.excerpt}
+                      heroImageUrl={v.hero_image_url}
+                      meta={
+                        [v.service_category_title, v.town_name].filter(Boolean).join(" · ") ||
+                        null
+                      }
+                      analyticsCategory="services_hub"
+                      analyticsLabel={v.slug}
+                    />
+                  </li>
+                ))}
+              </ul>
+
+              {totalPages > 1 ? (
+                <nav
+                  className="mt-10 flex flex-wrap items-center justify-center gap-2"
+                  aria-label="Pagination"
+                >
+                  {page > 1 ? (
+                    <Link
+                      href={paginationHref(page - 1, specialtySlug, query)}
+                      className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
+                    >
+                      Previous
+                    </Link>
+                  ) : null}
+                  <span className="px-2 text-sm text-[var(--color-text-tertiary)]">
+                    Page {page} of {totalPages}
+                  </span>
+                  {page < totalPages ? (
+                    <Link
+                      href={paginationHref(page + 1, specialtySlug, query)}
+                      className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
+                    >
+                      Next
+                    </Link>
+                  ) : null}
+                </nav>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-[var(--color-text-secondary)]">
+              No service providers found
+              {activeCategory ? ` in ${activeCategory.title}` : ""}
+              {query ? ` for “${query}”` : ""}.{" "}
+              <Link href="/list-your-business" className="text-[var(--color-primary)] hover:underline">
+                List your business
+              </Link>
+              .
+            </p>
+          )}
         </section>
       </main>
     </div>

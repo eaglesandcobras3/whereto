@@ -24,6 +24,7 @@ import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 
 export const revalidate = 3600;
 
@@ -206,7 +207,15 @@ async function loadBusiness(slug: string) {
       listing_review_count: row.review_count_cached,
       towns: towns ? { name: (towns as { title?: string }).title ?? towns.name, slug: towns.slug } : null,
       primary_area,
-      categories: category ? { name: category.title, slug: category.slug } : null,
+      categories: category
+        ? {
+            name: displayStorefrontCategoryTitle(
+              category.slug ?? "",
+              category.title ?? "Business",
+            ),
+            slug: category.slug,
+          }
+        : null,
       business_tags: intentTagsToFakeTagRows(row.intent_tags),
       pages: null,
       ai_vibe: null,

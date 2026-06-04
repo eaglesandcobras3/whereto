@@ -1,7 +1,10 @@
 import { hashQuery } from "@/lib/query-normalize";
 import type { SearchIntent } from "@/lib/intent-schema";
 import type { SearchCandidateRankOrder } from "@/lib/scoring";
+import type { ResolvedServiceCategoryFilter } from "@/lib/search/resolve-service-category-filter";
 import type { ResolvedFilters } from "@/lib/search/types";
+
+export type { ResolvedServiceCategoryFilter };
 
 export type SearchPriceBucket = "inexpensive" | "moderate" | "expensive";
 
@@ -11,6 +14,8 @@ const CACHE_VERSION = "search-v6-search-plan";
 export type ExplicitSearchConstraints = {
   explicitTownIds: string[];
   explicitCategorySlugs: string[];
+  /** Regional vendor taxonomy (`service_categories.slug`), separate from storefront categories. */
+  explicitServiceCategorySlugs: string[];
   constrainAreaId?: string;
   excludedCategorySlug?: string | null;
   requiredHasPhysicalLocation?: boolean;
@@ -64,6 +69,7 @@ export type SearchPlan = {
   intent: SearchIntent;
   explicit: ExplicitSearchConstraints;
   category: ResolvedCategoryFilter;
+  serviceCategory: ResolvedServiceCategoryFilter;
   town: ResolvedTownFilter;
   text: TextSearchPlan;
   effectivePriceBucket: SearchPriceBucket | null;
@@ -92,6 +98,8 @@ export function normalizeExplicitConstraints(options: {
   constrainTownId?: string;
   constrainCategorySlugs?: string[];
   constrainCategorySlug?: string | null;
+  constrainServiceCategorySlugs?: string[];
+  constrainServiceCategorySlug?: string | null;
   forcedCategorySlug?: string | null;
   constrainAreaId?: string;
   excludedCategorySlug?: string | null;
@@ -119,9 +127,16 @@ export function normalizeExplicitConstraints(options: {
         ? [options.forcedCategorySlug]
         : [];
 
+  const explicitServiceCategorySlugs = options.constrainServiceCategorySlugs?.length
+    ? options.constrainServiceCategorySlugs
+    : options.constrainServiceCategorySlug
+      ? [options.constrainServiceCategorySlug]
+      : [];
+
   return {
     explicitTownIds,
     explicitCategorySlugs,
+    explicitServiceCategorySlugs,
     constrainAreaId: options.constrainAreaId,
     excludedCategorySlug: options.excludedCategorySlug,
     requiredHasPhysicalLocation: options.requiredHasPhysicalLocation,
@@ -146,6 +161,9 @@ export function buildSearchQueryHash(
   }
   if (explicit.explicitCategorySlugs.length) {
     cacheBasis += `::__cats__:${explicit.explicitCategorySlugs.slice().sort().join(",")}`;
+  }
+  if (explicit.explicitServiceCategorySlugs.length) {
+    cacheBasis += `::__svc_cats__:${explicit.explicitServiceCategorySlugs.slice().sort().join(",")}`;
   }
   if (explicit.constrainAreaId) cacheBasis += `::__area__:${explicit.constrainAreaId}`;
   if (explicit.excludedCategorySlug) cacheBasis += `::__excl_cat__:${explicit.excludedCategorySlug}`;
@@ -256,9 +274,12 @@ export function resolvedFiltersFromPlan(plan: SearchPlan): ResolvedFilters {
         ? [town.resolvedTownId]
         : [];
 
+  const specialtySlugs = plan.serviceCategory.resolvedServiceCategorySlugs;
   return {
     town_ids: activeTownIds,
     category_slugs: category.resolvedCategorySlugs,
+    specialty_slugs: specialtySlugs,
+    service_category_slugs: specialtySlugs,
     vibe_tags: effectiveVibeTags,
     price_bucket: effectivePriceBucket,
   };

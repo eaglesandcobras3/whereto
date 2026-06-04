@@ -13,11 +13,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json()) as { query?: string };
+    const body = (await request.json()) as {
+      query?: string;
+      type?: string;
+      specialty?: string | string[];
+      service_category?: string | string[];
+      category?: string | string[];
+      town_id?: string;
+      page?: number;
+      pageSize?: number;
+    };
     const q = typeof body.query === "string" ? body.query : "";
     if (!q.trim()) {
       return NextResponse.json({ error: "query required" }, { status: 400 });
     }
+
+    const servicesOnly = body.type === "services";
+    const specialtyRaw = body.specialty ?? body.service_category;
+    const specialtySlugs = Array.isArray(specialtyRaw)
+      ? specialtyRaw
+      : typeof specialtyRaw === "string"
+        ? specialtyRaw.split(",").filter(Boolean)
+        : [];
+    const categoryRaw = body.category;
+    const categorySlugs = Array.isArray(categoryRaw)
+      ? categoryRaw
+      : typeof categoryRaw === "string"
+        ? categoryRaw.split(",").filter(Boolean)
+        : [];
 
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -30,6 +53,17 @@ export async function POST(request: NextRequest) {
       model,
       openaiKey: process.env.OPENAI_API_KEY,
       sessionId,
+      requiredIsServiceBusiness: servicesOnly ? true : undefined,
+      constrainServiceCategorySlugs: servicesOnly && specialtySlugs.length ? specialtySlugs : undefined,
+      constrainCategorySlugs:
+        !servicesOnly && categorySlugs.length
+          ? categorySlugs
+          : servicesOnly
+            ? categorySlugs.filter((s) => s !== "services")
+            : undefined,
+      constrainTownId: typeof body.town_id === "string" ? body.town_id : undefined,
+      page: typeof body.page === "number" ? body.page : undefined,
+      pageSize: typeof body.pageSize === "number" ? body.pageSize : undefined,
     });
 
     return NextResponse.json(result);

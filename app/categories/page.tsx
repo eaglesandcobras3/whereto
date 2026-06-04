@@ -10,6 +10,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 
 export const revalidate = 3600;
 
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   ...canonicalAlternates("/categories"),
   title: "Browse by Category | Restaurants, Coffee, Bars & More on 30A",
   description:
-    "Find the best restaurants, coffee shops, bars, activities, shopping, and services along Scenic 30A in South Walton, Florida. Browse every category of local business.",
+    "Find the best restaurants, coffee shops, bars, activities, shopping, and service businesses along Scenic 30A in South Walton, Florida. Browse every category of local business.",
   keywords: [
     "30A restaurants",
     "30A coffee shops",
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     path: "/categories",
     title: "Browse by Category | 30A Local Businesses | WhereTo30A",
     description:
-      "Every category of local business along 30A — restaurants, coffee, bars, activities, shopping, and services.",
+      "Every category of local business along 30A — restaurants, coffee, bars, activities, shopping, and service businesses.",
   }),
 };
 
@@ -143,6 +144,7 @@ async function getCategorySections(): Promise<CategorySection[]> {
       const pool = sortBrowseBusinesses(byCategory.get(cat.id) ?? []);
       return {
         ...cat,
+        title: displayStorefrontCategoryTitle(cat.slug, cat.title),
         business_count: pool.length,
         preview: pool.slice(0, PREVIEW_PER_CATEGORY),
         allBusinesses: pool,
@@ -167,7 +169,7 @@ export default async function CategoriesPage() {
             </h1>
             <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
               Every type of business along Scenic 30A in South Walton, Florida —
-              from restaurants and coffee shops to activities, shopping, and services.
+              from restaurants and coffee shops to activities, shopping, and service businesses.
             </p>
           </div>
         </section>

@@ -4,12 +4,13 @@ import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { buildSitemapEntries, staticFallbackSitemap } from "@/lib/seo/sitemap-strategy";
+import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
 
 /** PostgREST often caps a single response at ~1000 rows; paginate when tables grow. */
 const SITEMAP_PAGE_SIZE = 1000;
 
-/** Cache sitemap regeneration (seconds). Helps avoid hammering PostgREST on every crawler hit. */
-export const revalidate = 3600;
+/** Regenerate on each request so CMS archive/publish changes show up immediately. */
+export const dynamic = "force-dynamic";
 
 /**
  * Index-focused sitemap: hubs, towns, areas, categories, and editorial guides.
@@ -26,7 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const [towns, guides, areas, pointsOfInterest, categories] = await Promise.all([
       fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
-      fetchBrowseableRows(supabase, "guides", "slug, date_updated, published_at, date_created"),
+      fetchSitemapGuides(supabase),
       fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
       fetchBrowseableRows(
         supabase,
@@ -68,6 +69,8 @@ async function fetchBrowseableRows(
       .select(select)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .not("status", "eq", "archived")
+      .not("status", "eq", "draft")
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);

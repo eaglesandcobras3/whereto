@@ -12,7 +12,7 @@ export async function executeSearchFromPlan(
   /** When true, always populate _debug (for admin debugger). */
   includeDebug = false,
 ): Promise<SearchResultPayload> {
-  const { category, town, text, explicit, scoring } = plan;
+  const { category, serviceCategory, town, text, explicit, scoring } = plan;
 
   const result = await buildMinimalSearchResult(supabase, {
     rawQuery: plan.rawQuery,
@@ -33,6 +33,11 @@ export async function executeSearchFromPlan(
     primaryCategoryIds:
       explicit.explicitCategorySlugs.length > 1 ? category.filterCategoryIds : undefined,
     explicitCategoryId: category.explicitCategoryId,
+    explicitServiceCategoryId: serviceCategory.explicitServiceCategoryId,
+    primaryServiceCategoryIds:
+      explicit.explicitServiceCategorySlugs.length > 1
+        ? serviceCategory.filterServiceCategoryIds
+        : undefined,
     pageBrowseWithoutQuery: explicit.pageBrowseWithoutQuery,
     skipIlikeTextFilter: text.skipIlikeTextFilter,
     searchTermOverride: text.searchTermOverride,
@@ -64,6 +69,7 @@ export async function executeSearchFromPlan(
       intent: plan.intent,
       pageBrowseWithoutQuery: explicit.pageBrowseWithoutQuery,
       filterCategoryId: category.filterCategoryIds[0] ?? null,
+      filterSpecialtyCategoryId: serviceCategory.filterServiceCategoryIds[0] ?? null,
       resolvedTownId: town.resolvedTownId,
       nearTownIds: town.nearTownIds,
       searchTermOverride: text.searchTermOverride,

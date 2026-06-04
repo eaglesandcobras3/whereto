@@ -197,6 +197,14 @@ export default function SearchDebugClient({ initialQuery, result }: Props) {
                         <dd className="font-mono">{filters.category_slugs.join(", ")}</dd>
                       </div>
                     )}
+                    {(filters.specialty_slugs?.length ?? filters.service_category_slugs?.length) ? (
+                      <div className="flex gap-2">
+                        <dt className="w-40 text-gray-500">specialty</dt>
+                        <dd className="font-mono">
+                          {(filters.specialty_slugs ?? filters.service_category_slugs ?? []).join(", ")}
+                        </dd>
+                      </div>
+                    ) : null}
                     {filters.vibe_tags.length > 0 && (
                       <div className="flex gap-2">
                         <dt className="w-40 text-gray-500">vibe_tags</dt>

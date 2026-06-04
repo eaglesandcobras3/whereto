@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-import { getPublishedContentEntryBySlug } from "@/lib/data/content-entries";
+import {
+  getPublishedContentEntryBySlug,
+  isGuideArchivedInContentEntries,
+} from "@/lib/data/content-entries";
 import { guideHeroGradient } from "@/lib/guides/hero-gradient";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
@@ -39,6 +42,8 @@ type Props = { params: Promise<{ slug: string }> };
 
 async function loadGuide(slug: string) {
   try {
+    if (await isGuideArchivedInContentEntries(slug)) return null;
+
     const entry = await getPublishedContentEntryBySlug("guide", slug);
     if (entry) {
       return {

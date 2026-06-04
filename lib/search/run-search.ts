@@ -39,6 +39,8 @@ export async function runSearch(options: {
   constrainAreaId?: string;
   constrainCategorySlug?: string | null;
   constrainCategorySlugs?: string[];
+  constrainServiceCategorySlug?: string | null;
+  constrainServiceCategorySlugs?: string[];
   sortMode?: SearchCandidateRankOrder;
   skipIlikeTextFilter?: boolean;
   scopeOverride?: "in" | "near" | "anywhere";

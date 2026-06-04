@@ -7,6 +7,11 @@ import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import type { SearchResultPayload } from "@/lib/search/types";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { gaEvent } from "@/lib/analytics/gtag-runner";
+import {
+  parseSpecialtySlugsFromParams,
+  SERVICE_VENDOR_UI,
+  setSpecialtySlugsOnParams,
+} from "@/lib/routes/service-vendor-labels";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -168,6 +173,8 @@ type Props = {
   towns?: Town[];
   /** Business category filters (primary `business_categories.slug`). */
   categoryOptions?: CategoryOption[];
+  /** Vendor trade/specialty options (`service_categories.slug`) when showing service providers. */
+  serviceCategoryOptions?: CategoryOption[];
   /** `areas` rows for the area dropdown (optionally pre-scoped to selected town on the server). */
   areaOptions?: AreaOption[];
   sidebarAreas?: SidebarArea[];
@@ -219,6 +226,7 @@ export function SearchPageClient({
   areaName,
   towns = [],
   categoryOptions = [],
+  serviceCategoryOptions = [],
   areaOptions = [],
   sidebarAreas = [],
   sidebarGuides = [],
@@ -261,6 +269,7 @@ export function SearchPageClient({
     return raw ? raw.split(",").filter(Boolean) : [];
   })();
   const filterCategory = filterCategorySlugs[0] ?? ""; // backward compat
+  const filterSpecialtySlugs = parseSpecialtySlugsFromParams((key) => searchParams.get(key));
   const filterVibeTags: string[] = (() => {
     const raw = searchParams.get("tags");
     return raw ? raw.split(",").filter(Boolean) : [];
@@ -275,6 +284,11 @@ export function SearchPageClient({
   const resolvedFilters = results.resolved_filters;
   const aiTownIds = resolvedFilters?.town_ids.filter((id) => !filterTownIds.includes(id)) ?? [];
   const aiCategorySlugs = resolvedFilters?.category_slugs.filter((s) => !filterCategorySlugs.includes(s)) ?? [];
+  const aiSpecialtySlugs = (
+    resolvedFilters?.specialty_slugs ??
+    resolvedFilters?.service_category_slugs ??
+    []
+  ).filter((s) => !filterSpecialtySlugs.includes(s));
   const aiVibeTags = resolvedFilters?.vibe_tags.filter((t) => !filterVibeTags.includes(t)) ?? [];
   const aiPriceBucket = !filterPrice && resolvedFilters?.price_bucket ? resolvedFilters.price_bucket : null;
 
@@ -366,14 +380,32 @@ export function SearchPageClient({
     const params = new URLSearchParams(searchParams.toString());
     if (next === "services") {
       params.set("type", "services");
-      const cats = params.get("category")?.split(",").filter(Boolean) ?? [];
-      if (cats.length && !cats.includes("services")) {
-        params.delete("category");
-      }
+      params.delete("category");
     } else {
       params.delete("type");
       if (params.get("category") === "services") params.delete("category");
+      setSpecialtySlugsOnParams(params, []);
     }
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const toggleSpecialtyFilter = (slug: string) => {
+    if (browseMode !== "business") return;
+    gaEvent("search_filter_change", { filter: "specialty", value: slug });
+    const params = new URLSearchParams(searchParams.toString());
+    const next = filterSpecialtySlugs.includes(slug)
+      ? filterSpecialtySlugs.filter((s) => s !== slug)
+      : [...filterSpecialtySlugs, slug];
+    setSpecialtySlugsOnParams(params, next);
+    params.delete("page");
+    startTransition(() => router.push(`/search?${params.toString()}`));
+  };
+
+  const clearSpecialtyFilter = () => {
+    if (browseMode !== "business") return;
+    const params = new URLSearchParams(searchParams.toString());
+    setSpecialtySlugsOnParams(params, []);
     params.delete("page");
     startTransition(() => router.push(`/search?${params.toString()}`));
   };
@@ -500,8 +532,8 @@ export function SearchPageClient({
               <div className="flex shrink-0 overflow-hidden rounded-full border border-[var(--color-border)]">
                 {(
                   [
-                    ["storefront", "Businesses"],
-                    ["services", "Services"],
+                    ["storefront", SERVICE_VENDOR_UI.listingStorefront],
+                    ["services", SERVICE_VENDOR_UI.listingProviders],
                   ] as const
                 ).map(([value, label]) => {
                   const active = value === "services" ? listingServices : !listingServices;
@@ -604,8 +636,8 @@ export function SearchPageClient({
                   {browseMode === "business"
                     ? listingServices
                       ? townName
-                        ? `Services · ${townName}`
-                        : "Local Services"
+                        ? `${SERVICE_VENDOR_UI.listingProviders} · ${townName}`
+                        : SERVICE_VENDOR_UI.listingProviders
                       : townName && areaName
                         ? `Discovering ${areaName} · ${townName}`
                         : townName
@@ -624,8 +656,8 @@ export function SearchPageClient({
                     ? `${totalResults} ${
                         listingServices
                           ? totalResults === 1
-                            ? "service"
-                            : "services"
+                            ? "provider"
+                            : "providers"
                           : totalResults === 1
                             ? "business"
                             : "businesses"
@@ -1173,15 +1205,15 @@ export function SearchPageClient({
                   </div>
                 </form>
 
-                {/* Storefront vs services */}
+                {/* Storefront vs regional service providers */}
                 {browseMode === "business" && (
                   <div>
-                    <h3 className="text-eyebrow mb-2">Listing type</h3>
+                    <h3 className="text-eyebrow mb-2">{SERVICE_VENDOR_UI.listingTypeHeading}</h3>
                     <div className="flex overflow-hidden rounded-lg border border-[var(--color-border)]">
                       {(
                         [
-                          ["storefront", "Businesses"],
-                          ["services", "Services"],
+                          ["storefront", SERVICE_VENDOR_UI.listingStorefront],
+                          ["services", SERVICE_VENDOR_UI.listingProviders],
                         ] as const
                       ).map(([value, label]) => {
                         const active =
@@ -1282,7 +1314,95 @@ export function SearchPageClient({
                   </div>
                 )}
 
-                {/* Category filter (storefront categories only; services use listing type above) */}
+                {/* Specialty (trade) — service providers only; separate from storefront Category */}
+                {browseMode === "business" && listingServices && serviceCategoryOptions.length > 0 && (
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <h3 className="text-eyebrow">{SERVICE_VENDOR_UI.specialtyHeading}</h3>
+                      {filterSpecialtySlugs.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={clearSpecialtyFilter}
+                          className="text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {(() => {
+                      const VISIBLE_COUNT = 8;
+                      const prioritized = serviceCategoryOptions.filter(
+                        (c) =>
+                          filterSpecialtySlugs.includes(c.slug) || aiSpecialtySlugs.includes(c.slug),
+                      );
+                      const rest = serviceCategoryOptions.filter(
+                        (c) =>
+                          !filterSpecialtySlugs.includes(c.slug) && !aiSpecialtySlugs.includes(c.slug),
+                      );
+                      const visible = showAllCategories
+                        ? serviceCategoryOptions
+                        : [...prioritized, ...rest].slice(0, VISIBLE_COUNT);
+                      const hiddenCount = serviceCategoryOptions.length - visible.length;
+                      return (
+                        <>
+                          <ul className="space-y-0.5">
+                            {visible.map((cat) => {
+                              const isExplicit = filterSpecialtySlugs.includes(cat.slug);
+                              const isAiDetected = aiSpecialtySlugs.includes(cat.slug);
+                              return (
+                                <li key={cat.slug}>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleSpecialtyFilter(cat.slug)}
+                                    className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                                      isExplicit
+                                        ? "bg-[var(--color-primary)]/10 font-semibold text-[var(--color-primary)]"
+                                        : isAiDetected
+                                          ? "bg-[var(--color-primary)]/5 text-[var(--color-primary)]/75"
+                                          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-primary)]"
+                                    }`}
+                                  >
+                                    <span>{cat.title}</span>
+                                    {isExplicit && (
+                                      <span className="material-symbols-outlined !text-sm text-[var(--color-primary)]">
+                                        check
+                                      </span>
+                                    )}
+                                    {!isExplicit && isAiDetected && (
+                                      <span className="rounded bg-[var(--color-primary)]/10 px-1 py-0.5 text-[10px] font-medium text-[var(--color-primary)]/70">
+                                        suggested
+                                      </span>
+                                    )}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {!showAllCategories && hiddenCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllCategories(true)}
+                              className="mt-1 w-full rounded-md px-2 py-1 text-left text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+                            >
+                              + {hiddenCount} {SERVICE_VENDOR_UI.specialtyMore}
+                            </button>
+                          )}
+                          {showAllCategories && serviceCategoryOptions.length > VISIBLE_COUNT && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllCategories(false)}
+                              className="mt-1 w-full rounded-md px-2 py-1 text-left text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]"
+                            >
+                              Show fewer
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Category — storefront businesses only */}
                 {browseMode === "business" && !listingServices && categoryOptions.length > 0 && (
                   <div>
                     <div className="mb-2 flex items-center justify-between">

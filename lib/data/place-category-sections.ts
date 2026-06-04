@@ -7,6 +7,7 @@ import {
 } from "@/lib/shop/public-listing-filters";
 import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
 import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
+import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 
 /** Town + area pages: fixed category order (`business_categories.slug`). */
 export const PLACE_CATEGORY_SLUG_ORDER = [
@@ -68,7 +69,9 @@ export function rowToCategoryBusiness(row: Record<string, unknown>): CategoryBus
     ai_one_liner: excerpt,
     ai_summary: excerpt,
     categoryId: cat?.id ?? (row.primary_category_id as string | null) ?? null,
-    categoryTitle: cat?.title ?? null,
+    categoryTitle: cat?.title
+      ? displayStorefrontCategoryTitle(cat.slug ?? "", cat.title)
+      : null,
     categorySlug: cat?.slug ?? null,
   };
 }
@@ -90,7 +93,7 @@ export function groupBusinessesByCategorySections(
     if (!map.has(b.categoryId)) {
       map.set(b.categoryId, {
         id: b.categoryId,
-        title: b.categoryTitle,
+        title: displayStorefrontCategoryTitle(b.categorySlug, b.categoryTitle),
         slug: b.categorySlug,
         pool: [],
       });

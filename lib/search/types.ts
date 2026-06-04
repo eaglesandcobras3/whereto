@@ -48,6 +48,7 @@ export type SearchRetrievalMetrics = {
 export type SearchDebugInfo = {
   intent: unknown;
   filterCategoryId: string | null;
+  filterSpecialtyCategoryId?: string | null;
   resolvedTownId: string | undefined;
   nearTownIds: string[] | undefined;
   searchTermOverride: string | undefined;
@@ -60,6 +61,10 @@ export type SearchDebugInfo = {
 export type ResolvedFilters = {
   town_ids: string[];
   category_slugs: string[];
+  /** Regional vendor trade filter (`service_categories.slug`). */
+  specialty_slugs: string[];
+  /** @deprecated Use `specialty_slugs`. */
+  service_category_slugs: string[];
   vibe_tags: string[];
   price_bucket: "inexpensive" | "moderate" | "expensive" | null;
 };

@@ -5,6 +5,7 @@ import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/ser
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
@@ -67,7 +68,7 @@ export async function loadCategory(slug: string): Promise<CategoryRow | null> {
     .maybeSingle();
   if (!data) return null;
   const r = data as { id: string; title: string; slug: string; excerpt: string | null };
-  return r;
+  return { ...r, title: displayStorefrontCategoryTitle(r.slug, r.title) };
 }
 
 export async function loadBusinessesForCategory(
@@ -175,7 +176,12 @@ export async function loadCategoryHubPage(slug: string) {
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
-      .then((r) => (r.data ?? []) as { title: string; slug: string }[]),
+      .then((r) =>
+        ((r.data ?? []) as { title: string; slug: string }[]).map((row) => ({
+          ...row,
+          title: displayStorefrontCategoryTitle(row.slug, row.title),
+        })),
+      ),
   ]);
 
   return {

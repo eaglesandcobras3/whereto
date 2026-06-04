@@ -49,6 +49,14 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
   if (request.nextUrl.pathname !== "/search") return null;
 
   const sp = request.nextUrl.searchParams;
+  const legacySpecialty = sp.get("service_category")?.trim();
+  if (legacySpecialty && !sp.get("specialty")?.trim()) {
+    const url = request.nextUrl.clone();
+    url.searchParams.set("specialty", legacySpecialty);
+    url.searchParams.delete("service_category");
+    return NextResponse.redirect(url, 308);
+  }
+
   const rawType = sp.get("type");
   const type = rawType === "stores" ? "businesses" : rawType;
 
@@ -56,6 +64,8 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
     sp.get("q")?.trim() ||
       sp.get("town_id")?.trim() ||
       sp.get("category")?.trim() ||
+      sp.get("specialty")?.trim() ||
+      sp.get("service_category")?.trim() ||
       sp.get("area_id")?.trim() ||
       sp.get("scope") ||
       sp.get("price") ||

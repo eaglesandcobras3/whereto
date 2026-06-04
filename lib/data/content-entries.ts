@@ -97,7 +97,21 @@ export async function getPublishedContentEntryBySlug(
     .select("*")
     .eq("content_type", contentType)
     .eq("slug", slug)
+    .eq("status", "published")
     .maybeSingle();
   return (data as ContentEntry | null) ?? null;
+}
+
+/** When a guide slug is archived in content_entries, do not fall back to a stale `guides` row. */
+export async function isGuideArchivedInContentEntries(slug: string): Promise<boolean> {
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from("content_entries")
+    .select("status")
+    .eq("content_type", "guide")
+    .eq("slug", slug)
+    .maybeSingle();
+  const status = (data as { status?: string } | null)?.status;
+  return status === "archived" || status === "draft";
 }
 

@@ -156,6 +156,8 @@ type MinimalSearchBuildOptions = {
   searchTermOverride?: string;
   constrainPriceBucket?: "inexpensive" | "moderate" | "expensive" | null;
   primaryCategoryIds?: string[];
+  explicitServiceCategoryId?: string | null;
+  primaryServiceCategoryIds?: string[];
   constrainVibeTags?: string[];
   intentCategory?: string | null;
   intentSpecificItems?: string[];
@@ -189,6 +191,15 @@ function filterRowsBySidebar(rows: ScoredVecRow[], options: MinimalSearchBuildOp
     filtered = filtered.filter((r) => options.primaryCategoryIds!.includes(String(r.primary_category_id)));
   } else if (options.primaryCategoryId) {
     filtered = filtered.filter((r) => String(r.primary_category_id) === options.primaryCategoryId);
+  }
+  if (options.primaryServiceCategoryIds?.length) {
+    filtered = filtered.filter((r) =>
+      options.primaryServiceCategoryIds!.includes(String(r.service_category_id ?? "")),
+    );
+  } else if (options.explicitServiceCategoryId) {
+    filtered = filtered.filter(
+      (r) => String(r.service_category_id ?? "") === options.explicitServiceCategoryId,
+    );
   }
   if (options.constrainVibeTags?.length) {
     filtered = filtered.filter((r) =>
@@ -329,6 +340,7 @@ export async function buildMinimalSearchResult(
           typeof options.requiredIsServiceBusiness === "boolean"
             ? options.requiredIsServiceBusiness
             : null,
+        p_service_category_id: options.explicitServiceCategoryId ?? null,
       };
 
       // Pass user coordinates when available for geo-distance scoring
@@ -492,6 +504,12 @@ export async function buildMinimalSearchResult(
     query = query.in("primary_category_id", options.primaryCategoryIds);
   } else if (options.primaryCategoryId) {
     query = query.eq("primary_category_id", options.primaryCategoryId);
+  }
+
+  if (options.primaryServiceCategoryIds?.length) {
+    query = query.in("service_category_id", options.primaryServiceCategoryIds);
+  } else if (options.explicitServiceCategoryId) {
+    query = query.eq("service_category_id", options.explicitServiceCategoryId);
   }
 
   if (options.requiredHasPhysicalLocation === true) {
