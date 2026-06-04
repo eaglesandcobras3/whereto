@@ -24,9 +24,6 @@ export const revalidate = 3600;
 
 const DAILY_FEATURED_LIMIT = 8;
 const BUSINESS_POOL_LIMIT = 150;
-const BUSINESS_INDEX_LIMIT = 1000;
-
-type BusinessIndexLink = { name: string; slug: string };
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/businesses"),
@@ -131,30 +128,6 @@ async function getDailyFeaturedBusinesses(): Promise<BusinessPayload[]> {
   });
 }
 
-async function getAllBusinessIndexLinks(): Promise<BusinessIndexLink[]> {
-  const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("businesses_view")
-    .select("title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title", { ascending: true })
-    .limit(BUSINESS_INDEX_LIMIT);
-
-  if (error) {
-    console.error("businesses hub: index query", error);
-    return [];
-  }
-
-  return (data ?? [])
-    .map((row) => {
-      const r = row as { title: string; slug: string };
-      return { name: r.title, slug: r.slug };
-    })
-    .filter((b) => b.slug);
-}
-
 async function getTowns(): Promise<TownRow[]> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
@@ -191,11 +164,10 @@ async function getTowns(): Promise<TownRow[]> {
 
 export default async function BusinessesPage() {
   const featureFlags = await getAllFeatureFlags();
-  const [categories, featuredBusinesses, towns, businessIndex] = await Promise.all([
+  const [categories, featuredBusinesses, towns] = await Promise.all([
     getCategories(),
     getDailyFeaturedBusinesses(),
     getTowns(),
-    getAllBusinessIndexLinks(),
   ]);
 
   return (
@@ -295,36 +267,6 @@ export default async function BusinessesPage() {
           )}
         </div>
       </section>
-
-      {businessIndex.length > 0 ? (
-        <section className="border-t border-[var(--color-border)] py-14">
-          <div className="mx-auto max-w-6xl px-4">
-            <header className="mb-8 space-y-2">
-              <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
-                All business listings
-              </h2>
-              <p className="text-[var(--color-text-secondary)]">
-                Every published business on WhereTo30A — {businessIndex.length}{" "}
-                {businessIndex.length === 1 ? "listing" : "listings"}.
-              </p>
-            </header>
-            <nav aria-label="All business listings">
-              <ul className="columns-1 gap-x-8 sm:columns-2 lg:columns-3 xl:columns-4">
-                {businessIndex.map((b) => (
-                  <li key={b.slug} className="mb-2 break-inside-avoid">
-                    <Link
-                      href={`/business/${b.slug}`}
-                      className="text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                    >
-                      {b.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }
