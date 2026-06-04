@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { applyDiscoveryBrowseNav, discoveryHref } from "@/lib/nav/discovery-links";
+import {
+  applyDiscoveryBrowseNav,
+  discoveryHref,
+  discoveryLinkRel,
+} from "@/lib/nav/discovery-links";
 import { BROWSE_NAV_ITEMS } from "@/lib/nav/browse-links";
 
 const askOn = { ask: true, search: true };
@@ -23,5 +27,13 @@ describe("discoveryHref", () => {
   it("returns /ask when ask flag is on", () => {
     expect(discoveryHref(askOn)).toBe("/ask");
     expect(discoveryHref(askOn, { q: "coffee" })).toBe("/ask?q=coffee");
+  });
+});
+
+describe("discoveryLinkRel", () => {
+  it("marks robots-disallowed discovery URLs as nofollow", () => {
+    expect(discoveryLinkRel("/search?type=services")).toBe("nofollow");
+    expect(discoveryLinkRel("/ask?q=foo")).toBe("nofollow");
+    expect(discoveryLinkRel("/services")).toBeUndefined();
   });
 });

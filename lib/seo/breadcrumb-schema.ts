@@ -29,12 +29,7 @@ export function generateBreadcrumbSchema(items: BreadcrumbItem[]): object {
         "@type": "ListItem",
         position: index + 1,
         name: item.name,
-        item: {
-          "@type": "WebPage",
-          "@id": pageUrl,
-          name: item.name,
-          url: pageUrl,
-        },
+        item: pageUrl,
       };
     }),
   };
@@ -141,6 +136,10 @@ export function generateGuideSchema(guide: {
       "@type": "Organization",
       name: "WhereTo30A",
       url: siteUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/siteicon.png`,
+      },
     },
     ...(guide.datePublished ? { datePublished: guide.datePublished } : {}),
     ...(guide.dateModified ? { dateModified: guide.dateModified } : {}),

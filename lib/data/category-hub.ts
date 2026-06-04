@@ -3,6 +3,10 @@ import "server-only";
 import type { Metadata } from "next";
 import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import {
+  metaDescriptionSnippet,
+  seoTitleSegmentForLayout,
+} from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
@@ -197,10 +201,11 @@ export async function buildCategoryHubMetadata(slug: string): Promise<Metadata> 
   if (!cat) return { title: "Category" };
 
   const path = categoryHubPath(slug);
-  const title = `${cat.title} on 30A, Florida`;
-  const description =
-    cat.excerpt?.trim() ||
-    `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida — browse local options across Rosemary Beach, Seaside, Watercolor, Alys Beach, Inlet Beach, and more.`;
+  const title = seoTitleSegmentForLayout(`${cat.title} on 30A, Florida`);
+  const description = metaDescriptionSnippet(
+    cat.excerpt?.trim(),
+    `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida — browse local options across Rosemary Beach, Seaside, Watercolor, Alys Beach, Inlet Beach, and more.`,
+  );
   const ogTitle = `${cat.title} on 30A | WhereTo30A`;
 
   return {

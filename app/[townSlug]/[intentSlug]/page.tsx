@@ -10,7 +10,11 @@ import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
+import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
+import {
+  metaDescriptionSnippet,
+  seoTitleSegmentForLayout,
+} from "@/lib/seo/metadata-snippets";
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
 import { filterEnrichedToPublishedBusinesses } from "@/lib/shop/filter-enriched-published-businesses";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
@@ -107,11 +111,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!row) return { title: metadataTitleSiteOnly };
   const ts = normalizeUrlSegment(townSlug);
   const ins = normalizeUrlSegment(intentSlug);
-  const description = row.meta_description ?? row.intro.slice(0, 160);
+  const description = metaDescriptionSnippet(
+    row.meta_description ?? row.intro,
+    `Local guide: ${row.title} on 30A.`,
+  );
   const ogTitle = `${row.title} | WhereTo30A`;
   return {
     ...canonicalAlternates(`/${ts}/${ins}`),
-    title: titleSegmentForLayoutTemplate(row.title),
+    title: seoTitleSegmentForLayout(row.title),
     description,
     ...openGraphForPage({
       path: `/${ts}/${ins}`,

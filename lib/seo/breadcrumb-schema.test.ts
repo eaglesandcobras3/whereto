@@ -32,16 +32,10 @@ describe("generateBreadcrumbSchema", () => {
     const categoryCrumb = schema.itemListElement[2];
     expect(categoryCrumb.position).toBe(3);
     expect(categoryCrumb.name).toBe("Coffee Shops");
-    expect(categoryCrumb.item).toEqual({
-      "@type": "WebPage",
-      "@id": "https://whereto30a.com/coffee-shops",
-      name: "Coffee Shops",
-      url: "https://whereto30a.com/coffee-shops",
-    });
+    expect(categoryCrumb.item).toBe("https://whereto30a.com/coffee-shops");
 
     for (const entry of schema.itemListElement) {
-      expect(entry.item?.["@id"]).toMatch(/^https:\/\/whereto30a\.com\//);
-      expect(entry.item?.name).toBe(entry.name);
+      expect(entry.item).toMatch(/^https:\/\/whereto30a\.com\//);
     }
   });
 });

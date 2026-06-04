@@ -186,7 +186,7 @@ export default async function EventDetailPage({ params }: Props) {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={event.hero_image_url}
-          alt=""
+          alt={event.title}
           className="mb-8 aspect-[21/9] w-full rounded-2xl object-cover"
         />
       ) : null}

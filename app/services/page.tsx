@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { DiscoveryUtilityLink } from "@/components/nav/DiscoveryUtilityLink";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
@@ -17,11 +18,7 @@ import {
   parseSpecialtySlugsFromParams,
   SERVICE_VENDOR_UI,
 } from "@/lib/routes/service-vendor-labels";
-import {
-  SERVICE_VENDORS_HUB_PATH,
-  serviceVendorsHubHref,
-  serviceVendorsSearchHref,
-} from "@/lib/routes/service-vendors-hub";
+import { SERVICE_VENDORS_HUB_PATH, serviceVendorsHubHref } from "@/lib/routes/service-vendors-hub";
 import { discoveryHref } from "@/lib/nav/discovery-links";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -90,6 +87,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
   const specialtyGroups = groupListedServiceCategories(listedSpecialties);
   const openGroupSlug = findGroupForSpecialtySlug(specialtyGroups, specialtySlug);
   const browseGroups = toServiceSpecialtyBrowseGroups(specialtyGroups, specialtySlug);
+  const advancedSearchHref = discoveryHref(featureFlags, { type: "services" });
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -157,8 +155,8 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
               </button>
             </form>
             <div className="mt-4">
-              <Link
-                href={discoveryHref(featureFlags, { type: "services" })}
+              <DiscoveryUtilityLink
+                href={advancedSearchHref}
                 {...gaClickProps({
                   event: "cta_click",
                   category: "services_hub",
@@ -167,7 +165,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
                 className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
               >
                 Advanced search (town, filters)
-              </Link>
+              </DiscoveryUtilityLink>
             </div>
           </div>
         </section>
@@ -194,13 +192,6 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
                   matching &ldquo;{query}&rdquo;
                 </>
               ) : null}
-              {" · "}
-              <Link
-                href={serviceVendorsSearchHref(activeCategory.slug)}
-                className="font-medium text-[var(--color-primary)] hover:underline"
-              >
-                Open in search
-              </Link>
             </p>
           ) : null}
 

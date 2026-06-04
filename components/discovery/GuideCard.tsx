@@ -41,7 +41,7 @@ export function GuideCard({
             `}
           >
             {imageUrl ? (
-              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+              <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
             ) : null}
           </div>
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />

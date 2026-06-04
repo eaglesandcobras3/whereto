@@ -28,6 +28,7 @@ export function AdjacentBusinessCarousel({ businesses }: Props) {
               <ListingThumbnail
                 slug={b.slug}
                 imageUrl={b.image_url}
+                imageAlt={b.name}
                 rounded="none"
                 className="aspect-[5/4] min-h-[148px] rounded-none"
               />

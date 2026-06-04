@@ -66,6 +66,12 @@ export function discoveryHref(
   return qs ? `/search?${qs}` : "/search";
 }
 
+/** `rel` for links from indexable pages to discovery utilities (`/search`, `/ask` are robots-disallowed). */
+export function discoveryLinkRel(href: string): "nofollow" | undefined {
+  if (href.startsWith("/search") || href.startsWith("/ask")) return "nofollow";
+  return undefined;
+}
+
 /** Rewrite browse nav items that pointed at /search when Ask is enabled. */
 export function applyDiscoveryBrowseNav(
   items: BrowseNavItem[],

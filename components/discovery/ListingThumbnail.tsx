@@ -19,6 +19,8 @@ function gradientForSlug(slug: string): string {
 type Props = {
   slug: string;
   imageUrl?: string | null;
+  /** Accessible label when a photo is shown (parent cards pass the listing name). */
+  imageAlt?: string;
   /** Tailwind aspect + min-height, e.g. `aspect-[5/4] min-h-[176px]` */
   className?: string;
   rounded?: "top" | "all" | "none";
@@ -30,6 +32,7 @@ type Props = {
 export function ListingThumbnail({
   slug,
   imageUrl,
+  imageAlt,
   className = "aspect-[5/4] min-h-[168px]",
   rounded = "top",
 }: Props) {
@@ -50,7 +53,7 @@ export function ListingThumbnail({
       {show ? (
         <img
           src={imageUrl as string}
-          alt=""
+          alt={imageAlt?.trim() || slug.replace(/-/g, " ")}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
           loading="lazy"
           decoding="async"

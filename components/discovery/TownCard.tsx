@@ -65,7 +65,7 @@ export function TownCard({
             {imageUrl ? (
               <img
                 src={imageUrl}
-                alt=""
+                alt={name}
                 className="h-full w-full object-cover"
               />
             ) : null}

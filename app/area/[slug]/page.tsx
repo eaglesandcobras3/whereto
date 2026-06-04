@@ -10,6 +10,10 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import {
+  metaDescriptionSnippet,
+  seoTitleSegmentForLayout,
+} from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -188,12 +192,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug: raw } = await params;
   const place = await getPublicPlaceBySlug(raw);
   if (!place) return { title: "Area" };
-  const desc = place.excerpt || `Explore ${place.title} on 30A.`;
+  const desc = metaDescriptionSnippet(
+    place.excerpt,
+    `Explore ${place.title} on 30A — beaches, dining, and local spots along the corridor.`,
+  );
   const pathSeg = normalizeUrlSegment(place.slug);
   const ogTitle = `${place.title} | WhereTo30A`;
   return {
     ...canonicalAlternates(`/area/${pathSeg}`),
-    title: place.title,
+    title: seoTitleSegmentForLayout(place.title),
     description: desc,
     ...openGraphForPage({
       path: `/area/${pathSeg}`,

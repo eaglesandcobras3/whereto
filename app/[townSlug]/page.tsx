@@ -26,7 +26,11 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getSiteUrl } from "@/lib/site-url";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { metadataTitleSiteOnly, titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
+import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
+import {
+  metaDescriptionSnippet,
+  seoTitleSegmentForLayout,
+} from "@/lib/seo/metadata-snippets";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
@@ -255,13 +259,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (town) {
     const seoTitle = (town as unknown as { seo_title?: string | null }).seo_title;
     const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
-    const title = titleSegmentForLayoutTemplate(
+    const title = seoTitleSegmentForLayout(
       seoTitle?.trim() || `${town.name} | Local Guide to 30A`,
     );
-    const desc =
+    const desc = metaDescriptionSnippet(
       seoDesc?.trim() ||
-      (typeof town.excerpt === "string" && town.excerpt) ||
-      `Local guide: ${town.name} on 30A — restaurants, beaches, areas, and what the week actually feels like.`;
+        (typeof town.excerpt === "string" && town.excerpt) ||
+        "",
+      `Local guide: ${town.name} on 30A — restaurants, beaches, areas, and what the week actually feels like.`,
+    );
     const ogTitle = `${town.name} | WhereTo30A`;
     return {
       ...canonicalAlternates(`/${town.slug}`),

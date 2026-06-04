@@ -185,6 +185,7 @@ export function FeaturedCarousel({
                 <ListingThumbnail
                   slug={b.slug}
                   imageUrl={b.image_url}
+                  imageAlt={b.name}
                   className="aspect-[4/3] min-h-[168px] rounded-none"
                   rounded="none"
                 />

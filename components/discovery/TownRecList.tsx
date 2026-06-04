@@ -37,10 +37,22 @@ export function TownRecList({ enriched }: Props) {
                 href={`/business/${b.slug}`}
                 className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
               >
-                <ListingThumbnail slug={seed} imageUrl={b.image_url} rounded="none" className="aspect-[5/4] min-h-[156px] rounded-none" />
+                <ListingThumbnail
+                  slug={seed}
+                  imageUrl={b.image_url}
+                  imageAlt={b.name}
+                  rounded="none"
+                  className="aspect-[5/4] min-h-[156px] rounded-none"
+                />
               </Link>
             ) : (
-              <ListingThumbnail slug={seed} imageUrl={b.image_url} rounded="none" className="aspect-[5/4] min-h-[156px] rounded-none" />
+              <ListingThumbnail
+                slug={seed}
+                imageUrl={b.image_url}
+                imageAlt={b.name}
+                rounded="none"
+                className="aspect-[5/4] min-h-[156px] rounded-none"
+              />
             )}
             <div className="space-y-2 p-5">
               {b.slug ? (

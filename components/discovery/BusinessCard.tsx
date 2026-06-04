@@ -73,13 +73,25 @@ export function BusinessCard({
             {b.slug ? (
               <Link href={`/business/${b.slug}`} className="group block h-full w-full focus:outline-none">
                 {hasImage ? (
-                  <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
+                  <ListingThumbnail
+                    slug={slug}
+                    imageUrl={b.image_url}
+                    imageAlt={b.name}
+                    className="h-full w-full"
+                    rounded="none"
+                  />
                 ) : (
                   <CategoryIcon category={b.category_name} className="h-full w-full" />
                 )}
               </Link>
             ) : hasImage ? (
-              <ListingThumbnail slug={slug} imageUrl={b.image_url} className="h-full w-full" rounded="none" />
+              <ListingThumbnail
+                slug={slug}
+                imageUrl={b.image_url}
+                imageAlt={b.name}
+                className="h-full w-full"
+                rounded="none"
+              />
             ) : (
               <CategoryIcon category={b.category_name} className="h-full w-full" />
             )}

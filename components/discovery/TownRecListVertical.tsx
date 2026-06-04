@@ -51,6 +51,7 @@ export function TownRecListVertical({ enriched, analyticsListKey = "town_intent_
                 <ListingThumbnail
                   slug={seed}
                   imageUrl={b.image_url}
+                  imageAlt={b.name}
                   rounded="none"
                   className="aspect-[21/9] min-h-[140px] max-h-[220px] rounded-none sm:aspect-[3/1]"
                 />
@@ -59,6 +60,7 @@ export function TownRecListVertical({ enriched, analyticsListKey = "town_intent_
               <ListingThumbnail
                 slug={seed}
                 imageUrl={b.image_url}
+                imageAlt={b.name}
                 rounded="none"
                 className="aspect-[21/9] min-h-[140px] max-h-[220px] rounded-none sm:aspect-[3/1]"
               />

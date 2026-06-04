@@ -18,6 +18,10 @@ import {
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
 import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import {
+  businessListingTitleSegment,
+  metaDescriptionSnippet,
+} from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
@@ -245,7 +249,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const b = await loadBusiness(slug);
   if (!b) return { title: "Business" };
-  const desc = (b.excerpt as string) || (b.ai_summary as string)?.slice(0, 160) || undefined;
+  const descRaw = (b.excerpt as string) || (b.ai_summary as string) || "";
   const row = b as Record<string, unknown>;
   const rawSlug = row.slug;
   const dbSlug = typeof rawSlug === "string" ? rawSlug.trim() : "";
@@ -258,17 +262,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const titleSuffix = [metaCategory, metaTown ? `in ${metaTown}` : null]
     .filter(Boolean)
     .join(" ");
-  const pageTitle = titleSuffix ? `${b.name as string} | ${titleSuffix}` : (b.name as string);
+  const pageTitle = businessListingTitleSegment(b.name as string, [titleSuffix || null]);
+  const description = metaDescriptionSnippet(
+    descRaw,
+    `Local business on 30A: ${b.name as string}.`,
+  );
   const ogTitle = `${b.name as string} | WhereTo30A`;
 
   return {
     ...canonicalAlternates(canonicalPath),
     title: pageTitle,
-    description: desc,
+    description,
     ...openGraphForPage({
       path: canonicalPath,
       title: ogTitle,
-      description: desc ?? `Local business on 30A: ${b.name as string}.`,
+      description,
       imageUrl: businessListingImageUrl(b.hero_image_url as string | null),
     }),
   };

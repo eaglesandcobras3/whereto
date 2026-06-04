@@ -14,7 +14,10 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
+import {
+  metaDescriptionSnippet,
+  seoTitleSegmentForLayout,
+} from "@/lib/seo/metadata-snippets";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -118,13 +121,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const seg = normalizeUrlSegment(slug);
 
   const ogTitle = page.seo_title || page.title;
-  const ogDescription =
-    page.seo_description?.trim() || `Travel guide for 30A: ${page.title}.`;
+  const ogDescription = metaDescriptionSnippet(
+    page.seo_description,
+    `Travel guide for 30A: ${page.title}.`,
+  );
 
   return {
     ...canonicalAlternates(`/guide/${seg}`),
-    title: titleSegmentForLayoutTemplate(page.seo_title || page.title),
-    description: page.seo_description,
+    title: seoTitleSegmentForLayout(page.seo_title || page.title),
+    description: ogDescription,
     ...openGraphForPage({
       path: `/guide/${seg}`,
       title: ogTitle,
@@ -267,7 +272,7 @@ export default async function GuidePage({ params }: Props) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={page.og_image_url!}
-                  alt=""
+                  alt={page.title}
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
