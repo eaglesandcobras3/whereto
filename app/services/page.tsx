@@ -8,8 +8,8 @@ import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard"
 import { getServiceVendorsPage } from "@/lib/data/service-vendors-hub";
 import {
   ServiceSpecialtyBrowse,
-  toServiceSpecialtyBrowseGroups,
 } from "@/components/services/ServiceSpecialtyBrowse";
+import { toServiceSpecialtyBrowseGroups } from "@/lib/service-categories/service-specialty-browse";
 import {
   findGroupForSpecialtySlug,
   groupListedServiceCategories,
