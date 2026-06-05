@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { captureEvent } from "@/lib/analytics/gtag-runner";
 
 type Props = {
   /** Current public slug (`/business/[slug]`). */
@@ -66,6 +67,7 @@ export function ClaimBusinessEmailForm({ businessSlug, businessTitle, embedded =
     }
 
     if (j.ok) {
+      captureEvent("business_claim_submitted", { business_slug: businessSlug });
       setDone(true);
       e.currentTarget.reset();
     }

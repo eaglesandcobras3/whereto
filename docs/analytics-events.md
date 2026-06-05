@@ -1,11 +1,12 @@
-# Google Analytics (GA4) click & event tagging
+# PostHog click & event tagging
 
 ## Mechanism
 
-- **Loader:** `components/analytics/GoogleAnalytics.tsx` + `lib/analytics/google-measurement-id.ts` (`G-781F48KRLR` default; override with `NEXT_PUBLIC_GA_MEASUREMENT_ID`, or set to empty string to disable).
+- **Loader:** `components/analytics/PostHogProvider.tsx` + `lib/analytics/posthog-config.ts` (`NEXT_PUBLIC_POSTHOG_KEY` required; set to empty string to disable). Optional **`NEXT_PUBLIC_POSTHOG_HOST`** (defaults to `https://us.i.posthog.com`).
+- **Pageviews:** `components/analytics/PostHogPageView.tsx` fires `$pageview` on App Router navigations.
 - **Delegated clicks:** `components/analytics/AnalyticsClickCapture.tsx` listens in capture phase for elements with **`data-analytics-event`** (and optional **`data-analytics-category`**, **`data-analytics-label`**).
 - **Helper:** **`gaClickProps({ event, category?, label? })`** in `lib/analytics/ga-click-props.ts` — spread onto `<Link>`, `<a>`, `<button>`.
-- **Programmatic:** **`gaEvent(name, params?)`** in `lib/analytics/gtag-runner.ts` — search submits, pagination, filters, form success paths.
+- **Programmatic:** **`captureEvent(name, params?)`** (alias **`gaEvent`**) in `lib/analytics/gtag-runner.ts` — search submits, pagination, filters, form success paths.
 
 ## Naming convention
 
@@ -19,7 +20,7 @@
 | `pagination_click`    | (params)              | `page`, `browse_mode` |
 | `ui_open`             | `header`, etc.         | Panel id |
 
-Reports in GA4: use **Events** plus **category/label** as custom dimensions if you register `event_category` / `event_label` as CD (or derive from Explore).
+In PostHog, filter or break down events by `event_category`, `event_label`, and other properties sent with each capture.
 
 ## Surfaced audited (instrumented)
 
@@ -31,4 +32,4 @@ Reports in GA4: use **Events** plus **category/label** as custom dimensions if y
 
 **Forms:** Navbar search `gaEvent`, hero search `gaEvent`, listing feedback submit `gaEvent` on success.
 
-Re-run **`rg 'gaClickProps|gaEvent'`** occasionally to verify new UI keeps parity.
+Re-run **`rg 'gaClickProps|gaEvent|captureEvent'`** occasionally to verify new UI keeps parity.

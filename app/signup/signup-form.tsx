@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import posthog from "posthog-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -33,17 +34,23 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
       if (error) throw error;
+      if (data.user) {
+        posthog.identify(data.user.id, { email: data.user.email });
+      }
+      posthog.capture("user_signed_up", { method: "email" });
       const next = nextPath.startsWith("/") ? nextPath : "/profile";
       router.push(next);
       router.refresh();
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not create account";
       setStatus("error");
-      setMessage(err instanceof Error ? err.message : "Could not create account");
+      setMessage(message);
+      posthog.capture("user_sign_up_failed", { error_message: message });
     }
   }
 

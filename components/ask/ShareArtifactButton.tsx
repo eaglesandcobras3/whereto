@@ -5,6 +5,7 @@ import { Check, Link2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { artifactShareTitle } from "@/lib/ask/shareArtifacts";
 import type { AskArtifact } from "@/lib/ask/types";
+import { captureEvent } from "@/lib/analytics/gtag-runner";
 
 type Props = {
   artifact: AskArtifact | undefined;
@@ -44,6 +45,7 @@ export function ShareArtifactButton({
       if (data.url) {
         setShareUrl(data.url);
         if (navigator.share) {
+          captureEvent("ask_results_shared", { method: "native_share", artifact_type: artifact.type });
           await navigator.share({
             title: artifactShareTitle(artifact),
             text: data.summary ?? shareableSummary,
@@ -60,6 +62,7 @@ export function ShareArtifactButton({
     const text = shareableSummary ?? "";
     if (!text) return;
     await navigator.clipboard.writeText(text);
+    captureEvent("ask_results_shared", { method: "copy_summary", artifact_type: artifact?.type });
     setCopied("summary");
     setTimeout(() => setCopied(null), 2000);
   }
@@ -70,6 +73,7 @@ export function ShareArtifactButton({
       return;
     }
     await navigator.clipboard.writeText(shareUrl);
+    captureEvent("ask_results_shared", { method: "copy_link", artifact_type: artifact?.type });
     setCopied("link");
     setTimeout(() => setCopied(null), 2000);
   }

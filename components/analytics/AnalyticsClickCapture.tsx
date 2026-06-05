@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { getGoogleMeasurementId } from "@/lib/analytics/google-measurement-id";
+import posthog from "posthog-js";
+import { isPostHogEnabled } from "@/lib/analytics/posthog-config";
 
 function readDataAttr(el: Element, name: string): string | undefined {
   const v = el.getAttribute(name);
@@ -14,7 +15,7 @@ function readDataAttr(el: Element, name: string): string | undefined {
  */
 export function AnalyticsClickCapture() {
   useEffect(() => {
-    if (!getGoogleMeasurementId()) return;
+    if (!isPostHogEnabled()) return;
 
     const onClick = (e: MouseEvent) => {
       const start = e.target;
@@ -46,7 +47,7 @@ export function AnalyticsClickCapture() {
         // ignore malformed URLs
       }
 
-      window.gtag?.("event", eventName, {
+      posthog.capture(eventName, {
         event_category: category,
         event_label: label,
         link_url: linkUrl,

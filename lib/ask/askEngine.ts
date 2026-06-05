@@ -314,6 +314,11 @@ export async function runAskTurn(input: AskTurnInput): Promise<AskEngineResult> 
     // Force a tool call when answering clarification — prevents the LLM from
     // asking follow-up questions instead of searching, which causes a loop.
     toolChoice: clarificationFollowUp ? "required" : undefined,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "ask-generate",
+      metadata: { posthog_distinct_id: input.userId ?? undefined },
+    },
   });
 
   const assistantText = text.trim() || "Here's what I found in our verified listings.";
@@ -382,6 +387,11 @@ export async function streamAskTurn(input: AskTurnInput) {
     tools,
     stopWhen: stepCountIs(MAX_TOOL_STEPS),
     toolChoice: clarificationFollowUp ? "required" : undefined,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "ask-stream",
+      metadata: { posthog_distinct_id: input.userId ?? undefined },
+    },
     onFinish: async ({ text }) => {
       const assistantText = text.trim() || "Here's what I found in our verified listings.";
       resolvedSessionId = await persistTurnResult({

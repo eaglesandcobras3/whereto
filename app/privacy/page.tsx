@@ -43,8 +43,9 @@ export default function PrivacyPage() {
       <h2>Cookies and similar technologies</h2>
       <p>
         We use cookies and similar technologies that are necessary for the site to function (for example, session and
-        security cookies) and, where enabled, analytics to understand aggregate usage and improve the product. You can
-        control cookies through your browser settings; disabling some cookies may limit certain features.
+        security cookies) and, where enabled, product analytics (PostHog) to understand aggregate usage and improve the
+        product. You can control cookies through your browser settings; disabling some cookies may limit certain
+        features.
       </p>
 
       <h2>How we use information</h2>

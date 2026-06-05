@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import posthog from "posthog-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -19,17 +20,21 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     setMessage("");
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+      posthog.identify(data.user.id, { email: data.user.email });
+      posthog.capture("user_signed_in", { method: "email" });
       const next = nextPath.startsWith("/") ? nextPath : "/profile";
       router.push(next);
       router.refresh();
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not sign in";
       setStatus("error");
-      setMessage(err instanceof Error ? err.message : "Could not sign in");
+      setMessage(message);
+      posthog.capture("user_sign_in_failed", { error_message: message });
     }
   }
 

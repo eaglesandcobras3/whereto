@@ -1,17 +1,16 @@
 /**
- * Fire GA4 **`gtag` events after the snippet has loaded.** Safe no-op on the server / when GA disabled.
+ * Fire PostHog events from client code. Safe no-op on the server / when analytics disabled.
+ * Kept as **`gaEvent`** so existing call sites do not need renames.
  */
 
-import { getGoogleMeasurementId } from "@/lib/analytics/google-measurement-id";
+import posthog from "posthog-js";
+import { isPostHogEnabled } from "@/lib/analytics/posthog-config";
 
-export function gaEvent(eventName: string, params?: Record<string, unknown>): void {
+export function captureEvent(eventName: string, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return;
-  if (!getGoogleMeasurementId()) return;
-
-  const w = window as Window & {
-    dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
-  };
-
-  w.gtag?.("event", eventName, params ?? {});
+  if (!isPostHogEnabled()) return;
+  posthog.capture(eventName, params ?? {});
 }
+
+/** @deprecated Prefer **`captureEvent`** — alias kept for existing imports. */
+export const gaEvent = captureEvent;

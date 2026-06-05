@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
+import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -186,6 +187,16 @@ ${ua ? `User-Agent: ${escapeHtml(ua.slice(0, 500))}` : ""}</p>
   if (error) {
     console.error("resend.emails.send business claim email", error);
     return NextResponse.json({ error: "Could not send request." }, { status: 502 });
+  }
+
+  const ph = getPostHogServerClient();
+  if (ph) {
+    ph.capture({
+      distinctId: d.submitter_email,
+      event: "business_claim_received",
+      properties: { business_slug: d.business_slug, business_id: bizId },
+    });
+    await ph.shutdown();
   }
 
   return NextResponse.json({ ok: true });

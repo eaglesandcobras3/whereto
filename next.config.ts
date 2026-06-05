@@ -13,6 +13,13 @@ const supabaseHost = (() => {
 
 const indexNowKey = process.env.INDEXNOW_KEY?.trim();
 
+// Derive PostHog ingest and assets hosts from the env var.
+// e.g. https://us.i.posthog.com → ingest host; https://us-assets.i.posthog.com → assets host
+const phIngestHost = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim();
+const phAssetsHost = phIngestHost
+  ? phIngestHost.replace("://us.i.", "://us-assets.i.").replace("://eu.i.", "://eu-assets.i.")
+  : undefined;
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -32,10 +39,19 @@ const nextConfig: NextConfig = {
         : []),
     ],
   },
+  skipTrailingSlashRedirect: true,
   async rewrites() {
     const rules: { source: string; destination: string }[] = [
       // Avoid `app/[townSlug]` capturing `/sitemap.xml` (production 404).
       { source: "/sitemap.xml", destination: "/api/sitemap-xml" },
+      // PostHog reverse proxy — routes ingest through Next.js to avoid ad blockers.
+      ...(phAssetsHost ? [
+        { source: "/ingest/static/:path*", destination: `${phAssetsHost}/static/:path*` },
+        { source: "/ingest/array/:path*", destination: `${phAssetsHost}/array/:path*` },
+      ] : []),
+      ...(phIngestHost ? [
+        { source: "/ingest/:path*", destination: `${phIngestHost}/:path*` },
+      ] : []),
     ];
     if (indexNowKey) {
       rules.push({

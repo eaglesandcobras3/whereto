@@ -265,6 +265,7 @@ async function decideClarifyingQuestionIds(
   const { object } = await generateObject({
     model: openai(process.env.OPENAI_MODEL ?? "gpt-4o-mini"),
     schema: decidedQuestionsSchema,
+    experimental_telemetry: { isEnabled: true, functionId: "ask-clarify-decide" },
     prompt: `You decide which clarifying questions to ask before searching local businesses on Florida's 30A coast.
 
 User query: "${message}"${knownContext}
@@ -475,6 +476,7 @@ export async function buildClarifyingQuestionsWithReasoning(
     const result = await generateObject({
       model: openai(process.env.OPENAI_MODEL ?? "gpt-4o-mini"),
       schema: decidedQuestionsWithReasoningSchema,
+      experimental_telemetry: { isEnabled: true, functionId: "ask-clarify-inspect" },
       prompt: `You decide which clarifying questions to ask before searching local businesses on Florida's 30A coast.
 
 User query: "${message}"${knownContext}

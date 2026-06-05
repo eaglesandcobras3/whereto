@@ -95,6 +95,7 @@ If score < 7, alternativeAnswer must respect the same location constraint — de
   const { object } = await generateObject({
     model: openai(process.env.OPENAI_MODEL ?? "gpt-4o-mini"),
     schema: validationSchema,
+    experimental_telemetry: { isEnabled: true, functionId: "ask-validate-results" },
     prompt,
   });
 

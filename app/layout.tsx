@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter, Manrope, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { AnalyticsClickCapture } from "@/components/analytics/AnalyticsClickCapture";
+import { PostHogPageView } from "@/components/analytics/PostHogPageView";
+import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { NavbarServer } from "@/components/NavbarServer";
 import { SiteFooter } from "@/components/home/SiteFooter";
@@ -194,14 +196,18 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col bg-background font-body text-on-surface">
-        <ThemeProvider>
-          <NavbarServer compact showSearch />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-        </ThemeProvider>
-        <GoogleAnalytics />
+        <PostHogProvider>
+          <ThemeProvider>
+            <NavbarServer compact showSearch />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+          </ThemeProvider>
+        </PostHogProvider>
         <Analytics />
         <AnalyticsClickCapture />
+        <Suspense fallback={null}>
+          <PostHogPageView />
+        </Suspense>
       </body>
     </html>
   );

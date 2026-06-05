@@ -1,5 +1,5 @@
 /**
- * Props for delegated GA4 captures — see **`AnalyticsClickCapture`**.
+ * Props for delegated PostHog captures — see **`AnalyticsClickCapture`**.
  * Uses explicit `data-*` keys (React 19 typings omit them from **`Pick<HTMLAttributes, ...>`**).
  */
 
@@ -10,7 +10,7 @@ export type GaClickAnalyticsProps = {
 };
 
 export function gaClickProps(args: {
-  /** GA4 custom event name for reports. */
+  /** PostHog event name for reports. */
   event: string;
   category?: string;
   label?: string;

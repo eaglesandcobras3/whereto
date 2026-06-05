@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { discoveryHref } from "@/lib/nav/discovery-links";
+import { captureEvent } from "@/lib/analytics/gtag-runner";
 
 export type ListBusinessTownOption = { id: string; title: string; slug: string };
 
@@ -81,6 +82,7 @@ export function ListBusinessForm({ towns, featureFlags = {} }: Props) {
 
     if (j.ok) {
       setDone(true);
+      captureEvent("listing_request_submitted", { business_title: payload.title, town_id: payload.town_id });
       setMsg(
         "Thanks — we received your request. Our team reviews submissions before anything goes live. If we already list a close match, we may reach out or link you to claim it instead of creating a duplicate.",
       );

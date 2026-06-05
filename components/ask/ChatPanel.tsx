@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { isRichArtifact } from "@/lib/ask/artifact-rich-card";
 import type { AskArtifact } from "@/lib/ask/types";
+import { captureEvent } from "@/lib/analytics/gtag-runner";
 
 type AskArtifactData = {
   conversationId?: string;
@@ -96,6 +97,7 @@ export function ChatPanel({
       if (textareaRef.current) {
         textareaRef.current.style.height = "";
       }
+      captureEvent("ask_query_submitted", { query_length: trimmed.length });
       void sendMessage({ text: trimmed });
     },
     [busy, sendMessage],

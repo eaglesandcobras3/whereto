@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { captureEvent } from "@/lib/analytics/gtag-runner";
 
 type Props = {
   businessId: string;
@@ -31,6 +32,7 @@ export function SaveButton({
 
     try {
       await onSave(businessId);
+      captureEvent("business_saved", { business_id: businessId });
     } catch {
       // Revert on error
       setSaved(false);

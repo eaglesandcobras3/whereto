@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
+import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 
 import { findSimilarBusinessesForListingRequest } from "@/lib/listing-requests/find-similar-businesses";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
@@ -268,6 +269,20 @@ ${similarHtml}</body></html>`;
   if (error) {
     console.error("resend.emails.send listing request", error);
     return NextResponse.json({ error: "Could not send request." }, { status: 502 });
+  }
+
+  const ph = getPostHogServerClient();
+  if (ph) {
+    ph.capture({
+      distinctId: d.submitter_email,
+      event: "listing_request_received",
+      properties: {
+        business_title: d.title,
+        town_id: d.town_id,
+        similar_count: responseHits.length,
+      },
+    });
+    await ph.shutdown();
   }
 
   return NextResponse.json({

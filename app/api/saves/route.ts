@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { savedApiBlocked } from "@/lib/feature-flags";
+import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 
 export async function GET() {
   const blocked = await savedApiBlocked();
@@ -61,6 +62,16 @@ export async function POST(request: NextRequest) {
     { onConflict: "user_id,business_id" },
   );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const ph = getPostHogServerClient();
+  if (ph) {
+    ph.capture({
+      distinctId: user.id,
+      event: "business_save_completed",
+      properties: { business_id: body.business_id },
+    });
+    await ph.shutdown();
+  }
 
   const svc = getServiceSupabase();
   void svc
