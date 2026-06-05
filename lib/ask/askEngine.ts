@@ -317,7 +317,7 @@ export async function runAskTurn(input: AskTurnInput): Promise<AskEngineResult> 
     experimental_telemetry: {
       isEnabled: true,
       functionId: "ask-generate",
-      metadata: { posthog_distinct_id: input.userId ?? undefined },
+      metadata: input.userId ? { posthog_distinct_id: input.userId } : {},
     },
   });
 
@@ -390,7 +390,7 @@ export async function streamAskTurn(input: AskTurnInput) {
     experimental_telemetry: {
       isEnabled: true,
       functionId: "ask-stream",
-      metadata: { posthog_distinct_id: input.userId ?? undefined },
+      metadata: input.userId ? { posthog_distinct_id: input.userId } : {},
     },
     onFinish: async ({ text }) => {
       const assistantText = text.trim() || "Here's what I found in our verified listings.";

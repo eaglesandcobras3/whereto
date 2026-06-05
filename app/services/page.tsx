@@ -109,7 +109,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
             <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl">
               Service providers on 30A
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-[var(--color-text-secondary)]">
+            <p className="prose-editorial mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
               Regional and mobile vendors — trades, insurance, legal, medical, marine, and other
               professionals who serve homes and rentals across the corridor. Not the same as
               storefront service businesses with a fixed address (see{" "}
@@ -120,6 +120,11 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
                 storefront service businesses
               </Link>
               ).
+            </p>
+            <p className="prose-editorial mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
+              Browse by specialty, then filter by town when you need someone who actually works in
+              your neighborhood. Listings summarize service area and contact paths—confirm scope,
+              licensing, and scheduling with the provider before you hire.
             </p>
             <p className="mt-3 text-sm text-[var(--color-text-tertiary)]">
               {totalCount} {totalCount === 1 ? "provider" : "providers"}

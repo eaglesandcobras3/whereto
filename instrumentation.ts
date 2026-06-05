@@ -1,24 +1,8 @@
+/**
+ * Server instrumentation hook. PostHog AI OTEL span export is not wired here —
+ * `@posthog/ai/otel` is not published in @posthog/ai@7.x. Ask LLM telemetry uses
+ * AI SDK `experimental_telemetry` in `lib/ask/askEngine.ts`.
+ */
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    if (!apiKey) return;
-
-    const [{ NodeSDK }, { resourceFromAttributes }, { PostHogSpanProcessor }] =
-      await Promise.all([
-        import("@opentelemetry/sdk-node"),
-        import("@opentelemetry/resources"),
-        import("@posthog/ai/otel"),
-      ]);
-
-    const sdk = new NodeSDK({
-      resource: resourceFromAttributes({ "service.name": "whereto30a" }),
-      spanProcessors: [
-        new PostHogSpanProcessor({
-          apiKey,
-          host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-        }),
-      ],
-    });
-    sdk.start();
-  }
+  // Reserved for future Node-only observability setup.
 }
