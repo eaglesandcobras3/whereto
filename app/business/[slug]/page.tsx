@@ -22,6 +22,7 @@ import {
   businessListingTitleSegment,
   metaDescriptionSnippet,
 } from "@/lib/seo/metadata-snippets";
+import { businessListingIntro } from "@/lib/seo/page-intro-copy";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
@@ -600,9 +601,18 @@ export default async function BusinessPage({ params }: Props) {
                 )}
               </div>
 
-              {oneLiner && (
+              {oneLiner ? (
                 <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
-              )}
+              ) : null}
+              {!hasMarkdown ? (
+                <p className="prose-editorial mt-4 text-base leading-relaxed text-zinc-600">
+                  {businessListingIntro(
+                    b.name as string,
+                    category?.name,
+                    town?.name,
+                  )}
+                </p>
+              ) : null}
 
               <BusinessQuickFacts
                 address={b.address as string | null}

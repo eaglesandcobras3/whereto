@@ -19,6 +19,7 @@ import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
+import { hubBusinessesIntro } from "@/lib/seo/page-intro-copy";
 
 export const revalidate = 3600;
 
@@ -180,9 +181,12 @@ export default async function BusinessesPage() {
             <h1 className="text-hero text-[var(--color-text-primary)]">
               Local businesses on 30A
             </h1>
-            <p className="mx-auto max-w-xl text-lg text-[var(--color-text-secondary)]">
+            <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
               Restaurants, coffee shops, bars, boutiques, and services across every community
               along Scenic 30A — search by name or describe what you&apos;re looking for.
+            </p>
+            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
+              {hubBusinessesIntro()}
             </p>
             <div className="mx-auto max-w-2xl pt-2">
               <BusinessesHubSearch featureFlags={featureFlags} />

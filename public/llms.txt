@@ -1,0 +1,30 @@
+# WhereTo30A
+
+> A reader-first local guide and business directory for Scenic Highway 30A and Florida's Emerald Coast — beach towns, restaurants, shops, activities, services, and editorial trip guides.
+
+WhereTo30A helps visitors and locals discover what to do, where to eat, and which town fits their trip along 30A and South Walton.
+
+## Primary hubs
+
+- [Home](https://whereto30a.com/): Featured picks, search, and entry points across the corridor
+- [Beach towns](https://whereto30a.com/towns): Town guides for Rosemary Beach, Seaside, Alys Beach, WaterColor, Grayton Beach, and more
+- [Areas & districts](https://whereto30a.com/areas): Town centers, shopping districts, and gathering spots
+- [Browse by category](https://whereto30a.com/categories): Restaurants, coffee, bars, activities, shopping, and more
+- [Local businesses](https://whereto30a.com/businesses): Directory of storefront and venue listings
+- [Service providers](https://whereto30a.com/services): Regional contractors, trades, and mobile vendors
+- [Travel guides](https://whereto30a.com/guides): Editorial planning and on-the-ground advice
+
+## Editorial guides
+
+- [Ultimate 30A first-timer guide](https://whereto30a.com/guide/ultimate-30a-first-timers-guide): Planning overview for first-time visitors
+
+## Policies
+
+- [About](https://whereto30a.com/about): Mission, editorial approach, and how listings are handled
+- [Privacy](https://whereto30a.com/privacy): Analytics, accounts, and data practices
+- [Terms](https://whereto30a.com/terms): Site use and disclaimers
+
+## Optional
+
+- [List your business](https://whereto30a.com/list-your-business): Request a new or updated listing
+- [Listing feedback](https://whereto30a.com/feedback): Report accuracy issues or suggest improvements

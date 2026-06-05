@@ -11,6 +11,7 @@ import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesM
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { gaEvent } from "@/lib/analytics/gtag-runner";
+import { homeEditorialIntro } from "@/lib/seo/page-intro-copy";
 
 /** Placeholder assets from design/homepage.html (wire real URLs later). */
 const IMG = {
@@ -284,6 +285,14 @@ export function HomePage({
               </span>
               <MsIcon name="keyboard_arrow_down" className="!text-2xl" />
             </div>
+          </div>
+        </section>
+
+        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-16">
+          <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+            <p className="prose-editorial text-lg leading-relaxed text-[var(--color-text-secondary)]">
+              {homeEditorialIntro()}
+            </p>
           </div>
         </section>
 

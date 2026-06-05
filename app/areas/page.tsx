@@ -5,6 +5,7 @@ import { AreaCard } from "@/components/discovery/AreaCard";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import { hubAreasIntro } from "@/lib/seo/page-intro-copy";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export const revalidate = 3600;
@@ -115,9 +116,12 @@ export default async function AreasPage() {
             <h1 className="text-hero text-[var(--color-text-primary)]">
               Districts &amp; town centers
             </h1>
-            <p className="mx-auto max-w-xl text-lg text-[var(--color-text-secondary)]">
+            <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
               The shopping districts, town centers, and local gathering spots that give each
               30A community its character.
+            </p>
+            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
+              {hubAreasIntro()}
             </p>
           </header>
         </div>

@@ -47,6 +47,7 @@ import {
   type PlaceCategorySection,
 } from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { placeBrowseIntro, townPageIntro } from "@/lib/seo/page-intro-copy";
 
 type SidebarArea = { id: string; name: string; slug: string };
 
@@ -413,15 +414,9 @@ function BasicTownPage({
               <h1 className="text-editorial-headline mt-2 text-3xl text-zinc-900 sm:text-4xl">
                 {town.name}
               </h1>
-              <p className="mt-3 text-lg leading-relaxed text-zinc-600">{descriptor}</p>
-              {blurb && hasBodyMarkdown ? (
-                <p className="prose-editorial mt-4 text-lg leading-relaxed text-zinc-700">
-                  {blurb}
-                </p>
-              ) : null}
-              {blurb && !hasBodyMarkdown ? (
-                <p className="mt-4 text-lg leading-relaxed text-zinc-700">{blurb}</p>
-              ) : null}
+              <p className="prose-editorial mt-4 text-lg leading-relaxed text-zinc-600">
+                {blurb || townPageIntro(town.name, descriptor)}
+              </p>
             </div>
           </header>
 
@@ -432,6 +427,7 @@ function BasicTownPage({
                 placeSlug={town.slug}
                 sections={pageData.categorySections}
                 analyticsCategoryPrefix="town_guide_category"
+                subheading={placeBrowseIntro(town.name)}
                 buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
                   <p className="text-[var(--color-text-secondary)]">

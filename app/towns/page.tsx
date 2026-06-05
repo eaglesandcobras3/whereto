@@ -7,6 +7,7 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import { hubTownsIntro } from "@/lib/seo/page-intro-copy";
 
 export const revalidate = 3600;
 
@@ -94,8 +95,11 @@ export default async function TownsPage() {
             <h1 className="text-hero text-[var(--color-text-primary)]">
               Beach towns along 30A
             </h1>
-            <p className="mx-auto max-w-xl text-lg text-[var(--color-text-secondary)]">
+            <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
               Each community on Scenic Highway 30A has its own feel — pick the one that matches how you want the week to go.
+            </p>
+            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
+              {hubTownsIntro()}
             </p>
           </header>
         </div>

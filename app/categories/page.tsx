@@ -167,9 +167,13 @@ export default async function CategoriesPage() {
             <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl">
               Browse by category
             </h1>
-            <p className="mt-4 text-lg text-[var(--color-text-secondary)]">
+            <p className="prose-editorial mt-4 text-lg leading-relaxed text-[var(--color-text-secondary)]">
               Every type of business along Scenic 30A in South Walton, Florida —
               from restaurants and coffee shops to activities, shopping, and service businesses.
+            </p>
+            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
+              Pick a category to browse listings grouped by town, or open a town guide first when
+              you are still deciding where to stay along the corridor.
             </p>
           </div>
         </section>

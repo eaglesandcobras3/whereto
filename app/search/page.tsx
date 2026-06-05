@@ -157,6 +157,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     return {
       ...SEARCH_NOINDEX,
       title: "Search",
+      description:
+        "Search towns, restaurants, coffee shops, activities, guides, and events along Scenic 30A and South Walton.",
     };
   }
   return {

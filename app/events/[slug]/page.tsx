@@ -8,6 +8,10 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
+import {
+  metaDescriptionSnippet,
+  seoTitleSegmentForLayout,
+} from "@/lib/seo/metadata-snippets";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref } from "@/lib/nav/discovery-links";
@@ -144,10 +148,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const event = await loadEvent(slug);
   if (!event) return { title: "Event" };
   const seg = normalizeUrlSegment(slug);
-  const description = event.description?.slice(0, 160) ?? `Event on 30A: ${event.title}`;
+  const description = metaDescriptionSnippet(
+    event.description,
+    `Event on 30A: ${event.title}.`,
+  );
   return {
     ...canonicalAlternates(`/events/${seg}`),
-    title: event.title,
+    title: seoTitleSegmentForLayout(event.title),
     description,
     ...openGraphForPage({
       path: `/events/${seg}`,

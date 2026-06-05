@@ -4,6 +4,7 @@ import { getPublicPlaceBySlug, type PublicPlacePage } from "@/lib/data/public-pl
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { areaPageIntro, placeBrowseIntro } from "@/lib/seo/page-intro-copy";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
@@ -249,6 +250,10 @@ export default async function AreaPage({ params }: Props) {
     townSlug: area.town_slug,
   });
 
+  const intro =
+    area.excerpt?.trim() ||
+    areaPageIntro(area.title, typeLabel, area.town_name);
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
@@ -331,9 +336,7 @@ export default async function AreaPage({ params }: Props) {
                   </Link>
                 </div>
               )}
-              {area.excerpt && (
-                <p className="mt-4 text-lg leading-relaxed text-zinc-600">{area.excerpt}</p>
-              )}
+              <p className="prose-editorial mt-4 text-lg leading-relaxed text-zinc-600">{intro}</p>
             </div>
           </header>
 
@@ -344,6 +347,7 @@ export default async function AreaPage({ params }: Props) {
                 placeSlug={area.slug}
                 sections={categorySections}
                 analyticsCategoryPrefix="area_guide_category"
+                subheading={placeBrowseIntro(area.title)}
                 buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
                   areaBrowseSearchHref(area) ? (

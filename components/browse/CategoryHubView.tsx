@@ -9,6 +9,7 @@ import type {
   CategoryRow,
   CategoryTownGroup,
 } from "@/lib/data/category-hub";
+import { categoryHubIntro } from "@/lib/seo/page-intro-copy";
 
 type Props = {
   cat: CategoryRow;
@@ -19,6 +20,10 @@ type Props = {
 
 export function CategoryHubView({ cat, townGroups, businesses, otherCats }: Props) {
   const hubPath = categoryHubPath(cat.slug);
+  const townCount = townGroups.filter((g) => g.slug).length;
+  const intro =
+    cat.excerpt?.trim() ||
+    categoryHubIntro(cat.title, businesses.length, townCount);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -66,14 +71,12 @@ export function CategoryHubView({ cat, townGroups, businesses, otherCats }: Prop
             <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl">
               {cat.title} on 30A
             </h1>
-            {cat.excerpt && (
-              <p className="mt-4 max-w-2xl text-lg text-[var(--color-text-secondary)]">
-                {cat.excerpt}
-              </p>
-            )}
+            <p className="prose-editorial mt-4 max-w-3xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
+              {intro}
+            </p>
             <p className="mt-3 text-sm text-[var(--color-text-tertiary)]">
               {businesses.length} {businesses.length === 1 ? "listing" : "listings"} across{" "}
-              {townGroups.filter((g) => g.slug).length} towns
+              {townCount} {townCount === 1 ? "town" : "towns"}
             </p>
           </div>
         </section>

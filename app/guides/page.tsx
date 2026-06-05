@@ -11,6 +11,7 @@ import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { GuideCard } from "@/components/discovery/GuideCard";
 import { PRIMARY_EDITORIAL_GUIDE_PATH, PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { hubGuidesIntro } from "@/lib/seo/page-intro-copy";
 
 export const revalidate = 3600;
 
@@ -112,9 +113,12 @@ export default async function GuidesPage() {
           <header className="space-y-4 text-center">
             <p className="text-eyebrow">30A · South Walton, Florida</p>
             <h1 className="text-hero text-[var(--color-text-primary)]">Travel guides</h1>
-            <p className="mx-auto max-w-xl text-lg text-[var(--color-text-secondary)]">
+            <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
               Editorial guides for planning your trip — town picks, dining, beaches, and local
               advice written for the Emerald Coast.
+            </p>
+            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
+              {hubGuidesIntro()}
             </p>
             <div className="mx-auto max-w-2xl pt-2">
               <GuidesHubSearch featureFlags={featureFlags} />

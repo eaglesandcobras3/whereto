@@ -13,6 +13,32 @@ function toAbsoluteSiteUrl(url: string, siteUrl: string): string {
   return `${siteUrl}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 }
 
+function absoluteHttpUrl(url: string | null | undefined): string | null {
+  const u = url?.trim();
+  if (!u?.startsWith("http")) return null;
+  return u;
+}
+
+function breadcrumbWebPage(name: string, pageUrl: string): object {
+  return {
+    "@type": "WebPage",
+    "@id": pageUrl,
+    url: pageUrl,
+    name,
+  };
+}
+
+function isValidAggregateRating(
+  rating: number | null | undefined,
+  reviewCount: number | null | undefined,
+): rating is number {
+  if (rating == null || reviewCount == null) return false;
+  if (!Number.isFinite(rating) || !Number.isFinite(reviewCount)) return false;
+  const count = Math.floor(reviewCount);
+  if (count < 1) return false;
+  return rating >= 1 && rating <= 5;
+}
+
 /**
  * Generate BreadcrumbList JSON-LD schema
  * @param items Array of breadcrumb items — each must include a URL (including the current page).
@@ -29,7 +55,7 @@ export function generateBreadcrumbSchema(items: BreadcrumbItem[]): object {
         "@type": "ListItem",
         position: index + 1,
         name: item.name,
-        item: pageUrl,
+        item: breadcrumbWebPage(item.name, pageUrl),
       };
     }),
   };
@@ -45,6 +71,7 @@ export function generateTownSchema(town: {
   imageUrl?: string | null;
 }): object {
   const siteUrl = getSiteUrl();
+  const imageUrl = absoluteHttpUrl(town.imageUrl);
 
   return {
     "@context": "https://schema.org",
@@ -53,7 +80,7 @@ export function generateTownSchema(town: {
     name: town.name,
     description: town.description || `Discover ${town.name} on Florida's scenic Highway 30A.`,
     url: `${siteUrl}/${town.slug}`,
-    ...(town.imageUrl ? { image: [town.imageUrl] } : {}),
+    ...(imageUrl ? { image: imageUrl } : {}),
     touristType: ["Beach Vacation", "Family Travel", "Couples Getaway"],
     includesAttraction: {
       "@type": "Beach",
@@ -85,6 +112,7 @@ export function generateAreaSchema(area: {
   townSlug?: string | null;
 }): object {
   const siteUrl = getSiteUrl();
+  const imageUrl = absoluteHttpUrl(area.imageUrl);
 
   return {
     "@context": "https://schema.org",
@@ -93,7 +121,7 @@ export function generateAreaSchema(area: {
     name: area.name,
     description: area.description || `Explore ${area.name} on 30A.`,
     url: `${siteUrl}/area/${area.slug}`,
-    ...(area.imageUrl ? { image: [area.imageUrl] } : {}),
+    ...(imageUrl ? { image: imageUrl } : {}),
     ...(area.townName && area.townSlug
       ? {
           containedInPlace: {
@@ -118,6 +146,7 @@ export function generateGuideSchema(guide: {
   dateModified?: string | null;
 }): object {
   const siteUrl = getSiteUrl();
+  const imageUrl = absoluteHttpUrl(guide.imageUrl);
 
   return {
     "@context": "https://schema.org",
@@ -126,7 +155,7 @@ export function generateGuideSchema(guide: {
     headline: guide.title,
     description: guide.description || `A local guide to ${guide.title} on 30A.`,
     url: `${siteUrl}/guide/${guide.slug}`,
-    ...(guide.imageUrl ? { image: [guide.imageUrl] } : {}),
+    ...(imageUrl ? { image: imageUrl } : {}),
     author: {
       "@type": "Organization",
       name: "WhereTo30A",
@@ -151,7 +180,8 @@ export function generateGuideSchema(guide: {
 }
 
 /**
- * Generate enhanced LocalBusiness schema
+ * Generate LocalBusiness or Organization schema for listing detail pages.
+ * LocalBusiness requires a postal address; listings without one use Organization.
  */
 export function generateLocalBusinessSchema(business: {
   name: string;
@@ -171,27 +201,30 @@ export function generateLocalBusinessSchema(business: {
   priceRange?: string | null;
 }): object {
   const siteUrl = getSiteUrl();
+  const pageUrl = `${siteUrl}/business/${business.slug}`;
+  const hasAddress = Boolean(business.address?.trim());
+  const imageUrl = absoluteHttpUrl(business.imageUrl);
 
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "@id": `${siteUrl}/business/${business.slug}#business`,
+    "@type": hasAddress ? "LocalBusiness" : "Organization",
+    "@id": `${pageUrl}#business`,
     name: business.name,
-    url: `${siteUrl}/business/${business.slug}`,
+    url: pageUrl,
   };
 
   if (business.description) {
     schema.description = business.description;
   }
 
-  if (business.imageUrl) {
-    schema.image = [business.imageUrl];
+  if (imageUrl) {
+    schema.image = imageUrl;
   }
 
-  if (business.address) {
+  if (hasAddress) {
     schema.address = {
       "@type": "PostalAddress",
-      streetAddress: business.address,
+      streetAddress: business.address!.trim(),
       addressLocality: business.townName || "30A",
       addressRegion: "FL",
       addressCountry: "US",
@@ -215,11 +248,11 @@ export function generateLocalBusinessSchema(business: {
     schema.sameAs = [sameAs];
   }
 
-  if (business.rating != null && business.reviewCount != null && business.reviewCount > 0) {
+  if (isValidAggregateRating(business.rating, business.reviewCount)) {
     schema.aggregateRating = {
       "@type": "AggregateRating",
-      ratingValue: business.rating,
-      reviewCount: business.reviewCount,
+      ratingValue: Math.round(business.rating * 10) / 10,
+      reviewCount: Math.floor(business.reviewCount!),
       bestRating: 5,
       worstRating: 1,
     };
@@ -241,29 +274,26 @@ export function generateLocalBusinessSchema(business: {
 }
 
 /**
- * Generate ItemList schema for listing pages (search results, category pages)
+ * Generate ItemList schema for listing pages (category hubs, browse results).
+ * Uses flat ListItem nodes with `url` + `name` — not nested LocalBusiness stubs.
  */
 export function generateItemListSchema(items: Array<{
   name: string;
   url: string;
-  imageUrl?: string | null;
-  description?: string | null;
 }>): object {
   const siteUrl = getSiteUrl();
 
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: items.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      item: {
-        "@type": "LocalBusiness",
+    itemListElement: items.map((item, index) => {
+      const pageUrl = item.url.startsWith("http") ? item.url : `${siteUrl}${item.url}`;
+      return {
+        "@type": "ListItem",
+        position: index + 1,
         name: item.name,
-        url: item.url.startsWith("http") ? item.url : `${siteUrl}${item.url}`,
-        ...(item.imageUrl ? { image: item.imageUrl } : {}),
-        ...(item.description ? { description: item.description } : {}),
-      },
-    })),
+        url: pageUrl,
+      };
+    }),
   };
 }
