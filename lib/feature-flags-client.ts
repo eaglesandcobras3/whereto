@@ -18,14 +18,25 @@ import {
 export { PostHogFeature };
 export { usePostHogFeatureFlagEnabled as useFeatureFlagEnabled };
 
-function buildFlagsFromPostHog(): FeatureFlags {
-  const remote: Partial<FeatureFlags> = {};
+function posthogFlagsReady(): boolean {
+  if (!isPostHogEnabled()) return false;
+  const featureFlags = posthog.featureFlags;
+  return featureFlags.hasLoadedFlags || featureFlags.getFlags().length > 0;
+}
 
-  if (isPostHogEnabled()) {
-    for (const key of FEATURE_FLAG_KEYS) {
-      const value = posthog.isFeatureEnabled(key);
-      if (value !== undefined) remote[key] = value;
-    }
+function readPostHogBooleanFlag(key: FeatureFlagKey): boolean | undefined {
+  const value = posthog.isFeatureEnabled(key);
+  if (value === true || value === false) return value;
+  return undefined;
+}
+
+function buildFlagsFromPostHog(): FeatureFlags {
+  if (!posthogFlagsReady()) return DEFAULT_FLAGS;
+
+  const remote: Partial<FeatureFlags> = {};
+  for (const key of FEATURE_FLAG_KEYS) {
+    const value = readPostHogBooleanFlag(key);
+    if (value !== undefined) remote[key] = value;
   }
 
   return resolveFeatureFlags(remote);
@@ -70,8 +81,8 @@ export function useAppFeatureFlag(key: FeatureFlagKey): boolean {
 
 export function isAppFeatureEnabled(key: FeatureFlagKey): boolean {
   const defaultValue = DEFAULT_FLAGS[key];
-  if (!isPostHogEnabled()) return defaultValue;
-  const value = posthog.isFeatureEnabled(key);
+  if (!posthogFlagsReady()) return defaultValue;
+  const value = readPostHogBooleanFlag(key);
   if (value === undefined) return defaultValue;
   return value;
 }
