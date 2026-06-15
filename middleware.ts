@@ -1,29 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  getFeatureFlagsForEdgeRequest,
-  isAskEnabled,
-  isAuthEnabled,
-  isSavedEnabled,
-} from "@/lib/feature-flags-core";
+import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
+import { isAskEnabled } from "@/lib/feature-flags-core";
 import {
   categoryDbSlugFromLegacyOn30aSegment,
   categoryHubPath,
 } from "@/lib/routes/category-hub-path";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
-
-function isAuthGatedPath(pathname: string): boolean {
-  if (pathname === "/login" || pathname.startsWith("/login/")) return true;
-  if (pathname === "/signup" || pathname.startsWith("/signup/")) return true;
-  if (pathname === "/forgot-password" || pathname.startsWith("/forgot-password/"))
-    return true;
-  if (pathname === "/reset-password" || pathname.startsWith("/reset-password/"))
-    return true;
-  if (pathname === "/profile" || pathname.startsWith("/profile/")) return true;
-  if (pathname === "/auth/callback" || pathname.startsWith("/auth/")) return true;
-  return false;
-}
 
 /** Legacy `/*-on-30a` category URLs → short canonical paths (e.g. `/restaurants`). */
 function maybeRedirectLegacyCategoryOn30a(request: NextRequest): NextResponse | null {
@@ -92,20 +76,9 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
 }
 
 export async function middleware(request: NextRequest) {
-  const flags = getFeatureFlagsForEdgeRequest((name) =>
-    request.cookies.get(name)?.value,
-  );
+  const flags = await getFeatureFlagsForMiddleware(request);
   const { pathname } = request.nextUrl;
 
-  if (!isAuthEnabled(flags) && isAuthGatedPath(pathname)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-  if (
-    !isSavedEnabled(flags) &&
-    (pathname === "/saved" || pathname.startsWith("/saved/"))
-  ) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
   if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
     return NextResponse.redirect(new URL("/", request.url));
   }
@@ -139,20 +112,17 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value)
-        );
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
         supabaseResponse = NextResponse.next({
           request,
         });
         cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
+          supabaseResponse.cookies.set(name, value, options),
         );
       },
     },
   });
 
-  // Refresh the session - this is required for Server Components to read the session
   await supabase.auth.getUser();
 
   return supabaseResponse;
@@ -160,13 +130,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images, etc)
-     */
     "/((?!_next/static|_next/image|favicon.ico|.well-known/workflow|.*\\.(?:svg|png|jpg|jpeg|gif|webp|txt)$).*)",
   ],
 };

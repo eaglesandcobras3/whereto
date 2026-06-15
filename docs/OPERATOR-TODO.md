@@ -40,7 +40,6 @@
 | **`UPSTASH_REDIS_REST_TOKEN`** | Upstash console | Pair with URL for ask rate limiting. |
 | **`ASK_RATE_LIMIT_CHAT_MAX`** | e.g. `10` | Chat requests per window (default **10**). |
 | **`ASK_RATE_LIMIT_CHAT_WINDOW_SEC`** | e.g. `600` | Chat window seconds (default **600** = 10 min). |
-| **`FEATURE_FLAGS_JSON`** | include **`"ask":true`** | Enables `/ask` and `/api/ask/*`. Default off in production; **`next dev`** turns **`ask` on** when the key is omitted (same as **`search`**). |
 | **`SEARCH_LEARNING_ENABLED`** | `true` / `false` (default **`false`**) | Enables the self-learning search loop: impression logging (`search_impressions`), click tracking (`search_clicks`), and CTR-based ranking boost (`search_cluster_business_stats`). Requires migrations `20260528120000`, `20260529000000`, and `20260529000100` applied in Supabase. The learning boost only activates after ≥20 impressions + ≥2 clicks per cluster (sparse-data safe). Set **`true`** in both `.env.local` and Vercel after applying migrations. |
 | `GEOAPIFY_API_KEY` | [Geoapify MyProjects](https://myprojects.geoapify.com/) | Optional; without it, discovery and directory refresh crons skip external calls (discovery leaves jobs pending). Places + Place Details use OSM-derived data under Geoapify’s and ODbL terms — keep attribution (see `business_sources`). |
 | `CRON_SECRET` | Generate a long random string | Required in **production** for `/api/cron/*`; omitted in `NODE_ENV=development` the app allows cron without secret |
@@ -54,7 +53,6 @@
 | **`OPENAI_API_KEY`** | OpenAI | Already required for intent parsing. Also used by **`local/generate-embeddings.ts`** for `text-embedding-3-small` embeddings. |
 | `ADMIN_USER_IDS` | Comma-separated Supabase Auth user UUIDs | Who can open `/admin` in the Next app (optional in-app shell). |
 | `ADMIN_EMAILS` | Comma-separated emails | Alternative to `ADMIN_USER_IDS` for `/admin` access. |
-| `FEATURE_FLAGS_JSON` | JSON object, e.g. `{"search":true,"auth":false,"saved":false}` | Server-side feature flags (replaces legacy `feature_flags` table). **`search`** gates the homepage hero search and related UI (defaults **off** in production unless you set **`"search":true`**). In **`NODE_ENV=development`** (`next dev`), **`search` defaults to on** whenever **`FEATURE_FLAGS_JSON` omits a `search` key; set **`"search":false`** in JSON to hide search locally. Other keys include **`auth`** (sign in, profile, `/auth/callback`, claims API) and **`saved`** (Saved nav, `/saved`, saves/collections APIs). Legacy **`user_features`: `false`** disables both. **`services_nav`**: set **`true`** to show the **Services** item in the header browse nav (default **off**). **`guide_hub_search_callout`**: set **`true`** to show the **“Ready to Explore?” / Start Searching** block at the bottom of **`/guide`** (default **off**). Optional `ff_overrides` cookie merges the same shape (dev). |
 | `HOME_HERO_TITLE`, `HOME_HERO_SUBTITLE`, `HOME_HERO_IMAGE_URL`, `HOME_SEARCH_PLACEHOLDER` | Local / Vercel env | Override homepage hero when not using legacy `site_settings`. |
 | `RESEND_API_KEY` | [Resend](https://resend.com/) → API keys | **Server only.** Required for **`POST /api/listing-requests`** and **`POST /api/business-claim-email`** (sidebar “Claim or update listing” on business pages). |
 | `RESEND_FROM_EMAIL` | Resend-verified sender | Optional shorthand: used if **`LISTING_NOTIFICATION_FROM_EMAIL`** is unset (same verified domain rules). |
@@ -68,6 +66,28 @@
 | **`NEXT_PUBLIC_TIKTOK_URL`** | Full profile URL | **Default:** `https://www.tiktok.com/@whereto30a`. Same override / hide pattern as Instagram. |
 | **`NEXT_PUBLIC_POSTHOG_KEY`** | PostHog → Project → Settings → Project API key (`phc_…`) | **Public.** Required for product analytics (replaces Google Analytics). Set to empty string to disable. |
 | **`NEXT_PUBLIC_POSTHOG_HOST`** | PostHog ingest URL | Optional; defaults to **`https://us.i.posthog.com`**. Use your EU or self-hosted host if applicable. |
+
+### PostHog feature flags
+
+Create **boolean** flags in [PostHog → Feature flags](https://us.posthog.com/project/455090/feature_flags) with these **exact keys**:
+
+| Flag key | Default (prod) | What it gates |
+|----------|----------------|---------------|
+| `search` | off | Navbar search UI, `/search` discovery links |
+| `ask` | off | `/ask`, `/api/ask/*`, Ask nav; replaces search when on |
+| `search_inspector` | off | `/ask/inspect` and inspect API routes |
+
+**Client:** `useAppFeatureFlags()` / `useFeatureFlagEnabled('ask', false)` from `@/lib/feature-flags-client` (`posthog.onFeatureFlags` + `posthog.isFeatureEnabled`).
+
+**Server:** `getAllFeatureFlags()` from `@/lib/feature-flags` (middleware + API guards).
+
+All three flags default **off** in code when PostHog is unavailable or a flag is undefined. Enable them only in PostHog (no env var overrides).
+
+Use PostHog **release conditions** for percentage rollouts.
+
+**Not feature-flagged** (always on): auth, saved places, homepage sections, services nav, claims.
+
+**Separate env toggles:** `SEARCH_V2`, `SEARCH_LEARNING_ENABLED`, `FTS_SEARCH_ENABLED`, `SEARCH_QUERY_EMBEDDINGS`, `SEARCH_OPENAI_INTENT_PARSE`, `ENABLE_SUPABASE_DIAG_UI`.
 
 ---
 
@@ -326,11 +346,7 @@ This routes all `runSearch()` calls through `runSearchV2()` (deterministic routi
 
 ### Step 6: Re-enable search flag
 
-Only after `SEARCH_V2=1` is deployed and spot-checked in `/admin/search-debug`:
-```json
-{ "search": true }
-```
-in `FEATURE_FLAGS_JSON` Vercel env var.
+Only after `SEARCH_V2=1` is deployed and spot-checked in `/admin/search-debug`, enable the **`search`** boolean flag in PostHog (see **PostHog feature flags** table).
 
 ### Step 7: Add mobility rental vendors
 
@@ -356,6 +372,8 @@ The golf cart rental case (`regression-collision-mobility-01`) returns honest em
 
 | Date | What changed |
 |------|----------------|
+| 2026-06-15 | **PostHog-only feature flags:** **`search`**, **`ask`**, and **`search_inspector`** are read only from PostHog (no `FEATURE_FLAGS_JSON`, no `ff_overrides`, no dev auto-enable). Code defaults all three to **off**. Create boolean flags in PostHog (see table) — leave them off until you are ready to ship. |
+| 2026-06-15 | **Feature flags simplified:** Only **`search`**, **`ask`**, and **`search_inspector`** remain as flags. Auth, saved, homepage sections, and nav are always on. |
 | 2026-06-14 | **Search V2 (retrieval-constrained hybrid):** Apply migrations `20260614000000` (search_tags/search_terms/embedding_summary columns + FTS trigger update), `20260614000100` (search_tags_vocabulary table), `20260614000200` (search_businesses_v2 RPC — true FTS+vector hybrid scoring). Run `npx tsx scripts/backfill-search-document.ts`. Eval runner moved from `local/eval-search.ts` to `scripts/eval-search.ts` (committed to repo, CI updated). Routing layer: `data/search-query-rules.json` + `lib/search/resolve-query-plan.ts`. Set `SEARCH_V2=1` env var to enable V2 path (keep search flag off until preflight passes — see **Search V2** section). |
 | 2026-06-04 | **Analytics:** Replaced Google Analytics with **PostHog**. Set **`NEXT_PUBLIC_POSTHOG_KEY`** in Vercel + `.env.local` (empty string disables). Optional **`NEXT_PUBLIC_POSTHOG_HOST`**. Remove legacy **`NEXT_PUBLIC_GA_MEASUREMENT_ID`** if still set. Event tagging unchanged — see **`docs/analytics-events.md`**. |
 | 2026-06-04 | **Service vendor specialties:** Apply migrations through **`20260604130400_service_categories_full_taxonomy.sql`** (56 specialties, `group_slug` — see **`docs/service-categories-taxonomy.md`**). Prior: `20260604130000` … `20260604130300`. Audit all listings: `npx tsx scripts/audit-service-vendors.ts --write-report` → **`docs/service-vendor-audit-report.md`**. Fix mis-tagged storefronts, then classify: `npx tsx scripts/classify-service-categories.ts --apply --reclassify`. Hub **`/services`** (`?specialty=`); search **`/search?type=services&specialty=plumbing`**. Storefront slug `services` → **Service businesses** at **`/service-businesses`**. |

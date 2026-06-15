@@ -8,7 +8,6 @@ import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public
 import { TagPills } from "@/components/discovery/TagPills";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
-import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import {
@@ -319,8 +318,6 @@ export default async function BusinessPage({ params }: Props) {
     data: { user },
   } = await auth.auth.getUser();
 
-  const flags = await getAllFeatureFlags();
-  const authEnabled = isAuthEnabled(flags);
   const supabase = getServiceSupabase();
   const townId = b.town_id as string | null;
   const businessId = b.id as string;
@@ -715,17 +712,14 @@ export default async function BusinessPage({ params }: Props) {
               )}
 
               {/* Claim Section */}
-              {flags["claims"] === true && (
-                <section className="border-t border-zinc-100 pt-12">
-                  <ClaimListingForm
-                    businessId={b.id as string}
-                    claimStatus={(b.claim_status as string) ?? "unclaimed"}
-                    userId={user?.id ?? null}
-                    claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
-                    authEnabled={authEnabled}
-                  />
-                </section>
-              )}
+              <section className="border-t border-zinc-100 pt-12">
+                <ClaimListingForm
+                  businessId={b.id as string}
+                  claimStatus={(b.claim_status as string) ?? "unclaimed"}
+                  userId={user?.id ?? null}
+                  claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
+                />
+              </section>
             </div>
 
             {/* Sidebar */}

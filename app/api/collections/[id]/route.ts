@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { savedApiBlocked } from "@/lib/feature-flags";
 
 export async function PATCH(
   request: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const blocked = await savedApiBlocked();
-  if (blocked) return blocked;
-
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
   if (!Number.isFinite(id)) {
@@ -50,9 +46,6 @@ export async function DELETE(
   _request: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const blocked = await savedApiBlocked();
-  if (blocked) return blocked;
-
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
   if (!Number.isFinite(id)) {

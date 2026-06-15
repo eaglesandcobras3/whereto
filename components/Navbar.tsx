@@ -7,8 +7,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
-import { isAuthEnabled } from "@/lib/feature-flags-core";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import {
+  applyDiscoveryBrowseNav,
   discoveryHref,
   showNavbarAskUi,
   showNavbarSearchUi,
@@ -26,8 +27,6 @@ type Props = {
   onSearchChange?: (value: string) => void;
   onSearchSubmit?: (e: React.FormEvent) => void;
   searchLoading?: boolean;
-  /** Feature flags passed from server */
-  featureFlags?: Record<string, boolean>;
   /** Browse links (server can inject conditional items, e.g. Landmarks & parks). */
   browseNavItems?: BrowseNavItem[];
 };
@@ -47,9 +46,11 @@ export function Navbar({
   onSearchChange,
   onSearchSubmit,
   searchLoading,
-  featureFlags = {},
-  browseNavItems = BROWSE_NAV_ITEMS,
+  browseNavItems: browseNavItemsProp = BROWSE_NAV_ITEMS,
 }: Props) {
+  const featureFlags = useAppFeatureFlags();
+  const browseNavItems = applyDiscoveryBrowseNav(browseNavItemsProp, featureFlags);
+
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -65,7 +66,7 @@ export function Navbar({
   const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/");
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
-  const showAuth = isAuthEnabled(featureFlags);
+  const showAuth = true;
   /** Product: keep /saved and /login routes; hide nav links to them. */
   const showHeaderSaved = false;
   const showHeaderLogin = false;

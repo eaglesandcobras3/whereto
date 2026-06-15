@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { discoveryHref } from "@/lib/nav/discovery-links";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 
@@ -11,14 +12,14 @@ type SimilarHit = { id: string; title: string; slug: string; similarity: number 
 
 type Props = {
   towns: ListBusinessTownOption[];
-  featureFlags?: Record<string, boolean>;
 };
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
 const labelClass = "block text-sm font-medium text-[var(--color-text-secondary)]";
 
-export function ListBusinessForm({ towns, featureFlags = {} }: Props) {
+export function ListBusinessForm({ towns }: Props) {
+  const featureFlags = useAppFeatureFlags();
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);

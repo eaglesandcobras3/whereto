@@ -3,14 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { getSupabasePublishableKey } from "@/lib/supabase/env-keys";
-import { getAllFeatureFlags, isAuthEnabled } from "@/lib/feature-flags";
 
 export async function GET(request: Request) {
-  const flags = await getAllFeatureFlags();
-  if (!isAuthEnabled(flags)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/profile";

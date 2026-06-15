@@ -3,13 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SearchBar } from "@/components/discovery/SearchBar";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { discoveryHref } from "@/lib/nav/discovery-links";
 
-type Props = {
-  featureFlags?: Record<string, boolean>;
-};
-
-export function GuidesHubSearch({ featureFlags = {} }: Props) {
+export function GuidesHubSearch() {
+  const featureFlags = useAppFeatureFlags();
   const router = useRouter();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);

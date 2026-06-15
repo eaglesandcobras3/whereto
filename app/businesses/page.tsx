@@ -14,7 +14,6 @@ import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import type { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { BusinessesHubSearch } from "@/components/BusinessesHubSearch";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
@@ -164,7 +163,6 @@ async function getTowns(): Promise<TownRow[]> {
 }
 
 export default async function BusinessesPage() {
-  const featureFlags = await getAllFeatureFlags();
   const [categories, featuredBusinesses, towns] = await Promise.all([
     getCategories(),
     getDailyFeaturedBusinesses(),
@@ -189,7 +187,7 @@ export default async function BusinessesPage() {
               {hubBusinessesIntro()}
             </p>
             <div className="mx-auto max-w-2xl pt-2">
-              <BusinessesHubSearch featureFlags={featureFlags} />
+              <BusinessesHubSearch />
             </div>
           </header>
         </div>

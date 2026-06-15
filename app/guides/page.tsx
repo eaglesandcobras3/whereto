@@ -7,7 +7,6 @@ import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { GuidesHubSearch } from "@/components/GuidesHubSearch";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { GuideCard } from "@/components/discovery/GuideCard";
 import { PRIMARY_EDITORIAL_GUIDE_PATH, PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -99,7 +98,6 @@ async function getGuides(): Promise<GuideRow[]> {
 }
 
 export default async function GuidesPage() {
-  const featureFlags = await getAllFeatureFlags();
   const allGuides = await getGuides();
   const planningGuide = allGuides.find((g) => g.slug === PRIMARY_EDITORIAL_GUIDE_SLUG);
   const featuredGuides = pickDailySubset(allGuides, DAILY_FEATURED_LIMIT);
@@ -121,7 +119,7 @@ export default async function GuidesPage() {
               {hubGuidesIntro()}
             </p>
             <div className="mx-auto max-w-2xl pt-2">
-              <GuidesHubSearch featureFlags={featureFlags} />
+              <GuidesHubSearch />
             </div>
           </header>
         </div>

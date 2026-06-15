@@ -118,29 +118,28 @@ export default async function Home({ searchParams }: HomeProps) {
     badge?: string | null;
   })[] = [];
 
-  if (flags["featured_business"]) {
-    const { data: businessRows, error: bizErr } = await applyFeaturedListingPoolFilters(
-      supabase
-        .from("businesses_view")
-        .select(
-          "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated",
-        )
-        .is("archived_at", null)
-        .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN),
-    )
-      .order("sort", { ascending: true, nullsFirst: false })
-      .order("title", { ascending: true })
-      .order("id", { ascending: true })
-      .limit(150);
+  const { data: businessRows, error: bizErr } = await applyFeaturedListingPoolFilters(
+    supabase
+      .from("businesses_view")
+      .select(
+        "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated",
+      )
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN),
+  )
+    .order("sort", { ascending: true, nullsFirst: false })
+    .order("title", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(150);
 
-    if (bizErr) {
-      console.error("home: businesses query", bizErr);
-    }
+  if (bizErr) {
+    console.error("home: businesses query", bizErr);
+  }
 
-    const dailyPicks = pickDailySubset(filterFeaturedListingPool(businessRows ?? []), 8);
+  const dailyPicks = pickDailySubset(filterFeaturedListingPool(businessRows ?? []), 8);
 
-    featuredBusinesses = dailyPicks.map((b) => {
+  featuredBusinesses = dailyPicks.map((b) => {
       const row = b as {
         id: string;
         title: string;
@@ -167,11 +166,9 @@ export default async function Home({ searchParams }: HomeProps) {
         image_url: img,
       };
     });
-  }
 
   return (
     <HomePage
-      featureFlags={flags}
       featuredBusinesses={featuredBusinesses}
       towns={townList}
       heroSettings={heroSettings}

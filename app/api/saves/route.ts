@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { savedApiBlocked } from "@/lib/feature-flags";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 
 export async function GET() {
-  const blocked = await savedApiBlocked();
-  if (blocked) return blocked;
-
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -24,9 +20,6 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = await savedApiBlocked();
-  if (blocked) return blocked;
-
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -88,9 +81,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const blocked = await savedApiBlocked();
-  if (blocked) return blocked;
-
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -119,9 +109,6 @@ export async function DELETE(request: NextRequest) {
 
 /** Move a save into a collection (or uncategorized with null). */
 export async function PATCH(request: NextRequest) {
-  const blocked = await savedApiBlocked();
-  if (blocked) return blocked;
-
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

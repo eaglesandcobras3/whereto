@@ -181,7 +181,7 @@ async function main() {
   console.log(`${"─".repeat(68)}`);
   console.log(`\n${go ? "✓ GO — preflight passed. Search V2 can be enabled." : "✗ NO-GO — fix failing checks before enabling search."}`);
   console.log(`\nNext: ${go
-    ? "Set SEARCH_V2=1 in Vercel, then set FEATURE_FLAGS_JSON {\"search\":true}"
+    ? "Set SEARCH_V2=1 in Vercel, then enable the search flag in PostHog"
     : "See OPERATOR-TODO.md → Search V2 section for fix guidance"
   }\n`);
 

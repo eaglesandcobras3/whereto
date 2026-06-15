@@ -1,7 +1,7 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAllFeatureFlags, isSearchInspectorEnabled } from "@/lib/feature-flags";
+import { searchInspectorApiBlocked } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getAmbientContext } from "@/lib/ask/ambient-context";
 import { buildClarifyingQuestionsWithReasoning } from "@/lib/ask/clarifying-questions";
@@ -33,11 +33,7 @@ import { buildZeroResultHints, type InspectReportStrategyRun } from "@/lib/ask/i
 export const maxDuration = 60;
 
 async function guardInspector(): Promise<NextResponse | null> {
-  const flags = await getAllFeatureFlags();
-  if (!isSearchInspectorEnabled(flags)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  return null;
+  return searchInspectorApiBlocked();
 }
 
 function resolveTownIdFn(supabase: ReturnType<typeof getServiceSupabase>) {

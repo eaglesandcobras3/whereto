@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
@@ -197,8 +196,7 @@ const companyLinks = [
 ];
 
 export async function SiteFooter() {
-  const [flags, townLinks, areaLinks, categoryLinks, instagramUrl, tiktokUrl] = await Promise.all([
-    getAllFeatureFlags(),
+  const [townLinks, areaLinks, categoryLinks, instagramUrl, tiktokUrl] = await Promise.all([
     getFooterTowns(),
     getFooterAreas(),
     getFooterCategories(),
@@ -270,29 +268,6 @@ export async function SiteFooter() {
             ))}
 
             <div className={`${footerColumnClass} flex flex-col gap-8`}>
-              {flags["newsletter"] === true && (
-                <div className="xl:max-w-[9.5rem]">
-                  <h3 className="text-eyebrow mb-3">Stay updated</h3>
-                  <p className="mb-3 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                    Get the best local picks in your inbox.
-                  </p>
-                  <form className="flex flex-col gap-2 sm:flex-row xl:flex-col">
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      className="min-w-0 flex-1 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)] px-3 py-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-                    />
-                    <button
-                      type="submit"
-                      {...gaClickProps({ event: "cta_click", category: "footer_newsletter", label: "join" })}
-                      className="shrink-0 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--color-primary-light)]"
-                    >
-                      Join
-                    </button>
-                  </form>
-                </div>
-              )}
-
               <div>
                 <h3 className="text-eyebrow mb-3">Company</h3>
                 <ul className="flex flex-col gap-1">

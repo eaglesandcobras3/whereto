@@ -2,92 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { isAskEnabled } from "@/lib/feature-flags-core";
-import { discoveryHref } from "@/lib/nav/discovery-links";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { gaEvent } from "@/lib/analytics/gtag-runner";
 import { homeEditorialIntro } from "@/lib/seo/page-intro-copy";
 
 /** Placeholder assets from design/homepage.html (wire real URLs later). */
 const IMG = {
   hero:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCsXovFV1neXjTq-4mDbgPnbeulhSJTjrnA8HjhYxq8ia7daxCG_LgukxpGv4QFsulirvaswIA6YRwYJFSNId1ug0GSb0xSB5vMk2oIfL018BIDjnqCxf8mngM3LnJVaLLOz3m0qpr65y-xGAT3ZUZZY-fO437YIwlfzKPcpingFhsBIKN7sgwtVTuDefQ2_q6okMXgBEOT4EPmHvjNaVcN3NqSIl8bkXfWsg_h-MxXYQMT-vBNtntZc6L7fARzSUTdkBnVQMREwlc",
-  curator1:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuC3MZ7VIQ6AKoMetZk_0Piq6Kfbb1o0WgP66XvRwgNNmQsTCShkIlF39ea-HCTRiKDmEy9UCbSmoewmrVymj4aGOK-TEME4vLQJi3Kg2mYE07KtrgsEnpXWLfTc64NxgX_G5SCvnUzohQfxvrAQUkH3t3nYAJR7PeohFN97Cus7BAN1sq7dVMt37Gq4EJlTDe8MIyTbfwp4yA3NZ4P-N2ZaWJW1VBYCZuzipCEn5M-UnQLyiv3Zqf0zbx9d8biT0Ds4eCtqkoiZpO8",
-  curator2:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuC0gdiF22dhhvVxfDp3vJX14yaKA_hNHnVKisHnlXvbArm71cSx2JMl_UJuWSS3KFfgQ4jMD6_7Dhe2QRr0jaUqAu1mAKPMZxiV1xqfAy51DjPjLuZrvsWpSYLoyfuoh3M9le8pKIUglSzuRrSviOxn-HhpbMWicaPMAUI5OGG9JTW0NbKOUx2Q6SbEnRmKEZZ_QIRgvhUXjWGChUIsJXzcrkv4o46ZtNOntMM1ZghB4YejPNnniL_bTjLaAfW_t1gHQtsOR5arlG0",
-  curator3:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBIDuncMR9xcoWqFTjXXW2T40dTZtW_oRc6n0OmMmQ9US43lBOjnlTyzHKnqEF0AKHlQWjl1XG9EQoKadFs9fCeukYrRLQU-0HA0jdScWJGwDOVTj_FTkMUQ7xUaumtuMJ-AwIEWKbcsyVLxcbexfd-boU-lxHA810HjdRYThnUz26cPSm3ZUzofQV9ob8z672SGi7jiWJ460iiY-y3_grlBTKtaUNfWdFRp8tpS-zQye2KOIWiWH34bfuzrRhosbbTVyE4Tj615BA",
-  townSeaside:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBl2jpZmUuveB4onwYrkKMpxNkFpLvrYOGCS1o-MontRKuchdeQUgtS70hIWo_kyZbpSkSn1ozqN-uCgQG2YpI6xvJvtDD0EzvhE1c5tJrffE8pcNOdTeiRpyv3Q8tkLUjgCeuVK7qb5vh7BxmeA0iAIai06S6Cn17PgIyOlZXhnEwZ8Ma56ct6eKsFLWPZ_sK6h0IIHeLBgu0WSrTrlvaIBpoerCnGq3z6L2wNp0U1uu3R8XSyWrut0PQjyaLkt-UeJk2vP8ak4C4",
-  townAlys:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD_VzAJhGmAdDQUlhuouuBfJQ5rJfCAd5sS-8xNAvCqPC7BNVOQoGRmBnUZIcedk-mjflEc0PgayAxG9bn0uk1MSyYVHY5sMUVn29EIHTOpOIbMHO1ti9D6u0Ts3fVdjQgNfoplDqXTFVWFpKhQ7ItLmI-h0QwpwnKnt0InneV_eJ0u1r4oiVStTv8Cp7H3gibz8OodsSMeTYddKQqDIHEv9S4NDLCR8V-dQ85394-2uZMllj6vyaMVb4uDT5Jfel1guvU5bOKSULQ",
-  townRosemary:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD0U-BfohSaGYnILu4WO0mZsVaEEPpzxfj2vgG9m6eQ8FAR5gYQrfynDCoi9lkk-dtldDcdSgYO4PLK8M6p1L7pA2Y1hP1gUX-O8PYG1z_GHtZyuaWwcVlkCU57Y-VB1qyD2S8G4OhMmK8Y6dtwzYVr68rkzYx_KlC6C6VdPizF3FxD1q4nJ72Esc8tsFIWXD2Hj0w7WweQqcPytPgtX1HaFs5neMmTK3wKw2PXofQwg4WF5rAxRBcYtGjbtQPafeX8MM0JI_4AfUg",
-  townGrayton:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDHY82ur2HneaSAHqilQS1abVSxBAKq3Cv8JmIdVkTUiKGnHfth8KUD8auXhyPaWzO96i27GPqnRRd8bH8WVqAB20YIjQ70eR7oxG4n_WI4gP7uLgtdfm-pnaC3gRTgT-ymeZsTOITo6EpfixAG2Bi9l80WPQtrPZdJ2F5hq55ryYjkm5TZx4BpqfzWM1mV_4AKKvXvy2F8MZTQIINrsknMEnE74lWw07fh_XbX8cjGZbcAdEKqNjnb_K-H-__iiRhYtzFPI0cmsdw",
-  catStays:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuChsAjsgiQHhlWpmT10UaSmjJHBkZydxQTsx_F_4RFlVoEez_CPeWPvdsZkYuTOgZ67KpDY0r3WyOnIaZiRaTjy-g2iFJfpvM9qQqhZyx8EM5xs57cbh_kKQKBPNTuONe0ApIHYQLWLuFyYrEnOZ5Kd9HSZw8Ntodeunv-ndNADk0fGt5Ofs7h1cx8UKThyZWZvSM9M4vVUNib2HxLlLjlTgRIeT2aIXVtuBLmPAN_JmCVR3KmLHQ4Q_XivoP6XC6X5CMtKnaPAcxo",
-  catDining:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAZ-wPwfCxLDpajut0IygMOiy-6WZEA7-WfUdg7y2pik100PNqeoMlmI9aYw5Vgj1QKY50Y_mSVGzSx3HBM3iItV1s3oiUq-yx5oRL1cXSTvq4YKF46LsBNMCieHrA7lbHZDFfvmN0QPFsfkbJpWWK8agvofuM096ok6-QORIJZ5xYDQGCWuTQH5NZ9iToJBISkitQ5dItEUa1HraFITIVjaJGjLd1jf3bvNswFt-9NlYW8xQk_nYFpXDJLP1-csb4mWEeNduWoZEU",
-  catFamily:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD9qSAK7hoCLLe08xyIvYfDIHlj_77Z28WGSCPWac22rpMqZYoOfNc3a_I0Cuv80fwt7x4bVvW-xxc1GmixpUE6qhC-AYZ8B6hcycJdvdvHCxNruuyVMDf1_zzLbdH8sWv-Z4IIpX_NI3xJrH3EMQ64CaY-R7P-aBNYUDuSi8zCj-xq_6F83avgaLlGbMLTfH3eR9nbsappGz7GPfjU8loBIOUmNTk6FRj1c1C0MYXnz_sbTdMEkCuYWSbhQIg9KRiYDqJ7nWEkOhg",
-  catTours:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDyZQPvVuLvTgKnsh3FZ4y5V_Jc-Vc5OWojRxFo0iCIz9Eqeqbp2V898uoefiYtgdVx2mMU6ZuopyhQNlwIXv7GC6HvKTaysHltsuEcQfeScZ23RdmxAJTSwPC4AyQbz3kJbn20cyUFcOBrLvkUCEX23CgWJs4yoOHjwlxVn9Ml36fr_391KV1DUWrn7ahRwYPya-2idLIySlzOttAv8k-M2xnCGn7ivsTlDAkq8-CsBnC-7cAV-Rnqinb9tZgiDjqz2gGoyiJl74k",
 } as const;
-
-const CURATOR_CARDS = [
-  {
-    image: IMG.curator1,
-    alt: "gourmet seafood dish with fresh shrimp and scallops on a white plate in an elegant restaurant",
-    badge: "RESTAURANT",
-    title: "The Citizen",
-    meta: "Alys Beach • Modern Coastal",
-    rating: "4.9",
-    blurb:
-      "Based on your interest in minimalist design and craft cocktails, The Citizen's atmosphere perfectly matches your aesthetic. It's the highest-rated spot for 'clean eating' in Alys Beach.",
-    cta: "Book Reservation",
-    ctaHref: "#",
-  },
-  {
-    image: IMG.curator2,
-    alt: "luxury private yoga session on a white sand beach at sunrise with turquoise water",
-    badge: "EXPERIENCE",
-    title: "Sunrise Dune Yoga",
-    meta: "Grayton Beach • Wellness",
-    rating: "5.0",
-    blurb:
-      "You previously looked for 'quiet morning activities'. This session is limited to 4 guests and takes place in a secluded dune area far from the main crowds.",
-    cta: "Check Availability",
-    ctaHref: "#",
-  },
-  {
-    image: IMG.curator3,
-    alt: "modern beach house terrace with white sofas and view of sunset over the ocean",
-    badge: "STAY",
-    title: "The White House",
-    meta: "Seaside • Luxury Villa",
-    rating: "4.8",
-    blurb:
-      "This property has a rooftop deck similar to the one you saved last week. It's also within a 3-minute walk of Bud & Alley's.",
-    cta: "View Property",
-    ctaHref: "#",
-  },
-] as const;
-
-const MOOD_CHIPS_DATA = [
-  { label: "Relaxed" as const, hint: "relaxed day on 30A" },
-  { label: "Active" as const, hint: "active outdoor things to do on 30A" },
-  { label: "Family" as const, hint: "family-friendly activities on 30A" },
-  { label: "Romantic" as const, hint: "romantic dinner sunset views 30A" },
-] as const;
-
-type Mood = (typeof MOOD_CHIPS_DATA)[number]["label"];
 
 function MsIcon({
   name,
@@ -181,7 +109,6 @@ function getTownCardBlurb(town: TownPayload): string {
 }
 
 type Props = {
-  featureFlags?: Record<string, boolean>;
   featuredBusinesses?: (BusinessPayload & {
     featured_title?: string | null;
     featured_description?: string | null;
@@ -196,7 +123,6 @@ type Props = {
 };
 
 export function HomePage({
-  featureFlags = {},
   featuredBusinesses = [],
   towns = [],
   heroSettings = {
@@ -206,10 +132,7 @@ export function HomePage({
       "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
   },
 }: Props) {
-  function scrollToHero() {
-    gaEvent("cta_click", { source: "home_plan_section", label: "start_searching_scroll" });
-    document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
-  }
+  const featureFlags = useAppFeatureFlags();
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface antialiased">
@@ -296,7 +219,7 @@ export function HomePage({
           </div>
         </section>
 
-        {featureFlags["featured_business"] === true && featuredBusinesses.length > 0 && (
+        {featuredBusinesses.length > 0 && (
           <section id="section-featured" className="bg-background py-20 md:py-28">
             <div className="mx-auto max-w-[1280px] px-5 sm:px-6 lg:px-8">
               <div className="mb-12 md:mb-16">
@@ -323,84 +246,7 @@ export function HomePage({
           </section>
         )}
 
-        {featureFlags["curator"] === true && (
-          <section
-            id="section-curator"
-            className="overflow-hidden bg-background py-20 md:py-28"
-          >
-            <div className="mx-auto max-w-screen-xl px-5 sm:px-6 lg:px-8">
-              <div className="mb-12 md:mb-16">
-                <p className="text-eyebrow mb-3">Personalized</p>
-                <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
-                  Curated for You
-                </h2>
-              </div>
-
-              {/* Horizontal scroll carousel */}
-              <div className="editorial-scroll scrollbar-hide -mx-5 px-5 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-                {CURATOR_CARDS.map((card) => (
-                  <article
-                    key={card.title}
-                    className="editorial-card group w-[340px] overflow-hidden rounded-2xl border border-zinc-100 bg-white sm:w-[400px]"
-                  >
-                    {/* Horizontal layout: image left, content right */}
-                    <div className="flex h-full">
-                      <div className="relative w-[140px] shrink-0 overflow-hidden sm:w-[160px]">
-                        <DesignImg
-                          src={card.image}
-                          alt={card.alt}
-                          className="img-editorial-fast object-cover"
-                          sizes="160px"
-                        />
-                        <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-primary backdrop-blur-md">
-                          {card.badge}
-                        </div>
-                      </div>
-                      <div className="flex flex-1 flex-col p-4 sm:p-5">
-                        <div className="mb-3 flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <h3 className="font-headline text-lg font-bold leading-tight text-zinc-900 group-hover:text-primary">
-                              {card.title}
-                            </h3>
-                            <p className="mt-0.5 text-xs text-zinc-500">
-                              {card.meta}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-0.5">
-                            <MsIcon name="star" className="!text-xs text-amber-400" filled />
-                            <span className="text-xs font-bold text-zinc-700">{card.rating}</span>
-                          </div>
-                        </div>
-
-                        {/* Pull quote style */}
-                        <div className="mb-3 flex-1 border-l-2 border-primary/20 pl-3">
-                          <p className="line-clamp-4 text-sm italic leading-relaxed text-zinc-600">
-                            &ldquo;{card.blurb}&rdquo;
-                          </p>
-                        </div>
-
-                        <Link
-                          href={card.ctaHref}
-                          {...gaClickProps({
-                            event: "cta_click",
-                            category: "home_curator",
-                            label: card.title.replace(/\s+/g, "_").toLowerCase(),
-                          })}
-                          className="mt-auto flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary-light"
-                        >
-                          {card.cta}
-                          <MsIcon name="arrow_forward" className="!text-sm" />
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {featureFlags["towns"] === true && towns.length > 0 && (
+        {towns.length > 0 && (
           <section
             id="section-neighborhoods"
             className="bg-surface-container-low py-20 md:py-28"
@@ -464,189 +310,6 @@ export function HomePage({
         )}
 
         <ListBusinessHomeCta />
-
-        {featureFlags["categories"] === true && (
-          <section
-            id="section-categories"
-            className="mx-auto max-w-7xl px-5 py-20 sm:px-6 md:py-28 lg:px-8"
-          >
-            <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end md:mb-16">
-              <div>
-                <p className="text-eyebrow mb-3">Curated Discovery</p>
-                <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
-                  Explore by Category
-                </h2>
-              </div>
-              <Link
-                href="/categories"
-                className="group flex items-center gap-2 font-semibold text-primary transition-all"
-              >
-                View all
-                <MsIcon name="arrow_forward" className="!text-lg transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-              <Link
-                href={discoveryHref(featureFlags, { q: "beachfront stays 30A" })}
-                className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
-              >
-                <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">
-                  <DesignImg
-                    src={IMG.catStays}
-                    alt="Modern white architectural beach house with large glass windows reflecting the emerald coast at noon"
-                    className="object-contain"
-                    sizes="(min-width: 768px) 9rem, 7rem"
-                  />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-4 sm:p-5">
-                  <h3 className="font-headline text-lg font-bold text-zinc-900 transition-colors group-hover:text-primary sm:text-xl">
-                    Beachfront Stays
-                  </h3>
-                  <p className="text-sm leading-relaxed text-zinc-600">
-                    Wake up to the sound of waves
-                  </p>
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary pt-1">
-                    Search
-                    <MsIcon
-                      name="arrow_forward"
-                      className="!text-sm transition-transform group-hover:translate-x-0.5"
-                    />
-                  </span>
-                </div>
-              </Link>
-
-              <Link
-                href={discoveryHref(featureFlags, { q: "seaside dining 30A" })}
-                className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
-              >
-                <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">
-                  <DesignImg
-                    src={IMG.catDining}
-                    alt="Upscale outdoor restaurant terrace overlooking the gulf with string lights and elegant wooden furniture"
-                    className="object-contain"
-                    sizes="(min-width: 768px) 9rem, 7rem"
-                  />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-4 sm:p-5">
-                  <h3 className="font-headline text-lg font-bold text-zinc-900 transition-colors group-hover:text-primary sm:text-xl">
-                    Seaside Dining
-                  </h3>
-                  <p className="text-sm leading-relaxed text-zinc-600">
-                    Fresh catches and coastal spirits
-                  </p>
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary pt-1">
-                    Search
-                    <MsIcon
-                      name="arrow_forward"
-                      className="!text-sm transition-transform group-hover:translate-x-0.5"
-                    />
-                  </span>
-                </div>
-              </Link>
-
-              <Link
-                href={discoveryHref(featureFlags, { q: "family friendly 30A" })}
-                className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
-              >
-                <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">
-                  <DesignImg
-                    src={IMG.catFamily}
-                    alt="Happy family riding bicycles along a scenic bike path lined with dunes and white picket fences"
-                    className="object-contain"
-                    sizes="(min-width: 768px) 9rem, 7rem"
-                  />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-4 sm:p-5">
-                  <h3 className="font-headline text-lg font-bold text-zinc-900 transition-colors group-hover:text-primary sm:text-xl">
-                    Family Fun
-                  </h3>
-                  <p className="text-sm leading-relaxed text-zinc-600">
-                    Create memories along the shore
-                  </p>
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary pt-1">
-                    Search
-                    <MsIcon
-                      name="arrow_forward"
-                      className="!text-sm transition-transform group-hover:translate-x-0.5"
-                    />
-                  </span>
-                </div>
-              </Link>
-
-              <Link
-                href={discoveryHref(featureFlags, { q: "town tours 30A" })}
-                className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
-              >
-                <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">
-                  <DesignImg
-                    src={IMG.catTours}
-                    alt="Aerial view of seaside architectural style with iconic white tower and green common spaces"
-                    className="object-contain"
-                    sizes="(min-width: 768px) 9rem, 7rem"
-                  />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-4 sm:p-5">
-                  <h3 className="font-headline text-lg font-bold text-zinc-900 transition-colors group-hover:text-primary sm:text-xl">
-                    Town Tours
-                  </h3>
-                  <p className="text-sm leading-relaxed text-zinc-600">
-                    Walk through coastal masterpieces
-                  </p>
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary pt-1">
-                    Search
-                    <MsIcon
-                      name="arrow_forward"
-                      className="!text-sm transition-transform group-hover:translate-x-0.5"
-                    />
-                  </span>
-                </div>
-              </Link>
-            </div>
-          </section>
-        )}
-
-        {featureFlags["plan-your-trip"] === true && (
-          <section
-            id="section-plan-ai"
-            className="mx-auto max-w-5xl px-8 py-24 text-center"
-          >
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-primary-container p-16 text-on-primary">
-              <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal-400/20 blur-[100px]" />
-              <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-teal-400/10 blur-[100px]" />
-              <div className="relative z-10">
-                <MsIcon
-                  name="auto_awesome"
-                  className="mb-6 !block !text-5xl text-on-primary-container"
-                />
-                <h2 className="mb-6 font-headline text-4xl font-extrabold tracking-tighter">
-                  Plan your 30A trip
-                </h2>
-                <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-on-primary-container">
-                  &ldquo;Find me a dog-friendly beachfront cottage in Grayton
-                  Beach for a family of four, near a great seafood spot.&rdquo; Start
-                  with search, town guides, and local picks built around how people
-                  actually experience the coast.
-                </p>
-                <div className="flex flex-col justify-center gap-4 md:flex-row">
-                  <button
-                    type="button"
-                    onClick={scrollToHero}
-                    className="rounded-full bg-surface-elevated px-8 py-4 text-lg font-bold text-primary transition-all hover:shadow-xl"
-                  >
-                    Start Searching
-                  </button>
-                  <Link
-                    href={PRIMARY_REGION_HUB_PATH}
-                    className="rounded-full border border-on-primary/20 bg-transparent px-8 py-4 text-lg font-bold text-on-primary transition-all hover:bg-on-primary/10"
-                  >
-                    Browse Map
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
-import { isAskEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled, isSearchEnabled, type DiscoveryFlags } from "@/lib/feature-flags-core";
 import type { BrowseNavItem } from "@/lib/nav/browse-links";
+
+export type { DiscoveryFlags };
 
 export type DiscoveryLinkParams = {
   q?: string;
@@ -16,19 +18,12 @@ const TYPE_ASK_QUERIES: Record<string, string> = {
   businesses: "businesses on 30A",
 };
 
-/** When Ask is the primary discovery surface (replaces legacy /search UI). */
-export function useAskForDiscovery(flags: Record<string, boolean>): boolean {
-  return isAskEnabled(flags);
-}
-
-/** Legacy navbar search panel + icon. Hidden when Ask replaces it. */
-export function showNavbarSearchUi(flags: Record<string, boolean>): boolean {
+export function showNavbarSearchUi(flags: DiscoveryFlags): boolean {
   if (isAskEnabled(flags)) return false;
-  return flags.search !== false;
+  return isSearchEnabled(flags);
 }
 
-/** Navbar Ask shortcut (chat icon → /ask). */
-export function showNavbarAskUi(flags: Record<string, boolean>): boolean {
+export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
   return isAskEnabled(flags);
 }
 
@@ -44,11 +39,9 @@ function askQueryFromParams(params?: DiscoveryLinkParams): string | undefined {
   return undefined;
 }
 
-/**
- * Primary discovery URL — `/ask` when the ask flag is on, otherwise `/search`.
- */
+/** Primary discovery URL — `/ask` when ask is on, otherwise `/search`. */
 export function discoveryHref(
-  flags: Record<string, boolean>,
+  flags: DiscoveryFlags,
   params?: DiscoveryLinkParams,
 ): string {
   if (isAskEnabled(flags)) {
@@ -66,16 +59,14 @@ export function discoveryHref(
   return qs ? `/search?${qs}` : "/search";
 }
 
-/** `rel` for links from indexable pages to discovery utilities (`/search`, `/ask` are robots-disallowed). */
 export function discoveryLinkRel(href: string): "nofollow" | undefined {
   if (href.startsWith("/search") || href.startsWith("/ask")) return "nofollow";
   return undefined;
 }
 
-/** Rewrite browse nav items that pointed at /search when Ask is enabled. */
 export function applyDiscoveryBrowseNav(
   items: BrowseNavItem[],
-  flags: Record<string, boolean>,
+  flags: DiscoveryFlags,
 ): BrowseNavItem[] {
   if (!isAskEnabled(flags)) return items;
 
@@ -87,8 +78,6 @@ export function applyDiscoveryBrowseNav(
       return {
         ...item,
         href: discoveryHref(flags, { type }),
-        // Do not add /ask to activePaths — otherwise Services/Landmarks look
-        // selected on every Ask page.
       };
     } catch {
       return { ...item, href: "/ask" };
