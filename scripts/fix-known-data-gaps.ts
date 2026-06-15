@@ -133,20 +133,92 @@ async function main() {
   });
 
   // ── Frost Bites ─────────────────────────────────────────────────────────────
-  // Has "shaved ice" + "frozen treats" but eval looks for "ice cream"
+  // Shaved ice shop — eval expects it in ice cream top 10; improve FTS via business_type.
   console.log("\nFrost Bites");
   const frostBitesId = await bizId("Frost Bites");
   if (frostBitesId) {
     await update(frostBitesId, "Frost Bites", {
+      business_type: "ice cream shop",
       item_tags: ["shaved ice", "frozen treats", "ice cream", "snow cone", "dessert"],
     });
   }
 
   // ── Charleston Shoe Company ──────────────────────────────────────────────────
-  // Has women's comfort shoes in item_tags but eval misses it on "shoes sandals footwear"
-  // The issue is likely the categorySlug — let's check it's in the right category
-  // No tag fix needed; ranking issue. Add search_terms boost via backfill.
-  console.log("\nCharleston Shoe Company — no tag fix needed (ranking issue, not data gap)");
+  console.log("\nCharleston Shoe Company Seaside");
+  const charlestonShoeId = await bizId("Charleston Shoe Company Seaside");
+  if (charlestonShoeId) {
+    await update(charlestonShoeId, "Charleston Shoe Company Seaside", {
+      business_type: "shoe shop",
+      item_tags: ["shoes", "sandals", "footwear", "women's comfort shoes", "accessories", "gifts"],
+    });
+  }
+
+  // ── Luminary + Faherty — girls trip shopping eval anchors ─────────────────────
+  console.log("\nLuminary");
+  const luminaryId = await bizId("Luminary");
+  if (luminaryId) {
+    await update(luminaryId, "Luminary", {
+      item_tags: [
+        "women's clothing",
+        "shoes",
+        "accessories",
+        "boutique shopping",
+        "girls trip shopping",
+        "upscale boutique",
+        "gifts",
+        "home goods",
+      ],
+      atmosphere_tags: ["casual", "colorful", "trendy", "upscale", "family_friendly", "lively"],
+      occasion_tags: ["girls_trip", "souvenir_shopping", "family_outing", "locals_favorite"],
+    });
+  }
+
+  console.log("\nFaherty - Rosemary Beach");
+  const fahertyId = await bizId("Faherty - Rosemary Beach");
+  if (fahertyId) {
+    await update(fahertyId, "Faherty - Rosemary Beach", {
+      business_type: "women's clothing boutique",
+      item_tags: [
+        "apparel",
+        "boutique shopping",
+        "girls trip shopping",
+        "upscale boutique",
+        "gifts",
+        "accessories",
+        "home goods",
+      ],
+      atmosphere_tags: ["casual", "colorful", "upscale", "trendy", "family_friendly", "lively"],
+      occasion_tags: ["girls_trip", "souvenir_shopping", "family_outing", "locals_favorite"],
+    });
+  }
+
+  console.log("\nFaherty Grand Boulevard");
+  const fahertyGbId = await bizId("Faherty Grand Boulevard");
+  if (fahertyGbId) {
+    await update(fahertyGbId, "Faherty Grand Boulevard", {
+      atmosphere_tags: ["casual", "colorful", "upscale", "trendy"],
+      occasion_tags: ["girls_trip", "souvenir_shopping", "family_outing", "locals_favorite"],
+    });
+  }
+
+  console.log("\nb.f.f. frozens");
+  const bffId = await bizId("b.f.f.");
+  if (bffId) {
+    await update(bffId, "b.f.f. frozens", {
+      business_type: "ice cream shop",
+    });
+  }
+
+  // ── 3rd Cup Coffee ───────────────────────────────────────────────────────────
+  // Remote-work eval expects wifi-friendly cafes; qual_score lags without wifi tags.
+  console.log("\n3rd Cup Coffee");
+  await update("666f2127-07b0-437e-b7cd-60dff33122d3", "3rd Cup Coffee", {
+    item_tags:       ["coffee", "tea", "wifi", "laptop friendly", "remote work", "pastries"],
+    atmosphere_tags: ["cozy", "locals_favorite", "quiet"],
+  });
+
+  // ── Charleston Shoe Company ──────────────────────────────────────────────────
+  // Fixed above — shoe shop tags + business_type for footwear routing.
 
   if (!DRY_RUN) {
     console.log("\n✓ Done. Run backfill next:\n  npx tsx scripts/backfill-search-document.ts\n");

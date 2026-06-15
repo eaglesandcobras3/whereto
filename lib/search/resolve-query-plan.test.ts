@@ -104,17 +104,129 @@ describe("explicit overrides", () => {
   });
 });
 
+describe("category_remote_work", () => {
+  it("routes laptop wifi queries to coffee_shops", () => {
+    const plan = resolveQueryPlan("best place to work remote laptop wifi");
+    expect(plan.matchedRuleId).toBe("category_remote_work");
+    expect(plan.categorySlug).toBe("coffee_shops");
+  });
+
+  it("routes work with laptop and wifi variant", () => {
+    const plan = resolveQueryPlan("best place to work with laptop and wifi");
+    expect(plan.matchedRuleId).toBe("category_remote_work");
+    expect(plan.categorySlug).toBe("coffee_shops");
+  });
+});
+
+describe("category_ice_cream", () => {
+  it("routes ice cream shop queries", () => {
+    const plan = resolveQueryPlan("ice cream shop");
+    expect(plan.matchedRuleId).toBe("category_ice_cream");
+    expect(plan.searchTerms).toContain("ice cream");
+  });
+});
+
+describe("category_sunset_drinks", () => {
+  it("routes sunset drinks to restaurants", () => {
+    const plan = resolveQueryPlan("best place to watch the sunset with drinks");
+    expect(plan.matchedRuleId).toBe("category_sunset_drinks");
+    expect(plan.categorySlug).toBe("restaurants");
+  });
+});
+
+describe("category_wine_bar", () => {
+  it("routes wine bar without forcing bars-only category", () => {
+    const plan = resolveQueryPlan("wine bar cocktails");
+    expect(plan.matchedRuleId).toBe("category_wine_bar");
+    expect(plan.categorySlug).toBeNull();
+  });
+});
+
+describe("category_shopping_boutiques", () => {
+  it("routes girls trip shopping to shopping category", () => {
+    const plan = resolveQueryPlan("girls trip shopping boutiques");
+    expect(plan.matchedRuleId).toBe("category_shopping_boutiques");
+    expect(plan.categorySlug).toBe("shopping");
+  });
+});
+
+describe("category_footwear", () => {
+  it("routes shoe queries to shopping", () => {
+    const plan = resolveQueryPlan("shoes sandals footwear");
+    expect(plan.matchedRuleId).toBe("category_footwear");
+    expect(plan.categorySlug).toBe("shopping");
+  });
+});
+
+describe("category_jewelry", () => {
+  it("routes jewelry boutique queries to shopping", () => {
+    const plan = resolveQueryPlan("jewelry boutique accessories");
+    expect(plan.matchedRuleId).toBe("category_jewelry");
+    expect(plan.categorySlug).toBe("shopping");
+  });
+});
+
+describe("category_fitness", () => {
+  it("routes yoga fitness studio to fitness (not activities)", () => {
+    const plan = resolveQueryPlan("yoga fitness studio");
+    expect(plan.matchedRuleId).toBe("category_fitness");
+    expect(plan.categorySlug).toBe("fitness");
+    expect(plan.serviceCategorySlug).toBeNull();
+  });
+});
+
+describe("collision_books_retail conversational", () => {
+  it("routes find a good book to books rule", () => {
+    const plan = resolveQueryPlan("where can I find a good book");
+    expect(plan.matchedRuleId).toBe("collision_books_retail");
+    expect(plan.requiredTags).toEqual(["books"]);
+  });
+});
+
+describe("category_photography_services", () => {
+  it("routes photography studio to services", () => {
+    const plan = resolveQueryPlan("photography studio portraits");
+    expect(plan.matchedRuleId).toBe("category_photography_services");
+    expect(plan.categorySlug).toBe("services");
+  });
+
+  it("routes vacation photos to services", () => {
+    const plan = resolveQueryPlan("vacation photos family shoot");
+    expect(plan.matchedRuleId).toBe("category_photography_services");
+    expect(plan.categorySlug).toBe("services");
+  });
+});
+
+describe("category_water_charters", () => {
+  it("routes fishing charter via searchTerms (no category — activities is too broad)", () => {
+    const plan = resolveQueryPlan("fishing charter boat trip");
+    expect(plan.matchedRuleId).toBe("category_water_charters");
+    expect(plan.categorySlug).toBeNull();
+    expect(plan.searchTerms).toContain("charter");
+  });
+
+  it("routes dolphin cruise via searchTerms", () => {
+    const plan = resolveQueryPlan("dolphin cruise boat tour");
+    expect(plan.matchedRuleId).toBe("category_water_charters");
+    expect(plan.categorySlug).toBeNull();
+    expect(plan.searchTerms).toContain("boat");
+  });
+
+  it("routes paddle board rental via searchTerms", () => {
+    const plan = resolveQueryPlan("surf shop paddle board rental");
+    expect(plan.matchedRuleId).toBe("category_water_charters");
+    expect(plan.categorySlug).toBeNull();
+    expect(plan.searchTerms).toContain("rental");
+  });
+});
+
 // ── No-match fallback ────────────────────────────────────────────────────────
 
 describe("no rule match — FTS fallback", () => {
-  it("unmatched query gets searchTerms from normalized tokens", () => {
+  it("romantic waterfront dinner now matches waterfront dining rule", () => {
     const plan = resolveQueryPlan("romantic waterfront dinner");
-    expect(plan.matchedRuleId).toBeNull();
-    expect(plan.searchTerms).toContain("romantic");
-    expect(plan.searchTerms).toContain("waterfront");
-    expect(plan.searchTerms).toContain("dinner");
-    expect(plan.categorySlug).toBeNull();
-    expect(plan.requiredTags).toHaveLength(0);
+    expect(plan.matchedRuleId).toBe("category_waterfront_dining");
+    expect(plan.categorySlug).toBe("restaurants");
   });
 
   it("private chef query falls through with service category from explicit", () => {

@@ -13,6 +13,8 @@ import { embedNormalizedSearchQuery } from "@/lib/search/query-embedding";
 import { loadLearningBoostMap, learningBoostFromStats } from "@/lib/search/learning-boost";
 import { deriveQueryClusterKey } from "@/lib/search/query-cluster";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import { v2EmbeddingInput } from "@/lib/search/v2-embedding-input";
+import { computeV2RelevanceBoost } from "@/lib/search/v2-relevance-boost";
 import type { ScoreBreakdown } from "@/lib/search/scoring";
 import type { BusinessPayload, SearchResultPayload } from "@/lib/search/types";
 
@@ -208,7 +210,7 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
       : Promise.resolve(null),
     opts.openaiKey
       ? embedNormalizedSearchQuery(
-          plan.searchTerms.length > 0 ? plan.searchTerms.join(" ") : normalized,
+          v2EmbeddingInput(plan, normalized),
           opts.openaiKey,
         ).catch(() => null)
       : Promise.resolve(null),
@@ -248,8 +250,10 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
 
   const ranked = rawRows
     .map(row => {
-      const boost = boostMap.get(row.id) ?? 0;
-      return { row, boostedScore: row.final_score + boost, boost };
+      const learningBoost = boostMap.get(row.id) ?? 0;
+      const relevanceBoost = computeV2RelevanceBoost(row, opts.rawQuery, plan);
+      const boostedScore = row.final_score + learningBoost + relevanceBoost;
+      return { row, boostedScore, boost: learningBoost + relevanceBoost };
     })
     .sort((a, b) => b.boostedScore - a.boostedScore);
 

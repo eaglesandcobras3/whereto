@@ -29,12 +29,22 @@
       "id": "collision_books_retail",
       "problemClass": "substring_collision",
       "description": "Bookstores — 'books' would bleed into general shopping. requiredTags prevents gift shops appearing.",
-      "phrases": ["bookstore", "book store", "book shop", "books"],
+      "phrases": ["bookstore", "book store", "book shop", "books", "good book", "find a book"],
       "priority": 100,
       "plan": {
         "categorySlug": "shopping",
         "requiredTags": ["books"],
         "searchTerms": ["books", "bookstore"]
+      }
+    },
+    {
+      "id": "category_wine_bar",
+      "problemClass": "category_keyword",
+      "description": "Wine bar — includes bottle shops (Cork & Barrel), not just bars category.",
+      "phrases": ["wine bar"],
+      "priority": 85,
+      "plan": {
+        "searchTerms": ["wine", "cocktails", "wine bar"]
       }
     },
     {
@@ -50,25 +60,101 @@
       }
     },
     {
-      "id": "category_remote_work",
-      "problemClass": "category_keyword",
-      "description": "Remote work / business meeting queries route to coffee_shops — cafes are the natural answer, not offices or restaurants.",
-      "phrases": ["work remote", "remote work", "business meeting", "laptop wifi", "work from", "work with wifi", "study spot", "co-working"],
-      "priority": 75,
-      "plan": {
-        "categorySlug": "coffee_shops",
-        "searchTerms": ["coffee", "cafe", "wifi"]
-      }
-    },
-    {
       "id": "category_bars_nightlife",
       "problemClass": "category_keyword",
       "description": "Bars and nightlife — routes to bars category so restaurants don't dominate. Prevents Red Bar ranking at #10 for live music queries.",
-      "phrases": ["nightlife", "live music", "cocktail bar", "wine bar", "craft cocktails", "happy hour", "bar scene"],
+      "phrases": ["nightlife", "live music", "cocktail bar", "craft cocktails", "happy hour", "bar scene"],
       "priority": 78,
       "plan": {
         "categorySlug": "bars",
-        "searchTerms": ["bar", "drinks", "nightlife"]
+        "searchTerms": ["bar", "drinks", "nightlife", "live music"]
+      }
+    },
+    {
+      "id": "category_ice_cream",
+      "problemClass": "category_keyword",
+      "description": "Ice cream / frozen dessert queries anchor on dessert terms without category bleed.",
+      "phrases": ["ice cream", "frozen yogurt", "soft serve", "gelato", "shaved ice"],
+      "priority": 77,
+      "plan": {
+        "searchTerms": ["ice cream", "frozen treats", "dessert", "shaved ice"]
+      }
+    },
+    {
+      "id": "category_sunset_drinks",
+      "problemClass": "category_keyword",
+      "description": "Sunset / waterfront drinks — restaurants and bars with gulf views.",
+      "phrases": ["watch the sunset", "sunset with drinks", "sunset drinks"],
+      "priority": 76,
+      "plan": {
+        "categorySlug": "restaurants",
+        "searchTerms": ["sunset", "waterfront", "cocktails", "gulf views", "drinks"]
+      }
+    },
+    {
+      "id": "category_waterfront_dining",
+      "problemClass": "category_keyword",
+      "description": "Romantic waterfront dinner — scenic Gulf-front restaurants.",
+      "phrases": ["romantic waterfront", "waterfront dinner", "waterfront restaurant"],
+      "priority": 76,
+      "plan": {
+        "categorySlug": "restaurants",
+        "searchTerms": ["waterfront", "romantic", "dinner", "gulf views", "scenic"]
+      }
+    },
+    {
+      "id": "category_remote_work",
+      "problemClass": "category_keyword",
+      "description": "Remote work / business meeting queries route to coffee_shops — cafes are the natural answer, not offices or restaurants.",
+      "phrases": ["work remote", "remote work", "business meeting", "laptop wifi", "laptop and wifi", "work with laptop", "work from", "work with wifi", "study spot", "co-working", "good spot for a business meeting"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "coffee_shops",
+        "searchTerms": ["coffee", "cafe", "wifi", "laptop", "remote work"]
+      }
+    },
+    {
+      "id": "category_footwear",
+      "problemClass": "category_keyword",
+      "description": "Shoe stores — routes to shopping and anchors footwear terms.",
+      "phrases": ["shoes", "sandals", "footwear"],
+      "priority": 79,
+      "plan": {
+        "categorySlug": "shopping",
+        "searchTerms": ["shoes", "sandals", "footwear"]
+      }
+    },
+    {
+      "id": "category_jewelry",
+      "problemClass": "category_keyword",
+      "description": "Jewelry boutiques — shopping category, jewelry-focused terms.",
+      "phrases": ["jewelry boutique", "jewelry accessories", "jewelry store"],
+      "priority": 78,
+      "plan": {
+        "categorySlug": "shopping",
+        "searchTerms": ["jewelry", "accessories", "boutique"]
+      }
+    },
+    {
+      "id": "category_fitness",
+      "problemClass": "category_keyword",
+      "description": "Yoga/gym/fitness — routes to fitness category (separate from activities/water-sports after migrate-fitness-category.ts).",
+      "phrases": ["yoga fitness", "fitness studio", "yoga studio", "workout gym", "gym exercise", "exercise class"],
+      "priority": 77,
+      "plan": {
+        "categorySlug": "fitness",
+        "searchTerms": ["yoga", "fitness", "studio", "workout", "gym", "pilates"]
+      }
+    },
+    {
+      "id": "category_shopping_boutiques",
+      "problemClass": "category_keyword",
+      "description": "Boutique shopping — girls trip and general boutique browse.",
+      "phrases": ["shopping boutiques", "girls trip shopping", "boutique shopping"],
+      "priority": 74,
+      "plan": {
+        "categorySlug": "shopping",
+        "searchTerms": ["boutique", "shopping", "girls trip"]
       }
     },
     {
@@ -92,6 +178,27 @@
       "plan": {
         "categorySlug": "services",
         "searchTerms": ["massage", "spa"]
+      }
+    },
+    {
+      "id": "category_photography_services",
+      "problemClass": "category_keyword",
+      "description": "Photography/portrait services — routes to services so fitness studios (Power Movement) don't pollute.",
+      "phrases": ["photography studio", "portrait photographer", "photo session", "vacation photos", "family photos"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "services",
+        "searchTerms": ["photography", "photographer", "portraits"]
+      }
+    },
+    {
+      "id": "category_water_charters",
+      "problemClass": "category_keyword",
+      "description": "Fishing charters, boat tours, water sport rentals — searchTerms anchor FTS+vector toward water activities without routing to the broad activities category (which also contains fitness studios).",
+      "phrases": ["fishing charter", "charter boat", "boat charter", "dolphin cruise", "dolphin tour", "paddle board rental", "paddleboard rental", "snorkeling tour"],
+      "priority": 77,
+      "plan": {
+        "searchTerms": ["charter", "boat", "fishing", "water", "tour", "rental"]
       }
     }
   ]

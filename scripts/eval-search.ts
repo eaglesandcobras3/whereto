@@ -31,6 +31,8 @@ import {
 } from '@/lib/ai/search-ai';
 import { resolveQueryPlan } from '@/lib/search/resolve-query-plan';
 import { normalizeQuery } from '@/lib/query-normalize';
+import { v2EmbeddingInput } from '@/lib/search/v2-embedding-input';
+import { computeV2RelevanceBoost } from '@/lib/search/v2-relevance-boost';
 
 dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 
@@ -189,6 +191,12 @@ async function resolveCategoryId(categorySlug: string): Promise<string | null> {
   return (data as { id?: string } | null)?.id ?? null;
 }
 
+async function resolveServiceCategoryId(slug: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('service_categories').select('id').eq('slug', slug).maybeSingle();
+  return (data as { id?: string } | null)?.id ?? null;
+}
+
 async function searchV1Full(q: string): Promise<FullResult[]> {
   const normalized = normalizeQuery(q);
 
@@ -225,14 +233,17 @@ async function searchV1Full(q: string): Promise<FullResult[]> {
 
 async function searchV2(q: string): Promise<FullResult[]> {
   const plan = resolveQueryPlan(q);
+  const normalized = normalizeQuery(q);
 
   const categoryId = plan.categorySlug ? await resolveCategoryId(plan.categorySlug) : null;
+  const serviceCategoryId = plan.serviceCategorySlug
+    ? await resolveServiceCategoryId(plan.serviceCategorySlug)
+    : null;
 
   let embedding: number[] | null = null;
   if (process.env.OPENAI_API_KEY) {
     try {
-      const terms = plan.searchTerms.length > 0 ? plan.searchTerms.join(' ') : q;
-      embedding = await embed(terms);
+      embedding = await embed(v2EmbeddingInput(plan, normalized));
     } catch { /* degraded FTS-only */ }
   }
 
@@ -240,18 +251,35 @@ async function searchV2(q: string): Promise<FullResult[]> {
     p_query_text:      q,
     p_query_embedding: embedding ? `[${embedding.join(',')}]` : null,
     p_category_id:     categoryId,
+    p_service_category_id: serviceCategoryId,
     p_required_tags:   plan.requiredTags.length > 0 ? plan.requiredTags : null,
     p_any_tags:        plan.anyTags.length > 0 ? plan.anyTags : null,
-    p_match_count:     24,
+    p_match_count:     36,
   });
   if (error) throw new Error(`search_businesses_v2: ${error.message}`);
 
-  const rows = (data as Array<Record<string, unknown>>) ?? [];
-  return rows.slice(0, 10).map(r => ({
-    title:                String(r.title ?? ''),
-    bizType:              String(r.business_type ?? ''),
-    finalScore:           Number(r.final_score ?? 0),
-    scoreBreakdownPresent: typeof r.fts_score === 'number' && typeof r.vec_score === 'number',
+  const rows = ((data as Array<Record<string, unknown>>) ?? [])
+    .map((row) => ({
+      row,
+      finalScore:
+        Number(row.final_score ?? 0) +
+        computeV2RelevanceBoost(
+          {
+            title: row.title as string | null,
+            search_tags: row.search_tags as string[] | null,
+            business_type: row.business_type as string | null,
+          },
+          q,
+          plan,
+        ),
+    }))
+    .sort((a, b) => b.finalScore - a.finalScore);
+
+  return rows.slice(0, 10).map(({ row, finalScore }) => ({
+    title:                String(row.title ?? ''),
+    bizType:              String(row.business_type ?? ''),
+    finalScore,
+    scoreBreakdownPresent: typeof row.fts_score === 'number' && typeof row.vec_score === 'number',
   }));
 }
 
