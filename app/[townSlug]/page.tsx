@@ -48,6 +48,8 @@ import {
 } from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { placeBrowseIntro, townPageIntro } from "@/lib/seo/page-intro-copy";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { discoveryHref, isDiscoveryEnabled, type DiscoveryFlags } from "@/lib/nav/discovery-links";
 
 type SidebarArea = { id: string; name: string; slug: string };
 
@@ -312,8 +314,11 @@ export default async function TownPage({ params }: Props) {
 
   const town = await getTownBySlug(townSlug);
   if (town) {
-    const pageData = await getTownPageData(town.id, town.slug);
-    return <BasicTownPage town={town} pageData={pageData} />;
+    const [pageData, featureFlags] = await Promise.all([
+      getTownPageData(town.id, town.slug),
+      getAllFeatureFlags(),
+    ]);
+    return <BasicTownPage town={town} pageData={pageData} featureFlags={featureFlags} />;
   }
 
   const asPlace = await getPublicPlaceBySlug(townSlug);
@@ -332,9 +337,11 @@ type TownPageData = {
 function BasicTownPage({
   town,
   pageData,
+  featureFlags,
 }: {
   town: TownRecord;
   pageData: TownPageData;
+  featureFlags: DiscoveryFlags;
 }) {
   const descriptor = getTownDescriptor(town.slug);
   const blurb = town.excerpt?.trim() || null;
@@ -430,15 +437,21 @@ function BasicTownPage({
                 subheading={placeBrowseIntro(town.name)}
                 buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
-                  <p className="text-[var(--color-text-secondary)]">
-                    No business listings in {town.name} yet.{" "}
-                    <Link
-                      href={`/search?${new URLSearchParams({ town_id: town.id }).toString()}`}
-                      className="font-medium text-[var(--color-primary)] hover:underline"
-                    >
-                      Search all of 30A
-                    </Link>
-                  </p>
+                  isDiscoveryEnabled(featureFlags) ? (
+                    <p className="text-[var(--color-text-secondary)]">
+                      No business listings in {town.name} yet.{" "}
+                      <Link
+                        href={discoveryHref(featureFlags, { town_id: town.id })}
+                        className="font-medium text-[var(--color-primary)] hover:underline"
+                      >
+                        Search all of 30A
+                      </Link>
+                    </p>
+                  ) : (
+                    <p className="text-[var(--color-text-secondary)]">
+                      No business listings in {town.name} yet.
+                    </p>
+                  )
                 }
               />
 

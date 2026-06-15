@@ -73,7 +73,7 @@ Create **boolean** flags in [PostHog → Feature flags](https://us.posthog.com/p
 
 | Flag key | Default (prod) | What it gates |
 |----------|----------------|---------------|
-| `search` | off | Navbar search UI, `/search` discovery links |
+| `search` | off | Navbar search UI, hub page search bars, `/search`, `/api/search`, discovery links |
 | `ask` | off | `/ask`, `/api/ask/*`, Ask nav; replaces search when on |
 | `search_inspector` | off | `/ask/inspect` and inspect API routes |
 

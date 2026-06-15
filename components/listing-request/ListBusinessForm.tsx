@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { discoveryHref } from "@/lib/nav/discovery-links";
+import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 
 export type ListBusinessTownOption = { id: string; title: string; slug: string };
@@ -107,11 +107,19 @@ export function ListBusinessForm({ towns }: Props) {
               Possible matches already on WhereTo30A
             </h2>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-              If one of these is your business, mention it when we follow up — or{" "}
-              <Link href={discoveryHref(featureFlags)} className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline">
-                {featureFlags.ask ? "open Ask" : "open search"}
-              </Link>{" "}
-              to find the listing.
+              If one of these is your business, mention it when we follow up
+              {isDiscoveryEnabled(featureFlags) ? (
+                <>
+                  {" "}
+                  — or{" "}
+                  <Link href={discoveryHref(featureFlags)} className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline">
+                    {featureFlags.ask ? "open Ask" : "open search"}
+                  </Link>{" "}
+                  to find the listing.
+                </>
+              ) : (
+                "."
+              )}
             </p>
             <ul className="mt-4 space-y-2">
               {similar.map((s) => (

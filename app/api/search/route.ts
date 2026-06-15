@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSearchRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
 import { runSearch } from "@/lib/search/run-search";
+import { searchApiBlocked } from "@/lib/feature-flags";
 
 export async function POST(request: NextRequest) {
+  const blocked = await searchApiBlocked();
+  if (blocked) return blocked;
+
   try {
     const ipKey = rateLimitKeyFromRequest(request);
     if (isSearchRateLimited(ipKey)) {

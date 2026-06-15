@@ -4,6 +4,7 @@ import {
   DEFAULT_FLAGS,
   FEATURE_FLAG_KEYS,
   isAskEnabled,
+  isSearchEnabled,
   isSearchInspectorEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
@@ -22,6 +23,13 @@ export {
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 
+export {
+  isDiscoveryEnabled,
+  showHubDiscoveryUi,
+  showNavbarAskUi,
+  showNavbarSearchUi,
+} from "@/lib/nav/discovery-links";
+
 export { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
 
 /** Server-side flags from PostHog (middleware, API guards, redirects). */
@@ -36,6 +44,14 @@ export async function getAllFeatureFlags(): Promise<FeatureFlags> {
   } catch {
     return DEFAULT_FLAGS;
   }
+}
+
+/** For route handlers: returns a 404 response when the search feature is off. */
+export async function searchApiBlocked(): Promise<NextResponse | null> {
+  if (!isSearchEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
 }
 
 /** For route handlers: returns a 404 response when the ask concierge feature is off. */

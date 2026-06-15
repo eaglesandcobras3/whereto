@@ -14,7 +14,7 @@ import {
 } from "@/lib/seo/metadata-snippets";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
-import { discoveryHref } from "@/lib/nav/discovery-links";
+import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 
 export const revalidate = 1800;
 
@@ -182,9 +182,13 @@ export default async function EventDetailPage({ params }: Props) {
           Home
         </Link>
         <span className="material-symbols-outlined !text-xs opacity-40">chevron_right</span>
-        <Link href={discoveryHref(featureFlags, { type: "events" })} className="hover:text-[var(--color-primary)]">
-          Events
-        </Link>
+        {isDiscoveryEnabled(featureFlags) ? (
+          <Link href={discoveryHref(featureFlags, { type: "events" })} className="hover:text-[var(--color-primary)]">
+            Events
+          </Link>
+        ) : (
+          <span className="text-[var(--color-text-secondary)]">Events</span>
+        )}
         <span className="material-symbols-outlined !text-xs opacity-40">chevron_right</span>
         <span className="text-[var(--color-text-secondary)]">{event.title}</span>
       </nav>

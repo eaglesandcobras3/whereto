@@ -21,6 +21,12 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
+import {
+  discoveryHref,
+  isDiscoveryEnabled,
+  type DiscoveryFlags,
+} from "@/lib/nav/discovery-links";
 
 export const revalidate = 3600;
 
@@ -154,20 +160,23 @@ function areaSectionSearchHref(
   return `/search?${params.toString()}`;
 }
 
-function areaBrowseSearchHref(place: PublicPlacePage): string | null {
-  const params = new URLSearchParams();
+function areaBrowseDiscoveryHref(
+  place: PublicPlacePage,
+  flags: DiscoveryFlags,
+): string | null {
+  if (!isDiscoveryEnabled(flags)) return null;
+
+  const townId = place.town_id?.trim() || undefined;
   if (place.source === "area") {
-    params.set("area_id", place.id);
-  } else if (place.parent_area_id) {
-    params.set("area_id", place.parent_area_id);
-  } else if (place.town_id) {
-    params.set("town_id", place.town_id);
-    return `/search?${params.toString()}`;
-  } else {
-    return null;
+    return discoveryHref(flags, { area_id: place.id, town_id: townId });
   }
-  if (place.town_id?.trim()) params.set("town_id", place.town_id.trim());
-  return `/search?${params.toString()}`;
+  if (place.parent_area_id) {
+    return discoveryHref(flags, { area_id: place.parent_area_id, town_id: townId });
+  }
+  if (townId) {
+    return discoveryHref(flags, { town_id: townId });
+  }
+  return null;
 }
 
 async function getAreaSidebarData(place: PublicPlacePage): Promise<AreaSidebarData> {
@@ -216,9 +225,10 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) notFound();
 
-  const [sidebar, categorySections] = await Promise.all([
+  const [sidebar, categorySections, featureFlags] = await Promise.all([
     getAreaSidebarData(area),
     getCategorySectionsForPublicPlace(area),
+    getAllFeatureFlags(),
   ]);
 
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
@@ -348,11 +358,11 @@ export default async function AreaPage({ params }: Props) {
                 subheading={placeBrowseIntro(area.title)}
                 buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
-                  areaBrowseSearchHref(area) ? (
+                  areaBrowseDiscoveryHref(area, featureFlags) ? (
                     <p className="text-[var(--color-text-secondary)]">
                       No business listings in {area.title} yet.{" "}
                       <Link
-                        href={areaBrowseSearchHref(area)!}
+                        href={areaBrowseDiscoveryHref(area, featureFlags)!}
                         className="font-medium text-[var(--color-primary)] hover:underline"
                       >
                         Search nearby

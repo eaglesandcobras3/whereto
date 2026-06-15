@@ -19,7 +19,7 @@ import {
   SERVICE_VENDOR_UI,
 } from "@/lib/routes/service-vendor-labels";
 import { SERVICE_VENDORS_HUB_PATH, serviceVendorsHubHref } from "@/lib/routes/service-vendors-hub";
-import { discoveryHref } from "@/lib/nav/discovery-links";
+import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -88,6 +88,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
   const openGroupSlug = findGroupForSpecialtySlug(specialtyGroups, specialtySlug);
   const browseGroups = toServiceSpecialtyBrowseGroups(specialtyGroups, specialtySlug);
   const advancedSearchHref = discoveryHref(featureFlags, { type: "services" });
+  const showDiscoverySearch = isDiscoveryEnabled(featureFlags);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -132,46 +133,50 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
                 ? ` across ${listedSpecialties.length} ${listedSpecialties.length === 1 ? "specialty" : "specialties"}`
                 : ""}
             </p>
-            <form
-              action={SERVICE_VENDORS_HUB_PATH}
-              method="get"
-              className="mt-6 flex max-w-md flex-wrap items-center gap-2"
-            >
-              {specialtySlug ? (
-                <input type="hidden" name="specialty" value={specialtySlug} />
-              ) : null}
-              <div className="relative min-w-0 flex-1">
-                <span className="material-symbols-outlined absolute left-3 top-2.5 !text-[1.1rem] text-[var(--color-text-tertiary)]">
-                  search
-                </span>
-                <input
-                  type="search"
-                  name="q"
-                  defaultValue={query}
-                  placeholder="Search providers…"
-                  className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pl-9 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none"
-                />
+            {showDiscoverySearch ? (
+              <form
+                action={SERVICE_VENDORS_HUB_PATH}
+                method="get"
+                className="mt-6 flex max-w-md flex-wrap items-center gap-2"
+              >
+                {specialtySlug ? (
+                  <input type="hidden" name="specialty" value={specialtySlug} />
+                ) : null}
+                <div className="relative min-w-0 flex-1">
+                  <span className="material-symbols-outlined absolute left-3 top-2.5 !text-[1.1rem] text-[var(--color-text-tertiary)]">
+                    search
+                  </span>
+                  <input
+                    type="search"
+                    name="q"
+                    defaultValue={query}
+                    placeholder="Search providers…"
+                    className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pl-9 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-full bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-light)]"
+                >
+                  Search
+                </button>
+              </form>
+            ) : null}
+            {showDiscoverySearch ? (
+              <div className="mt-4">
+                <DiscoveryUtilityLink
+                  href={advancedSearchHref}
+                  {...gaClickProps({
+                    event: "cta_click",
+                    category: "services_hub",
+                    label: "advanced_search",
+                  })}
+                  className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
+                >
+                  Advanced search (town, filters)
+                </DiscoveryUtilityLink>
               </div>
-              <button
-                type="submit"
-                className="rounded-full bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-light)]"
-              >
-                Search
-              </button>
-            </form>
-            <div className="mt-4">
-              <DiscoveryUtilityLink
-                href={advancedSearchHref}
-                {...gaClickProps({
-                  event: "cta_click",
-                  category: "services_hub",
-                  label: "advanced_search",
-                })}
-                className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-              >
-                Advanced search (town, filters)
-              </DiscoveryUtilityLink>
-            </div>
+            ) : null}
           </div>
         </section>
 

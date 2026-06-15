@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { runSearch } from "@/lib/search/run-search";
+import { getAllFeatureFlags, isAskEnabled, isSearchEnabled } from "@/lib/feature-flags";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
@@ -169,6 +170,16 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function SearchPage({ searchParams }: Props) {
+  const flags = await getAllFeatureFlags();
+  if (!isSearchEnabled(flags)) {
+    if (isAskEnabled(flags)) {
+      const sp = await searchParams;
+      const q = typeof sp.q === "string" ? sp.q.trim() : "";
+      redirect(q ? `/ask?q=${encodeURIComponent(q)}` : "/ask");
+    }
+    redirect("/");
+  }
+
   const {
     q,
     town_id,

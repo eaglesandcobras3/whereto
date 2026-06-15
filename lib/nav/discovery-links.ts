@@ -8,6 +8,7 @@ export type DiscoveryLinkParams = {
   type?: string;
   category?: string;
   town_id?: string;
+  area_id?: string;
 };
 
 const TYPE_ASK_QUERIES: Record<string, string> = {
@@ -25,6 +26,15 @@ export function showNavbarSearchUi(flags: DiscoveryFlags): boolean {
 
 export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
   return isAskEnabled(flags);
+}
+
+/** Hub hero search bars and other discovery entry points (search or ask). */
+export function showHubDiscoveryUi(flags: DiscoveryFlags): boolean {
+  return isAskEnabled(flags) || isSearchEnabled(flags);
+}
+
+export function isDiscoveryEnabled(flags: DiscoveryFlags): boolean {
+  return showHubDiscoveryUi(flags);
 }
 
 function askQueryFromParams(params?: DiscoveryLinkParams): string | undefined {
@@ -50,11 +60,14 @@ export function discoveryHref(
     return "/ask";
   }
 
+  if (!isSearchEnabled(flags)) return "/";
+
   const sp = new URLSearchParams();
   if (params?.q?.trim()) sp.set("q", params.q.trim());
   if (params?.type) sp.set("type", params.type);
   if (params?.category) sp.set("category", params.category);
   if (params?.town_id) sp.set("town_id", params.town_id);
+  if (params?.area_id) sp.set("area_id", params.area_id);
   const qs = sp.toString();
   return qs ? `/search?${qs}` : "/search";
 }

@@ -31,6 +31,22 @@ function buildFlagsFromPostHog(): FeatureFlags {
   return resolveFeatureFlags(remote);
 }
 
+let cachedSnapshot: FeatureFlags = DEFAULT_FLAGS;
+
+function flagsEqual(a: FeatureFlags, b: FeatureFlags): boolean {
+  for (const key of FEATURE_FLAG_KEYS) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+function getFeatureFlagsSnapshot(): FeatureFlags {
+  const next = buildFlagsFromPostHog();
+  if (flagsEqual(cachedSnapshot, next)) return cachedSnapshot;
+  cachedSnapshot = next;
+  return cachedSnapshot;
+}
+
 function subscribeFeatureFlags(onStoreChange: () => void): () => void {
   if (!isPostHogEnabled()) return () => {};
   return posthog.onFeatureFlags(onStoreChange);
@@ -40,7 +56,7 @@ function subscribeFeatureFlags(onStoreChange: () => void): () => void {
 export function useAppFeatureFlags(): FeatureFlags {
   return useSyncExternalStore(
     subscribeFeatureFlags,
-    buildFlagsFromPostHog,
+    getFeatureFlagsSnapshot,
     () => DEFAULT_FLAGS,
   );
 }

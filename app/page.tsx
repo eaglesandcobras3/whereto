@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { HomePage } from "@/components/home/HomePage";
-import { getAllFeatureFlags, isAskEnabled } from "@/lib/feature-flags";
-import { discoveryHref } from "@/lib/nav/discovery-links";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
@@ -62,7 +62,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const flags = await getAllFeatureFlags();
   const { q } = await searchParams;
   const query = typeof q === "string" ? q : Array.isArray(q) ? q[0] : undefined;
-  if (query?.trim()) {
+  if (query?.trim() && isDiscoveryEnabled(flags)) {
     redirect(discoveryHref(flags, { q: query.trim() }));
   }
 
