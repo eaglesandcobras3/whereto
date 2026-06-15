@@ -10,10 +10,13 @@ search-eval:
         - lib/search/**/*
         - lib/ai/search-ai.ts
         - eval/search-golden.json
+        - eval/pollutants.json
+        - data/search-query-rules.json
+        - scripts/eval-search.ts
         - supabase/migrations/**/*
   script:
     - npm ci
-    - npx tsx local/eval-search.ts --ci
+    - npx tsx scripts/eval-search.ts --ci
   variables:
     NEXT_PUBLIC_SUPABASE_URL: $STAGING_SUPABASE_URL
     SUPABASE_SECRET_KEY: $STAGING_SUPABASE_KEY

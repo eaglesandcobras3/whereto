@@ -244,7 +244,7 @@ npx tsx local/enrich-search-pipeline.ts
   - `STAGING_SUPABASE_URL` — staging Supabase project URL
   - `STAGING_SUPABASE_KEY` — staging Supabase **secret** key
   - `OPENAI_API_KEY` — already set if using OpenAI elsewhere
-- [ ] `.gitlab-ci.yml` is already committed. MRs touching `lib/search/**` will automatically run `npx tsx local/eval-search.ts --ci` against staging.
+- [ ] `.gitlab-ci.yml` is already committed. MRs touching `lib/search/**`, `eval/search-golden.json`, `data/search-query-rules.json`, or `scripts/eval-search.ts` will automatically run `npx tsx scripts/eval-search.ts --ci` against staging (regression tier must 100% pass).
 
 ### Monitoring views (query in Supabase dashboard)
 
@@ -273,6 +273,78 @@ Scores (1–4) are stored in `search_eval_runs` for month-over-month comparison.
 
 ---
 
+## Search V2 — retrieval-constrained hybrid
+
+Search is off by default (`search: false` feature flag). V2 must pass the preflight gate before being enabled. Follow in order.
+
+### Step 1: Apply migrations (Supabase SQL Editor, in order)
+
+1. **`20260614000000_search_document_v2.sql`** — adds `search_tags text[]`, `search_terms text`, `embedding_summary text` columns; updates FTS trigger; creates `businesses_search_tags_gin_idx`.
+2. **`20260614000100_search_tags_vocabulary.sql`** — creates `search_tags_vocabulary` table (tag registry); seeds `mobility_rental`, `golf`, `books`, `coffee`.
+3. **`20260614000200_search_businesses_v2.sql`** — creates `search_businesses_v2()` RPC with true FTS+vector hybrid scoring.
+
+### Step 2: Backfill search document fields
+
+```bash
+npx tsx scripts/backfill-search-document.ts --dry-run   # preview
+npx tsx scripts/backfill-search-document.ts             # apply
+```
+
+Derives `search_tags` from existing `item_tags`/`dietary_tags`/`atmosphere_tags`/`occasion_tags`/`meal_period_tags` arrays, plus structural tags inferred from `business_type`. Also sets `search_terms` and `embedding_summary`.
+
+**After backfill:** Fill gaps manually in the admin for the 158 businesses that have empty `item_tags`. Priority: Red Bar (`primary_category_id` is null — assign bar category), Great Southern Cafe, Havana Beach Bar & Grill, Crêpes du Soleil.
+
+### Step 3: Validate tag registry
+
+```bash
+npm run validate:tags
+```
+
+Must pass before enabling V2. Checks every tag in `data/search-query-rules.json` exists in `search_tags_vocabulary`. Fails if rule count > 40.
+
+### Step 4: Run eval baseline
+
+```bash
+npm run eval:search           # v1-raw: retrieval quality with correct intent (should be ~85%)
+npm run eval:search:v1        # v1-full: actual V1 production pipeline (~35% — the real starting point)
+npm run eval:search:v2        # v2: new routing + hybrid RPC
+```
+
+Capture the V2 baseline:
+```bash
+npx tsx scripts/eval-search.ts --pipeline v2 --milestone baseline-3
+```
+
+### Step 5: Enable V2 (SEARCH_V2=1)
+
+Only after V2 eval shows improvement over V1-full baseline. Set in Vercel + `.env.local`:
+```
+SEARCH_V2=1
+```
+
+This routes all `runSearch()` calls through `runSearchV2()` (deterministic routing → `search_businesses_v2` RPC).
+
+### Step 6: Re-enable search flag
+
+Only after `SEARCH_V2=1` is deployed and spot-checked in `/admin/search-debug`:
+```json
+{ "search": true }
+```
+in `FEATURE_FLAGS_JSON` Vercel env var.
+
+### Step 7: Add mobility rental vendors
+
+The golf cart rental case (`regression-collision-mobility-01`) returns honest empty because no mobility rental vendors exist in the DB. Add them via `/admin` or `scripts/import-services-csv.ts` with `search_tags: ["mobility_rental", "cart", "lsv"]`.
+
+### Ongoing eval maintenance
+
+- Add a golden case for every search bug within 24h of incident (tier: regression)
+- Run `npm run validate:tags` before merging any changes to `data/search-query-rules.json`
+- Monthly: `npx tsx scripts/eval-search.ts --pipeline v2 --milestone monthly-YYYY-MM`
+- Add to `search_tags_vocabulary` before adding new tags to any rule
+
+---
+
 ## Not done in code yet (optional follow-ups)
 
 - **Stricter rate limits:** move from in-memory per instance to Vercel KV / edge if you need global quotas.
@@ -284,6 +356,7 @@ Scores (1–4) are stored in `search_eval_runs` for month-over-month comparison.
 
 | Date | What changed |
 |------|----------------|
+| 2026-06-14 | **Search V2 (retrieval-constrained hybrid):** Apply migrations `20260614000000` (search_tags/search_terms/embedding_summary columns + FTS trigger update), `20260614000100` (search_tags_vocabulary table), `20260614000200` (search_businesses_v2 RPC — true FTS+vector hybrid scoring). Run `npx tsx scripts/backfill-search-document.ts`. Eval runner moved from `local/eval-search.ts` to `scripts/eval-search.ts` (committed to repo, CI updated). Routing layer: `data/search-query-rules.json` + `lib/search/resolve-query-plan.ts`. Set `SEARCH_V2=1` env var to enable V2 path (keep search flag off until preflight passes — see **Search V2** section). |
 | 2026-06-04 | **Analytics:** Replaced Google Analytics with **PostHog**. Set **`NEXT_PUBLIC_POSTHOG_KEY`** in Vercel + `.env.local` (empty string disables). Optional **`NEXT_PUBLIC_POSTHOG_HOST`**. Remove legacy **`NEXT_PUBLIC_GA_MEASUREMENT_ID`** if still set. Event tagging unchanged — see **`docs/analytics-events.md`**. |
 | 2026-06-04 | **Service vendor specialties:** Apply migrations through **`20260604130400_service_categories_full_taxonomy.sql`** (56 specialties, `group_slug` — see **`docs/service-categories-taxonomy.md`**). Prior: `20260604130000` … `20260604130300`. Audit all listings: `npx tsx scripts/audit-service-vendors.ts --write-report` → **`docs/service-vendor-audit-report.md`**. Fix mis-tagged storefronts, then classify: `npx tsx scripts/classify-service-categories.ts --apply --reclassify`. Hub **`/services`** (`?specialty=`); search **`/search?type=services&specialty=plumbing`**. Storefront slug `services` → **Service businesses** at **`/service-businesses`**. |
 | 2026-06-02 | **Sitemap strategy (index focus):** `sitemap.xml` now lists hubs, towns, areas, categories, and guides only — **no `/business/*`** or utility pages. `/guide` **301** → `/guide/ultimate-30a-first-timers-guide`. Validate with **`npm run validate:sitemap`** (add **`--live`** for HTTP/canonical checks). | All indexable routes now use **`openGraphForPage()`** — every page emits **`og:url`**, **`og:image`**, and matching Twitter tags (hero/listing image when available, else default home hero). **Orphan business fix:** category pages list every business (not 4/day rotation); **`/categories`** hub and **`/businesses`** add full text indexes; town/area pages link all browse-visible listings including services/bars. Footer links to **`/guide`** and **`/categories`**. Optional **`INDEXNOW_KEY`** + weekly **`/api/cron/indexnow`**. Ahrefs site verification meta tag in root layout. |

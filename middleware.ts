@@ -167,6 +167,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public files (images, etc)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.well-known/workflow|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.well-known/workflow|.*\\.(?:svg|png|jpg|jpeg|gif|webp|txt)$).*)",
   ],
 };

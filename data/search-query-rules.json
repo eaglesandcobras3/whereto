@@ -1,0 +1,98 @@
+{
+  "_comment": "Deterministic routing rules for search V2. Rules are routing-only — they narrow the search space (category, tags, town) but do NOT pick which business ranks #1. Keep under 40 rules. Every new rule MUST have problemClass + a golden eval pair (regression tier). Every tag in requiredTags/anyTags must exist in search_tags_vocabulary. Validated by: npx tsx scripts/validate-tag-registry.ts",
+  "rules": [
+    {
+      "id": "collision_mobility_rental",
+      "problemClass": "substring_collision",
+      "description": "Cart/LSV rental — 'golf' substring would otherwise match golf courses. Longest phrase wins over collision_golf_activity.",
+      "phrases": ["golf cart", "golf carts", "rent a cart", "cart rental", "lsv rental", "lsv"],
+      "priority": 100,
+      "plan": {
+        "categorySlug": "activities",
+        "requiredTags": ["mobility_rental"],
+        "searchTerms": ["cart", "rental"]
+      }
+    },
+    {
+      "id": "collision_golf_activity",
+      "problemClass": "substring_collision",
+      "description": "Golf courses/putting — must not surface cart rental businesses. Pair with collision_mobility_rental.",
+      "phrases": ["golf course", "tee time", "play golf", "mini golf", "miniature golf", "putting green"],
+      "priority": 90,
+      "plan": {
+        "categorySlug": "activities",
+        "requiredTags": ["golf"],
+        "searchTerms": ["golf"]
+      }
+    },
+    {
+      "id": "collision_books_retail",
+      "problemClass": "substring_collision",
+      "description": "Bookstores — 'books' would bleed into general shopping. requiredTags prevents gift shops appearing.",
+      "phrases": ["bookstore", "book store", "book shop", "books"],
+      "priority": 100,
+      "plan": {
+        "categorySlug": "shopping",
+        "requiredTags": ["books"],
+        "searchTerms": ["books", "bookstore"]
+      }
+    },
+    {
+      "id": "category_coffee",
+      "problemClass": "category_keyword",
+      "description": "Coffee shops — routes to coffee_shops category so restaurants/boutiques are excluded by category filter.",
+      "phrases": ["coffee", "cafe", "espresso", "latte", "cappuccino"],
+      "priority": 80,
+      "plan": {
+        "categorySlug": "coffee_shops",
+        "anyTags": ["coffee"],
+        "searchTerms": ["coffee"]
+      }
+    },
+    {
+      "id": "category_remote_work",
+      "problemClass": "category_keyword",
+      "description": "Remote work / business meeting queries route to coffee_shops — cafes are the natural answer, not offices or restaurants.",
+      "phrases": ["work remote", "remote work", "business meeting", "laptop wifi", "work from", "work with wifi", "study spot", "co-working"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "coffee_shops",
+        "searchTerms": ["coffee", "cafe", "wifi"]
+      }
+    },
+    {
+      "id": "category_bars_nightlife",
+      "problemClass": "category_keyword",
+      "description": "Bars and nightlife — routes to bars category so restaurants don't dominate. Prevents Red Bar ranking at #10 for live music queries.",
+      "phrases": ["nightlife", "live music", "cocktail bar", "wine bar", "craft cocktails", "happy hour", "bar scene"],
+      "priority": 78,
+      "plan": {
+        "categorySlug": "bars",
+        "searchTerms": ["bar", "drinks", "nightlife"]
+      }
+    },
+    {
+      "id": "category_rainy_day",
+      "problemClass": "category_keyword",
+      "description": "Rainy day / indoor queries route to shopping — bookstores are the natural 30A answer for bad weather.",
+      "phrases": ["rainy day", "rainy afternoon", "rainy morning", "when it rains", "bad weather", "indoor activity", "stuck inside"],
+      "priority": 72,
+      "plan": {
+        "categorySlug": "shopping",
+        "anyTags": ["books"],
+        "searchTerms": ["bookstore", "indoor", "shopping"]
+      }
+    },
+    {
+      "id": "category_massage_spa",
+      "problemClass": "category_keyword",
+      "description": "Massage/spa queries route to services — prevents fitness studios (Power Movement) polluting results.",
+      "phrases": ["massage", "deep tissue", "massage therapy", "swedish massage", "facial treatment", "body wrap", "spa treatment"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "services",
+        "searchTerms": ["massage", "spa"]
+      }
+    }
+  ]
+}

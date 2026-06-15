@@ -16,7 +16,14 @@
     "supabase:types:remote": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > lib/supabase/database.types.ts",
     "diagnose:supabase": "npx tsx scripts/diagnose-supabase.ts",
     "validate:sitemap": "npx tsx scripts/validate-sitemap.ts",
-    "validate:sitemap:live": "npx tsx scripts/validate-sitemap.ts --live"
+    "validate:sitemap:live": "npx tsx scripts/validate-sitemap.ts --live",
+    "eval:search": "npx tsx scripts/eval-search.ts",
+    "eval:search:v1": "npx tsx scripts/eval-search.ts --pipeline v1-full",
+    "eval:search:v2": "npx tsx scripts/eval-search.ts --pipeline v2",
+    "eval:search:data": "npx tsx scripts/eval-search-data.ts",
+    "eval:search:preflight": "npx tsx scripts/search-preflight.ts",
+    "validate:tags": "npx tsx scripts/validate-tag-registry.ts",
+    "backfill:search": "npx tsx scripts/backfill-search-document.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.67",

@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
     const rules: { source: string; destination: string }[] = [
       // Avoid `app/[townSlug]` capturing `/sitemap.xml` (production 404).
       { source: "/sitemap.xml", destination: "/api/sitemap-xml" },
+      { source: "/llms.txt", destination: "/api/llms-txt" },
       // PostHog reverse proxy — routes ingest through Next.js to avoid ad blockers.
       ...(phAssetsHost ? [
         { source: "/ingest/static/:path*", destination: `${phAssetsHost}/static/:path*` },

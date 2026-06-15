@@ -1,0 +1,11 @@
+[
+  {
+    "gap": "mobility_rental",
+    "priority": "high",
+    "audience": "visitor",
+    "exampleQueries": ["golf carts", "rent a cart", "cart rental", "lsv rental"],
+    "status": "missing_vendors",
+    "owner": "product",
+    "notes": "No mobility rental vendors in DB. Golden cases use minResults:0 (honest empty acceptable). Add vendors via /admin or scripts/import-services-csv.ts with search_tags:[\"mobility_rental\",\"cart\",\"lsv\"]."
+  }
+]

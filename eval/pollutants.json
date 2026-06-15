@@ -1,0 +1,6 @@
+{
+  "mobility_rental": ["Golf Club", "Golf Course", "Links", "Greens", "Putting"],
+  "coffee": ["Sundog", "ONO Surf", "Pescado", "Amor Boutique"],
+  "bookstore": ["restaurant", "coffee shop", "bar", "boutique"],
+  "clothing": ["gift shop", "souvenir", "restaurant"]
+}

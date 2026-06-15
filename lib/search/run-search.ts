@@ -61,6 +61,29 @@ export async function runSearch(options: {
   /** Pre-computed query embedding — skips the embed API call when provided. */
   precomputedQueryEmbedding?: number[] | null;
 }): Promise<SearchResultPayload> {
+  // Search V2: deterministic routing + true hybrid SQL scoring.
+  // Enable with SEARCH_V2=1 env var. V1 path is unchanged below.
+  if (process.env.SEARCH_V2 === "1") {
+    const { runSearchV2 } = await import("@/lib/search/run-search-v2");
+    return runSearchV2({
+      rawQuery:            options.rawQuery,
+      openaiKey:           options.openaiKey,
+      page:                options.page,
+      pageSize:            options.pageSize,
+      sessionId:           options.sessionId ?? null,
+      userId:              options.userId ?? null,
+      userLat:             options.userLat ?? null,
+      userLng:             options.userLng ?? null,
+      includeDebug:        options.includeDebug,
+      townSlug:            options.constrainTownId ?? (options.constrainTownIds?.[0] ?? null),
+      categorySlug:        options.constrainCategorySlug ?? options.forcedCategorySlug ?? null,
+      serviceCategorySlug: options.constrainServiceCategorySlug ?? null,
+      // priceLevel not wired in V2 yet (SearchPriceBucket is string, V2 expects number)
+
+      vibeTags:            options.constrainVibeTags,
+    });
+  }
+
   const supabase = getServiceSupabase();
   const normalized = normalizeQuery(options.rawQuery);
   const explicit = normalizeExplicitConstraints(options);
