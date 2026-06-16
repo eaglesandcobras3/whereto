@@ -4,8 +4,13 @@
     "tier": "smoke",
     "stratum": "single_token_stress",
     "query": "coffee",
-    "notExpect": ["Sundog", "Pescado", "Amor Boutique", "ONO Surf"],
-    "note": "STRESS: single-word coffee — no restaurants/boutiques in pure vector results"
+    "notExpect": [
+      "Sundog",
+      "Pescado",
+      "Amor Boutique",
+      "ONO Surf"
+    ],
+    "note": "STRESS: single-word coffee \u2014 no restaurants/boutiques in pure vector results"
   },
   {
     "id": "regression-coffee-01",
@@ -13,16 +18,27 @@
     "stratum": "coffee",
     "problemClass": "category_bleed",
     "query": "coffee shop espresso cafe",
-    "expect": ["Amavida", "3rd Cup", "Turbo Coffee"],
-    "notExpect": ["ONO Surf", "Sundog"],
-    "note": "Core coffee query — coffee shops only"
+    "expect": [
+      "Amavida",
+      "3rd Cup",
+      "Turbo Coffee"
+    ],
+    "notExpect": [
+      "ONO Surf",
+      "Sundog"
+    ],
+    "note": "Core coffee query \u2014 coffee shops only"
   },
   {
     "id": "stretch-coffee-01",
     "tier": "stretch",
     "stratum": "coffee",
     "query": "coffee in rosemary beach",
-    "expect": ["3rd Cup", "Amavida", "Charlie"],
+    "expect": [
+      "3rd Cup",
+      "Amavida",
+      "Charlie"
+    ],
     "note": "Rosemary-specific coffee spots"
   },
   {
@@ -31,9 +47,17 @@
     "stratum": "coffee",
     "problemClass": "category_bleed",
     "query": "morning coffee latte cappuccino",
-    "expect": ["Amavida", "3rd Cup", "Turbo"],
-    "notExpect": ["Kilwins", "Sundog", "Faherty"],
-    "note": "Morning coffee — cafes only, no ice cream or boutiques"
+    "expect": [
+      "Amavida",
+      "3rd Cup",
+      "Turbo"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "Sundog",
+      "Faherty"
+    ],
+    "note": "Morning coffee \u2014 cafes only, no ice cream or boutiques"
   },
   {
     "id": "regression-coffee-03",
@@ -41,10 +65,19 @@
     "stratum": "coffee",
     "problemClass": "category_bleed",
     "query": "best place to work remote laptop wifi",
-    "intent": { "category": "coffee_shops" },
-    "expect": ["Amavida", "3rd Cup"],
-    "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
-    "note": "Remote-work cafe — should surface cafes known for atmosphere"
+    "intent": {
+      "category": "coffee_shops"
+    },
+    "expect": [
+      "Amavida",
+      "3rd Cup"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Remote-work cafe \u2014 should surface cafes known for atmosphere"
   },
   {
     "id": "regression-food-dish-01",
@@ -52,9 +85,19 @@
     "stratum": "food_dish",
     "problemClass": "category_bleed",
     "query": "ice cream",
-    "expect": ["b.f.f.", "Kilwins", "Frost Bites"],
-    "notExpect": ["Sundog Books", "Amavida Coffee", "Charleston Shoe"],
-    "note": "STRESS: ice cream must not bleed into unrelated categories"
+    "expect": [
+      "Pecan Jacks",
+      "Kilwins",
+      "It's Heavenly",
+      "Dawson's",
+      "Frost Bites"
+    ],
+    "notExpect": [
+      "Sundog Books",
+      "Amavida Coffee",
+      "Charleston Shoe"
+    ],
+    "note": "All major ice cream shops should appear \u2014 Pecan Jacks, Kilwins, Dawson's, Frost Bites"
   },
   {
     "id": "regression-food-dish-02",
@@ -62,17 +105,33 @@
     "stratum": "food_dish",
     "problemClass": "category_bleed",
     "query": "ice cream shop",
-    "expect": ["b.f.f.", "Kilwins", "Frost Bites", "Dawson's"],
-    "notExpect": ["Sundog", "Amavida Coffee"],
-    "note": "All ice cream shops surface, no unrelated results"
+    "expect": [
+      "Pecan Jacks",
+      "Kilwins",
+      "It's Heavenly",
+      "Dawson's",
+      "Frost Bites"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Amavida Coffee"
+    ],
+    "note": "Ice cream corpus now routes to desserts category \u2014 all shops should be present"
   },
   {
     "id": "stretch-food-dish-01",
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "frozen yogurt soft serve",
-    "intent": { "specificItems": ["frozen yogurt", "soft serve"] },
-    "expect": ["Dawson's"],
+    "intent": {
+      "specificItems": [
+        "frozen yogurt",
+        "soft serve"
+      ]
+    },
+    "expect": [
+      "Dawson's"
+    ],
     "note": "Frozen dessert"
   },
   {
@@ -80,8 +139,14 @@
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "donuts",
-    "intent": { "specificItems": ["donuts"] },
-    "expect": ["Charlie"],
+    "intent": {
+      "specificItems": [
+        "donuts"
+      ]
+    },
+    "expect": [
+      "Charlie"
+    ],
     "note": "Charlies Cafe at Rosemary has donuts in item_tags"
   },
   {
@@ -89,8 +154,16 @@
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "donuts near rosemary",
-    "intent": { "category": "restaurants", "specificItems": ["donuts", "doughnuts"] },
-    "expect": ["Charlie"],
+    "intent": {
+      "category": "restaurants",
+      "specificItems": [
+        "donuts",
+        "doughnuts"
+      ]
+    },
+    "expect": [
+      "Charlie"
+    ],
     "note": "Production path: donut keyword sets category=restaurants + both spellings as items"
   },
   {
@@ -98,74 +171,128 @@
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "something sweet dessert treat",
-    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
-    "note": "Dessert query — only food/dessert venues, no shopping or fitness"
+    "notExpect": [
+      "Sundog",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Dessert query \u2014 only food/dessert venues, no shopping or fitness"
   },
   {
     "id": "stretch-food-dish-04",
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "acai bowls smoothie bowls",
-    "intent": { "specificItems": ["acai bowls"] },
-    "expect": ["Playa"],
-    "note": "Acai bowls — Playa Bowls only"
+    "intent": {
+      "specificItems": [
+        "acai bowls"
+      ]
+    },
+    "expect": [
+      "Playa"
+    ],
+    "note": "Acai bowls \u2014 Playa Bowls only"
   },
   {
     "id": "smoke-food-dish-02",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "fresh juice smoothie healthy drink",
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf"],
-    "note": "Juice/smoothie bar — no retail or fitness studios"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Juice/smoothie bar \u2014 no retail or fitness studios"
   },
   {
     "id": "smoke-single-token-02",
     "tier": "smoke",
     "stratum": "single_token_stress",
     "query": "restaurant",
-    "notExpect": ["Sundog", "Faherty", "ONO Surf", "Lala Links", "Power Movement"],
-    "note": "STRESS: 'restaurant' alone — no bookstores, clothing, or surf shops"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "ONO Surf",
+      "Lala Links",
+      "Power Movement"
+    ],
+    "note": "STRESS: 'restaurant' alone \u2014 no bookstores, clothing, or surf shops"
   },
   {
     "id": "smoke-food-general-01",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "best restaurants 30a",
-    "notExpect": ["Sundog", "Faherty", "ONO Surf", "Lala Links", "Power Movement"],
-    "note": "Top restaurants — should be restaurants only"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "ONO Surf",
+      "Lala Links",
+      "Power Movement"
+    ],
+    "note": "Top restaurants \u2014 should be restaurants only"
   },
   {
     "id": "smoke-food-general-02",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "casual lunch spot",
-    "notExpect": ["Power Movement", "Spa Pearl", "Jonah Allen", "Faherty", "Lala Links"],
-    "note": "Casual lunch — no fitness/spa/gallery/boutique"
+    "notExpect": [
+      "Power Movement",
+      "Spa Pearl",
+      "Jonah Allen",
+      "Faherty",
+      "Lala Links"
+    ],
+    "note": "Casual lunch \u2014 no fitness/spa/gallery/boutique"
   },
   {
     "id": "smoke-food-general-03",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "grab a quick bite to eat",
-    "notExpect": ["Power Movement", "Spa Pearl", "Sundog", "Faherty"],
-    "note": "Quick food — no fitness/spa/retail"
+    "notExpect": [
+      "Power Movement",
+      "Spa Pearl",
+      "Sundog",
+      "Faherty"
+    ],
+    "note": "Quick food \u2014 no fitness/spa/retail"
   },
   {
     "id": "stretch-food-dish-05",
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "where can I get crepes",
-    "intent": { "specificItems": ["crepes"], "category": "restaurants" },
-    "expect": ["Crepes du Soleil"],
-    "note": "Only one crepe place — should rank #1"
+    "intent": {
+      "specificItems": [
+        "crepes"
+      ],
+      "category": "restaurants"
+    },
+    "expect": [
+      "Crepes du Soleil"
+    ],
+    "note": "Only one crepe place \u2014 should rank #1"
   },
   {
     "id": "stretch-food-dish-06",
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "burgers and fries",
-    "intent": { "specificItems": ["burgers", "fries"], "category": "restaurants" },
-    "expect": ["Pickle"],
+    "intent": {
+      "specificItems": [
+        "burgers",
+        "fries"
+      ],
+      "category": "restaurants"
+    },
+    "expect": [
+      "Pickle"
+    ],
     "note": "Burger joint"
   },
   {
@@ -173,8 +300,16 @@
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "bbq brisket smoked meat",
-    "intent": { "specificItems": ["bbq", "brisket"], "category": "restaurants" },
-    "expect": ["Barefoot BBQ"],
+    "intent": {
+      "specificItems": [
+        "bbq",
+        "brisket"
+      ],
+      "category": "restaurants"
+    },
+    "expect": [
+      "Barefoot BBQ"
+    ],
     "note": "BBQ restaurant"
   },
   {
@@ -182,63 +317,134 @@
     "tier": "stretch",
     "stratum": "food_dish",
     "query": "gyros greek food",
-    "intent": { "specificItems": ["gyros"], "category": "restaurants" },
-    "expect": ["Mr. Gyro"],
-    "note": "Very specific niche — should rank #1"
+    "intent": {
+      "specificItems": [
+        "gyros"
+      ],
+      "category": "restaurants"
+    },
+    "expect": [
+      "Mr. Gyro"
+    ],
+    "note": "Very specific niche \u2014 should rank #1"
   },
   {
     "id": "smoke-food-dish-03",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "tacos mexican food",
-    "intent": { "specificItems": ["tacos"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
-    "note": "Tacos — no bookstores, ice cream, coffee, or boutiques"
+    "intent": {
+      "specificItems": [
+        "tacos"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty"
+    ],
+    "note": "Tacos \u2014 no bookstores, ice cream, coffee, or boutiques"
   },
   {
     "id": "smoke-food-dish-04",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "pizza slice",
-    "intent": { "specificItems": ["pizza"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Faherty", "Kilwins", "Amavida"],
-    "note": "Pizza — no unrelated categories"
+    "intent": {
+      "specificItems": [
+        "pizza"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Kilwins",
+      "Amavida"
+    ],
+    "note": "Pizza \u2014 no unrelated categories"
   },
   {
     "id": "smoke-food-dish-05",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "sushi rolls japanese food",
-    "intent": { "specificItems": ["sushi", "rolls"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Faherty", "Kilwins", "Power Movement"],
-    "note": "Sushi — no retail, ice cream, or fitness"
+    "intent": {
+      "specificItems": [
+        "sushi",
+        "rolls"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Kilwins",
+      "Power Movement"
+    ],
+    "note": "Sushi \u2014 no retail, ice cream, or fitness"
   },
   {
     "id": "smoke-food-dish-06",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "pancakes waffles french toast",
-    "intent": { "specificItems": ["pancakes", "waffles"], "mealPeriod": "breakfast" },
-    "notExpect": ["Sundog", "Faherty", "Kilwins", "Lala Links"],
-    "note": "Pancake/waffle spots — only breakfast-serving food venues"
+    "intent": {
+      "specificItems": [
+        "pancakes",
+        "waffles"
+      ],
+      "mealPeriod": "breakfast"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Kilwins",
+      "Lala Links"
+    ],
+    "note": "Pancake/waffle spots \u2014 only breakfast-serving food venues"
   },
   {
     "id": "smoke-food-dish-07",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "breakfast sandwich eggs bacon",
-    "intent": { "specificItems": ["eggs", "breakfast sandwich"], "mealPeriod": "breakfast" },
-    "notExpect": ["Sundog", "Faherty", "ONO Surf"],
-    "note": "Breakfast items — no shopping or activity results"
+    "intent": {
+      "specificItems": [
+        "eggs",
+        "breakfast sandwich"
+      ],
+      "mealPeriod": "breakfast"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "ONO Surf"
+    ],
+    "note": "Breakfast items \u2014 no shopping or activity results"
   },
   {
     "id": "smoke-food-dish-08",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "fresh seafood oysters shrimp",
-    "intent": { "specificItems": ["seafood", "shrimp", "oysters"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "Spa Pearl"],
-    "note": "Seafood query — seafood restaurants only, no retail or fitness"
+    "intent": {
+      "specificItems": [
+        "seafood",
+        "shrimp",
+        "oysters"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "Spa Pearl"
+    ],
+    "note": "Seafood query \u2014 seafood restaurants only, no retail or fitness"
   },
   {
     "id": "regression-food-general-01",
@@ -246,19 +452,42 @@
     "stratum": "food_general",
     "problemClass": "category_bleed",
     "query": "waterfront restaurant gulf views",
-    "intent": { "atmosphereNeeds": ["waterfront"], "category": "restaurants" },
-    "expect": ["Pescado", "Havana"],
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Waterfront dining — no retail or fitness"
+    "intent": {
+      "atmosphereNeeds": [
+        "waterfront"
+      ],
+      "category": "restaurants"
+    },
+    "expect": [
+      "Pescado",
+      "Havana"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Waterfront dining \u2014 no retail or fitness"
   },
   {
     "id": "smoke-food-dish-09",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "fresh fish local catch",
-    "intent": { "specificItems": ["fish", "seafood"] },
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "Kilwins"],
-    "note": "Fresh fish — seafood/restaurant results only, no retail or dessert"
+    "intent": {
+      "specificItems": [
+        "fish",
+        "seafood"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "Kilwins"
+    ],
+    "note": "Fresh fish \u2014 seafood/restaurant results only, no retail or dessert"
   },
   {
     "id": "regression-bars-01",
@@ -266,9 +495,21 @@
     "stratum": "bars_nightlife",
     "problemClass": "category_bleed",
     "query": "best place to watch the sunset with drinks",
-    "intent": { "atmosphereNeeds": ["waterfront", "outdoor"] },
-    "expect": ["Pescado", "Havana"],
-    "notExpect": ["Sundog", "Power Movement", "Faherty"],
+    "intent": {
+      "atmosphereNeeds": [
+        "waterfront",
+        "outdoor"
+      ]
+    },
+    "expect": [
+      "Pescado",
+      "Havana"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Power Movement",
+      "Faherty"
+    ],
     "note": "Sunset/waterfront spots"
   },
   {
@@ -277,9 +518,15 @@
     "stratum": "bars_nightlife",
     "problemClass": "category_bleed",
     "query": "wine bar cocktails",
-    "expect": ["Cork"],
-    "notExpect": ["Sundog", "Kilwins", "Power Movement"],
-    "note": "Wine/cocktail bar — Cork & Barrel is the clear match"
+    "expect": [
+      "Cork"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Power Movement"
+    ],
+    "note": "Wine/cocktail bar \u2014 Cork & Barrel is the clear match"
   },
   {
     "id": "regression-bars-03",
@@ -287,44 +534,83 @@
     "stratum": "bars_nightlife",
     "problemClass": "category_bleed",
     "query": "nightlife bars live music",
-    "expect": ["Red Bar"],
-    "notExpect": ["Sundog", "Power Movement", "Kilwins", "Spa Pearl"],
-    "note": "Nightlife/live music — Red Bar is the iconic 30A live music venue"
+    "expect": [
+      "Red Bar"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Power Movement",
+      "Kilwins",
+      "Spa Pearl"
+    ],
+    "note": "Nightlife/live music \u2014 Red Bar is the iconic 30A live music venue"
   },
   {
     "id": "smoke-bars-01",
     "tier": "smoke",
     "stratum": "bars_nightlife",
     "query": "craft beer local brewery tap room",
-    "intent": { "specificItems": ["craft beer", "beer"] },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Beer/brewery — no retail or dessert-only venues"
+    "intent": {
+      "specificItems": [
+        "craft beer",
+        "beer"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Beer/brewery \u2014 no retail or dessert-only venues"
   },
   {
     "id": "smoke-bars-02",
     "tier": "smoke",
     "stratum": "bars_nightlife",
     "query": "happy hour drinks seagrove",
-    "intent": { "category": "bars" },
-    "notExpect": ["Sundog", "Lala Links", "Power Movement", "Latitude 25"],
-    "note": "Happy hour near Seagrove — bars category intent prevents restaurant/retail pollutants"
+    "intent": {
+      "category": "bars"
+    },
+    "notExpect": [
+      "Sundog",
+      "Lala Links",
+      "Power Movement",
+      "Latitude 25"
+    ],
+    "note": "Happy hour near Seagrove \u2014 bars category intent prevents restaurant/retail pollutants"
   },
   {
     "id": "smoke-bars-03",
     "tier": "smoke",
     "stratum": "bars_nightlife",
     "query": "margaritas tropical cocktails",
-    "intent": { "specificItems": ["margaritas", "cocktails"] },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Cocktail bars only — no retail or dessert shops"
+    "intent": {
+      "specificItems": [
+        "margaritas",
+        "cocktails"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Cocktail bars only \u2014 no retail or dessert shops"
   },
   {
     "id": "stretch-food-general-01",
     "tier": "stretch",
     "stratum": "food_general",
     "query": "best place for brunch",
-    "intent": { "mealPeriod": "brunch" },
-    "expect": ["Great Southern", "Canopy"],
+    "intent": {
+      "mealPeriod": "brunch"
+    },
+    "expect": [
+      "Great Southern",
+      "Canopy"
+    ],
     "note": "Brunch spots"
   },
   {
@@ -332,8 +618,14 @@
     "tier": "stretch",
     "stratum": "food_town",
     "query": "best breakfast seaside florida",
-    "intent": { "mealPeriod": "breakfast" },
-    "expect": ["Black Bear", "Great Southern", "Canopy"],
+    "intent": {
+      "mealPeriod": "breakfast"
+    },
+    "expect": [
+      "Black Bear",
+      "Great Southern",
+      "Canopy"
+    ],
     "note": "Breakfast near Seaside"
   },
   {
@@ -341,41 +633,72 @@
     "tier": "smoke",
     "stratum": "food_general",
     "query": "early morning breakfast open early",
-    "intent": { "mealPeriod": "breakfast" },
-    "notExpect": ["Sundog", "Faherty", "Cork", "Spa Pearl"],
-    "note": "Early morning — no late-night bars or shopping venues"
+    "intent": {
+      "mealPeriod": "breakfast"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Cork",
+      "Spa Pearl"
+    ],
+    "note": "Early morning \u2014 no late-night bars or shopping venues"
   },
   {
     "id": "smoke-shopping-01",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "clothing boutique women's fashion",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement", "Pescado"],
-    "note": "STRESS: clothing category only — no bookstores, ice cream, coffee, or restaurants"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Power Movement",
+      "Pescado"
+    ],
+    "note": "STRESS: clothing category only \u2014 no bookstores, ice cream, coffee, or restaurants"
   },
   {
     "id": "smoke-shopping-02",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "swimwear beach clothes",
-    "notExpect": ["Sundog", "Amavida", "Power Movement", "Kilwins", "Pescado"],
-    "note": "Swimwear/beach clothing — clothing boutiques only, no food or fitness"
+    "notExpect": [
+      "Sundog",
+      "Amavida",
+      "Power Movement",
+      "Kilwins",
+      "Pescado"
+    ],
+    "note": "Swimwear/beach clothing \u2014 clothing boutiques only, no food or fitness"
   },
   {
     "id": "smoke-shopping-03",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "upscale boutique designer fashion",
-    "notExpect": ["Sundog", "Kilwins", "Power Movement", "Amavida", "Pescado"],
-    "note": "Upscale boutique — clothing/retail only, no food or fitness"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Power Movement",
+      "Amavida",
+      "Pescado"
+    ],
+    "note": "Upscale boutique \u2014 clothing/retail only, no food or fitness"
   },
   {
     "id": "smoke-shopping-04",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "resort wear vacation outfits",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Pescado", "Power Movement"],
-    "note": "Vacation/resort clothing — clothing stores only"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Pescado",
+      "Power Movement"
+    ],
+    "note": "Vacation/resort clothing \u2014 clothing stores only"
   },
   {
     "id": "regression-shopping-01",
@@ -383,9 +706,16 @@
     "stratum": "shopping_retail",
     "problemClass": "category_bleed",
     "query": "shoes sandals footwear",
-    "expect": ["Charleston Shoe"],
-    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
-    "note": "Shoe store — Charleston Shoe should dominate"
+    "expect": [
+      "Charleston Shoe"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Amavida",
+      "Kilwins",
+      "Power Movement"
+    ],
+    "note": "Shoe store \u2014 Charleston Shoe should dominate"
   },
   {
     "id": "regression-shopping-02",
@@ -393,26 +723,49 @@
     "stratum": "shopping_retail",
     "problemClass": "category_bleed",
     "query": "girls trip shopping boutiques",
-    "intent": { "occasion": "girls_trip", "atmosphereNeeds": ["upscale"] },
-    "expect": ["Luminary", "Faherty"],
-    "notExpect": ["Sundog", "Power Movement", "Barefoot BBQ"],
-    "note": "Boutiques for girls trip — avoid food/fitness"
+    "intent": {
+      "occasion": "girls_trip",
+      "atmosphereNeeds": [
+        "upscale"
+      ]
+    },
+    "expect": [
+      "Luminary",
+      "Faherty"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Power Movement",
+      "Barefoot BBQ"
+    ],
+    "note": "Boutiques for girls trip \u2014 avoid food/fitness"
   },
   {
     "id": "smoke-shopping-05",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "men's clothing apparel",
-    "notExpect": ["Sundog", "Kilwins", "Power Movement", "Spa Pearl"],
-    "note": "Men's clothing — no food, fitness, or spa"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Power Movement",
+      "Spa Pearl"
+    ],
+    "note": "Men's clothing \u2014 no food, fitness, or spa"
   },
   {
     "id": "smoke-single-token-03",
     "tier": "smoke",
     "stratum": "single_token_stress",
     "query": "boutique",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement", "Pescado"],
-    "note": "STRESS: 'boutique' alone — should return retail, not restaurants or fitness"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Power Movement",
+      "Pescado"
+    ],
+    "note": "STRESS: 'boutique' alone \u2014 should return retail, not restaurants or fitness"
   },
   {
     "id": "regression-shopping-03",
@@ -420,8 +773,17 @@
     "stratum": "shopping_retail",
     "problemClass": "substring_collision",
     "query": "bookstore",
-    "expect": ["Sundog", "Hidden Lantern"],
-    "notExpect": ["Amor", "Faherty", "Free People", "Charleston Shoe", "Curate"],
+    "expect": [
+      "Sundog",
+      "Hidden Lantern"
+    ],
+    "notExpect": [
+      "Amor",
+      "Faherty",
+      "Free People",
+      "Charleston Shoe",
+      "Curate"
+    ],
     "note": "Both bookstores in, zero clothing boutiques"
   },
   {
@@ -430,8 +792,17 @@
     "stratum": "shopping_retail",
     "problemClass": "substring_collision",
     "query": "bookstore books reading",
-    "expect": ["Sundog", "Hidden Lantern"],
-    "notExpect": ["Amor Boutique", "Free People", "Charleston Shoe", "Colombia", "Faherty"],
+    "expect": [
+      "Sundog",
+      "Hidden Lantern"
+    ],
+    "notExpect": [
+      "Amor Boutique",
+      "Free People",
+      "Charleston Shoe",
+      "Colombia",
+      "Faherty"
+    ],
     "note": "STRESS: zero clothing bleeding into bookstore query"
   },
   {
@@ -440,41 +811,69 @@
     "stratum": "shopping_retail",
     "problemClass": "category_bleed",
     "query": "jewelry boutique accessories",
-    "expect": ["Lala Links"],
-    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
-    "note": "Jewelry — Lala Links should rank first"
+    "expect": [
+      "Lala Links"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Amavida",
+      "Kilwins",
+      "Power Movement"
+    ],
+    "note": "Jewelry \u2014 Lala Links should rank first"
   },
   {
     "id": "smoke-shopping-06",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "gifts souvenirs local",
-    "notExpect": ["Pescado", "Power Movement", "Spa Pearl", "Amavida"],
-    "note": "Gift shop — no restaurants, fitness, or coffee"
+    "notExpect": [
+      "Pescado",
+      "Power Movement",
+      "Spa Pearl",
+      "Amavida"
+    ],
+    "note": "Gift shop \u2014 no restaurants, fitness, or coffee"
   },
   {
     "id": "smoke-shopping-07",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "special occasion gift luxury",
-    "intent": { "category": "shopping" },
-    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf", "Pescado"],
-    "note": "Special gift — retail/shopping only, no food or fitness"
+    "intent": {
+      "category": "shopping"
+    },
+    "notExpect": [
+      "Amavida",
+      "Kilwins",
+      "Power Movement",
+      "ONO Surf",
+      "Pescado"
+    ],
+    "note": "Special gift \u2014 retail/shopping only, no food or fitness"
   },
   {
     "id": "smoke-shopping-08",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "home decor coastal living",
-    "notExpect": ["Kilwins", "Amavida", "Pescado", "Power Movement"],
-    "note": "Home decor — no food or fitness"
+    "notExpect": [
+      "Kilwins",
+      "Amavida",
+      "Pescado",
+      "Power Movement"
+    ],
+    "note": "Home decor \u2014 no food or fitness"
   },
   {
     "id": "stretch-activities-01",
     "tier": "stretch",
     "stratum": "activities_rental",
     "query": "surf shop paddle board rental",
-    "expect": ["ONO", "YOLO"],
+    "expect": [
+      "ONO",
+      "YOLO"
+    ],
     "note": "Gear rental / surf"
   },
   {
@@ -483,48 +882,80 @@
     "stratum": "activities_rental",
     "problemClass": "category_bleed",
     "query": "where can I rent a paddleboard",
-    "expect": ["YOLO"],
-    "notExpect": ["Sundog", "Kilwins", "Faherty"],
-    "note": "Natural language paddleboard rental — YOLO Board is the primary match"
+    "expect": [
+      "YOLO"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty"
+    ],
+    "note": "Natural language paddleboard rental \u2014 YOLO Board is the primary match"
   },
   {
     "id": "smoke-activities-01",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "kayak rental water activities",
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
-    "note": "Kayak/water activity rental — no retail or food"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement",
+      "Amavida"
+    ],
+    "note": "Kayak/water activity rental \u2014 no retail or food"
   },
   {
     "id": "smoke-activities-02",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "bike rental cycling beach path",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Pescado", "Faherty"],
-    "note": "Bike rental — no unrelated categories"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Pescado",
+      "Faherty"
+    ],
+    "note": "Bike rental \u2014 no unrelated categories"
   },
   {
     "id": "smoke-activities-03",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "fishing charter boat tour",
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
-    "note": "Fishing/boat charter — water activity only"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement",
+      "Amavida"
+    ],
+    "note": "Fishing/boat charter \u2014 water activity only"
   },
   {
     "id": "smoke-activities-04",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "outdoor adventure things to do",
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Spa Pearl"],
-    "note": "Outdoor activities — no retail or spa"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Spa Pearl"
+    ],
+    "note": "Outdoor activities \u2014 no retail or spa"
   },
   {
     "id": "stretch-services-01",
     "tier": "stretch",
     "stratum": "services",
     "query": "spa massage",
-    "expect": ["Spa Pearl", "Vivo Spa"],
+    "expect": [
+      "Spa Pearl",
+      "Vivo Spa"
+    ],
     "note": "Spa services"
   },
   {
@@ -533,9 +964,16 @@
     "stratum": "services",
     "problemClass": "category_bleed",
     "query": "massage therapy deep tissue",
-    "expect": ["Vivo Spa"],
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Massage therapy — spa only, not fitness studios"
+    "expect": [
+      "Vivo Spa"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Massage therapy \u2014 spa only, not fitness studios"
   },
   {
     "id": "regression-services-02",
@@ -543,9 +981,16 @@
     "stratum": "services",
     "problemClass": "category_bleed",
     "query": "yoga fitness studio",
-    "expect": ["Power Movement"],
-    "notExpect": ["Kilwins", "Sundog", "Faherty", "Spa Pearl"],
-    "note": "Fitness studio — not spa or retail"
+    "expect": [
+      "Power Movement"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "Sundog",
+      "Faherty",
+      "Spa Pearl"
+    ],
+    "note": "Fitness studio \u2014 not spa or retail"
   },
   {
     "id": "regression-services-03",
@@ -553,49 +998,85 @@
     "stratum": "services",
     "problemClass": "category_bleed",
     "query": "workout gym exercise class",
-    "expect": ["Power Movement"],
-    "notExpect": ["Kilwins", "Sundog", "Faherty", "Spa Pearl"],
-    "note": "Gym/fitness — not spa or retail"
+    "expect": [
+      "Power Movement"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "Sundog",
+      "Faherty",
+      "Spa Pearl"
+    ],
+    "note": "Gym/fitness \u2014 not spa or retail"
   },
   {
     "id": "smoke-services-01",
     "tier": "smoke",
     "stratum": "services",
     "query": "hair salon blowout styling",
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
-    "note": "Hair salon — no retail, food, or fitness"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement",
+      "Amavida"
+    ],
+    "note": "Hair salon \u2014 no retail, food, or fitness"
   },
   {
     "id": "smoke-services-02",
     "tier": "smoke",
     "stratum": "services",
     "query": "nail salon manicure pedicure",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Power Movement", "Faherty"],
-    "note": "Nail salon only — no food or fitness"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Power Movement",
+      "Faherty"
+    ],
+    "note": "Nail salon only \u2014 no food or fitness"
   },
   {
     "id": "smoke-services-03",
     "tier": "smoke",
     "stratum": "services",
     "query": "art gallery",
-    "notExpect": ["Amavida", "Kilwins", "Faherty", "Power Movement", "ONO Surf"],
-    "note": "Art galleries only — no food, fitness, clothing, or surf shops"
+    "notExpect": [
+      "Amavida",
+      "Kilwins",
+      "Faherty",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Art galleries only \u2014 no food, fitness, clothing, or surf shops"
   },
   {
     "id": "smoke-services-04",
     "tier": "smoke",
     "stratum": "services",
     "query": "local art paintings sculptures",
-    "notExpect": ["Amavida", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Local art — gallery only, no food or retail"
+    "notExpect": [
+      "Amavida",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Local art \u2014 gallery only, no food or retail"
   },
   {
     "id": "smoke-services-05",
     "tier": "smoke",
     "stratum": "services",
     "query": "photography studio portraits",
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "Amavida"],
-    "note": "Photography studio — not retail or food"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement",
+      "Amavida"
+    ],
+    "note": "Photography studio \u2014 not retail or food"
   },
   {
     "id": "regression-occasion-01",
@@ -604,40 +1085,72 @@
     "problemClass": "category_bleed",
     "query": "romantic waterfront dinner",
     "intent": {
-      "atmosphereNeeds": ["romantic", "waterfront"],
+      "atmosphereNeeds": [
+        "romantic",
+        "waterfront"
+      ],
       "mealPeriod": "dinner",
       "category": "restaurants"
     },
-    "expect": ["Pescado", "Havana"],
-    "notExpect": ["Sundog", "Kilwins"],
-    "note": "Romantic dinner spots — waterfront restaurants"
+    "expect": [
+      "Pescado",
+      "Havana"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Kilwins"
+    ],
+    "note": "Romantic dinner spots \u2014 waterfront restaurants"
   },
   {
     "id": "smoke-occasion-01",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "anniversary dinner special night out",
-    "intent": { "occasion": "anniversary", "mealPeriod": "dinner" },
-    "notExpect": ["Sundog", "Kilwins", "Charlie", "Power Movement", "Faherty"],
-    "note": "Anniversary dinner — fine dining only, no retail or casual"
+    "intent": {
+      "occasion": "anniversary",
+      "mealPeriod": "dinner"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Charlie",
+      "Power Movement",
+      "Faherty"
+    ],
+    "note": "Anniversary dinner \u2014 fine dining only, no retail or casual"
   },
   {
     "id": "smoke-occasion-02",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "date night ideas",
-    "intent": { "atmosphereNeeds": ["romantic"] },
-    "notExpect": ["Power Movement", "Sundog", "Kilwins", "Faherty"],
-    "note": "Date night — romantic restaurants/bars, no retail or fitness"
+    "intent": {
+      "atmosphereNeeds": [
+        "romantic"
+      ]
+    },
+    "notExpect": [
+      "Power Movement",
+      "Sundog",
+      "Kilwins",
+      "Faherty"
+    ],
+    "note": "Date night \u2014 romantic restaurants/bars, no retail or fitness"
   },
   {
     "id": "stretch-occasion-01",
     "tier": "stretch",
     "stratum": "occasion_vibe",
     "query": "rainy day activities things to do inside",
-    "intent": { "occasion": "rainy_day" },
-    "expect": ["Hidden Lantern", "Sundog"],
-    "note": "Rainy day — bookstores are the classic answer"
+    "intent": {
+      "occasion": "rainy_day"
+    },
+    "expect": [
+      "Hidden Lantern",
+      "Sundog"
+    ],
+    "note": "Rainy day \u2014 bookstores are the classic answer"
   },
   {
     "id": "regression-occasion-02",
@@ -645,10 +1158,20 @@
     "stratum": "occasion_vibe",
     "problemClass": "category_bleed",
     "query": "what should I do on a rainy afternoon",
-    "intent": { "category": "shopping", "specificItems": ["books", "bookstore"] },
-    "expect": ["Hidden Lantern"],
-    "notExpect": ["ONO Surf"],
-    "note": "Rainy day NL — bookstores surface. YOLO removed from notExpect: its business_type is set to 'bookstore' (wrong data — re-run enrich-search-pipeline for YOLO to fix)"
+    "intent": {
+      "category": "shopping",
+      "specificItems": [
+        "books",
+        "bookstore"
+      ]
+    },
+    "expect": [
+      "Hidden Lantern"
+    ],
+    "notExpect": [
+      "ONO Surf"
+    ],
+    "note": "Rainy day NL \u2014 bookstores surface. YOLO removed from notExpect: its business_type is set to 'bookstore' (wrong data \u2014 re-run enrich-search-pipeline for YOLO to fix)"
   },
   {
     "id": "smoke-occasion-03",
@@ -656,10 +1179,17 @@
     "stratum": "occasion_vibe",
     "query": "kid friendly family lunch",
     "intent": {
-      "atmosphereNeeds": ["family_friendly", "kid_friendly"],
+      "atmosphereNeeds": [
+        "family_friendly",
+        "kid_friendly"
+      ],
       "mealPeriod": "lunch"
     },
-    "notExpect": ["Edward", "Pescado", "Disco"],
+    "notExpect": [
+      "Edward",
+      "Pescado",
+      "Disco"
+    ],
     "note": "Fine dining should NOT dominate family queries"
   },
   {
@@ -667,17 +1197,33 @@
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "something fun to do with kids",
-    "notExpect": ["Edward", "Pescado", "Disco", "Spa Pearl", "Vivo Spa"],
-    "note": "Family activity — fine dining and spa should not dominate"
+    "notExpect": [
+      "Edward",
+      "Pescado",
+      "Disco",
+      "Spa Pearl",
+      "Vivo Spa"
+    ],
+    "note": "Family activity \u2014 fine dining and spa should not dominate"
   },
   {
     "id": "smoke-occasion-05",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "dog friendly patio outdoor dining",
-    "intent": { "atmosphereNeeds": ["dog_friendly", "outdoor"] },
-    "notExpect": ["Power Movement", "Spa Pearl", "Sundog", "Lala Links"],
-    "note": "Dog-friendly outdoor dining — no fitness/spa/bookstore/jewelry"
+    "intent": {
+      "atmosphereNeeds": [
+        "dog_friendly",
+        "outdoor"
+      ]
+    },
+    "notExpect": [
+      "Power Movement",
+      "Spa Pearl",
+      "Sundog",
+      "Lala Links"
+    ],
+    "note": "Dog-friendly outdoor dining \u2014 no fitness/spa/bookstore/jewelry"
   },
   {
     "id": "regression-bars-04",
@@ -685,44 +1231,85 @@
     "stratum": "bars_nightlife",
     "problemClass": "category_bleed",
     "query": "best place to watch the sunset with drinks",
-    "intent": { "atmosphereNeeds": ["waterfront", "outdoor"] },
-    "expect": ["Pescado", "Havana"],
-    "notExpect": ["Sundog", "Power Movement", "Faherty"],
-    "note": "Sunset/waterfront spots (duplicate case — retained from original golden set)"
+    "intent": {
+      "atmosphereNeeds": [
+        "waterfront",
+        "outdoor"
+      ]
+    },
+    "expect": [
+      "Pescado",
+      "Havana"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Power Movement",
+      "Faherty"
+    ],
+    "note": "Sunset/waterfront spots (duplicate case \u2014 retained from original golden set)"
   },
   {
     "id": "smoke-dietary-01",
     "tier": "smoke",
     "stratum": "dietary",
     "query": "gluten free food options",
-    "intent": { "dietaryNeeds": ["gluten_free"] },
-    "notExpect": ["Sundog", "ONO Surf", "Faherty"],
-    "note": "Gluten-free filter — only food venues, no retail or sports"
+    "intent": {
+      "dietaryNeeds": [
+        "gluten_free"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Gluten-free filter \u2014 only food venues, no retail or sports"
   },
   {
     "id": "smoke-dietary-02",
     "tier": "smoke",
     "stratum": "dietary",
     "query": "vegan vegetarian restaurant",
-    "intent": { "dietaryNeeds": ["vegan", "vegetarian"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf"],
-    "note": "Vegan/vegetarian options — food only"
+    "intent": {
+      "dietaryNeeds": [
+        "vegan",
+        "vegetarian"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Vegan/vegetarian options \u2014 food only"
   },
   {
     "id": "smoke-food-general-05",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "healthy food clean eating",
-    "notExpect": ["Sundog", "Faherty", "ONO Surf", "Lala Links"],
-    "note": "Healthy food — restaurants and cafes only"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "ONO Surf",
+      "Lala Links"
+    ],
+    "note": "Healthy food \u2014 restaurants and cafes only"
   },
   {
     "id": "smoke-food-town-01",
     "tier": "smoke",
     "stratum": "food_town",
     "query": "alys beach restaurants dining",
-    "notExpect": ["Sundog", "Power Movement", "Faherty", "ONO Surf"],
-    "note": "Alys Beach area dining — restaurants only, no retail or fitness"
+    "notExpect": [
+      "Sundog",
+      "Power Movement",
+      "Faherty",
+      "ONO Surf"
+    ],
+    "note": "Alys Beach area dining \u2014 restaurants only, no retail or fitness"
   },
   {
     "id": "regression-coffee-04",
@@ -730,26 +1317,44 @@
     "stratum": "coffee",
     "problemClass": "category_bleed",
     "query": "watercolor seaside coffee shop",
-    "intent": { "category": "coffee_shops" },
-    "expect": ["Amavida"],
-    "notExpect": ["ONO Surf", "Faherty", "Lala Links"],
-    "note": "WaterColor/Seaside area coffee — coffee_shops category prevents surf shop pollutant"
+    "intent": {
+      "category": "coffee_shops"
+    },
+    "expect": [
+      "Amavida"
+    ],
+    "notExpect": [
+      "ONO Surf",
+      "Faherty",
+      "Lala Links"
+    ],
+    "note": "WaterColor/Seaside area coffee \u2014 coffee_shops category prevents surf shop pollutant"
   },
   {
     "id": "smoke-bars-04",
     "tier": "smoke",
     "stratum": "bars_nightlife",
     "query": "grayton beach bar",
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Grayton Beach bar — no bookstore, ice cream, clothing, or fitness"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Grayton Beach bar \u2014 no bookstore, ice cream, clothing, or fitness"
   },
   {
     "id": "smoke-food-town-02",
     "tier": "smoke",
     "stratum": "food_town",
     "query": "blue mountain beach food",
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "Spa Pearl"],
-    "note": "Blue Mountain area food — restaurants only"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "Spa Pearl"
+    ],
+    "note": "Blue Mountain area food \u2014 restaurants only"
   },
   {
     "id": "regression-coffee-05",
@@ -757,8 +1362,16 @@
     "stratum": "coffee",
     "problemClass": "category_bleed",
     "query": "where can I get coffee this morning",
-    "expect": ["Amavida", "3rd Cup", "Turbo"],
-    "notExpect": ["Kilwins", "Faherty", "ONO Surf"],
+    "expect": [
+      "Amavida",
+      "3rd Cup",
+      "Turbo"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "Faherty",
+      "ONO Surf"
+    ],
     "note": "Conversational morning coffee"
   },
   {
@@ -766,17 +1379,29 @@
     "tier": "smoke",
     "stratum": "nl_conversational",
     "query": "I'm looking for a nice dinner spot tonight",
-    "intent": { "mealPeriod": "dinner" },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Conversational dinner query — no retail or fitness"
+    "intent": {
+      "mealPeriod": "dinner"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Conversational dinner query \u2014 no retail or fitness"
   },
   {
     "id": "smoke-nl-02",
     "tier": "smoke",
     "stratum": "nl_conversational",
     "query": "need a gift for someone special",
-    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf"],
-    "note": "Gift shopping NL — retail/gift shops, no food or fitness"
+    "notExpect": [
+      "Amavida",
+      "Kilwins",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Gift shopping NL \u2014 retail/gift shops, no food or fitness"
   },
   {
     "id": "regression-shopping-06",
@@ -784,18 +1409,35 @@
     "stratum": "shopping_retail",
     "problemClass": "substring_collision",
     "query": "where can I find a good book",
-    "intent": { "category": "shopping", "specificItems": ["books", "bookstore"] },
-    "expect": ["Sundog", "Hidden Lantern"],
-    "notExpect": ["Faherty", "Amor", "Free People"],
-    "note": "Conversational bookstore query — no clothing"
+    "intent": {
+      "category": "shopping",
+      "specificItems": [
+        "books",
+        "bookstore"
+      ]
+    },
+    "expect": [
+      "Sundog",
+      "Hidden Lantern"
+    ],
+    "notExpect": [
+      "Faherty",
+      "Amor",
+      "Free People"
+    ],
+    "note": "Conversational bookstore query \u2014 no clothing"
   },
   {
     "id": "smoke-occasion-06",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "looking for somewhere to relax and decompress",
-    "notExpect": ["Sundog", "Faherty", "ONO Surf"],
-    "note": "Relaxation query — spa and wellness venues should dominate"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "ONO Surf"
+    ],
+    "note": "Relaxation query \u2014 spa and wellness venues should dominate"
   },
   {
     "id": "regression-coffee-06",
@@ -803,184 +1445,368 @@
     "stratum": "coffee",
     "problemClass": "category_bleed",
     "query": "what's a good spot for a business meeting",
-    "intent": { "category": "coffee_shops" },
-    "expect": ["Amavida", "3rd Cup"],
-    "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
-    "note": "Business meeting — cafes with atmosphere, not ice cream or surf shops"
+    "intent": {
+      "category": "coffee_shops"
+    },
+    "expect": [
+      "Amavida",
+      "3rd Cup"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Business meeting \u2014 cafes with atmosphere, not ice cream or surf shops"
   },
   {
     "id": "smoke-activities-05",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "kayak rental paddleboard",
-    "intent": { "category": "activities", "specificItems": ["kayak", "paddleboard"] },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
-    "note": "Water sport rentals — activities category only"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "kayak",
+        "paddleboard"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty"
+    ],
+    "note": "Water sport rentals \u2014 activities category only"
   },
   {
     "id": "smoke-activities-06",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "bike rental bicycle 30a",
-    "intent": { "category": "activities", "specificItems": ["bike rental", "bicycle"] },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Spa Pearl"],
-    "note": "Bike rental — activities only, no food or spa"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "bike rental",
+        "bicycle"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Spa Pearl"
+    ],
+    "note": "Bike rental \u2014 activities only, no food or spa"
   },
   {
     "id": "smoke-activities-07",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "surf lessons beginner surfing",
-    "intent": { "category": "activities", "specificItems": ["surf lessons"] },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
-    "note": "Surf lessons — activities/water sports"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "surf lessons"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Surf lessons \u2014 activities/water sports"
   },
   {
     "id": "smoke-activities-08",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "fishing charter boat trip",
-    "intent": { "category": "activities", "specificItems": ["fishing charter"] },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
-    "note": "Fishing charter — marine activities"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "fishing charter"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty"
+    ],
+    "note": "Fishing charter \u2014 marine activities"
   },
   {
     "id": "smoke-services-06",
     "tier": "smoke",
     "stratum": "services",
     "query": "yoga class studio 30a",
-    "intent": { "category": "activities", "specificItems": ["yoga"] },
-    "notExpect": ["Sundog", "Amavida", "Kilwins", "Faherty"],
-    "note": "Yoga studio — fitness/wellness activities"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "yoga"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Amavida",
+      "Kilwins",
+      "Faherty"
+    ],
+    "note": "Yoga studio \u2014 fitness/wellness activities"
   },
   {
     "id": "smoke-activities-09",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "golf course tee time",
-    "intent": { "category": "activities", "specificItems": ["golf"] },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
-    "note": "Golf — activities only"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "golf"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Golf \u2014 activities only"
   },
   {
     "id": "smoke-activities-10",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "pickleball tennis courts",
-    "intent": { "category": "activities" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
-    "note": "Racket sports courts — activities"
+    "intent": {
+      "category": "activities"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty"
+    ],
+    "note": "Racket sports courts \u2014 activities"
   },
   {
     "id": "smoke-activities-11",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "snorkeling scuba diving",
-    "intent": { "category": "activities", "specificItems": ["snorkeling", "scuba"] },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
-    "note": "Underwater activities — no food or shopping"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "snorkeling",
+        "scuba"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty"
+    ],
+    "note": "Underwater activities \u2014 no food or shopping"
   },
   {
     "id": "smoke-activities-12",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "dolphin cruise boat tour",
-    "intent": { "category": "activities", "specificItems": ["boat tour", "dolphin"] },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Boat tour — marine/charter activities"
+    "intent": {
+      "category": "activities",
+      "specificItems": [
+        "boat tour",
+        "dolphin"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Boat tour \u2014 marine/charter activities"
   },
   {
     "id": "smoke-activities-13",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "axe throwing escape room",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
-    "note": "Entertainment activities — not typical food/retail"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Entertainment activities \u2014 not typical food/retail"
   },
   {
     "id": "smoke-services-07",
     "tier": "smoke",
     "stratum": "services",
     "query": "private chef catering dinner",
-    "intent": { "category": "services" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
-    "note": "Private chef / catering service — services category, not restaurants"
+    "intent": {
+      "category": "services"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Private chef / catering service \u2014 services category, not restaurants"
   },
   {
     "id": "smoke-services-08",
     "tier": "smoke",
     "stratum": "services",
     "query": "photographer vacation photos",
-    "intent": { "category": "services" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
-    "note": "Vacation photographer — services category"
+    "intent": {
+      "category": "services"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Vacation photographer \u2014 services category"
   },
   {
     "id": "smoke-services-09",
     "tier": "smoke",
     "stratum": "services",
     "query": "hair salon blowout styling",
-    "intent": { "category": "services" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
-    "note": "Hair salon — services/beauty category"
+    "intent": {
+      "category": "services"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Hair salon \u2014 services/beauty category"
   },
   {
     "id": "smoke-services-10",
     "tier": "smoke",
     "stratum": "services",
     "query": "spa massage facial treatment",
-    "intent": { "category": "services", "atmosphereNeeds": ["relaxing"] },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
-    "note": "Spa services — not food or retail"
+    "intent": {
+      "category": "services",
+      "atmosphereNeeds": [
+        "relaxing"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Spa services \u2014 not food or retail"
   },
   {
     "id": "smoke-services-11",
     "tier": "smoke",
     "stratum": "services",
     "query": "wedding venue ceremony location",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
-    "note": "Wedding venue — event spaces and unique venues"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Wedding venue \u2014 event spaces and unique venues"
   },
   {
     "id": "smoke-services-12",
     "tier": "smoke",
     "stratum": "services",
     "query": "real estate agent home rental",
-    "intent": { "category": "services" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "ONO Surf", "Faherty"],
-    "note": "Real estate services — no food or retail"
+    "intent": {
+      "category": "services"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Real estate services \u2014 no food or retail"
   },
   {
     "id": "smoke-single-token-04",
     "tier": "smoke",
     "stratum": "single_token_stress",
     "query": "coffee",
-    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Pescado", "Lala Links"],
-    "note": "SMS: single word — coffee shops only, no restaurants or retail"
+    "notExpect": [
+      "Sundog",
+      "ONO Surf",
+      "Faherty",
+      "Pescado",
+      "Lala Links"
+    ],
+    "note": "SMS: single word \u2014 coffee shops only, no restaurants or retail"
   },
   {
     "id": "smoke-single-token-05",
     "tier": "smoke",
     "stratum": "single_token_stress",
     "query": "food",
-    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Lala Links", "Power Movement"],
-    "note": "SMS: single word food — restaurants only"
+    "notExpect": [
+      "Sundog",
+      "ONO Surf",
+      "Faherty",
+      "Lala Links",
+      "Power Movement"
+    ],
+    "note": "SMS: single word food \u2014 restaurants only"
   },
   {
     "id": "smoke-bars-05",
     "tier": "smoke",
     "stratum": "bars_nightlife",
     "query": "bar",
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "SMS: single word bar — bars only, no retail"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "SMS: single word bar \u2014 bars only, no retail"
   },
   {
     "id": "smoke-food-dish-10",
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "pizza 30a",
-    "intent": { "specificItems": ["pizza"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Amavida", "Kilwins", "Faherty"],
+    "intent": {
+      "specificItems": [
+        "pizza"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Amavida",
+      "Kilwins",
+      "Faherty"
+    ],
     "note": "SMS: short pizza query with location suffix"
   },
   {
@@ -988,8 +1814,15 @@
     "tier": "smoke",
     "stratum": "coffee",
     "query": "best coffee inlet beach",
-    "intent": { "category": "coffee_shops" },
-    "notExpect": ["Kilwins", "ONO Surf", "Faherty", "Power Movement"],
+    "intent": {
+      "category": "coffee_shops"
+    },
+    "notExpect": [
+      "Kilwins",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
     "note": "SMS-style location + category"
   },
   {
@@ -997,8 +1830,18 @@
     "tier": "smoke",
     "stratum": "food_town",
     "query": "tacos seaside",
-    "intent": { "specificItems": ["tacos"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
+    "intent": {
+      "specificItems": [
+        "tacos"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
     "note": "SMS: food + location"
   },
   {
@@ -1006,112 +1849,198 @@
     "tier": "smoke",
     "stratum": "food_dish",
     "query": "where can I get a really good steak",
-    "intent": { "specificItems": ["steak"], "category": "restaurants" },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "NL steak query — steakhouse or upscale restaurants"
+    "intent": {
+      "specificItems": [
+        "steak"
+      ],
+      "category": "restaurants"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "NL steak query \u2014 steakhouse or upscale restaurants"
   },
   {
     "id": "smoke-occasion-07",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "best upscale dinner 30a special occasion",
-    "intent": { "occasion": "celebration", "mealPeriod": "dinner" },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Upscale dinner — fine dining venues only"
+    "intent": {
+      "occasion": "celebration",
+      "mealPeriod": "dinner"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Upscale dinner \u2014 fine dining venues only"
   },
   {
     "id": "smoke-occasion-08",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "where should we go for our anniversary dinner",
-    "intent": { "occasion": "date_night", "mealPeriod": "dinner" },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement", "ONO Surf"],
-    "note": "Anniversary NL — upscale/romantic restaurants"
+    "intent": {
+      "occasion": "date_night",
+      "mealPeriod": "dinner"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Anniversary NL \u2014 upscale/romantic restaurants"
   },
   {
     "id": "smoke-food-general-06",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "we need a place for a large group dinner",
-    "intent": { "mealPeriod": "dinner" },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Group dinner NL — restaurants with capacity"
+    "intent": {
+      "mealPeriod": "dinner"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Group dinner NL \u2014 restaurants with capacity"
   },
   {
     "id": "smoke-food-general-07",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "I want to try something new for breakfast",
-    "intent": { "mealPeriod": "breakfast" },
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf"],
-    "note": "NL breakfast exploration — breakfast restaurants/cafes"
+    "intent": {
+      "mealPeriod": "breakfast"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "NL breakfast exploration \u2014 breakfast restaurants/cafes"
   },
   {
     "id": "smoke-nl-03",
     "tier": "smoke",
     "stratum": "nl_conversational",
     "query": "somewhere to take out-of-town guests",
-    "notExpect": ["Power Movement", "Spa Pearl"],
-    "note": "NL hosting query — iconic / notable 30A spots"
+    "notExpect": [
+      "Power Movement",
+      "Spa Pearl"
+    ],
+    "note": "NL hosting query \u2014 iconic / notable 30A spots"
   },
   {
     "id": "smoke-food-general-08",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "what are the most popular restaurants on 30a",
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf", "Lala Links"],
-    "note": "Discovery query — should return well-known restaurants"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "ONO Surf",
+      "Lala Links"
+    ],
+    "note": "Discovery query \u2014 should return well-known restaurants"
   },
   {
     "id": "smoke-food-town-04",
     "tier": "smoke",
     "stratum": "food_town",
     "query": "restaurants in inlet beach",
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "ONO Surf", "Lala Links"],
-    "note": "Inlet Beach area — restaurants only, no retail or fitness"
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "ONO Surf",
+      "Lala Links"
+    ],
+    "note": "Inlet Beach area \u2014 restaurants only, no retail or fitness"
   },
   {
     "id": "smoke-coffee-02",
     "tier": "smoke",
     "stratum": "coffee",
     "query": "coffee near watercolor",
-    "intent": { "category": "coffee_shops" },
-    "notExpect": ["ONO Surf", "Faherty", "Lala Links", "Power Movement"],
-    "note": "WaterColor-adjacent coffee — cafes only"
+    "intent": {
+      "category": "coffee_shops"
+    },
+    "notExpect": [
+      "ONO Surf",
+      "Faherty",
+      "Lala Links",
+      "Power Movement"
+    ],
+    "note": "WaterColor-adjacent coffee \u2014 cafes only"
   },
   {
     "id": "smoke-activities-14",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "things to do in seagrove",
-    "notExpect": ["Power Movement", "Spa Pearl"],
-    "note": "Seagrove discovery — activities and dining"
+    "notExpect": [
+      "Power Movement",
+      "Spa Pearl"
+    ],
+    "note": "Seagrove discovery \u2014 activities and dining"
   },
   {
     "id": "smoke-shopping-09",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "rosemary beach shopping boutiques",
-    "intent": { "category": "shopping" },
-    "notExpect": ["Amavida", "Power Movement", "Kilwins"],
-    "note": "Rosemary Beach boutiques — shopping only"
+    "intent": {
+      "category": "shopping"
+    },
+    "notExpect": [
+      "Amavida",
+      "Power Movement",
+      "Kilwins"
+    ],
+    "note": "Rosemary Beach boutiques \u2014 shopping only"
   },
   {
     "id": "smoke-bars-06",
     "tier": "smoke",
     "stratum": "bars_nightlife",
     "query": "santa rosa beach bars",
-    "intent": { "category": "bars" },
-    "notExpect": ["Sundog", "Kilwins", "Faherty", "Power Movement"],
-    "note": "Santa Rosa Beach bars — bars/nightlife only"
+    "intent": {
+      "category": "bars"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Santa Rosa Beach bars \u2014 bars/nightlife only"
   },
   {
     "id": "smoke-activities-15",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "dune allen beach activities",
-    "intent": { "category": "activities" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
+    "intent": {
+      "category": "activities"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty"
+    ],
     "note": "Dune Allen area activities"
   },
   {
@@ -1119,44 +2048,81 @@
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "women's clothing beach resort wear",
-    "intent": { "category": "shopping" },
-    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
-    "note": "Women's clothing — shopping boutiques only"
+    "intent": {
+      "category": "shopping"
+    },
+    "notExpect": [
+      "Sundog",
+      "Amavida",
+      "Kilwins",
+      "Power Movement"
+    ],
+    "note": "Women's clothing \u2014 shopping boutiques only"
   },
   {
     "id": "smoke-shopping-11",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "swimwear bathing suit beach",
-    "intent": { "category": "shopping" },
-    "notExpect": ["Sundog", "Amavida", "Kilwins", "Power Movement"],
-    "note": "Swimwear — clothing/retail only"
+    "intent": {
+      "category": "shopping"
+    },
+    "notExpect": [
+      "Sundog",
+      "Amavida",
+      "Kilwins",
+      "Power Movement"
+    ],
+    "note": "Swimwear \u2014 clothing/retail only"
   },
   {
     "id": "smoke-shopping-12",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "jewelry accessories gifts",
-    "intent": { "category": "shopping" },
-    "notExpect": ["Amavida", "Power Movement", "ONO Surf"],
-    "note": "Jewelry and accessories — shopping only"
+    "intent": {
+      "category": "shopping"
+    },
+    "notExpect": [
+      "Amavida",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Jewelry and accessories \u2014 shopping only"
   },
   {
     "id": "smoke-services-13",
     "tier": "smoke",
     "stratum": "services",
     "query": "art gallery local artist",
-    "intent": { "category": "shopping" },
-    "notExpect": ["Amavida", "Kilwins", "Power Movement", "ONO Surf"],
-    "note": "Art gallery — shopping/gallery category"
+    "intent": {
+      "category": "shopping"
+    },
+    "notExpect": [
+      "Amavida",
+      "Kilwins",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Art gallery \u2014 shopping/gallery category"
   },
   {
     "id": "smoke-dietary-03",
     "tier": "smoke",
     "stratum": "dietary",
     "query": "gluten free breakfast rosemary beach",
-    "intent": { "dietaryNeeds": ["gluten_free"], "mealPeriod": "breakfast" },
-    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
+    "intent": {
+      "dietaryNeeds": [
+        "gluten_free"
+      ],
+      "mealPeriod": "breakfast"
+    },
+    "notExpect": [
+      "Sundog",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
     "note": "Gluten-free + location + meal period"
   },
   {
@@ -1164,17 +2130,38 @@
     "tier": "smoke",
     "stratum": "dietary",
     "query": "dairy free options 30a",
-    "intent": { "dietaryNeeds": ["dairy_free"] },
-    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
-    "note": "Dairy-free — food venues only"
+    "intent": {
+      "dietaryNeeds": [
+        "dairy_free"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Dairy-free \u2014 food venues only"
   },
   {
     "id": "smoke-dietary-05",
     "tier": "smoke",
     "stratum": "dietary",
     "query": "kid friendly gluten free food",
-    "intent": { "dietaryNeeds": ["gluten_free"], "atmosphereNeeds": ["family_friendly"] },
-    "notExpect": ["Sundog", "ONO Surf", "Faherty", "Power Movement"],
+    "intent": {
+      "dietaryNeeds": [
+        "gluten_free"
+      ],
+      "atmosphereNeeds": [
+        "family_friendly"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
     "note": "Multi-filter: dietary + family"
   },
   {
@@ -1183,60 +2170,102 @@
     "stratum": "coffee",
     "problemClass": "category_bleed",
     "query": "what's better for coffee 3rd cup or amavida",
-    "expect": ["Amavida", "3rd Cup"],
-    "notExpect": ["Kilwins", "ONO Surf", "Faherty"],
-    "note": "Direct comparison — both named businesses should appear"
+    "expect": [
+      "Amavida",
+      "3rd Cup"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "ONO Surf",
+      "Faherty"
+    ],
+    "note": "Direct comparison \u2014 both named businesses should appear"
   },
   {
     "id": "smoke-food-general-09",
     "tier": "smoke",
     "stratum": "food_general",
     "query": "cheapest lunch option near me",
-    "intent": { "mealPeriod": "lunch" },
-    "notExpect": ["Sundog", "Faherty", "Power Movement", "Spa Pearl"],
-    "note": "Budget lunch — food only, casual spots"
+    "intent": {
+      "mealPeriod": "lunch"
+    },
+    "notExpect": [
+      "Sundog",
+      "Faherty",
+      "Power Movement",
+      "Spa Pearl"
+    ],
+    "note": "Budget lunch \u2014 food only, casual spots"
   },
   {
     "id": "smoke-occasion-09",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "bachelorette party activities fun",
-    "notExpect": ["Sundog", "Power Movement"],
-    "note": "Bachelorette — fun social activities, bars, unique experiences"
+    "notExpect": [
+      "Sundog",
+      "Power Movement"
+    ],
+    "note": "Bachelorette \u2014 fun social activities, bars, unique experiences"
   },
   {
     "id": "smoke-occasion-10",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "girls trip shopping lunch cocktails",
-    "intent": { "occasion": "girls_trip" },
-    "notExpect": ["Power Movement", "ONO Surf"],
-    "note": "Girls trip combo query — shopping + dining"
+    "intent": {
+      "occasion": "girls_trip"
+    },
+    "notExpect": [
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Girls trip combo query \u2014 shopping + dining"
   },
   {
     "id": "smoke-occasion-11",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "beach vacation family fun 30a",
-    "notExpect": ["Disco", "Pescado", "Edward", "Spa Pearl"],
-    "note": "Family vacation — family-appropriate activities and dining"
+    "notExpect": [
+      "Disco",
+      "Pescado",
+      "Edward",
+      "Spa Pearl"
+    ],
+    "note": "Family vacation \u2014 family-appropriate activities and dining"
   },
   {
     "id": "smoke-occasion-12",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "honeymoon romantic getaway",
-    "intent": { "occasion": "date_night", "atmosphereNeeds": ["romantic"] },
-    "notExpect": ["Sundog", "Kilwins", "Power Movement", "ONO Surf"],
-    "note": "Honeymoon/romantic — upscale dining and spa"
+    "intent": {
+      "occasion": "date_night",
+      "atmosphereNeeds": [
+        "romantic"
+      ]
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Honeymoon/romantic \u2014 upscale dining and spa"
   },
   {
     "id": "smoke-occasion-13",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "things to do on a budget 30a free",
-    "notExpect": ["Pescado", "Edward", "Disco", "Spa Pearl"],
-    "note": "Budget travel — affordable activities and casual dining"
+    "notExpect": [
+      "Pescado",
+      "Edward",
+      "Disco",
+      "Spa Pearl"
+    ],
+    "note": "Budget travel \u2014 affordable activities and casual dining"
   },
   {
     "id": "regression-single-token-01",
@@ -1244,53 +2273,92 @@
     "stratum": "single_token_stress",
     "problemClass": "substring_collision",
     "query": "bookstore",
-    "expect": ["Sundog", "Hidden Lantern"],
-    "notExpect": ["Amavida", "Kilwins", "ONO Surf", "Faherty", "Power Movement"],
-    "note": "Single-word bookstore — only book shops, nothing else"
+    "expect": [
+      "Sundog",
+      "Hidden Lantern"
+    ],
+    "notExpect": [
+      "Amavida",
+      "Kilwins",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Single-word bookstore \u2014 only book shops, nothing else"
   },
   {
     "id": "smoke-shopping-13",
     "tier": "smoke",
     "stratum": "shopping_retail",
     "query": "grocery store market",
-    "notExpect": ["Amavida", "Kilwins", "ONO Surf", "Faherty", "Power Movement"],
-    "note": "Grocery/market — food market stores only"
+    "notExpect": [
+      "Amavida",
+      "Kilwins",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Grocery/market \u2014 food market stores only"
   },
   {
     "id": "smoke-activities-16",
     "tier": "smoke",
     "stratum": "activities_rental",
     "query": "gym fitness workout",
-    "intent": { "category": "activities" },
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty"],
-    "note": "Fitness/gym — activities/health only"
+    "intent": {
+      "category": "activities"
+    },
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty"
+    ],
+    "note": "Fitness/gym \u2014 activities/health only"
   },
   {
     "id": "smoke-services-14",
     "tier": "smoke",
     "stratum": "services",
     "query": "florist flowers bouquet",
-    "notExpect": ["Sundog", "Kilwins", "Amavida", "Faherty", "Power Movement"],
-    "note": "Florist — specialty service, no food or clothing"
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Amavida",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Florist \u2014 specialty service, no food or clothing"
   },
   {
     "id": "smoke-occasion-14",
     "tier": "smoke",
     "stratum": "occasion_vibe",
     "query": "children activities toddlers indoor play",
-    "notExpect": ["Disco", "Pescado", "Spa Pearl", "Vivo Spa", "Red Bar"],
-    "note": "Children's activities — no adult nightlife or fine dining"
+    "notExpect": [
+      "Disco",
+      "Pescado",
+      "Spa Pearl",
+      "Vivo Spa",
+      "Red Bar"
+    ],
+    "note": "Children's activities \u2014 no adult nightlife or fine dining"
   },
-
   {
     "id": "regression-bars-nightlife-01",
     "tier": "regression",
     "stratum": "bars_nightlife",
     "problemClass": "category_keyword",
     "query": "nightlife bars live music 30a",
-    "expect": ["Red Bar"],
-    "notExpect": ["Sundog", "Kilwins", "Power Movement"],
-    "note": "Nightlife → bars category. Red Bar must surface for live music queries."
+    "expect": [
+      "Red Bar"
+    ],
+    "notExpect": [
+      "Sundog",
+      "Kilwins",
+      "Power Movement"
+    ],
+    "note": "Nightlife \u2192 bars category. Red Bar must surface for live music queries."
   },
   {
     "id": "regression-rainy-day-01",
@@ -1298,9 +2366,15 @@
     "stratum": "occasion_vibe",
     "problemClass": "category_keyword",
     "query": "what to do on a rainy day",
-    "expect": ["Sundog", "Hidden Lantern"],
-    "notExpect": ["Power Movement", "ONO Surf"],
-    "note": "Rainy day → shopping + books. Bookstores are the 30A rainy day answer."
+    "expect": [
+      "Sundog",
+      "Hidden Lantern"
+    ],
+    "notExpect": [
+      "Power Movement",
+      "ONO Surf"
+    ],
+    "note": "Rainy day \u2192 shopping + books. Bookstores are the 30A rainy day answer."
   },
   {
     "id": "regression-remote-work-01",
@@ -1308,9 +2382,17 @@
     "stratum": "coffee",
     "problemClass": "category_keyword",
     "query": "best place to work with laptop and wifi",
-    "expect": ["Amavida", "3rd Cup"],
-    "notExpect": ["Kilwins", "ONO Surf", "Faherty", "Power Movement"],
-    "note": "Remote work → coffee_shops. Pair with regression-remote-work-02."
+    "expect": [
+      "Amavida",
+      "3rd Cup"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "ONO Surf",
+      "Faherty",
+      "Power Movement"
+    ],
+    "note": "Remote work \u2192 coffee_shops. Pair with regression-remote-work-02."
   },
   {
     "id": "regression-remote-work-02",
@@ -1318,9 +2400,16 @@
     "stratum": "coffee",
     "problemClass": "category_keyword",
     "query": "good spot for a business meeting",
-    "expect": ["Amavida", "3rd Cup"],
-    "notExpect": ["Kilwins", "Power Movement", "Faherty"],
-    "note": "Business meeting → coffee_shops, not restaurants or retail."
+    "expect": [
+      "Amavida",
+      "3rd Cup"
+    ],
+    "notExpect": [
+      "Kilwins",
+      "Power Movement",
+      "Faherty"
+    ],
+    "note": "Business meeting \u2192 coffee_shops, not restaurants or retail."
   },
   {
     "id": "regression-massage-spa-01",
@@ -1328,8 +2417,12 @@
     "stratum": "services",
     "problemClass": "category_keyword",
     "query": "deep tissue massage",
-    "notExpect": ["Power Movement", "ONO Surf", "Sundog"],
-    "note": "Massage → services, not fitness studios. Pair with regression-massage-spa-02."
+    "notExpect": [
+      "Power Movement",
+      "ONO Surf",
+      "Sundog"
+    ],
+    "note": "Massage \u2192 services, not fitness studios. Pair with regression-massage-spa-02."
   },
   {
     "id": "regression-massage-spa-02",
@@ -1337,8 +2430,50 @@
     "stratum": "services",
     "problemClass": "category_keyword",
     "query": "facial treatment spa",
-    "notExpect": ["Power Movement", "Sundog", "Faherty"],
-    "note": "Spa treatment → services, not shopping or fitness."
+    "notExpect": [
+      "Power Movement",
+      "Sundog",
+      "Faherty"
+    ],
+    "note": "Spa treatment \u2192 services, not shopping or fitness."
+  },
+  {
+    "id": "regression-hair-salon-01",
+    "tier": "regression",
+    "stratum": "services",
+    "problemClass": "category_bleed",
+    "query": "hair salon blowout styling",
+    "expect": [
+      "Halo Salon"
+    ],
+    "notExpect": [
+      "Coast Land Title",
+      "Arrow Exterminators",
+      "Burke Blue",
+      "Avari",
+      "30A Burger",
+      "Hidden Lantern"
+    ],
+    "note": "Hair salon previously had no routing rule and fell through to bare FTS against the 182-business services bucket \u2014 returned title companies, pest control, and a burger joint instead of any actual salon. Now routes to hair_salons."
+  },
+  {
+    "id": "regression-nail-salon-01",
+    "tier": "regression",
+    "stratum": "services",
+    "problemClass": "category_bleed",
+    "query": "nail salon manicure pedicure",
+    "expect": [
+      "Nail Garten"
+    ],
+    "notExpect": [
+      "Coast Land Title",
+      "Arrow Exterminators",
+      "Burke Blue",
+      "Avari",
+      "30A Burger",
+      "Hidden Lantern"
+    ],
+    "note": "Nail salon \u2014 only 1 of 10 prior results was an actual nail salon, rest were unrelated services-bucket businesses. Now routes to nail_salons."
   },
   {
     "id": "regression-collision-mobility-01",
@@ -1347,8 +2482,14 @@
     "problemClass": "substring_collision",
     "query": "golf carts",
     "minResults": 0,
-    "notExpect": ["Golf Club", "Golf Course", "Links", "Greens", "Rainforest"],
-    "note": "Cart rental ≠ golf course. minResults:0 = honest empty OK if no vendors in DB. Collision pair with regression-collision-golf-course-01."
+    "notExpect": [
+      "Golf Club",
+      "Golf Course",
+      "Links",
+      "Greens",
+      "Rainforest"
+    ],
+    "note": "Cart rental \u2260 golf course. minResults:0 = honest empty OK if no vendors in DB. Collision pair with regression-collision-golf-course-01."
   },
   {
     "id": "regression-collision-golf-course-01",
@@ -1356,7 +2497,12 @@
     "stratum": "activities_rental",
     "problemClass": "substring_collision",
     "query": "golf course tee time",
-    "notExpect": ["cart rental", "Cart Co", "LSV", "mobility"],
+    "notExpect": [
+      "cart rental",
+      "Cart Co",
+      "LSV",
+      "mobility"
+    ],
     "note": "Collision pair: golf courses ARE correct results here. Cart rental businesses must NOT appear."
   },
   {
@@ -1365,9 +2511,18 @@
     "stratum": "shopping_retail",
     "problemClass": "substring_collision",
     "query": "bookstore",
-    "expect": ["Sundog", "Hidden Lantern"],
-    "notExpect": ["restaurant", "coffee", "bar", "Faherty", "Free People"],
-    "note": "Collision pair: bookstore ≠ general retail. V2 routing must use search_tags ['books'] to isolate."
+    "expect": [
+      "Sundog",
+      "Hidden Lantern"
+    ],
+    "notExpect": [
+      "restaurant",
+      "coffee",
+      "bar",
+      "Faherty",
+      "Free People"
+    ],
+    "note": "Collision pair: bookstore \u2260 general retail. V2 routing must use search_tags ['books'] to isolate."
   },
   {
     "id": "smoke-missing-inventory-01",
@@ -1376,7 +2531,10 @@
     "problemClass": "missing_inventory",
     "query": "rent a cart",
     "minResults": 0,
-    "notExpect": ["Golf Club", "Golf Course"],
-    "note": "Honest empty acceptable — no mobility rental vendors yet in DB. Must not return golf courses."
+    "notExpect": [
+      "Golf Club",
+      "Golf Course"
+    ],
+    "note": "Honest empty acceptable \u2014 no mobility rental vendors yet in DB. Must not return golf courses."
   }
 ]

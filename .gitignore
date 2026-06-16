@@ -45,6 +45,8 @@ next-env.d.ts
 
 # Local-only scripts (never committed)
 /local/
+scripts/_tmp_*.ts
+scripts/tmp/
 
 # Supabase CLI — commit migrations/, seed.sql, README, config.toml; ignore local machine state
 .supabase/

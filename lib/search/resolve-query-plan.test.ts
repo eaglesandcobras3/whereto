@@ -45,11 +45,11 @@ describe("collision_mobility_rental vs collision_golf_activity", () => {
 });
 
 describe("collision_books_retail", () => {
-  it("routes 'bookstore' to books tag", () => {
+  it("routes 'bookstore' to books tag in specialty_retail", () => {
     const plan = resolveQueryPlan("bookstore");
     expect(plan.matchedRuleId).toBe("collision_books_retail");
     expect(plan.requiredTags).toContain("books");
-    expect(plan.categorySlug).toBe("shopping");
+    expect(plan.categorySlug).toBe("specialty_retail");
   });
 
   it("routes 'bookstore books reading' to books tag", () => {
@@ -118,11 +118,25 @@ describe("category_remote_work", () => {
   });
 });
 
-describe("category_ice_cream", () => {
-  it("routes ice cream shop queries", () => {
+describe("category_desserts", () => {
+  it("routes ice cream shop queries to desserts category", () => {
     const plan = resolveQueryPlan("ice cream shop");
-    expect(plan.matchedRuleId).toBe("category_ice_cream");
+    expect(plan.matchedRuleId).toBe("category_desserts");
+    expect(plan.categorySlug).toBe("desserts");
     expect(plan.searchTerms).toContain("ice cream");
+  });
+
+  it("routes donut queries to desserts category", () => {
+    const plan = resolveQueryPlan("donuts near rosemary beach");
+    expect(plan.matchedRuleId).toBe("category_desserts");
+    expect(plan.categorySlug).toBe("desserts");
+    expect(plan.searchTerms).toContain("donuts");
+  });
+
+  it("routes candy shop queries to desserts category", () => {
+    const plan = resolveQueryPlan("candy shop sweet treats");
+    expect(plan.matchedRuleId).toBe("category_desserts");
+    expect(plan.categorySlug).toBe("desserts");
   });
 });
 
@@ -143,26 +157,63 @@ describe("category_wine_bar", () => {
 });
 
 describe("category_shopping_boutiques", () => {
-  it("routes girls trip shopping to shopping category", () => {
+  it("routes girls trip shopping to boutiques subcategory", () => {
     const plan = resolveQueryPlan("girls trip shopping boutiques");
     expect(plan.matchedRuleId).toBe("category_shopping_boutiques");
-    expect(plan.categorySlug).toBe("shopping");
+    expect(plan.categorySlug).toBe("boutiques");
+  });
+
+  it("routes bare 'boutique' to boutiques", () => {
+    const plan = resolveQueryPlan("boutique");
+    expect(plan.matchedRuleId).toBe("category_shopping_boutiques");
+    expect(plan.categorySlug).toBe("boutiques");
   });
 });
 
 describe("category_footwear", () => {
-  it("routes shoe queries to shopping", () => {
+  it("routes shoe queries to dedicated footwear category", () => {
     const plan = resolveQueryPlan("shoes sandals footwear");
     expect(plan.matchedRuleId).toBe("category_footwear");
-    expect(plan.categorySlug).toBe("shopping");
+    expect(plan.categorySlug).toBe("footwear");
   });
 });
 
 describe("category_jewelry", () => {
-  it("routes jewelry boutique queries to shopping", () => {
+  it("routes jewelry boutique queries to dedicated jewelry category", () => {
     const plan = resolveQueryPlan("jewelry boutique accessories");
     expect(plan.matchedRuleId).toBe("category_jewelry");
-    expect(plan.categorySlug).toBe("shopping");
+    expect(plan.categorySlug).toBe("jewelry");
+  });
+});
+
+describe("collision_books_retail (subcategory update)", () => {
+  it("routes bookstore to specialty_retail", () => {
+    const plan = resolveQueryPlan("bookstore");
+    expect(plan.matchedRuleId).toBe("collision_books_retail");
+    expect(plan.categorySlug).toBe("specialty_retail");
+    expect(plan.requiredTags).toContain("books");
+  });
+});
+
+describe("category_breakfast_brunch", () => {
+  it("routes breakfast queries via anyTags filter (no categorySlug — spans restaurants + coffee_shops)", () => {
+    const plan = resolveQueryPlan("best place for breakfast");
+    expect(plan.matchedRuleId).toBe("category_breakfast_brunch");
+    expect(plan.categorySlug).toBeNull();
+    expect(plan.anyTags).toContain("breakfast");
+    expect(plan.searchTerms).toContain("breakfast");
+  });
+
+  it("routes brunch queries via anyTags filter", () => {
+    const plan = resolveQueryPlan("brunch spot rosemary beach");
+    expect(plan.matchedRuleId).toBe("category_breakfast_brunch");
+    expect(plan.categorySlug).toBeNull();
+    expect(plan.anyTags).toContain("brunch");
+  });
+
+  it("does not match 'lunch' (only breakfast and brunch trigger the rule)", () => {
+    const plan = resolveQueryPlan("lunch near watercolor");
+    expect(plan.matchedRuleId).toBeNull();
   });
 });
 
@@ -184,16 +235,144 @@ describe("collision_books_retail conversational", () => {
 });
 
 describe("category_photography_services", () => {
-  it("routes photography studio to services", () => {
+  it("routes photography studio to photography", () => {
     const plan = resolveQueryPlan("photography studio portraits");
     expect(plan.matchedRuleId).toBe("category_photography_services");
-    expect(plan.categorySlug).toBe("services");
+    expect(plan.categorySlug).toBe("photography");
   });
 
-  it("routes vacation photos to services", () => {
+  it("routes vacation photos to photography", () => {
     const plan = resolveQueryPlan("vacation photos family shoot");
     expect(plan.matchedRuleId).toBe("category_photography_services");
-    expect(plan.categorySlug).toBe("services");
+    expect(plan.categorySlug).toBe("photography");
+  });
+});
+
+describe("category_massage_spa", () => {
+  it("routes massage queries to spas (not the broad services bucket)", () => {
+    const plan = resolveQueryPlan("deep tissue massage");
+    expect(plan.matchedRuleId).toBe("category_massage_spa");
+    expect(plan.categorySlug).toBe("spas");
+  });
+});
+
+describe("category_hair_salon", () => {
+  it("routes hair salon queries to hair_salons", () => {
+    const plan = resolveQueryPlan("hair salon blowout styling");
+    expect(plan.matchedRuleId).toBe("category_hair_salon");
+    expect(plan.categorySlug).toBe("hair_salons");
+  });
+});
+
+describe("category_nail_salon", () => {
+  it("routes nail salon queries to nail_salons", () => {
+    const plan = resolveQueryPlan("nail salon manicure pedicure");
+    expect(plan.matchedRuleId).toBe("category_nail_salon");
+    expect(plan.categorySlug).toBe("nail_salons");
+  });
+});
+
+describe("category_hvac_plumbing", () => {
+  it("routes plumber queries to hvac_plumbing", () => {
+    const plan = resolveQueryPlan("plumber for leaky pipe");
+    expect(plan.matchedRuleId).toBe("category_hvac_plumbing");
+    expect(plan.categorySlug).toBe("hvac_plumbing");
+  });
+});
+
+describe("category_pest_control", () => {
+  it("routes exterminator queries to pest_control", () => {
+    const plan = resolveQueryPlan("pest control exterminator");
+    expect(plan.matchedRuleId).toBe("category_pest_control");
+    expect(plan.categorySlug).toBe("pest_control");
+  });
+});
+
+describe("category_landscaping", () => {
+  it("routes lawn care queries to landscaping", () => {
+    const plan = resolveQueryPlan("lawn care service");
+    expect(plan.matchedRuleId).toBe("category_landscaping");
+    expect(plan.categorySlug).toBe("landscaping");
+  });
+});
+
+describe("category_cleaning_services", () => {
+  it("routes house cleaning queries to cleaning_services", () => {
+    const plan = resolveQueryPlan("vacation rental cleaning service");
+    expect(plan.matchedRuleId).toBe("category_cleaning_services");
+    expect(plan.categorySlug).toBe("cleaning_services");
+  });
+});
+
+describe("category_real_estate", () => {
+  it("routes realtor queries to real_estate", () => {
+    const plan = resolveQueryPlan("real estate agent");
+    expect(plan.matchedRuleId).toBe("category_real_estate");
+    expect(plan.categorySlug).toBe("real_estate");
+  });
+});
+
+describe("category_legal_services", () => {
+  it("routes attorney queries to legal_services", () => {
+    const plan = resolveQueryPlan("attorney for legal advice");
+    expect(plan.matchedRuleId).toBe("category_legal_services");
+    expect(plan.categorySlug).toBe("legal_services");
+  });
+});
+
+describe("category_insurance", () => {
+  it("routes insurance agent queries to insurance", () => {
+    const plan = resolveQueryPlan("homeowners insurance agent");
+    expect(plan.matchedRuleId).toBe("category_insurance");
+    expect(plan.categorySlug).toBe("insurance");
+  });
+});
+
+describe("category_title_escrow", () => {
+  it("routes title company queries to title_escrow", () => {
+    const plan = resolveQueryPlan("title company for closing");
+    expect(plan.matchedRuleId).toBe("category_title_escrow");
+    expect(plan.categorySlug).toBe("title_escrow");
+  });
+});
+
+describe("category_dental", () => {
+  it("routes dentist queries to dental_orthodontics", () => {
+    const plan = resolveQueryPlan("dentist for teeth cleaning");
+    expect(plan.matchedRuleId).toBe("category_dental");
+    expect(plan.categorySlug).toBe("dental_orthodontics");
+  });
+});
+
+describe("category_dermatology", () => {
+  it("routes dermatologist queries to dermatology_skin", () => {
+    const plan = resolveQueryPlan("dermatologist skin clinic");
+    expect(plan.matchedRuleId).toBe("category_dermatology");
+    expect(plan.categorySlug).toBe("dermatology_skin");
+  });
+});
+
+describe("category_chiropractic", () => {
+  it("routes chiropractor queries to chiropractic_wellness", () => {
+    const plan = resolveQueryPlan("chiropractor for back pain");
+    expect(plan.matchedRuleId).toBe("category_chiropractic");
+    expect(plan.categorySlug).toBe("chiropractic_wellness");
+  });
+});
+
+describe("category_medical_clinic", () => {
+  it("routes urgent care queries to medical_clinics", () => {
+    const plan = resolveQueryPlan("urgent care medical clinic");
+    expect(plan.matchedRuleId).toBe("category_medical_clinic");
+    expect(plan.categorySlug).toBe("medical_clinics");
+  });
+});
+
+describe("category_home_repair", () => {
+  it("routes handyman queries to contractors_handyman", () => {
+    const plan = resolveQueryPlan("handyman for home repair");
+    expect(plan.matchedRuleId).toBe("category_home_repair");
+    expect(plan.categorySlug).toBe("contractors_handyman");
   });
 });
 

@@ -28,11 +28,11 @@
     {
       "id": "collision_books_retail",
       "problemClass": "substring_collision",
-      "description": "Bookstores — 'books' would bleed into general shopping. requiredTags prevents gift shops appearing.",
+      "description": "Bookstores — route to specialty_retail (Sundog, Hidden Lantern) to exclude clothing boutiques and general shopping from results.",
       "phrases": ["bookstore", "book store", "book shop", "books", "good book", "find a book"],
       "priority": 100,
       "plan": {
-        "categorySlug": "shopping",
+        "categorySlug": "specialty_retail",
         "requiredTags": ["books"],
         "searchTerms": ["books", "bookstore"]
       }
@@ -71,13 +71,14 @@
       }
     },
     {
-      "id": "category_ice_cream",
+      "id": "category_desserts",
       "problemClass": "category_keyword",
-      "description": "Ice cream / frozen dessert queries anchor on dessert terms without category bleed.",
-      "phrases": ["ice cream", "frozen yogurt", "soft serve", "gelato", "shaved ice"],
+      "description": "Ice cream, donuts, candy, and sweet treat queries route to the desserts category to avoid polluting restaurant/shopping results.",
+      "phrases": ["ice cream", "frozen yogurt", "soft serve", "gelato", "shaved ice", "donuts", "donut shop", "candy shop", "sweet treats"],
       "priority": 77,
       "plan": {
-        "searchTerms": ["ice cream", "frozen treats", "dessert", "shaved ice"]
+        "categorySlug": "desserts",
+        "searchTerms": ["ice cream", "frozen treats", "dessert", "donuts", "candy", "sweets"]
       }
     },
     {
@@ -116,29 +117,29 @@
     {
       "id": "category_footwear",
       "problemClass": "category_keyword",
-      "description": "Shoe stores — routes to shopping and anchors footwear terms.",
+      "description": "Shoe stores — dedicated footwear category (Charleston Shoe, Sunset Shoes, Fleet Feet, Town Square). Exact corpus prevents bookstores or boutiques polluting results.",
       "phrases": ["shoes", "sandals", "footwear"],
       "priority": 79,
       "plan": {
-        "categorySlug": "shopping",
+        "categorySlug": "footwear",
         "searchTerms": ["shoes", "sandals", "footwear"]
       }
     },
     {
       "id": "category_jewelry",
       "problemClass": "category_keyword",
-      "description": "Jewelry boutiques — shopping category, jewelry-focused terms.",
+      "description": "Jewelry stores — dedicated jewelry category (Lala Links, Jewelry of 30A, Kendra Scott). Exact corpus prevents shopping bleed.",
       "phrases": ["jewelry boutique", "jewelry accessories", "jewelry store"],
       "priority": 78,
       "plan": {
-        "categorySlug": "shopping",
+        "categorySlug": "jewelry",
         "searchTerms": ["jewelry", "accessories", "boutique"]
       }
     },
     {
       "id": "category_fitness",
       "problemClass": "category_keyword",
-      "description": "Yoga/gym/fitness — routes to fitness category (separate from activities/water-sports after migrate-fitness-category.ts).",
+      "description": "Yoga/gym/fitness — routes to fitness category (separate from activities/water-sports).",
       "phrases": ["yoga fitness", "fitness studio", "yoga studio", "workout gym", "gym exercise", "exercise class"],
       "priority": 77,
       "plan": {
@@ -149,46 +150,233 @@
     {
       "id": "category_shopping_boutiques",
       "problemClass": "category_keyword",
-      "description": "Boutique shopping — girls trip and general boutique browse.",
-      "phrases": ["shopping boutiques", "girls trip shopping", "boutique shopping"],
+      "description": "Boutique shopping — girls trip and general boutique browse. Routes to boutiques subcategory for a more precise clothing corpus.",
+      "phrases": ["shopping boutiques", "girls trip shopping", "boutique shopping", "boutique"],
       "priority": 74,
       "plan": {
-        "categorySlug": "shopping",
+        "categorySlug": "boutiques",
         "searchTerms": ["boutique", "shopping", "girls trip"]
       }
     },
     {
       "id": "category_rainy_day",
       "problemClass": "category_keyword",
-      "description": "Rainy day / indoor queries route to shopping — bookstores are the natural 30A answer for bad weather.",
+      "description": "Rainy day / indoor queries route to specialty_retail — bookstores are the natural 30A answer for bad weather.",
       "phrases": ["rainy day", "rainy afternoon", "rainy morning", "when it rains", "bad weather", "indoor activity", "stuck inside"],
       "priority": 72,
       "plan": {
-        "categorySlug": "shopping",
+        "categorySlug": "specialty_retail",
         "anyTags": ["books"],
         "searchTerms": ["bookstore", "indoor", "shopping"]
       }
     },
     {
+      "id": "category_breakfast_brunch",
+      "problemClass": "category_keyword",
+      "description": "Breakfast and brunch queries — anyTags filter ensures only businesses tagged breakfast/brunch appear, preventing shopping/fitness bleed. No categorySlug: breakfast places span restaurants and coffee_shops.",
+      "phrases": ["breakfast", "brunch"],
+      "priority": 73,
+      "plan": {
+        "anyTags": ["breakfast", "brunch"],
+        "searchTerms": ["breakfast", "brunch", "morning", "eggs"]
+      }
+    },
+    {
       "id": "category_massage_spa",
       "problemClass": "category_keyword",
-      "description": "Massage/spa queries route to services — prevents fitness studios (Power Movement) polluting results.",
+      "description": "Massage/spa queries route to dedicated spas category (Spa Pearl, Vivo Spa) — the broad services category mixed spas with title companies, law firms, and pest control, all of which outranked actual spas on FTS.",
       "phrases": ["massage", "deep tissue", "massage therapy", "swedish massage", "facial treatment", "body wrap", "spa treatment"],
       "priority": 75,
       "plan": {
-        "categorySlug": "services",
+        "categorySlug": "spas",
         "searchTerms": ["massage", "spa"]
       }
     },
     {
       "id": "category_photography_services",
       "problemClass": "category_keyword",
-      "description": "Photography/portrait services — routes to services so fitness studios (Power Movement) don't pollute.",
+      "description": "Photography/portrait services — routes to dedicated photography category so HVAC/legal/title businesses in the broad services bucket don't pollute.",
       "phrases": ["photography studio", "portrait photographer", "photo session", "vacation photos", "family photos"],
       "priority": 75,
       "plan": {
-        "categorySlug": "services",
+        "categorySlug": "photography",
         "searchTerms": ["photography", "photographer", "portraits"]
+      }
+    },
+    {
+      "id": "category_hair_salon",
+      "problemClass": "category_bleed",
+      "description": "Hair salon queries previously had no routing rule at all and fell through to bare FTS against the 182-business services bucket — top results were title companies, pest control, and a burger joint, zero actual salons. Routes to dedicated hair_salons category.",
+      "phrases": ["hair salon", "blowout", "hair stylist", "haircut", "hair styling"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "hair_salons",
+        "searchTerms": ["hair salon", "stylist", "blowout"]
+      }
+    },
+    {
+      "id": "category_nail_salon",
+      "problemClass": "category_bleed",
+      "description": "Nail salon queries previously had no routing rule — only 1 of 10 results was an actual nail salon, rest were unrelated services-bucket businesses. Routes to dedicated nail_salons category.",
+      "phrases": ["nail salon", "manicure", "pedicure", "mani pedi"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "nail_salons",
+        "searchTerms": ["nail salon", "manicure", "pedicure"]
+      }
+    },
+    {
+      "id": "category_hvac_plumbing",
+      "problemClass": "category_bleed",
+      "description": "HVAC/plumbing/AC repair queries — dedicated category so pest control, cabinetry, and security companies in the old home_services bucket don't pollute.",
+      "phrases": ["hvac", "air conditioning repair", "ac repair", "plumber", "plumbing repair", "heating and air", "furnace repair"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "hvac_plumbing",
+        "searchTerms": ["hvac", "plumbing", "air conditioning", "heating"]
+      }
+    },
+    {
+      "id": "category_pest_control",
+      "problemClass": "category_bleed",
+      "description": "Pest control queries — previously surfaced HVAC, cabinetry, and home inspection companies alongside 1 real pest control result. Dedicated category.",
+      "phrases": ["pest control", "exterminator", "termite", "bug spray service"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "pest_control",
+        "searchTerms": ["pest control", "exterminator"]
+      }
+    },
+    {
+      "id": "category_landscaping",
+      "problemClass": "category_keyword",
+      "description": "Landscaping/lawn care queries — dedicated category.",
+      "phrases": ["landscaping", "lawn care", "lawn service", "yard maintenance"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "landscaping",
+        "searchTerms": ["landscaping", "lawn care"]
+      }
+    },
+    {
+      "id": "category_cleaning_services",
+      "problemClass": "category_keyword",
+      "description": "House/vacation rental cleaning queries — dedicated category, separate from handyman/contractor services.",
+      "phrases": ["house cleaning", "cleaning service", "vacation rental cleaning", "maid service"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "cleaning_services",
+        "searchTerms": ["cleaning service", "house cleaning"]
+      }
+    },
+    {
+      "id": "category_real_estate",
+      "problemClass": "category_bleed",
+      "description": "Real estate queries — previously bled into title companies, law firms, banks, and insurance (all in the same professional_services bucket). Dedicated category.",
+      "phrases": ["real estate agent", "real estate office", "buy a house", "home for sale", "realtor"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "real_estate",
+        "searchTerms": ["real estate", "realtor", "homes for sale"]
+      }
+    },
+    {
+      "id": "category_legal_services",
+      "problemClass": "category_bleed",
+      "description": "Lawyer/attorney queries — previously surfaced title companies, banks, insurance, and accounting ahead of actual law firms. Dedicated category.",
+      "phrases": ["lawyer", "attorney", "law firm", "legal help", "legal advice"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "legal_services",
+        "searchTerms": ["lawyer", "attorney", "legal"]
+      }
+    },
+    {
+      "id": "category_insurance",
+      "problemClass": "category_keyword",
+      "description": "Insurance agent/policy queries — dedicated category.",
+      "phrases": ["insurance agent", "insurance agency", "homeowners insurance", "flood insurance"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "insurance",
+        "searchTerms": ["insurance"]
+      }
+    },
+    {
+      "id": "category_title_escrow",
+      "problemClass": "category_keyword",
+      "description": "Title/escrow queries for real estate closings — dedicated category, separate from real estate agents.",
+      "phrases": ["title company", "title agency", "escrow services", "closing attorney"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "title_escrow",
+        "searchTerms": ["title company", "escrow"]
+      }
+    },
+    {
+      "id": "category_dental",
+      "problemClass": "category_keyword",
+      "description": "Dentist/orthodontist queries — dedicated category so dermatology/chiropractic/diagnostic-center businesses in the old health_medical bucket don't pollute.",
+      "phrases": ["dentist", "dental office", "teeth cleaning", "orthodontist", "braces"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "dental_orthodontics",
+        "searchTerms": ["dentist", "dental"]
+      }
+    },
+    {
+      "id": "category_dermatology",
+      "problemClass": "category_keyword",
+      "description": "Dermatologist/skin care queries — dedicated category.",
+      "phrases": ["dermatologist", "skin doctor", "dermatology clinic", "skin care clinic"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "dermatology_skin",
+        "searchTerms": ["dermatology", "skin care"]
+      }
+    },
+    {
+      "id": "category_chiropractic",
+      "problemClass": "category_keyword",
+      "description": "Chiropractor queries — dedicated category.",
+      "phrases": ["chiropractor", "chiropractic", "back pain treatment"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "chiropractic_wellness",
+        "searchTerms": ["chiropractor"]
+      }
+    },
+    {
+      "id": "category_medical_clinic",
+      "problemClass": "category_keyword",
+      "description": "General medical/urgent care queries — dedicated category, separate from dental, dermatology, chiropractic, mental health, and hospice.",
+      "phrases": ["urgent care", "medical clinic", "doctor's office", "emergency room", "primary care"],
+      "priority": 75,
+      "plan": {
+        "categorySlug": "medical_clinics",
+        "searchTerms": ["medical clinic", "doctor", "urgent care"]
+      }
+    },
+    {
+      "id": "category_home_repair",
+      "problemClass": "category_keyword",
+      "description": "General handyman/contractor queries that aren't HVAC, plumbing, or pest-specific.",
+      "phrases": ["handyman", "general contractor", "home repair", "home inspection", "painting contractor"],
+      "priority": 74,
+      "plan": {
+        "categorySlug": "contractors_handyman",
+        "searchTerms": ["handyman", "contractor", "home repair"]
+      }
+    },
+    {
+      "id": "category_entertainment",
+      "problemClass": "category_keyword",
+      "description": "Movie theaters, live theater, arcades, arts & entertainment venues — separate from outdoor/water activities.",
+      "phrases": ["movie theater", "movie near", "movies tonight", "live theater", "theater performance", "live show", "comedy show", "live performance", "art workshop", "paint and sip", "escape room", "arcade games"],
+      "priority": 76,
+      "plan": {
+        "categorySlug": "entertainment",
+        "searchTerms": ["theater", "movies", "performance", "show", "entertainment"]
       }
     },
     {
