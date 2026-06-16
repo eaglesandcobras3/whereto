@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  categoryDbSlugCandidatesFromPublicPath,
   categoryDbSlugFromLegacyOn30aSegment,
   categoryDbSlugFromPublicPath,
   categoryHubPath,
@@ -29,8 +30,25 @@ describe("categoryDbSlugFromPublicPath", () => {
     expect(categoryDbSlugFromPublicPath("service-businesses")).toBe("services");
   });
 
+  it("maps hyphenated segments to underscore db slugs", () => {
+    expect(categoryDbSlugCandidatesFromPublicPath("donut-shops")).toEqual(["donut_shops"]);
+    expect(categoryDbSlugCandidatesFromPublicPath("ice-cream")).toEqual(["ice_cream"]);
+    expect(categoryDbSlugCandidatesFromPublicPath("hvac-plumbing")).toEqual(["hvac_plumbing"]);
+  });
+
   it("does not treat legacy -on-30a paths as canonical", () => {
     expect(categoryDbSlugFromPublicPath("restaurants-on-30a")).toBeNull();
+    expect(categoryDbSlugCandidatesFromPublicPath("restaurants-on-30a")).toEqual([]);
+  });
+});
+
+describe("categoryDbSlugCandidatesFromPublicPath", () => {
+  it("prefers explicit public segment mappings", () => {
+    expect(categoryDbSlugCandidatesFromPublicPath("coffee-shops")).toEqual(["coffee_shops"]);
+    expect(categoryDbSlugCandidatesFromPublicPath("service-businesses")).toEqual([
+      "services",
+      "service_businesses",
+    ]);
   });
 });
 

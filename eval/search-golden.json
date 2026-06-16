@@ -116,7 +116,46 @@
       "Sundog",
       "Amavida Coffee"
     ],
-    "note": "Ice cream corpus now routes to desserts category \u2014 all shops should be present"
+    "note": "Ice cream corpus now routes to dedicated ice_cream category \u2014 all shops should be present"
+  },
+  {
+    "id": "regression-donuts-01",
+    "tier": "regression",
+    "stratum": "food_dish",
+    "problemClass": "category_bleed",
+    "query": "donuts",
+    "expect": [
+      "Amavida Donut",
+      "Charlie\u2019s Donut Shop"
+    ],
+    "notExpect": [
+      "Pecan Jacks",
+      "Kilwins",
+      "Frost Bites",
+      "It's Heavenly",
+      "Dawson's",
+      "The Candy Bar",
+      "The Sugar Shak"
+    ],
+    "note": "Donut queries previously routed to the shared desserts category and surfaced mostly ice cream shops (only 2 of 16 desserts businesses actually sold donuts). Now routes to dedicated donut_shops category."
+  },
+  {
+    "id": "regression-candy-01",
+    "tier": "regression",
+    "stratum": "food_dish",
+    "problemClass": "category_bleed",
+    "query": "candy shop",
+    "expect": [
+      "The Candy Bar"
+    ],
+    "notExpect": [
+      "Pecan Jacks",
+      "Kilwins",
+      "Amavida Donut",
+      "Charlie\u2019s Donut Shop",
+      "Frost Bites"
+    ],
+    "note": "Candy queries now route to dedicated candy_sweets category, separate from ice cream and donuts."
   },
   {
     "id": "stretch-food-dish-01",

@@ -46,8 +46,25 @@ export function categoryHubPath(dbSlug: string): string {
 export function categoryDbSlugFromPublicPath(segment: string): string | null {
   const norm = segment.trim().toLowerCase();
   if (!norm) return null;
-  if (PUBLIC_SEGMENT_TO_DB_SLUG[norm]) return PUBLIC_SEGMENT_TO_DB_SLUG[norm];
-  return null;
+  return PUBLIC_SEGMENT_TO_DB_SLUG[norm] ?? null;
+}
+
+/**
+ * Ordered DB slug candidates for a public path segment (explicit map first, then normalized).
+ * Callers must verify against `business_categories` before treating as a category hub.
+ */
+export function categoryDbSlugCandidatesFromPublicPath(segment: string): string[] {
+  const norm = segment.trim().toLowerCase();
+  if (!norm || norm.endsWith("-on-30a")) return [];
+
+  const out: string[] = [];
+  const mapped = PUBLIC_SEGMENT_TO_DB_SLUG[norm];
+  if (mapped) out.push(mapped);
+
+  const normalized = normalizeBusinessCategorySlug(norm);
+  if (normalized && !out.includes(normalized)) out.push(normalized);
+
+  return out;
 }
 
 /** Map legacy `*-on-30a` segment to DB slug (for redirects only). */

@@ -84,12 +84,12 @@ export function groupBusinessesByCategorySections(
   businesses: CategoryBusiness[],
   _dailyPickSaltPrefix?: string,
 ): PlaceCategorySection[] {
-  const allowed = new Set<string>(PLACE_CATEGORY_SLUG_ORDER);
+  const priorityOrder = PLACE_CATEGORY_SLUG_ORDER as readonly string[];
+  const priorityIndex = new Map(priorityOrder.map((slug, index) => [slug, index]));
   const map = new Map<string, { id: string; title: string; slug: string; pool: CategoryBusiness[] }>();
 
   for (const b of businesses) {
     if (!b.categorySlug || !b.categoryTitle || !b.categoryId) continue;
-    if (!allowed.has(b.categorySlug)) continue;
     if (!map.has(b.categoryId)) {
       map.set(b.categoryId, {
         id: b.categoryId,
@@ -101,22 +101,26 @@ export function groupBusinessesByCategorySections(
     map.get(b.categoryId)!.pool.push(b);
   }
 
-  const bySlug = new Map([...map.values()].map((cat) => [cat.slug, cat]));
-
-  return PLACE_CATEGORY_SLUG_ORDER.flatMap((slug) => {
-    const cat = bySlug.get(slug);
-    if (!cat || cat.pool.length === 0) return [];
-    const sorted = sortBrowseBusinesses(cat.pool);
-    return [
-      {
+  return [...map.values()]
+    .map((cat) => {
+      const sorted = sortBrowseBusinesses(cat.pool);
+      return {
         id: cat.id,
         title: cat.title,
         slug: cat.slug,
         totalCount: sorted.length,
         businesses: sorted,
-      },
-    ];
-  });
+      };
+    })
+    .filter((section) => section.totalCount > 0)
+    .sort((a, b) => {
+      const aPriority = priorityIndex.get(a.slug);
+      const bPriority = priorityIndex.get(b.slug);
+      if (aPriority != null && bPriority != null) return aPriority - bPriority;
+      if (aPriority != null) return -1;
+      if (bPriority != null) return 1;
+      return a.title.localeCompare(b.title);
+    });
 }
 
 function mergeCategoryBusinessRows(

@@ -10,6 +10,9 @@ import {
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
+import {
+  categoryDbSlugCandidatesFromPublicPath,
+} from "@/lib/routes/category-hub-path";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
@@ -73,6 +76,17 @@ export async function loadCategory(slug: string): Promise<CategoryRow | null> {
   if (!data) return null;
   const r = data as { id: string; title: string; slug: string; excerpt: string | null };
   return { ...r, title: displayStorefrontCategoryTitle(r.slug, r.title) };
+}
+
+/** Resolve a public URL segment to a published category slug, or null. */
+export async function resolveCategorySlugFromPublicPath(
+  segment: string,
+): Promise<string | null> {
+  for (const candidate of categoryDbSlugCandidatesFromPublicPath(segment)) {
+    const cat = await loadCategory(candidate);
+    if (cat) return cat.slug;
+  }
+  return null;
 }
 
 export async function loadBusinessesForCategory(

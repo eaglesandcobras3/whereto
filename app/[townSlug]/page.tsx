@@ -4,13 +4,13 @@ import { getGuidesForTown, getTownBySlug, type TownGuideCard } from "@/lib/data/
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import {
-  categoryDbSlugFromPublicPath,
   categoryHubPath,
 } from "@/lib/routes/category-hub-path";
 import { listPublishedCategorySlugs } from "@/lib/data/category-hub";
 import {
   buildCategoryHubMetadata,
   loadCategoryHubPage,
+  resolveCategorySlugFromPublicPath,
 } from "@/lib/data/category-hub";
 import { CategoryHubView } from "@/components/browse/CategoryHubView";
 import {
@@ -225,9 +225,10 @@ type Props = { params: Promise<{ townSlug: string }> };
 export const revalidate = 3600;
 
 export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
-  const segments = new Set(
+  const categorySegments = new Set(
     (await listPublishedCategorySlugs()).map((slug) => categoryHubPath(slug).replace(/^\//, "")),
   );
+  const segments = new Set(categorySegments);
 
   try {
     const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
@@ -240,7 +241,7 @@ export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
         .order("slug");
       for (const row of data ?? []) {
         const slug = String((row as { slug: string }).slug);
-        if (!slug || isReservedRootSlug(slug) || categoryDbSlugFromPublicPath(slug)) continue;
+        if (!slug || isReservedRootSlug(slug) || categorySegments.has(slug)) continue;
         segments.add(slug);
       }
     }
@@ -255,7 +256,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { townSlug: raw } = await params;
   const townSlug = normalizeUrlSegment(raw);
   if (!townSlug) return { title: metadataTitleSiteOnly };
-  const categorySlug = categoryDbSlugFromPublicPath(townSlug);
+  const categorySlug = await resolveCategorySlugFromPublicPath(townSlug);
   if (categorySlug) return buildCategoryHubMetadata(categorySlug);
   if (isReservedRootSlug(townSlug)) return { title: metadataTitleSiteOnly };
   const town = await getTownBySlug(townSlug);
@@ -292,7 +293,7 @@ export default async function TownPage({ params }: Props) {
   const townSlug = normalizeUrlSegment(raw);
   if (!townSlug) notFound();
 
-  const categorySlug = categoryDbSlugFromPublicPath(townSlug);
+  const categorySlug = await resolveCategorySlugFromPublicPath(townSlug);
   if (categorySlug) {
     const hub = await loadCategoryHubPage(categorySlug);
     if (!hub) notFound();

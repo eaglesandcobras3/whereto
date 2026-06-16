@@ -118,25 +118,37 @@ describe("category_remote_work", () => {
   });
 });
 
-describe("category_desserts", () => {
-  it("routes ice cream shop queries to desserts category", () => {
+describe("category_ice_cream", () => {
+  it("routes ice cream shop queries to ice_cream category", () => {
     const plan = resolveQueryPlan("ice cream shop");
-    expect(plan.matchedRuleId).toBe("category_desserts");
-    expect(plan.categorySlug).toBe("desserts");
+    expect(plan.matchedRuleId).toBe("category_ice_cream");
+    expect(plan.categorySlug).toBe("ice_cream");
     expect(plan.searchTerms).toContain("ice cream");
   });
+});
 
-  it("routes donut queries to desserts category", () => {
+describe("category_donut_shops", () => {
+  it("routes donut queries to donut_shops category", () => {
     const plan = resolveQueryPlan("donuts near rosemary beach");
-    expect(plan.matchedRuleId).toBe("category_desserts");
-    expect(plan.categorySlug).toBe("desserts");
+    expect(plan.matchedRuleId).toBe("category_donut_shops");
+    expect(plan.categorySlug).toBe("donut_shops");
     expect(plan.searchTerms).toContain("donuts");
   });
+});
 
-  it("routes candy shop queries to desserts category", () => {
-    const plan = resolveQueryPlan("candy shop sweet treats");
-    expect(plan.matchedRuleId).toBe("category_desserts");
-    expect(plan.categorySlug).toBe("desserts");
+describe("category_candy_sweets", () => {
+  it("routes candy shop queries to candy_sweets category", () => {
+    const plan = resolveQueryPlan("candy shop");
+    expect(plan.matchedRuleId).toBe("category_candy_sweets");
+    expect(plan.categorySlug).toBe("candy_sweets");
+  });
+});
+
+describe("category_sweet_treats_generic", () => {
+  it("routes generic sweet treat queries with no hard category filter", () => {
+    const plan = resolveQueryPlan("something sweet dessert treat");
+    expect(plan.matchedRuleId).toBe("category_sweet_treats_generic");
+    expect(plan.categorySlug).toBeNull();
   });
 });
 

@@ -71,14 +71,46 @@
       }
     },
     {
-      "id": "category_desserts",
-      "problemClass": "category_keyword",
-      "description": "Ice cream, donuts, candy, and sweet treat queries route to the desserts category to avoid polluting restaurant/shopping results.",
-      "phrases": ["ice cream", "frozen yogurt", "soft serve", "gelato", "shaved ice", "donuts", "donut shop", "candy shop", "sweet treats"],
+      "id": "category_donut_shops",
+      "problemClass": "category_bleed",
+      "description": "Donut queries previously routed to the shared desserts category, which mixed in ice cream and candy shops — a 'donuts' query returned mostly ice cream parlors since only 2 of 16 businesses in that bucket actually sold donuts. Dedicated category.",
+      "phrases": ["donuts", "donut shop", "doughnuts", "donut"],
       "priority": 77,
       "plan": {
-        "categorySlug": "desserts",
-        "searchTerms": ["ice cream", "frozen treats", "dessert", "donuts", "candy", "sweets"]
+        "categorySlug": "donut_shops",
+        "searchTerms": ["donuts", "donut shop", "doughnuts", "fresh donuts"]
+      }
+    },
+    {
+      "id": "category_ice_cream",
+      "problemClass": "category_keyword",
+      "description": "Ice cream / frozen treat queries — dedicated category, split out of the old shared desserts bucket so candy and donut shops don't pollute results.",
+      "phrases": ["ice cream", "ice cream shop", "frozen yogurt", "soft serve", "gelato", "shaved ice", "snow cone", "frozen treats", "creamery"],
+      "priority": 77,
+      "plan": {
+        "categorySlug": "ice_cream",
+        "searchTerms": ["ice cream", "frozen treats", "gelato", "frozen yogurt"]
+      }
+    },
+    {
+      "id": "category_candy_sweets",
+      "problemClass": "category_keyword",
+      "description": "Candy/confection queries — dedicated category, split out of the old shared desserts bucket so ice cream and donut shops don't pollute results.",
+      "phrases": ["candy shop", "candy store", "fudge", "chocolates", "pralines", "cookies", "sweet shop"],
+      "priority": 77,
+      "plan": {
+        "categorySlug": "candy_sweets",
+        "searchTerms": ["candy", "sweets", "fudge", "chocolates"]
+      }
+    },
+    {
+      "id": "category_sweet_treats_generic",
+      "problemClass": "category_keyword",
+      "description": "Generic 'something sweet/dessert' queries genuinely span donuts, ice cream, and candy — no categorySlug, so FTS+vector roam across all three new dedicated categories instead of hard-filtering to one.",
+      "phrases": ["sweet treats", "something sweet", "dessert", "desserts", "dessert treat"],
+      "priority": 71,
+      "plan": {
+        "searchTerms": ["dessert", "sweet treats", "ice cream", "candy", "donuts", "fudge", "cookies"]
       }
     },
     {
