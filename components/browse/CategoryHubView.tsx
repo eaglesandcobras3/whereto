@@ -92,7 +92,7 @@ export function CategoryHubView({ cat, townGroups, businesses, otherCats }: Prop
 
               {townGroups.map((group) => (
                 <section key={group.slug || "other"}>
-                  <div className="mb-6 flex items-center justify-between gap-4">
+                  <div className="mb-6">
                     <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
                       {group.slug ? (
                         <Link
@@ -105,19 +105,6 @@ export function CategoryHubView({ cat, townGroups, businesses, otherCats }: Prop
                         group.name
                       )}
                     </h2>
-                    {group.slug ? (
-                      <Link
-                        href={`/${group.slug}`}
-                        {...gaClickProps({
-                          event: "nav_click",
-                          category: "category_page_town_guide",
-                          label: `${cat.slug}_${group.slug}`,
-                        })}
-                        className="shrink-0 text-xs font-medium text-[var(--color-primary)] hover:underline"
-                      >
-                        Town guide
-                      </Link>
-                    ) : null}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -15,6 +15,7 @@ import { deriveQueryClusterKey } from "@/lib/search/query-cluster";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { v2EmbeddingInput } from "@/lib/search/v2-embedding-input";
 import { computeV2RelevanceBoost } from "@/lib/search/v2-relevance-boost";
+import { loadTownScope } from "@/lib/search/location-scope";
 import type { ScoreBreakdown } from "@/lib/search/scoring";
 import type { BusinessPayload, SearchResultPayload } from "@/lib/search/types";
 
@@ -144,6 +145,28 @@ async function resolveServiceCategoryId(
   return data?.id ? String(data.id) : null;
 }
 
+// ── Town slug → ID(s) lookup, with "near" adjacency expansion ────────────────
+
+async function resolveTownIds(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  townSlug: string,
+  scope: "exact" | "near" | "anywhere",
+): Promise<string[] | null> {
+  if (scope === "anywhere") return null;
+  const { data: townRow } = await supabase
+    .from("towns")
+    .select("id")
+    .eq("slug", townSlug)
+    .maybeSingle();
+  if (!townRow?.id) return null;
+  const anchorId = String(townRow.id);
+  if (scope === "near") {
+    const { adjacentTownIds } = await loadTownScope(supabase, anchorId);
+    return [anchorId, ...adjacentTownIds];
+  }
+  return [anchorId];
+}
+
 // ── V2 impression log (simplified — avoids V1 SearchPlan dependency) ─────────
 
 async function logV2Impression(
@@ -171,7 +194,7 @@ async function logV2Impression(
       cluster_key:            opts.clusterKey,
       intent_category:        opts.categorySlug,
       resolved_category_slugs: opts.categorySlug ? [opts.categorySlug] : [],
-      town_ids:               [],
+      town_ids:               townIds ?? [],
       retrieval_path:         "v2_hybrid",
       attempted_paths:        ["v2_hybrid"],
       total_results:          opts.totalResults,
@@ -201,7 +224,7 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
   });
 
   // Layer 2: resolve slugs → UUIDs (parallel)
-  const [categoryId, serviceCategoryId, embedding] = await Promise.all([
+  const [categoryId, serviceCategoryId, embedding, townIds] = await Promise.all([
     plan.categorySlug
       ? resolveCategoryId(supabase, plan.categorySlug)
       : Promise.resolve(null),
@@ -214,6 +237,9 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
           opts.openaiKey,
         ).catch(() => null)
       : Promise.resolve(null),
+    plan.townSlug
+      ? resolveTownIds(supabase, plan.townSlug, plan.scope)
+      : Promise.resolve(null),
   ]);
 
   const degraded = embedding === null;
@@ -224,7 +250,7 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
     p_query_embedding:      embedding ? `[${embedding.join(",")}]` : null,
     p_category_id:          categoryId,
     p_service_category_id:  serviceCategoryId,
-    p_town_ids:             null, // town filter via slug not yet wired (Phase 4 town resolver)
+    p_town_ids:             townIds,
     p_required_tags:        plan.requiredTags.length > 0 ? plan.requiredTags : null,
     p_any_tags:             plan.anyTags.length > 0 ? plan.anyTags : null,
     p_match_count:          (opts.pageSize ?? 12) + 12, // over-fetch for post-rank
@@ -243,7 +269,7 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
     normalizedQuery: normalized,
     intentCategory:  plan.categorySlug,
     resolvedCategorySlugs: plan.categorySlug ? [plan.categorySlug] : [],
-    townIds: [],
+    townIds: townIds ?? [],
   });
 
   const boostMap = await loadLearningBoostMap(supabase, clusterKey);
@@ -303,8 +329,8 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
       pageBrowseWithoutQuery: false,
       filterCategoryId:       categoryId ?? null,
       filterSpecialtyCategoryId: serviceCategoryId ?? null,
-      resolvedTownId:         undefined,
-      nearTownIds:            undefined,
+      resolvedTownId:         plan.scope === "exact" ? townIds?.[0] : townIds?.[0],
+      nearTownIds:            plan.scope === "near"  ? townIds?.slice(1) : undefined,
       searchTermOverride:     plan.searchTerms.join(" ") || undefined,
       skipIlike:              true,
       retrieval: {
