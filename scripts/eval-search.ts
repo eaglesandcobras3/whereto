@@ -30,6 +30,7 @@ import {
   parseIntentWithOpenAI,
 } from '@/lib/ai/search-ai';
 import { resolveQueryPlan } from '@/lib/search/resolve-query-plan';
+import { loadTownScope } from '@/lib/search/location-scope';
 import { normalizeQuery } from '@/lib/query-normalize';
 import { v2EmbeddingInput } from '@/lib/search/v2-embedding-input';
 import { computeV2RelevanceBoost } from '@/lib/search/v2-relevance-boost';
@@ -191,6 +192,21 @@ async function resolveCategoryId(categorySlug: string): Promise<string | null> {
   return (data as { id?: string } | null)?.id ?? null;
 }
 
+async function resolveTownIdsForEval(
+  townSlug: string,
+  scope: 'exact' | 'near' | 'anywhere',
+): Promise<string[] | null> {
+  if (scope === 'anywhere') return null;
+  const { data: townRow } = await supabase.from('towns').select('id').eq('slug', townSlug).maybeSingle();
+  if (!(townRow as { id?: string } | null)?.id) return null;
+  const anchorId = String((townRow as { id: string }).id);
+  if (scope === 'near') {
+    const { adjacentTownIds } = await loadTownScope(supabase, anchorId);
+    return [anchorId, ...adjacentTownIds];
+  }
+  return [anchorId];
+}
+
 async function resolveServiceCategoryId(slug: string): Promise<string | null> {
   const { data } = await supabase
     .from('service_categories').select('id').eq('slug', slug).maybeSingle();
@@ -235,10 +251,11 @@ async function searchV2(q: string): Promise<FullResult[]> {
   const plan = resolveQueryPlan(q);
   const normalized = normalizeQuery(q);
 
-  const categoryId = plan.categorySlug ? await resolveCategoryId(plan.categorySlug) : null;
-  const serviceCategoryId = plan.serviceCategorySlug
-    ? await resolveServiceCategoryId(plan.serviceCategorySlug)
-    : null;
+  const [categoryId, serviceCategoryId, townIds] = await Promise.all([
+    plan.categorySlug ? resolveCategoryId(plan.categorySlug) : Promise.resolve(null),
+    plan.serviceCategorySlug ? resolveServiceCategoryId(plan.serviceCategorySlug) : Promise.resolve(null),
+    plan.townSlug ? resolveTownIdsForEval(plan.townSlug, plan.scope) : Promise.resolve(null),
+  ]);
 
   let embedding: number[] | null = null;
   if (process.env.OPENAI_API_KEY) {
@@ -252,6 +269,7 @@ async function searchV2(q: string): Promise<FullResult[]> {
     p_query_embedding: embedding ? `[${embedding.join(',')}]` : null,
     p_category_id:     categoryId,
     p_service_category_id: serviceCategoryId,
+    p_town_ids:        townIds,
     p_required_tags:   plan.requiredTags.length > 0 ? plan.requiredTags : null,
     p_any_tags:        plan.anyTags.length > 0 ? plan.anyTags : null,
     p_match_count:     36,

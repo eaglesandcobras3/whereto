@@ -177,6 +177,7 @@ async function logV2Impression(
     queryHash: string;
     clusterKey: string;
     categorySlug: string | null;
+    townIds: string[] | null;
     totalResults: number;
     topRows: V2Row[];
     sessionId?: string | null;
@@ -194,7 +195,7 @@ async function logV2Impression(
       cluster_key:            opts.clusterKey,
       intent_category:        opts.categorySlug,
       resolved_category_slugs: opts.categorySlug ? [opts.categorySlug] : [],
-      town_ids:               townIds ?? [],
+      town_ids:               opts.townIds ?? [],
       retrieval_path:         "v2_hybrid",
       attempted_paths:        ["v2_hybrid"],
       total_results:          opts.totalResults,
@@ -305,6 +306,7 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
     queryHash,
     clusterKey,
     categorySlug:    plan.categorySlug,
+    townIds,
     totalResults:    ranked.length,
     topRows:         ranked.map(r => r.row),
     sessionId:       opts.sessionId,
