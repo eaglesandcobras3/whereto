@@ -36,10 +36,9 @@
     "query": "coffee in rosemary beach",
     "expect": [
       "3rd Cup",
-      "Amavida",
-      "Charlie"
+      "Amavida - Rosemary"
     ],
-    "note": "Rosemary-specific coffee spots"
+    "note": "\"in\" = exact town scope: only rosemary-beach coffee_shops appear. Charlie's Café is in restaurants category, so correctly excluded."
   },
   {
     "id": "regression-coffee-02",
@@ -2575,5 +2574,70 @@
       "Golf Course"
     ],
     "note": "Honest empty acceptable \u2014 no mobility rental vendors yet in DB. Must not return golf courses."
+  },
+  {
+    "id": "regression-location-01",
+    "tier": "regression",
+    "stratum": "location_scope",
+    "problemClass": "location_scope",
+    "query": "coffee in rosemary beach",
+    "expect": [
+      "Amavida - Rosemary",
+      "3rd Cup Coffee"
+    ],
+    "notExpect": [
+      "Turbo Coffee",
+      "Hotz Coffee",
+      "Beignets & Brew"
+    ],
+    "note": "\"in\" = exact scope \u2192 rosemary-beach town only. Turbo Coffee is in Seagrove Beach (3 hops), Hotz/Beignets in Grayton Beach (4 hops) \u2014 all must be excluded."
+  },
+  {
+    "id": "regression-location-02",
+    "tier": "regression",
+    "stratum": "location_scope",
+    "problemClass": "location_scope",
+    "query": "tacos in seaside",
+    "notExpect": [
+      "Cowgirl Kitchen",
+      "AJ's Grayton",
+      "Pescado",
+      "The Red Bar",
+      "Borago"
+    ],
+    "note": "\"in\" = exact scope \u2192 seaside town only. Cowgirl Kitchen/Pescado are in Rosemary Beach (4 hops); AJ's/Red Bar/Borago are in Grayton Beach (2 hops but outside exact scope). None should appear."
+  },
+  {
+    "id": "regression-location-03",
+    "tier": "regression",
+    "stratum": "location_scope",
+    "problemClass": "location_scope",
+    "query": "coffee near rosemary beach",
+    "expect": [
+      "Amavida - Rosemary",
+      "3rd Cup Coffee"
+    ],
+    "notExpect": [
+      "Turbo Coffee",
+      "Hotz Coffee",
+      "Beignets & Brew",
+      "Black Bear Bread Co. Grayton"
+    ],
+    "note": "\"near\" = 2-hop adjacency. Rosemary Beach 2-hop neighbors are alys/carillon/inlet/seacrest/watersound/santa-rosa \u2014 NOT seagrove (3 hops) or grayton (4 hops). Turbo/Hotz/Beignets/Black Bear Grayton must all be excluded."
+  },
+  {
+    "id": "regression-location-04",
+    "tier": "regression",
+    "stratum": "location_scope",
+    "problemClass": "location_scope",
+    "query": "restaurants near rosemary",
+    "notExpect": [
+      "AJ's Grayton",
+      "The Red Bar",
+      "Hurricane Oyster Bar",
+      "Grayton Seafood Co",
+      "Caf\u00e9 Thirty-A"
+    ],
+    "note": "\"near rosemary\" = 2-hop adjacency. Grayton Beach (4 hops) and Seagrove Beach (3 hops) are both out of range. AJ's/Red Bar/Hurricane/Grayton Seafood are in Grayton; Caf\u00e9 Thirty-A is in Seagrove \u2014 all must be excluded."
   }
 ]
