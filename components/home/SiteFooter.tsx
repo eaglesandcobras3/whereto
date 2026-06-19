@@ -256,9 +256,9 @@ export async function SiteFooter() {
               <img
                 src="/whereto30a.svg"
                 alt="WhereTo30A"
-                className="h-10 w-auto md:h-12"
-                width={1384}
-                height={627}
+                className="h-7 w-auto md:h-8"
+                width={737}
+                height={182}
                 decoding="async"
               />
             </div>

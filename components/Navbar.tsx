@@ -132,8 +132,8 @@ export function Navbar({
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-site-chrome)] shadow-[var(--shadow-nav)] ${
-        compact ? "py-2 md:py-2.5" : "py-3 md:py-4"
-      } min-h-0 md:min-h-[var(--site-header-offset)]`}
+        compact ? "py-3" : "py-3.5 md:py-4"
+      }`}
     >
       <div className="relative z-[120] mx-auto flex w-full max-w-7xl items-center px-4 md:gap-3 md:px-10">
         <div className="flex min-w-0 shrink-0 items-center md:flex-1">
@@ -147,11 +147,11 @@ export function Navbar({
               alt="WhereTo30A"
               className={
                 compact
-                  ? "h-10 w-auto shrink-0 md:h-12"
-                  : "h-11 w-auto shrink-0 md:h-14"
+                  ? "h-7 w-auto shrink-0 md:h-8"
+                  : "h-7 w-auto shrink-0 md:h-9"
               }
-              width={1384}
-              height={627}
+              width={737}
+              height={182}
               decoding="async"
             />
             {!compact && (

@@ -17,10 +17,11 @@
   --color-primary-light: #004b54;
   --color-primary-dark: #001f24;
   --color-brand-wordmark: #004b50;
-  /* Logo script (#102333 in public/whereto30a.svg) — nav hover / active */
-  --color-logo-navy: #102333;
-  /* Header / footer shell */
-  --color-site-chrome: #f7f3ee;
+  /* Logo navy + teal (public/whereto30a.svg) — nav hover / active */
+  --color-logo-navy: #1c3257;
+  --color-logo-teal: #6cb2b5;
+  /* Header / footer shell — soft sea-mist tint to pair with logo teal */
+  --color-site-chrome: #f2f5f5;
   --color-primary-fixed: #a7eefc;
   --color-on-primary-fixed: #001f24;
   --color-on-primary: #ffffff;
@@ -77,9 +78,9 @@
   --accent: var(--color-primary);
   --accent-soft: rgba(0, 50, 57, 0.08);
 
-  /* Sticky header offset (main bar, panels closed). Mobile matches compact Navbar; md+ matches taller bar. */
-  --site-header-offset-mobile: 3.5rem;
-  --site-header-offset: 4.75rem;
+  /* Sticky header offset (compact Navbar: logo + h-10 actions + py-3). */
+  --site-header-offset-mobile: 4rem;
+  --site-header-offset: 4rem;
 
   /* --------------------------------------------------------------------------
      shadcn/ui semantic tokens (aligned with WhereTo30A — used by components/ui)
