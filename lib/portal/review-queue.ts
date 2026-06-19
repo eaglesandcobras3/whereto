@@ -1,0 +1,415 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { ensureBusinessSubscription } from "@/lib/portal/entitlements";
+import { sendPortalOwnerEmail } from "@/lib/portal/notifications";
+import { uniqueSlug } from "@/lib/portal/slug";
+
+export type ReviewItemRow = {
+  id: string;
+  type: string;
+  status: string;
+  business_id: string | null;
+  submitted_by: string;
+  payload: Record<string, unknown>;
+  admin_notes: string | null;
+  created_at: string;
+};
+
+async function submitterEmail(
+  supabase: SupabaseClient,
+  userId: string,
+  payload: Record<string, unknown>,
+): Promise<string | null> {
+  const fromPayload = typeof payload.submitter_email === "string" ? payload.submitter_email : null;
+  if (fromPayload) return fromPayload;
+
+  const { data } = await supabase.auth.admin.getUserById(userId);
+  return data.user?.email ?? null;
+}
+
+async function approveClaim(
+  supabase: SupabaseClient,
+  item: ReviewItemRow,
+  reviewerId: string,
+): Promise<{ businessId: string; businessTitle: string }> {
+  const businessId = item.business_id;
+  if (!businessId) throw new Error("Claim missing business_id");
+
+  const { data: biz } = await supabase
+    .from("businesses")
+    .select("id, title, claim_status")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!biz) throw new Error("Business not found");
+  if ((biz.claim_status as string) === "claimed") {
+    throw new Error("Business already claimed");
+  }
+
+  const { error: memberErr } = await supabase.from("business_members").insert({
+    business_id: businessId,
+    user_id: item.submitted_by,
+    role: "owner",
+  });
+  if (memberErr) throw new Error(memberErr.message);
+
+  const { error: bizErr } = await supabase
+    .from("businesses")
+    .update({
+      claim_status: "claimed",
+      claimed_by_user_id: item.submitted_by,
+    })
+    .eq("id", businessId);
+  if (bizErr) throw new Error(bizErr.message);
+
+  await supabase
+    .from("business_claim_requests")
+    .update({ status: "approved" })
+    .eq("business_id", businessId)
+    .eq("user_id", item.submitted_by)
+    .eq("status", "pending");
+
+  await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
+  await ensureBusinessSubscription(supabase, businessId);
+
+  return { businessId, businessTitle: (biz.title as string) ?? "your business" };
+}
+
+async function approveEdit(
+  supabase: SupabaseClient,
+  item: ReviewItemRow,
+  reviewerId: string,
+): Promise<{ businessId: string; businessTitle: string }> {
+  const businessId = item.business_id;
+  if (!businessId) throw new Error("Edit missing business_id");
+
+  const proposalId =
+    typeof item.payload.proposal_id === "string" ? item.payload.proposal_id : null;
+  if (!proposalId) throw new Error("Edit proposal id missing");
+
+  const { data: proposal } = await supabase
+    .from("business_edit_proposals")
+    .select("id, changes, status")
+    .eq("id", proposalId)
+    .maybeSingle();
+  if (!proposal) throw new Error("Edit proposal not found");
+  if ((proposal.status as string) !== "pending") throw new Error("Proposal already processed");
+
+  const changes = (proposal.changes as Record<string, unknown>) ?? {};
+  if (Object.keys(changes).length === 0) throw new Error("No changes to apply");
+
+  const { data: biz } = await supabase
+    .from("businesses")
+    .select("id, title")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!biz) throw new Error("Business not found");
+
+  const { error: updateErr } = await supabase.from("businesses").update(changes).eq("id", businessId);
+  if (updateErr) throw new Error(updateErr.message);
+
+  await supabase
+    .from("business_edit_proposals")
+    .update({ status: "approved" })
+    .eq("id", proposalId);
+
+  await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
+
+  return { businessId, businessTitle: (biz.title as string) ?? "your business" };
+}
+
+async function approvePhoto(
+  supabase: SupabaseClient,
+  item: ReviewItemRow,
+  reviewerId: string,
+): Promise<{ businessId: string; businessTitle: string }> {
+  const businessId = item.business_id;
+  if (!businessId) throw new Error("Photo missing business_id");
+
+  const photoId = typeof item.payload.photo_id === "string" ? item.payload.photo_id : null;
+  if (!photoId) throw new Error("Photo id missing");
+
+  const { data: photo } = await supabase
+    .from("business_photos")
+    .select("id, public_url, is_hero, status")
+    .eq("id", photoId)
+    .maybeSingle();
+  if (!photo) throw new Error("Photo not found");
+  if ((photo.status as string) !== "pending") throw new Error("Photo already processed");
+
+  const { data: biz } = await supabase
+    .from("businesses")
+    .select("id, title, hero_image_url, main_image_url")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!biz) throw new Error("Business not found");
+
+  await supabase.from("business_photos").update({ status: "approved" }).eq("id", photoId);
+
+  const setHero = Boolean(photo.is_hero) || !biz.hero_image_url;
+  if (setHero && photo.public_url) {
+    await supabase
+      .from("businesses")
+      .update({ hero_image_url: photo.public_url, main_image_url: photo.public_url })
+      .eq("id", businessId);
+  }
+
+  await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
+
+  return { businessId, businessTitle: (biz.title as string) ?? "your business" };
+}
+
+async function approveNewListing(
+  supabase: SupabaseClient,
+  item: ReviewItemRow,
+  reviewerId: string,
+): Promise<{ businessId: string; businessTitle: string }> {
+  const listingRequestId =
+    typeof item.payload.listing_request_id === "string" ? item.payload.listing_request_id : null;
+  if (!listingRequestId) throw new Error("Listing request id missing");
+
+  const { data: req } = await supabase
+    .from("business_listing_requests")
+    .select("*")
+    .eq("id", listingRequestId)
+    .maybeSingle();
+  if (!req) throw new Error("Listing request not found");
+
+  const title = String(req.title ?? "").trim();
+  if (!title) throw new Error("Listing title missing");
+
+  const { data: slugRows } = await supabase.from("businesses").select("slug");
+  const taken = new Set((slugRows ?? []).map((r) => String((r as { slug: string }).slug)));
+  const slug = uniqueSlug(title, taken);
+
+  const insertRow = {
+    title,
+    slug,
+    status: "published",
+    town_id: req.town_id as string,
+    address: (req.address as string | null) ?? null,
+    website: (req.website as string | null) ?? null,
+    phone: (req.phone as string | null) ?? null,
+    email: (req.email as string | null) ?? null,
+    excerpt: String(req.description ?? "").slice(0, 500) || null,
+    content: (req.description as string | null) ?? null,
+    is_storefront: Boolean(req.is_storefront),
+    is_service_business: Boolean(req.is_service_business),
+    service_area: (req.service_area as string | null) ?? null,
+    map_lat: (req.map_lat as number | null) ?? null,
+    map_lng: (req.map_lng as number | null) ?? null,
+    claim_status: "claimed",
+    claimed_by_user_id: item.submitted_by,
+    published_at: new Date().toISOString(),
+  };
+
+  const { data: created, error: createErr } = await supabase
+    .from("businesses")
+    .insert(insertRow)
+    .select("id, title")
+    .single();
+  if (createErr || !created) throw new Error(createErr?.message ?? "Could not create business");
+
+  const businessId = created.id as string;
+
+  await supabase.from("business_members").insert({
+    business_id: businessId,
+    user_id: item.submitted_by,
+    role: "owner",
+  });
+
+  await supabase
+    .from("business_listing_requests")
+    .update({ status: "approved" })
+    .eq("id", listingRequestId);
+
+  await supabase
+    .from("portal_review_items")
+    .update({ business_id: businessId })
+    .eq("id", item.id);
+
+  await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
+  await ensureBusinessSubscription(supabase, businessId);
+
+  return { businessId, businessTitle: (created.title as string) ?? title };
+}
+
+async function finalizeReviewItem(
+  supabase: SupabaseClient,
+  itemId: string,
+  reviewerId: string,
+  status: "approved" | "rejected" | "needs_changes",
+  adminNotes: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("portal_review_items")
+    .update({
+      status,
+      admin_notes: adminNotes,
+      reviewed_by: reviewerId,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", itemId);
+  if (error) throw new Error(error.message);
+}
+
+export async function approveReviewItem(
+  supabase: SupabaseClient,
+  itemId: string,
+  reviewerId: string,
+): Promise<void> {
+  const { data: item, error } = await supabase
+    .from("portal_review_items")
+    .select("id, type, status, business_id, submitted_by, payload, admin_notes, created_at")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error || !item) throw new Error("Review item not found");
+  if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
+
+  const row = item as ReviewItemRow;
+  let result: { businessId: string; businessTitle: string };
+
+  if (row.type === "claim") {
+    result = await approveClaim(supabase, row, reviewerId);
+    const email = await submitterEmail(supabase, row.submitted_by, row.payload);
+    if (email) {
+      await sendPortalOwnerEmail({
+        to: email,
+        event: "claim_approved",
+        businessTitle: result.businessTitle,
+      });
+    }
+    return;
+  }
+
+  if (row.type === "new_listing") {
+    result = await approveNewListing(supabase, row, reviewerId);
+    const email = await submitterEmail(supabase, row.submitted_by, row.payload);
+    if (email) {
+      await sendPortalOwnerEmail({
+        to: email,
+        event: "listing_approved",
+        businessTitle: result.businessTitle,
+      });
+    }
+    return;
+  }
+
+  if (row.type === "edit") {
+    result = await approveEdit(supabase, row, reviewerId);
+    const email = await submitterEmail(supabase, row.submitted_by, row.payload);
+    if (email) {
+      await sendPortalOwnerEmail({
+        to: email,
+        event: "edit_approved",
+        businessTitle: result.businessTitle,
+      });
+    }
+    return;
+  }
+
+  if (row.type === "photo") {
+    result = await approvePhoto(supabase, row, reviewerId);
+    const email = await submitterEmail(supabase, row.submitted_by, row.payload);
+    if (email) {
+      await sendPortalOwnerEmail({
+        to: email,
+        event: "photo_approved",
+        businessTitle: result.businessTitle,
+      });
+    }
+    return;
+  }
+
+  throw new Error(`Approve not implemented for type: ${row.type}`);
+}
+
+export async function rejectReviewItem(
+  supabase: SupabaseClient,
+  itemId: string,
+  reviewerId: string,
+  adminNotes: string | null,
+): Promise<void> {
+  const { data: item, error } = await supabase
+    .from("portal_review_items")
+    .select("id, type, status, business_id, submitted_by, payload, admin_notes, created_at")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error || !item) throw new Error("Review item not found");
+  if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
+
+  const row = item as ReviewItemRow;
+
+  if (row.type === "claim" && row.business_id) {
+    await supabase
+      .from("businesses")
+      .update({ claim_status: "unclaimed" })
+      .eq("id", row.business_id)
+      .eq("claim_status", "pending_review");
+
+    await supabase
+      .from("business_claim_requests")
+      .update({ status: "rejected" })
+      .eq("business_id", row.business_id)
+      .eq("user_id", row.submitted_by)
+      .eq("status", "pending");
+  }
+
+  if (row.type === "new_listing") {
+    const listingRequestId =
+      typeof row.payload.listing_request_id === "string" ? row.payload.listing_request_id : null;
+    if (listingRequestId) {
+      await supabase
+        .from("business_listing_requests")
+        .update({ status: "rejected" })
+        .eq("id", listingRequestId);
+    }
+  }
+
+  if (row.type === "edit") {
+    const proposalId =
+      typeof row.payload.proposal_id === "string" ? row.payload.proposal_id : null;
+    if (proposalId) {
+      await supabase
+        .from("business_edit_proposals")
+        .update({ status: "rejected" })
+        .eq("id", proposalId);
+    }
+  }
+
+  if (row.type === "photo") {
+    const photoId = typeof row.payload.photo_id === "string" ? row.payload.photo_id : null;
+    if (photoId) {
+      await supabase.from("business_photos").update({ status: "rejected" }).eq("id", photoId);
+    }
+  }
+
+  await finalizeReviewItem(supabase, itemId, reviewerId, "rejected", adminNotes);
+
+  const businessTitle =
+    typeof row.payload.business_title === "string"
+      ? row.payload.business_title
+      : typeof row.payload.title === "string"
+        ? row.payload.title
+        : "your business";
+
+  const email = await submitterEmail(supabase, row.submitted_by, row.payload);
+  if (email) {
+    const event =
+      row.type === "claim"
+        ? "claim_rejected"
+        : row.type === "new_listing"
+          ? "listing_rejected"
+          : row.type === "edit"
+            ? "edit_rejected"
+            : row.type === "photo"
+              ? "photo_rejected"
+              : null;
+    if (event) {
+      await sendPortalOwnerEmail({
+        to: email,
+        event,
+        businessTitle,
+        adminNotes,
+      });
+    }
+  }
+}

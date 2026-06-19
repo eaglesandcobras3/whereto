@@ -4,6 +4,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
@@ -173,7 +174,8 @@ function FooterBrowseColumn({
   );
 }
 
-const companyLinks = [
+function buildCompanyLinks(listBusinessHref: string) {
+  return [
   { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "about" }), name: "About", href: "/about" },
   {
     ...gaClickProps({ event: "nav_click", category: "footer_company", label: "visitor_guide" }),
@@ -188,14 +190,19 @@ const companyLinks = [
   {
     ...gaClickProps({ event: "cta_click", category: "footer_company", label: "list_your_business" }),
     name: "List your business",
-    href: "/list-your-business",
+    href: listBusinessHref,
   },
   { ...gaClickProps({ event: "cta_click", category: "footer_company", label: "correct_listing" }), name: "Correct a listing", href: "/feedback" },
   { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "privacy" }), name: "Privacy", href: "/privacy" },
   { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "terms" }), name: "Terms", href: "/terms" },
 ];
+}
 
 export async function SiteFooter() {
+  const flags = await getAllFeatureFlags();
+  const listBusinessHref = isOnboardEnabled(flags) ? "/portal/businesses/new" : "/list-your-business";
+  const companyLinks = buildCompanyLinks(listBusinessHref);
+
   const [townLinks, areaLinks, categoryLinks, instagramUrl, tiktokUrl] = await Promise.all([
     getFooterTowns(),
     getFooterAreas(),

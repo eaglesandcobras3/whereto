@@ -1,10 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { isOnboardEnabled } from "@/lib/feature-flags-core";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 
 /**
  * Homepage call-to-action after the neighborhoods / towns strip.
  * Links to the public listing request flow (no markdown images — CSS only).
  */
 export function ListBusinessHomeCta() {
+  const flags = useAppFeatureFlags();
+  const listHref = isOnboardEnabled(flags) ? "/portal/businesses/new" : "/list-your-business";
+
   return (
     <section
       id="section-list-your-business"
@@ -41,7 +48,7 @@ export function ListBusinessHomeCta() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
-                  href="/list-your-business"
+                  href={listHref}
                   className="inline-flex items-center gap-2 rounded-full bg-[var(--color-logo-navy)] px-7 py-3.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[var(--color-primary-light)] md:text-base"
                 >
                   <span className="material-symbols-outlined !text-xl" aria-hidden>

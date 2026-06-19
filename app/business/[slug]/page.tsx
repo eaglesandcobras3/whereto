@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
-import { ClaimListingForm } from "@/components/ClaimListingForm";
+import { BusinessClaimSection } from "@/components/business/BusinessClaimSection";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
@@ -717,14 +717,13 @@ export default async function BusinessPage({ params }: Props) {
               )}
 
               {/* Claim Section */}
-              <section className="border-t border-zinc-100 pt-12">
-                <ClaimListingForm
-                  businessId={b.id as string}
-                  claimStatus={(b.claim_status as string) ?? "unclaimed"}
-                  userId={user?.id ?? null}
-                  claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
-                />
-              </section>
+              <BusinessClaimSection
+                businessId={b.id as string}
+                businessTitle={String(b.title ?? "this business")}
+                claimStatus={(b.claim_status as string) ?? "unclaimed"}
+                userId={user?.id ?? null}
+                claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
+              />
             </div>
 
             {/* Sidebar */}

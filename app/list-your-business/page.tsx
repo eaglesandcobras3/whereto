@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { ListBusinessForm, type ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
+import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
@@ -45,6 +47,11 @@ async function loadTowns(): Promise<ListBusinessTownOption[]> {
 }
 
 export default async function ListYourBusinessPage() {
+  const flags = await getAllFeatureFlags();
+  if (isOnboardEnabled(flags)) {
+    redirect("/portal/businesses/new");
+  }
+
   const towns = await loadTowns();
 
   return (

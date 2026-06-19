@@ -6,6 +6,7 @@ import {
   isAskEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
+  isOnboardEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -16,6 +17,7 @@ export {
   isAskEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
+  isOnboardEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -65,6 +67,14 @@ export async function askApiBlocked(): Promise<NextResponse | null> {
 /** For route handlers: returns a 404 when the search inspector is off. */
 export async function searchInspectorApiBlocked(): Promise<NextResponse | null> {
   if (!isSearchInspectorEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when the business portal is off. */
+export async function onboardApiBlocked(): Promise<NextResponse | null> {
+  if (!isOnboardEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;

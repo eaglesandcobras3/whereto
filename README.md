@@ -1,8 +1,10 @@
 # WhereTo30A (`whereto30a`)
 
-AI-assisted local discovery for Florida’s 30A corridor. See [docs/PRD.md](docs/PRD.md) and [docs/whereto30a-implementation-plan.md](docs/whereto30a-implementation-plan.md).
+AI-assisted local discovery for Florida’s 30A corridor.
 
-**Human setup checklist:** [docs/OPERATOR-TODO.md](docs/OPERATOR-TODO.md) (keep this updated when onboarding or changing infra).
+**Business Portal:** [docs/PRD-business-portal.md](docs/PRD-business-portal.md) · [docs/business-portal-implementation-plan.md](docs/business-portal-implementation-plan.md) · [docs/OPERATOR-TODO-business-portal.md](docs/OPERATOR-TODO-business-portal.md)
+
+**Human setup checklist:** [docs/OPERATOR-TODO.md](docs/OPERATOR-TODO.md) (site-wide) and [docs/OPERATOR-TODO-business-portal.md](docs/OPERATOR-TODO-business-portal.md) (portal rollout).
 
 ## Setup
 

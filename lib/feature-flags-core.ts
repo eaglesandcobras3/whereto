@@ -3,8 +3,8 @@
  * Flags are PostHog-only; code defaults are all off when PostHog is unavailable.
  */
 
-/** PostHog flag keys — discovery surfaces only. */
-export const FEATURE_FLAG_KEYS = ["search", "ask", "search_inspector"] as const;
+/** PostHog flag keys. */
+export const FEATURE_FLAG_KEYS = ["search", "ask", "search_inspector", "onboard"] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
 
@@ -14,6 +14,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   search: false,
   ask: false,
   search_inspector: false,
+  onboard: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -56,4 +57,8 @@ export function isSearchEnabled(flags: DiscoveryFlags | FeatureFlags): boolean {
 
 export function isSearchInspectorEnabled(flags: FeatureFlags): boolean {
   return flags.search_inspector === true;
+}
+
+export function isOnboardEnabled(flags: FeatureFlags): boolean {
+  return flags.onboard === true;
 }
