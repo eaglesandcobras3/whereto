@@ -223,7 +223,7 @@ export async function getGuidesForTown(townId: string): Promise<TownGuideCard[]>
   if (linkedIds.length === 0) return [];
 
   const { data: linked } = await supabase
-    .from("guides_view")
+    .from("guides")
     .select(GUIDE_VIEW_SELECT)
     .in("id", linkedIds)
     .is("archived_at", null)

@@ -9,7 +9,7 @@ import {
 } from "@/lib/data/content-entries";
 import { guideHeroGradient } from "@/lib/guides/hero-gradient";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
-import { getPublicImageUrl } from "@/lib/media/public-image-url";
+import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
@@ -64,7 +64,7 @@ async function loadGuide(slug: string) {
 
     const { data: g } = await supabase
       .from("guides")
-      .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, status, date_created, date_updated")
+      .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, main_image_url, hero_image_url, status, date_created, date_updated")
       .eq("slug", slug)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -79,10 +79,17 @@ async function loadGuide(slug: string) {
         seo_description: string | null;
         main_image: string | null;
         hero_image: string | null;
+        main_image_url: string | null;
+        hero_image_url: string | null;
         date_created: string | null;
         date_updated: string | null;
       };
-      const img = getPublicImageUrl(row.main_image) ?? getPublicImageUrl(row.hero_image);
+      const img = getPublicImageUrlWithView(
+        row.main_image_url,
+        row.hero_image_url,
+        row.main_image,
+        row.hero_image,
+      );
       return {
         title: row.title,
         body_markdown: row.content ?? "",

@@ -61,7 +61,7 @@ function guideSubtitle(
 async function getGuides(): Promise<GuideRow[]> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
-    .from("guides_view")
+    .from("guides")
     .select(
       "slug, title, excerpt, seo_description, guide_type, main_image, hero_image, main_image_url, hero_image_url",
     )

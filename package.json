@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "content:compile": "npx tsx scripts/content-compiler.ts",
+    "sync:rankscore": "npx tsx scripts/sync-rankscore-guides.ts",
     "supabase:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
     "supabase:types:remote": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > lib/supabase/database.types.ts",
     "diagnose:supabase": "npx tsx scripts/diagnose-supabase.ts",
