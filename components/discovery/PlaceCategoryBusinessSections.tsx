@@ -39,7 +39,7 @@ export function PlaceCategoryBusinessSections({
           {heading ?? `Local businesses in ${placeName}`}
         </h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-          {subheading ?? "Browse by category — every listing linked below."}
+          {subheading ?? "Browse by category. Every listing is linked below."}
         </p>
       </div>
       {sections.map((section) => {

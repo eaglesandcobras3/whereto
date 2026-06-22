@@ -36,15 +36,15 @@ export function ListBusinessHomeCta() {
                 id="home-list-business-heading"
                 className="font-headline text-3xl font-bold leading-tight tracking-tight text-[var(--color-text-primary)] md:text-4xl"
               >
-                List your business &mdash; it&apos;s free on WhereTo30A
+                List your business. It&apos;s free on WhereTo30A
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)] md:text-lg">
                 Reach travelers and locals who are already budgeting time on Scenic Highway 30A. One short request puts
                 your storefront or service in front of visitors planning meals, errands, date nights, and beach weeks.
               </p>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--color-text-tertiary)]">
-                We review every submission before anything goes live&mdash;same thoughtful standards as the rest of the
-                guide.
+                We review every submission before anything goes live, with the same thoughtful standards as the rest of
+                the guide.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
@@ -74,7 +74,7 @@ export function ListBusinessHomeCta() {
                   <div>
                     <dt className="font-semibold text-[var(--color-text-primary)]">Visible audience</dt>
                     <dd className="mt-1 leading-relaxed text-[var(--color-text-secondary)]">
-                      People browsing town hubs, search, and related picks—not a billboard on the interstate.
+                      People browsing town hubs, search, and related picks, not a billboard on the interstate.
                     </dd>
                   </div>
                 </div>
@@ -102,7 +102,8 @@ export function ListBusinessHomeCta() {
                   <div>
                     <dt className="font-semibold text-[var(--color-text-primary)]">Simple next step</dt>
                     <dd className="mt-1 leading-relaxed text-[var(--color-text-secondary)]">
-                      Tell us basics and how you operate—we follow up when we&apos;re ready to publish or need more info.
+                      Tell us the basics and how you operate. We&apos;ll follow up when we&apos;re ready to publish or
+                      need more info.
                     </dd>
                   </div>
                 </div>

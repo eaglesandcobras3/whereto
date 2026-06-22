@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   ...canonicalAlternates("/guides"),
   title: "30A Travel Guides | Town Tips, Dining & Trip Planning",
   description:
-    "Browse editorial guides for Scenic 30A and South Walton, Florida — first-timer planning, town picks, dining, beaches, and local trip ideas from Rosemary Beach to Grayton Beach.",
+    "Browse editorial guides for Scenic 30A and South Walton, Florida: first-timer planning, town picks, dining, beaches, and local trip ideas from Rosemary Beach to Grayton Beach.",
   keywords: [
     "30A travel guides",
     "30A vacation planning",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     path: "/guides",
     title: "30A Travel Guides | WhereTo30A",
     description:
-      "Editorial guides for planning your 30A trip — towns, food, beaches, and on-the-ground local advice.",
+      "Editorial guides for planning your 30A trip: towns, food, beaches, and on-the-ground local advice.",
   }),
 };
 
@@ -112,7 +112,7 @@ export default async function GuidesPage() {
             <p className="text-eyebrow">30A · South Walton, Florida</p>
             <h1 className="text-hero text-[var(--color-text-primary)]">Travel guides</h1>
             <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Editorial guides for planning your trip — town picks, dining, beaches, and local
+              Editorial guides for planning your trip: town picks, dining, beaches, and local
               advice written for the Emerald Coast.
             </p>
             <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
@@ -147,7 +147,7 @@ export default async function GuidesPage() {
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
                   {planningGuide.subtitle ||
-                    "First-timer planning — towns, beach access, airports, where to eat, and how to pace your week along Scenic 30A."}
+                    "First-timer planning: towns, beach access, airports, where to eat, and how to pace your week along Scenic 30A."}
                 </p>
               </div>
               <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--color-primary)]">

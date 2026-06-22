@@ -249,7 +249,7 @@ export default async function SeoIntentPage({ params }: Props) {
               to refine by vibe, dietary needs, or time of day.
             </li>
             <li>
-              Town guides cover broader picks — see the{" "}
+              Town guides cover broader picks. See the{" "}
               <Link
                 href={`/${townSlug}`}
                 {...gaClickProps({

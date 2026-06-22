@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   ...canonicalAlternates("/businesses"),
   title: "Local Businesses on 30A, Florida | Restaurants, Shops & More",
   description:
-    "Browse local businesses along Scenic 30A in South Walton, Florida — restaurants, coffee shops, bars, activities, shopping boutiques, and services across Rosemary Beach, Seaside, Watercolor, Alys Beach, and Inlet Beach.",
+    "Browse local businesses along Scenic 30A in South Walton, Florida: restaurants, coffee shops, bars, activities, shopping boutiques, and services across Rosemary Beach, Seaside, WaterColor, Alys Beach, and Inlet Beach.",
   keywords: [
     "30A local businesses",
     "30A restaurants",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     path: "/businesses",
     title: "Local Businesses on 30A, Florida | WhereTo30A",
     description:
-      "The local business directory for Scenic 30A — restaurants, coffee, bars, activities, shopping, and services curated town by town.",
+      "The local business directory for Scenic 30A: restaurants, coffee, bars, activities, shopping, and services curated town by town.",
   }),
 };
 
@@ -181,7 +181,7 @@ export default async function BusinessesPage() {
             </h1>
             <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
               Restaurants, coffee shops, bars, boutiques, and services across every community
-              along Scenic 30A — search by name or describe what you&apos;re looking for.
+              along Scenic 30A. Search by name or describe what you&apos;re looking for.
             </p>
             <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
               {hubBusinessesIntro()}
@@ -247,7 +247,7 @@ export default async function BusinessesPage() {
               Browse by town
             </h2>
             <p className="text-[var(--color-text-secondary)]">
-              Every 30A community has its own character — find restaurants, shops, and local guides
+              Every 30A community has its own character. Find restaurants, shops, and local guides
               for each one.
             </p>
           </header>

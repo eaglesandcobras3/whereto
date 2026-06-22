@@ -41,7 +41,7 @@ export function generateArtifactSummary(artifact: AskArtifact): string {
 function summarizeBusinessResults(a: BusinessResultsArtifact): string {
   const lines = a.results.slice(0, 8).map((r) => {
     const place = r.town_or_area ? ` (${r.town_or_area})` : "";
-    return `• ${r.title}${place} — ${r.why_this_matched}`;
+    return `• ${r.title}${place}: ${r.why_this_matched}`;
   });
   const intro = a.title ? `${a.title}:\n` : "";
   const outro =
@@ -52,14 +52,14 @@ function summarizeBusinessResults(a: BusinessResultsArtifact): string {
 }
 
 function summarizeGuideResults(a: GuideResultsArtifact): string {
-  const lines = a.results.slice(0, 6).map((g) => `• ${g.title}${g.excerpt ? ` — ${g.excerpt}` : ""}`);
+  const lines = a.results.slice(0, 6).map((g) => `• ${g.title}${g.excerpt ? `: ${g.excerpt}` : ""}`);
   return `${a.title}:\n${lines.join("\n")}`.trim();
 }
 
 function summarizeTownResults(a: TownResultsArtifact): string {
   const lines = a.results.slice(0, 6).map((t) => {
     const region = t.region ? ` (${t.region})` : "";
-    return `• ${t.title}${region}${t.excerpt ? ` — ${t.excerpt}` : ""}`;
+    return `• ${t.title}${region}${t.excerpt ? `: ${t.excerpt}` : ""}`;
   });
   return `${a.title}:\n${lines.join("\n")}`.trim();
 }
@@ -67,7 +67,7 @@ function summarizeTownResults(a: TownResultsArtifact): string {
 function summarizeAreaResults(a: AreaResultsArtifact): string {
   const lines = a.results.slice(0, 6).map((ar) => {
     const kind = ar.area_type ? ` [${ar.area_type}]` : "";
-    return `• ${ar.title}${kind}${ar.excerpt ? ` — ${ar.excerpt}` : ""}`;
+    return `• ${ar.title}${kind}${ar.excerpt ? `: ${ar.excerpt}` : ""}`;
   });
   return `${a.title}:\n${lines.join("\n")}`.trim();
 }

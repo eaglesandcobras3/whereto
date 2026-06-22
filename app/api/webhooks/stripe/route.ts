@@ -1,27 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { recordBillingEvent } from "@/lib/portal/billing-events";
 import { sendPortalOwnerEmail } from "@/lib/portal/notifications";
 import {
+  effectivePlanSlug,
+  getBusinessSubscription,
   recordStripeEvent,
   syncStripeSubscription,
 } from "@/lib/portal/billing";
+import { isPaidPlan } from "@/lib/portal/entitlements";
 import { getStripe } from "@/lib/stripe/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 export const runtime = "nodejs";
 
-async function notifyPaymentSuccess(businessId: string): Promise<void> {
+async function ownerEmailForBusiness(businessId: string): Promise<{ email: string; title: string } | null> {
   const supabase = getServiceSupabase();
-  const { data: biz } = await supabase.from("businesses").select("title, claimed_by_user_id").eq("id", businessId).maybeSingle();
-  if (!biz?.claimed_by_user_id) return;
+  const { data: biz } = await supabase
+    .from("businesses")
+    .select("title, claimed_by_user_id")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!biz?.claimed_by_user_id) return null;
 
   const { data: user } = await supabase.auth.admin.getUserById(biz.claimed_by_user_id as string);
-  if (!user.user?.email) return;
+  if (!user.user?.email) return null;
 
+  return { email: user.user.email, title: String(biz.title ?? "your business") };
+}
+
+async function businessIdFromSubscriptionId(subscriptionId: string): Promise<string | null> {
+  const stripe = getStripe();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  return (
+    subscription.metadata.business_id?.trim() ||
+    (typeof subscription.items.data[0]?.price?.metadata?.business_id === "string"
+      ? subscription.items.data[0].price.metadata.business_id
+      : null)
+  );
+}
+
+async function notifyPaymentSuccess(businessId: string): Promise<void> {
+  const owner = await ownerEmailForBusiness(businessId);
+  if (!owner) return;
   await sendPortalOwnerEmail({
-    to: user.user.email,
+    to: owner.email,
     event: "payment_success",
-    businessTitle: String(biz.title ?? "your business"),
+    businessTitle: owner.title,
+  });
+}
+
+async function notifyPaymentFailed(businessId: string): Promise<void> {
+  const owner = await ownerEmailForBusiness(businessId);
+  if (!owner) return;
+  await sendPortalOwnerEmail({
+    to: owner.email,
+    event: "payment_failed",
+    businessTitle: owner.title,
+  });
+}
+
+async function notifySubscriptionUpgraded(businessId: string): Promise<void> {
+  const owner = await ownerEmailForBusiness(businessId);
+  if (!owner) return;
+  await sendPortalOwnerEmail({
+    to: owner.email,
+    event: "subscription_upgraded",
+    businessTitle: owner.title,
   });
 }
 
@@ -30,6 +75,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   if (!businessId) return;
 
   const supabase = getServiceSupabase();
+  const subBefore = await getBusinessSubscription(supabase, businessId);
+  const wasFree = effectivePlanSlug(subBefore) === "claimed_listing";
+
   const subscriptionId =
     typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
   const customerId =
@@ -40,7 +88,48 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   const stripe = getStripe();
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   await syncStripeSubscription(supabase, subscription);
-  await notifyPaymentSuccess(businessId);
+
+  const subAfter = await getBusinessSubscription(supabase, businessId);
+  if (wasFree && isPaidPlan(effectivePlanSlug(subAfter))) {
+    await notifySubscriptionUpgraded(businessId);
+  } else {
+    await notifyPaymentSuccess(businessId);
+  }
+}
+
+async function handleInvoice(
+  invoice: Stripe.Invoice,
+  stripeEventId: string,
+  eventType: "payment_succeeded" | "payment_failed",
+): Promise<void> {
+  const parentSub = invoice.parent?.subscription_details?.subscription;
+  const subscriptionId =
+    typeof parentSub === "string" ? parentSub : parentSub?.id;
+  if (!subscriptionId) return;
+
+  const businessId = await businessIdFromSubscriptionId(subscriptionId);
+  if (!businessId) return;
+
+  const supabase = getServiceSupabase();
+  const stripe = getStripe();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  await syncStripeSubscription(supabase, subscription);
+
+  await recordBillingEvent(supabase, {
+    businessId,
+    stripeEventId,
+    stripeInvoiceId: invoice.id ?? null,
+    eventType,
+    amountCents: invoice.amount_paid ?? invoice.amount_due ?? null,
+    currency: invoice.currency ?? "usd",
+    description: invoice.description ?? `Invoice ${invoice.number ?? invoice.id ?? ""}`.trim(),
+  });
+
+  if (eventType === "payment_succeeded") {
+    await notifyPaymentSuccess(businessId);
+  } else {
+    await notifyPaymentFailed(businessId);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -81,22 +170,32 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const businessId = await syncStripeSubscription(supabase, subscription);
-        if (event.type === "customer.subscription.deleted" && businessId) {
-          // downgrade handled in sync
+        await syncStripeSubscription(supabase, subscription);
+        if (event.type === "customer.subscription.deleted") {
+          const businessId =
+            subscription.metadata.business_id?.trim() ||
+            (typeof subscription.items.data[0]?.price?.metadata?.business_id === "string"
+              ? subscription.items.data[0].price.metadata.business_id
+              : null);
+          if (businessId) {
+            await recordBillingEvent(supabase, {
+              businessId,
+              stripeEventId: event.id,
+              eventType: "subscription_canceled",
+              description: "Subscription canceled",
+            });
+          }
         }
+        break;
+      }
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleInvoice(invoice, event.id, "payment_succeeded");
         break;
       }
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        const parentSub = invoice.parent?.subscription_details?.subscription;
-        const subscriptionId =
-          typeof parentSub === "string" ? parentSub : parentSub?.id;
-        if (subscriptionId) {
-          const stripe = getStripe();
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          await syncStripeSubscription(supabase, subscription);
-        }
+        await handleInvoice(invoice, event.id, "payment_failed");
         break;
       }
       default:

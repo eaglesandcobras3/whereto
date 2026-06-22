@@ -48,7 +48,7 @@ export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, cl
 
   return (
     <p className={base}>
-      Listings aren&apos;t verified—hours, descriptions, and suitability cues can be out of date.
+      Listings aren&apos;t verified. Hours, descriptions, and suitability cues can be out of date.
       Appearance here isn&apos;t an endorsement unless we say so.{" "}
       <Link href={feedbackHref} className={linkCn}>
         Send a correction

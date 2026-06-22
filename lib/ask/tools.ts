@@ -397,7 +397,7 @@ export function createAskTools(ctx: AskToolContext) {
           type: "empty_state",
           title: "Submission received",
           message:
-            "Thanks — our team will review your listing request. We do not auto-publish new businesses.",
+            "Thanks. Our team will review your listing request. We do not auto-publish new businesses.",
         };
         return { requestId: data!.id, status: "pending" };
       },
@@ -433,7 +433,7 @@ export function createAskTools(ctx: AskToolContext) {
         ctx.artifact = {
           type: "empty_state",
           title: "Feedback received",
-          message: "Thank you — we'll review your note and follow up if needed.",
+          message: "Thank you. We'll review your note and follow up if needed.",
         };
         return { feedbackId: data!.id };
       },

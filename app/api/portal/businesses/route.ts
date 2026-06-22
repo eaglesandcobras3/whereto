@@ -69,12 +69,24 @@ export async function GET() {
 
   const { data: pending } = await supabase
     .from("portal_review_items")
-    .select("id, type, status, business_id, payload, created_at")
+    .select("id, type, status, business_id, payload, admin_notes, created_at")
     .eq("submitted_by", session.user.id)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  return NextResponse.json({ businesses, pending: pending ?? [] });
+  const { data: recentDecisions } = await supabase
+    .from("portal_review_items")
+    .select("id, type, status, business_id, payload, admin_notes, created_at")
+    .eq("submitted_by", session.user.id)
+    .in("status", ["rejected", "needs_changes"])
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  return NextResponse.json({
+    businesses,
+    pending: pending ?? [],
+    recent_decisions: recentDecisions ?? [],
+  });
 }
 
 export async function POST(request: NextRequest) {

@@ -27,15 +27,15 @@ export default function PrivacyPage() {
       <p>Depending on how you use the site, we may collect:</p>
       <ul>
         <li>
-          <strong>Account information</strong> — if you create an account (for example, email and profile details you
+          <strong>Account information</strong>: if you create an account (for example, email and profile details you
           provide, and authentication data managed by our identity provider).
         </li>
         <li>
-          <strong>Usage data</strong> — such as pages viewed, approximate region from IP address, device and browser
+          <strong>Usage data</strong>: such as pages viewed, approximate region from IP address, device and browser
           type, and interactions with search or navigation features.
         </li>
         <li>
-          <strong>Content you submit</strong> — for example, text you enter into forms, support messages, or other fields
+          <strong>Content you submit</strong>: for example, text you enter into forms, support messages, or other fields
           where you voluntarily send us information.
         </li>
       </ul>

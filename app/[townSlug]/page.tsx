@@ -270,7 +270,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       seoDesc?.trim() ||
         (typeof town.excerpt === "string" && town.excerpt) ||
         "",
-      `Local guide: ${town.name} on 30A — restaurants, beaches, areas, and what the week actually feels like.`,
+      `Local guide: ${town.name} on 30A. Restaurants, beaches, areas, and what the week actually feels like.`,
     );
     const ogTitle = `${town.name} | WhereTo30A`;
     return {

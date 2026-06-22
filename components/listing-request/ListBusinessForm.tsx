@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
+import { isOnboardEnabled } from "@/lib/feature-flags-core";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 
@@ -25,6 +26,22 @@ export function ListBusinessForm({ towns }: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [similar, setSimilar] = useState<SimilarHit[] | null>(null);
   const [done, setDone] = useState(false);
+
+  if (isOnboardEnabled(featureFlags)) {
+    return (
+      <div className="mt-8 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6">
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          New listings are submitted through the Business Portal. Sign in to add your business and track review status.
+        </p>
+        <Link
+          href="/portal/businesses/new"
+          className="mt-4 inline-flex rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+        >
+          Open Business Portal
+        </Link>
+      </div>
+    );
+  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -85,7 +102,7 @@ export function ListBusinessForm({ towns }: Props) {
       setDone(true);
       captureEvent("listing_request_submitted", { business_title: payload.title, town_id: payload.town_id });
       setMsg(
-        "Thanks — we received your request. Our team reviews submissions before anything goes live. If we already list a close match, we may reach out or link you to claim it instead of creating a duplicate.",
+        "Thanks. We got your request. Our team reviews every submission before anything goes live. If we already list a close match, we may reach out or point you to claim it instead of creating a duplicate.",
       );
       setSimilar(j.similar && j.similar.length > 0 ? j.similar : null);
       e.currentTarget.reset();
@@ -111,7 +128,7 @@ export function ListBusinessForm({ towns }: Props) {
               {isDiscoveryEnabled(featureFlags) ? (
                 <>
                   {" "}
-                  — or{" "}
+                  or{" "}
                   <Link href={discoveryHref(featureFlags)} className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline">
                     {featureFlags.ask ? "open Ask" : "open search"}
                   </Link>{" "}

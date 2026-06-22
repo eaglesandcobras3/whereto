@@ -156,7 +156,7 @@ function buildRankExplanation(entry: ScoredRec): string {
   const scoreContext = signals.length ? ` (${signals.slice(0, 2).join(", ")})` : "";
 
   if (entry._strategyIds.length > 1) {
-    return `Strong fit across ${via} — ${hintText}${scoreContext}.`;
+    return `Strong fit across ${via}: ${hintText}${scoreContext}.`;
   }
   return `Matched for ${hintText} via ${via}${scoreContext}.`;
 }

@@ -19,7 +19,7 @@ export const SERVICE_VENDOR_UI = {
   specialtyMore: "more specialties",
   hubBrowseHeading: "Browse by specialty",
   hubBrowseSubheading:
-    "Browse by section — home trades, professional services, health, marine, and more. Expand a group or filter to find a specialty.",
+    "Browse by section: home trades, professional services, health, marine, and more. Expand a group or filter to find a specialty.",
 } as const;
 
 export function parseSpecialtySlugsFromParams(

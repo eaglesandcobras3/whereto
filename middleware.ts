@@ -8,6 +8,7 @@ import {
 } from "@/lib/routes/category-hub-path";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
+import { isPortalProtectedPath, portalLoginNextPath } from "@/lib/portal/portal-paths";
 
 /** Legacy `/*-on-30a` category URLs → short canonical paths (e.g. `/restaurants`). */
 function maybeRedirectLegacyCategoryOn30a(request: NextRequest): NextResponse | null {
@@ -101,7 +102,8 @@ export async function middleware(request: NextRequest) {
       pathname === "/admin/review" ||
       pathname.startsWith("/api/admin/review") ||
       pathname === "/admin/subscriptions" ||
-      pathname.startsWith("/api/admin/subscriptions"))
+      pathname.startsWith("/api/admin/subscriptions") ||
+      pathname.startsWith("/api/admin/businesses"))
   ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
@@ -147,6 +149,17 @@ export async function middleware(request: NextRequest) {
   });
 
   await supabase.auth.getUser();
+
+  if (isOnboardEnabled(flags) && isPortalProtectedPath(pathname)) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("next", portalLoginNextPath(pathname, request.nextUrl.search));
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
   return supabaseResponse;
 }

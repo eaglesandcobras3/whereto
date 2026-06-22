@@ -18,6 +18,12 @@ describe("effectivePlanSlug", () => {
     ).toBe("local_partner");
   });
 
+  it("returns premium_partner when comped", () => {
+    expect(
+      effectivePlanSlug({ plan_slug: "premium_partner", status: "comped" }),
+    ).toBe("premium_partner");
+  });
+
   it("returns local_partner for past_due grace period", () => {
     expect(
       effectivePlanSlug({ plan_slug: "local_partner", status: "past_due" }),

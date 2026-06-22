@@ -72,7 +72,7 @@ export function ClaimListingForm({
       return;
     }
     gaEvent("claim_submit_success", { business_id: businessId });
-    setMsg("Request submitted. Operators will review — no automated verification.");
+    setMsg("Request submitted. Operators will review it. No automated verification.");
     setNote("");
   }
 
@@ -80,7 +80,7 @@ export function ClaimListingForm({
     <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
       <h2 className="text-sm font-semibold text-zinc-900">Listing claim (MVP)</h2>
       <p className="mt-1 text-xs text-zinc-500">
-        Submit a short note for operators. This is not legal verification — manual review only.
+        Submit a short note for operators. This is not legal verification. Manual review only.
       </p>
       <form onSubmit={submit} className="mt-3 space-y-2">
         <textarea

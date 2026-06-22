@@ -13,7 +13,7 @@ export function AdjacentBusinessCarousel({ businesses }: Props) {
   return (
     <SectionBlock
       title="Worth the short drive"
-      subtitle="Hand-picked from neighboring towns — still on the coast."
+      subtitle="Hand-picked from neighboring towns, still on the coast."
     >
       <ul className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
         {businesses.map((b) => (

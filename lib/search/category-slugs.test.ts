@@ -13,6 +13,11 @@ describe("normalizeBusinessCategorySlug", () => {
     expect(normalizeBusinessCategorySlug("coffee_shops")).toBe("coffee_shops");
   });
 
+  it("maps events and beaches aliases", () => {
+    expect(normalizeBusinessCategorySlug("event")).toBe("events");
+    expect(normalizeBusinessCategorySlug("beach")).toBe("beaches");
+  });
+
   it("returns null for empty", () => {
     expect(normalizeBusinessCategorySlug("")).toBeNull();
     expect(normalizeBusinessCategorySlug(undefined)).toBeNull();

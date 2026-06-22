@@ -322,6 +322,86 @@ export async function approveReviewItem(
   throw new Error(`Approve not implemented for type: ${row.type}`);
 }
 
+export async function needsChangesReviewItem(
+  supabase: SupabaseClient,
+  itemId: string,
+  reviewerId: string,
+  adminNotes: string | null,
+): Promise<void> {
+  const { data: item, error } = await supabase
+    .from("portal_review_items")
+    .select("id, type, status, business_id, submitted_by, payload, admin_notes, created_at")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error || !item) throw new Error("Review item not found");
+  if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
+
+  const row = item as ReviewItemRow;
+
+  if (row.type === "claim" && row.business_id) {
+    await supabase
+      .from("businesses")
+      .update({ claim_status: "unclaimed" })
+      .eq("id", row.business_id)
+      .eq("claim_status", "pending_review");
+
+    await supabase
+      .from("business_claim_requests")
+      .update({ status: "rejected" })
+      .eq("business_id", row.business_id)
+      .eq("user_id", row.submitted_by)
+      .eq("status", "pending");
+  }
+
+  if (row.type === "new_listing") {
+    const listingRequestId =
+      typeof row.payload.listing_request_id === "string" ? row.payload.listing_request_id : null;
+    if (listingRequestId) {
+      await supabase
+        .from("business_listing_requests")
+        .update({ status: "rejected" })
+        .eq("id", listingRequestId);
+    }
+  }
+
+  if (row.type === "edit") {
+    const proposalId =
+      typeof row.payload.proposal_id === "string" ? row.payload.proposal_id : null;
+    if (proposalId) {
+      await supabase
+        .from("business_edit_proposals")
+        .update({ status: "rejected" })
+        .eq("id", proposalId);
+    }
+  }
+
+  if (row.type === "photo") {
+    const photoId = typeof row.payload.photo_id === "string" ? row.payload.photo_id : null;
+    if (photoId) {
+      await supabase.from("business_photos").update({ status: "rejected" }).eq("id", photoId);
+    }
+  }
+
+  await finalizeReviewItem(supabase, itemId, reviewerId, "needs_changes", adminNotes);
+
+  const businessTitle =
+    typeof row.payload.business_title === "string"
+      ? row.payload.business_title
+      : typeof row.payload.title === "string"
+        ? row.payload.title
+        : "your business";
+
+  const email = await submitterEmail(supabase, row.submitted_by, row.payload);
+  if (email) {
+    await sendPortalOwnerEmail({
+      to: email,
+      event: "review_needs_changes",
+      businessTitle,
+      adminNotes,
+    });
+  }
+}
+
 export async function rejectReviewItem(
   supabase: SupabaseClient,
   itemId: string,

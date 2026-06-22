@@ -68,7 +68,7 @@ export function prefilledListingContextLine(
   if (!isSafeInternalPath(path)) return titleOnly;
 
   const urlLine = `${site}${path}`;
-  if (titleOnly) return `${titleOnly} — ${urlLine}`;
+  if (titleOnly) return `${titleOnly}: ${urlLine}`;
   return urlLine;
 }
 

@@ -58,7 +58,7 @@ export function BusinessFeedbackForm({ initialListingContext }: Props) {
       captureEvent("business_feedback_submitted", {
         has_listing_context: Boolean(payload.listing_context),
       });
-      setMsg("Thanks — we received your feedback. Our team reads every note.");
+      setMsg("Thanks. We got your feedback. Our team reads every note.");
       e.currentTarget.reset();
     }
   }

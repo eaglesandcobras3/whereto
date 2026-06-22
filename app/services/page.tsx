@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   ...canonicalAlternates(SERVICE_VENDORS_HUB_PATH),
   title: "Service Providers on 30A, Florida | Contractors, Vendors & Trades",
   description:
-    "Find regional service providers along Scenic 30A and South Walton — landscaping, cleaning, contractors, trades, and mobile vendors who work across the corridor.",
+    "Find regional service providers along Scenic 30A and South Walton: landscaping, cleaning, contractors, trades, and mobile vendors who work across the corridor.",
   keywords: [
     "30A service providers",
     "30A contractors",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     path: SERVICE_VENDORS_HUB_PATH,
     title: "Service Providers on 30A | WhereTo30A",
     description:
-      "Regional and mobile service providers for 30A — browse by specialty, then filter by town in search.",
+      "Regional and mobile service providers for 30A. Browse by specialty, then filter by town in search.",
   }),
 };
 
@@ -111,7 +111,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
               Service providers on 30A
             </h1>
             <p className="prose-editorial mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Regional and mobile vendors — trades, insurance, legal, medical, marine, and other
+              Regional and mobile vendors: trades, insurance, legal, medical, marine, and other
               professionals who serve homes and rentals across the corridor. Not the same as
               storefront service businesses with a fixed address (see{" "}
               <Link
@@ -124,7 +124,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
             </p>
             <p className="prose-editorial mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
               Browse by specialty, then filter by town when you need someone who actually works in
-              your neighborhood. Listings summarize service area and contact paths—confirm scope,
+              your neighborhood. Listings summarize service area and contact paths. Confirm scope,
               licensing, and scheduling with the provider before you hire.
             </p>
             <p className="mt-3 text-sm text-[var(--color-text-tertiary)]">

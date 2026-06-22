@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
-import type { PlanSlug } from "@/lib/portal/entitlements";
+import { isPaidPlan, type PaidPlanSlug, type PlanSlug } from "@/lib/portal/entitlements";
 import { getStripe, localPartnerPriceId, siteBaseUrl } from "@/lib/stripe/server";
 
 export type SubscriptionStatus = "active" | "comped" | "canceled" | "past_due";
@@ -19,9 +19,9 @@ export function effectivePlanSlug(sub: Pick<BusinessSubscriptionRow, "plan_slug"
   if (!sub) return "claimed_listing";
   if (
     (sub.status === "active" || sub.status === "comped" || sub.status === "past_due") &&
-    sub.plan_slug === "local_partner"
+    isPaidPlan(sub.plan_slug)
   ) {
-    return "local_partner";
+    return sub.plan_slug;
   }
   return "claimed_listing";
 }
@@ -85,15 +85,16 @@ export async function downgradeToClaimedListing(
   if (error) throw new Error(error.message);
 }
 
-export async function compLocalPartner(
+export async function compPaidPlan(
   supabase: SupabaseClient,
   businessId: string,
   adminUserId: string,
+  planSlug: PaidPlanSlug,
 ): Promise<void> {
   const { error } = await supabase.from("business_subscriptions").upsert(
     {
       business_id: businessId,
-      plan_slug: "local_partner",
+      plan_slug: planSlug,
       status: "comped",
       comped_by: adminUserId,
       updated_at: new Date().toISOString(),
@@ -101,6 +102,15 @@ export async function compLocalPartner(
     { onConflict: "business_id" },
   );
   if (error) throw new Error(error.message);
+}
+
+/** @deprecated use compPaidPlan */
+export async function compLocalPartner(
+  supabase: SupabaseClient,
+  businessId: string,
+  adminUserId: string,
+): Promise<void> {
+  await compPaidPlan(supabase, businessId, adminUserId, "local_partner");
 }
 
 export async function removeComp(
@@ -176,8 +186,8 @@ export async function createLocalPartnerCheckout(opts: {
   const base = siteBaseUrl();
 
   const existing = await getBusinessSubscription(opts.supabase, opts.businessId);
-  if (effectivePlanSlug(existing) === "local_partner") {
-    throw new Error("This business already has Local Partner.");
+  if (isPaidPlan(effectivePlanSlug(existing))) {
+    throw new Error("This business already has an active paid plan.");
   }
 
   let customerId = existing?.stripe_customer_id ?? null;
@@ -222,6 +232,27 @@ export async function createLocalPartnerCheckout(opts: {
   });
 
   if (!session.url) throw new Error("Could not start checkout.");
+  return session.url;
+}
+
+export async function createBillingPortalSession(opts: {
+  supabase: SupabaseClient;
+  businessId: string;
+  userId: string;
+}): Promise<string> {
+  const sub = await getBusinessSubscription(opts.supabase, opts.businessId);
+  if (!sub?.stripe_customer_id) {
+    throw new Error("No billing account found for this business.");
+  }
+
+  const stripe = getStripe();
+  const base = siteBaseUrl();
+  const session = await stripe.billingPortal.sessions.create({
+    customer: sub.stripe_customer_id,
+    return_url: `${base}/portal/billing?business_id=${encodeURIComponent(opts.businessId)}`,
+  });
+
+  if (!session.url) throw new Error("Could not open billing portal.");
   return session.url;
 }
 

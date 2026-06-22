@@ -90,7 +90,7 @@ export function ArtifactPanel({
             </div>
             <p className="font-medium text-foreground">Your recommendations appear here</p>
             <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-              Ask about places to eat, coffee, activities, or guides — we only show verified
+              Ask about places to eat, coffee, activities, or guides. We only show verified
               WhereTo30A listings.
             </p>
           </div>

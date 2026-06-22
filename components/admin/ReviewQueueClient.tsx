@@ -36,7 +36,7 @@ export function ReviewQueueClient() {
     load();
   }, [load]);
 
-  async function act(id: string, action: "approve" | "reject") {
+  async function act(id: string, action: "approve" | "reject" | "needs_changes") {
     setActing(id);
     setError(null);
     const res = await fetch(`/api/admin/review/${encodeURIComponent(id)}`, {
@@ -149,6 +149,14 @@ export function ReviewQueueClient() {
                     className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
                   >
                     Approve
+                  </button>
+                  <button
+                    type="button"
+                    disabled={acting === item.id}
+                    onClick={() => act(item.id, "needs_changes")}
+                    className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                  >
+                    Request changes
                   </button>
                   <button
                     type="button"

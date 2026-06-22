@@ -218,7 +218,7 @@ export async function buildCategoryHubMetadata(slug: string): Promise<Metadata> 
   const title = seoTitleSegmentForLayout(`${cat.title} on 30A, Florida`);
   const description = metaDescriptionSnippet(
     cat.excerpt?.trim(),
-    `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida — browse local options across Rosemary Beach, Seaside, Watercolor, Alys Beach, Inlet Beach, and more.`,
+    `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida. Browse local options across Rosemary Beach, Seaside, WaterColor, Alys Beach, Inlet Beach, and more.`,
   );
   const ogTitle = `${cat.title} on 30A | WhereTo30A`;
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { onboardApiBlocked } from "@/lib/feature-flags";
-import { approveReviewItem, rejectReviewItem } from "@/lib/portal/review-queue";
+import { approveReviewItem, needsChangesReviewItem, rejectReviewItem } from "@/lib/portal/review-queue";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
@@ -35,7 +35,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       await rejectReviewItem(supabase, id, admin.userId, adminNotes);
       return NextResponse.json({ ok: true, status: "rejected" });
     }
-    return NextResponse.json({ error: "action must be approve or reject" }, { status: 400 });
+    if (action === "needs_changes") {
+      if (!adminNotes) {
+        return NextResponse.json({ error: "Add a note explaining what to change." }, { status: 400 });
+      }
+      await needsChangesReviewItem(supabase, id, admin.userId, adminNotes);
+      return NextResponse.json({ ok: true, status: "needs_changes" });
+    }
+    return NextResponse.json({ error: "action must be approve, reject, or needs_changes" }, { status: 400 });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Review action failed";
     return NextResponse.json({ error: message }, { status: 400 });

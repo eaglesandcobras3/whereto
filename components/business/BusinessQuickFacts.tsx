@@ -105,7 +105,7 @@ export function BusinessQuickFacts({
                   <p className="text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">{primaryLocationLine}</p>
                 ) : mapsHref ? (
                   <p className="text-sm italic text-zinc-600">
-                    Exact map coordinates on file—we&apos;re filling in street details when operators confirm them.
+                    Exact map coordinates on file. We&apos;re filling in street details when operators confirm them.
                   </p>
                 ) : null}
                 {addr && svc ? (
@@ -170,7 +170,7 @@ export function BusinessQuickFacts({
               <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">Hours</h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">{hoursText}</p>
               <p className="mt-1.5 text-xs text-zinc-500">
-                Hours can change anytime—please confirm close to your visit.
+                Hours can change anytime. Please confirm close to your visit.
               </p>
             </div>
           </div>

@@ -17,7 +17,15 @@ describe("parseEntitlements", () => {
       hours: true,
       social_links: true,
       long_description: true,
+      featured_placement: undefined,
+      analytics: undefined,
+      priority_support: undefined,
     });
+  });
+
+  it("includes premium hooks from defaults", () => {
+    expect(parseEntitlements(null, "premium_partner").featured_placement).toBe(true);
+    expect(parseEntitlements(null, "signature_partner").analytics).toBe(true);
   });
 });
 

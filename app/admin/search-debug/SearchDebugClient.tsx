@@ -100,7 +100,7 @@ export default function SearchDebugClient({ initialQuery, result }: Props) {
             }`}>
               <span className="font-semibold">Confidence: {confidence.score.toFixed(2)}</span>
               {confidence.low_confidence_reasons.length > 0 && (
-                <span className="ml-2 text-gray-600">— {confidence.low_confidence_reasons.join(", ")}</span>
+                <span className="ml-2 text-gray-600">: {confidence.low_confidence_reasons.join(", ")}</span>
               )}
             </div>
           )}

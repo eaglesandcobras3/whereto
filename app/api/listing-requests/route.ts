@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
+import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 
 import { findSimilarBusinessesForListingRequest } from "@/lib/listing-requests/find-similar-businesses";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
@@ -67,6 +68,14 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const flags = await getAllFeatureFlags();
+  if (isOnboardEnabled(flags)) {
+    return NextResponse.json(
+      { error: "Use the Business Portal at /portal/businesses/new", code: "use_portal" },
+      { status: 410 },
+    );
+  }
+
   let json: unknown;
   try {
     json = await request.json();

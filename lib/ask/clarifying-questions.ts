@@ -176,12 +176,12 @@ const CAPABILITY_PATTERNS: [CapabilityType, RegExp][] = [
 const CAPABILITY_DISCLOSURES: Record<CapabilityType, CapabilityMismatch> = {
   reservations: {
     capability: "reservations",
-    disclosure: "I can't make reservations — I can find you the best options with contact info so you can call or book through their website.",
+    disclosure: "I can't make reservations. I can find you the best options with contact info so you can call or book through their website.",
     offerSearch: true,
   },
   live_hours: {
     capability: "live hours",
-    disclosure: "I don't have live hours — I can still find the right places; check Google Maps or call ahead to confirm they're open.",
+    disclosure: "I don't have live hours. I can still find the right places; check Google Maps or call ahead to confirm they're open.",
     offerSearch: true,
   },
   ordering: {
@@ -418,7 +418,7 @@ export async function buildClarifyingQuestions(
     if (id === "treat_type" && ambient?.searchSignals.preferCold) {
       return {
         ...QUESTION_BANK.treat_type,
-        question: "What kind of treat? (It's hot out — cold options are great right now!)",
+        question: "What kind of treat? (It's hot out, so cold options are great right now!)",
         suggestions: ["Ice cream / gelato", "Cold brew & something sweet", "Donut / pastry", "Bakery item"],
       };
     }
@@ -530,7 +530,7 @@ Also provide reasoning explaining your decision (including why you skipped obvio
     if (id === "treat_type" && ambient?.searchSignals.preferCold) {
       return {
         ...QUESTION_BANK.treat_type,
-        question: "What kind of treat? (It's hot out — cold options are great right now!)",
+        question: "What kind of treat? (It's hot out, so cold options are great right now!)",
         suggestions: ["Ice cream / gelato", "Cold brew & something sweet", "Donut / pastry", "Bakery item"],
       };
     }

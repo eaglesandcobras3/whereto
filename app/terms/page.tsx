@@ -67,7 +67,7 @@ export default function TermsPage() {
         If you operate a business shown on WhereTo30A and you submit listing requests, corrections, ownership or claim correspondence,
         or branding materials, you represent that factual statements about your authority to act for the business, licensing,
         location, imagery rights, URLs, trademarks, allergens, ADA-related claims you ask us to publish, suitability claims, affiliation,
-        accreditation, staffing, food-handling or sanitary assertions you invite us to echo—or other concrete factual assertions—are materially accurate to the best of your
+        accreditation, staffing, food-handling or sanitary assertions you invite us to echo, or other concrete factual assertions, are materially accurate to the best of your
         knowledge after reasonable inquiry. Knowing misrepresentations are misuse of the Service and may void good-faith cooperation.
       </p>
 
@@ -76,13 +76,13 @@ export default function TermsPage() {
       <h3>6.1 General</h3>
       <p>
         The Service is provided <strong>“as is”</strong> and <strong>“as available”</strong>. Except where expressly stated in writing
-        in a separate contract with you, we disclaim warranties implied by law or otherwise—including implied warranties of merchantability,
+        in a separate contract with you, we disclaim warranties implied by law or otherwise, including implied warranties of merchantability,
         fitness for a particular purpose, accuracy, completeness, uninterrupted operation, non-infringement, title, interoperability, latent
-        defects, and conformity to descriptions—to the fullest extent permitted by applicable law.
+        defects, and conformity to descriptions, to the fullest extent permitted by applicable law.
       </p>
       <p>
         Operational facts (hours, prices, closures, tides, sanitation, allergens, ticketing, blackout dates, capacity, zoning, alcohol
-        service rules, staffing, ADA accommodations, contractual terms, permitting, marina rules—the list is illustrative) often change faster
+        service rules, staffing, ADA accommodations, contractual terms, permitting, marina rules; the list is illustrative) often change faster
         than listings update. Readers should independently verify anything load-bearing directly with venues, organizers, licensees, landowners,
         municipalities and, when appropriate, professional advisers.
       </p>
@@ -90,23 +90,23 @@ export default function TermsPage() {
       <h3 id="listing-information-scope">6.2 Business listings &amp; third-party information</h3>
       <p>
         Listings assemble names, excerpts, logistic fields, tagging, heuristic scores, illustrative imagery/icons, excerpts from licensees,
-        ingestion partners, OCR, imports—and tooling-assisted rewriting. Taken together this material remains{" "}
+        ingestion partners, OCR, imports, and tooling-assisted rewriting. Taken together this material remains{" "}
         <strong>informational commentary and directory metadata</strong>, not inspected truth.
       </p>
       <ul>
         <li>
           WhereTo30A does <strong>not</strong> warrant that listings are current, truthful, omission-free, non-defamatory, allergen-perfect,
           safety-certified, medically sound, staffed as described, licensed as described, ADA-accurate, alcohol-regulation accurate for your
-          situation, geographically correct, competitively ranked objective truth—or free of infringement.
+          situation, geographically correct, competitively ranked objective truth, or free of infringement.
         </li>
         <li>
           Inclusion, ordering, illustrative photography, typography, heuristic scores, conversational labels such as “Great for…” or comparative
-          adjectives are editorial or automated convenience—not proof of endorsement, audited inspection or sponsorship unless a disclosure
+          adjectives are editorial or automated convenience, not proof of endorsement, audited inspection or sponsorship unless a disclosure
           immediately adjacent plainly marks paid amplification.
         </li>
         <li>
-          Tooling-assisted summaries can misstate logistical details beside otherwise accurate fields. Automation output is informational only—not
-          legal, tax, medical, maritime-regulatory or other professional advice—even when tone sounds prescriptive.
+          Tooling-assisted summaries can misstate logistical details beside otherwise accurate fields. Automation output is informational only, not
+          legal, tax, medical, maritime-regulatory or other professional advice, even when tone sounds prescriptive.
         </li>
       </ul>
       <p>
@@ -116,30 +116,30 @@ export default function TermsPage() {
           {...gaClickProps({ event: "nav_click", category: "terms", label: "feedback_form" })}
         >
           listing feedback form
-        </Link>—whether you&apos;re flagging inaccuracies, misleading comparisons, likeness disputes,
+        </Link>, whether you&apos;re flagging inaccuracies, misleading comparisons, likeness disputes,
         scraped or imported duplicates, OCR or ingestion issues, suspected impersonations, discriminatory taxonomy that ought not remain, infringing or unlawful
-        editorial copy; omission of plainly required disclosures when you identify the statute or rule and furnish substantiation—we
-        review good-faith requests with commercially reasonable diligence and endeavor to annotate, downgrade prominence, correct—or remove
+        editorial copy; omission of plainly required disclosures when you identify the statute or rule and furnish substantiation. We
+        review good-faith requests with commercially reasonable diligence and endeavor to annotate, downgrade prominence, correct, or remove
         offending material when warranted consistent with applicable law.
       </p>
       <p>
-        Nothing in this policy guarantees a resolution, timetable, prominence, wording—or continued publication. Editors retain editorial
-        discretion—including around speech equities, neutrality, contradictory records—or legal counsel—without committing to any particular
+        Nothing in this policy guarantees a resolution, timetable, prominence, wording, or continued publication. Editors retain editorial
+        discretion, including around speech equities, neutrality, contradictory records, or legal counsel, without committing to any particular
         result.
       </p>
       <p>Repeated abusive or duplicative demands do not accelerate review.</p>
 
       <p>
         <strong>Third-party dealings.</strong> Reservations, purchases, ticketing, contractor engagements, HOA or condominium matters,
-        mooring bookings, employment decisions—or similar dealings—are solely between you and counterparties you independently select.
+        mooring bookings, employment decisions, or similar dealings, are solely between you and counterparties you independently select.
         WhereTo30A is not your broker, escrow agent, fiduciary, or insurer unless we separately execute a written agreement plainly stating otherwise.
       </p>
 
       <h2 id="limitation-of-liability">7. Limitation of liability</h2>
       <p>
-        To the maximum extent permitted by law, neither WhereTo30A nor its suppliers or licensors will be liable for your reliance on—or
-        omissions within—business listings—including reputational portrayal, illustrative ranking—or automation errors—even ordinary
-        negligence—except where applicable law forbids such exclusion (such as gross negligence, willful misconduct, or fraud as defined locally).
+        To the maximum extent permitted by law, neither WhereTo30A nor its suppliers or licensors will be liable for your reliance on, or
+        omissions within, business listings, including reputational portrayal, illustrative ranking, or automation errors, even ordinary
+        negligence, except where applicable law forbids such exclusion (such as gross negligence, willful misconduct, or fraud as defined locally).
       </p>
       <p>
         To the fullest extent permitted by law, WhereTo30A and its suppliers will not be liable for any indirect,
@@ -159,12 +159,12 @@ export default function TermsPage() {
       <h2>8. Indemnity</h2>
       <p>
         You will defend and indemnify WhereTo30A and its affiliates, directors, officers, employees, contractors, successors, and assigns from
-        third-party claims, damages, judgments, settlements, liabilities, fines, and expenses—including reasonable attorneys’ fees—to the extent arising from your misuse of the Service or breach of these Terms.
+        third-party claims, damages, judgments, settlements, liabilities, fines, and expenses, including reasonable attorneys’ fees, to the extent arising from your misuse of the Service or breach of these Terms.
       </p>
       <p>
-        Operators who supply materials covered by Section 5—including onboarding forms, correction or claim correspondence, imagery,
+        Operators who supply materials covered by Section 5, including onboarding forms, correction or claim correspondence, imagery,
         or factual statements about licensing, allergens, ADA suitability, alcohol service, minors, staffing, affiliation, accreditation,
-        sanitary practices for regulated foodservice establishments, mooring authority, ticketing authority, franchisor instructions—or other fields you ask us to publish—must honor the accuracy obligations described there. Knowingly false, materially misleading, or infringing submissions that contribute to third-party claims may trigger defense and indemnification obligations to the widest extent enforced under Florida law and applicable federal statutes, excluding categories expressly declared non-indemnifiable.
+        sanitary practices for regulated foodservice establishments, mooring authority, ticketing authority, franchisor instructions, or other fields you ask us to publish, must honor the accuracy obligations described there. Knowingly false, materially misleading, or infringing submissions that contribute to third-party claims may trigger defense and indemnification obligations to the widest extent enforced under Florida law and applicable federal statutes, excluding categories expressly declared non-indemnifiable.
       </p>
 
       <h2>9. Termination</h2>

@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     path: "/categories",
     title: "Browse by Category | 30A Local Businesses | WhereTo30A",
     description:
-      "Every category of local business along 30A — restaurants, coffee, bars, activities, shopping, and service businesses.",
+      "Every category of local business along 30A: restaurants, coffee, bars, activities, shopping, and service businesses.",
   }),
 };
 
@@ -168,7 +168,7 @@ export default async function CategoriesPage() {
               Browse by category
             </h1>
             <p className="prose-editorial mt-4 text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Every type of business along Scenic 30A in South Walton, Florida —
+              Every type of business along Scenic 30A in South Walton, Florida,
               from restaurants and coffee shops to activities, shopping, and service businesses.
             </p>
             <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
@@ -315,7 +315,7 @@ export default async function CategoriesPage() {
               Looking for something specific?
             </h2>
             <p className="mt-3 text-[var(--color-text-secondary)]">
-              Use search to find businesses by name, vibe, or natural language — &quot;casual
+              Use search to find businesses by name, vibe, or natural language. &quot;Casual
               dinner after the beach&quot; works.
             </p>
             <Link

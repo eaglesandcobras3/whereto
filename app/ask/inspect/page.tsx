@@ -3,9 +3,9 @@ import { getAllFeatureFlags, isSearchInspectorEnabled } from "@/lib/feature-flag
 import { InspectFlow } from "@/components/ask/inspect/InspectFlow";
 
 export const metadata = {
-  title: "Search Inspector — WhereTo30A",
+  title: "Search Inspector | WhereTo30A",
   description:
-    "Internal search inspector for WhereTo30A — review query routing, filters, and result payloads.",
+    "Internal search inspector for WhereTo30A. Review query routing, filters, and result payloads.",
   robots: { index: false, follow: false },
 };
 

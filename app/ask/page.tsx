@@ -9,7 +9,7 @@ import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 export const metadata: Metadata = {
   title: "Ask WhereTo30A",
   description:
-    "AI concierge for 30A — discover verified restaurants, coffee, activities, and local guides.",
+    "AI concierge for 30A. Discover verified restaurants, coffee, activities, and local guides.",
   robots: { index: false, follow: true },
 };
 

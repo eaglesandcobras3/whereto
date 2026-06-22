@@ -1,13 +1,35 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { effectivePlanSlug, type BusinessSubscriptionRow } from "@/lib/portal/billing";
 
-export type PlanSlug = "claimed_listing" | "local_partner";
+export type PlanSlug =
+  | "claimed_listing"
+  | "local_partner"
+  | "premium_partner"
+  | "signature_partner";
+
+export const PAID_PLAN_SLUGS = [
+  "local_partner",
+  "premium_partner",
+  "signature_partner",
+] as const satisfies readonly PlanSlug[];
+
+export type PaidPlanSlug = (typeof PAID_PLAN_SLUGS)[number];
+
+export function isPaidPlan(slug: string): slug is PaidPlanSlug {
+  return (PAID_PLAN_SLUGS as readonly string[]).includes(slug);
+}
 
 export type PlanEntitlements = {
   max_photos: number;
   hours: boolean;
   social_links: boolean;
   long_description: boolean;
+  /** Future hook — not enforced in UI yet */
+  featured_placement?: boolean;
+  /** Future hook — not enforced in UI yet */
+  analytics?: boolean;
+  /** Future hook — not enforced in UI yet */
+  priority_support?: boolean;
 };
 
 const DEFAULT_ENTITLEMENTS: Record<PlanSlug, PlanEntitlements> = {
@@ -23,7 +45,39 @@ const DEFAULT_ENTITLEMENTS: Record<PlanSlug, PlanEntitlements> = {
     social_links: true,
     long_description: true,
   },
+  premium_partner: {
+    max_photos: 24,
+    hours: true,
+    social_links: true,
+    long_description: true,
+    featured_placement: true,
+    analytics: false,
+  },
+  signature_partner: {
+    max_photos: 48,
+    hours: true,
+    social_links: true,
+    long_description: true,
+    featured_placement: true,
+    analytics: true,
+    priority_support: true,
+  },
 };
+
+export function planDisplayName(slug: PlanSlug | string): string {
+  switch (slug) {
+    case "local_partner":
+      return "Local Partner";
+    case "premium_partner":
+      return "Premium Partner";
+    case "signature_partner":
+      return "Signature Partner";
+    case "claimed_listing":
+      return "Claimed listing (free)";
+    default:
+      return slug;
+  }
+}
 
 export function parseEntitlements(raw: unknown, planSlug: PlanSlug): PlanEntitlements {
   const fallback = DEFAULT_ENTITLEMENTS[planSlug];
@@ -35,6 +89,11 @@ export function parseEntitlements(raw: unknown, planSlug: PlanSlug): PlanEntitle
     social_links: typeof o.social_links === "boolean" ? o.social_links : fallback.social_links,
     long_description:
       typeof o.long_description === "boolean" ? o.long_description : fallback.long_description,
+    featured_placement:
+      typeof o.featured_placement === "boolean" ? o.featured_placement : fallback.featured_placement,
+    analytics: typeof o.analytics === "boolean" ? o.analytics : fallback.analytics,
+    priority_support:
+      typeof o.priority_support === "boolean" ? o.priority_support : fallback.priority_support,
   };
 }
 
@@ -50,7 +109,10 @@ export async function getBusinessPlan(
 
   const planSlug: PlanSlug = effectivePlanSlug(
     sub
-      ? { plan_slug: sub.plan_slug as PlanSlug, status: sub.status as BusinessSubscriptionRow["status"] }
+      ? {
+          plan_slug: sub.plan_slug as PlanSlug,
+          status: sub.status as BusinessSubscriptionRow["status"],
+        }
       : null,
   );
 
@@ -66,7 +128,12 @@ export async function ensureBusinessSubscription(
   await supabase
     .from("business_subscriptions")
     .upsert(
-      { business_id: businessId, plan_slug: "claimed_listing", status: "active", updated_at: new Date().toISOString() },
+      {
+        business_id: businessId,
+        plan_slug: "claimed_listing",
+        status: "active",
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: "business_id", ignoreDuplicates: true },
     );
 }

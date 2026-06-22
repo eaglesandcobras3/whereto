@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PortalBillingClient } from "@/components/portal/PortalBillingClient";
 import { PortalShell } from "@/components/portal/PortalShell";
+import { requireAnyBusinessOwner } from "@/lib/portal/require-any-business-owner";
 
 export const metadata: Metadata = {
   title: "Billing",
   robots: { index: false, follow: false },
 };
 
-export default function PortalBillingPage() {
+export default async function PortalBillingPage() {
+  const owner = await requireAnyBusinessOwner();
+  if (!owner) redirect("/portal");
+
   return (
     <PortalShell active="billing">
       <p className="text-sm text-[var(--color-text-secondary)]">

@@ -202,7 +202,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!place) return { title: "Area" };
   const desc = metaDescriptionSnippet(
     place.excerpt,
-    `Explore ${place.title} on 30A — beaches, dining, and local spots along the corridor.`,
+    `Explore ${place.title} on 30A: beaches, dining, and local spots along the corridor.`,
   );
   const pathSeg = normalizeUrlSegment(place.slug);
   const ogTitle = `${place.title} | WhereTo30A`;
@@ -388,7 +388,7 @@ export default async function AreaPage({ params }: Props) {
                 </section>
               ) : !area.excerpt && categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
-                  Full write-up for this place is on the way—browse the town or nearby spots in the
+                  Full write-up for this place is on the way. Browse the town or nearby spots in the
                   meantime.
                 </p>
               ) : null}

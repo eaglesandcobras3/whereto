@@ -8,6 +8,8 @@ export const BUSINESS_CATEGORY_SLUGS = [
   "shopping",
   "activities",
   "services",
+  "events",
+  "beaches",
 ] as const;
 
 /** Map informal slugs to rows in `business_categories`. */
@@ -24,6 +26,10 @@ const CATEGORY_SLUG_ALIASES: Record<string, (typeof BUSINESS_CATEGORY_SLUGS)[num
   shops: "shopping",
   activity: "activities",
   service: "services",
+  event: "events",
+  events: "events",
+  beach: "beaches",
+  beaches: "beaches",
 };
 
 /**

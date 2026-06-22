@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   ...canonicalAlternates("/towns"),
   title: "30A Beach Towns | Florida's Emerald Coast Communities",
   description:
-    "Explore the beach communities along Scenic 30A in South Walton, Florida — from Rosemary Beach and Seaside to Alys Beach, Watercolor, and Inlet Beach. Each town has its own feel, pace, and local character.",
+    "Explore the beach communities along Scenic 30A in South Walton, Florida, from Rosemary Beach and Seaside to Alys Beach, WaterColor, and Inlet Beach. Each town has its own feel, pace, and local character.",
   keywords: [
     "30A beach towns",
     "South Walton communities",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     path: "/towns",
     title: "30A Beach Towns | Florida's Emerald Coast Communities | WhereTo30A",
     description:
-      "Every beach community along Scenic 30A — with local guides covering vibe, restaurants, beaches, and who each town is best for.",
+      "Every beach community along Scenic 30A, with local guides covering vibe, restaurants, beaches, and who each town is best for.",
   }),
 };
 
@@ -96,7 +96,7 @@ export default async function TownsPage() {
               Beach towns along 30A
             </h1>
             <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Each community on Scenic Highway 30A has its own feel — pick the one that matches how you want the week to go.
+              Each community on Scenic Highway 30A has its own feel. Pick the one that matches how you want the week to go.
             </p>
             <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
               {hubTownsIntro()}

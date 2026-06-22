@@ -8,7 +8,7 @@ import { prefilledListingContextLine } from "@/lib/feedback/feedback-query";
 
 const FEEDBACK_TITLE = "Listing feedback";
 const FEEDBACK_DESCRIPTION =
-  "Share feedback about a business listing on WhereTo30A — accuracy, experience, or suggested improvements.";
+  "Share feedback about a business listing on WhereTo30A: accuracy, experience, or suggested improvements.";
 
 function feedbackHasPrefillParams(
   searchParams: Record<string, string | string[] | undefined>,
@@ -71,7 +71,7 @@ export default async function FeedbackPage({
         <a href="mailto:feedback@whereto30a.com">feedback@whereto30a.com</a>.
       </p>
       <p className="text-sm text-[var(--color-text-tertiary)]">
-        Submitting feedback does not guarantee a particular edit timeline or outcome. How we handle corrections—and the legal limits on liability for directory copy—is described in{" "}
+        Submitting feedback does not guarantee a particular edit timeline or outcome. How we handle corrections, and the legal limits on liability for directory copy, is described in{" "}
         <Link href="/terms#listing-information-scope" className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
           Terms&nbsp;§&nbsp;6.2
         </Link>{" "}

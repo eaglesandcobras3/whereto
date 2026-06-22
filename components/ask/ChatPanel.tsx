@@ -138,7 +138,7 @@ export function ChatPanel({
             <div className="flex flex-col items-center justify-center py-12 text-center sm:py-20">
               <h1 className="text-page-title text-foreground">Ask WhereTo30A</h1>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                Local discovery from verified listings — restaurants, coffee, activities, and
+                Local discovery from verified listings: restaurants, coffee, activities, and
                 guides on 30A.
               </p>
             </div>
