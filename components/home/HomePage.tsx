@@ -212,8 +212,8 @@ export function HomePage({
         </section>
 
         <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-16">
-          <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
-            <p className="prose-editorial text-lg leading-relaxed text-[var(--color-text-secondary)]">
+          <div className="mx-auto max-w-6xl px-4 md:px-10">
+            <p className="max-w-3xl text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
               {homeEditorialIntro()}
             </p>
           </div>
