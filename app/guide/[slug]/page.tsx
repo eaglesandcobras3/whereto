@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -155,6 +156,7 @@ export default async function GuidePage({ params }: Props) {
   const bodyMarkdown = stripLeadingH1MatchingTitle(page.body_markdown || "", page.title).trim();
   const hasHeroImage = Boolean(page.og_image_url);
   const lead = page.seo_description?.trim() || null;
+  const showCorridorMap = slug === "ultimate-30a-first-timers-guide";
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -297,6 +299,23 @@ export default async function GuidePage({ params }: Props) {
                 </p>
               ) : null}
             </>
+          ) : null}
+
+          {showCorridorMap ? (
+            <figure className="mb-10">
+              <div className="overflow-hidden rounded-xl border border-[var(--color-border)] shadow-sm">
+                <Image
+                  src="/map.jpeg"
+                  alt="Map of beach towns along Scenic Highway 30A from Inlet Beach to Dune Allen"
+                  width={1200}
+                  height={600}
+                  className="h-auto w-full"
+                />
+              </div>
+              <figcaption className="mt-2 text-center text-xs text-[var(--color-text-tertiary)]">
+                Beach towns along Scenic Highway 30A, east to west
+              </figcaption>
+            </figure>
           ) : null}
 
           <MarkdownRenderer content={bodyMarkdown} />
