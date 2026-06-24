@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   DEFAULT_FLAGS,
   FEATURE_FLAG_KEYS,
@@ -34,15 +35,27 @@ export {
 
 export { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
 
+async function getAuthenticatedDistinctId(): Promise<string | undefined> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user?.id;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Server-side flags from PostHog (middleware, API guards, redirects). */
 export async function getAllFeatureFlags(): Promise<FeatureFlags> {
   try {
-    const cookieStore = await cookies();
+    const [cookieStore, distinctId] = await Promise.all([cookies(), getAuthenticatedDistinctId()]);
     const cookieHeader = cookieStore
       .getAll()
       .map((cookie) => `${cookie.name}=${cookie.value}`)
       .join("; ");
-    return getAllFeatureFlagsFromCookieHeader(cookieHeader);
+    return getAllFeatureFlagsFromCookieHeader(cookieHeader, distinctId);
   } catch {
     return DEFAULT_FLAGS;
   }

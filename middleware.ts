@@ -77,7 +77,44 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
 }
 
 export async function middleware(request: NextRequest) {
-  const flags = await getFeatureFlagsForMiddleware(request);
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.sb_publishable_key ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  let authenticatedUserId: string | undefined;
+  let supabase: ReturnType<typeof createServerClient> | undefined;
+
+  if (supabaseUrl && supabaseKey) {
+    supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    authenticatedUserId = user?.id;
+  }
+
+  const flags = await getFeatureFlagsForMiddleware(request, authenticatedUserId);
   const { pathname } = request.nextUrl;
 
   if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
@@ -117,38 +154,9 @@ export async function middleware(request: NextRequest) {
   const searchRedirect = maybeRedirectSearch(request);
   if (searchRedirect) return searchRedirect;
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.sb_publishable_key ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
+  if (!supabase) {
     return supabaseResponse;
   }
-
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        supabaseResponse = NextResponse.next({
-          request,
-        });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options),
-        );
-      },
-    },
-  });
-
-  await supabase.auth.getUser();
 
   if (isOnboardEnabled(flags) && isPortalProtectedPath(pathname)) {
     const {

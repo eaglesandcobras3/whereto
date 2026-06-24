@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import posthog from "posthog-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { identifyPostHogUserAndWaitForFlags } from "@/lib/analytics/posthog-auth";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export function SignupForm({ nextPath }: { nextPath: string }) {
@@ -40,7 +41,10 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
       });
       if (error) throw error;
       if (data.user) {
-        posthog.identify(data.user.id, { email: data.user.email });
+        await identifyPostHogUserAndWaitForFlags({
+          id: data.user.id,
+          email: data.user.email,
+        });
       }
       posthog.capture("user_signed_up", { method: "email" });
       const next = nextPath.startsWith("/") ? nextPath : "/profile";
