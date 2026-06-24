@@ -9,31 +9,19 @@ import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
 import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 
-/** Town + area pages: fixed category order (`business_categories.slug`). */
-export const PLACE_CATEGORY_SLUG_ORDER = [
-  "restaurants",
-  "coffee_shops",
-  "bars",
-  "shopping",
-  "activities",
-  "services",
-  "events",
-  "beaches",
-] as const;
+import {
+  PLACE_CATEGORY_SLUG_ORDER,
+  PLACE_CATEGORY_ICONS,
+  PER_PLACE_CATEGORY_PREVIEW,
+  type PlaceCategorySection,
+} from "@/lib/data/place-category-shared";
 
-export const PLACE_CATEGORY_ICONS: Record<string, string> = {
-  restaurants: "restaurant",
-  coffee_shops: "coffee",
-  bars: "local_bar",
-  activities: "kayaking",
-  shopping: "shopping_bag",
-  services: "home_repair_service",
-  events: "event",
-  beaches: "beach_access",
+export {
+  PLACE_CATEGORY_SLUG_ORDER,
+  PLACE_CATEGORY_ICONS,
+  PER_PLACE_CATEGORY_PREVIEW,
 };
-
-/** Card grid cap on town/area hubs; full pool is still linked when over this count. */
-export const PER_PLACE_CATEGORY_PREVIEW = 8;
+export type { PlaceCategorySection };
 
 export const BIZ_CATEGORY_SELECT =
   "id, title, slug, area_id, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( id, title, slug )";
@@ -42,14 +30,6 @@ export type CategoryBusiness = BrowseBusinessCard & {
   categoryId: string | null;
   categoryTitle: string | null;
   categorySlug: string | null;
-};
-
-export type PlaceCategorySection = {
-  id: string;
-  title: string;
-  slug: string;
-  businesses: BrowseBusinessCard[];
-  totalCount: number;
 };
 
 export function rowToCategoryBusiness(row: Record<string, unknown>): CategoryBusiness {

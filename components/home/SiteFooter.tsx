@@ -6,70 +6,120 @@ import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { TruncatedList } from "@/components/ui/truncated-list";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
 const FOOTER_BROWSE_LIMIT = 500;
 
 type FooterBrowseLink = { name: string; slug: string };
 
-async function getFooterTowns(): Promise<FooterBrowseLink[]> {
+async function getBusinessCountsByColumn(column: "town_id" | "area_id" | "primary_category_id"): Promise<Map<string, number>> {
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("towns")
-    .select("title, slug")
+  const { data } = await supabase
+    .from("businesses_view")
+    .select(column)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title")
-    .limit(FOOTER_BROWSE_LIMIT);
+    .limit(5000);
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const id = (row as Record<string, unknown>)[column] as string | null;
+    if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return counts;
+}
+
+async function getFooterTowns(): Promise<FooterBrowseLink[]> {
+  const supabase = getServiceSupabase();
+  const [{ data, error }, bizCounts] = await Promise.all([
+    supabase
+      .from("towns")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(FOOTER_BROWSE_LIMIT),
+    getBusinessCountsByColumn("town_id"),
+  ]);
   if (error) {
     console.error("SiteFooter getFooterTowns", error);
     return [];
   }
-  return (data ?? []).map((t) => ({
-    name: (t as { title: string }).title,
-    slug: t.slug as string,
-  }));
+  const PINNED_TOWN_SLUGS = [
+    "seaside",
+    "rosemary-beach",
+    "alys-beach",
+    "watercolor",
+    "watersound",
+    "grayton-beach",
+  ];
+  const pinnedIndex = new Map(PINNED_TOWN_SLUGS.map((s, i) => [s, i]));
+
+  return (data ?? [])
+    .map((t) => ({
+      name: (t as unknown as { title: string }).title,
+      slug: t.slug as string,
+      _count: bizCounts.get(t.id as string) ?? 0,
+    }))
+    .sort((a, b) => {
+      const aPin = pinnedIndex.get(a.slug);
+      const bPin = pinnedIndex.get(b.slug);
+      if (aPin != null && bPin != null) return aPin - bPin;
+      if (aPin != null) return -1;
+      if (bPin != null) return 1;
+      return b._count - a._count || a.name.localeCompare(b.name);
+    });
 }
 
 async function getFooterAreas(): Promise<FooterBrowseLink[]> {
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("areas_view")
-    .select("title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title")
-    .limit(FOOTER_BROWSE_LIMIT);
+  const [{ data, error }, bizCounts] = await Promise.all([
+    supabase
+      .from("areas_view")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(FOOTER_BROWSE_LIMIT),
+    getBusinessCountsByColumn("area_id"),
+  ]);
   if (error) {
     console.error("SiteFooter getFooterAreas", error);
     return [];
   }
-  return (data ?? []).map((a) => ({
-    name: (a as { title: string }).title,
-    slug: a.slug as string,
-  }));
+  return (data ?? [])
+    .map((a) => ({
+      name: (a as unknown as { title: string }).title,
+      slug: a.slug as string,
+      _count: bizCounts.get(a.id as string) ?? 0,
+    }))
+    .sort((a, b) => b._count - a._count || a.name.localeCompare(b.name));
 }
 
 async function getFooterCategories(): Promise<FooterBrowseLink[]> {
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("business_categories")
-    .select("title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title")
-    .limit(FOOTER_BROWSE_LIMIT);
+  const [{ data, error }, bizCounts] = await Promise.all([
+    supabase
+      .from("business_categories")
+      .select("id, title, slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(FOOTER_BROWSE_LIMIT),
+    getBusinessCountsByColumn("primary_category_id"),
+  ]);
   if (error) {
     console.error("SiteFooter getFooterCategories", error);
     return [];
   }
-  return (data ?? []).map((c) => ({
-    name: (c as { title: string }).title,
-    slug: c.slug as string,
-  }));
+  return (data ?? [])
+    .map((c) => ({
+      name: (c as unknown as { title: string }).title,
+      slug: c.slug as string,
+      _count: bizCounts.get(c.id as string) ?? 0,
+    }))
+    .sort((a, b) => b._count - a._count || a.name.localeCompare(b.name));
 }
 
 const footerLinkClass =
@@ -150,26 +200,41 @@ function FooterBrowseColumn({
   hrefForSlug: (slug: string) => string;
   analyticsCategory: string;
 }) {
+  const list = (
+    <ul className="flex flex-col gap-1">
+      {links.map((item) => (
+        <li key={item.slug}>
+          <Link
+            href={hrefForSlug(item.slug)}
+            {...gaClickProps({
+              event: "nav_click",
+              category: analyticsCategory,
+              label: item.slug,
+            })}
+            className={footerLinkClass}
+          >
+            {item.name}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className={footerColumnClass}>
       <h3 className="text-eyebrow mb-3">{title}</h3>
-      <ul className="flex flex-col gap-1">
-        {links.map((item) => (
-          <li key={item.slug}>
-            <Link
-              href={hrefForSlug(item.slug)}
-              {...gaClickProps({
-                event: "nav_click",
-                category: analyticsCategory,
-                label: item.slug,
-              })}
-              className={footerLinkClass}
-            >
-              {item.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {links.length > 8 ? (
+        <TruncatedList
+          itemCount={links.length}
+          label={title.toLowerCase()}
+          maxHeight="10rem"
+          fadeFrom="var(--color-site-chrome)"
+        >
+          {list}
+        </TruncatedList>
+      ) : (
+        list
+      )}
     </div>
   );
 }

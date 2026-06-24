@@ -45,7 +45,7 @@ export function BusinessPreviewCard({
             alt={name}
             fill
             unoptimized
-            className="object-contain"
+            className="object-cover"
             sizes="(min-width: 768px) 9rem, 7rem"
           />
         ) : (

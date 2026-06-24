@@ -8,7 +8,9 @@ import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public
 import { TagPills } from "@/components/discovery/TagPills";
 import { BusinessClaimSection } from "@/components/business/BusinessClaimSection";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
-import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { markdownSectionPreview } from "@/lib/markdown/section-meta";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
@@ -642,14 +644,28 @@ export default async function BusinessPage({ params }: Props) {
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
-            <div className="space-y-8">
+            <div className="space-y-4">
 
-              {hasMarkdown ? <MarkdownRenderer content={cleanedMarkdown} /> : null}
+              {hasMarkdown ? (
+                <MarkdownCollapsibleSections
+                  content={cleanedMarkdown}
+                  fallbackTitle={`About ${b.name as string}`}
+                  heading={`About ${b.name as string}`}
+                  description="What to expect, when to go, and tips from our local editors."
+                />
+              ) : null}
 
               {/* Vibe Tags - Editorial badges */}
               {vibe?.length ? (
-                <div>
-                  <h2 className="text-eyebrow mb-4">The Vibe</h2>
+                <CollapsibleSection
+                  icon="spa"
+                  preview={`${vibe.slice(0, 3).join(" · ")}${vibe.length > 3 ? " · …" : ""}`}
+                  title={
+                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
+                      The Vibe
+                    </h2>
+                  }
+                >
                   <div className="flex flex-wrap gap-2">
                     {vibe.map((v) => (
                       <span key={v} className="editorial-chip">
@@ -657,55 +673,92 @@ export default async function BusinessPage({ params }: Props) {
                       </span>
                     ))}
                   </div>
-                </div>
+                </CollapsibleSection>
               ) : null}
 
               {/* About - prose style */}
               {!hasMarkdown && b.ai_summary ? (
-                <div>
-                  <h2 className="text-eyebrow mb-4">About</h2>
-                  <p className="prose-editorial text-zinc-700">{b.ai_summary as string}</p>
-                </div>
+                <CollapsibleSection
+                  icon="storefront"
+                  preview={markdownSectionPreview(String(b.ai_summary), 150)}
+                  title={
+                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
+                      About
+                    </h2>
+                  }
+                >
+                  <p className="text-base leading-relaxed text-zinc-700 sm:text-lg">
+                    {b.ai_summary as string}
+                  </p>
+                </CollapsibleSection>
               ) : null}
 
               {/* Local Tip - Pull quote style */}
-              {localTip && (
-                <div className="pull-quote">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[var(--color-primary)]">Local Tip</p>
-                  <p className="text-lg leading-relaxed">{localTip}</p>
-                </div>
-              )}
+              {localTip ? (
+                <CollapsibleSection
+                  icon="lightbulb"
+                  preview={markdownSectionPreview(localTip, 120)}
+                  title={
+                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
+                      Local tip
+                    </h2>
+                  }
+                >
+                  <div className="pull-quote border-0 p-0">
+                    <p className="text-base leading-relaxed sm:text-lg">{localTip}</p>
+                  </div>
+                </CollapsibleSection>
+              ) : null}
 
               {/* Good For / Skip If - Two column layout */}
-              {(goodFor?.length || notIdealFor?.length) ? (
-                <div className="grid gap-8 sm:grid-cols-2">
-                  {goodFor?.length ? (
-                    <div>
-                      <h2 className="text-eyebrow mb-4">Great For</h2>
-                      <ul className="space-y-2.5">
-                        {goodFor.map((g) => (
-                          <li key={g} className="flex items-center gap-2.5 text-zinc-700">
-                            <span className="text-green-600 material-symbols-outlined !text-base">check_circle</span>
-                            <span>{g}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                  {notIdealFor?.length ? (
-                    <div>
-                      <h2 className="text-eyebrow mb-4">Skip If</h2>
-                      <ul className="space-y-2.5">
-                        {notIdealFor.map((n) => (
-                          <li key={n} className="flex items-center gap-2.5 text-zinc-500">
-                            <span className="text-zinc-300 material-symbols-outlined !text-base">remove_circle</span>
-                            <span>{n}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </div>
+              {goodFor?.length || notIdealFor?.length ? (
+                <CollapsibleSection
+                  icon="groups"
+                  preview={[
+                    goodFor?.length ? `Great for ${goodFor.slice(0, 2).join(", ")}` : null,
+                    notIdealFor?.length ? `Skip if ${notIdealFor.slice(0, 2).join(", ")}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  title={
+                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
+                      Who it&apos;s for
+                    </h2>
+                  }
+                >
+                  <div className="grid gap-8 sm:grid-cols-2">
+                    {goodFor?.length ? (
+                      <div>
+                        <h3 className="text-eyebrow mb-4">Great for</h3>
+                        <ul className="space-y-2.5">
+                          {goodFor.map((g) => (
+                            <li key={g} className="flex items-center gap-2.5 text-zinc-700">
+                              <span className="material-symbols-outlined !text-base text-green-600">
+                                check_circle
+                              </span>
+                              <span>{g}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {notIdealFor?.length ? (
+                      <div>
+                        <h3 className="text-eyebrow mb-4">Skip if</h3>
+                        <ul className="space-y-2.5">
+                          {notIdealFor.map((n) => (
+                            <li key={n} className="flex items-center gap-2.5 text-zinc-500">
+                              <span className="material-symbols-outlined !text-base text-zinc-300">
+                                remove_circle
+                              </span>
+                              <span>{n}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                </CollapsibleSection>
               ) : null}
 
               {/* Tags - linked for SEO */}

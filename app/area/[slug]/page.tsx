@@ -5,7 +5,10 @@ import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sec
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro, placeBrowseIntro } from "@/lib/seo/page-intro-copy";
-import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
+import { PlacePageHeader } from "@/components/place/PlacePageHeader";
+import { TownCard } from "@/components/discovery/TownCard";
+import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { Metadata } from "next";
@@ -18,8 +21,6 @@ import {
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
-import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import {
@@ -50,34 +51,11 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
   }
 }
 
-/** Deterministic shuffle using mulberry32 PRNG with daily seed */
-function shuffleWithDailySeed<T>(items: T[]): T[] {
-  const seed = chicagoCalendarDaySeed();
-  let a = seed >>> 0;
-  const rng = () => {
-    a += 0x6d2b79f5;
-    let t = Math.imul(a ^ (a >>> 15), a | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-type SidebarGuide = { slug: string; title: string };
-
 type SidebarTownLink = { name: string; slug: string };
 
 type AreaSidebarData = {
   townLink: SidebarTownLink | null;
-  guides: SidebarGuide[];
 };
-
-const SIDEBAR_GUIDES_CAP = 6;
 
 async function resolveTownLink(place: PublicPlacePage): Promise<SidebarTownLink | null> {
   if (place.town_slug?.trim() && place.town_name?.trim()) {
@@ -94,53 +72,6 @@ async function resolveTownLink(place: PublicPlacePage): Promise<SidebarTownLink 
   if (!row) return null;
   const t = row as { title: string; slug: string };
   return { name: t.title, slug: t.slug };
-}
-
-async function getGuidesForPlace(place: PublicPlacePage): Promise<SidebarGuide[]> {
-  const supabase = getServiceSupabase();
-  const areaKey = place.source === "area" ? place.id : place.parent_area_id;
-  const guideIds: string[] = [];
-
-  if (areaKey) {
-    const { data: ga } = await supabase
-      .from("guide_areas")
-      .select("guide_id")
-      .eq("area_id", areaKey)
-      .limit(35);
-    for (const r of ga ?? []) {
-      const id = (r as { guide_id: string }).guide_id;
-      if (id) guideIds.push(id);
-    }
-  }
-
-  if (guideIds.length === 0 && place.town_id) {
-    const { data: gt } = await supabase
-      .from("guide_towns")
-      .select("guide_id")
-      .eq("town_id", place.town_id)
-      .limit(25);
-    for (const r of gt ?? []) {
-      const id = (r as { guide_id: string }).guide_id;
-      if (id) guideIds.push(id);
-    }
-  }
-
-  const unique = [...new Set(guideIds)];
-  if (unique.length === 0) return [];
-
-  const { data: gRows } = await supabase
-    .from("guides_view")
-    .select("slug, title")
-    .in("id", unique)
-    .is("archived_at", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .limit(40);
-
-  const guides = (gRows ?? []).map((g) => ({
-    slug: String((g as { slug: string }).slug),
-    title: String((g as { title: string }).title),
-  }));
-  return shuffleWithDailySeed(guides).slice(0, SIDEBAR_GUIDES_CAP);
 }
 
 function areaSectionSearchHref(
@@ -180,12 +111,8 @@ function areaBrowseDiscoveryHref(
 }
 
 async function getAreaSidebarData(place: PublicPlacePage): Promise<AreaSidebarData> {
-  const [townLink, guides] = await Promise.all([
-    resolveTownLink(place),
-    getGuidesForPlace(place),
-  ]);
-
-  return { townLink, guides };
+  const townLink = await resolveTownLink(place);
+  return { townLink };
 }
 
 type Props = { params: Promise<{ slug: string }> };
@@ -265,7 +192,7 @@ export default async function AreaPage({ params }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 md:px-10 md:py-12">
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
@@ -303,33 +230,16 @@ export default async function AreaPage({ params }: Props) {
             <span className="text-zinc-500">{typeLabel}</span>
           </nav>
 
-          <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40 md:w-48">
-              {portraitUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={portraitUrl}
-                  alt={area.title}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-zinc-400">
-                  <span className="material-symbols-outlined !text-4xl" aria-hidden>
-                    explore
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-primary)]">
-                {typeLabel}
-              </p>
-              <h1 className="text-editorial-headline mt-2 text-3xl text-zinc-900 sm:text-4xl">
-                {area.title}
-              </h1>
-              {area.town_name && area.town_slug && (
-                <div className="mt-3 text-sm text-zinc-500">
+          <PlacePageHeader
+            eyebrow={typeLabel}
+            title={area.title}
+            intro={intro}
+            portraitUrl={portraitUrl}
+            portraitAlt={area.title}
+            fallbackIcon="explore"
+            meta={
+              area.town_name && area.town_slug ? (
+                <div className="mt-2 text-sm text-zinc-500 sm:mt-3">
                   <Link
                     href={`/${area.town_slug}`}
                     {...gaClickProps({
@@ -343,20 +253,17 @@ export default async function AreaPage({ params }: Props) {
                     {area.town_name}
                   </Link>
                 </div>
-              )}
-              <p className="prose-editorial mt-4 text-lg leading-relaxed text-zinc-600">{intro}</p>
-            </div>
-          </header>
+              ) : undefined
+            }
+          />
 
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
-            <div className="min-w-0 space-y-12">
-              <PlaceCategoryBusinessSections
+          <div className="min-w-0 space-y-8 sm:space-y-10">
+            <PlaceCategoryBusinessSections
                 placeName={area.title}
                 placeSlug={area.slug}
                 sections={categorySections}
                 analyticsCategoryPrefix="area_guide_category"
                 subheading={placeBrowseIntro(area.title)}
-                buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
                   areaBrowseDiscoveryHref(area, featureFlags) ? (
                     <p className="text-[var(--color-text-secondary)]">
@@ -377,80 +284,18 @@ export default async function AreaPage({ params }: Props) {
               />
 
               {hasMarkdown ? (
-                <section
-                  className={
-                    categorySections.length > 0
-                      ? "border-t border-[var(--color-border)] pt-10"
-                      : ""
-                  }
-                >
-                  <MarkdownRenderer content={bodyMarkdown} />
-                </section>
+                <MarkdownCollapsibleSections
+                  content={bodyMarkdown}
+                  fallbackTitle={`About ${area.title}`}
+                  heading={`About ${area.title}`}
+                  description={`Local context and what to know before you explore ${area.title}.`}
+                />
               ) : !area.excerpt && categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
                   Full write-up for this place is on the way. Browse the town or nearby spots in the
                   meantime.
                 </p>
               ) : null}
-            </div>
-
-            <aside className="space-y-6">
-              {sidebar.townLink && (
-                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                  <h2 className="text-eyebrow mb-4">Town</h2>
-                  <ul className="space-y-2">
-                    <li>
-                      <Link
-                        href={`/${sidebar.townLink.slug}`}
-                        {...gaClickProps({
-                          event: "nav_click",
-                          category: "area_sidebar",
-                          label: sidebar.townLink.slug,
-                        })}
-                        className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                      >
-                        <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                          place
-                        </span>
-                        {sidebar.townLink.name}
-                      </Link>
-                    </li>
-                  </ul>
-                </section>
-              )}
-
-              {/* Featured Guides */}
-              {sidebar.guides.length > 0 && (
-                <div className={sidebar.townLink ? "border-t border-[var(--color-border)] pt-6" : ""}>
-                  <h3 className="text-eyebrow mb-4">Featured Guides</h3>
-                  <ul className="space-y-2">
-                    {sidebar.guides.map((guide) => (
-                      <li key={guide.slug}>
-                        <Link
-                          href={
-                            sidebar.townLink?.slug === guide.slug
-                              ? `/${guide.slug}`
-                              : `/guide/${guide.slug}`
-                          }
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "area_sidebar",
-                            label: guide.slug,
-                          })}
-                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                        >
-                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                            menu_book
-                          </span>
-                          {guide.title}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-            </aside>
           </div>
         </div>
       </main>

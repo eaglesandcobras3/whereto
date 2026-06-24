@@ -11,6 +11,8 @@ import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
+import { TruncatedList } from "@/components/ui/truncated-list";
+import { CollapsibleText } from "@/components/ui/collapsible-text";
 
 export const revalidate = 3600;
 
@@ -159,22 +161,22 @@ export default async function CategoriesPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
-        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-20">
-          <div className="mx-auto max-w-3xl px-6 text-center">
-            <span className="mb-4 inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
-              Browse 30A
-            </span>
-            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl">
-              Browse by category
-            </h1>
-            <p className="prose-editorial mt-4 text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Every type of business along Scenic 30A in South Walton, Florida,
-              from restaurants and coffee shops to activities, shopping, and service businesses.
-            </p>
-            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
-              Pick a category to browse listings grouped by town, or open a town guide first when
-              you are still deciding where to stay along the corridor.
-            </p>
+        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10 sm:py-14">
+          <div className="mx-auto max-w-6xl px-6 md:px-10">
+            <div className="max-w-3xl">
+              <p className="text-eyebrow mb-3">Browse 30A</p>
+              <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
+                Browse by category
+              </h1>
+              <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
+                Every type of business along Scenic 30A in South Walton, Florida,
+                from restaurants and coffee shops to activities, shopping, and service businesses.
+              </p>
+              <CollapsibleText
+                text="Pick a category to browse listings grouped by town, or open a town guide first when you are still deciding where to stay along the corridor."
+                className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]"
+              />
+            </div>
           </div>
         </section>
 
@@ -227,7 +229,7 @@ export default async function CategoriesPage() {
                       </p>
                     ) : null}
 
-                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       {cat.preview.map((b) => {
                         const thumb = businessListingImageUrl(b.hero_image_url);
                         return (
@@ -278,29 +280,36 @@ export default async function CategoriesPage() {
                       <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-text-tertiary)]">
                         All {cat.title.toLowerCase()} listings
                       </h3>
-                      <ul className="columns-1 gap-x-8 sm:columns-2 lg:columns-3">
-                        {cat.allBusinesses.map((b) => (
-                          <li key={b.id} className="mb-2 break-inside-avoid">
-                            <Link
-                              href={`/business/${b.slug}`}
-                              {...gaClickProps({
-                                event: "nav_click",
-                                category: "categories_hub_index",
-                                label: `${cat.slug}_${b.slug}`,
-                              })}
-                              className="text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                            >
-                              {b.name}
-                              {b.town_name ? (
-                                <span className="text-[var(--color-text-tertiary)]">
-                                  {" "}
-                                  · {b.town_name}
-                                </span>
-                              ) : null}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                      <TruncatedList
+                        itemCount={cat.allBusinesses.length}
+                        label="listings"
+                        maxHeight="10rem"
+                        fadeFrom="var(--color-background)"
+                      >
+                        <ul className="columns-1 gap-x-8 sm:columns-2 lg:columns-3">
+                          {cat.allBusinesses.map((b) => (
+                            <li key={b.id} className="mb-2 break-inside-avoid">
+                              <Link
+                                href={`/business/${b.slug}`}
+                                {...gaClickProps({
+                                  event: "nav_click",
+                                  category: "categories_hub_index",
+                                  label: `${cat.slug}_${b.slug}`,
+                                })}
+                                className="text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                              >
+                                {b.name}
+                                {b.town_name ? (
+                                  <span className="text-[var(--color-text-tertiary)]">
+                                    {" "}
+                                    · {b.town_name}
+                                  </span>
+                                ) : null}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </TruncatedList>
                     </nav>
                   </section>
                 );

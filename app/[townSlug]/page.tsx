@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { getGuidesForTown, getTownBySlug, type TownGuideCard } from "@/lib/data/town-hub";
+import { getTownBySlug } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import {
@@ -20,9 +20,13 @@ import {
 import type { Metadata } from "next";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
-import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
+import { PlacePageHeader } from "@/components/place/PlacePageHeader";
+import { AreaCard } from "@/components/discovery/AreaCard";
+import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { getSiteUrl } from "@/lib/site-url";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
@@ -38,7 +42,6 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
-import { GuideCard } from "@/components/discovery/GuideCard";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import {
   BIZ_CATEGORY_SELECT,
@@ -51,7 +54,13 @@ import { placeBrowseIntro, townPageIntro } from "@/lib/seo/page-intro-copy";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled, type DiscoveryFlags } from "@/lib/nav/discovery-links";
 
-type SidebarArea = { id: string; name: string; slug: string };
+type SidebarArea = {
+  id: string;
+  name: string;
+  slug: string;
+  subtitle?: string;
+  imageUrl?: string | null;
+};
 
 function shuffleWithDailySeed<T>(items: T[]): T[] {
   const seed = chicagoCalendarDaySeed();
@@ -76,20 +85,34 @@ const TOWN_AREAS_CANDIDATE_CAP = 50;
 async function getTownPageData(townId: string, townSlug: string) {
   const supabase = getServiceSupabase();
 
-  const [guides, areasRes] = await Promise.all([
-    getGuidesForTown(townId),
-    supabase
+  const areasRes = await supabase
       .from("areas_view")
-      .select("id, title, slug")
+      .select(
+        "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url",
+      )
       .eq("town_id", townId)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title")
-      .limit(TOWN_AREAS_CANDIDATE_CAP),
-  ]);
+      .limit(TOWN_AREAS_CANDIDATE_CAP);
 
-  const townAreaRows = (areasRes.data ?? []) as { id: string; title: string; slug: string }[];
+  const townAreaRows = (areasRes.data ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    const heroUrl = getPublicImageUrlWithView(
+      r.main_image_url as string | null,
+      r.hero_image_url as string | null,
+      r.main_image as string | null,
+      r.hero_image as string | null,
+    );
+    return {
+      id: String(r.id),
+      title: String(r.title),
+      slug: String(r.slug),
+      excerpt: typeof r.excerpt === "string" ? r.excerpt.trim() : "",
+      hero_image_url: heroUrl,
+    };
+  });
   const townAreaIds = townAreaRows.map((a) => String(a.id));
   const townAreaIdSet = new Set(townAreaIds);
 
@@ -214,10 +237,12 @@ async function getTownPageData(townId: string, townSlug: string) {
       id: String(a.id),
       name: String(a.title),
       slug: String(a.slug),
+      subtitle: a.excerpt || undefined,
+      imageUrl: a.hero_image_url,
     }))
   ).slice(0, SIDEBAR_AREAS_LIMIT);
 
-  return { areas, guides, categorySections };
+  return { areas, categorySections };
 }
 
 type Props = { params: Promise<{ townSlug: string }> };
@@ -331,7 +356,6 @@ type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 
 type TownPageData = {
   areas: SidebarArea[];
-  guides: TownGuideCard[];
   categorySections: PlaceCategorySection[];
 };
 
@@ -371,7 +395,7 @@ function BasicTownPage({
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 md:px-10 md:py-12">
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
@@ -397,46 +421,22 @@ function BasicTownPage({
             <span className="text-zinc-500">{town.name}</span>
           </nav>
 
-          <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40 md:w-48">
-              {portraitUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={portraitUrl}
-                  alt={town.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-zinc-400">
-                  <span className="material-symbols-outlined !text-4xl" aria-hidden>
-                    location_city
-                  </span>
-                </div>
-              )}
-            </div>
+          <PlacePageHeader
+            eyebrow="Town"
+            title={town.name}
+            intro={blurb || townPageIntro(town.name, descriptor)}
+            portraitUrl={portraitUrl}
+            portraitAlt={town.name}
+            fallbackIcon="location_city"
+          />
 
-            <div className="flex-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-primary)]">
-                Town
-              </p>
-              <h1 className="text-editorial-headline mt-2 text-3xl text-zinc-900 sm:text-4xl">
-                {town.name}
-              </h1>
-              <p className="prose-editorial mt-4 text-lg leading-relaxed text-zinc-600">
-                {blurb || townPageIntro(town.name, descriptor)}
-              </p>
-            </div>
-          </header>
-
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-10">
-            <div className="min-w-0 space-y-12">
-              <PlaceCategoryBusinessSections
+          <div className="min-w-0 space-y-8 sm:space-y-10">
+            <PlaceCategoryBusinessSections
                 placeName={town.name}
                 placeSlug={town.slug}
                 sections={pageData.categorySections}
                 analyticsCategoryPrefix="town_guide_category"
                 subheading={placeBrowseIntro(town.name)}
-                buildSectionSearchHref={(section) => categoryHubPath(section.slug)}
                 emptyMessage={
                   isDiscoveryEnabled(featureFlags) ? (
                     <p className="text-[var(--color-text-secondary)]">
@@ -456,94 +456,38 @@ function BasicTownPage({
                 }
               />
 
-              {pageData.guides.length > 0 ? (
-                <section
-                  className={
-                    pageData.categorySections.length > 0
-                      ? "border-t border-[var(--color-border)] pt-10"
-                      : ""
-                  }
-                >
-                  <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                      <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
-                        Guides for {town.name}
-                      </h2>
-                      <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                        Editorial guides linked to this town.
-                      </p>
-                    </div>
-                    <Link
-                      href="/guides"
-                      {...gaClickProps({
-                        event: "nav_click",
-                        category: "town_guide_guides_hub",
-                        label: town.slug,
-                      })}
-                      className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-                    >
-                      All guides
-                    </Link>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {pageData.guides.map((guide) => (
-                      <GuideCard
-                        key={guide.id}
-                        title={guide.title}
-                        slug={guide.slug}
-                        href={
-                          guide.slug === town.slug ? `/${guide.slug}` : `/guide/${guide.slug}`
-                        }
-                        subtitle={guide.subtitle ?? undefined}
-                        imageUrl={guide.hero_image_url}
-                        analyticsCategory="town_guide_guides"
-                      />
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+            {pageData.areas.length > 0 ? (
+              <PlaceRelatedSection
+                title="Explore areas"
+                description={`Neighborhoods and points of interest in ${town.name}.`}
+                layout="stack"
+              >
+                {pageData.areas.map((area) => (
+                  <AreaCard
+                    key={area.id}
+                    name={area.name}
+                    slug={area.slug}
+                    subtitle={area.subtitle}
+                    imageUrl={area.imageUrl}
+                    fullWidth
+                    analyticsCategory="town_guide_related"
+                  />
+                ))}
+              </PlaceRelatedSection>
+            ) : null}
 
               {hasBodyMarkdown ? (
-                <section className="border-t border-[var(--color-border)] pt-10">
-                  <h2 className="text-eyebrow mb-6">Town guide</h2>
-                  <MarkdownRenderer content={bodyMarkdown} />
-                </section>
+                <MarkdownCollapsibleSections
+                  content={bodyMarkdown}
+                  fallbackTitle="Town guide"
+                  heading="Town guide"
+                  description={`History, neighborhoods, and local tips for ${town.name}.`}
+                />
               ) : !blurb && pageData.categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
                   A full local guide for this town is coming soon.
                 </p>
               ) : null}
-            </div>
-
-            <aside className="space-y-6">
-              {pageData.areas.length > 0 && (
-                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                  <h2 className="text-eyebrow mb-4">Explore Areas</h2>
-                  <ul className="space-y-2">
-                    {pageData.areas.map((area) => (
-                      <li key={area.id}>
-                        <Link
-                          href={`/area/${area.slug}`}
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "town_guide_sidebar",
-                            label: `${town.slug}_area_${area.slug}`,
-                          })}
-                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                        >
-                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                            explore
-                          </span>
-                          {area.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {/* Featured Guides */}
-            </aside>
           </div>
         </div>
       </main>

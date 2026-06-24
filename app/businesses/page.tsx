@@ -19,6 +19,7 @@ import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { hubBusinessesIntro } from "@/lib/seo/page-intro-copy";
+import { CollapsibleText } from "@/components/ui/collapsible-text";
 
 export const revalidate = 3600;
 
@@ -173,20 +174,21 @@ export default async function BusinessesPage() {
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* Hero with search */}
       <div className="coastal-hero border-b border-[var(--color-border)]">
-        <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
-          <header className="space-y-4 text-center">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
+          <header className="max-w-3xl space-y-3">
             <p className="text-eyebrow">30A · South Walton, Florida</p>
-            <h1 className="text-hero text-[var(--color-text-primary)]">
+            <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
               Local businesses on 30A
             </h1>
-            <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
+            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
               Restaurants, coffee shops, bars, boutiques, and services across every community
               along Scenic 30A. Search by name or describe what you&apos;re looking for.
             </p>
-            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
-              {hubBusinessesIntro()}
-            </p>
-            <div className="mx-auto max-w-2xl pt-2">
+            <CollapsibleText
+              text={hubBusinessesIntro()}
+              className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]"
+            />
+            <div className="max-w-2xl pt-2">
               <BusinessesHubSearch />
             </div>
           </header>
