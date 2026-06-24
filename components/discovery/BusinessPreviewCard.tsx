@@ -9,8 +9,10 @@ type Props = {
   excerpt?: string | null;
   heroImageUrl?: string | null;
   meta?: string | null;
+  badge?: string | null;
   analyticsCategory: string;
   analyticsLabel: string;
+  ctaLabel?: string;
 };
 
 export function BusinessPreviewCard({
@@ -19,8 +21,10 @@ export function BusinessPreviewCard({
   excerpt,
   heroImageUrl,
   meta,
+  badge,
   analyticsCategory,
   analyticsLabel,
+  ctaLabel = "Explore",
 }: Props) {
   const thumb = businessListingImageUrl(heroImageUrl ?? null);
 
@@ -32,33 +36,47 @@ export function BusinessPreviewCard({
         category: analyticsCategory,
         label: analyticsLabel,
       })}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/40 hover:shadow-md"
+      className="editorial-card group flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-all hover:border-[var(--color-primary)]/40 hover:shadow-md"
     >
-      {thumb ? (
-        <div className="relative aspect-[3/2] overflow-hidden">
+      <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-[var(--color-surface-container-high)] sm:w-32 md:w-36">
+        {thumb ? (
           <Image
             src={thumb}
             alt={name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
+            unoptimized
+            className="object-contain"
+            sizes="(min-width: 768px) 9rem, 7rem"
           />
-        </div>
-      ) : (
-        <div className="flex aspect-[3/2] items-center justify-center bg-[var(--color-surface-container-high)] text-[var(--color-text-tertiary)]">
-          <span className="material-symbols-outlined !text-4xl">storefront</span>
-        </div>
-      )}
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-headline text-base font-bold leading-snug text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)]">
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/35 to-primary/65">
+            <span className="material-symbols-outlined !text-4xl text-white/45 sm:!text-5xl">
+              storefront
+            </span>
+          </div>
+        )}
+        {badge ? (
+          <div className="absolute left-2 top-2 rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary shadow-sm backdrop-blur-sm sm:left-3 sm:top-3 sm:px-3 sm:py-1 sm:text-xs">
+            {badge}
+          </div>
+        ) : null}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-4 sm:p-5">
+        <h3 className="font-headline text-lg font-bold leading-snug text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-primary)] sm:text-xl">
           {name}
         </h3>
-        {meta ? <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">{meta}</p> : null}
+        {meta ? <p className="text-xs text-[var(--color-text-tertiary)]">{meta}</p> : null}
         {excerpt ? (
-          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+          <p className="line-clamp-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
             {excerpt}
           </p>
         ) : null}
+        <span className="mt-auto inline-flex items-center gap-1 pt-1 text-sm font-semibold text-[var(--color-primary)]">
+          {ctaLabel}
+          <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
+            arrow_forward
+          </span>
+        </span>
       </div>
     </Link>
   );
