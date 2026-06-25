@@ -47,7 +47,7 @@ export function ProfileBusinessPortalSection({ summary }: Props) {
           </ul>
         ) : (
           <p className="mt-4 border-t border-zinc-200/80 pt-4 text-sm text-zinc-600">
-            No listings yet. Claim an existing business from its page, or submit a new one.
+            Submissions awaiting approval will appear here once a listing is live.
           </p>
         )}
 

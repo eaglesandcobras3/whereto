@@ -24,10 +24,24 @@ export default async function ProfilePage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-100 bg-zinc-50/50 p-6 sm:p-8">
-              <h1 className="text-2xl font-bold text-zinc-900">Your account</h1>
-              <p className="mt-1 text-sm text-zinc-500">
-                Sign-in details and shortcuts. Browse towns, guides, and saved spots on the site like any visitor.
-              </p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-bold text-zinc-900">Your account</h1>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {portalSummary
+                      ? "You browse as a visitor and manage business listings when needed."
+                      : "Sign-in for saving spots and site features. Browse towns and guides like any visitor."}
+                  </p>
+                </div>
+                {portalSummary ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                    <span className="material-symbols-outlined text-base" aria-hidden>
+                      verified
+                    </span>
+                    Business account
+                  </span>
+                ) : null}
+              </div>
             </div>
 
             <div className="space-y-8 p-6 sm:p-8">
@@ -48,10 +62,18 @@ export default async function ProfilePage() {
                       })}
                     </p>
                   </div>
+                  <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                    <p className="text-xs font-medium text-zinc-500">Account type</p>
+                    <p className="mt-1 font-medium text-zinc-900">
+                      {portalSummary ? "Visitor + business owner" : "Visitor"}
+                    </p>
+                  </div>
                 </div>
               </section>
 
-              {portalSummary ? <ProfileBusinessPortalSection summary={portalSummary} /> : null}
+              {portalSummary?.hasPortalActivity ? (
+                <ProfileBusinessPortalSection summary={portalSummary} />
+              ) : null}
 
               <section className="border-t border-zinc-100 pt-4">
                 <form action="/api/auth/signout" method="post">

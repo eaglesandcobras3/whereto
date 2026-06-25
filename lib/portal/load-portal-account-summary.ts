@@ -1,12 +1,18 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { userHasPortalActivity } from "@/lib/portal/portal-activity";
 
 export type PortalAccountSummary = {
+  /** User has claimed, manages, or submitted at least one listing */
+  hasPortalActivity: boolean;
   businessCount: number;
   pendingCount: number;
   businesses: Array<{ id: string; title: string; slug: string }>;
 };
 
-export async function loadPortalAccountSummary(userId: string): Promise<PortalAccountSummary> {
+export async function loadPortalAccountSummary(userId: string): Promise<PortalAccountSummary | null> {
+  const hasPortalActivity = await userHasPortalActivity(userId);
+  if (!hasPortalActivity) return null;
+
   const supabase = getServiceSupabase();
 
   const [{ data: memberships }, { data: pending }] = await Promise.all([
@@ -35,6 +41,7 @@ export async function loadPortalAccountSummary(userId: string): Promise<PortalAc
     .filter((b): b is { id: string; title: string; slug: string } => b !== null);
 
   return {
+    hasPortalActivity: true,
     businessCount: businesses.length,
     pendingCount: pending?.length ?? 0,
     businesses,

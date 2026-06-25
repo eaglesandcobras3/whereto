@@ -57,6 +57,7 @@ export function Navbar({
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [showAdminNav, setShowAdminNav] = useState(false);
+  const [showPortalNav, setShowPortalNav] = useState(false);
   const [internalSearch, setInternalSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -92,6 +93,7 @@ export function Navbar({
   useEffect(() => {
     if (!user) {
       setShowAdminNav(false);
+      setShowPortalNav(false);
       return;
     }
     fetch("/api/admin/me")
@@ -101,6 +103,19 @@ export function Navbar({
       })
       .catch(() => setShowAdminNav(false));
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !onboardEnabled) {
+      setShowPortalNav(false);
+      return;
+    }
+    fetch("/api/portal/me")
+      .then(async (res) => {
+        const j = (await res.json()) as { hasPortalActivity?: boolean };
+        setShowPortalNav(Boolean(res.ok && j.hasPortalActivity));
+      })
+      .catch(() => setShowPortalNav(false));
+  }, [user, onboardEnabled]);
 
   useEffect(() => {
     startTransition(() => {
@@ -248,7 +263,7 @@ export function Navbar({
                 Saved
               </Link>
             ) : null}
-            {showAuth && user && onboardEnabled ? (
+            {showAuth && user && showPortalNav ? (
               <Link
                 {...gaClickProps({ event: "nav_click", category: "header_auth", label: "business_portal" })}
                 href="/portal"
@@ -342,7 +357,7 @@ export function Navbar({
           isSaved={isSaved}
           isAccount={isAccount}
           isPortalRoute={isPortalRoute}
-          onboardEnabled={onboardEnabled}
+          showPortalNav={showPortalNav}
           showAdminNav={showAdminNav}
           isAdminRoute={isAdminRoute}
           showAuth={showAuth}

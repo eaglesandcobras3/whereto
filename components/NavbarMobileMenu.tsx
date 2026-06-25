@@ -21,7 +21,7 @@ type Props = {
   isSaved: boolean;
   isAccount: boolean;
   isPortalRoute: boolean;
-  onboardEnabled: boolean;
+  showPortalNav: boolean;
   showAdminNav: boolean;
   isAdminRoute: boolean;
   showAuth: boolean;
@@ -37,7 +37,7 @@ export function NavbarMobileMenu({
   isSaved,
   isAccount,
   isPortalRoute,
-  onboardEnabled,
+  showPortalNav,
   isAdminRoute,
   showAdminNav,
   showAuth,
@@ -84,7 +84,7 @@ export function NavbarMobileMenu({
               Saved
             </Link>
           ) : null}
-          {showAuth && user && onboardEnabled ? (
+          {showAuth && user && showPortalNav ? (
             <Link
               {...gaClickProps({ event: "nav_click", category: "header_auth_mobile", label: "business_portal" })}
               href="/portal"
