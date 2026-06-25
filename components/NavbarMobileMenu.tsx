@@ -22,6 +22,7 @@ type Props = {
   isAccount: boolean;
   isPortalRoute: boolean;
   onboardEnabled: boolean;
+  showAdminNav: boolean;
   isAdminRoute: boolean;
   showAuth: boolean;
   showSaved: boolean;

@@ -84,6 +84,8 @@ describe("syncRankScoreGuides", () => {
       errors: [],
     });
     expect(insert).toHaveBeenCalledTimes(1);
-    expect(insert.mock.calls[0]?.[0]).toMatchObject({ slug: "new-guide", title: "New Guide" });
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "new-guide", title: "New Guide" }),
+    );
   });
 });
