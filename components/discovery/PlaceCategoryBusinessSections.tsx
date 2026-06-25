@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
-import { BusinessPreviewCarousel } from "@/components/discovery/BusinessPreviewCarousel";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import {
   PLACE_CATEGORY_ICONS,
@@ -20,9 +19,21 @@ type Props = {
   heading?: string;
   subheading?: string;
   emptyMessage?: ReactNode;
-  /** How many categories to show expanded by default. */
+  /** How many categories to show expanded by default on desktop. All collapsed on mobile/tablet. */
   defaultExpandedCount?: number;
 };
+
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    setDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return desktop;
+}
 
 export function PlaceCategoryBusinessSections({
   placeName,
@@ -34,14 +45,22 @@ export function PlaceCategoryBusinessSections({
   emptyMessage,
   defaultExpandedCount = 4,
 }: Props) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    const initial = new Set<string>();
-    for (let i = 0; i < Math.min(defaultExpandedCount, sections.length); i++) {
-      initial.add(sections[i]!.id);
+  const isDesktop = useIsDesktop();
+
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (isDesktop) {
+      setExpandedIds((prev) => {
+        if (prev.size > 0) return prev;
+        const initial = new Set<string>();
+        for (let i = 0; i < Math.min(defaultExpandedCount, sections.length); i++) {
+          initial.add(sections[i]!.id);
+        }
+        return initial;
+      });
     }
-    return initial;
-  });
-  const [gridIds, setGridIds] = useState<Set<string>>(new Set());
+  }, [isDesktop, defaultExpandedCount, sections]);
 
   if (sections.length === 0) {
     return emptyMessage ? <div>{emptyMessage}</div> : null;
@@ -76,7 +95,6 @@ export function PlaceCategoryBusinessSections({
           : "storefront";
         const headingId = `place-cat-${placeSlug}-${section.id}`;
         const isOpen = expandedIds.has(section.id);
-        const isGrid = gridIds.has(section.id);
 
         const businessItems = section.businesses.map((business) => ({
           id: business.id,
@@ -139,47 +157,23 @@ export function PlaceCategoryBusinessSections({
               className={isOpen ? "pt-4" : "h-0 overflow-hidden"}
               aria-hidden={!isOpen}
             >
-              {isGrid ? (
-                <ul
-                  aria-labelledby={headingId}
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                >
-                  {businessItems.map((business) => (
-                    <li key={business.id}>
-                      <BusinessPreviewCard
-                        name={business.name}
-                        slug={business.slug}
-                        excerpt={business.excerpt}
-                        heroImageUrl={business.heroImageUrl}
-                        analyticsCategory={`${analyticsCategoryPrefix}_business`}
-                        analyticsLabel={`${placeSlug}_${business.slug}`}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <BusinessPreviewCarousel
-                  labelledBy={headingId}
-                  businesses={businessItems}
-                  analyticsCategory={`${analyticsCategoryPrefix}_business`}
-                  analyticsLabelPrefix={placeSlug}
-                />
-              )}
-
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setGridIds((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(section.id)) next.delete(section.id);
-                    else next.add(section.id);
-                    return next;
-                  })}
-                  className="text-xs text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
-                >
-                  {isGrid ? "View less" : "View more"}
-                </button>
-              </div>
+              <ul
+                aria-labelledby={headingId}
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {businessItems.map((business) => (
+                  <li key={business.id}>
+                    <BusinessPreviewCard
+                      name={business.name}
+                      slug={business.slug}
+                      excerpt={business.excerpt}
+                      heroImageUrl={business.heroImageUrl}
+                      analyticsCategory={`${analyticsCategoryPrefix}_business`}
+                      analyticsLabel={`${placeSlug}_${business.slug}`}
+                    />
+                  </li>
+                ))}
+              </ul>
             </div>
           </section>
         );
