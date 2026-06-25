@@ -53,7 +53,6 @@ function readDistinctIdFromCookieHeader(cookieHeader: string | undefined): strin
 function coerceBooleanFlag(value: unknown): boolean | undefined {
   if (value === true || value === "true") return true;
   if (value === false || value === "false") return false;
-  if (typeof value === "string") return true;
   return undefined;
 }
 

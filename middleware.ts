@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
-import { isAskEnabled, isOnboardEnabled, isSearchEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled, isOnboardEnabled, isSearchEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
 import {
   categoryDbSlugFromLegacyOn30aSegment,
   categoryHubPath,
@@ -141,6 +141,13 @@ export async function middleware(request: NextRequest) {
       pathname === "/admin/subscriptions" ||
       pathname.startsWith("/api/admin/subscriptions") ||
       pathname.startsWith("/api/admin/businesses"))
+  ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (
+    !isSearchInspectorEnabled(flags) &&
+    (pathname === "/admin/search-debug" || pathname.startsWith("/admin/search-debug/"))
   ) {
     return NextResponse.redirect(new URL("/", request.url));
   }

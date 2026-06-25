@@ -1,9 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { OperatorToolsLinks } from "@/components/admin/OperatorToolsLinks";
-import { adminNavItemsForSession } from "@/lib/admin/admin-nav";
+import { ProfileBusinessPortalSection } from "@/components/profile/ProfileBusinessPortalSection";
 import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
-import { requireAdminUser } from "@/lib/security/requireAdmin";
+import { loadPortalAccountSummary } from "@/lib/portal/load-portal-account-summary";
 
 export default async function ProfilePage() {
   const supabase = await createSupabaseServerClient();
@@ -15,9 +14,9 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const admin = await requireAdminUser();
   const flags = await getAllFeatureFlags();
-  const operatorTools = admin ? adminNavItemsForSession(isOnboardEnabled(flags)) : [];
+  const onboardEnabled = isOnboardEnabled(flags);
+  const portalSummary = onboardEnabled ? await loadPortalAccountSummary(user.id) : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
@@ -25,8 +24,10 @@ export default async function ProfilePage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-100 bg-zinc-50/50 p-6 sm:p-8">
-              <h1 className="text-2xl font-bold text-zinc-900">Your Profile</h1>
-              <p className="mt-1 text-sm text-zinc-500">Manage your account and preferences.</p>
+              <h1 className="text-2xl font-bold text-zinc-900">Your account</h1>
+              <p className="mt-1 text-sm text-zinc-500">
+                Sign-in details and shortcuts. Browse towns, guides, and saved spots on the site like any visitor.
+              </p>
             </div>
 
             <div className="space-y-8 p-6 sm:p-8">
@@ -50,13 +51,7 @@ export default async function ProfilePage() {
                 </div>
               </section>
 
-              {operatorTools.length > 0 ? (
-                <section className="border-t border-zinc-100 pt-8">
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Operator tools</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Admin-only shortcuts for running the site.</p>
-                  <OperatorToolsLinks items={operatorTools} />
-                </section>
-              ) : null}
+              {portalSummary ? <ProfileBusinessPortalSection summary={portalSummary} /> : null}
 
               <section className="border-t border-zinc-100 pt-4">
                 <form action="/api/auth/signout" method="post">

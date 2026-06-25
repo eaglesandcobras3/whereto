@@ -4,6 +4,8 @@ export type AdminNavItem = {
   description: string;
   /** Hidden when the `onboard` feature flag is off */
   requiresOnboard?: boolean;
+  /** Hidden when the `search_inspector` feature flag is off */
+  requiresSearchInspector?: boolean;
 };
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
@@ -23,9 +25,17 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/search-debug",
     title: "Search debug",
     description: "Inspect hybrid search results and ranking signals.",
+    requiresSearchInspector: true,
   },
 ];
 
-export function adminNavItemsForSession(onboardEnabled: boolean): AdminNavItem[] {
-  return ADMIN_NAV_ITEMS.filter((item) => !item.requiresOnboard || onboardEnabled);
+export function adminNavItemsForSession(flags: {
+  onboardEnabled: boolean;
+  searchInspectorEnabled: boolean;
+}): AdminNavItem[] {
+  return ADMIN_NAV_ITEMS.filter((item) => {
+    if (item.requiresOnboard && !flags.onboardEnabled) return false;
+    if (item.requiresSearchInspector && !flags.searchInspectorEnabled) return false;
+    return true;
+  });
 }

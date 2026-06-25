@@ -8,6 +8,7 @@ import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
+import { isOnboardEnabled } from "@/lib/feature-flags-core";
 import {
   applyDiscoveryBrowseNav,
   discoveryHref,
@@ -49,12 +50,13 @@ export function Navbar({
   browseNavItems: browseNavItemsProp = BROWSE_NAV_ITEMS,
 }: Props) {
   const featureFlags = useAppFeatureFlags();
+  const onboardEnabled = isOnboardEnabled(featureFlags);
   const browseNavItems = applyDiscoveryBrowseNav(browseNavItemsProp, featureFlags);
 
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminNav, setShowAdminNav] = useState(false);
   const [internalSearch, setInternalSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,7 +68,8 @@ export function Navbar({
   const showAskInNavbar = showNavbarAskUi(featureFlags);
   const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/");
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
-  const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
+  const isAccount = pathname === "/profile" || pathname.startsWith("/profile/");
+  const isPortalRoute = pathname === "/portal" || pathname.startsWith("/portal/");
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const showAuth = true;
   /** Product: keep /saved and /login routes; hide nav links to them. */
@@ -88,15 +91,15 @@ export function Navbar({
 
   useEffect(() => {
     if (!user) {
-      setIsAdmin(false);
+      setShowAdminNav(false);
       return;
     }
     fetch("/api/admin/me")
       .then(async (res) => {
-        const j = (await res.json()) as { isAdmin?: boolean };
-        setIsAdmin(Boolean(res.ok && j.isAdmin));
+        const j = (await res.json()) as { showAdminNav?: boolean };
+        setShowAdminNav(Boolean(res.ok && j.showAdminNav));
       })
-      .catch(() => setIsAdmin(false));
+      .catch(() => setShowAdminNav(false));
   }, [user]);
 
   useEffect(() => {
@@ -245,7 +248,16 @@ export function Navbar({
                 Saved
               </Link>
             ) : null}
-            {showAuth && user && isAdmin ? (
+            {showAuth && user && onboardEnabled ? (
+              <Link
+                {...gaClickProps({ event: "nav_click", category: "header_auth", label: "business_portal" })}
+                href="/portal"
+                className={navLinkClass(isPortalRoute)}
+              >
+                Business Portal
+              </Link>
+            ) : null}
+            {showAuth && user && showAdminNav ? (
               <Link
                 {...gaClickProps({ event: "nav_click", category: "header_auth", label: "admin" })}
                 href="/admin"
@@ -256,11 +268,11 @@ export function Navbar({
             ) : null}
             {showAuth && user ? (
               <Link
-                {...gaClickProps({ event: "nav_click", category: "header_auth", label: "profile" })}
+                {...gaClickProps({ event: "nav_click", category: "header_auth", label: "account" })}
                 href="/profile"
-                className={navLinkClass(isProfile)}
+                className={navLinkClass(isAccount)}
               >
-                Profile
+                Account
               </Link>
             ) : showAuth && showHeaderLogin ? (
               <Link
@@ -328,8 +340,10 @@ export function Navbar({
           onClose={() => setMobileMenuOpen(false)}
           browseNavItems={browseNavItems}
           isSaved={isSaved}
-          isProfile={isProfile}
-          isAdmin={isAdmin}
+          isAccount={isAccount}
+          isPortalRoute={isPortalRoute}
+          onboardEnabled={onboardEnabled}
+          showAdminNav={showAdminNav}
           isAdminRoute={isAdminRoute}
           showAuth={showAuth}
           showSaved={showSaved}

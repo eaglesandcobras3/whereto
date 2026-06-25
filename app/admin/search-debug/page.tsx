@@ -1,7 +1,8 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { getAllFeatureFlags, isSearchInspectorEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { runSearch } from "@/lib/search/run-search";
 import type { SearchResultPayload } from "@/lib/search/types";
@@ -26,6 +27,9 @@ export default async function SearchDebugPage({
 }) {
   const admin = await requireAdminUser();
   if (!admin) redirect("/");
+
+  const flags = await getAllFeatureFlags();
+  if (!isSearchInspectorEnabled(flags)) notFound();
 
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
