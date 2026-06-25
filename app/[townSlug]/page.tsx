@@ -247,7 +247,7 @@ async function getTownPageData(townId: string, townSlug: string) {
 
 type Props = { params: Promise<{ townSlug: string }> };
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
   const categorySegments = new Set(

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminSubscriptionsClient } from "@/components/admin/AdminSubscriptionsClient";
 import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
@@ -19,10 +20,10 @@ export default async function AdminSubscriptionsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-headline text-2xl font-bold tracking-tight text-zinc-900">Portal subscriptions</h1>
-      <p className="mt-2 text-sm text-zinc-600">
-        Comp Local Partner plans or downgrade businesses without Stripe.
-      </p>
+      <AdminPageHeader
+        title="Portal subscriptions"
+        description="Comp Local Partner plans or downgrade businesses without Stripe."
+      />
       <div className="mt-8">
         <AdminSubscriptionsClient />
       </div>

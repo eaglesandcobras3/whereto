@@ -250,13 +250,13 @@ function writeReport(
 
 function runEmbeddingsAfterImport() {
   console.log("\nRunning embeddings for rows missing embedding_updated_at…");
-  const r = spawnSync("npx", ["tsx", "local/generate-embeddings.ts"], {
+  const r = spawnSync("npx", ["tsx", "scripts/generate-business-embeddings.ts", "--apply"], {
     cwd: process.cwd(),
     stdio: "inherit",
     env: process.env,
   });
   if (r.status !== 0) {
-    throw new Error(`generate-embeddings exited with ${r.status ?? "unknown"}`);
+    throw new Error(`generate-business-embeddings exited with ${r.status ?? "unknown"}`);
   }
 }
 
@@ -413,7 +413,7 @@ async function main() {
   if (RUN_EMBEDDINGS) {
     runEmbeddingsAfterImport();
   } else {
-    console.log("Run: npx tsx local/generate-embeddings.ts");
+    console.log("Run: npx tsx scripts/generate-business-embeddings.ts --apply");
     console.log("Or re-run with --embeddings to import + embed in one step.");
   }
 }

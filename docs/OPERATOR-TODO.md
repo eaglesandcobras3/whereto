@@ -51,9 +51,57 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/ra
 
 ---
 
+## Backfill: business search enrichment
+
+Published businesses need **category**, **search profile** (tags + `search_profile` + `qa_document`), **derived search document** (`search_tags`, `search_terms`, `embedding_summary`), and an **embedding** vector to show on town pages and rank in search.
+
+`scripts/backfill-business-enrichment.ts` runs the full pipeline (OpenAI for missing profiles, then embeddings).
+
+### Prerequisites
+
+- `OPENAI_API_KEY` in `.env.local` (or shell env)
+- Supabase service key + URL
+
+### Run
+
+```bash
+# Preview one business
+npx tsx scripts/backfill-business-enrichment.ts --dry-run --id <uuid>
+
+# Full backfill (recommended)
+npx tsx scripts/backfill-business-enrichment.ts --dry-run
+npx tsx scripts/backfill-business-enrichment.ts --apply
+
+# Heuristics only (category + business_type + derived fields, no OpenAI)
+npx tsx scripts/backfill-business-enrichment.ts --apply --skip-ai
+
+# Embeddings only (after profiles exist)
+npx tsx scripts/generate-business-embeddings.ts --apply
+```
+
+### Verify
+
+```bash
+npx tsx scripts/eval-search-data.ts
+```
+
+- [ ] Dry-run enrichment, spot-check Mignot&Co and other Grayton Beach gaps
+- [ ] Run `--apply`
+- [ ] Run `eval-search-data.ts` — completeness should approach 95%+
+- [ ] Manually fix any unmatched rows from category-only script
+
+### Category-only (fast path)
+
+```bash
+npx tsx scripts/backfill-business-categories.ts --apply
+```
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-06-25 | Full search enrichment backfill (`backfill-business-enrichment.ts`, `generate-business-embeddings.ts`); portal intake sets category + business_type + derived search fields; uncategorized businesses show in "More local spots" |
 | 2026-06-19 | RankScore → guides sync: env vars, SQL migration, cron `/api/cron/rankscore-guides`, `npm run sync:rankscore` |
 | 2026-06-17 | Created site-wide stub; portal checklist split to OPERATOR-TODO-business-portal.md |

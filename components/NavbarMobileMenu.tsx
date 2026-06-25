@@ -20,6 +20,8 @@ type Props = {
   browseNavItems?: BrowseNavItem[];
   isSaved: boolean;
   isProfile: boolean;
+  isAdmin: boolean;
+  isAdminRoute: boolean;
   showAuth: boolean;
   showSaved: boolean;
   showLogin: boolean;
@@ -32,6 +34,8 @@ export function NavbarMobileMenu({
   browseNavItems = BROWSE_NAV_ITEMS,
   isSaved,
   isProfile,
+  isAdmin,
+  isAdminRoute,
   showAuth,
   showSaved,
   showLogin,
@@ -74,6 +78,16 @@ export function NavbarMobileMenu({
           {showSaved ? (
             <Link {...gaClickProps({ event: "nav_click", category: "header_auth_mobile", label: "saved" })} href="/saved" onClick={onClose} className={navLinkClassMobile(isSaved)}>
               Saved
+            </Link>
+          ) : null}
+          {showAuth && user && isAdmin ? (
+            <Link
+              {...gaClickProps({ event: "nav_click", category: "header_auth_mobile", label: "admin" })}
+              href="/admin"
+              onClick={onClose}
+              className={navLinkClassMobile(isAdminRoute)}
+            >
+              Admin
             </Link>
           ) : null}
           {showAuth && user ? (

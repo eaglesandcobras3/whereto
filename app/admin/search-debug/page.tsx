@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { runSearch } from "@/lib/search/run-search";
 import type { SearchResultPayload } from "@/lib/search/types";
@@ -34,5 +35,15 @@ export default async function SearchDebugPage({
     result = await debugSearch(query);
   }
 
-  return <SearchDebugClient initialQuery={query} result={result} />;
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <AdminPageHeader
+        title="Search debug"
+        description="Inspect hybrid search results, intent parsing, and ranking signals."
+      />
+      <div className="mt-6">
+        <SearchDebugClient initialQuery={query} result={result} />
+      </div>
+    </div>
+  );
 }

@@ -63,10 +63,8 @@ export default function SearchDebugClient({ initialQuery, result }: Props) {
   const filters = result?.resolved_filters;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 font-sans">
-      <h1 className="text-2xl font-bold mb-6">Search Debugger</h1>
-
-      {/* Query form */}
+    <div className="font-sans">
+      <h2 className="sr-only">Search query</h2>
       <form onSubmit={handleSubmit} className="flex gap-2 mb-8">
         <input
           type="text"

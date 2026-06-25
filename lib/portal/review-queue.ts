@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ensureBusinessSubscription } from "@/lib/portal/entitlements";
 import { sendPortalOwnerEmail } from "@/lib/portal/notifications";
 import { uniqueSlug } from "@/lib/portal/slug";
+import { inferStorefrontCategoryId, inferBusinessType } from "@/lib/portal/infer-category";
+import { buildSearchDocumentFields } from "@/lib/search/derive-search-document";
 
 export type ReviewItemRow = {
   id: string;
@@ -180,7 +182,22 @@ async function approveNewListing(
   const taken = new Set((slugRows ?? []).map((r) => String((r as { slug: string }).slug)));
   const slug = uniqueSlug(title, taken);
 
-  const insertRow = {
+  const description = (req.description as string | null) ?? null;
+  const categoryId = await inferStorefrontCategoryId(supabase, {
+    title,
+    description,
+    isServiceBusiness: Boolean(req.is_service_business),
+  });
+  const businessType =
+    inferBusinessType(title, description, Boolean(req.is_service_business)) ?? null;
+  const searchDoc = buildSearchDocumentFields({
+    title,
+    excerpt: String(req.description ?? "").slice(0, 500) || null,
+    business_type: businessType,
+    search_keywords: null,
+  });
+
+  const insertRow: Record<string, unknown> = {
     title,
     slug,
     status: "published",
@@ -199,7 +216,12 @@ async function approveNewListing(
     claim_status: "claimed",
     claimed_by_user_id: item.submitted_by,
     published_at: new Date().toISOString(),
+    business_type: businessType,
+    search_tags: searchDoc.search_tags,
+    search_terms: searchDoc.search_terms,
+    embedding_summary: searchDoc.embedding_summary,
   };
+  if (categoryId) insertRow.primary_category_id = categoryId;
 
   const { data: created, error: createErr } = await supabase
     .from("businesses")

@@ -68,17 +68,30 @@ export function groupBusinessesByCategorySections(
   const priorityIndex = new Map(priorityOrder.map((slug, index) => [slug, index]));
   const map = new Map<string, { id: string; title: string; slug: string; pool: CategoryBusiness[] }>();
 
+  const UNCATEGORIZED_KEY = "__uncategorized__";
+
   for (const b of businesses) {
-    if (!b.categorySlug || !b.categoryTitle || !b.categoryId) continue;
-    if (!map.has(b.categoryId)) {
-      map.set(b.categoryId, {
-        id: b.categoryId,
-        title: displayStorefrontCategoryTitle(b.categorySlug, b.categoryTitle),
-        slug: b.categorySlug,
-        pool: [],
-      });
+    if (b.categorySlug && b.categoryTitle && b.categoryId) {
+      if (!map.has(b.categoryId)) {
+        map.set(b.categoryId, {
+          id: b.categoryId,
+          title: displayStorefrontCategoryTitle(b.categorySlug, b.categoryTitle),
+          slug: b.categorySlug,
+          pool: [],
+        });
+      }
+      map.get(b.categoryId)!.pool.push(b);
+    } else {
+      if (!map.has(UNCATEGORIZED_KEY)) {
+        map.set(UNCATEGORIZED_KEY, {
+          id: UNCATEGORIZED_KEY,
+          title: "More local spots",
+          slug: UNCATEGORIZED_KEY,
+          pool: [],
+        });
+      }
+      map.get(UNCATEGORIZED_KEY)!.pool.push(b);
     }
-    map.get(b.categoryId)!.pool.push(b);
   }
 
   return [...map.values()]

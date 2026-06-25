@@ -54,6 +54,7 @@ export function Navbar({
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [internalSearch, setInternalSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,6 +67,7 @@ export function Navbar({
   const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/");
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isProfile = pathname === "/profile" || pathname.startsWith("/profile/");
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const showAuth = true;
   /** Product: keep /saved and /login routes; hide nav links to them. */
   const showHeaderSaved = false;
@@ -83,6 +85,19 @@ export function Navbar({
       setUser(data.user);
     });
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    fetch("/api/admin/me")
+      .then(async (res) => {
+        const j = (await res.json()) as { isAdmin?: boolean };
+        setIsAdmin(Boolean(res.ok && j.isAdmin));
+      })
+      .catch(() => setIsAdmin(false));
+  }, [user]);
 
   useEffect(() => {
     startTransition(() => {
@@ -230,6 +245,15 @@ export function Navbar({
                 Saved
               </Link>
             ) : null}
+            {showAuth && user && isAdmin ? (
+              <Link
+                {...gaClickProps({ event: "nav_click", category: "header_auth", label: "admin" })}
+                href="/admin"
+                className={navLinkClass(isAdminRoute)}
+              >
+                Admin
+              </Link>
+            ) : null}
             {showAuth && user ? (
               <Link
                 {...gaClickProps({ event: "nav_click", category: "header_auth", label: "profile" })}
@@ -305,6 +329,8 @@ export function Navbar({
           browseNavItems={browseNavItems}
           isSaved={isSaved}
           isProfile={isProfile}
+          isAdmin={isAdmin}
+          isAdminRoute={isAdminRoute}
           showAuth={showAuth}
           showSaved={showSaved}
           showLogin={showHeaderLogin}

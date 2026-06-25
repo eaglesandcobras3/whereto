@@ -1,5 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { OperatorToolsLinks } from "@/components/admin/OperatorToolsLinks";
+import { adminNavItemsForSession } from "@/lib/admin/admin-nav";
+import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
+import { requireAdminUser } from "@/lib/security/requireAdmin";
 
 export default async function ProfilePage() {
   const supabase = await createSupabaseServerClient();
@@ -10,6 +14,10 @@ export default async function ProfilePage() {
   if (!user) {
     redirect("/login");
   }
+
+  const admin = await requireAdminUser();
+  const flags = await getAllFeatureFlags();
+  const operatorTools = admin ? adminNavItemsForSession(isOnboardEnabled(flags)) : [];
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
@@ -41,6 +49,14 @@ export default async function ProfilePage() {
                   </div>
                 </div>
               </section>
+
+              {operatorTools.length > 0 ? (
+                <section className="border-t border-zinc-100 pt-8">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Operator tools</h2>
+                  <p className="mt-1 text-sm text-zinc-500">Admin-only shortcuts for running the site.</p>
+                  <OperatorToolsLinks items={operatorTools} />
+                </section>
+              ) : null}
 
               <section className="border-t border-zinc-100 pt-4">
                 <form action="/api/auth/signout" method="post">
