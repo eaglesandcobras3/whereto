@@ -14,9 +14,6 @@ export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, cl
       ? feedbackPageHref(`/business/${normalizeUrlSegment(String(businessSlug).trim())}`)
       : "/feedback";
 
-  const claimHref =
-    businessSlug !== undefined ? `/business/${businessSlug}#listing-update-request` : null;
-
   const base = `text-xs text-[var(--color-text-tertiary)] ${className}`;
   const linkCn = "underline underline-offset-2 hover:text-[var(--color-primary)]";
 
@@ -29,14 +26,6 @@ export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, cl
           <Link href={feedbackHref} className={linkCn}>
             Send a correction
           </Link>
-          {claimHref !== null && (
-            <>
-              {" "}or{" "}
-              <Link href={claimHref} className={linkCn}>
-                claim this listing
-              </Link>
-            </>
-          )}
           {" · "}
           <Link href="/terms#directory-and-business-listings" className={linkCn}>
             Listing terms
@@ -53,14 +42,6 @@ export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, cl
       <Link href={feedbackHref} className={linkCn}>
         Send a correction
       </Link>
-      {claimHref !== null && (
-        <>
-          {" "}·{" "}
-          <Link href={claimHref} className={linkCn}>
-            Claim listing
-          </Link>
-        </>
-      )}
       {" · "}
       <Link href="/terms#directory-and-business-listings" className={linkCn}>
         Terms&nbsp;§&nbsp;6–8

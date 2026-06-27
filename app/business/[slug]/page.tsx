@@ -2,11 +2,9 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
-import { BusinessClaimSection } from "@/components/business/BusinessClaimSection";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
@@ -316,11 +314,6 @@ export default async function BusinessPage({ params }: Props) {
   if (UUID_RE.test(slug) && dbSlug && slug !== dbSlug) {
     permanentRedirect(`/business/${encodeURIComponent(dbSlug)}`);
   }
-
-  const auth = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
 
   const supabase = getServiceSupabase();
   const [featureFlags, townId] = await Promise.all([
@@ -769,38 +762,10 @@ export default async function BusinessPage({ params }: Props) {
                 </div>
               )}
 
-              {/* Claim Section */}
-              <BusinessClaimSection
-                businessId={b.id as string}
-                businessTitle={String(b.title ?? "this business")}
-                claimStatus={(b.claim_status as string) ?? "unclaimed"}
-                userId={user?.id ?? null}
-                claimedByUserId={(b.claimed_by_user_id as string | null) ?? null}
-              />
             </div>
 
             {/* Sidebar */}
             <aside className="space-y-5">
-              {/* Primary CTA */}
-              {websiteHref && (
-                <a
-                  href={websiteHref}
-                  {...gaClickProps({
-                    event: "outbound_click",
-                    category: "business_detail_sidebar",
-                    label: `${gaBiz}_visit_website_cta`,
-                  })}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-4 font-semibold text-white transition-all hover:bg-[var(--color-primary-light)]"
-                >
-                  Visit Website
-                  <span className="material-symbols-outlined !text-lg transition-transform group-hover:translate-x-1">
-                    arrow_forward
-                  </span>
-                </a>
-              )}
-
               {/* At a Glance card */}
               {(reservations || parking || waitTime || noiseLevel || bestTime?.length || crowd?.length) ? (
                 <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
