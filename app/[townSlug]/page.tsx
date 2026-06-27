@@ -20,11 +20,9 @@ import {
 import type { Metadata } from "next";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
-import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
 import { AreaCard } from "@/components/discovery/AreaCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
-import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { getSiteUrl } from "@/lib/site-url";
@@ -370,13 +368,6 @@ function BasicTownPage({
 }) {
   const descriptor = getTownDescriptor(town.slug);
   const blurb = town.excerpt?.trim() || null;
-  const contentRaw =
-    "content" in town && typeof town.content === "string" ? town.content.trim() : "";
-  const bodyMarkdown = contentRaw
-    ? stripLeadingH1MatchingTitle(contentRaw, town.name).trim()
-    : "";
-  const hasBodyMarkdown = bodyMarkdown.length > 0;
-
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
@@ -476,14 +467,7 @@ function BasicTownPage({
               </PlaceRelatedSection>
             ) : null}
 
-              {hasBodyMarkdown ? (
-                <MarkdownCollapsibleSections
-                  content={bodyMarkdown}
-                  fallbackTitle="Town guide"
-                  heading="Town guide"
-                  description={`History, neighborhoods, and local tips for ${town.name}.`}
-                />
-              ) : !blurb && pageData.categorySections.length === 0 ? (
+              {!blurb && pageData.categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
                   A full local guide for this town is coming soon.
                 </p>

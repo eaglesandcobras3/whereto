@@ -20,7 +20,7 @@ export function MarkdownCollapsibleSectionsClient({
   sections,
   businessCards,
   heading = "In this guide",
-  description = "Jump between topics below.",
+  description = "Expand each section to read more.",
 }: Props) {
   if (sections.length === 0) return null;
 

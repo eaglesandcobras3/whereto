@@ -5,11 +5,9 @@ import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sec
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro, placeBrowseIntro } from "@/lib/seo/page-intro-copy";
-import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
 import { TownCard } from "@/components/discovery/TownCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
-import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
@@ -160,12 +158,6 @@ export default async function AreaPage({ params }: Props) {
 
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
   const typeLabel = areaTypeLabel(area.areaTypeLabel);
-  const rawMarkdown = typeof area.content === "string" ? area.content.trim() : "";
-  const bodyMarkdown = rawMarkdown
-    ? stripLeadingH1MatchingTitle(rawMarkdown, area.title).trim()
-    : "";
-  const hasMarkdown = bodyMarkdown.length > 0;
-
   const areaPath = `/area/${normalizeUrlSegment(area.slug)}`;
   const breadcrumbItems = [
     { name: "Home", url: "/" },
@@ -283,14 +275,7 @@ export default async function AreaPage({ params }: Props) {
                 }
               />
 
-              {hasMarkdown ? (
-                <MarkdownCollapsibleSections
-                  content={bodyMarkdown}
-                  fallbackTitle={`About ${area.title}`}
-                  heading={`About ${area.title}`}
-                  description={`Local context and what to know before you explore ${area.title}.`}
-                />
-              ) : !area.excerpt && categorySections.length === 0 ? (
+              {!area.excerpt && categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
                   Full write-up for this place is on the way. Browse the town or nearby spots in the
                   meantime.

@@ -62,7 +62,7 @@ export function ProfileBusinessPortalSection({ summary }: Props) {
             href="/portal/businesses/new"
             className="inline-flex rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Add a business
+            List your business
           </Link>
         </div>
       </div>

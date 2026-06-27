@@ -16,6 +16,8 @@ type Props = {
   icon?: string;
   preview?: string;
   sectionNumber?: number;
+  /** Plain stacks: drop trailing border and bottom spacing on the last item. */
+  trimTrailingSpace?: boolean;
 };
 
 export function CollapsibleSection({
@@ -31,6 +33,7 @@ export function CollapsibleSection({
   icon,
   preview,
   sectionNumber,
+  trimTrailingSpace = false,
 }: Props) {
   const baseId = useId();
   const triggerId = `${baseId}-trigger`;
@@ -53,12 +56,22 @@ export function CollapsibleSection({
       className={cn(
         isCard
           ? "overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-premium-sm transition-all duration-200"
-          : "border-b border-[var(--color-border)]",
+          : cn(
+              "border-b border-[var(--color-border)]",
+              trimTrailingSpace && "border-b-0",
+            ),
         open && isCard && "border-[var(--color-primary)]/25 shadow-premium-md",
         className,
       )}
     >
-      <div className={cn("flex items-start gap-2", isCard ? "p-4 sm:p-5" : "py-3 sm:py-4")}>
+      <div
+        className={cn(
+          "flex items-start gap-2",
+          isCard
+            ? "p-4 sm:p-5"
+            : cn("pt-3 sm:pt-4", !trimTrailingSpace && "pb-3 sm:pb-4"),
+        )}
+      >
         <button
           type="button"
           id={triggerId}
@@ -116,14 +129,18 @@ export function CollapsibleSection({
         id={panelId}
         role="region"
         aria-labelledby={triggerId}
+        aria-hidden={!open}
         className={cn(
-          "grid overflow-hidden transition-[grid-template-rows] duration-200",
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          !open && "sr-only",
+          open &&
+            (isCard
+              ? "border-t border-[var(--color-border)] px-4 pb-5 pt-4 sm:px-5 sm:pb-6"
+              : trimTrailingSpace
+                ? "[&_.prose-p:last-child]:mb-0 [&_.prose-ul:last-child]:mb-0"
+                : "pb-4 sm:pb-6"),
         )}
       >
-        <div className={cn("min-h-0", isCard ? "border-t border-[var(--color-border)] px-4 pb-5 pt-4 sm:px-5 sm:pb-6" : "pb-4 sm:pb-6")}>
-          {children}
-        </div>
+        {children}
       </div>
     </section>
   );

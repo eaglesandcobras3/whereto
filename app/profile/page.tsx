@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileBusinessPortalSection } from "@/components/profile/ProfileBusinessPortalSection";
+import { ProfileListBusinessCta } from "@/components/profile/ProfileListBusinessCta";
 import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { loadPortalAccountSummary } from "@/lib/portal/load-portal-account-summary";
 
@@ -73,7 +74,9 @@ export default async function ProfilePage() {
 
               {portalSummary?.hasPortalActivity ? (
                 <ProfileBusinessPortalSection summary={portalSummary} />
-              ) : null}
+              ) : (
+                <ProfileListBusinessCta onboardEnabled={onboardEnabled} />
+              )}
 
               <section className="border-t border-zinc-100 pt-4">
                 <form action="/api/auth/signout" method="post">
