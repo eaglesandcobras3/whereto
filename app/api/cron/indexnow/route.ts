@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAllFeatureFlags, isGuidesEnabled } from "@/lib/feature-flags";
 import { getSiteUrl } from "@/lib/site-url";
 import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { indexNowConfig, submitUrlsToIndexNow } from "@/lib/seo/indexnow";
@@ -18,10 +19,11 @@ export async function GET(request: Request) {
   }
 
   const base = getSiteUrl();
+  const flags = await getAllFeatureFlags();
+  const guidesEnabled = isGuidesEnabled(flags);
   const result = await submitUrlsToIndexNow([
     base,
-    `${base}${PRIMARY_EDITORIAL_GUIDE_PATH}`,
-    `${base}/guides`,
+    ...(guidesEnabled ? [`${base}${PRIMARY_EDITORIAL_GUIDE_PATH}`, `${base}/guides`] : []),
     `${base}/categories`,
     `${base}/towns`,
     `${base}/sitemap.xml`,

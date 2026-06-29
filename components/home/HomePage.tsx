@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
-import { isAskEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled, isGuidesEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
@@ -172,14 +172,16 @@ export function HomePage({
             </p>
 
             <div className="mb-10 flex w-full max-w-2xl flex-col justify-center gap-3 sm:flex-row sm:gap-5">
-              <Link
-                href={PRIMARY_EDITORIAL_GUIDE_PATH}
-                {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-lg font-bold text-primary shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"
-              >
-                <MsIcon name="menu_book" className="!text-xl" />
-                Explore the guide
-              </Link>
+              {isGuidesEnabled(featureFlags) ? (
+                <Link
+                  href={PRIMARY_EDITORIAL_GUIDE_PATH}
+                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-lg font-bold text-primary shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"
+                >
+                  <MsIcon name="menu_book" className="!text-xl" />
+                  Explore the guide
+                </Link>
+              ) : null}
               {isAskEnabled(featureFlags) ? (
                 <Link
                   href="/ask"
