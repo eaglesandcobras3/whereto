@@ -47,20 +47,25 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
     }
   }
 
-  if (!pathSet.has("/guides")) {
-    violations.push({ rule: "guides-hub", detail: "Missing /guides hub" });
-  }
-  if (pathSet.has("/guide")) {
-    violations.push({
-      rule: "no-standalone-guide",
-      detail: "Standalone /guide must not appear (use editorial slug URL)",
-    });
-  }
-  if (!pathSet.has(PRIMARY_EDITORIAL_GUIDE_PATH)) {
-    violations.push({
-      rule: "primary-editorial-guide",
-      detail: `Missing ${PRIMARY_EDITORIAL_GUIDE_PATH}`,
-    });
+  const hasGuideUrls =
+    pathSet.has("/guides") || paths.some((p) => p.startsWith("/guide/"));
+
+  if (hasGuideUrls) {
+    if (!pathSet.has("/guides")) {
+      violations.push({ rule: "guides-hub", detail: "Missing /guides hub" });
+    }
+    if (pathSet.has("/guide")) {
+      violations.push({
+        rule: "no-standalone-guide",
+        detail: "Standalone /guide must not appear (use editorial slug URL)",
+      });
+    }
+    if (!pathSet.has(PRIMARY_EDITORIAL_GUIDE_PATH)) {
+      violations.push({
+        rule: "primary-editorial-guide",
+        detail: `Missing ${PRIMARY_EDITORIAL_GUIDE_PATH}`,
+      });
+    }
   }
 
   const requiredHubs = ["/towns", "/areas", "/categories", SERVICE_VENDORS_HUB_PATH];

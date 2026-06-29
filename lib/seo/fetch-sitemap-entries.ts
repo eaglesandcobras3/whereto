@@ -4,6 +4,7 @@ import type { MetadataRoute } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
+import { getAllFeatureFlags, isGuidesEnabled } from "@/lib/feature-flags";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { buildSitemapEntries, staticFallbackSitemap } from "@/lib/seo/sitemap-strategy";
 import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
@@ -44,15 +45,17 @@ async function fetchBrowseableRows(
 export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
   const now = new Date();
+  const flags = await getAllFeatureFlags();
+  const guidesEnabled = isGuidesEnabled(flags);
   try {
     const supabase = getServiceSupabaseOrNull();
     if (!supabase) {
-      return staticFallbackSitemap(base, now);
+      return staticFallbackSitemap(base, now, guidesEnabled);
     }
 
     const [towns, guides, areas, pointsOfInterest, categories] = await Promise.all([
       fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
-      fetchSitemapGuides(supabase),
+      guidesEnabled ? fetchSitemapGuides(supabase) : Promise.resolve([]),
       fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
       fetchBrowseableRows(
         supabase,
@@ -74,9 +77,10 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       areas,
       categories,
       pointsOfInterest,
+      guidesEnabled,
     });
   } catch (err) {
     console.error("[sitemap] generation failed:", err);
-    return staticFallbackSitemap(base, now);
+    return staticFallbackSitemap(base, now, guidesEnabled);
   }
 }
