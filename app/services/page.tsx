@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { DiscoveryUtilityLink } from "@/components/nav/DiscoveryUtilityLink";
+import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { hubServicesIntro } from "@/lib/seo/page-intro-copy";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { getServiceVendorsPage } from "@/lib/data/service-vendors-hub";
 import {
@@ -98,22 +100,13 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
       />
 
       <main className="flex-1">
-        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-12 md:py-16">
-          <div className="mx-auto max-w-6xl px-6">
-            <nav className="mb-5 flex items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
-              <Link href="/" className="transition-colors hover:text-[var(--color-primary)]">
-                Home
-              </Link>
-              <span>/</span>
-              <span className="text-[var(--color-text-primary)]">Services</span>
-            </nav>
-            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl">
-              Service providers on 30A
-            </h1>
-            <p className="prose-editorial mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Regional and mobile vendors: trades, insurance, legal, medical, marine, and other
-              professionals who serve homes and rentals across the corridor. Not the same as
-              storefront service businesses with a fixed address (see{" "}
+        <BrowseHubHero
+          title="Service providers on 30A"
+          description={
+            <>
+              Regional and mobile vendors for homes and rentals across the corridor: trades,
+              insurance, legal, medical, marine, and more. Not the same as storefront service
+              businesses with a fixed address (see{" "}
               <Link
                 href="/service-businesses"
                 className="font-medium text-[var(--color-primary)] hover:underline"
@@ -121,66 +114,63 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
                 storefront service businesses
               </Link>
               ).
-            </p>
-            <p className="prose-editorial mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
-              Browse by specialty, then filter by town when you need someone who actually works in
-              your neighborhood. Listings summarize service area and contact paths. Confirm scope,
-              licensing, and scheduling with the provider before you hire.
-            </p>
-            <p className="mt-3 text-sm text-[var(--color-text-tertiary)]">
+            </>
+          }
+          collapsibleDescription={hubServicesIntro()}
+          meta={
+            <>
               {totalCount} {totalCount === 1 ? "provider" : "providers"}
               {listedSpecialties.length > 0
                 ? ` across ${listedSpecialties.length} ${listedSpecialties.length === 1 ? "specialty" : "specialties"}`
                 : ""}
-            </p>
-            {showDiscoverySearch ? (
-              <form
-                action={SERVICE_VENDORS_HUB_PATH}
-                method="get"
-                className="mt-6 flex max-w-md flex-wrap items-center gap-2"
-              >
-                {specialtySlug ? (
-                  <input type="hidden" name="specialty" value={specialtySlug} />
-                ) : null}
-                <div className="relative min-w-0 flex-1">
-                  <span className="material-symbols-outlined absolute left-3 top-2.5 !text-[1.1rem] text-[var(--color-text-tertiary)]">
-                    search
-                  </span>
-                  <input
-                    type="search"
-                    name="q"
-                    defaultValue={query}
-                    placeholder="Search providers…"
-                    className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pl-9 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="rounded-full bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-light)]"
-                >
-                  Search
-                </button>
-              </form>
-            ) : null}
-            {showDiscoverySearch ? (
-              <div className="mt-4">
-                <DiscoveryUtilityLink
-                  href={advancedSearchHref}
-                  {...gaClickProps({
-                    event: "cta_click",
-                    category: "services_hub",
-                    label: "advanced_search",
-                  })}
-                  className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-                >
-                  Advanced search (town, filters)
-                </DiscoveryUtilityLink>
+            </>
+          }
+        >
+          {showDiscoverySearch ? (
+            <form
+              action={SERVICE_VENDORS_HUB_PATH}
+              method="get"
+              className="flex max-w-md flex-wrap items-center gap-2 pt-2"
+            >
+              {specialtySlug ? (
+                <input type="hidden" name="specialty" value={specialtySlug} />
+              ) : null}
+              <div className="relative min-w-0 flex-1">
+                <span className="material-symbols-outlined absolute left-3 top-2.5 !text-[1.1rem] text-[var(--color-text-tertiary)]">
+                  search
+                </span>
+                <input
+                  type="search"
+                  name="q"
+                  defaultValue={query}
+                  placeholder="Search providers…"
+                  className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pl-9 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none"
+                />
               </div>
-            ) : null}
-          </div>
-        </section>
+              <button
+                type="submit"
+                className="rounded-full bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-light)]"
+              >
+                Search
+              </button>
+            </form>
+          ) : null}
+          {showDiscoverySearch ? (
+            <DiscoveryUtilityLink
+              href={advancedSearchHref}
+              {...gaClickProps({
+                event: "cta_click",
+                category: "services_hub",
+                label: "advanced_search",
+              })}
+              className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
+            >
+              Advanced search (town, filters)
+            </DiscoveryUtilityLink>
+          ) : null}
+        </BrowseHubHero>
 
-        <section className="mx-auto max-w-6xl px-6 py-10 md:py-14">
+        <section className="mx-auto max-w-6xl px-4 py-12 md:px-10">
           <div className="mb-8">
             <ServiceSpecialtyBrowse
               groups={browseGroups}

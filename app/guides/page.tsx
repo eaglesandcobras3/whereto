@@ -8,6 +8,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { GuidesHubSearch } from "@/components/GuidesHubSearch";
 import { GuideCard } from "@/components/discovery/GuideCard";
+import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { PRIMARY_EDITORIAL_GUIDE_PATH, PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { hubGuidesIntro } from "@/lib/seo/page-intro-copy";
@@ -106,24 +107,15 @@ export default async function GuidesPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      <div className="coastal-hero border-b border-[var(--color-border)]">
-        <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
-          <header className="space-y-4 text-center">
-            <p className="text-eyebrow">30A · South Walton, Florida</p>
-            <h1 className="text-hero text-[var(--color-text-primary)]">Travel guides</h1>
-            <p className="prose-editorial mx-auto max-w-2xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              Editorial guides for planning your trip: town picks, dining, beaches, and local
-              advice written for the Emerald Coast.
-            </p>
-            <p className="prose-editorial mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
-              {hubGuidesIntro()}
-            </p>
-            <div className="mx-auto max-w-2xl pt-2">
-              <GuidesHubSearch />
-            </div>
-          </header>
+      <BrowseHubHero
+        title="Travel guides"
+        description="Editorial guides for planning your trip: town picks, dining, beaches, and local advice written for the Emerald Coast."
+        collapsibleDescription={hubGuidesIntro()}
+      >
+        <div className="max-w-2xl pt-2">
+          <GuidesHubSearch />
         </div>
-      </div>
+      </BrowseHubHero>
 
       {planningGuide ? (
         <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10">

@@ -50,6 +50,10 @@ export function hubGuidesIntro(): string {
   return "Our guides are written for trip planning and on-the-ground decisions: first-timer overviews, town-specific notes, dining angles, and beach-day context for South Walton. Start with the featured planning guide if you are new to 30A, then open town pages when you want listings grouped by community.";
 }
 
+export function hubServicesIntro(): string {
+  return "Browse by specialty, then filter by town when you need someone who actually works in your neighborhood. Listings summarize service area and contact paths. Confirm scope, licensing, and scheduling with the provider before you hire.";
+}
+
 export function businessListingIntro(
   name: string,
   categoryName?: string | null,

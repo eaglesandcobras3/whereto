@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { generateBreadcrumbSchema, generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
@@ -55,33 +56,19 @@ export function CategoryHubView({ cat, townGroups, businesses, otherCats }: Prop
       />
 
       <main className="flex-1">
-        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-12 md:py-16">
-          <div className="mx-auto max-w-6xl px-6">
-            <nav className="mb-5 flex items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
-              <Link href="/" className="transition-colors hover:text-[var(--color-primary)]">
-                Home
-              </Link>
-              <span>/</span>
-              <Link href="/categories" className="transition-colors hover:text-[var(--color-primary)]">
-                Categories
-              </Link>
-              <span>/</span>
-              <span className="text-[var(--color-text-primary)]">{cat.title}</span>
-            </nav>
-            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--color-text-primary)] md:text-5xl">
-              {cat.title} on 30A
-            </h1>
-            <p className="prose-editorial mt-4 max-w-3xl text-lg leading-relaxed text-[var(--color-text-secondary)]">
-              {intro}
-            </p>
-            <p className="mt-3 text-sm text-[var(--color-text-tertiary)]">
+        <BrowseHubHero
+          title={`${cat.title} on 30A`}
+          description={`Local ${cat.title.toLowerCase()} across ${townCount} ${townCount === 1 ? "town" : "towns"} along Scenic Highway 30A in South Walton, Florida.`}
+          collapsibleDescription={intro}
+          meta={
+            <>
               {businesses.length} {businesses.length === 1 ? "listing" : "listings"} across{" "}
               {townCount} {townCount === 1 ? "town" : "towns"}
-            </p>
-          </div>
-        </section>
+            </>
+          }
+        />
 
-        <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
           <div className="grid gap-12 lg:grid-cols-[1fr_260px]">
             <div className="space-y-14">
               {townGroups.length === 0 && (

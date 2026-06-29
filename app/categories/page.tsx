@@ -8,7 +8,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
-import { CollapsibleText } from "@/components/ui/collapsible-text";
+import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import {
   PLACE_CATEGORY_SLUG_ORDER,
   type PlaceCategorySection,
@@ -137,24 +137,11 @@ export default async function CategoriesPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <main className="flex-1">
-        <div className="coastal-hero border-b border-[var(--color-border)]">
-          <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
-            <header className="max-w-3xl space-y-3">
-              <p className="text-eyebrow">30A · South Walton, Florida</p>
-              <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
-                Browse by category
-              </h1>
-              <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-                Every type of business along Scenic 30A in South Walton, Florida,
-                from restaurants and coffee shops to activities, shopping, and service businesses.
-              </p>
-              <CollapsibleText
-                text="Pick a category to browse listings grouped by town, or open a town guide first when you are still deciding where to stay along the corridor."
-                className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]"
-              />
-            </header>
-          </div>
-        </div>
+        <BrowseHubHero
+          title="Browse by category"
+          description="Every type of business along Scenic 30A in South Walton, Florida, from restaurants and coffee shops to activities, shopping, and service businesses."
+          collapsibleDescription="Pick a category to browse listings grouped by town, or open a town guide first when you are still deciding where to stay along the corridor."
+        />
 
         <section className="mx-auto max-w-6xl px-4 py-12 sm:py-16 md:px-10">
           <PlaceCategoryBusinessSections
