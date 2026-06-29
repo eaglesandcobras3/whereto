@@ -98,10 +98,31 @@ npx tsx scripts/backfill-business-categories.ts --apply
 
 ---
 
+## Feature flags (PostHog)
+
+Product visibility flags are boolean keys in PostHog. Code defaults are **off** when PostHog is unavailable.
+
+| Flag | Controls |
+|------|----------|
+| `search` | `/search`, search API, nav search UI |
+| `ask` | `/ask`, Ask API, concierge UI |
+| `onboard` | Business portal (`/portal`, admin review) |
+| `search_inspector` | Admin search debug tools |
+| `guides` | `/guides`, `/guide/[slug]`, Guides nav, home/footer guide CTAs, sitemap guide URLs |
+
+### Guides rollout
+
+- [ ] In PostHog: create boolean feature flag `guides` (default off for gradual rollout).
+- [ ] Enable for internal testers, then widen to production when ready.
+- [ ] When off: guide pages redirect home, Guides nav item hidden, `/guides` and `/guide/*` omitted from sitemap.
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-06-29 | Added PostHog `guides` feature flag — gates guide UI visibility and sitemap inclusion |
 | 2026-06-25 | Full search enrichment backfill (`backfill-business-enrichment.ts`, `generate-business-embeddings.ts`); portal intake sets category + business_type + derived search fields; uncategorized businesses show in "More local spots" |
 | 2026-06-19 | RankScore → guides sync: env vars, SQL migration, cron `/api/cron/rankscore-guides`, `npm run sync:rankscore` |
 | 2026-06-17 | Created site-wide stub; portal checklist split to OPERATOR-TODO-business-portal.md |

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getAllFeatureFlags, isGuidesEnabled } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import {
@@ -148,6 +149,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function GuidePage({ params }: Props) {
+  const flags = await getAllFeatureFlags();
+  if (!isGuidesEnabled(flags)) notFound();
+
   const { slug } = await params;
   const page = await loadGuide(slug);
 

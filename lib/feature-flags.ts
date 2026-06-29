@@ -8,6 +8,7 @@ import {
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
+  isGuidesEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -19,6 +20,7 @@ export {
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
+  isGuidesEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,

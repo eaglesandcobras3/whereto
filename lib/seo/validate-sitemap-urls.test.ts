@@ -49,6 +49,21 @@ describe("validateSitemapStructure", () => {
     ]);
     expect(violations.some((v) => v.rule === "no-standalone-guide")).toBe(true);
   });
+
+  it("skips guide rules when no guide URLs are present", () => {
+    const violations = validateSitemapStructure(BASE, [
+      `${BASE}/`,
+      `${BASE}/towns`,
+      `${BASE}/areas`,
+      `${BASE}/categories`,
+      `${BASE}/services`,
+      `${BASE}/seaside`,
+      `${BASE}/area/x`,
+      `${BASE}/restaurants`,
+    ]);
+    expect(violations.some((v) => v.rule === "guides-hub")).toBe(false);
+    expect(violations.some((v) => v.rule === "primary-editorial-guide")).toBe(false);
+  });
 });
 
 describe("parseSitemapLocs", () => {
