@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
-import { isServiceBrowseGroupSlug } from "@/lib/service-categories/browse-group-nav";
+import {
+  isServiceBrowseGroupSlug,
+  serviceBrowseGroupHubPath,
+} from "@/lib/service-categories/browse-group-nav";
 import {
   SERVICE_CATEGORY_GROUP_ICONS,
   type ServiceCategoryGroupSlug,
 } from "@/lib/service-categories/groups";
 import type { ServiceSpecialtySection } from "@/lib/data/service-vendors-hub";
+import Link from "next/link";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 
 type Props = {
@@ -39,6 +44,7 @@ export function ServiceSpecialtySections({
   emptyMessage,
   defaultExpandedCount = 1,
 }: Props) {
+  const router = useRouter();
   const isDesktop = useIsDesktop();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
@@ -59,13 +65,8 @@ export function ServiceSpecialtySections({
     if (sections.length === 0) return;
     const hash = window.location.hash.replace(/^#/, "");
     if (!hash || !isServiceBrowseGroupSlug(hash)) return;
-    if (!sections.some((s) => s.slug === hash)) return;
-
-    setExpandedIds((prev) => new Set([...prev, hash]));
-    requestAnimationFrame(() => {
-      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }, [sections]);
+    router.replace(serviceBrowseGroupHubPath(hash));
+  }, [sections, router]);
 
   if (sections.length === 0) {
     return emptyMessage ? <div>{emptyMessage}</div> : null;
@@ -103,9 +104,16 @@ export function ServiceSpecialtySections({
         return (
           <CollapsibleBrowseSection
             key={section.id}
-            sectionId={section.slug}
             title={section.title}
             subtitle={`${section.totalCount} ${section.totalCount === 1 ? "provider" : "providers"}`}
+            action={
+              <Link
+                href={serviceBrowseGroupHubPath(section.slug as ServiceCategoryGroupSlug)}
+                className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+              >
+                View all
+              </Link>
+            }
             icon={
               <span className="material-symbols-outlined text-xl" aria-hidden>
                 {icon}

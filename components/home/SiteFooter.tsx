@@ -11,7 +11,7 @@ import { gaClickProps } from "@/lib/analytics/ga-click-props";
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
 const FOOTER_BROWSE_LIMIT = 500;
 
-type FooterBrowseLink = { name: string; slug: string };
+type FooterBrowseLink = { name: string; slug: string; href: string };
 
 async function getBusinessCountsByColumn(column: "town_id" | "area_id" | "primary_category_id"): Promise<Map<string, number>> {
   const supabase = getServiceSupabase();
@@ -60,6 +60,7 @@ async function getFooterTowns(): Promise<FooterBrowseLink[]> {
     .map((t) => ({
       name: (t as unknown as { title: string }).title,
       slug: t.slug as string,
+      href: `/${t.slug as string}`,
       _count: bizCounts.get(t.id as string) ?? 0,
     }))
     .sort((a, b) => {
@@ -92,6 +93,7 @@ async function getFooterAreas(): Promise<FooterBrowseLink[]> {
     .map((a) => ({
       name: (a as unknown as { title: string }).title,
       slug: a.slug as string,
+      href: `/area/${a.slug as string}`,
       _count: bizCounts.get(a.id as string) ?? 0,
     }))
     .sort((a, b) => b._count - a._count || a.name.localeCompare(b.name));
@@ -102,7 +104,7 @@ async function getFooterBusinessBrowseGroups(): Promise<FooterBrowseLink[]> {
   return groups.map((g) => ({
     name: g.title,
     slug: g.slug,
-    _count: g.listingCount,
+    href: g.href,
   }));
 }
 
@@ -111,7 +113,7 @@ async function getFooterServiceBrowseGroups(): Promise<FooterBrowseLink[]> {
   return groups.map((g) => ({
     name: g.title,
     slug: g.slug,
-    _count: g.vendorCount,
+    href: g.href,
   }));
 }
 
@@ -188,13 +190,11 @@ const footerColumnClass = "min-w-0 w-full max-w-[10.5rem] sm:max-w-none xl:max-w
 function FooterBrowseColumn({
   title,
   links,
-  hrefForSlug,
   analyticsCategory,
   compact = false,
 }: {
   title: string;
   links: FooterBrowseLink[];
-  hrefForSlug: (slug: string) => string;
   analyticsCategory: string;
   compact?: boolean;
 }) {
@@ -205,7 +205,7 @@ function FooterBrowseColumn({
         {links.map((item) => (
           <li key={item.slug}>
             <Link
-              href={hrefForSlug(item.slug)}
+              href={item.href}
               {...gaClickProps({
                 event: "nav_click",
                 category: analyticsCategory,
@@ -265,7 +265,6 @@ export async function SiteFooter() {
       ? {
           title: "Towns",
           links: townLinks,
-          hrefForSlug: (slug: string) => `/${slug}`,
           analyticsCategory: "footer_towns",
           compact: true,
         }
@@ -274,7 +273,6 @@ export async function SiteFooter() {
       ? {
           title: "Areas",
           links: areaLinks,
-          hrefForSlug: (slug: string) => `/area/${slug}`,
           analyticsCategory: "footer_areas",
           compact: true,
         }
@@ -283,22 +281,21 @@ export async function SiteFooter() {
       ? {
           title: "Businesses",
           links: businessGroupLinks,
-          hrefForSlug: (slug: string) => `/categories#${slug}`,
           analyticsCategory: "footer_business_categories",
+          compact: true,
         }
       : null,
     serviceGroupLinks.length > 0
       ? {
           title: "Services",
           links: serviceGroupLinks,
-          hrefForSlug: (slug: string) => `/services#${slug}`,
           analyticsCategory: "footer_service_categories",
+          compact: true,
         }
       : null,
   ].filter(Boolean) as {
     title: string;
     links: FooterBrowseLink[];
-    hrefForSlug: (slug: string) => string;
     analyticsCategory: string;
     compact?: boolean;
   }[];

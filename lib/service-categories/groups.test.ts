@@ -32,3 +32,11 @@ describe("service category browse groups (option A)", () => {
     expect(serviceCategoryGroupForSlug("pet_services")).toBe("marine_auto_more");
   });
 });
+
+describe("service browse group paths", () => {
+  it("uses path detail pages not hash anchors", async () => {
+    const { serviceBrowseGroupHubPath } = await import("@/lib/service-categories/browse-group-nav");
+    expect(serviceBrowseGroupHubPath("home_trades")).toBe("/services/home-trades");
+    expect(serviceBrowseGroupHubPath("vacation_guest")).toBe("/services/vacation-guest");
+  });
+});

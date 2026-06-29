@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { browseGroupIcon } from "@/lib/business-categories/group-browse-sections";
 import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
-import { isBusinessBrowseGroupSlug } from "@/lib/business-categories/browse-group-nav";
+import {
+  businessBrowseGroupHubPath,
+  isBusinessBrowseGroupSlug,
+} from "@/lib/business-categories/browse-group-nav";
 import type { CategoryHubSection } from "@/lib/data/category-hub";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 
@@ -102,6 +106,14 @@ export function CategoryHubSections({
             sectionId={section.slug}
             title={section.title}
             subtitle={`${section.totalCount} ${section.totalCount === 1 ? "listing" : "listings"}`}
+            action={
+              <Link
+                href={businessBrowseGroupHubPath(section.slug as BusinessCategoryGroupSlug)}
+                className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+              >
+                View by town
+              </Link>
+            }
             icon={
               <span className="material-symbols-outlined text-xl" aria-hidden>
                 {iconSlug}

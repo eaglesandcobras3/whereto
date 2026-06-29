@@ -6,6 +6,7 @@ import {
   categoryDbSlugFromLegacyOn30aSegment,
   categoryHubPath,
 } from "@/lib/routes/category-hub-path";
+import { businessBrowseGroupFromPublicSegment } from "@/lib/business-categories/browse-group-nav";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 import { isPortalProtectedPath, portalLoginNextPath } from "@/lib/portal/portal-paths";
@@ -20,11 +21,13 @@ function maybeRedirectLegacyCategoryOn30a(request: NextRequest): NextResponse | 
   return NextResponse.redirect(new URL(categoryHubPath(dbSlug), request.url), 308);
 }
 
-/** `/categories/[slug]` → canonical category hub (e.g. `/restaurants`). */
+/** `/categories/[slug]` → canonical category hub (e.g. `/restaurants`) for granular slugs only. */
 function maybeRedirectLegacyCategory(request: NextRequest): NextResponse | null {
   const match = request.nextUrl.pathname.match(/^\/categories\/([^/]+)\/?$/);
   if (!match) return null;
-  const slug = normalizeBusinessCategorySlug(match[1]);
+  const segment = match[1] ?? "";
+  if (businessBrowseGroupFromPublicSegment(segment)) return null;
+  const slug = normalizeBusinessCategorySlug(segment);
   if (!slug) return null;
   return NextResponse.redirect(new URL(categoryHubPath(slug), request.url), 308);
 }

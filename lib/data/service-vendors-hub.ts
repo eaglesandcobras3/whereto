@@ -4,6 +4,11 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { normalizeServiceCategorySlug } from "@/lib/service-categories/normalize";
 import { groupListedServiceCategories } from "@/lib/service-categories/group-listed-categories";
+import {
+  serviceCategoryGroupForSlug,
+  type ServiceCategoryGroupSlug,
+} from "@/lib/service-categories/groups";
+import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export const SERVICE_VENDORS_PAGE_SIZE = 24;
@@ -271,4 +276,35 @@ export async function getServiceSpecialtySections(
   }
 
   return sections;
+}
+
+/** All vendors in one browse group (flat list for `/services/[group]` detail pages). */
+export async function loadServiceBrowseGroupVendors(
+  groupSlug: ServiceCategoryGroupSlug,
+): Promise<ServiceVendorRow[]> {
+  const { data, error } = await vendorBaseQuery()
+    .order("featured", { ascending: false })
+    .order("title", { ascending: true })
+    .limit(HUB_VENDOR_POOL_LIMIT);
+
+  if (error) {
+    console.error("service browse group vendors", error);
+    return [];
+  }
+
+  const vendors: ServiceVendorRow[] = [];
+  const seen = new Set<string>();
+  for (const row of data ?? []) {
+    const r = row as Record<string, unknown>;
+    const specialtySlug = (r.service_category_slug as string | null)?.trim().toLowerCase() as
+      | ServiceCategorySlug
+      | undefined;
+    if (!specialtySlug || serviceCategoryGroupForSlug(specialtySlug) !== groupSlug) continue;
+    const vendor = mapVendorRow(r);
+    if (seen.has(vendor.id)) continue;
+    seen.add(vendor.id);
+    vendors.push(vendor);
+  }
+
+  return vendors;
 }
