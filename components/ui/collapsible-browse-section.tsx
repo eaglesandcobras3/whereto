@@ -15,6 +15,8 @@ type Props = {
   /** Shown below the trigger when expanded (e.g. “View all”). */
   action?: ReactNode;
   children: ReactNode;
+  /** Stable DOM id for in-page / cross-page anchors (e.g. `/categories#restaurants_and_bars`). */
+  sectionId?: string;
   className?: string;
 };
 
@@ -26,6 +28,7 @@ export function CollapsibleBrowseSection({
   onToggle,
   action,
   children,
+  sectionId,
   className,
 }: Props) {
   const baseId = useId();
@@ -33,7 +36,7 @@ export function CollapsibleBrowseSection({
   const panelId = `${baseId}-panel`;
 
   return (
-    <section className={cn(className)}>
+    <section id={sectionId} className={cn(className)}>
       <h3 className="m-0 font-headline text-lg font-bold sm:text-xl">
         <button
           type="button"

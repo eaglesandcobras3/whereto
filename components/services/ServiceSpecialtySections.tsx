@@ -2,7 +2,11 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
-import { SERVICE_CATEGORY_ICONS } from "@/lib/service-categories/constants";
+import { isServiceBrowseGroupSlug } from "@/lib/service-categories/browse-group-nav";
+import {
+  SERVICE_CATEGORY_GROUP_ICONS,
+  type ServiceCategoryGroupSlug,
+} from "@/lib/service-categories/groups";
 import type { ServiceSpecialtySection } from "@/lib/data/service-vendors-hub";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 
@@ -51,6 +55,18 @@ export function ServiceSpecialtySections({
     }
   }, [isDesktop, defaultExpandedCount, sections]);
 
+  useEffect(() => {
+    if (sections.length === 0) return;
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash || !isServiceBrowseGroupSlug(hash)) return;
+    if (!sections.some((s) => s.slug === hash)) return;
+
+    setExpandedIds((prev) => new Set([...prev, hash]));
+    requestAnimationFrame(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [sections]);
+
   if (sections.length === 0) {
     return emptyMessage ? <div>{emptyMessage}</div> : null;
   }
@@ -71,20 +87,23 @@ export function ServiceSpecialtySections({
     <div className="space-y-6 sm:space-y-8">
       <div>
         <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
-          {heading ?? "Browse by specialty"}
+          {heading ?? "Browse by category"}
         </h2>
         <p className="mt-1.5 text-left text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-          {subheading ?? "Tap a specialty to expand and browse providers."}
+          {subheading ?? "Tap a group to expand and browse providers."}
         </p>
       </div>
 
       {sections.map((section) => {
-        const icon = SERVICE_CATEGORY_ICONS[section.slug] ?? "home_repair_service";
+        const icon =
+          SERVICE_CATEGORY_GROUP_ICONS[section.slug as ServiceCategoryGroupSlug] ??
+          "home_repair_service";
         const isOpen = expandedIds.has(section.id);
 
         return (
           <CollapsibleBrowseSection
             key={section.id}
+            sectionId={section.slug}
             title={section.title}
             subtitle={`${section.totalCount} ${section.totalCount === 1 ? "provider" : "providers"}`}
             icon={

@@ -7,6 +7,10 @@ export type BrowseBusinessPreview = {
   ai_summary: string | null;
 };
 
+export function sortBrowseBusinesses<T extends { name: string }>(businesses: T[]): T[] {
+  return [...businesses].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** Town + area pages: priority sort for `business_categories.slug` (expanded taxonomy). */
 export const PLACE_CATEGORY_SLUG_ORDER = [
   "restaurants",
@@ -25,6 +29,7 @@ export const PLACE_CATEGORY_SLUG_ORDER = [
   "entertainment",
   "events",
   "beaches",
+  "hotels",
   "fitness",
   "beauty_wellness",
   "spas",
@@ -47,6 +52,8 @@ export const PLACE_CATEGORY_ICONS: Record<string, string> = {
   coffee_shops: "coffee",
   bars: "local_bar",
   activities: "kayaking",
+  events: "event",
+  hotels: "bed",
   shopping: "shopping_bag",
   boutiques: "checkroom",
   jewelry: "diamond",
@@ -61,7 +68,6 @@ export const PLACE_CATEGORY_ICONS: Record<string, string> = {
   contractors_handyman: "construction",
   cleaning_services: "cleaning_services",
   entertainment: "theater_comedy",
-  events: "event",
   beaches: "beach_access",
   fitness: "fitness_center",
   beauty_wellness: "spa",

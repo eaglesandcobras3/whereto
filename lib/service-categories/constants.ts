@@ -4,15 +4,6 @@
  * Hub groups: lib/service-categories/groups.ts
  */
 export const SERVICE_CATEGORY_SLUGS = [
-  // outdoor_property
-  "landscaping",
-  "lawn_care",
-  "pool_spa",
-  "irrigation",
-  "pest_control",
-  "property_management",
-  "vacation_rentals",
-  "home_staging",
   // home_trades
   "plumbing",
   "electrical",
@@ -34,8 +25,16 @@ export const SERVICE_CATEGORY_SLUGS = [
   "home_improvement",
   "home_inspection",
   "security_systems",
-  // marine
-  "marine_boat",
+  // outdoor_property
+  "landscaping",
+  "lawn_care",
+  "pool_spa",
+  "irrigation",
+  "pest_control",
+  // vacation_guest
+  "property_management",
+  "vacation_rentals",
+  "home_staging",
   // professional
   "insurance",
   "accounting",
@@ -50,23 +49,20 @@ export const SERVICE_CATEGORY_SLUGS = [
   "veterinary",
   "salon_spa",
   "fitness_wellness",
-  // creative_events
+  // marine_auto_more
+  "marine_boat",
   "design_architecture",
   "photography",
   "events_wedding",
   "catering_events",
   "marketing_creative",
-  // tech_office
   "it_computer",
   "office_workspace",
-  // auto_transport
   "auto_repair",
   "towing_transport",
   "car_rental",
-  // family_pets
   "education_childcare",
   "pet_services",
-  // other_services
   "storage",
   "waste_septic",
   "laundry_dry_clean",

@@ -1,32 +1,37 @@
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
 
-/** Hub / filter section groupings (not a DB table yet; optional `group_slug` on rows later). */
+/**
+ * End-user browse groups for `/services` hub (Option A — six rolled-up sections).
+ * Granular `service_categories.slug` values stay in the DB for search / `?specialty=`.
+ */
 export const SERVICE_CATEGORY_GROUP_SLUGS = [
-  "outdoor_property",
   "home_trades",
-  "marine",
+  "outdoor_property",
   "professional",
   "health_wellness",
-  "creative_events",
-  "tech_office",
-  "auto_transport",
-  "family_pets",
-  "other_services",
+  "vacation_guest",
+  "marine_auto_more",
 ] as const;
 
 export type ServiceCategoryGroupSlug = (typeof SERVICE_CATEGORY_GROUP_SLUGS)[number];
 
 export const SERVICE_CATEGORY_GROUP_LABELS: Record<ServiceCategoryGroupSlug, string> = {
-  outdoor_property: "Outdoor & property",
   home_trades: "Home trades",
-  marine: "Marine",
+  outdoor_property: "Outdoor & property",
   professional: "Professional & financial",
   health_wellness: "Health & wellness",
-  creative_events: "Creative & events",
-  tech_office: "Tech & workspace",
-  auto_transport: "Auto & transport",
-  family_pets: "Family, pets & education",
-  other_services: "Other services",
+  vacation_guest: "Vacation & guest services",
+  marine_auto_more: "Marine, auto & more",
+};
+
+/** Material icon per browse group (CollapsibleBrowseSection). */
+export const SERVICE_CATEGORY_GROUP_ICONS: Record<ServiceCategoryGroupSlug, string> = {
+  home_trades: "handyman",
+  outdoor_property: "yard",
+  professional: "account_balance",
+  health_wellness: "spa",
+  vacation_guest: "holiday_village",
+  marine_auto_more: "more_horiz",
 };
 
 /** Which specialty slug belongs to which hub section. */
@@ -34,16 +39,6 @@ export const SERVICE_CATEGORY_GROUP_MEMBERS: Record<
   ServiceCategoryGroupSlug,
   readonly ServiceCategorySlug[]
 > = {
-  outdoor_property: [
-    "landscaping",
-    "lawn_care",
-    "pool_spa",
-    "irrigation",
-    "pest_control",
-    "property_management",
-    "vacation_rentals",
-    "home_staging",
-  ],
   home_trades: [
     "plumbing",
     "electrical",
@@ -66,7 +61,7 @@ export const SERVICE_CATEGORY_GROUP_MEMBERS: Record<
     "home_inspection",
     "security_systems",
   ],
-  marine: ["marine_boat"],
+  outdoor_property: ["landscaping", "lawn_care", "pool_spa", "irrigation", "pest_control"],
   professional: [
     "insurance",
     "accounting",
@@ -83,24 +78,36 @@ export const SERVICE_CATEGORY_GROUP_MEMBERS: Record<
     "salon_spa",
     "fitness_wellness",
   ],
-  creative_events: [
+  vacation_guest: ["vacation_rentals", "property_management", "home_staging"],
+  marine_auto_more: [
+    "marine_boat",
+    "towing_transport",
+    "auto_repair",
+    "car_rental",
     "design_architecture",
     "photography",
     "events_wedding",
     "catering_events",
     "marketing_creative",
+    "it_computer",
+    "office_workspace",
+    "education_childcare",
+    "pet_services",
+    "storage",
+    "waste_septic",
+    "laundry_dry_clean",
   ],
-  tech_office: ["it_computer", "office_workspace"],
-  auto_transport: ["auto_repair", "towing_transport", "car_rental"],
-  family_pets: ["education_childcare", "pet_services"],
-  other_services: ["storage", "waste_septic", "laundry_dry_clean"],
 };
+
+const SLUG_TO_GROUP = new Map<ServiceCategorySlug, ServiceCategoryGroupSlug>();
+for (const groupSlug of SERVICE_CATEGORY_GROUP_SLUGS) {
+  for (const member of SERVICE_CATEGORY_GROUP_MEMBERS[groupSlug]) {
+    SLUG_TO_GROUP.set(member, groupSlug);
+  }
+}
 
 export function serviceCategoryGroupForSlug(
   slug: ServiceCategorySlug,
 ): ServiceCategoryGroupSlug | null {
-  for (const group of SERVICE_CATEGORY_GROUP_SLUGS) {
-    if (SERVICE_CATEGORY_GROUP_MEMBERS[group].includes(slug)) return group;
-  }
-  return null;
+  return SLUG_TO_GROUP.get(slug) ?? null;
 }

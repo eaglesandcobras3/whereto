@@ -1,20 +1,16 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
-import Link from "next/link";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
-import {
-  PLACE_CATEGORY_ICONS,
-  type PlaceCategorySection,
-} from "@/lib/data/place-category-shared";
-import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { browseGroupIcon } from "@/lib/business-categories/group-browse-sections";
+import type { BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
+import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
-import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   placeName: string;
   placeSlug: string;
-  sections: PlaceCategorySection[];
+  sections: BrowseGroupSection[];
   analyticsCategoryPrefix: string;
   heading?: string;
   subheading?: string;
@@ -43,7 +39,7 @@ export function PlaceCategoryBusinessSections({
   heading,
   subheading,
   emptyMessage,
-  defaultExpandedCount = 4,
+  defaultExpandedCount = 1,
 }: Props) {
   const isDesktop = useIsDesktop();
 
@@ -90,9 +86,7 @@ export function PlaceCategoryBusinessSections({
       </div>
 
       {sections.map((section) => {
-        const iconSlug = section.slug
-          ? (PLACE_CATEGORY_ICONS[section.slug] ?? "storefront")
-          : "storefront";
+        const iconSlug = browseGroupIcon(section.slug as BusinessCategoryGroupSlug);
         const isOpen = expandedIds.has(section.id);
 
         const businessItems = section.businesses.map((business) => ({
@@ -115,27 +109,7 @@ export function PlaceCategoryBusinessSections({
             }
             open={isOpen}
             onToggle={() => toggle(section.id)}
-            action={
-              section.totalCount > section.businesses.length ? (
-                <Link
-                  href={categoryHubPath(section.slug)}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: analyticsCategoryPrefix,
-                    label: `${placeSlug}_${section.slug}`,
-                  })}
-                  className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-                >
-                  View all {section.totalCount}
-                </Link>
-              ) : undefined
-            }
           >
-            {section.excerpt?.trim() ? (
-              <p className="mb-4 max-w-3xl text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {section.excerpt.trim()}
-              </p>
-            ) : null}
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {businessItems.map((business) => (
                 <li key={business.id} className="h-full">

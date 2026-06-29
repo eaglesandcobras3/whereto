@@ -43,10 +43,12 @@ import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import {
   BIZ_CATEGORY_SELECT,
-  groupBusinessesByCategorySections,
   rowToCategoryBusiness,
-  type PlaceCategorySection,
 } from "@/lib/data/place-category-sections";
+import {
+  groupBusinessesIntoBrowseSections,
+  type BrowseGroupSection,
+} from "@/lib/business-categories/group-browse-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { placeBrowseIntro, townPageIntro } from "@/lib/seo/page-intro-copy";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
@@ -120,6 +122,7 @@ async function getTownPageData(townId: string, townSlug: string) {
     .eq("town_id", townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(500);
 
@@ -131,6 +134,7 @@ async function getTownPageData(townId: string, townSlug: string) {
           .in("area_id", townAreaIds)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
+          .eq("is_storefront", true)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .limit(500)
       : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
@@ -142,6 +146,7 @@ async function getTownPageData(townId: string, townSlug: string) {
     .not("area_id", "is", null)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const directAreaBizInAreasQuery =
@@ -174,9 +179,16 @@ async function getTownPageData(townId: string, townSlug: string) {
     }
   }
   const hasTownBusinesses = businessById.size > 0;
-  const categorySections = groupBusinessesByCategorySections(
-    [...businessById.values()],
-    townSlug,
+  const categorySections = groupBusinessesIntoBrowseSections(
+    [...businessById.values()].map((b) => ({
+      id: b.id,
+      name: b.name,
+      slug: b.slug,
+      hero_image_url: b.hero_image_url,
+      ai_one_liner: b.ai_one_liner,
+      ai_summary: b.ai_summary,
+      categorySlug: b.categorySlug,
+    })),
   );
 
   const areaIdsWithBusiness = new Set<string>();
@@ -353,7 +365,7 @@ type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 
 type TownPageData = {
   areas: SidebarArea[];
-  categorySections: PlaceCategorySection[];
+  categorySections: BrowseGroupSection[];
 };
 
 function BasicTownPage({

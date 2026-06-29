@@ -15,14 +15,17 @@ import {
 } from "@/lib/routes/category-hub-path";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
-import { PLACE_CATEGORY_SLUG_ORDER } from "@/lib/data/place-category-shared";
+import { sortBrowseBusinesses } from "@/lib/data/place-category-shared";
+import {
+  groupBusinessesIntoBrowseSections,
+  type BrowseGroupSection,
+} from "@/lib/business-categories/group-browse-sections";
 
 const CATEGORY_HUB_BUSINESS_POOL_LIMIT = 2000;
 
-/** Batch load for `/categories` hub — same `businesses_view` columns as `loadBusinessesForCategory`. */
+/** Batch load for `/categories` hub — storefront listings with category slug for grouping. */
 const CATEGORY_HUB_BUSINESS_SELECT =
-  "id, slug, title, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url";
+  "id, slug, title, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( slug )";
 
 export type CategoryRow = {
   id: string;
@@ -56,17 +59,12 @@ export type CategoryHubBusinessPreview = {
   id: string;
   slug: string;
   name: string;
-  excerpt: string | null;
   hero_image_url: string | null;
+  ai_one_liner: string | null;
+  ai_summary: string | null;
 };
 
-export type CategoryHubSection = {
-  id: string;
-  title: string;
-  slug: string;
-  businesses: CategoryHubBusinessPreview[];
-  totalCount: number;
-};
+export type CategoryHubSection = BrowseGroupSection;
 
 export async function listPublishedCategorySlugs(): Promise<string[]> {
   try {
@@ -123,6 +121,7 @@ export async function loadBusinessesForCategory(
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .eq("primary_category_id", categoryId)
     .order("featured", { ascending: false })
@@ -204,19 +203,21 @@ export function groupCategoryBusinessesByTown(
   return groups;
 }
 
-function mapCategoryHubBusinessRow(row: Record<string, unknown>): CategoryHubBusinessPreview {
+function mapCategoryHubBusinessRow(row: Record<string, unknown>) {
   const heroUrl = getPublicImageUrlWithView(
     row.main_image_url as string | null,
     row.hero_image_url as string | null,
     row.main_image as string | null,
     row.hero_image as string | null,
   );
+  const excerpt = (row.excerpt as string | null) ?? null;
   return {
     id: String(row.id),
     slug: String(row.slug),
     name: String((row as { title: string }).title),
-    excerpt: (row.excerpt as string | null) ?? null,
     hero_image_url: heroUrl,
+    ai_one_liner: excerpt,
+    ai_summary: excerpt,
   };
 }
 
@@ -226,6 +227,7 @@ export async function countCategoryHubBusinesses(): Promise<number> {
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (error) {
@@ -238,31 +240,13 @@ export async function countCategoryHubBusinesses(): Promise<number> {
 export async function getCategoryHubSections(): Promise<CategoryHubSection[]> {
   const supabase = getServiceSupabase();
 
-  const { data: cats, error: catErr } = await supabase
-    .from("business_categories")
-    .select("id, title, slug")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .order("title");
-
-  if (catErr) {
-    console.error("categories hub: categories query", catErr);
-    return [];
-  }
-
-  const categories = (cats ?? []) as { id: string; title: string; slug: string }[];
-  if (categories.length === 0) return [];
-
-  const categoryIds = categories.map((c) => c.id);
-
   const { data: businessRows, error: bizErr } = await supabase
     .from("businesses_view")
     .select(CATEGORY_HUB_BUSINESS_SELECT)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .in("primary_category_id", categoryIds)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(CATEGORY_HUB_BUSINESS_POOL_LIMIT);
@@ -272,39 +256,16 @@ export async function getCategoryHubSections(): Promise<CategoryHubSection[]> {
     return [];
   }
 
-  const byCategory = new Map<string, CategoryHubBusinessPreview[]>();
-  for (const row of businessRows ?? []) {
+  const pool = (businessRows ?? []).map((row) => {
     const r = row as Record<string, unknown>;
-    const categoryId = r.primary_category_id as string | null;
-    if (!categoryId) continue;
-    const list = byCategory.get(categoryId) ?? [];
-    list.push(mapCategoryHubBusinessRow(r));
-    byCategory.set(categoryId, list);
-  }
-
-  const slugIndex = new Map<string, number>(PLACE_CATEGORY_SLUG_ORDER.map((s, i) => [s, i]));
-
-  const sections: CategoryHubSection[] = categories
-    .map((cat) => {
-      const pool = sortBrowseBusinesses(byCategory.get(cat.id) ?? []);
-      return {
-        id: cat.id,
-        title: displayStorefrontCategoryTitle(cat.slug, cat.title),
-        slug: cat.slug,
-        businesses: pool,
-        totalCount: pool.length,
-      };
-    })
-    .filter((s) => s.totalCount > 0);
-
-  sections.sort((a, b) => {
-    const ai = slugIndex.get(a.slug) ?? 999;
-    const bi = slugIndex.get(b.slug) ?? 999;
-    if (ai !== bi) return ai - bi;
-    return a.title.localeCompare(b.title);
+    const cat = r.business_categories as { slug?: string } | null;
+    return {
+      ...mapCategoryHubBusinessRow(r),
+      categorySlug: cat?.slug ?? null,
+    };
   });
 
-  return sections;
+  return groupBusinessesIntoBrowseSections(pool);
 }
 
 export async function loadCategoryHubPage(slug: string) {

@@ -42,13 +42,13 @@ export default async function CategoriesPage() {
       <main className="flex-1">
         <BrowseHubHero
           title="Browse by category"
-          description="Restaurants, coffee, bars, shopping, activities, and services along Scenic 30A — organized the same way as on each town page."
-          collapsibleDescription="Expand a category to browse every listing, or open the full category page to filter by town."
+          description="Restaurants, coffee, bars, shopping, things to do, and more along Scenic 30A — grouped for easy browsing. Regional service providers live on the Services hub."
+          collapsibleDescription="Expand a group to browse storefront listings. For mobile vendors and trades, see Service providers."
           meta={
             <>
-              {totalCount} {totalCount === 1 ? "listing" : "listings"}
+              {totalCount} {totalCount === 1 ? "place" : "places"} & shops
               {sections.length > 0
-                ? ` across ${sections.length} ${sections.length === 1 ? "category" : "categories"}`
+                ? ` in ${sections.length} browse ${sections.length === 1 ? "group" : "groups"}`
                 : ""}
             </>
           }
@@ -58,7 +58,7 @@ export default async function CategoriesPage() {
           <CategoryHubSections
             sections={sections}
             analyticsCategoryPrefix="categories_hub"
-            subheading="Tap a category to expand and browse listings."
+            subheading="Tap a group to expand and browse listings."
             emptyMessage={
               <p className="text-[var(--color-text-secondary)]">
                 No listings yet.{" "}

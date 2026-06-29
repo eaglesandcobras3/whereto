@@ -61,6 +61,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
   ]);
 
   const listedSpecialties = categories.filter((c) => c.vendor_count > 0);
+  const listedGroups = sections.length;
   const advancedSearchHref = discoveryHref(featureFlags, { type: "services" });
   const showDiscoverySearch = isDiscoveryEnabled(featureFlags);
 
@@ -97,9 +98,11 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
           meta={
             <>
               {totalCount} {totalCount === 1 ? "provider" : "providers"}
-              {listedSpecialties.length > 0
-                ? ` across ${listedSpecialties.length} ${listedSpecialties.length === 1 ? "specialty" : "specialties"}`
-                : ""}
+              {listedGroups > 0
+                ? ` across ${listedGroups} ${listedGroups === 1 ? "category" : "categories"}`
+                : listedSpecialties.length > 0
+                  ? ` across ${listedSpecialties.length} ${listedSpecialties.length === 1 ? "specialty" : "specialties"}`
+                  : ""}
             </>
           }
         >
@@ -148,7 +151,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
           <ServiceSpecialtySections
             sections={sections}
             analyticsCategoryPrefix="services_hub_specialty"
-            subheading="Tap a specialty to expand and browse providers."
+            subheading="Tap a group to expand and browse providers."
             emptyMessage={
               <p className="text-[var(--color-text-secondary)]">
                 No service providers found

@@ -38,12 +38,18 @@ export function groupListedServiceCategories(
   );
   const ungrouped = categories.filter((c) => c.vendor_count > 0 && !assigned.has(c.slug));
   if (ungrouped.length) {
-    grouped.push({
-      groupSlug: "other_services",
-      groupLabel: "More services",
-      totalVendors: ungrouped.reduce((sum, c) => sum + c.vendor_count, 0),
-      categories: ungrouped,
-    });
+    const catchAll = grouped.find((g) => g.groupSlug === "marine_auto_more");
+    if (catchAll) {
+      catchAll.categories.push(...ungrouped);
+      catchAll.totalVendors += ungrouped.reduce((sum, c) => sum + c.vendor_count, 0);
+    } else {
+      grouped.push({
+        groupSlug: "marine_auto_more",
+        groupLabel: SERVICE_CATEGORY_GROUP_LABELS.marine_auto_more,
+        totalVendors: ungrouped.reduce((sum, c) => sum + c.vendor_count, 0),
+        categories: ungrouped,
+      });
+    }
   }
 
   return grouped;

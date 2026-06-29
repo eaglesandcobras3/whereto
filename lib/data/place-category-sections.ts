@@ -13,13 +13,16 @@ import {
   PLACE_CATEGORY_SLUG_ORDER,
   PLACE_CATEGORY_ICONS,
   PER_PLACE_CATEGORY_PREVIEW,
+  sortBrowseBusinesses,
   type PlaceCategorySection,
 } from "@/lib/data/place-category-shared";
+import { groupBusinessesIntoBrowseSections, type BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
 
 export {
   PLACE_CATEGORY_SLUG_ORDER,
   PLACE_CATEGORY_ICONS,
   PER_PLACE_CATEGORY_PREVIEW,
+  sortBrowseBusinesses,
 };
 export type { PlaceCategorySection };
 
@@ -54,10 +57,6 @@ export function rowToCategoryBusiness(row: Record<string, unknown>): CategoryBus
       : null,
     categorySlug: cat?.slug ?? null,
   };
-}
-
-export function sortBrowseBusinesses<T extends { name: string }>(businesses: T[]): T[] {
-  return [...businesses].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function groupBusinessesByCategorySections(
@@ -129,7 +128,7 @@ function mergeCategoryBusinessRows(
 /** Businesses linked to an area hub or POI (column + `area_businesses` join). */
 export async function getCategorySectionsForPublicPlace(
   place: PublicPlacePage,
-): Promise<PlaceCategorySection[]> {
+): Promise<BrowseGroupSection[]> {
   const supabase = getServiceSupabase();
   const byId = new Map<string, CategoryBusiness>();
   const cap = 500;
@@ -140,6 +139,7 @@ export async function getCategorySectionsForPublicPlace(
       .select(BIZ_CATEGORY_SELECT)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .eq("is_storefront", true)
       .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (place.source === "area") {
@@ -186,5 +186,15 @@ export async function getCategorySectionsForPublicPlace(
     }
   }
 
-  return groupBusinessesByCategorySections([...byId.values()], `area:${place.slug}`);
+  return groupBusinessesIntoBrowseSections(
+    [...byId.values()].map((b) => ({
+      id: b.id,
+      name: b.name,
+      slug: b.slug,
+      hero_image_url: b.hero_image_url,
+      ai_one_liner: b.ai_one_liner,
+      ai_summary: b.ai_summary,
+      categorySlug: b.categorySlug,
+    })),
+  );
 }

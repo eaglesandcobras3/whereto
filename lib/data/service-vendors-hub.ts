@@ -251,17 +251,23 @@ export async function getServiceSpecialtySections(
   const sections: ServiceSpecialtySection[] = [];
 
   for (const group of grouped) {
+    const vendors: ServiceVendorRow[] = [];
+    const seen = new Set<string>();
     for (const cat of group.categories) {
-      const pool = byCategory.get(cat.id) ?? [];
-      if (pool.length === 0) continue;
-      sections.push({
-        id: cat.id,
-        title: cat.title,
-        slug: cat.slug,
-        vendors: pool,
-        totalCount: pool.length,
-      });
+      for (const vendor of byCategory.get(cat.id) ?? []) {
+        if (seen.has(vendor.id)) continue;
+        seen.add(vendor.id);
+        vendors.push(vendor);
+      }
     }
+    if (vendors.length === 0) continue;
+    sections.push({
+      id: group.groupSlug,
+      title: group.groupLabel,
+      slug: group.groupSlug,
+      vendors,
+      totalCount: vendors.length,
+    });
   }
 
   return sections;

@@ -19,6 +19,13 @@ const CATEGORY_HINTS: Array<{ pattern: RegExp; slug: string }> = [
   { pattern: /jewel(ry|er)\s*(store|shop)|jewelry\s*store/i, slug: "jewelry" },
   { pattern: /\bjewel(ry|er)\b/i, slug: "jewelry" },
 
+  // Treats & bowls (before broad "restaurant" — acai/smoothie shops are not full restaurants)
+  { pattern: /acai|smoothie\s*bowl|juice\s*bar|playa\s*bowls/i, slug: "desserts" },
+  { pattern: /marble\s*slab|creamery/i, slug: "ice_cream" },
+
+  // Event venues (search taxonomy — not in storefront browse groups)
+  { pattern: /town\s*hall|event\s*venue|wedding\s*venue|banquet\s*hall/i, slug: "events" },
+
   // Food & drink
   { pattern: /restaurant|grill|bistro|steakhouse|sushi|taco|pizza|seafood|diner|eatery|cantina|trattoria|taqueria|ramen|pho|oyster|raw\s*bar/i, slug: "restaurants" },
   { pattern: /coffee|café|cafe|espresso|roaster|beignet/i, slug: "coffee_shops" },
@@ -31,15 +38,22 @@ const CATEGORY_HINTS: Array<{ pattern: RegExp; slug: string }> = [
 
   // Wellness & beauty (before "lounge" → bars false positive)
   { pattern: /beauty|salon|barber|nail|medi\s*spa|day\s*spa/i, slug: "beauty_wellness" },
-  { pattern: /pilates|yoga|fitness|gym\b/i, slug: "fitness" },
+  { pattern: /pilates|yoga|fitness|gym\b|lagree|crossfit|barre\s*studio/i, slug: "fitness" },
   { pattern: /wellness|infusion/i, slug: "beauty_wellness" },
   { pattern: /chiropract/i, slug: "chiropractic_wellness" },
   { pattern: /hair\s*salon/i, slug: "hair_salons" },
   { pattern: /nail\s*salon|manicure/i, slug: "nail_salons" },
   { pattern: /\bspa\b|massage/i, slug: "spas" },
+  { pattern: /primary care|ascension|sacred heart|healthcare|medical group/i, slug: "medical_clinics" },
+
+  // Lodging (before generic shop/store)
+  { pattern: /\b(hotel|resort|inn|marriott|hyatt|motel|lodging|suites)\b/i, slug: "hotels" },
+
+  // BOTE storefronts sell boards and apparel — not rentals/activities
+  { pattern: /\bbote\b/i, slug: "shopping" },
 
   // Activities & surf (before "beach" in town names)
-  { pattern: /surf\s*(school|club|lesson|rental)|paddleboard|\bbote\b|kayak|bike\s*rental|tour\b|excursion|fishing\s*charter|adventure|water\s*sport|zipline/i, slug: "activities" },
+  { pattern: /surf\s*(school|club|lesson|rental)|paddleboard|kayak|bike\s*rental|tour\b|excursion|fishing\s*charter|adventure|water\s*sport|zipline/i, slug: "activities" },
 
   // Retail (specific before generic shop/store)
   { pattern: /boutique|clothing|fashion|dress|captured\s*clothing/i, slug: "boutiques" },

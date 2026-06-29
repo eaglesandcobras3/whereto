@@ -3,10 +3,10 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
-import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups";
+import { getListedServiceBrowseGroups } from "@/lib/data/service-browse-groups";
 import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { TruncatedList } from "@/components/ui/truncated-list";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
 const FOOTER_BROWSE_LIMIT = 500;
@@ -97,33 +97,29 @@ async function getFooterAreas(): Promise<FooterBrowseLink[]> {
     .sort((a, b) => b._count - a._count || a.name.localeCompare(b.name));
 }
 
-async function getFooterCategories(): Promise<FooterBrowseLink[]> {
-  const supabase = getServiceSupabase();
-  const [{ data, error }, bizCounts] = await Promise.all([
-    supabase
-      .from("business_categories")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .limit(FOOTER_BROWSE_LIMIT),
-    getBusinessCountsByColumn("primary_category_id"),
-  ]);
-  if (error) {
-    console.error("SiteFooter getFooterCategories", error);
-    return [];
-  }
-  return (data ?? [])
-    .map((c) => ({
-      name: (c as unknown as { title: string }).title,
-      slug: c.slug as string,
-      _count: bizCounts.get(c.id as string) ?? 0,
-    }))
-    .sort((a, b) => b._count - a._count || a.name.localeCompare(b.name));
+async function getFooterBusinessBrowseGroups(): Promise<FooterBrowseLink[]> {
+  const groups = await getListedBusinessBrowseGroups();
+  return groups.map((g) => ({
+    name: g.title,
+    slug: g.slug,
+    _count: g.listingCount,
+  }));
+}
+
+async function getFooterServiceBrowseGroups(): Promise<FooterBrowseLink[]> {
+  const groups = await getListedServiceBrowseGroups();
+  return groups.map((g) => ({
+    name: g.title,
+    slug: g.slug,
+    _count: g.vendorCount,
+  }));
 }
 
 const footerLinkClass =
   "text-xs leading-snug text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]";
+
+const footerCompactLinkClass =
+  "text-[0.6875rem] leading-[1.35] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]";
 
 const footerSocialButtonClass =
   "flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]";
@@ -185,7 +181,7 @@ function FooterSocialIcons({
 
 /** Narrow link columns: 1×4 stack → 2×2 → 4 across (brand stays left on lg+). */
 const footerColumnsGridClass =
-  "grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-x-8 xl:grid-cols-4 xl:gap-x-8";
+  "grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-x-8 xl:grid-cols-3 2xl:grid-cols-5 2xl:gap-x-8";
 
 const footerColumnClass = "min-w-0 w-full max-w-[10.5rem] sm:max-w-none xl:max-w-[9.5rem]";
 
@@ -194,47 +190,34 @@ function FooterBrowseColumn({
   links,
   hrefForSlug,
   analyticsCategory,
+  compact = false,
 }: {
   title: string;
   links: FooterBrowseLink[];
   hrefForSlug: (slug: string) => string;
   analyticsCategory: string;
+  compact?: boolean;
 }) {
-  const list = (
-    <ul className="flex flex-col gap-1">
-      {links.map((item) => (
-        <li key={item.slug}>
-          <Link
-            href={hrefForSlug(item.slug)}
-            {...gaClickProps({
-              event: "nav_click",
-              category: analyticsCategory,
-              label: item.slug,
-            })}
-            className={footerLinkClass}
-          >
-            {item.name}
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-
   return (
     <div className={footerColumnClass}>
-      <h3 className="text-eyebrow mb-3">{title}</h3>
-      {links.length > 8 ? (
-        <TruncatedList
-          itemCount={links.length}
-          label={title.toLowerCase()}
-          maxHeight="10rem"
-          fadeFrom="var(--color-site-chrome)"
-        >
-          {list}
-        </TruncatedList>
-      ) : (
-        list
-      )}
+      <h3 className={`text-eyebrow ${compact ? "mb-2" : "mb-3"}`}>{title}</h3>
+      <ul className={`flex flex-col ${compact ? "gap-0.5" : "gap-1"}`}>
+        {links.map((item) => (
+          <li key={item.slug}>
+            <Link
+              href={hrefForSlug(item.slug)}
+              {...gaClickProps({
+                event: "nav_click",
+                category: analyticsCategory,
+                label: item.slug,
+              })}
+              className={compact ? footerCompactLinkClass : footerLinkClass}
+            >
+              {item.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -268,10 +251,12 @@ export async function SiteFooter() {
   const listBusinessHref = isOnboardEnabled(flags) ? "/portal/businesses/new" : "/list-your-business";
   const companyLinks = buildCompanyLinks(listBusinessHref);
 
-  const [townLinks, areaLinks, categoryLinks, instagramUrl, tiktokUrl] = await Promise.all([
+  const [townLinks, areaLinks, businessGroupLinks, serviceGroupLinks, instagramUrl, tiktokUrl] =
+    await Promise.all([
     getFooterTowns(),
     getFooterAreas(),
-    getFooterCategories(),
+    getFooterBusinessBrowseGroups(),
+    getFooterServiceBrowseGroups(),
     Promise.resolve(getSiteInstagramUrl()),
     Promise.resolve(getSiteTikTokUrl()),
   ]);
@@ -282,6 +267,7 @@ export async function SiteFooter() {
           links: townLinks,
           hrefForSlug: (slug: string) => `/${slug}`,
           analyticsCategory: "footer_towns",
+          compact: true,
         }
       : null,
     areaLinks.length > 0
@@ -290,14 +276,23 @@ export async function SiteFooter() {
           links: areaLinks,
           hrefForSlug: (slug: string) => `/area/${slug}`,
           analyticsCategory: "footer_areas",
+          compact: true,
         }
       : null,
-    categoryLinks.length > 0
+    businessGroupLinks.length > 0
       ? {
-          title: "Categories",
-          links: categoryLinks,
-          hrefForSlug: (slug: string) => categoryHubPath(slug),
-          analyticsCategory: "footer_categories",
+          title: "Businesses",
+          links: businessGroupLinks,
+          hrefForSlug: (slug: string) => `/categories#${slug}`,
+          analyticsCategory: "footer_business_categories",
+        }
+      : null,
+    serviceGroupLinks.length > 0
+      ? {
+          title: "Services",
+          links: serviceGroupLinks,
+          hrefForSlug: (slug: string) => `/services#${slug}`,
+          analyticsCategory: "footer_service_categories",
         }
       : null,
   ].filter(Boolean) as {
@@ -305,6 +300,7 @@ export async function SiteFooter() {
     links: FooterBrowseLink[];
     hrefForSlug: (slug: string) => string;
     analyticsCategory: string;
+    compact?: boolean;
   }[];
   const socials = [
     instagramUrl ? { id: "instagram" as const, label: "Instagram", href: instagramUrl } : null,
