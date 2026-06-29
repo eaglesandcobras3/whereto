@@ -1,25 +1,17 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
-import Link from "next/link";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
-import {
-  PLACE_CATEGORY_ICONS,
-  type PlaceCategorySection,
-} from "@/lib/data/place-category-shared";
-import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { SERVICE_CATEGORY_ICONS } from "@/lib/service-categories/constants";
+import type { ServiceSpecialtySection } from "@/lib/data/service-vendors-hub";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
-import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
-  placeName: string;
-  placeSlug: string;
-  sections: PlaceCategorySection[];
+  sections: ServiceSpecialtySection[];
   analyticsCategoryPrefix: string;
   heading?: string;
   subheading?: string;
   emptyMessage?: ReactNode;
-  /** How many categories to show expanded by default on desktop. All collapsed on mobile/tablet. */
   defaultExpandedCount?: number;
 };
 
@@ -35,18 +27,15 @@ function useIsDesktop() {
   return desktop;
 }
 
-export function PlaceCategoryBusinessSections({
-  placeName,
-  placeSlug,
+export function ServiceSpecialtySections({
   sections,
   analyticsCategoryPrefix,
   heading,
   subheading,
   emptyMessage,
-  defaultExpandedCount = 4,
+  defaultExpandedCount = 1,
 }: Props) {
   const isDesktop = useIsDesktop();
-
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
@@ -82,70 +71,40 @@ export function PlaceCategoryBusinessSections({
     <div className="space-y-6 sm:space-y-8">
       <div>
         <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
-          {heading ?? `Local businesses in ${placeName}`}
+          {heading ?? "Browse by specialty"}
         </h2>
         <p className="mt-1.5 text-left text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-          {subheading ?? "Browse by category. Tap a section to expand."}
+          {subheading ?? "Tap a specialty to expand and browse providers."}
         </p>
       </div>
 
       {sections.map((section) => {
-        const iconSlug = section.slug
-          ? (PLACE_CATEGORY_ICONS[section.slug] ?? "storefront")
-          : "storefront";
+        const icon = SERVICE_CATEGORY_ICONS[section.slug] ?? "home_repair_service";
         const isOpen = expandedIds.has(section.id);
-
-        const businessItems = section.businesses.map((business) => ({
-          id: business.id,
-          name: business.name,
-          slug: business.slug,
-          excerpt: business.ai_summary,
-          heroImageUrl: business.hero_image_url,
-        }));
 
         return (
           <CollapsibleBrowseSection
             key={section.id}
             title={section.title}
-            subtitle={`${section.totalCount} ${section.totalCount === 1 ? "listing" : "listings"}`}
+            subtitle={`${section.totalCount} ${section.totalCount === 1 ? "provider" : "providers"}`}
             icon={
               <span className="material-symbols-outlined text-xl" aria-hidden>
-                {iconSlug}
+                {icon}
               </span>
             }
             open={isOpen}
             onToggle={() => toggle(section.id)}
-            action={
-              section.totalCount > section.businesses.length ? (
-                <Link
-                  href={categoryHubPath(section.slug)}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: analyticsCategoryPrefix,
-                    label: `${placeSlug}_${section.slug}`,
-                  })}
-                  className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-                >
-                  View all {section.totalCount}
-                </Link>
-              ) : undefined
-            }
           >
-            {section.excerpt?.trim() ? (
-              <p className="mb-4 max-w-3xl text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {section.excerpt.trim()}
-              </p>
-            ) : null}
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {businessItems.map((business) => (
-                <li key={business.id} className="h-full">
+              {section.vendors.map((vendor) => (
+                <li key={vendor.id} className="h-full">
                   <BusinessPreviewCard
-                    name={business.name}
-                    slug={business.slug}
-                    excerpt={business.excerpt}
-                    heroImageUrl={business.heroImageUrl}
-                    analyticsCategory={`${analyticsCategoryPrefix}_business`}
-                    analyticsLabel={`${placeSlug}_${business.slug}`}
+                    name={vendor.name}
+                    slug={vendor.slug}
+                    excerpt={vendor.excerpt}
+                    analyticsCategory={`${analyticsCategoryPrefix}_vendor`}
+                    analyticsLabel={vendor.slug}
+                    hideImage
                   />
                 </li>
               ))}

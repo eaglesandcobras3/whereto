@@ -3,6 +3,9 @@
 import { useId, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+const TRIGGER_CLASS =
+  "flex min-w-0 flex-1 items-start gap-3 rounded-lg text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2";
+
 type Props = {
   title: ReactNode;
   meta?: ReactNode;
@@ -18,6 +21,8 @@ type Props = {
   sectionNumber?: number;
   /** Plain stacks: drop trailing border and bottom spacing on the last item. */
   trimTrailingSpace?: boolean;
+  /** Heading level for the disclosure trigger. */
+  headingLevel?: 2 | 3;
 };
 
 export function CollapsibleSection({
@@ -34,12 +39,14 @@ export function CollapsibleSection({
   preview,
   sectionNumber,
   trimTrailingSpace = false,
+  headingLevel = 3,
 }: Props) {
   const baseId = useId();
   const triggerId = `${baseId}-trigger`;
   const panelId = `${baseId}-panel`;
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const open = controlledOpen ?? uncontrolledOpen;
+  const HeadingTag = headingLevel === 2 ? "h2" : "h3";
 
   function setOpen(next: boolean) {
     if (controlledOpen === undefined) {
@@ -72,56 +79,63 @@ export function CollapsibleSection({
             : cn("pt-3 sm:pt-4", !trimTrailingSpace && "pb-3 sm:pb-4"),
         )}
       >
-        <button
-          type="button"
-          id={triggerId}
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen(!open)}
-          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+        <HeadingTag
+          className={cn(
+            "m-0 min-w-0 flex-1 font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl",
+            isCard && "text-[var(--color-text-primary)]",
+          )}
         >
-          {isCard && sectionNumber != null ? (
+          <button
+            type="button"
+            id={triggerId}
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen(!open)}
+            className={TRIGGER_CLASS}
+          >
+            {isCard && sectionNumber != null ? (
+              <span
+                className="pt-1 font-headline text-sm font-extrabold tabular-nums text-[var(--color-primary)]/45"
+                aria-hidden
+              >
+                {String(sectionNumber).padStart(2, "0")}
+              </span>
+            ) : null}
+
+            {isCard && icon ? (
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-container-high)] text-[var(--color-primary)]">
+                <span className="material-symbols-outlined text-xl" aria-hidden>
+                  {icon}
+                </span>
+              </span>
+            ) : null}
+
+            <span className="min-w-0 flex-1">
+              <span className="block">{title}</span>
+              {meta ? <span className="mt-1 block">{meta}</span> : null}
+              {showPreview ? (
+                <span className="mt-2 block line-clamp-2 text-sm font-normal leading-relaxed text-[var(--color-text-secondary)]">
+                  {preview}
+                </span>
+              ) : null}
+              {isCard ? (
+                <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-[var(--color-primary)]">
+                  {open ? "Hide section" : "Read section"}
+                </span>
+              ) : null}
+            </span>
+
             <span
-              className="pt-1 font-headline text-sm font-extrabold tabular-nums text-[var(--color-primary)]/45"
+              className={cn(
+                "material-symbols-outlined mt-0.5 shrink-0 text-[var(--color-text-tertiary)] transition-transform duration-200",
+                open && "rotate-180",
+              )}
               aria-hidden
             >
-              {String(sectionNumber).padStart(2, "0")}
+              expand_more
             </span>
-          ) : null}
-
-          {isCard && icon ? (
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-container-high)] text-[var(--color-primary)]">
-              <span className="material-symbols-outlined text-xl" aria-hidden>
-                {icon}
-              </span>
-            </span>
-          ) : null}
-
-          <div className="min-w-0 flex-1">
-            {title}
-            {meta ? <div className="mt-1">{meta}</div> : null}
-            {showPreview ? (
-              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {preview}
-              </p>
-            ) : null}
-            {isCard ? (
-              <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-primary)]">
-                {open ? "Hide section" : "Read section"}
-              </p>
-            ) : null}
-          </div>
-
-          <span
-            className={cn(
-              "material-symbols-outlined mt-0.5 shrink-0 text-[var(--color-text-tertiary)] transition-transform duration-200",
-              open && "rotate-180",
-            )}
-            aria-hidden
-          >
-            expand_more
-          </span>
-        </button>
+          </button>
+        </HeadingTag>
         {actions ? <div className="shrink-0 pt-0.5">{actions}</div> : null}
       </div>
 
@@ -129,9 +143,8 @@ export function CollapsibleSection({
         id={panelId}
         role="region"
         aria-labelledby={triggerId}
-        aria-hidden={!open}
+        hidden={!open}
         className={cn(
-          !open && "sr-only",
           open &&
             (isCard
               ? "border-t border-[var(--color-border)] px-4 pb-5 pt-4 sm:px-5 sm:pb-6"

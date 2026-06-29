@@ -3,9 +3,11 @@ import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { normalizeServiceCategorySlug } from "@/lib/service-categories/normalize";
+import { groupListedServiceCategories } from "@/lib/service-categories/group-listed-categories";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export const SERVICE_VENDORS_PAGE_SIZE = 24;
+const HUB_VENDOR_POOL_LIMIT = 2000;
 
 export type ServiceCategoryRow = {
   id: string;
@@ -37,11 +39,19 @@ export type ServiceVendorsPageResult = {
   query: string;
 };
 
+export type ServiceSpecialtySection = {
+  id: string;
+  title: string;
+  slug: string;
+  vendors: ServiceVendorRow[];
+  totalCount: number;
+};
+
 function vendorBaseQuery() {
   return getServiceSupabase()
     .from("businesses_view")
     .select(
-      "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, service_category_slug, service_category_title, towns ( title )",
+      "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, service_category_id, service_category_slug, service_category_title, towns ( title )",
       { count: "exact" },
     )
     .is("archived_at", null)
@@ -197,4 +207,62 @@ export async function countServiceVendors(): Promise<number> {
     return 0;
   }
   return count ?? 0;
+}
+
+export async function getServiceSpecialtySections(
+  query?: string | null,
+): Promise<ServiceSpecialtySection[]> {
+  const categories = (await listServiceCategories()).filter((c) => c.vendor_count > 0);
+  if (categories.length === 0) return [];
+
+  const categoryIds = categories.map((c) => c.id);
+  const trimmedQ = query?.trim() ?? "";
+
+  let q = vendorBaseQuery().in("service_category_id", categoryIds);
+
+  if (trimmedQ) {
+    const safe = trimmedQ.replace(/[%_,\\]/g, " ").trim();
+    if (safe) {
+      q = q.or(`title.ilike.%${safe}%,excerpt.ilike.%${safe}%,search_keywords.ilike.%${safe}%`);
+    }
+  }
+
+  const { data, error } = await q
+    .order("featured", { ascending: false })
+    .order("title", { ascending: true })
+    .limit(HUB_VENDOR_POOL_LIMIT);
+
+  if (error) {
+    console.error("service specialty sections", error);
+    return [];
+  }
+
+  const byCategory = new Map<string, ServiceVendorRow[]>();
+  for (const row of data ?? []) {
+    const r = row as Record<string, unknown>;
+    const categoryId = r.service_category_id as string | null;
+    if (!categoryId) continue;
+    const list = byCategory.get(categoryId) ?? [];
+    list.push(mapVendorRow(r));
+    byCategory.set(categoryId, list);
+  }
+
+  const grouped = groupListedServiceCategories(categories);
+  const sections: ServiceSpecialtySection[] = [];
+
+  for (const group of grouped) {
+    for (const cat of group.categories) {
+      const pool = byCategory.get(cat.id) ?? [];
+      if (pool.length === 0) continue;
+      sections.push({
+        id: cat.id,
+        title: cat.title,
+        slug: cat.slug,
+        vendors: pool,
+        totalCount: pool.length,
+      });
+    }
+  }
+
+  return sections;
 }

@@ -652,12 +652,9 @@ export default async function BusinessPage({ params }: Props) {
               {vibe?.length ? (
                 <CollapsibleSection
                   icon="spa"
+                  headingLevel={2}
                   preview={`${vibe.slice(0, 3).join(" · ")}${vibe.length > 3 ? " · …" : ""}`}
-                  title={
-                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-                      The Vibe
-                    </h2>
-                  }
+                  title="The Vibe"
                 >
                   <div className="flex flex-wrap gap-2">
                     {vibe.map((v) => (
@@ -673,12 +670,9 @@ export default async function BusinessPage({ params }: Props) {
               {!hasMarkdown && b.ai_summary ? (
                 <CollapsibleSection
                   icon="storefront"
+                  headingLevel={2}
                   preview={markdownSectionPreview(String(b.ai_summary), 150)}
-                  title={
-                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-                      About
-                    </h2>
-                  }
+                  title="About"
                 >
                   <p className="text-base leading-relaxed text-zinc-700 sm:text-lg">
                     {b.ai_summary as string}
@@ -690,12 +684,9 @@ export default async function BusinessPage({ params }: Props) {
               {localTip ? (
                 <CollapsibleSection
                   icon="lightbulb"
+                  headingLevel={2}
                   preview={markdownSectionPreview(localTip, 120)}
-                  title={
-                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-                      Local tip
-                    </h2>
-                  }
+                  title="Local tip"
                 >
                   <div className="pull-quote border-0 p-0">
                     <p className="text-base leading-relaxed sm:text-lg">{localTip}</p>
@@ -707,17 +698,14 @@ export default async function BusinessPage({ params }: Props) {
               {goodFor?.length || notIdealFor?.length ? (
                 <CollapsibleSection
                   icon="groups"
+                  headingLevel={2}
                   preview={[
                     goodFor?.length ? `Great for ${goodFor.slice(0, 2).join(", ")}` : null,
                     notIdealFor?.length ? `Skip if ${notIdealFor.slice(0, 2).join(", ")}` : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
-                  title={
-                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-                      Who it&apos;s for
-                    </h2>
-                  }
+                  title="Who it's for"
                 >
                   <div className="grid gap-8 sm:grid-cols-2">
                     {goodFor?.length ? (

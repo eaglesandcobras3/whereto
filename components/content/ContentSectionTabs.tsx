@@ -40,11 +40,7 @@ export function ContentSectionTabs({
             variant="plain"
             defaultOpen={index === 0}
             trimTrailingSpace={index === sections.length - 1}
-            title={
-              <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-                {section.title}
-              </h3>
-            }
+            title={section.title}
           >
             {section.content}
           </CollapsibleSection>

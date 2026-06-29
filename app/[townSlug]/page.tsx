@@ -325,7 +325,6 @@ export default async function TownPage({ params }: Props) {
         cat={hub.cat}
         townGroups={hub.townGroups}
         businesses={hub.businesses}
-        otherCats={hub.otherCats}
       />
     );
   }

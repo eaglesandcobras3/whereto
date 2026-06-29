@@ -85,6 +85,7 @@ export type PlaceCategorySection = {
   id: string;
   title: string;
   slug: string;
+  excerpt?: string | null;
   businesses: BrowseBusinessPreview[];
   totalCount: number;
 };

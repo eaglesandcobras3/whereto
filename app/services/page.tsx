@@ -6,21 +6,13 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { hubServicesIntro } from "@/lib/seo/page-intro-copy";
-import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
-import { getServiceVendorsPage } from "@/lib/data/service-vendors-hub";
 import {
-  ServiceSpecialtyBrowse,
-} from "@/components/services/ServiceSpecialtyBrowse";
-import { toServiceSpecialtyBrowseGroups } from "@/lib/service-categories/service-specialty-browse";
-import {
-  findGroupForSpecialtySlug,
-  groupListedServiceCategories,
-} from "@/lib/service-categories/group-listed-categories";
-import {
-  parseSpecialtySlugsFromParams,
-  SERVICE_VENDOR_UI,
-} from "@/lib/routes/service-vendor-labels";
-import { SERVICE_VENDORS_HUB_PATH, serviceVendorsHubHref } from "@/lib/routes/service-vendors-hub";
+  countServiceVendors,
+  getServiceSpecialtySections,
+  listServiceCategories,
+} from "@/lib/data/service-vendors-hub";
+import { ServiceSpecialtySections } from "@/components/services/ServiceSpecialtySections";
+import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -57,40 +49,25 @@ export const metadata: Metadata = {
   }),
 };
 
-function paginationHref(page: number, specialty: string | null, query: string): string {
-  return serviceVendorsHubHref({
-    specialtySlug: specialty,
-    page: page > 1 ? page : undefined,
-    query: query || null,
-  });
-}
-
 export default async function ServiceVendorsHubPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const specialtySlugs = parseSpecialtySlugsFromParams((key) => {
-    if (key === "specialty") return sp.specialty;
-    if (key === "service_category") return sp.service_category;
-    return null;
-  });
-  const specialtySlug = specialtySlugs[0] ?? null;
-  const page = Math.max(1, Number(sp.page) || 1);
   const query = sp.q?.trim() ?? "";
 
   const featureFlags = await getAllFeatureFlags();
-  const result = await getServiceVendorsPage({ page, specialtySlug, query });
-  const { vendors, totalCount, totalPages, categories, activeCategory } = result;
+  const [sections, categories, totalCount] = await Promise.all([
+    getServiceSpecialtySections(query),
+    listServiceCategories(),
+    countServiceVendors(),
+  ]);
+
+  const listedSpecialties = categories.filter((c) => c.vendor_count > 0);
+  const advancedSearchHref = discoveryHref(featureFlags, { type: "services" });
+  const showDiscoverySearch = isDiscoveryEnabled(featureFlags);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Services", url: SERVICE_VENDORS_HUB_PATH },
   ]);
-
-  const listedSpecialties = categories.filter((c) => c.vendor_count > 0);
-  const specialtyGroups = groupListedServiceCategories(listedSpecialties);
-  const openGroupSlug = findGroupForSpecialtySlug(specialtyGroups, specialtySlug);
-  const browseGroups = toServiceSpecialtyBrowseGroups(specialtyGroups, specialtySlug);
-  const advancedSearchHref = discoveryHref(featureFlags, { type: "services" });
-  const showDiscoverySearch = isDiscoveryEnabled(featureFlags);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -132,9 +109,6 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
               method="get"
               className="flex max-w-md flex-wrap items-center gap-2 pt-2"
             >
-              {specialtySlug ? (
-                <input type="hidden" name="specialty" value={specialtySlug} />
-              ) : null}
               <div className="relative min-w-0 flex-1">
                 <span className="material-symbols-outlined absolute left-3 top-2.5 !text-[1.1rem] text-[var(--color-text-tertiary)]">
                   search
@@ -171,89 +145,21 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
         </BrowseHubHero>
 
         <section className="mx-auto max-w-6xl px-4 py-12 md:px-10">
-          <div className="mb-8">
-            <ServiceSpecialtyBrowse
-              groups={browseGroups}
-              defaultOpenGroupSlug={openGroupSlug}
-              allHref={serviceVendorsHubHref({ query: query || null })}
-              allActive={!specialtySlug}
-              query={query}
-              specialtyHeading={SERVICE_VENDOR_UI.specialtyHeading}
-              hubBrowseSubheading={SERVICE_VENDOR_UI.hubBrowseSubheading}
-            />
-          </div>
-
-          {activeCategory ? (
-            <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
-              Showing <span className="font-semibold">{activeCategory.title}</span>
-              {query ? (
-                <>
-                  {" "}
-                  matching &ldquo;{query}&rdquo;
-                </>
-              ) : null}
-            </p>
-          ) : null}
-
-          {vendors.length > 0 ? (
-            <>
-              <ul className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-                {vendors.map((v) => (
-                  <li key={v.id}>
-                    <BusinessPreviewCard
-                      name={v.name}
-                      slug={v.slug}
-                      excerpt={v.excerpt}
-                      heroImageUrl={v.hero_image_url}
-                      meta={
-                        [v.service_category_title, v.town_name].filter(Boolean).join(" · ") ||
-                        null
-                      }
-                      analyticsCategory="services_hub"
-                      analyticsLabel={v.slug}
-                    />
-                  </li>
-                ))}
-              </ul>
-
-              {totalPages > 1 ? (
-                <nav
-                  className="mt-10 flex flex-wrap items-center justify-center gap-2"
-                  aria-label="Pagination"
-                >
-                  {page > 1 ? (
-                    <Link
-                      href={paginationHref(page - 1, specialtySlug, query)}
-                      className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
-                    >
-                      Previous
-                    </Link>
-                  ) : null}
-                  <span className="px-2 text-sm text-[var(--color-text-tertiary)]">
-                    Page {page} of {totalPages}
-                  </span>
-                  {page < totalPages ? (
-                    <Link
-                      href={paginationHref(page + 1, specialtySlug, query)}
-                      className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]"
-                    >
-                      Next
-                    </Link>
-                  ) : null}
-                </nav>
-              ) : null}
-            </>
-          ) : (
-            <p className="text-[var(--color-text-secondary)]">
-              No service providers found
-              {activeCategory ? ` in ${activeCategory.title}` : ""}
-              {query ? ` for “${query}”` : ""}.{" "}
-              <Link href="/list-your-business" className="text-[var(--color-primary)] hover:underline">
-                List your business
-              </Link>
-              .
-            </p>
-          )}
+          <ServiceSpecialtySections
+            sections={sections}
+            analyticsCategoryPrefix="services_hub_specialty"
+            subheading="Tap a specialty to expand and browse providers."
+            emptyMessage={
+              <p className="text-[var(--color-text-secondary)]">
+                No service providers found
+                {query ? ` for “${query}”` : ""}.{" "}
+                <Link href="/list-your-business" className="text-[var(--color-primary)] hover:underline">
+                  List your business
+                </Link>
+                .
+              </p>
+            }
+          />
         </section>
       </main>
     </div>

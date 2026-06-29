@@ -16,6 +16,13 @@ import {
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { sortBrowseBusinesses } from "@/lib/data/place-category-sections";
+import { PLACE_CATEGORY_SLUG_ORDER } from "@/lib/data/place-category-shared";
+
+const CATEGORY_HUB_BUSINESS_POOL_LIMIT = 2000;
+
+/** Batch load for `/categories` hub — same `businesses_view` columns as `loadBusinessesForCategory`. */
+const CATEGORY_HUB_BUSINESS_SELECT =
+  "id, slug, title, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url";
 
 export type CategoryRow = {
   id: string;
@@ -42,6 +49,22 @@ export type CategoryTownGroup = {
   slug: string;
   townId: string | null;
   businesses: CategoryBusinessRow[];
+  totalCount: number;
+};
+
+export type CategoryHubBusinessPreview = {
+  id: string;
+  slug: string;
+  name: string;
+  excerpt: string | null;
+  hero_image_url: string | null;
+};
+
+export type CategoryHubSection = {
+  id: string;
+  title: string;
+  slug: string;
+  businesses: CategoryHubBusinessPreview[];
   totalCount: number;
 };
 
@@ -181,32 +204,119 @@ export function groupCategoryBusinessesByTown(
   return groups;
 }
 
+function mapCategoryHubBusinessRow(row: Record<string, unknown>): CategoryHubBusinessPreview {
+  const heroUrl = getPublicImageUrlWithView(
+    row.main_image_url as string | null,
+    row.hero_image_url as string | null,
+    row.main_image as string | null,
+    row.hero_image as string | null,
+  );
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    name: String((row as { title: string }).title),
+    excerpt: (row.excerpt as string | null) ?? null,
+    hero_image_url: heroUrl,
+  };
+}
+
+export async function countCategoryHubBusinesses(): Promise<number> {
+  const { count, error } = await getServiceSupabase()
+    .from("businesses_view")
+    .select("id", { count: "exact", head: true })
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN);
+
+  if (error) {
+    console.error("categories hub: count query", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+export async function getCategoryHubSections(): Promise<CategoryHubSection[]> {
+  const supabase = getServiceSupabase();
+
+  const { data: cats, error: catErr } = await supabase
+    .from("business_categories")
+    .select("id, title, slug")
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .order("title");
+
+  if (catErr) {
+    console.error("categories hub: categories query", catErr);
+    return [];
+  }
+
+  const categories = (cats ?? []) as { id: string; title: string; slug: string }[];
+  if (categories.length === 0) return [];
+
+  const categoryIds = categories.map((c) => c.id);
+
+  const { data: businessRows, error: bizErr } = await supabase
+    .from("businesses_view")
+    .select(CATEGORY_HUB_BUSINESS_SELECT)
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .in("primary_category_id", categoryIds)
+    .order("featured", { ascending: false })
+    .order("title", { ascending: true })
+    .limit(CATEGORY_HUB_BUSINESS_POOL_LIMIT);
+
+  if (bizErr) {
+    console.error("categories hub: businesses query", bizErr);
+    return [];
+  }
+
+  const byCategory = new Map<string, CategoryHubBusinessPreview[]>();
+  for (const row of businessRows ?? []) {
+    const r = row as Record<string, unknown>;
+    const categoryId = r.primary_category_id as string | null;
+    if (!categoryId) continue;
+    const list = byCategory.get(categoryId) ?? [];
+    list.push(mapCategoryHubBusinessRow(r));
+    byCategory.set(categoryId, list);
+  }
+
+  const slugIndex = new Map<string, number>(PLACE_CATEGORY_SLUG_ORDER.map((s, i) => [s, i]));
+
+  const sections: CategoryHubSection[] = categories
+    .map((cat) => {
+      const pool = sortBrowseBusinesses(byCategory.get(cat.id) ?? []);
+      return {
+        id: cat.id,
+        title: displayStorefrontCategoryTitle(cat.slug, cat.title),
+        slug: cat.slug,
+        businesses: pool,
+        totalCount: pool.length,
+      };
+    })
+    .filter((s) => s.totalCount > 0);
+
+  sections.sort((a, b) => {
+    const ai = slugIndex.get(a.slug) ?? 999;
+    const bi = slugIndex.get(b.slug) ?? 999;
+    if (ai !== bi) return ai - bi;
+    return a.title.localeCompare(b.title);
+  });
+
+  return sections;
+}
+
 export async function loadCategoryHubPage(slug: string) {
   const cat = await loadCategory(slug);
   if (!cat) return null;
 
-  const [businesses, otherCats] = await Promise.all([
-    loadBusinessesForCategory(cat.id),
-    getServiceSupabase()
-      .from("business_categories")
-      .select("title, slug")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .order("title")
-      .then((r) =>
-        ((r.data ?? []) as { title: string; slug: string }[]).map((row) => ({
-          ...row,
-          title: displayStorefrontCategoryTitle(row.slug, row.title),
-        })),
-      ),
-  ]);
+  const businesses = await loadBusinessesForCategory(cat.id);
 
   return {
     cat,
     businesses,
     townGroups: groupCategoryBusinessesByTown(businesses),
-    otherCats,
   };
 }
 
