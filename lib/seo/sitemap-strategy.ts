@@ -51,6 +51,8 @@ export type BuildSitemapInput = {
   categories: SitemapRow[];
   /** POIs resolve at `/area/[slug]` — deduped against areas. */
   pointsOfInterest?: SitemapRow[];
+  /** When false, omit `/guides` hub and all `/guide/[slug]` URLs. */
+  guidesEnabled?: boolean;
 };
 
 export function pathnameFromSitemapUrl(base: string, url: string): string {
@@ -95,7 +97,16 @@ export function dedupeSitemapByUrl(entries: MetadataRoute.Sitemap): MetadataRout
 
 /** Build index-focused sitemap entries (no business URLs, no utility pages). */
 export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sitemap {
-  const { base, now, towns, guides, areas, categories, pointsOfInterest = [] } = input;
+  const {
+    base,
+    now,
+    towns,
+    guides,
+    areas,
+    categories,
+    pointsOfInterest = [],
+    guidesEnabled = true,
+  } = input;
   const entries: MetadataRoute.Sitemap = [];
 
   entries.push({
@@ -106,6 +117,7 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
   });
 
   for (const hub of SITEMAP_HUB_PAGES) {
+    if (!guidesEnabled && hub.path === "/guides") continue;
     entries.push({
       url: `${base}${hub.path}`,
       lastModified: now,
@@ -128,6 +140,7 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
   }
 
   for (const g of guides) {
+    if (!guidesEnabled) break;
     const slug = String(g.slug ?? "").trim();
     if (!shouldIncludeGuideInSitemap(slug, townSlugs)) continue;
     entries.push({
@@ -183,13 +196,18 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
   });
 }
 
-export function staticFallbackSitemap(base: string, now: Date): MetadataRoute.Sitemap {
+export function staticFallbackSitemap(
+  base: string,
+  now: Date,
+  guidesEnabled = true,
+): MetadataRoute.Sitemap {
   return buildSitemapEntries({
     base,
     now,
     towns: [],
-    guides: [{ slug: "ultimate-30a-first-timers-guide" }],
+    guides: guidesEnabled ? [{ slug: "ultimate-30a-first-timers-guide" }] : [],
     areas: [],
     categories: [],
+    guidesEnabled,
   });
 }

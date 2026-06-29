@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
-import { isAskEnabled, isOnboardEnabled, isSearchEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled, isGuidesEnabled, isOnboardEnabled, isSearchEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
 import {
   categoryDbSlugFromLegacyOn30aSegment,
   categoryHubPath,
@@ -33,7 +33,7 @@ function maybeRedirectLegacyCategory(request: NextRequest): NextResponse | null 
 }
 
 /** Server-side redirects for legacy /search URLs — avoids 200 HTML + client meta refresh. */
-function maybeRedirectSearch(request: NextRequest): NextResponse | null {
+function maybeRedirectSearch(request: NextRequest, guidesEnabled: boolean): NextResponse | null {
   if (request.nextUrl.pathname !== "/search") return null;
 
   const sp = request.nextUrl.searchParams;
@@ -66,7 +66,11 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
     if (type === "towns") return NextResponse.redirect(new URL("/towns", request.url));
     if (type === "areas") return NextResponse.redirect(new URL("/areas", request.url));
     if (type === "businesses") return NextResponse.redirect(new URL("/businesses", request.url));
-    if (type === "guides") return NextResponse.redirect(new URL("/guides", request.url));
+    if (type === "guides") {
+      return NextResponse.redirect(
+        new URL(guidesEnabled ? "/guides" : "/", request.url),
+      );
+    }
     if (type === "services") {
       return NextResponse.redirect(new URL(SERVICE_VENDORS_HUB_PATH, request.url));
     }
@@ -148,9 +152,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (
-    !isSearchInspectorEnabled(flags) &&
+  if (!isSearchInspectorEnabled(flags) &&
     (pathname === "/admin/search-debug" || pathname.startsWith("/admin/search-debug/"))
+  ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (
+    !isGuidesEnabled(flags) &&
+    (pathname === "/guides" || pathname === "/guide" || pathname.startsWith("/guide/"))
   ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
@@ -161,7 +171,7 @@ export async function middleware(request: NextRequest) {
   const legacyCategoryRedirect = maybeRedirectLegacyCategory(request);
   if (legacyCategoryRedirect) return legacyCategoryRedirect;
 
-  const searchRedirect = maybeRedirectSearch(request);
+  const searchRedirect = maybeRedirectSearch(request, isGuidesEnabled(flags));
   if (searchRedirect) return searchRedirect;
 
   if (!supabase) {
