@@ -10,12 +10,7 @@ import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesM
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { homeEditorialIntro } from "@/lib/seo/page-intro-copy";
-
-/** Placeholder assets from design/homepage.html (wire real URLs later). */
-const IMG = {
-  hero:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCsXovFV1neXjTq-4mDbgPnbeulhSJTjrnA8HjhYxq8ia7daxCG_LgukxpGv4QFsulirvaswIA6YRwYJFSNId1ug0GSb0xSB5vMk2oIfL018BIDjnqCxf8mngM3LnJVaLLOz3m0qpr65y-xGAT3ZUZZY-fO437YIwlfzKPcpingFhsBIKN7sgwtVTuDefQ2_q6okMXgBEOT4EPmHvjNaVcN3NqSIl8bkXfWsg_h-MxXYQMT-vBNtntZc6L7fARzSUTdkBnVQMREwlc",
-} as const;
+import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
 
 function MsIcon({
   name,
@@ -62,7 +57,7 @@ function DesignImg({
       className={className}
       sizes={sizes}
       priority={priority}
-      unoptimized
+      unoptimized={src.startsWith("http")}
     />
   );
 }
@@ -126,7 +121,7 @@ export function HomePage({
   featuredBusinesses = [],
   towns = [],
   heroSettings = {
-    imageUrl: IMG.hero,
+    imageUrl: HOME_HERO_IMAGE_PATH,
     title: "The complete guide to visiting 30A, Florida",
     subtitle:
       "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
@@ -140,34 +135,26 @@ export function HomePage({
         {/* Guide-first hero: same full-bleed image URL as the former search hero */}
         <section
           id="hero"
-          className="relative flex min-h-[95vh] w-full flex-col items-center justify-center"
+          className="relative flex min-h-[clamp(28rem,85vh,48rem)] w-full flex-col items-center justify-center"
         >
           <div className="absolute inset-0 z-0 overflow-hidden">
             <div className="absolute inset-0 img-editorial">
               <DesignImg
                 src={heroSettings.imageUrl}
-                alt="Cinematic wide shot of 30A beach with sugar-white sand and turquoise Gulf water"
-                className="object-cover"
+                alt="Watercolor illustration of 30A beach towns with sand paths, coastal architecture, and Gulf views"
+                className="object-cover object-[center_42%]"
                 sizes="100vw"
                 priority
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-background" />
           </div>
 
           <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-12 pt-8 text-center sm:px-6 lg:px-8">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur-md">
-              <MsIcon name="menu_book" className="!text-sm text-white" filled />
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-white">
-                Start here
-              </span>
-            </div>
-
-            <h1 className="text-balance mb-5 w-full max-w-6xl font-headline text-4xl font-extrabold leading-[1.06] tracking-tight text-white drop-shadow-lg sm:text-5xl sm:leading-[1.05] md:text-6xl md:leading-[1.04] lg:text-[clamp(3.25rem,5.5vw,4.25rem)] lg:leading-[1.05]">
+            <h1 className="text-balance mb-5 w-full max-w-6xl font-headline text-4xl font-extrabold leading-[1.06] tracking-tight text-primary [text-shadow:0_1px_24px_rgba(250,249,248,0.85)] sm:text-5xl sm:leading-[1.05] md:text-6xl md:leading-[1.04] lg:text-[clamp(3.25rem,5.5vw,4.25rem)] lg:leading-[1.05]">
               {heroSettings.title}
             </h1>
 
-            <p className="text-balance mb-10 w-full max-w-4xl text-lg leading-relaxed text-white/90 md:text-xl lg:max-w-5xl">
+            <p className="text-balance mb-10 w-full max-w-4xl text-lg leading-relaxed text-on-surface/80 md:text-xl lg:max-w-5xl">
               {heroSettings.subtitle}
             </p>
 
@@ -176,7 +163,7 @@ export function HomePage({
                 <Link
                   href={PRIMARY_EDITORIAL_GUIDE_PATH}
                   {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-lg font-bold text-primary shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-on-primary shadow-lg transition-all hover:bg-primary-container hover:text-on-primary hover:shadow-xl"
                 >
                   <MsIcon name="menu_book" className="!text-xl" />
                   Explore the guide
@@ -186,7 +173,7 @@ export function HomePage({
                 <Link
                   href="/ask"
                   {...gaClickProps({ event: "cta_click", category: "home_hero", label: "ask_concierge" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-primary/25 bg-background/70 px-8 py-4 text-lg font-bold text-primary backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-background/90"
                 >
                   <MsIcon name="chat" className="!text-xl" />
                   Ask WhereTo30A
@@ -195,7 +182,7 @@ export function HomePage({
                 <Link
                   href="/towns"
                   {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                  className="inline-flex items-center justify-center rounded-full border-2 border-primary/25 bg-background/70 px-8 py-4 text-lg font-bold text-primary backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-background/90"
                 >
                   Browse towns
                 </Link>
@@ -204,7 +191,7 @@ export function HomePage({
           </div>
 
           <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
-            <div className="animate-scroll-bounce flex flex-col items-center gap-2 text-white/60">
+            <div className="animate-scroll-bounce flex flex-col items-center gap-2 text-primary/50">
               <span className="text-xs font-medium uppercase tracking-widest">
                 Explore
               </span>

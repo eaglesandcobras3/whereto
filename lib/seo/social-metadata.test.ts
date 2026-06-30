@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { defaultOpenGraphImageUrl, openGraphForPage } from "@/lib/seo/social-metadata";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 
 vi.mock("@/lib/site-url", () => ({
   getSiteUrl: () => "https://whereto30a.com",
@@ -14,8 +14,10 @@ describe("openGraphForPage", () => {
     });
 
     expect(meta.openGraph?.url).toBe("https://whereto30a.com/towns");
-    expect(meta.openGraph?.images).toEqual([{ url: defaultOpenGraphImageUrl() }]);
-    expect(meta.twitter?.images).toEqual([defaultOpenGraphImageUrl()]);
+    expect(meta.openGraph?.images).toEqual([
+      { url: "https://whereto30a.com/hero.webp" },
+    ]);
+    expect(meta.twitter?.images).toEqual(["https://whereto30a.com/hero.webp"]);
   });
 
   it("uses page image when provided", () => {

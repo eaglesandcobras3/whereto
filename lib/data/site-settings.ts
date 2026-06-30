@@ -1,5 +1,12 @@
 import "server-only";
 
+import {
+  HOME_HERO_IMAGE_PATH,
+  resolveHomeHeroImageUrl,
+} from "@/lib/home/hero-image";
+
+export { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
+
 export type HomeHeroSettings = {
   imageUrl: string;
   title: string;
@@ -7,9 +14,9 @@ export type HomeHeroSettings = {
   searchPlaceholder: string;
 };
 
+/** Static homepage hero (public/hero.webp). */
 const DEFAULTS: HomeHeroSettings = {
-  imageUrl:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCsXovFV1neXjTq-4mDbgPnbeulhSJTjrnA8HjhYxq8ia7daxCG_LgukxpGv4QFsulirvaswIA6YRwYJFSNId1ug0GSb0xSB5vMk2oIfL018BIDjnqCxf8mngM3LnJVaLLOz3m0qpr65y-xGAT3ZUZZY-fO437YIwlfzKPcpingFhsBIKN7sgwtVTuDefQ2_q6okMXgBEOT4EPmHvjNaVcN3NqSIl8bkXfWsg_h-MxXYQMT-vBNtntZc6L7fARzSUTdkBnVQMREwlc",
+  imageUrl: HOME_HERO_IMAGE_PATH,
   title: "The complete guide to visiting 30A, Florida",
   subtitle:
     "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
@@ -31,7 +38,7 @@ function fromEnv(k: string, fallback: string): string {
  */
 export async function getPublicSiteSettings(): Promise<Record<string, unknown>> {
   return {
-    "home.hero_image_url": fromEnv("HOME_HERO_IMAGE_URL", DEFAULTS.imageUrl),
+    "home.hero_image_url": resolveHomeHeroImageUrl(process.env.HOME_HERO_IMAGE_URL),
     "home.hero_title": fromEnv("HOME_HERO_TITLE", DEFAULTS.title),
     "home.hero_subtitle": fromEnv("HOME_HERO_SUBTITLE", DEFAULTS.subtitle),
     "home.search_placeholder": fromEnv("HOME_SEARCH_PLACEHOLDER", DEFAULTS.searchPlaceholder),

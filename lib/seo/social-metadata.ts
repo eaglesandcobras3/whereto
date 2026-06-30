@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { DEFAULT_HOME_HERO_IMAGE_URL } from "@/lib/data/site-settings";
+import { resolveHomeHeroImageUrl } from "@/lib/home/hero-image";
 import { getSiteUrl } from "@/lib/site-url";
 
 /** Fallback when a page has no hero/listing image (absolute URL for OG crawlers). */
 export function defaultOpenGraphImageUrl(): string {
-  const fromEnv = process.env.HOME_HERO_IMAGE_URL?.trim();
-  return fromEnv || DEFAULT_HOME_HERO_IMAGE_URL;
+  return resolveHomeHeroImageUrl(process.env.HOME_HERO_IMAGE_URL);
 }
 
 type OpenGraphPageOptions = {
@@ -25,7 +24,8 @@ export function openGraphForPage({
   const base = getSiteUrl();
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${base}${normalizedPath}`;
-  const image = imageUrl?.trim() || defaultOpenGraphImageUrl();
+  const rawImage = imageUrl?.trim() || defaultOpenGraphImageUrl();
+  const image = rawImage.startsWith("/") ? `${base}${rawImage}` : rawImage;
 
   return {
     openGraph: {
