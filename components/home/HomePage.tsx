@@ -142,7 +142,7 @@ export function HomePage({
               <DesignImg
                 src={heroSettings.imageUrl}
                 alt="Watercolor illustration of 30A beach towns with sand paths, coastal architecture, and Gulf views"
-                className="object-cover object-[center_42%]"
+                className="object-cover object-center"
                 sizes="100vw"
                 priority
               />
@@ -150,7 +150,7 @@ export function HomePage({
           </div>
 
           <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-12 pt-8 sm:px-6 lg:px-8">
-            <div className="home-hero-panel w-full max-w-3xl text-center lg:max-w-4xl">
+            <div className="home-hero-panel w-full max-w-4xl text-center lg:max-w-5xl xl:max-w-6xl">
               <h1 className="text-balance font-headline text-3xl font-extrabold leading-[1.08] tracking-tight text-primary sm:text-4xl md:text-5xl lg:text-[clamp(2.25rem,4vw,3.25rem)]">
                 {heroSettings.title}
               </h1>

@@ -450,22 +450,24 @@ body {
 /* Home hero — frosted panel over watercolor illustration */
 .home-hero-panel {
   border-radius: 1.75rem;
-  padding: clamp(2rem, 5vw, 3rem) clamp(1.75rem, 4vw, 2.5rem);
-  background: rgba(255, 255, 255, 0.72);
+  padding: clamp(2rem, 5vw, 3rem) clamp(2rem, 5vw, 3.5rem);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow:
-    0 0 48px rgba(255, 255, 255, 0.55),
-    0 12px 40px rgba(0, 50, 57, 0.08);
+    0 0 40px rgba(255, 255, 255, 0.45),
+    0 12px 40px rgba(0, 0, 0, 0.14),
+    0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 :root.dark .home-hero-panel {
-  background: rgba(34, 37, 36, 0.78);
+  background: rgba(34, 37, 36, 0.88);
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow:
-    0 0 48px rgba(0, 0, 0, 0.25),
-    0 12px 40px rgba(0, 0, 0, 0.35);
+    0 0 40px rgba(0, 0, 0, 0.2),
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .home-hero-divider {
