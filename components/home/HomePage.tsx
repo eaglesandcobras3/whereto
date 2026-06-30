@@ -193,15 +193,6 @@ export function HomePage({
               </div>
             </div>
           </div>
-
-          <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
-            <div className="animate-scroll-bounce flex flex-col items-center gap-2 text-primary/50">
-              <span className="text-xs font-medium uppercase tracking-widest">
-                Explore
-              </span>
-              <MsIcon name="keyboard_arrow_down" className="!text-2xl" />
-            </div>
-          </div>
         </section>
 
         <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-16">
