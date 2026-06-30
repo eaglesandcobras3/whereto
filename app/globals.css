@@ -83,6 +83,60 @@
   --site-header-offset: 4rem;
 
   /* --------------------------------------------------------------------------
+     DLS — Airbnb-inspired layout & spacing (team colors preserved)
+     Generous whitespace, modest type weights, row-first layouts.
+     -------------------------------------------------------------------------- */
+  --color-canvas: var(--color-surface);
+  --color-ink: var(--color-text-primary);
+  --color-body: var(--color-text-secondary);
+  --color-muted: var(--color-text-tertiary);
+  --color-hairline: color-mix(in srgb, var(--color-outline-variant) 55%, transparent);
+  --color-hairline-soft: color-mix(in srgb, var(--color-outline-variant) 35%, transparent);
+  --color-border-ghost: color-mix(in srgb, var(--color-outline-variant) 15%, transparent);
+  --color-surface-soft: var(--color-surface-secondary);
+  --color-primary-active: var(--color-primary-light);
+  --color-primary-disabled: color-mix(in srgb, var(--color-primary) 18%, white);
+  --gradient-cta: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-container) 100%
+  );
+
+  /* 4px base spacing — premium section rhythm (Stripe / Headway generous) */
+  --space-xxs: 0.125rem;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 0.75rem;
+  --space-base: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-xxl: 3rem;
+  --space-section: 4rem;
+  --space-section-lg: 5rem;
+  --space-section-xl: 6rem;
+
+  /* Layout */
+  --container-max: 80rem;
+  --container-narrow: 67.5rem;
+  --container-detail: 67.5rem;
+  --container-gutter: clamp(1.25rem, 4vw, 2rem);
+  --search-height: 3.5rem;
+  --nav-height: 5rem;
+  --touch-target: 3rem;
+
+  /* Radius — soft shapes (Airbnb pill + card language) */
+  --radius-image: 0.875rem;
+  --radius-card: var(--radius-listing);
+  --radius-pill: 9999px;
+  --radius-button: 0.5rem;
+
+  /* Single elevation tier — photography + whitespace carry depth */
+  --shadow-float:
+    rgba(0, 50, 57, 0.02) 0 0 0 1px,
+    rgba(0, 50, 57, 0.04) 0 2px 6px 0,
+    rgba(0, 50, 57, 0.08) 0 4px 12px 0;
+
+  /* --------------------------------------------------------------------------
      shadcn/ui semantic tokens (aligned with WhereTo30A — used by components/ui)
      -------------------------------------------------------------------------- */
   --radius: 0.75rem;
@@ -233,6 +287,9 @@
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-headline: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --spacing-section: var(--space-section);
+  --spacing-section-lg: var(--space-section-lg);
+  --spacing-section-xl: var(--space-section-xl);
 }
 
 /* --------------------------------------------------------------------------
@@ -259,22 +316,93 @@ body {
    -------------------------------------------------------------------------- */
 .text-hero {
   font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.08;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
 }
 
 @media (min-width: 640px) {
   .text-hero {
-    font-size: 3rem;
+    font-size: 2rem;
   }
 }
 
 @media (min-width: 768px) {
   .text-hero {
-    font-size: 3.75rem;
+    font-size: 2.25rem;
   }
+}
+
+/* DLS display scale — modest weights; photography carries visual weight */
+.text-display-xl {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+@media (min-width: 768px) {
+  .text-display-xl {
+    font-size: 2rem;
+  }
+}
+
+.text-display-lg {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.22;
+  color: var(--color-ink);
+}
+
+.text-display-md {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+
+.text-title-md {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+
+.text-title-sm {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+
+.text-body-md {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-body);
+}
+
+.text-body-sm {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.43;
+  color: var(--color-body);
+}
+
+.text-caption {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.29;
+  color: var(--color-muted);
 }
 
 .text-page-title {
@@ -287,9 +415,10 @@ body {
 
 .text-section {
   font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.375rem;
+  font-weight: 600;
   letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
 .text-eyebrow {
@@ -307,16 +436,16 @@ body {
 /* Listing title — Apple-forward weight + Manrope */
 .text-listing-title {
   font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.25;
   color: var(--color-text-primary);
 }
 
 @media (min-width: 640px) {
   .text-listing-title {
-    font-size: 1.25rem;
+    font-size: 1.0625rem;
   }
 }
 
@@ -327,11 +456,11 @@ body {
   color: var(--color-text-secondary);
 }
 
-/* Hairline between photo block and details / tags */
+/* Hairline between photo block and details / tags — prefer whitespace; optional */
 .divider-listing {
-  border-top: 1px solid var(--color-border);
-  margin-top: 1rem;
-  padding-top: 1rem;
+  border-top: 1px solid var(--color-hairline-soft);
+  margin-top: var(--space-base);
+  padding-top: var(--space-base);
 }
 
 /* --------------------------------------------------------------------------
@@ -355,6 +484,10 @@ body {
 
 .shadow-premium-elevated {
   box-shadow: var(--shadow-elevated);
+}
+
+.shadow-float {
+  box-shadow: var(--shadow-float);
 }
 
 /* design/homepage.html .card-shadow */
@@ -561,44 +694,178 @@ body {
    -------------------------------------------------------------------------- */
 .card {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-listing);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border-ghost);
+  border-radius: var(--radius-card);
+  box-shadow: none;
   transition: border-color var(--duration-normal) var(--ease-out),
     box-shadow var(--duration-normal) var(--ease-out),
     transform var(--duration-normal) var(--ease-out);
 }
 
 .card:hover {
-  border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-hairline-soft);
+  box-shadow: var(--shadow-float);
 }
 
 .card-interactive:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
-  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  box-shadow: var(--shadow-float);
+  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+/* Photo-first listing card — Airbnb property-card pattern */
+.listing-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: var(--color-canvas);
+  border-radius: var(--radius-card);
+  border: none;
+  box-shadow: none;
+  transition: transform var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.listing-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-float);
+}
+
+.listing-card-photo {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-image);
+  background: var(--color-surface-soft);
+}
+
+.listing-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: 0 var(--space-xs) var(--space-sm);
+}
+
+/* DLS Row — standardized list cell (icon / title / trailing action) */
+.dls-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+  min-height: var(--touch-target);
+  padding: var(--space-md) 0;
+  color: var(--color-ink);
+}
+
+.dls-row + .dls-row {
+  border-top: 1px solid var(--color-hairline-soft);
+}
+
+.dls-row-leading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dls-row-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+}
+
+.dls-row-trailing {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-muted);
+}
+
+/* Page layout — generous section rhythm */
+.dls-container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-gutter);
+}
+
+.dls-container-narrow {
+  max-width: var(--container-narrow);
+}
+
+.dls-section {
+  padding-block: var(--space-section-lg);
+}
+
+@media (min-width: 768px) {
+  .dls-section {
+    padding-block: var(--space-section-xl);
+  }
+}
+
+.dls-section-header {
+  max-width: 42rem;
+  margin-bottom: var(--space-xxl);
+}
+
+@media (min-width: 768px) {
+  .dls-section-header {
+    margin-bottom: calc(var(--space-xxl) + var(--space-base));
+  }
+}
+
+.dls-section-header .text-eyebrow {
+  margin-bottom: var(--space-md);
+}
+
+.dls-section-header .text-section,
+.dls-section-header .text-display-xl {
+  margin-bottom: var(--space-base);
+}
+
+.dls-grid-cards {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 640px) {
+  .dls-grid-cards {
+    gap: var(--space-xl);
+  }
+}
+
+.dls-grid-cards-2 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .dls-grid-cards-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* --------------------------------------------------------------------------
    Button Styles
    -------------------------------------------------------------------------- */
 .btn-primary {
-  background: var(--color-primary);
+  background: var(--gradient-cta);
   color: white;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
+  font-weight: 500;
+  padding: 0.875rem 1.5rem;
+  min-height: var(--touch-target);
+  border-radius: var(--radius-pill);
   transition: background-color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
 }
 
 .btn-primary:hover {
-  background: color-mix(in srgb, var(--color-primary) 88%, white);
+  opacity: 0.92;
 }
 
 :root.dark .btn-primary:hover {
-  background: color-mix(in srgb, var(--color-primary) 85%, var(--color-surface));
+  opacity: 0.88;
 }
 
 .btn-primary:active {
@@ -608,17 +875,18 @@ body {
 .btn-secondary {
   background: var(--color-surface);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border-ghost);
   font-weight: 500;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  min-height: var(--touch-target);
+  border-radius: var(--radius-button);
   transition: background-color var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
 }
 
 .btn-secondary:hover {
   background: var(--color-surface-secondary);
-  border-color: var(--color-primary);
+  border-color: var(--color-hairline);
 }
 
 /* --------------------------------------------------------------------------
@@ -918,9 +1186,9 @@ body {
 /* Editorial typography - tighter tracking for headlines */
 .text-editorial-headline {
   font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
 }
 
 /* Large editorial hero text */

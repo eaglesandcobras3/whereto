@@ -40,7 +40,7 @@ export function SearchBar({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="h-16 w-full rounded-full border-0 bg-[var(--color-surface-container-highest)] pl-8 pr-[4.25rem] text-lg text-[var(--color-text-primary)] shadow-premium-sm placeholder:text-[var(--color-text-secondary)]/50 transition-premium-fast focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/10"
+            className="h-16 w-full rounded-full border border-[var(--color-border-ghost)] bg-[var(--color-surface)] pl-8 pr-[4.25rem] text-lg text-[var(--color-text-primary)] shadow-float placeholder:text-[var(--color-text-secondary)]/50 transition-premium-fast focus:outline-none focus:border-[var(--color-ink)] focus:ring-0"
           />
           <button
             type="submit"
