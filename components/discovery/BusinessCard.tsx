@@ -61,13 +61,13 @@ export function BusinessCard({
   return (
     <li
       className={`
-        group shrink-0 snap-start overflow-hidden rounded-2xl
-        border border-[var(--color-border)] bg-[var(--color-surface)]
-        shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md
+        group shrink-0 snap-start overflow-hidden rounded-[var(--radius-card)]
+        border border-[var(--color-border-ghost)] bg-[var(--color-surface)]
+        transition-all duration-300 hover:-translate-y-0.5 hover:shadow-float
         ${isCompact ? "min-w-[260px] max-w-[280px]" : "min-w-[280px] max-w-sm sm:min-w-[300px]"}
       `}
     >
-      <div className={isCompact ? "space-y-3 p-4" : "flex items-start gap-3 p-4 sm:gap-4 sm:p-5"}>
+      <div className={isCompact ? "space-y-4 p-5" : "flex items-start gap-4 p-5 sm:gap-5 sm:p-6"}>
         {!isCompact ? (
           <div className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl sm:w-28 md:w-32">
             {b.slug ? (

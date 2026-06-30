@@ -1,5 +1,7 @@
 # Design System Document
 
+> **DLS pass (2026):** Airbnb-inspired spacing, row layouts, and modest typography are documented in [`design/DLS.md`](../DLS.md). This file remains the coastal editorial north star; implement new surfaces against DLS tokens first.
+
 ## 1. Overview & Creative North Star
 
 ### The Creative North Star: "The Digital Concierge"
