@@ -80,20 +80,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
       <main className="flex-1">
         <BrowseHubHero
           title="Service providers on 30A"
-          description={
-            <>
-              Regional and mobile vendors for homes and rentals across the corridor: trades,
-              insurance, legal, medical, marine, and more. Not the same as storefront service
-              businesses with a fixed address (see{" "}
-              <Link
-                href="/service-businesses"
-                className="font-medium text-[var(--color-primary)] hover:underline"
-              >
-                storefront service businesses
-              </Link>
-              ).
-            </>
-          }
+          description="Regional and mobile vendors for homes and rentals across the corridor: trades, insurance, legal, medical, marine, and more."
           collapsibleDescription={hubServicesIntro()}
           meta={
             <>
