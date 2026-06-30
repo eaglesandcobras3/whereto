@@ -10,6 +10,11 @@ export type AdminNavItem = {
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
+    href: "/admin/seo-audit",
+    title: "SEO audit",
+    description: "Optional stored reports; run npm run audit:seo -- --live for full markdown.",
+  },
+  {
     href: "/admin/review",
     title: "Review queue",
     description: "Approve or reject new listings, claims, edits, and photos.",
