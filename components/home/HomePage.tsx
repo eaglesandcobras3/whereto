@@ -142,51 +142,55 @@ export function HomePage({
               <DesignImg
                 src={heroSettings.imageUrl}
                 alt="Watercolor illustration of 30A beach towns with sand paths, coastal architecture, and Gulf views"
-                className="object-cover object-[center_42%]"
+                className="object-cover object-center"
                 sizes="100vw"
                 priority
               />
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-12 pt-8 text-center sm:px-6 lg:px-8">
-            <h1 className="text-balance mb-5 w-full max-w-6xl font-headline text-4xl font-extrabold leading-[1.06] tracking-tight text-primary [text-shadow:0_1px_24px_rgba(250,249,248,0.85)] sm:text-5xl sm:leading-[1.05] md:text-6xl md:leading-[1.04] lg:text-[clamp(3.25rem,5.5vw,4.25rem)] lg:leading-[1.05]">
-              {heroSettings.title}
-            </h1>
+          <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-12 pt-8 sm:px-6 lg:px-8">
+            <div className="home-hero-panel w-full max-w-3xl text-center lg:max-w-4xl">
+              <h1 className="text-balance font-headline text-3xl font-extrabold leading-[1.08] tracking-tight text-primary sm:text-4xl md:text-5xl lg:text-[clamp(2.25rem,4vw,3.25rem)]">
+                {heroSettings.title}
+              </h1>
 
-            <p className="text-balance mb-10 w-full max-w-4xl text-lg leading-relaxed text-on-surface/80 md:text-xl lg:max-w-5xl">
-              {heroSettings.subtitle}
-            </p>
+              <div className="home-hero-divider" aria-hidden="true" />
 
-            <div className="mb-10 flex w-full max-w-2xl flex-col justify-center gap-3 sm:flex-row sm:gap-5">
-              {isGuidesEnabled(featureFlags) ? (
-                <Link
-                  href={PRIMARY_EDITORIAL_GUIDE_PATH}
-                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-on-primary shadow-lg transition-all hover:bg-primary-container hover:text-on-primary hover:shadow-xl"
-                >
-                  <MsIcon name="menu_book" className="!text-xl" />
-                  Explore the guide
-                </Link>
-              ) : null}
-              {isAskEnabled(featureFlags) ? (
-                <Link
-                  href="/ask"
-                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "ask_concierge" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-primary/25 bg-background/70 px-8 py-4 text-lg font-bold text-primary backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-background/90"
-                >
-                  <MsIcon name="chat" className="!text-xl" />
-                  Ask WhereTo30A
-                </Link>
-              ) : (
-                <Link
-                  href="/towns"
-                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-primary/25 bg-background/70 px-8 py-4 text-lg font-bold text-primary backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-background/90"
-                >
-                  Browse towns
-                </Link>
-              )}
+              <p className="w-full max-w-none text-base leading-relaxed text-on-surface/80 md:text-lg">
+                {heroSettings.subtitle}
+              </p>
+
+              <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+                {isGuidesEnabled(featureFlags) ? (
+                  <Link
+                    href={PRIMARY_EDITORIAL_GUIDE_PATH}
+                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
+                    className="home-hero-cta"
+                  >
+                    <MsIcon name="menu_book" className="!text-xl" />
+                    Explore the guide
+                  </Link>
+                ) : null}
+                {isAskEnabled(featureFlags) ? (
+                  <Link
+                    href="/ask"
+                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "ask_concierge" })}
+                    className={isGuidesEnabled(featureFlags) ? "home-hero-cta-secondary" : "home-hero-cta"}
+                  >
+                    <MsIcon name="chat" className="!text-xl" />
+                    Ask WhereTo30A
+                  </Link>
+                ) : (
+                  <Link
+                    href="/towns"
+                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
+                    className="home-hero-cta"
+                  >
+                    Browse towns
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 
