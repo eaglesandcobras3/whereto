@@ -164,7 +164,7 @@ export function Navbar({
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-site-chrome)] shadow-[var(--shadow-nav)] ${
+      className={`sticky top-0 z-50 w-full border-b border-zinc-200/90 bg-[var(--color-site-chrome)] shadow-[var(--shadow-nav)] ${
         compact ? "py-3" : "py-3.5 md:py-4"
       }`}
     >
