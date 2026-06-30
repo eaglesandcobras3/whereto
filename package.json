@@ -17,6 +17,7 @@
     "diagnose:supabase": "npx tsx scripts/diagnose-supabase.ts",
     "validate:sitemap": "npx tsx scripts/validate-sitemap.ts",
     "validate:sitemap:live": "npx tsx scripts/validate-sitemap.ts --live",
+    "audit:seo": "npx tsx scripts/run-seo-audit.ts",
     "eval:search": "npx tsx scripts/eval-search.ts",
     "eval:search:v1": "npx tsx scripts/eval-search.ts --pipeline v1-full",
     "eval:search:v2": "npx tsx scripts/eval-search.ts --pipeline v2",

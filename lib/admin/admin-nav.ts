@@ -10,7 +10,11 @@ export type AdminNavItem = {
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
-    href: "/admin/review",
+    href: "/admin/seo-audit",
+    title: "SEO audit",
+    description: "Twice-weekly crawl reports: indexability, content, links, schema, sitemaps.",
+  },
+  {
     title: "Review queue",
     description: "Approve or reject new listings, claims, edits, and photos.",
     requiresOnboard: true,
