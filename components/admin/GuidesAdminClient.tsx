@@ -14,7 +14,13 @@ type GuideRow = {
   town_name: string | null;
 };
 
-const STATUS_FILTERS = ["all", "draft", "published", "archived"] as const;
+const STATUS_FILTERS = ["active", "draft", "published", "archived"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+function filterLabel(filter: StatusFilter): string {
+  if (filter === "active") return "All";
+  return filter.charAt(0).toUpperCase() + filter.slice(1);
+}
 
 function statusBadge(status: string, enriched: boolean) {
   if (status === "published") {
@@ -44,13 +50,13 @@ function statusBadge(status: string, enriched: boolean) {
 
 export function GuidesAdminClient() {
   const [guides, setGuides] = useState<GuideRow[]>([]);
-  const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
+  const [filter, setFilter] = useState<StatusFilter>("active");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
-    const qs = filter !== "all" ? `?status=${encodeURIComponent(filter)}` : "";
+    const qs = `?status=${encodeURIComponent(filter)}`;
     fetch(`/api/admin/guides${qs}`)
       .then(async (res) => {
         const j = (await res.json()) as { guides?: GuideRow[]; error?: string };
@@ -77,13 +83,13 @@ export function GuidesAdminClient() {
               key={s}
               type="button"
               onClick={() => setFilter(s)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize ${
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 filter === s
                   ? "bg-zinc-900 text-white"
                   : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
               }`}
             >
-              {s}
+              {filterLabel(s)}
             </button>
           ))}
         </div>
@@ -99,7 +105,9 @@ export function GuidesAdminClient() {
 
       {guides.length === 0 ? (
         <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-600">
-          No guides yet. Create one to get started.
+          {filter === "archived"
+            ? "No archived guides."
+            : "No guides yet. Create one to get started."}
         </p>
       ) : (
         <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white shadow-sm">

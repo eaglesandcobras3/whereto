@@ -94,7 +94,13 @@ export async function listAdminGuides(
     .select("id, slug, title, status, guide_type, date_updated, custom_fields")
     .order("date_updated", { ascending: false, nullsFirst: false })
     .limit(limit);
-  if (opts?.status) q = q.eq("status", opts.status);
+  if (opts?.status === "active") {
+    q = q.neq("status", "archived");
+  } else if (opts?.status) {
+    q = q.eq("status", opts.status);
+  } else {
+    q = q.neq("status", "archived");
+  }
 
   const { data: guides } = await q;
   if (!guides?.length) return [];
