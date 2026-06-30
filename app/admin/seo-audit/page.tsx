@@ -22,7 +22,7 @@ export default async function AdminSeoAuditPage() {
     <div className="mx-auto max-w-4xl px-4 py-12">
       <AdminPageHeader
         title="SEO site audit"
-        description="Twice-weekly crawl (Mon/Thu cron). Primary workflow: npm run audit:seo -- --live writes a markdown file locally."
+        description="Run npm run audit:seo -- --live for a full markdown report. Optional admin history when SEO_AUDIT_STORE_REPORTS=1."
       />
 
       <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
@@ -34,8 +34,8 @@ export default async function AdminSeoAuditPage() {
             markdown report, no database required
           </li>
           <li>
-            <strong>Cron:</strong> returns JSON summary; optional DB history when{" "}
-            <code className="rounded bg-white px-1">SEO_AUDIT_STORE_REPORTS=1</code>
+            <strong>On demand:</strong>{" "}
+            <code className="rounded bg-white px-1">curl -H &quot;Authorization: Bearer $CRON_SECRET&quot; .../api/cron/seo-audit</code>
           </li>
         </ul>
       </div>

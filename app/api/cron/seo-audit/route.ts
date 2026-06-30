@@ -16,9 +16,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * Cron: full SEO site crawl + audit.
- * Returns JSON summary every run. Markdown history in Supabase only when
- * SEO_AUDIT_STORE_REPORTS=1 (see docs/OPERATOR-TODO.md).
+ * On-demand SEO site crawl + audit (not scheduled — use npm run audit:seo locally).
+ * Optional Supabase markdown history when SEO_AUDIT_STORE_REPORTS=1.
  */
 export async function GET(request: NextRequest) {
   try {

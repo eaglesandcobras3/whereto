@@ -47,37 +47,32 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/ra
 
 ---
 
-## SEO site audit (cron)
+## SEO site audit (CLI)
 
 Automated crawl: indexability, titles/meta, H1s, canonicals, JSON-LD, OG/Twitter, broken links, sitemap drift, **business listing data quality** (Phase A), robots.txt, and `llms.txt`.
 
-### Recommended workflow (no database required)
+### Run locally
 
 ```bash
 npm run audit:seo -- --live
 ```
 
-Writes `docs/seo-audit-report-YYYY-MM-DD.md` locally. This is the primary way to review results.
+Writes `docs/seo-audit-report-YYYY-MM-DD.md`. No cron, no database required.
 
-### Cron (twice weekly)
+Optional: `?maxUrls=100` is not CLI — use `npm run audit:seo -- --live --max-urls=100`.
 
-`GET /api/cron/seo-audit` — Mondays & Thursdays 06:00 UTC. Returns a **JSON summary** every run.
+### Optional: manual API run or admin history
 
-### Optional: store markdown in Supabase
+The route `GET /api/cron/seo-audit` still exists for on-demand runs (requires `CRON_SECRET`). It is **not** scheduled in `vercel.json`.
 
-Only if you want history in `/admin/seo-audit`:
+To store markdown in `/admin/seo-audit`:
 
-- [ ] Apply [scripts/migrations/seo-audit-tables.sql](../scripts/migrations/seo-audit-tables.sql) (single `seo_audit_runs` table — markdown only)
+- [ ] Apply [scripts/migrations/seo-audit-tables.sql](../scripts/migrations/seo-audit-tables.sql)
 - [ ] Set `SEO_AUDIT_STORE_REPORTS=1` on Vercel
-- [ ] `CRON_SECRET` + `NEXT_PUBLIC_SITE_URL` already set
-
-Old runs are **pruned automatically** after each stored run (keeps the latest **6**). No cleanup before each run — a new row is inserted, then older rows are deleted.
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/seo-audit"
 ```
-
-Optional cap for testing: `?maxUrls=100`
 
 ---
 
@@ -152,7 +147,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 
 | Date | Change |
 |------|--------|
-| 2026-06-30 | SEO audit Phase A: business indexability DB checks, events seeds, sitemap reverse coverage, site-wide JSON-LD; storage opt-in via `SEO_AUDIT_STORE_REPORTS` |
+| 2026-06-30 | Removed scheduled SEO audit from `vercel.json` — use `npm run audit:seo -- --live` manually |
 | 2026-06-29 | SEO site audit cron (`/api/cron/seo-audit`, Mon/Thu); admin `/admin/seo-audit`; `npm run audit:seo`; removed weekly RankScore guides cron from `vercel.json` |
 | 2026-06-29 | Added PostHog `guides` feature flag — gates guide UI visibility and sitemap inclusion |
 | 2026-06-25 | Full search enrichment backfill (`backfill-business-enrichment.ts`, `generate-business-embeddings.ts`); portal intake sets category + business_type + derived search fields; uncategorized businesses show in "More local spots" |

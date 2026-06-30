@@ -12,7 +12,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     href: "/admin/seo-audit",
     title: "SEO audit",
-    description: "Twice-weekly crawl reports: indexability, content, links, schema, sitemaps.",
+    description: "Optional stored reports; run npm run audit:seo -- --live for full markdown.",
   },
   {
     title: "Review queue",
