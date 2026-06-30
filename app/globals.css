@@ -487,14 +487,14 @@ body {
   font-size: 1rem;
   font-weight: 700;
   color: #ffffff;
-  background: #5f8389;
+  background: var(--color-logo-teal);
   transition:
     background-color var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out);
 }
 
 .home-hero-cta:hover {
-  background: #4f7278;
+  background: color-mix(in srgb, var(--color-logo-teal) 82%, var(--color-primary));
 }
 
 .home-hero-cta:active {
