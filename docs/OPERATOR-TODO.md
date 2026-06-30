@@ -31,14 +31,10 @@ npm run sync:rankscore                # full sync
 
 ### Scheduled sync (Vercel)
 
-Cron route: `GET /api/cron/rankscore-guides` (**weekly**, Mondays 13:00 UTC in `vercel.json`).  
-Optional: `?limit=20` for a capped run.
-
-**Create-only:** if a guide slug (or RankScore article id) already exists in `guides`, the sync skips it — no updates, no republish. Only new articles are inserted.
-
-Verify after deploy:
+**Removed:** the weekly Vercel cron for `/api/cron/rankscore-guides` was replaced by the SEO site audit cron. RankScore sync remains available **manually**:
 
 ```bash
+npm run sync:rankscore -- --limit 5
 curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/rankscore-guides?limit=1"
 ```
 
@@ -48,6 +44,35 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/ra
 - Hero images: RankScore `hero_image_url` is downloaded to Supabase (`guides/rankscore/{slug}/hero.webp`) and stored on `guides.main_image_url` / `hero_image_url`. Inline markdown images stay as-is.
 - Re-sync is **create-only**: existing slugs are skipped; RankScore edits do not overwrite live guides.
 - Rate limit: ~1 request/sec to stay under RankScore’s 60 req/min cap.
+
+---
+
+## SEO site audit (CLI)
+
+Automated crawl: indexability, titles/meta, H1s, canonicals, JSON-LD, OG/Twitter, broken links, sitemap drift, **business listing data quality** (Phase A), robots.txt, and `llms.txt`.
+
+### Run locally
+
+```bash
+npm run audit:seo -- --live
+```
+
+Writes `docs/seo-audit-report-YYYY-MM-DD.md`. No cron, no database required.
+
+Optional: `?maxUrls=100` is not CLI — use `npm run audit:seo -- --live --max-urls=100`.
+
+### Optional: manual API run or admin history
+
+The route `GET /api/cron/seo-audit` still exists for on-demand runs (requires `CRON_SECRET`). It is **not** scheduled in `vercel.json`.
+
+To store markdown in `/admin/seo-audit`:
+
+- [ ] Apply [scripts/migrations/seo-audit-tables.sql](../scripts/migrations/seo-audit-tables.sql)
+- [ ] Set `SEO_AUDIT_STORE_REPORTS=1` on Vercel
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/seo-audit"
+```
 
 ---
 
@@ -122,6 +147,8 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 
 | Date | Change |
 |------|--------|
+| 2026-06-30 | Removed scheduled SEO audit from `vercel.json` — use `npm run audit:seo -- --live` manually |
+| 2026-06-29 | SEO site audit cron (`/api/cron/seo-audit`, Mon/Thu); admin `/admin/seo-audit`; `npm run audit:seo`; removed weekly RankScore guides cron from `vercel.json` |
 | 2026-06-29 | Added PostHog `guides` feature flag — gates guide UI visibility and sitemap inclusion |
 | 2026-06-25 | Full search enrichment backfill (`backfill-business-enrichment.ts`, `generate-business-embeddings.ts`); portal intake sets category + business_type + derived search fields; uncategorized businesses show in "More local spots" |
 | 2026-06-19 | RankScore → guides sync: env vars, SQL migration, cron `/api/cron/rankscore-guides`, `npm run sync:rankscore` |

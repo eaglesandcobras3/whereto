@@ -11,10 +11,6 @@
     {
       "path": "/api/cron/indexnow",
       "schedule": "0 12 * * 1"
-    },
-    {
-      "path": "/api/cron/rankscore-guides",
-      "schedule": "0 13 * * 1"
     }
   ]
 }

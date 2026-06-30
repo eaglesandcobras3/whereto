@@ -26,6 +26,7 @@
 # misc
 .DS_Store
 *.pem
+docs/seo-audit-report-*.md
 
 # debug
 npm-debug.log*
