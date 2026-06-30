@@ -28,6 +28,8 @@ const EXPECTED_JSON_LD: Partial<Record<PageKind, string[]>> = {
   category_hub: ["ItemList", "BreadcrumbList"],
   browse_group: ["ItemList", "BreadcrumbList"],
   service_group: ["ItemList", "BreadcrumbList"],
+  seo_intent: ["ItemList", "BreadcrumbList"],
+  event: ["Event", "BreadcrumbList"],
 };
 
 function normalizedCanonical(url: string, href: string | null): string | null {
@@ -339,9 +341,17 @@ function analyzeSocial(url: string, p: ParsedPageHtml): AuditIssue[] {
   return issues;
 }
 
+function expectedJsonLdForPage(kind: PageKind, pageUrl: string): string[] | undefined {
+  const path = pathnameFromUrl(pageUrl);
+  if (path === "/businesses") {
+    return ["BreadcrumbList", "ItemList"];
+  }
+  return EXPECTED_JSON_LD[kind];
+}
+
 function analyzeStructuredData(url: string, kind: PageKind, p: ParsedPageHtml): AuditIssue[] {
   const issues: AuditIssue[] = [];
-  const expected = EXPECTED_JSON_LD[kind];
+  const expected = expectedJsonLdForPage(kind, url);
 
   if (p.jsonLdBlocks.length === 0) {
     if (expected) {
@@ -595,6 +605,33 @@ export function analyzeSiteWide(input: {
       rule: "llms_txt_missing",
       detail: "/llms.txt not reachable",
     });
+  }
+
+  if (!input.partialCrawl && input.sitemapUrls.length > 0) {
+    for (const sitemapUrl of input.sitemapUrls) {
+      const norm = normalizeAuditUrl(sitemapUrl);
+      if (crawledOk.has(norm)) continue;
+      const attempted = input.pages.find(
+        (p) => normalizeAuditUrl(p.url) === norm || normalizeAuditUrl(p.finalUrl) === norm,
+      );
+      if (attempted) {
+        issues.push({
+          severity: "error",
+          category: "sitemap",
+          rule: "sitemap_url_not_indexable",
+          url: norm,
+          detail: `Sitemap URL returned HTTP ${attempted.status}${attempted.fetchError ? ` (${attempted.fetchError})` : ""}`,
+        });
+      } else {
+        issues.push({
+          severity: "error",
+          category: "sitemap",
+          rule: "sitemap_url_not_crawled",
+          url: norm,
+          detail: "Sitemap URL was not reached during crawl",
+        });
+      }
+    }
   }
 
   return issues;

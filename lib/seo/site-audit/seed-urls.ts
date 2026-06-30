@@ -80,6 +80,26 @@ export async function collectSeedUrls(input: {
         seeds.add(normalizeAuditUrl(`${base}/${full}`));
       }
     }
+
+    let from = 0;
+    for (;;) {
+      const { data, error } = await supabase
+        .from("events")
+        .select("slug")
+        .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
+        .or(BROWSE_VISIBLE_NOT_HIDDEN)
+        .order("id", { ascending: true })
+        .range(from, from + SEED_PAGE_SIZE - 1);
+      if (error) break;
+      const batch = data ?? [];
+      for (const row of batch) {
+        const slug = String((row as { slug: string }).slug ?? "").trim();
+        if (slug) seeds.add(normalizeAuditUrl(`${base}/events/${encodeURIComponent(slug)}`));
+      }
+      if (batch.length < SEED_PAGE_SIZE) break;
+      from += SEED_PAGE_SIZE;
+    }
   }
 
   return {

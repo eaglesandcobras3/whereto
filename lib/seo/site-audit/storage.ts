@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AuditIssue, SiteAuditReport } from "./types";
+import type { SiteAuditReport } from "./types";
 
 export type StoredAuditRun = {
   id: string;
@@ -16,8 +16,14 @@ export type StoredAuditRun = {
   error_message: string | null;
 };
 
+/** Persist markdown reports only when explicitly enabled (off by default — use CLI for local reports). */
+export function shouldStoreAuditReports(): boolean {
+  const v = process.env.SEO_AUDIT_STORE_REPORTS?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
 export function isSeoAuditStorageAvailable(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim());
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) && shouldStoreAuditReports();
 }
 
 export async function createAuditRun(
@@ -59,7 +65,10 @@ export async function completeAuditRun(
       status: input.status ?? "completed",
       urls_crawled: input.report.summary.urlsCrawled,
       urls_total: input.report.summary.urlsDiscovered,
-      summary: input.report.summary,
+      summary: {
+        ...input.report.summary,
+        businessIndexability: input.report.businessIndexability,
+      },
       report_markdown: input.markdown,
     })
     .eq("id", runId);
@@ -67,17 +76,6 @@ export async function completeAuditRun(
   if (runErr) {
     console.error("[seo-audit] complete run", runErr);
     return false;
-  }
-
-  const rows = input.report.issues.map((issue) => issueToRow(runId, issue));
-  const chunkSize = 500;
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    const { error } = await supabase.from("seo_audit_issues").insert(chunk);
-    if (error) {
-      console.error("[seo-audit] insert issues", error);
-      return false;
-    }
   }
 
   return true;
@@ -96,17 +94,6 @@ export async function failAuditRun(
       error_message: message,
     })
     .eq("id", runId);
-}
-
-function issueToRow(runId: string, issue: AuditIssue) {
-  return {
-    run_id: runId,
-    severity: issue.severity,
-    category: issue.category,
-    rule: issue.rule,
-    url: issue.url ?? null,
-    detail: issue.detail,
-  };
 }
 
 export async function listAuditRuns(
@@ -144,32 +131,8 @@ export async function getAuditRun(
   return data as StoredAuditRun;
 }
 
-export async function listAuditIssuesForRun(
-  supabase: SupabaseClient,
-  runId: string,
-  severity?: string,
-): Promise<AuditIssue[]> {
-  let q = supabase
-    .from("seo_audit_issues")
-    .select("severity, category, rule, url, detail")
-    .eq("run_id", runId)
-    .order("severity", { ascending: true })
-    .limit(500);
-
-  if (severity) q = q.eq("severity", severity);
-
-  const { data, error } = await q;
-  if (error) return [];
-  return (data ?? []).map((row) => ({
-    severity: row.severity as AuditIssue["severity"],
-    category: row.category as AuditIssue["category"],
-    rule: row.rule as string,
-    url: row.url ?? undefined,
-    detail: row.detail as string,
-  }));
-}
-
-export async function pruneOldAuditRuns(supabase: SupabaseClient, keep = 12): Promise<void> {
+/** Delete runs older than the newest `keep` (issues table unused — markdown only). */
+export async function pruneOldAuditRuns(supabase: SupabaseClient, keep = 6): Promise<void> {
   const runs = await listAuditRuns(supabase, keep + 1);
   const toDelete = runs.slice(keep);
   if (toDelete.length === 0) return;

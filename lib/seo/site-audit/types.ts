@@ -8,7 +8,8 @@ export type AuditCategory =
   | "links"
   | "sitemap"
   | "technical"
-  | "images";
+  | "images"
+  | "data_quality";
 
 export type AuditIssue = {
   severity: AuditSeverity;
@@ -85,6 +86,10 @@ export type SiteAuditReport = {
   crawledUrls: string[];
   sitemapUrls: string[];
   seedUrls: string[];
+  businessIndexability?: {
+    total: number;
+    indexReady: number;
+  };
 };
 
 export type RunSiteAuditOptions = {

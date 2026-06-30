@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
-import { getAuditRun, listAuditIssuesForRun } from "@/lib/seo/site-audit/storage";
+import { getAuditRun, shouldStoreAuditReports } from "@/lib/seo/site-audit/storage";
 
 type Props = { params: Promise<{ runId: string }> };
 
@@ -16,14 +16,26 @@ export default async function AdminSeoAuditRunPage({ params }: Props) {
   const admin = await requireAdminUser();
   if (!admin) redirect("/");
 
+  if (!shouldStoreAuditReports()) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-12">
+        <p className="text-sm text-zinc-600">
+          Report storage is disabled. Run{" "}
+          <code className="rounded bg-zinc-100 px-1">npm run audit:seo -- --live</code> locally.
+        </p>
+        <Link href="/admin/seo-audit" className="mt-4 inline-block text-sm underline">
+          Back
+        </Link>
+      </div>
+    );
+  }
+
   const { runId } = await params;
   const supabase = getServiceSupabaseOrNull();
   if (!supabase) notFound();
 
   const run = await getAuditRun(supabase, runId);
   if (!run) notFound();
-
-  const errors = await listAuditIssuesForRun(supabase, runId, "error");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -39,26 +51,6 @@ export default async function AdminSeoAuditRunPage({ params }: Props) {
           <span className="text-red-700">Error: {run.error_message}</span>
         ) : null}
       </div>
-
-      {errors.length > 0 ? (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
-            Errors ({errors.length}
-            {errors.length >= 500 ? "+" : ""})
-          </h2>
-          <ul className="mt-3 space-y-2 text-sm text-zinc-700">
-            {errors.slice(0, 40).map((issue, i) => (
-              <li key={`${issue.rule}-${i}`} className="rounded-lg border border-red-100 bg-red-50/50 px-3 py-2">
-                <span className="font-mono text-xs text-red-800">{issue.rule}</span>
-                <p className="mt-1">{issue.detail}</p>
-                {issue.url ? (
-                  <p className="mt-1 truncate text-xs text-zinc-500">{issue.url}</p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       {run.report_markdown ? (
         <section className="mt-10">

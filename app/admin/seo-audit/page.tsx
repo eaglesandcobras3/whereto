@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
-import { listAuditRuns } from "@/lib/seo/site-audit/storage";
+import { listAuditRuns, shouldStoreAuditReports } from "@/lib/seo/site-audit/storage";
 
 export const metadata = {
   title: "SEO audit",
@@ -15,34 +15,45 @@ export default async function AdminSeoAuditPage() {
   if (!admin) redirect("/");
 
   const supabase = getServiceSupabaseOrNull();
-  const runs = supabase ? await listAuditRuns(supabase, 12) : [];
+  const storeEnabled = shouldStoreAuditReports();
+  const runs = supabase && storeEnabled ? await listAuditRuns(supabase, 12) : [];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <AdminPageHeader
         title="SEO site audit"
-        description="Automated crawl reports (twice weekly via cron). Covers indexability, content, links, structured data, sitemaps, and social tags."
+        description="Twice-weekly crawl (Mon/Thu cron). Primary workflow: npm run audit:seo -- --live writes a markdown file locally."
       />
 
-      {!supabase ? (
-        <p className="mt-6 text-sm text-amber-800">
-          Supabase is not configured — reports are only available when the cron stores runs.
+      <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+        <p className="font-medium text-zinc-900">Recommended workflow</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li>
+            <strong>Local CLI:</strong>{" "}
+            <code className="rounded bg-white px-1">npm run audit:seo -- --live</code> — full
+            markdown report, no database required
+          </li>
+          <li>
+            <strong>Cron:</strong> returns JSON summary; optional DB history when{" "}
+            <code className="rounded bg-white px-1">SEO_AUDIT_STORE_REPORTS=1</code>
+          </li>
+        </ul>
+      </div>
+
+      {!storeEnabled ? (
+        <p className="mt-6 text-sm text-zinc-600">
+          Report storage is <strong>off</strong> (<code className="rounded bg-zinc-100 px-1">SEO_AUDIT_STORE_REPORTS</code> not set).
+          Enable it on Vercel only if you want this admin history view.
         </p>
+      ) : !supabase ? (
+        <p className="mt-6 text-sm text-amber-800">Supabase is not configured.</p>
       ) : runs.length === 0 ? (
         <div className="mt-8 space-y-3 text-sm text-zinc-600">
-          <p>No audit runs yet.</p>
-          <p>
-            Apply{" "}
-            <code className="rounded bg-zinc-100 px-1">scripts/migrations/seo-audit-tables.sql</code>{" "}
-            in Supabase, then trigger:
-          </p>
+          <p>No stored runs yet. Apply migration and trigger cron:</p>
           <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-4 text-xs text-zinc-100">
             {`curl -H "Authorization: Bearer $CRON_SECRET" \\
   "https://whereto30a.com/api/cron/seo-audit"`}
           </pre>
-          <p>
-            Or locally: <code className="rounded bg-zinc-100 px-1">npm run audit:seo -- --live</code>
-          </p>
         </div>
       ) : (
         <div className="mt-8 overflow-hidden rounded-xl border border-zinc-200">

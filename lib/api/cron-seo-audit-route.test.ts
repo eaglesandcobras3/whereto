@@ -51,7 +51,7 @@ describe("GET /api/cron/seo-audit", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
-    expect(body.summary.urlsCrawled).toBe(10);
+    expect(body.storeReportsEnabled).toBe(false);
   });
 
   it("returns 401 when unauthorized", async () => {

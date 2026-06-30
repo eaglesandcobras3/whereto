@@ -7,6 +7,7 @@ import {
   failAuditRun,
   isSeoAuditStorageAvailable,
   pruneOldAuditRuns,
+  shouldStoreAuditReports,
 } from "@/lib/seo/site-audit/storage";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
@@ -15,8 +16,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * Cron: full SEO site crawl + audit (Ahrefs-style checks).
- * Schedule: twice weekly in vercel.json. Requires CRON_SECRET + Supabase tables.
+ * Cron: full SEO site crawl + audit.
+ * Returns JSON summary every run. Markdown history in Supabase only when
+ * SEO_AUDIT_STORE_REPORTS=1 (see docs/OPERATOR-TODO.md).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -29,9 +31,10 @@ export async function GET(request: NextRequest) {
   const supabase = getServiceSupabaseOrNull();
   const maxUrlsParam = request.nextUrl.searchParams.get("maxUrls");
   const maxUrls = maxUrlsParam ? Number(maxUrlsParam) : undefined;
+  const storeReports = isSeoAuditStorageAvailable();
 
   let runId: string | null = null;
-  if (supabase && isSeoAuditStorageAvailable()) {
+  if (supabase && storeReports) {
     runId = await createAuditRun(supabase, baseUrl);
   }
 
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (supabase && runId) {
       await completeAuditRun(supabase, runId, { report, markdown, status: partial });
-      await pruneOldAuditRuns(supabase, 12);
+      await pruneOldAuditRuns(supabase, 6);
     }
 
     return NextResponse.json({
@@ -58,9 +61,13 @@ export async function GET(request: NextRequest) {
       runId,
       status: partial,
       summary: report.summary,
+      businessIndexability: report.businessIndexability,
       issueCount: report.issues.length,
-      markdownBytes: markdown.length,
       stored: Boolean(runId),
+      storeReportsEnabled: shouldStoreAuditReports(),
+      hint: runId
+        ? undefined
+        : "Set SEO_AUDIT_STORE_REPORTS=1 and apply seo-audit-tables migration to persist markdown, or run npm run audit:seo -- --live",
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -52,6 +52,11 @@ export function renderAuditMarkdown(report: SiteAuditReport): string {
   lines.push(`- **URLs crawled:** ${s.urlsCrawled} / ${s.urlsDiscovered} discovered`);
   lines.push(`- **Failed fetches:** ${s.urlsFailed}`);
   lines.push(`- **Duration:** ${(s.durationMs / 1000).toFixed(1)}s`);
+  if (report.businessIndexability) {
+    const { indexReady, total } = report.businessIndexability;
+    const pct = total > 0 ? Math.round((indexReady / total) * 100) : 0;
+    lines.push(`- **Business listings index-ready:** ${indexReady}/${total} (${pct}%)`);
+  }
   lines.push("");
 
   lines.push("## Issue summary");

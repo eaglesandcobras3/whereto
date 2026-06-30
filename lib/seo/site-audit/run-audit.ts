@@ -1,10 +1,12 @@
 import { analyzePage, analyzeSiteWide, sitemapViolationsFromUrls } from "./analyze";
+import { auditBusinessIndexability } from "./business-indexability";
 import { extractCrawlQueue, fetchPage } from "./crawl";
 import { normalizeAuditUrl } from "./page-kind";
 import { buildAuditSummary, renderAuditMarkdown } from "./report";
 import { runPool } from "./run-pool";
 import { collectSeedUrls } from "./seed-urls";
-import type { CrawledPage, RunSiteAuditOptions, SiteAuditReport } from "./types";
+import { analyzeHomePageJsonLd } from "./site-wide-checks";
+import type { AuditIssue, CrawledPage, RunSiteAuditOptions, SiteAuditReport } from "./types";
 
 export type RobotsTxtInfo = {
   disallow: string[];
@@ -120,7 +122,30 @@ export async function runSiteAudit(
     partialCrawl,
   });
 
-  const issues = [...pageIssues, ...siteIssues];
+  const extraIssues: AuditIssue[] = [];
+  const homeNorm = normalizeAuditUrl(baseUrl);
+  const homePage = pages.find((p) => normalizeAuditUrl(p.finalUrl) === homeNorm);
+  if (homePage?.html) {
+    extraIssues.push(...analyzeHomePageJsonLd(homeNorm, homePage.html));
+  } else {
+    try {
+      const res = await fetchFn(baseUrl, { headers: { Accept: "text/html" } });
+      if (res.ok) extraIssues.push(...analyzeHomePageJsonLd(homeNorm, await res.text()));
+    } catch {
+      // home fetch failed — crawl errors cover this
+    }
+  }
+
+  let businessIndexability: SiteAuditReport["businessIndexability"];
+  if (options.supabase) {
+    const { issues: bizIssues, stats } = await auditBusinessIndexability(options.supabase, baseUrl);
+    extraIssues.push(...bizIssues);
+    if (stats) {
+      businessIndexability = { total: stats.total, indexReady: stats.indexReady };
+    }
+  }
+
+  const issues = [...pageIssues, ...siteIssues, ...extraIssues];
   const urlsFailed = pages.filter((p) => p.status !== 200 || p.fetchError).length;
   const completedAt = new Date().toISOString();
 
@@ -140,6 +165,7 @@ export async function runSiteAudit(
     crawledUrls: pages.map((p) => normalizeAuditUrl(p.finalUrl)),
     sitemapUrls,
     seedUrls,
+    businessIndexability,
   };
 
   return report;
