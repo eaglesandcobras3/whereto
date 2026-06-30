@@ -150,14 +150,14 @@ export function HomePage({
           </div>
 
           <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-12 pt-8 sm:px-6 lg:px-8">
-            <div className="home-hero-panel w-full max-w-4xl text-center lg:max-w-5xl xl:max-w-6xl">
+            <div className="home-hero-panel w-full max-w-3xl text-center lg:max-w-4xl">
               <h1 className="text-balance font-headline text-3xl font-extrabold leading-[1.08] tracking-tight text-primary sm:text-4xl md:text-5xl lg:text-[clamp(2.25rem,4vw,3.25rem)]">
                 {heroSettings.title}
               </h1>
 
               <div className="home-hero-divider" aria-hidden="true" />
 
-              <p className="text-balance text-base leading-relaxed text-on-surface/80 md:text-lg">
+              <p className="w-full max-w-none text-base leading-relaxed text-on-surface/80 md:text-lg">
                 {heroSettings.subtitle}
               </p>
 
