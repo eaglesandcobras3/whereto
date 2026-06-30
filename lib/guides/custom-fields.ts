@@ -21,6 +21,11 @@ export function isGuideEnriched(customFields: unknown): boolean {
   return Boolean(cf.enriched_at?.trim());
 }
 
+export function hasGuideSearchProfile(customFields: unknown): boolean {
+  const cf = parseGuideCustomFields(customFields);
+  return Boolean(cf.search_profile?.trim());
+}
+
 export function mergeGuideCustomFields(
   existing: unknown,
   patch: GuideCustomFields,

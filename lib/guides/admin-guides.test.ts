@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isGuideEnriched, mergeGuideCustomFields } from "@/lib/guides/custom-fields";
+import { isGuideEnriched, mergeGuideCustomFields, hasGuideSearchProfile } from "@/lib/guides/custom-fields";
 import { assertCanPublish, mainImagePatch } from "@/lib/admin/guides";
 import { validateGuideMarkdown } from "@/lib/guides/validate-markdown";
 
@@ -24,18 +24,31 @@ describe("validateGuideMarkdown", () => {
 });
 
 describe("guide enrichment gate", () => {
-  it("blocks publish when not enriched", () => {
-    expect(assertCanPublish("published", {}, "draft")).toMatch(/enriched/i);
+  it("blocks publish when search profile is missing", () => {
+    expect(assertCanPublish("published", { enriched_at: "2026-01-01T00:00:00Z" }, "draft")).toMatch(
+      /search profile/i,
+    );
   });
 
-  it("allows publish when enriched", () => {
+  it("allows publish when search profile exists", () => {
     expect(
-      assertCanPublish("published", { enriched_at: "2026-01-01T00:00:00Z" }, "draft"),
+      assertCanPublish(
+        "published",
+        { enriched_at: "2026-01-01T00:00:00Z", search_profile: "30A beach guide for families." },
+        "draft",
+      ),
     ).toBeNull();
   });
 
   it("allows staying published", () => {
     expect(assertCanPublish("published", {}, "published")).toBeNull();
+  });
+});
+
+describe("hasGuideSearchProfile", () => {
+  it("detects search profile", () => {
+    expect(hasGuideSearchProfile({ search_profile: "Trip planning tips." })).toBe(true);
+    expect(hasGuideSearchProfile({ enriched_at: "2026-06-01" })).toBe(false);
   });
 });
 

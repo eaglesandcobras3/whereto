@@ -6,12 +6,15 @@ import {
   buildGuideEnrichmentPrompt,
   enrichmentToGuidePatch,
   guideEnrichmentSchema,
+  normalizeEnrichmentSlug,
   type GuideEnrichmentInput,
 } from "@/lib/guides/guide-enrichment-schema";
+import { resolveUniqueGuideSlug } from "@/lib/admin/guides";
 
 export type GuideRowForEnrichment = {
   id: string;
   title: string;
+  slug: string | null;
   content: string | null;
   guide_type: string | null;
   custom_fields: unknown;
@@ -23,7 +26,7 @@ export async function loadGuideEnrichmentContext(
 ): Promise<GuideEnrichmentInput | null> {
   const { data: guide } = await supabase
     .from("guides")
-    .select("id, title, content, guide_type")
+    .select("id, title, slug, content, guide_type")
     .eq("id", guideId)
     .maybeSingle();
 
@@ -60,6 +63,7 @@ export async function loadGuideEnrichmentContext(
   return {
     id: row.id,
     title: row.title,
+    slug: row.slug,
     content: row.content,
     guide_type: row.guide_type,
     town_names,
@@ -80,7 +84,7 @@ export async function generateGuideEnrichment(
 }
 
 export type EnrichGuideResult =
-  | { ok: true; guideId: string; enrichedAt: string }
+  | { ok: true; guideId: string; enrichedAt: string; slug: string }
   | { ok: false; error: string };
 
 export async function enrichGuideById(
@@ -108,6 +112,8 @@ export async function enrichGuideById(
 
   const now = new Date().toISOString();
   const patch = enrichmentToGuidePatch(enrichment, now);
+  const slugBase = normalizeEnrichmentSlug(enrichment.slug, input.title);
+  patch.slug = await resolveUniqueGuideSlug(supabase, input.title, slugBase, guideId);
   const cf = mergeGuideCustomFields(existing?.custom_fields, {
     enriched_at: now,
     search_profile: enrichment.search_profile,
@@ -119,7 +125,7 @@ export async function enrichGuideById(
   const { error } = await supabase.from("guides").update(patch).eq("id", guideId);
   if (error) return { ok: false, error: error.message };
 
-  return { ok: true, guideId, enrichedAt: now };
+  return { ok: true, guideId, enrichedAt: now, slug: String(patch.slug) };
 }
 
 export function guideEnrichmentSummary(customFields: unknown): {

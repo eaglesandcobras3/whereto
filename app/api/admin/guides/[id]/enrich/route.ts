@@ -25,5 +25,5 @@ export async function POST(_req: Request, ctx: Ctx) {
     return NextResponse.json({ error: result.error }, { status });
   }
 
-  return NextResponse.json({ ok: true, enrichedAt: result.enrichedAt });
+  return NextResponse.json({ ok: true, enrichedAt: result.enrichedAt, slug: result.slug });
 }

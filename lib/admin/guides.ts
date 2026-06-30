@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { slugifyBusinessTitle, uniqueSlug } from "@/lib/portal/slug";
-import { isGuideEnriched } from "@/lib/guides/custom-fields";
+import { isGuideEnriched, hasGuideSearchProfile } from "@/lib/guides/custom-fields";
 import {
   estimateReadingTimeMinutes,
   validateGuideMarkdown,
@@ -229,6 +229,15 @@ export async function getAdminGuideById(
   };
 }
 
+export async function resolveUniqueGuideSlug(
+  supabase: SupabaseClient,
+  title: string,
+  explicit?: string,
+  excludeId?: string,
+): Promise<string> {
+  return resolveUniqueSlug(supabase, title, explicit, excludeId);
+}
+
 async function resolveUniqueSlug(
   supabase: SupabaseClient,
   title: string,
@@ -304,8 +313,8 @@ export function assertCanPublish(
 ): string | null {
   if (status !== "published") return null;
   if (currentStatus === "published") return null;
-  if (!isGuideEnriched(customFields)) {
-    return "Guide must be enriched before publishing. Run Enrich first.";
+  if (!hasGuideSearchProfile(customFields)) {
+    return "Guide must be enriched before publishing. Run Enrich to generate a search profile first.";
   }
   return null;
 }

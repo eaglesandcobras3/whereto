@@ -120,9 +120,10 @@ export function GuidesAdminClient() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-zinc-900">{g.title}</p>
                   <p className="mt-0.5 truncate text-xs text-zinc-500">
-                    /guide/{g.slug}
-                    {g.town_name ? ` · ${g.town_name}` : ""}
-                    {g.guide_type ? ` · ${g.guide_type}` : ""}
+                    {g.town_name ? g.town_name : null}
+                    {g.town_name && g.guide_type ? " · " : null}
+                    {g.guide_type ? g.guide_type : null}
+                    {!g.town_name && !g.guide_type ? "Guide" : null}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { GuideMarkdownEditor } from "@/components/admin/GuideMarkdownEditor";
 
 type PickerOption = { id: string; label: string; sublabel?: string };
 
@@ -59,7 +60,6 @@ export function GuideEditorClient({ guideId }: Props) {
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
 
-  const [enriched, setEnriched] = useState(false);
   const [seoPreview, setSeoPreview] = useState<Partial<GuideDetail>>({});
 
   const [towns, setTowns] = useState<PickerOption[]>([]);
@@ -105,7 +105,6 @@ export function GuideEditorClient({ guideId }: Props) {
       setBusinessLabels(g.business_labels ?? {});
       setMainImageUrl(g.main_image_url ?? null);
       setMainImagePreview(g.main_image_preview_url ?? g.main_image_url ?? null);
-      setEnriched(g.enriched);
       setSeoPreview({
         seo_title: g.seo_title,
         seo_description: g.seo_description,
@@ -150,12 +149,16 @@ export function GuideEditorClient({ guideId }: Props) {
     return () => clearTimeout(t);
   }, [businessQuery, loadOptions]);
 
-  const canPublish = enriched || status === "published";
+  const hasSearchProfile = Boolean(
+    typeof seoPreview.custom_fields?.search_profile === "string" &&
+      seoPreview.custom_fields.search_profile.trim(),
+  );
+
+  const canPublish = hasSearchProfile || status === "published";
 
   const payload = useMemo(
     () => ({
       title,
-      slug: slug.trim() || undefined,
       content,
       status,
       guide_type: guideType,
@@ -164,7 +167,7 @@ export function GuideEditorClient({ guideId }: Props) {
       business_ids: businessIds,
       main_image_url: mainImageUrl,
     }),
-    [title, slug, content, status, guideType, townId, areaId, businessIds, mainImageUrl],
+    [title, content, status, guideType, townId, areaId, businessIds, mainImageUrl],
   );
 
   async function save() {
@@ -204,12 +207,13 @@ export function GuideEditorClient({ guideId }: Props) {
     const res = await fetch(`/api/admin/guides/${encodeURIComponent(guideId)}/enrich`, {
       method: "POST",
     });
-    const j = (await res.json()) as { error?: string; enrichedAt?: string };
+    const j = (await res.json()) as { error?: string; enrichedAt?: string; slug?: string };
     setEnriching(false);
     if (!res.ok) {
       setError(j.error ?? "Enrichment failed");
       return;
     }
+    if (j.slug) setSlug(j.slug);
     setMessage(`Enriched at ${j.enrichedAt ? new Date(j.enrichedAt).toLocaleString() : "now"}.`);
     await loadGuide();
   }
@@ -263,7 +267,7 @@ export function GuideEditorClient({ guideId }: Props) {
         <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{message}</p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-5">
           <label className="block">
             <span className="text-sm font-medium text-zinc-800">Title</span>
@@ -271,36 +275,26 @@ export function GuideEditorClient({ guideId }: Props) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-base font-medium text-zinc-900 shadow-sm outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200"
               placeholder="Guide title"
             />
           </label>
 
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-800">Slug</span>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
-              placeholder="auto-generated from title"
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-800">Markdown content</span>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              Markdown only. Embed businesses with{" "}
-              <code className="rounded bg-zinc-100 px-1">[[business-slug]]</code>.
-            </p>
-            <textarea
+          <div>
+            <div className="mb-2 flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-medium text-zinc-800">Content</h2>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Write in markdown. Use Preview or Split to check formatting before you save.
+                </p>
+              </div>
+            </div>
+            <GuideMarkdownEditor
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={22}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm leading-relaxed"
-              placeholder="# Your guide&#10;&#10;Write in markdown…"
+              onChange={setContent}
+              placeholder={"# Your guide\n\nStart with a short intro, then add sections, lists, and business embeds."}
             />
-          </label>
+          </div>
         </div>
 
         <aside className="space-y-5">
@@ -313,7 +307,7 @@ export function GuideEditorClient({ guideId }: Props) {
                 onChange={(e) => setStatus(e.target.value as (typeof STATUSES)[number])}
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               >
-                {STATUSES.map((s) => (
+                {STATUSES.filter((s) => s !== "published" || hasSearchProfile).map((s) => (
                   <option key={s} value={s} disabled={s === "published" && !canPublish}>
                     {s}
                     {s === "published" && !canPublish ? " (requires enrich)" : ""}
@@ -346,22 +340,24 @@ export function GuideEditorClient({ guideId }: Props) {
               >
                 {saving ? "Saving…" : "Save"}
               </button>
-              <button
-                type="button"
-                onClick={() => enrich()}
-                disabled={enriching || isNew || !content.trim()}
-                className="w-full rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-primary)] disabled:opacity-50"
-              >
-                {enriching ? "Enriching…" : enriched ? "Re-enrich" : "Enrich"}
-              </button>
+              {!hasSearchProfile ? (
+                <button
+                  type="button"
+                  onClick={() => enrich()}
+                  disabled={enriching || isNew || !content.trim()}
+                  className="w-full rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-primary)] disabled:opacity-50"
+                >
+                  {enriching ? "Enriching…" : "Enrich"}
+                </button>
+              ) : null}
             </div>
 
-            {!enriched ? (
+            {!hasSearchProfile ? (
               <p className="mt-3 text-xs text-amber-700">
-                Enrich generates SEO fields and search profile. Publishing is blocked until enriched.
+                Save your draft, then run Enrich to generate SEO fields and a search profile. Publishing unlocks after that.
               </p>
             ) : (
-              <p className="mt-3 text-xs text-emerald-700">Enriched — ready to publish.</p>
+              <p className="mt-3 text-xs text-emerald-700">Search profile ready — you can publish.</p>
             )}
           </div>
 
@@ -507,10 +503,16 @@ export function GuideEditorClient({ guideId }: Props) {
             </div>
           </div>
 
-          {enriched && seoPreview.seo_title ? (
+          {hasSearchProfile && seoPreview.seo_title ? (
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm">
               <h2 className="font-semibold text-zinc-900">SEO preview</h2>
               <dl className="mt-3 space-y-2 text-xs text-zinc-600">
+                {slug ? (
+                  <div>
+                    <dt className="font-medium text-zinc-800">Public URL</dt>
+                    <dd className="font-mono">/guide/{slug}</dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt className="font-medium text-zinc-800">SEO title</dt>
                   <dd>{seoPreview.seo_title}</dd>
@@ -538,17 +540,19 @@ export function GuideEditorClient({ guideId }: Props) {
                   </div>
                 ) : null}
               </dl>
+              {!isNew && slug ? (
+                <Link
+                  href={`/guide/${encodeURIComponent(slug)}`}
+                  target="_blank"
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                >
+                  Preview public page
+                  <span className="material-symbols-outlined !text-sm" aria-hidden>
+                    open_in_new
+                  </span>
+                </Link>
+              ) : null}
             </div>
-          ) : null}
-
-          {!isNew && slug ? (
-            <Link
-              href={`/guide/${encodeURIComponent(slug)}`}
-              target="_blank"
-              className="block text-center text-sm text-[var(--color-primary)] hover:underline"
-            >
-              Preview public page ↗
-            </Link>
           ) : null}
         </aside>
       </div>

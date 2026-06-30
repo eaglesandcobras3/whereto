@@ -1,6 +1,15 @@
 import { z } from "zod";
 
+import { slugifyBusinessTitle } from "@/lib/portal/slug";
+
+const guideSlugSchema = z
+  .string()
+  .min(3)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers, and hyphens.");
+
 export const guideEnrichmentSchema = z.object({
+  slug: guideSlugSchema,
   seo_title: z.string().min(10).max(70),
   seo_description: z.string().min(50).max(160),
   og_title: z.string().min(10).max(70),
@@ -17,6 +26,7 @@ export type GuideEnrichment = z.infer<typeof guideEnrichmentSchema>;
 export type GuideEnrichmentInput = {
   id: string;
   title: string;
+  slug: string | null;
   content: string;
   guide_type: string | null;
   town_names: string[];
@@ -37,6 +47,7 @@ export function buildGuideEnrichmentPrompt(input: GuideEnrichmentInput): string 
 GUIDE:
 - id: ${input.id}
 - title: ${input.title}
+- current slug: ${input.slug?.trim() || "(none yet — propose a new one)"}
 - type: ${input.guide_type ?? "editorial"}
 - towns: ${townLine}
 - areas/places: ${areaLine}
@@ -46,6 +57,7 @@ MARKDOWN BODY (truncated):
 ${preview}
 
 Return ONE enrichment object with:
+- slug: URL path segment for /guide/{slug} — lowercase, hyphenated, 3-80 chars, SEO-friendly (include town or topic when relevant; refine current slug if one exists)
 - seo_title: page title for Google (≤70 chars, include location when relevant)
 - seo_description: meta description (≤160 chars, compelling, no quotes)
 - og_title: social share title (can differ slightly from seo_title)
@@ -58,6 +70,12 @@ Return ONE enrichment object with:
 
 Be accurate to the guide content. Do not invent businesses or places not mentioned or implied.
 Focus on what a visitor planning a 30A trip would search for.`;
+}
+
+export function normalizeEnrichmentSlug(raw: string, titleFallback: string): string {
+  const normalized = slugifyBusinessTitle(raw);
+  if (normalized.length >= 3) return normalized;
+  return slugifyBusinessTitle(titleFallback) || "guide";
 }
 
 export function enrichmentToGuidePatch(
