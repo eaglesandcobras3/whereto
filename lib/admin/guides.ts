@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { slugifyBusinessTitle, uniqueSlug } from "@/lib/portal/slug";
 import { isGuideEnriched } from "@/lib/guides/custom-fields";
 import {
@@ -46,6 +47,8 @@ export type AdminGuideDetail = {
   area_id: string | null;
   business_ids: string[];
   business_labels: Record<string, string>;
+  main_image_url: string | null;
+  main_image_preview_url: string | null;
   date_updated: string | null;
   published_at: string | null;
 };
@@ -59,12 +62,26 @@ export type GuideWriteInput = {
   town_id?: string | null;
   area_id?: string | null;
   business_ids?: string[];
+  /** Set URL, pass `null` to remove, omit to leave unchanged (update only). */
+  main_image_url?: string | null;
 };
 
 function parseIntentTags(raw: unknown): string[] | null {
   if (!Array.isArray(raw)) return null;
   const tags = raw.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
   return tags.length ? tags : null;
+}
+
+/** Persist admin-uploaded main image URL; clears legacy Directus UUID on `main_image`. */
+export function mainImagePatch(
+  mainImageUrl: string | null | undefined,
+): Record<string, unknown> | null {
+  if (mainImageUrl === undefined) return null;
+  const url = mainImageUrl?.trim() || null;
+  if (url) {
+    return { main_image_url: url, main_image: null };
+  }
+  return { main_image_url: null, main_image: null };
 }
 
 export async function listAdminGuides(
@@ -125,7 +142,7 @@ export async function getAdminGuideById(
   const { data: guide } = await supabase
     .from("guides")
     .select(
-      "id, slug, title, content, status, guide_type, seo_title, seo_description, og_title, og_description, search_keywords, summary, excerpt, intent_tags, custom_fields, date_updated, published_at",
+      "id, slug, title, content, status, guide_type, seo_title, seo_description, og_title, og_description, search_keywords, summary, excerpt, intent_tags, custom_fields, main_image_url, main_image, date_updated, published_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -148,6 +165,8 @@ export async function getAdminGuideById(
     excerpt: string | null;
     intent_tags: unknown;
     custom_fields: unknown;
+    main_image_url: string | null;
+    main_image: string | null;
     date_updated: string | null;
     published_at: string | null;
   };
@@ -196,6 +215,9 @@ export async function getAdminGuideById(
     area_id: (areaRes.data as { area_id?: string } | null)?.area_id ?? null,
     business_ids,
     business_labels,
+    main_image_url: row.main_image_url,
+    main_image_preview_url:
+      getPublicImageUrl(row.main_image_url) ?? getPublicImageUrl(row.main_image),
     date_updated: row.date_updated,
     published_at: row.published_at,
   };
@@ -299,7 +321,7 @@ export async function createAdminGuide(
   }
   const id = randomUUID();
 
-  const { error } = await supabase.from("guides").insert({
+  const insertPayload: Record<string, unknown> = {
     id,
     slug,
     title: input.title.trim(),
@@ -310,7 +332,10 @@ export async function createAdminGuide(
     date_created: now,
     date_updated: now,
     published_at: null,
-  });
+  };
+  Object.assign(insertPayload, mainImagePatch(input.main_image_url) ?? {});
+
+  const { error } = await supabase.from("guides").insert(insertPayload);
   if (error) throw new Error(error.message);
 
   await syncGuideTowns(supabase, id, input.town_id ?? null);
@@ -356,6 +381,9 @@ export async function updateAdminGuide(
   if (nextStatus !== "published") {
     patch.published_at = null;
   }
+
+  const imagePatch = mainImagePatch(input.main_image_url);
+  if (imagePatch) Object.assign(patch, imagePatch);
 
   const { error } = await supabase.from("guides").update(patch).eq("id", id);
   if (error) throw new Error(error.message);

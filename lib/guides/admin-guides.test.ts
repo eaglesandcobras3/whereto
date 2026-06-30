@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isGuideEnriched, mergeGuideCustomFields } from "@/lib/guides/custom-fields";
-import { assertCanPublish } from "@/lib/admin/guides";
+import { assertCanPublish, mainImagePatch } from "@/lib/admin/guides";
 import { validateGuideMarkdown } from "@/lib/guides/validate-markdown";
 
 describe("validateGuideMarkdown", () => {
@@ -36,6 +36,26 @@ describe("guide enrichment gate", () => {
 
   it("allows staying published", () => {
     expect(assertCanPublish("published", {}, "published")).toBeNull();
+  });
+});
+
+describe("mainImagePatch", () => {
+  it("sets URL and clears Directus UUID", () => {
+    expect(mainImagePatch("https://cdn.example/hero.webp")).toEqual({
+      main_image_url: "https://cdn.example/hero.webp",
+      main_image: null,
+    });
+  });
+
+  it("clears both when removed", () => {
+    expect(mainImagePatch(null)).toEqual({
+      main_image_url: null,
+      main_image: null,
+    });
+  });
+
+  it("returns null when unchanged", () => {
+    expect(mainImagePatch(undefined)).toBeNull();
   });
 });
 

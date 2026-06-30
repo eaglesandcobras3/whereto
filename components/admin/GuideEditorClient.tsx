@@ -26,6 +26,8 @@ type GuideDetail = {
   area_id: string | null;
   business_ids: string[];
   business_labels?: Record<string, string>;
+  main_image_url?: string | null;
+  main_image_preview_url?: string | null;
 };
 
 const GUIDE_TYPES = ["editorial", "seasonal", "town", "intent"] as const;
@@ -41,6 +43,7 @@ export function GuideEditorClient({ guideId }: Props) {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [enriching, setEnriching] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -53,6 +56,8 @@ export function GuideEditorClient({ guideId }: Props) {
   const [areaId, setAreaId] = useState<string>("");
   const [businessIds, setBusinessIds] = useState<string[]>([]);
   const [businessLabels, setBusinessLabels] = useState<Record<string, string>>({});
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
 
   const [enriched, setEnriched] = useState(false);
   const [seoPreview, setSeoPreview] = useState<Partial<GuideDetail>>({});
@@ -98,6 +103,8 @@ export function GuideEditorClient({ guideId }: Props) {
       setAreaId(g.area_id ?? "");
       setBusinessIds(g.business_ids);
       setBusinessLabels(g.business_labels ?? {});
+      setMainImageUrl(g.main_image_url ?? null);
+      setMainImagePreview(g.main_image_preview_url ?? g.main_image_url ?? null);
       setEnriched(g.enriched);
       setSeoPreview({
         seo_title: g.seo_title,
@@ -155,8 +162,9 @@ export function GuideEditorClient({ guideId }: Props) {
       town_id: townId || null,
       area_id: areaId || null,
       business_ids: businessIds,
+      main_image_url: mainImageUrl,
     }),
-    [title, slug, content, status, guideType, townId, areaId, businessIds],
+    [title, slug, content, status, guideType, townId, areaId, businessIds, mainImageUrl],
   );
 
   async function save() {
@@ -216,6 +224,34 @@ export function GuideEditorClient({ guideId }: Props) {
 
   function removeBusiness(id: string) {
     setBusinessIds((prev) => prev.filter((x) => x !== id));
+  }
+
+  async function uploadMainImage(file: File) {
+    setUploadingImage(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("folder", `guides/${slug.trim() || "drafts"}`);
+      form.append("alt_text", title.trim() || "Guide main image");
+      const res = await fetch("/api/admin/media/upload", { method: "POST", body: form });
+      const j = (await res.json()) as { error?: string; url?: string };
+      if (!res.ok || !j.url) throw new Error(j.error ?? "Upload failed");
+      setMainImageUrl(j.url);
+      setMainImagePreview(j.url);
+      setMessage("Main image uploaded. Save to apply.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  function removeMainImage() {
+    setMainImageUrl(null);
+    setMainImagePreview(null);
+    setMessage("Main image removed. Save to apply.");
   }
 
   if (loading) return <p className="text-sm text-zinc-500">Loading guide…</p>;
@@ -327,6 +363,58 @@ export function GuideEditorClient({ guideId }: Props) {
             ) : (
               <p className="mt-3 text-xs text-emerald-700">Enriched — ready to publish.</p>
             )}
+          </div>
+
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-zinc-900">Main image</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Shown on the guide page header and social previews. Markdown must not include images.
+            </p>
+
+            {mainImagePreview ? (
+              <div className="mt-3 overflow-hidden rounded-lg border border-zinc-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={mainImagePreview}
+                  alt=""
+                  className="aspect-[16/9] w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="mt-3 flex aspect-[16/9] items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-xs text-zinc-500">
+                No main image
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-col gap-2">
+              <label className="block">
+                <span className="sr-only">Upload main image</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  disabled={uploadingImage}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) void uploadMainImage(file);
+                  }}
+                  className="block w-full text-xs text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-800 hover:file:bg-zinc-200"
+                />
+              </label>
+              {mainImagePreview ? (
+                <button
+                  type="button"
+                  onClick={() => removeMainImage()}
+                  disabled={uploadingImage}
+                  className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
+                >
+                  Remove image
+                </button>
+              ) : null}
+              {uploadingImage ? (
+                <p className="text-xs text-zinc-500">Uploading…</p>
+              ) : null}
+            </div>
           </div>
 
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
