@@ -143,10 +143,32 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 
 ---
 
+## Guides admin
+
+In-app editor at `/admin/guides` for markdown guides stored in `public.guides`.
+
+### Setup
+
+- [ ] Ensure admin access (`ADMIN_USER_IDS`, `ADMIN_EMAILS`, or `profiles.is_admin`).
+- [ ] Set `OPENAI_API_KEY` (and optional `OPENAI_MODEL`, default `gpt-4o-mini`) for the **Enrich** action.
+- [ ] Enable PostHog `guides` flag when ready to expose public guide pages.
+
+### Workflow
+
+1. **New guide** — write markdown, optionally link a town, place (area), and businesses.
+2. **Save draft** — content is validated as markdown only.
+3. **Enrich** — generates SEO title/description, OG fields, keywords, summary, intent tags, and `custom_fields.search_profile`.
+4. **Publish** — blocked until enriched; sets `status=published` and `published_at`.
+
+Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-06-30 | Guides admin at `/admin/guides` — markdown editor, town/area/business links, AI enrich, publish gate |
 | 2026-06-30 | Removed scheduled SEO audit from `vercel.json` — use `npm run audit:seo -- --live` manually |
 | 2026-06-29 | SEO site audit cron (`/api/cron/seo-audit`, Mon/Thu); admin `/admin/seo-audit`; `npm run audit:seo`; removed weekly RankScore guides cron from `vercel.json` |
 | 2026-06-29 | Added PostHog `guides` feature flag — gates guide UI visibility and sitemap inclusion |
