@@ -309,7 +309,7 @@ export async function createAdminGuide(
     reading_time_minutes: estimateReadingTimeMinutes(input.content),
     date_created: now,
     date_updated: now,
-    published_at: status === "published" ? now : null,
+    published_at: null,
   });
   if (error) throw new Error(error.message);
 
