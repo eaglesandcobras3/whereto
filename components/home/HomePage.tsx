@@ -9,7 +9,6 @@ import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { homeEditorialIntro } from "@/lib/seo/page-intro-copy";
 import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
 
 function MsIcon({
@@ -122,9 +121,9 @@ export function HomePage({
   towns = [],
   heroSettings = {
     imageUrl: HOME_HERO_IMAGE_PATH,
-    title: "The complete guide to visiting 30A, Florida",
+    title: "Your local guide to 30A, Florida",
     subtitle:
-      "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
+      "From Rosemary Beach to Seaside and beyond, each town along Scenic Highway 30A has its own pace. Find where to eat, what to do, and the beach-access details worth knowing before you arrive.",
   },
 }: Props) {
   const featureFlags = useAppFeatureFlags();
@@ -195,22 +194,17 @@ export function HomePage({
           </div>
         </section>
 
-        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-16">
-          <div className="mx-auto max-w-6xl px-4 md:px-10">
-            <p className="max-w-3xl text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-              {homeEditorialIntro()}
-            </p>
-          </div>
-        </section>
-
         {featuredBusinesses.length > 0 && (
           <section id="section-featured" className="bg-background py-20 md:py-28">
             <div className="mx-auto max-w-[1280px] px-5 sm:px-6 lg:px-8">
               <div className="mb-12 md:mb-16">
-                <p className="text-eyebrow mb-3">Editor's Picks</p>
+                <p className="text-eyebrow mb-3">Editor&apos;s Picks</p>
                 <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
                   Featured Today
                 </h2>
+                <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)] md:text-lg">
+                  Restaurants, shops, and local spots we are highlighting across 30A.
+                </p>
               </div>
               <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
               <div className="mt-10 flex justify-center md:mt-12">
@@ -237,11 +231,14 @@ export function HomePage({
           >
             <div className="mx-auto max-w-screen-xl px-5 sm:px-6 lg:px-8">
               <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end md:mb-16">
-                <div>
+                <div className="max-w-2xl">
                   <p className="text-eyebrow mb-3">Discover</p>
                   <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
                     Beach Towns of 30A
                   </h2>
+                  <p className="mt-4 text-base leading-relaxed text-[var(--color-text-secondary)] md:text-lg">
+                    Rosemary feels different from Grayton, and Seaside from WaterColor. Compare the towns, then dive into local listings and guides.
+                  </p>
                 </div>
                 <Link
                   href="/towns"

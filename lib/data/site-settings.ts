@@ -17,9 +17,9 @@ export type HomeHeroSettings = {
 /** Static homepage hero (public/hero.webp). */
 const DEFAULTS: HomeHeroSettings = {
   imageUrl: HOME_HERO_IMAGE_PATH,
-  title: "The complete guide to visiting 30A, Florida",
+  title: "Your local guide to 30A, Florida",
   subtitle:
-    "Sugar sand, town-by-town energy, and the beach-access details that actually matter before you book. Then dig into towns, food, and local picks.",
+    "From Rosemary Beach to Seaside and beyond, each town along Scenic Highway 30A has its own pace. Find where to eat, what to do, and the beach-access details worth knowing before you arrive.",
   searchPlaceholder: "Search anything on 30A...",
 };
 

@@ -30,10 +30,6 @@ export function townPageIntro(townName: string, descriptor: string): string {
   return `${townName} sits on Florida's Scenic Highway 30A in South Walton. ${descriptor} Use the categories below to see restaurants, coffee, activities, and shops tied to this town, then open our guides when you want trip-planning context beyond a single listing.`;
 }
 
-export function homeEditorialIntro(): string {
-  return "WhereTo30A is a local guide and directory for the beach towns between Destin and Panama City Beach: Rosemary Beach, Seaside, Alys Beach, WaterColor, Grayton Beach, Inlet Beach, and the rest of the corridor. Start with a town page to understand pace and beach access, browse by category when you know what you want, or read an editorial guide when you are planning a first trip. Listings are curated for orientation. Confirm hours, pricing, and availability with the business before you go.";
-}
-
 export function hubTownsIntro(): string {
   return "Scenic Highway 30A strings together distinct beach communities, each with its own architecture, dining scene, and beach-access reality. Pick a town below to see local businesses by category, nearby areas and districts, and editorial guides linked to that community. If you are new to the corridor, compare two or three towns before you book. Seaside and Rosemary feel different from Grayton or Santa Rosa Beach, and the right match depends on how you want the week to run.";
 }
