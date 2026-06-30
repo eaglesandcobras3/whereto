@@ -447,6 +447,84 @@ body {
   background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
 
+/* Home hero — frosted panel over watercolor illustration */
+.home-hero-panel {
+  border-radius: 1.75rem;
+  padding: clamp(2rem, 5vw, 3rem) clamp(2rem, 5vw, 3.5rem);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 40px rgba(255, 255, 255, 0.45),
+    0 12px 40px rgba(0, 0, 0, 0.14),
+    0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+:root.dark .home-hero-panel {
+  background: rgba(34, 37, 36, 0.88);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 0 40px rgba(0, 0, 0, 0.2),
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-hero-divider {
+  width: 3.5rem;
+  height: 1px;
+  margin: 1.25rem auto;
+  background: color-mix(in srgb, var(--color-logo-teal) 35%, var(--color-outline-variant));
+}
+
+.home-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--color-logo-teal);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.home-hero-cta:hover {
+  background: color-mix(in srgb, var(--color-logo-teal) 82%, var(--color-primary));
+}
+
+.home-hero-cta:active {
+  transform: scale(0.98);
+}
+
+.home-hero-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 50, 57, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.home-hero-cta-secondary:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 50, 57, 0.2);
+}
+
 /* design/homepage.html — horizontal carousels */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
