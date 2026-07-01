@@ -19,6 +19,8 @@ const META_MAX = 160;
 const META_MIN = 70;
 const THIN_WORD_COUNT = 200;
 const MAX_HTML_BYTES = 1_500_000;
+/** Words per KB of visible body markup (framework scripts excluded). */
+const TEXT_HTML_RATIO_MIN = 0.5;
 
 const EXPECTED_JSON_LD: Partial<Record<PageKind, string[]>> = {
   business: ["LocalBusiness", "Organization", "BreadcrumbList"],
@@ -286,14 +288,15 @@ function analyzeContent(url: string, p: ParsedPageHtml): AuditIssue[] {
     });
   }
 
-  const ratio = p.htmlBytes > 0 ? p.wordCount / (p.htmlBytes / 1024) : 0;
-  if (p.wordCount > 0 && ratio < 0.5) {
+  const markupKb = p.bodyContentHtmlBytes / 1024;
+  const ratio = markupKb > 0 ? p.wordCount / markupKb : 0;
+  if (p.wordCount > 0 && markupKb > 0 && ratio < TEXT_HTML_RATIO_MIN) {
     issues.push({
       severity: "notice",
       category: "content",
       rule: "low_text_html_ratio",
       url,
-      detail: `Low text-to-HTML ratio (${ratio.toFixed(2)} words/KB)`,
+      detail: `Low text-to-HTML ratio (${ratio.toFixed(2)} words/KB body markup)`,
     });
   }
 

@@ -102,10 +102,47 @@ describe("generateLocalBusinessSchema", () => {
     const schema = generateLocalBusinessSchema({
       name: "Mobile Detailing Co",
       slug: "mobile-detailing-co",
-    }) as { "@type": string; address?: unknown };
+    }) as { "@type": string; address?: unknown; geo?: unknown; priceRange?: unknown };
 
     expect(schema["@type"]).toBe("Organization");
     expect(schema.address).toBeUndefined();
+    expect(schema.geo).toBeUndefined();
+    expect(schema.priceRange).toBeUndefined();
+  });
+
+  it("emits LocalBusiness with geo and priceRange when coordinates exist but street address is missing", () => {
+    const schema = generateLocalBusinessSchema({
+      name: "Barefoot BBQ",
+      slug: "barefoot-bbq-seaside-fl",
+      lat: 30.321,
+      lng: -86.141,
+      townName: "Seaside",
+      townSlug: "seaside",
+      priceRange: "$$",
+    }) as {
+      "@type": string;
+      address: { streetAddress?: string; addressLocality: string };
+      geo: { latitude: number; longitude: number };
+      priceRange: string;
+    };
+
+    expect(schema["@type"]).toBe("LocalBusiness");
+    expect(schema.address.addressLocality).toBe("Seaside");
+    expect(schema.address.streetAddress).toBeUndefined();
+    expect(schema.geo.latitude).toBe(30.321);
+    expect(schema.priceRange).toBe("$$");
+  });
+
+  it("does not emit geo or priceRange on Organization listings", () => {
+    const schema = generateLocalBusinessSchema({
+      name: "Remote Brand",
+      slug: "remote-brand",
+      priceRange: "$",
+    }) as { "@type": string; geo?: unknown; priceRange?: unknown };
+
+    expect(schema["@type"]).toBe("Organization");
+    expect(schema.geo).toBeUndefined();
+    expect(schema.priceRange).toBeUndefined();
   });
 
   it("emits LocalBusiness when a listing has a postal address", () => {

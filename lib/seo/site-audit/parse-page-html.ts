@@ -14,6 +14,14 @@ function stripTags(html: string): string {
   return decodeHtmlEntities(html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
 }
 
+/** Body markup for text-to-HTML ratio — excludes framework scripts that dominate App Router HTML. */
+export function bodyMarkupForTextRatio(bodyHtml: string): string {
+  return bodyHtml
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, "");
+}
+
 function attrValue(tag: string, name: string): string | null {
   const re = new RegExp(`\\b${name}\\s*=\\s*["']([^"']*)["']`, "i");
   const m = re.exec(tag);
@@ -129,8 +137,10 @@ export function parsePageHtml(html: string, pageUrl: string): ParsedPageHtml {
   }
 
   const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*)<\/body>/i);
-  const bodyText = bodyMatch ? stripTags(bodyMatch[1]) : stripTags(html);
+  const bodyHtml = bodyMatch ? bodyMatch[1] : html;
+  const bodyText = stripTags(bodyHtml);
   const wordCount = bodyText ? bodyText.split(/\s+/).filter(Boolean).length : 0;
+  const bodyContentHtmlBytes = new TextEncoder().encode(bodyMarkupForTextRatio(bodyHtml)).length;
 
   return {
     title,
@@ -151,5 +161,6 @@ export function parsePageHtml(html: string, pageUrl: string): ParsedPageHtml {
     imageAlts,
     wordCount,
     htmlBytes: new TextEncoder().encode(html).length,
+    bodyContentHtmlBytes,
   };
 }

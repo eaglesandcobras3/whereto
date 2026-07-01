@@ -6,6 +6,7 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { hubServicesIntro } from "@/lib/seo/page-intro-copy";
+import { seoTitleSegmentForLayout } from "@/lib/seo/metadata-snippets";
 import {
   countServiceVendors,
   getServiceSpecialtySections,
@@ -30,7 +31,7 @@ type Props = {
 
 export const metadata: Metadata = {
   ...canonicalAlternates(SERVICE_VENDORS_HUB_PATH),
-  title: "Service Providers on 30A, Florida | Contractors, Vendors & Trades",
+  title: seoTitleSegmentForLayout("30A Service Providers | Contractors & Trades"),
   description:
     "Find regional service providers along Scenic 30A and South Walton: landscaping, cleaning, contractors, trades, and mobile vendors who work across the corridor.",
   keywords: [

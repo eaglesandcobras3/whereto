@@ -181,7 +181,7 @@ export function generateGuideSchema(guide: {
 
 /**
  * Generate LocalBusiness or Organization schema for listing detail pages.
- * LocalBusiness requires a postal address; listings without one use Organization.
+ * LocalBusiness is used when a street address or map coordinates exist; otherwise Organization.
  */
 export function generateLocalBusinessSchema(business: {
   name: string;
@@ -202,12 +202,18 @@ export function generateLocalBusinessSchema(business: {
 }): object {
   const siteUrl = getSiteUrl();
   const pageUrl = `${siteUrl}/business/${business.slug}`;
-  const hasAddress = Boolean(business.address?.trim());
+  const hasStreetAddress = Boolean(business.address?.trim());
+  const hasGeo =
+    business.lat != null &&
+    business.lng != null &&
+    Number.isFinite(business.lat) &&
+    Number.isFinite(business.lng);
+  const isLocalBusiness = hasStreetAddress || hasGeo;
   const imageUrl = absoluteHttpUrl(business.imageUrl);
 
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": hasAddress ? "LocalBusiness" : "Organization",
+    "@type": isLocalBusiness ? "LocalBusiness" : "Organization",
     "@id": `${pageUrl}#business`,
     name: business.name,
     url: pageUrl,
@@ -221,7 +227,7 @@ export function generateLocalBusinessSchema(business: {
     schema.image = imageUrl;
   }
 
-  if (hasAddress) {
+  if (hasStreetAddress) {
     schema.address = {
       "@type": "PostalAddress",
       streetAddress: business.address!.trim(),
@@ -229,9 +235,16 @@ export function generateLocalBusinessSchema(business: {
       addressRegion: "FL",
       addressCountry: "US",
     };
+  } else if (isLocalBusiness && business.townName) {
+    schema.address = {
+      "@type": "PostalAddress",
+      addressLocality: business.townName,
+      addressRegion: "FL",
+      addressCountry: "US",
+    };
   }
 
-  if (business.lat != null && business.lng != null) {
+  if (isLocalBusiness && hasGeo) {
     schema.geo = {
       "@type": "GeoCoordinates",
       latitude: business.lat,
@@ -248,7 +261,10 @@ export function generateLocalBusinessSchema(business: {
     schema.sameAs = [sameAs];
   }
 
-  if (isValidAggregateRating(business.rating, business.reviewCount)) {
+  if (
+    isLocalBusiness &&
+    isValidAggregateRating(business.rating, business.reviewCount)
+  ) {
     schema.aggregateRating = {
       "@type": "AggregateRating",
       ratingValue: Math.round(business.rating * 10) / 10,
@@ -258,7 +274,7 @@ export function generateLocalBusinessSchema(business: {
     };
   }
 
-  if (business.priceRange) {
+  if (isLocalBusiness && business.priceRange) {
     schema.priceRange = business.priceRange;
   }
 

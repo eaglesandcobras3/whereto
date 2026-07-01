@@ -66,6 +66,21 @@ export default async function FeedbackPage({
         We read every submission. If something on a listing doesn&apos;t match reality, describe it below and we&apos;ll route
         it to the team for review (we may follow up).
       </p>
+      <h2>What to include</h2>
+      <p>
+        The more specific you are, the faster we can verify a change. Mention what you saw on the listing, what seems
+        wrong or outdated, and when you visited or last checked if you can.
+      </p>
+      <ul>
+        <li>Wrong or outdated hours, phone, website, or address</li>
+        <li>A business that appears closed, moved, or listed twice</li>
+        <li>A category or town that does not match where the business operates</li>
+        <li>Photos or description copy that no longer reflects the current experience</li>
+      </ul>
+      <p>
+        Business owners can use this form as well. If you represent the listing and need a broader update, you can also{" "}
+        <Link href="/list-your-business">request a new or updated listing</Link>.
+      </p>
       <p className="text-sm text-[var(--color-text-tertiary)]">
         Prefer email? Reach us directly at{" "}
         <a href="mailto:feedback@whereto30a.com">feedback@whereto30a.com</a>.

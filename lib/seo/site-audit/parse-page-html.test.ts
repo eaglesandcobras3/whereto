@@ -34,4 +34,18 @@ describe("parsePageHtml", () => {
     expect(p.imageAlts.filter((i) => !i.alt?.trim())).toHaveLength(1);
     expect(p.wordCount).toBeGreaterThan(40);
   });
+
+  it("excludes body scripts from content markup bytes used for text ratio", () => {
+    const bigScript = "x".repeat(500_000);
+    const html = `<!DOCTYPE html><html><body>
+      <h1>Hello</h1>
+      <p>${"word ".repeat(100)}</p>
+      <script>${bigScript}</script>
+    </body></html>`;
+
+    const p = parsePageHtml(html, "https://whereto30a.com/test");
+    expect(p.htmlBytes).toBeGreaterThan(500_000);
+    expect(p.bodyContentHtmlBytes).toBeLessThan(10_000);
+    expect(p.wordCount).toBeGreaterThan(100);
+  });
 });

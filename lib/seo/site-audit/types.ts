@@ -53,6 +53,8 @@ export type ParsedPageHtml = {
   imageAlts: Array<{ src: string; alt: string | null }>;
   wordCount: number;
   htmlBytes: number;
+  /** Body HTML bytes with scripts/styles stripped — used for text-to-HTML ratio. */
+  bodyContentHtmlBytes: number;
 };
 
 export type CrawledPage = {

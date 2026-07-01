@@ -19,6 +19,8 @@ export default async function AdminEditGuidePage({ params }: Props) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <AdminPageHeader
+        backHref="/admin/guides"
+        backLabel="Guides"
         title="Edit guide"
         description="Update markdown, relationships, and status. Re-enrich after major content changes."
       />
