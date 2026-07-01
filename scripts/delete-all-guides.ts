@@ -7,7 +7,7 @@
  */
 
 import * as dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
@@ -15,7 +15,7 @@ dotenv.config({ path: ".env" });
 const APPLY = process.argv.includes("--apply");
 
 async function countTable(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   table: string,
   filter?: { column: string; value: string },
 ): Promise<number> {
@@ -30,7 +30,7 @@ async function countTable(
 }
 
 async function deleteAll(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   table: string,
   filter?: { column: string; value: string },
 ): Promise<number | null> {
