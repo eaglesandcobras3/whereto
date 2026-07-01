@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 
 type Props = {
   title: string;
@@ -15,8 +16,11 @@ export function GuideCard({
   slug,
   href,
   subtitle,
+  imageUrl,
   analyticsCategory = "guide_card",
 }: Props) {
+  const hasImage = Boolean(imageUrl?.trim());
+
   return (
     <Link
       href={href ?? `/guide/${slug}`}
@@ -28,6 +32,14 @@ export function GuideCard({
         transition-premium hover-lift
       "
     >
+      {hasImage ? (
+        <ListingThumbnail
+          slug={slug}
+          imageUrl={imageUrl}
+          imageAlt={title}
+          className="aspect-[16/10] min-h-[140px]"
+        />
+      ) : null}
       <div className="space-y-3 p-4 sm:p-5">
         <h3 className="font-headline text-lg font-bold tracking-tight text-[var(--color-text-primary)] sm:text-xl">
           {title}

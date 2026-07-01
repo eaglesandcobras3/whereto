@@ -165,7 +165,7 @@ export function HomePage({
                   <Link
                     href={PRIMARY_EDITORIAL_GUIDE_PATH}
                     {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
-                    className="home-hero-cta"
+                    className="home-hero-cta-secondary"
                   >
                     <MsIcon name="menu_book" className="!text-xl" />
                     Explore the guide
@@ -175,7 +175,7 @@ export function HomePage({
                   <Link
                     href="/ask"
                     {...gaClickProps({ event: "cta_click", category: "home_hero", label: "ask_concierge" })}
-                    className={isGuidesEnabled(featureFlags) ? "home-hero-cta-secondary" : "home-hero-cta"}
+                    className="home-hero-cta"
                   >
                     <MsIcon name="chat" className="!text-xl" />
                     Ask WhereTo30A
