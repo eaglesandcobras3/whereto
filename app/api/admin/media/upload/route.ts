@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 export const runtime = "nodejs";
@@ -14,21 +14,10 @@ const VARIANTS: Record<VariantName, number> = {
   hero: 1600,
 };
 
-async function assertAdminOrThrow() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-
-  const serviceSupabase = getServiceSupabase();
-  const { data: profile } = await serviceSupabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile?.is_admin) throw new Error("Forbidden");
-  return user.id;
+async function assertAdminOrThrow(): Promise<string> {
+  const admin = await requireAdminUser();
+  if (!admin) throw new Error("Forbidden");
+  return admin.userId;
 }
 
 function sanitizeFileName(input: string): string {

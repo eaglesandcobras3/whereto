@@ -241,7 +241,14 @@ export function GuideEditorClient({ guideId }: Props) {
       form.append("alt_text", title.trim() || "Guide main image");
       const res = await fetch("/api/admin/media/upload", { method: "POST", body: form });
       const j = (await res.json()) as { error?: string; url?: string };
-      if (!res.ok || !j.url) throw new Error(j.error ?? "Upload failed");
+      if (!res.ok || !j.url) {
+        throw new Error(
+          j.error ??
+            (res.status === 403
+              ? "Upload not allowed. Sign in with an admin account."
+              : "Upload failed"),
+        );
+      }
       setMainImageUrl(j.url);
       setMainImagePreview(j.url);
       setMessage("Main image uploaded. Save to apply.");
