@@ -13,6 +13,7 @@ import {
   applyDiscoveryBrowseNav,
   discoveryHref,
   showNavbarAskUi,
+  showNavbarDiscoverUi,
   showNavbarSearchUi,
 } from "@/lib/nav/discovery-links";
 import type { User } from "@supabase/supabase-js";
@@ -66,8 +67,10 @@ export function Navbar({
   const isHome = pathname === "/";
   const showSearchInNavbar =
     showNavbarSearchUi(featureFlags) && (showSearch || !isHome);
+  const showDiscoverInNavbar = showNavbarDiscoverUi(featureFlags);
   const showAskInNavbar = showNavbarAskUi(featureFlags);
   const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/");
+  const isDiscoverRoute = pathname === "/discover" || pathname.startsWith("/discover/");
   const isSaved = pathname === "/saved" || pathname.startsWith("/saved/");
   const isAccount = pathname === "/profile" || pathname.startsWith("/profile/");
   const isPortalRoute = pathname === "/portal" || pathname.startsWith("/portal/");
@@ -204,6 +207,21 @@ export function Navbar({
         </Suspense>
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
+          {showDiscoverInNavbar ? (
+            <Link
+              href="/discover"
+              {...gaClickProps({ event: "nav_click", category: "header", label: "discover_filters" })}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-premium-fast ${
+                isDiscoverRoute
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                  : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]"
+              }`}
+              title="Discover by filters"
+            >
+              <span className="material-symbols-outlined text-[22px]">tune</span>
+            </Link>
+          ) : null}
+
           {showAskInNavbar ? (
             <Link
               href="/ask"

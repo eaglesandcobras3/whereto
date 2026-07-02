@@ -1,4 +1,4 @@
-import { isAskEnabled, isSearchEnabled, type DiscoveryFlags } from "@/lib/feature-flags-core";
+import { isAskEnabled, isDiscoverEnabled, isSearchEnabled, type DiscoveryFlags, type FeatureFlags } from "@/lib/feature-flags-core";
 import type { BrowseNavItem } from "@/lib/nav/browse-links";
 
 export type { DiscoveryFlags };
@@ -8,6 +8,9 @@ export type DiscoveryLinkParams = {
   type?: string;
   category?: string;
   town_id?: string;
+  town?: string;
+  service_category?: string;
+  facet?: string;
   area_id?: string;
 };
 
@@ -21,16 +24,22 @@ const TYPE_ASK_QUERIES: Record<string, string> = {
 
 export function showNavbarSearchUi(flags: DiscoveryFlags): boolean {
   if (isAskEnabled(flags)) return false;
+  if (isDiscoverEnabled(flags as FeatureFlags)) return false;
   return isSearchEnabled(flags);
+}
+
+export function showNavbarDiscoverUi(flags: FeatureFlags): boolean {
+  if (isAskEnabled(flags)) return false;
+  return isDiscoverEnabled(flags);
 }
 
 export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
   return isAskEnabled(flags);
 }
 
-/** Hub hero search bars and other discovery entry points (search or ask). */
+/** Hub hero search bars and other discovery entry points (search, discover, or ask). */
 export function showHubDiscoveryUi(flags: DiscoveryFlags): boolean {
-  return isAskEnabled(flags) || isSearchEnabled(flags);
+  return isAskEnabled(flags) || isSearchEnabled(flags) || isDiscoverEnabled(flags as FeatureFlags);
 }
 
 export function isDiscoveryEnabled(flags: DiscoveryFlags): boolean {
@@ -49,11 +58,32 @@ function askQueryFromParams(params?: DiscoveryLinkParams): string | undefined {
   return undefined;
 }
 
-/** Primary discovery URL — `/ask` when ask is on, otherwise `/search`. */
+/** Filter-first discovery (`/discover`) — separate from legacy `/search`. */
+export function discoverHref(flags: FeatureFlags, params?: DiscoveryLinkParams): string {
+  if (!isDiscoverEnabled(flags)) return "/";
+
+  const sp = new URLSearchParams();
+  if (params?.town?.trim()) sp.set("town", params.town.trim());
+  else if (params?.town_id?.trim()) sp.set("town_id", params.town_id.trim());
+  if (params?.type === "services") sp.set("type", "services");
+  else if (params?.type === "storefront" || params?.type === "businesses") sp.set("type", "storefront");
+  if (params?.category?.trim()) sp.set("category", params.category.trim());
+  if (params?.service_category?.trim()) sp.set("service_category", params.service_category.trim());
+  if (params?.facet?.trim()) sp.set("facet", params.facet.trim());
+  if (params?.q?.trim()) sp.set("q", params.q.trim());
+  const qs = sp.toString();
+  return qs ? `/discover?${qs}` : "/discover";
+}
+
+/** Primary discovery URL — `/discover` when discover is on, else `/ask` or `/search`. */
 export function discoveryHref(
   flags: DiscoveryFlags,
   params?: DiscoveryLinkParams,
 ): string {
+  if (isDiscoverEnabled(flags as FeatureFlags)) {
+    return discoverHref(flags as FeatureFlags, params);
+  }
+
   if (isAskEnabled(flags)) {
     const q = askQueryFromParams(params);
     if (q) return `/ask?q=${encodeURIComponent(q)}`;
@@ -73,7 +103,9 @@ export function discoveryHref(
 }
 
 export function discoveryLinkRel(href: string): "nofollow" | undefined {
-  if (href.startsWith("/search") || href.startsWith("/ask")) return "nofollow";
+  if (href.startsWith("/search") || href.startsWith("/ask") || href.startsWith("/discover")) {
+    return "nofollow";
+  }
   return undefined;
 }
 
