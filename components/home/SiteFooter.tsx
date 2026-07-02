@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
-import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups";
 import { getListedServiceBrowseGroups } from "@/lib/data/service-browse-groups";
 import { getAllFeatureFlags, isGuidesEnabled, isOnboardEnabled } from "@/lib/feature-flags";
@@ -228,9 +227,9 @@ function buildCompanyLinks(listBusinessHref: string, guidesEnabled: boolean) {
   ...(guidesEnabled
     ? [
         {
-          ...gaClickProps({ event: "nav_click", category: "footer_company", label: "visitor_guide" }),
-          name: "30A visitor guide",
-          href: PRIMARY_EDITORIAL_GUIDE_PATH,
+          ...gaClickProps({ event: "nav_click", category: "footer_company", label: "travel_guides" }),
+          name: "Travel guides",
+          href: "/guides",
         },
       ]
     : []),
