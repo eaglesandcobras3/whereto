@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
 
 type Props = {
   businessId: string;
@@ -16,7 +17,7 @@ export function PortalClaimForm({ businessId, businessTitle, claimStatus }: Prop
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   if (claimStatus === "claimed") {
@@ -43,7 +44,6 @@ export function PortalClaimForm({ businessId, businessTitle, claimStatus }: Prop
     e.preventDefault();
     setPending(true);
     setErr(null);
-    setMsg(null);
 
     const res = await fetch(`/api/portal/businesses/${encodeURIComponent(businessId)}/claim`, {
       method: "POST",
@@ -58,17 +58,19 @@ export function PortalClaimForm({ businessId, businessTitle, claimStatus }: Prop
       return;
     }
 
-    setMsg("Claim submitted. We'll review it and email you when it's approved.");
+    setDone(true);
     router.refresh();
   }
 
-  if (msg) {
+  if (done) {
     return (
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-4 py-4 text-sm text-[var(--color-text-secondary)]">
-        {msg}{" "}
-        <Link href="/portal" className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
-          Back to portal
-        </Link>
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-4 py-4">
+        <SubmissionThankYou />
+        <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
+          <Link href="/portal" className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
+            Back to portal
+          </Link>
+        </p>
       </div>
     );
   }

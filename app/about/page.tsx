@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   ...canonicalAlternates("/about"),
   title: "About",
   description:
-    "Locals along Scenic Highway 30A built WhereTo30A to help visitors and neighbors find the businesses that make this coast worth knowing.",
+    "WhereTo30A was created by 30A locals to make it easier to discover restaurants, events, businesses, and things to do along the Emerald Coast.",
   ...openGraphForPage({
     path: "/about",
     title: "About | WhereTo30A",
     description:
-      "A local guide to Highway 30A and the Emerald Coast, built by people who live here.",
+      "Built by 30A locals to bring restaurants, events, businesses, and local experiences into one trusted place.",
   }),
 };
 
@@ -22,22 +22,27 @@ export default function AboutPage() {
   return (
     <SiteDocument
       title="About WhereTo30A"
-      description="A local guide to Scenic Highway 30A, built by people who live here."
+      description="Created by 30A locals to make it easier to discover everything the coast has to offer."
     >
       <p>
-        We&apos;re locals along 30A. We built WhereTo30A because we kept sending the same restaurant, beach, and shop recommendations to friends visiting from out of town, and we wanted one place that felt like the guide we&apos;d actually hand someone at the house.
+        WhereTo30A was created by 30A locals with a simple goal: to make it easier to discover everything 30A has to offer.
       </p>
 
       <p>
-        Whether you&apos;re here for a week or you live here year-round, the goal is the same: showcase the businesses that make this stretch special and make them easier to find. Town pages, standout spots, guides, and search that gets you to a real place without wading through noise.
+        We found ourselves searching across multiple websites, social media, and local groups just to find restaurants, events, businesses, and things to do. We wanted one trusted place where it all came together.
       </p>
 
-      <h2>What you&apos;ll find</h2>
-      <ul>
-        <li>Town pages along Scenic Highway 30A.</li>
-        <li>Curated business listings from operators and our own notes.</li>
-        <li>Guides, events, and search to help you plan a day or discover something new.</li>
-      </ul>
+      <p>
+        With backgrounds in product design, technology, and digital experiences, we set out to build a platform that makes exploring 30A simpler for everyone.
+      </p>
+
+      <p>
+        Our vision is to help visitors discover more, help locals stay connected, and support the incredible businesses that make this community so special.
+      </p>
+
+      <p>
+        We&apos;re just getting started, and we&apos;re excited to continue growing alongside the 30A community.
+      </p>
 
       <h2>Contact</h2>
       <p>

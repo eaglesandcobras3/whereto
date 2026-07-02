@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { PRIMARY_EDITORIAL_GUIDE_PATH } from "@/lib/seo/sitemap-strategy";
 import { isAskEnabled, isGuidesEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
@@ -163,12 +162,12 @@ export function HomePage({
               <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                 {isGuidesEnabled(featureFlags) ? (
                   <Link
-                    href={PRIMARY_EDITORIAL_GUIDE_PATH}
-                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guide" })}
+                    href="/guides"
+                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guides" })}
                     className="home-hero-cta-secondary"
                   >
                     <MsIcon name="menu_book" className="!text-xl" />
-                    Explore the guide
+                    Browse travel guides
                   </Link>
                 ) : null}
                 {isAskEnabled(featureFlags) ? (
