@@ -6,6 +6,7 @@ import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { isOnboardEnabled } from "@/lib/feature-flags-core";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
+import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
 
 export type ListBusinessTownOption = { id: string; title: string; slug: string };
 
@@ -22,7 +23,6 @@ const labelClass = "block text-sm font-medium text-[var(--color-text-secondary)]
 export function ListBusinessForm({ towns }: Props) {
   const featureFlags = useAppFeatureFlags();
   const [pending, setPending] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [similar, setSimilar] = useState<SimilarHit[] | null>(null);
   const [done, setDone] = useState(false);
@@ -46,7 +46,6 @@ export function ListBusinessForm({ towns }: Props) {
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
-    setMsg(null);
     setErr(null);
     setSimilar(null);
 
@@ -101,22 +100,19 @@ export function ListBusinessForm({ towns }: Props) {
     if (j.ok) {
       setDone(true);
       captureEvent("listing_request_submitted", { business_title: payload.title, town_id: payload.town_id });
-      setMsg(
-        "Thanks. We got your request. Our team reviews every submission before anything goes live. If we already list a close match, we may reach out or point you to claim it instead of creating a duplicate.",
-      );
       setSimilar(j.similar && j.similar.length > 0 ? j.similar : null);
       e.currentTarget.reset();
     }
   }
 
-  if (done && msg) {
+  if (done) {
     return (
       <div className="mt-10 space-y-6">
         <div
           className="rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-sm"
           role="status"
         >
-          <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{msg}</p>
+          <SubmissionThankYou />
         </div>
         {similar && similar.length > 0 ? (
           <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 p-6 dark:border-amber-900/40 dark:bg-amber-950/30">
@@ -160,7 +156,6 @@ export function ListBusinessForm({ towns }: Props) {
           className="text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
           onClick={() => {
             setDone(false);
-            setMsg(null);
             setSimilar(null);
           }}
         >

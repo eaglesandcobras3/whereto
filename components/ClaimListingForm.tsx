@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { gaEvent } from "@/lib/analytics/gtag-runner";
+import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
 
 type Props = {
   businessId: string;
@@ -19,7 +20,8 @@ export function ClaimListingForm({
   claimedByUserId,
 }: Props) {
   const [note, setNote] = useState("");
-  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
   const [pending, setPending] = useState(false);
 
   if (!userId) {
@@ -59,7 +61,7 @@ export function ClaimListingForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
-    setMsg(null);
+    setErr(null);
     const res = await fetch("/api/claims", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,12 +70,20 @@ export function ClaimListingForm({
     const j = (await res.json()) as { error?: string };
     setPending(false);
     if (!res.ok) {
-      setMsg(j.error ?? "Request failed");
+      setErr(j.error ?? "Request failed");
       return;
     }
     gaEvent("claim_submit_success", { business_id: businessId });
-    setMsg("Request submitted. Operators will review it. No automated verification.");
+    setDone(true);
     setNote("");
+  }
+
+  if (done) {
+    return (
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm" role="status">
+        <SubmissionThankYou />
+      </div>
+    );
   }
 
   return (
@@ -103,7 +113,7 @@ export function ClaimListingForm({
           {pending ? "Sending…" : "Request review"}
         </button>
       </form>
-      {msg ? <p className="mt-2 text-sm text-zinc-700">{msg}</p> : null}
+      {err ? <p className="mt-2 text-sm text-red-700" role="alert">{err}</p> : null}
     </div>
   );
 }
