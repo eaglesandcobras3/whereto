@@ -4,7 +4,14 @@
  */
 
 /** PostHog flag keys. */
-export const FEATURE_FLAG_KEYS = ["search", "ask", "search_inspector", "onboard", "guides"] as const;
+export const FEATURE_FLAG_KEYS = [
+  "search",
+  "discover",
+  "ask",
+  "search_inspector",
+  "onboard",
+  "guides",
+] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
 
@@ -12,6 +19,7 @@ export type FeatureFlags = Record<FeatureFlagKey, boolean>;
 
 export const DEFAULT_FLAGS: FeatureFlags = {
   search: false,
+  discover: false,
   ask: false,
   search_inspector: false,
   onboard: false,
@@ -54,6 +62,10 @@ export function isAskEnabled(flags: DiscoveryFlags | FeatureFlags): boolean {
 
 export function isSearchEnabled(flags: DiscoveryFlags | FeatureFlags): boolean {
   return flags.search === true;
+}
+
+export function isDiscoverEnabled(flags: FeatureFlags): boolean {
+  return flags.discover === true;
 }
 
 export function isSearchInspectorEnabled(flags: FeatureFlags): boolean {
