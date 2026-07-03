@@ -163,8 +163,9 @@ export async function executeFilterSearch(
   const serviceGroup = normalizeServiceCategoryGroupSlug(state.service_category_slug);
   const town_id = await resolveTownId(supabase, state.town_id, options?.town_slug);
 
-  const needsMemoryPass =
-  Boolean(storefrontGroup || serviceGroup || state.facet_tags.length > 0);
+  const needsMemoryPass = Boolean(
+    storefrontGroup || serviceGroup || state.facet_tags.length > 0,
+  );
 
   let query = supabase
     .from("businesses_view")
