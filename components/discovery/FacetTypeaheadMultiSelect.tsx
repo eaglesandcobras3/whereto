@@ -2,10 +2,10 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import type { FacetDefinition } from "@/lib/discovery-filters/facet-allowlists";
+import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
 
 type Props = {
-  options: FacetDefinition[];
+  options: DiscoverSearchTagOption[];
   selectedSlugs: string[];
   onChange: (slugs: string[]) => void;
   disabled?: boolean;
@@ -25,7 +25,7 @@ export function FacetTypeaheadMultiSelect({
   const [open, setOpen] = useState(false);
 
   const optionBySlug = useMemo(() => {
-    const map = new Map<string, FacetDefinition>();
+    const map = new Map<string, DiscoverSearchTagOption>();
     for (const option of options) {
       map.set(option.slug, option);
     }
@@ -131,7 +131,7 @@ export function FacetTypeaheadMultiSelect({
             className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-[var(--color-border)] bg-white py-1 shadow-lg"
           >
             {filteredOptions.map((option) => (
-              <li key={`${option.family}:${option.slug}`} role="option">
+              <li key={option.slug} role="option">
                 <button
                   type="button"
                   className={cn(
