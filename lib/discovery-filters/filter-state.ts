@@ -12,7 +12,7 @@ export type DiscoveryEntityType = z.infer<typeof discoveryEntityTypeSchema>;
 
 export const discoveryFilterStateSchema = z.object({
   entity_type: discoveryEntityTypeSchema,
-  town_id: z.string().uuid().optional(),
+  town_ids: z.array(z.string().uuid()).default([]),
   category_slug: z.string().min(1).optional(),
   service_category_slug: z.string().min(1).optional(),
   /** Must all be present on `search_tags` (Search V2 `p_required_tags`). */

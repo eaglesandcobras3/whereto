@@ -31,7 +31,7 @@ export function parseEntityType(raw: string | null | undefined): DiscoveryEntity
 
 export function parseDiscoveryFilterState(
   params: RawDiscoverParams,
-  resolvedTownId?: string | null,
+  resolvedTownIds?: string[],
 ): DiscoveryFilterState {
   const entity_type = parseEntityType(params.type);
   const category_slug = normalizeStorefrontCategoryGroupSlug(params.category ?? undefined);
@@ -49,13 +49,13 @@ export function parseDiscoveryFilterState(
     Math.max(1, Number.parseInt(params.page_size ?? String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE),
   );
 
-  const town_id = resolvedTownId ?? params.town_id?.trim() ?? undefined;
+  const town_ids = resolvedTownIds ?? [];
 
   const q = params.q?.trim() || undefined;
 
   return discoveryFilterStateSchema.parse({
     entity_type,
-    town_id,
+    town_ids,
     category_slug,
     service_category_slug,
     tags_required,
@@ -64,4 +64,18 @@ export function parseDiscoveryFilterState(
     page,
     page_size,
   });
+}
+
+/** Drop tag selections that are not available in the current scoped vocabulary. */
+export function constrainTagsToScope(
+  state: DiscoveryFilterState,
+  scopedSlugs: string[],
+): DiscoveryFilterState {
+  if (!scopedSlugs.length) return state;
+  const allowed = new Set(scopedSlugs);
+  return {
+    ...state,
+    tags_required: state.tags_required.filter((slug) => allowed.has(slug)),
+    tags_any: state.tags_any.filter((slug) => allowed.has(slug)),
+  };
 }

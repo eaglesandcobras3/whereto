@@ -98,7 +98,7 @@ export function FacetTypeaheadMultiSelect({
           type="text"
           value={query}
           disabled={disabled || options.length === 0}
-          placeholder={options.length === 0 ? "Select a category first" : placeholder}
+          placeholder={placeholder}
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(true);
