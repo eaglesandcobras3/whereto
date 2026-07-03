@@ -137,7 +137,7 @@ export function DiscoverPageClient({
   );
 
   const setTownSlugs = (slugs: string[]) => {
-    navigate({ townSlugs: slugs, facetsRequired: [], facetsAny: [], page: 1 });
+    navigate({ townSlugs: slugs, page: 1 });
   };
 
   const setRequiredTags = (slugs: string[]) => {
@@ -256,8 +256,6 @@ export function DiscoverPageClient({
                   onChange={(e) =>
                     navigate({
                       category: e.target.value,
-                      facetsRequired: [],
-                      facetsAny: [],
                       page: 1,
                     })
                   }
@@ -283,8 +281,6 @@ export function DiscoverPageClient({
                   onChange={(e) =>
                     navigate({
                       service_category: e.target.value,
-                      facetsRequired: [],
-                      facetsAny: [],
                       page: 1,
                     })
                   }
