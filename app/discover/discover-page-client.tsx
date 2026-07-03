@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
+import { formatTagMatchSummary } from "@/lib/discovery-filters/format-tag-match";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverFilterSearchResult, DiscoverListingRow } from "@/lib/discovery-filters/types";
 import type {
@@ -27,6 +28,7 @@ type Props = {
     category?: string;
     service_category?: string;
     facet?: string;
+    facet_any?: string;
     q?: string;
     page: number;
   };
@@ -37,7 +39,8 @@ function buildDiscoverUrl(params: {
   town?: string;
   category?: string;
   service_category?: string;
-  facets: string[];
+  facetsRequired: string[];
+  facetsAny: string[];
   q?: string;
   page?: number;
 }): string {
@@ -48,7 +51,8 @@ function buildDiscoverUrl(params: {
   if (params.type === "service" && params.service_category) {
     sp.set("service_category", params.service_category);
   }
-  if (params.facets.length) sp.set("facet", params.facets.join(","));
+  if (params.facetsRequired.length) sp.set("facet", params.facetsRequired.join(","));
+  if (params.facetsAny.length) sp.set("facet_any", params.facetsAny.join(","));
   if (params.q?.trim()) sp.set("q", params.q.trim());
   if (params.page && params.page > 1) sp.set("page", String(params.page));
   const qs = sp.toString();
@@ -83,13 +87,28 @@ export function DiscoverPageClient({
     return map;
   }, [searchTags]);
 
-  const activeTags = useMemo(
+  const labelForSlug = useCallback(
+    (slug: string) => tagLabelBySlug.get(slug) ?? formatSearchTagLabel(slug),
+    [tagLabelBySlug],
+  );
+
+  const requiredTags = useMemo(
     () => parseFacetSlugs(initialParams.facet),
     [initialParams.facet],
   );
+  const optionalTags = useMemo(
+    () => parseFacetSlugs(initialParams.facet_any),
+    [initialParams.facet_any],
+  );
 
   const navigate = useCallback(
-    (next: Partial<Props["initialParams"]> & { facets?: string[]; page?: number }) => {
+    (
+      next: Partial<Props["initialParams"]> & {
+        facetsRequired?: string[];
+        facetsAny?: string[];
+        page?: number;
+      },
+    ) => {
       const type = next.type ?? initialParams.type;
       const url = buildDiscoverUrl({
         type,
@@ -97,17 +116,31 @@ export function DiscoverPageClient({
         category: "category" in next ? next.category : initialParams.category,
         service_category:
           "service_category" in next ? next.service_category : initialParams.service_category,
-        facets: next.facets ?? activeTags,
+        facetsRequired: next.facetsRequired ?? requiredTags,
+        facetsAny: next.facetsAny ?? optionalTags,
         q: "q" in next ? next.q : initialParams.q,
         page: next.page ?? 1,
       });
       startTransition(() => router.push(url));
     },
-    [router, initialParams, activeTags],
+    [router, initialParams, requiredTags, optionalTags],
   );
 
-  const setTags = (slugs: string[]) => {
-    navigate({ facets: slugs, page: 1 });
+  const setRequiredTags = (slugs: string[]) => {
+    const requiredSet = new Set(slugs);
+    navigate({
+      facetsRequired: slugs,
+      facetsAny: optionalTags.filter((slug) => !requiredSet.has(slug)),
+      page: 1,
+    });
+  };
+
+  const setOptionalTags = (slugs: string[]) => {
+    const requiredSet = new Set(requiredTags);
+    navigate({
+      facetsAny: slugs.filter((slug) => !requiredSet.has(slug)),
+      page: 1,
+    });
   };
 
   const queryError =
@@ -120,6 +153,10 @@ export function DiscoverPageClient({
       ? categories.find((c) => c.slug === initialParams.category)?.title
       : serviceCategories.find((c) => c.slug === initialParams.service_category)?.title;
 
+  const hasTagFilters = requiredTags.length > 0 || optionalTags.length > 0;
+  const showingRelaxed =
+    initialResult.tag_match_mode === "relaxed" && initialResult.partial_listings.length > 0;
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       <div className="coastal-hero border-b border-[var(--color-border)]">
@@ -129,8 +166,8 @@ export function DiscoverPageClient({
             Browse by filters
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-secondary)]">
-            Scope by town and category, then refine with search tags. Selecting multiple tags
-            requires a listing to have all of them.
+            Scope by town and category, then refine with tags. Must-have tags use AND; nice-to-have
+            tags boost ranking and fill in when a strict match is not available.
           </p>
         </div>
       </div>
@@ -200,7 +237,12 @@ export function DiscoverPageClient({
                   disabled={pending}
                   value={initialParams.category ?? ""}
                   onChange={(e) =>
-                    navigate({ category: e.target.value, facets: [], page: 1 })
+                    navigate({
+                      category: e.target.value,
+                      facetsRequired: [],
+                      facetsAny: [],
+                      page: 1,
+                    })
                   }
                   className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
                 >
@@ -224,7 +266,8 @@ export function DiscoverPageClient({
                   onChange={(e) =>
                     navigate({
                       service_category: e.target.value,
-                      facets: [],
+                      facetsRequired: [],
+                      facetsAny: [],
                       page: 1,
                     })
                   }
@@ -242,18 +285,40 @@ export function DiscoverPageClient({
 
             <div>
               <label
-                htmlFor="discover-facets"
+                htmlFor="discover-facets-required"
                 className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
               >
-                Tags (search_tags)
+                Must have
               </label>
               <FacetTypeaheadMultiSelect
                 options={searchTags}
-                selectedSlugs={activeTags}
-                onChange={setTags}
+                selectedSlugs={requiredTags}
+                onChange={setRequiredTags}
                 disabled={pending}
-                placeholder={searchTags.length ? "Search tags…" : "No tags in vocabulary"}
+                placeholder={searchTags.length ? "Required tags…" : "No tags in vocabulary"}
               />
+              <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+                Listing must include every selected tag.
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="discover-facets-any"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+              >
+                Nice to have
+              </label>
+              <FacetTypeaheadMultiSelect
+                options={searchTags.filter((tag) => !requiredTags.includes(tag.slug))}
+                selectedSlugs={optionalTags}
+                onChange={setOptionalTags}
+                disabled={pending}
+                placeholder={searchTags.length ? "Optional tags…" : "No tags in vocabulary"}
+              />
+              <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+                Boosts ranking; shown as close matches when must-haves return nothing.
+              </p>
             </div>
           </aside>
 
@@ -261,22 +326,41 @@ export function DiscoverPageClient({
             <div className="mb-4 space-y-2">
               <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
                 <span>
-                  {pending ? "Updating…" : `${initialResult.total} result${initialResult.total === 1 ? "" : "s"}`}
+                  {pending
+                    ? "Updating…"
+                    : showingRelaxed
+                      ? `${initialResult.partial_total} close match${initialResult.partial_total === 1 ? "" : "es"}`
+                      : `${initialResult.total} result${initialResult.total === 1 ? "" : "s"}`}
                 </span>
                 {initialParams.town ? (
                   <span className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs">
                     {towns.find((t) => t.slug === initialParams.town)?.name ?? initialParams.town}
                   </span>
                 ) : null}
-                {activeTags.map((slug) => (
+                {requiredTags.map((slug) => (
                   <span
-                    key={slug}
-                    className="rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-xs text-[var(--color-primary)]"
+                    key={`req-${slug}`}
+                    className="rounded-full bg-[var(--color-primary)]/15 px-2 py-0.5 text-xs text-[var(--color-primary)]"
                   >
-                    {tagLabelBySlug.get(slug) ?? formatSearchTagLabel(slug)}
+                    Must: {labelForSlug(slug)}
+                  </span>
+                ))}
+                {optionalTags.map((slug) => (
+                  <span
+                    key={`any-${slug}`}
+                    className="rounded-full border border-dashed border-[var(--color-primary)]/40 px-2 py-0.5 text-xs text-[var(--color-primary)]"
+                  >
+                    Nice: {labelForSlug(slug)}
                   </span>
                 ))}
               </div>
+
+              {showingRelaxed ? (
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  No listings matched every must-have tag. These places match at least one of your
+                  tags, ranked by how many fit.
+                </p>
+              ) : null}
 
               <dl className="grid gap-1 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 px-3 py-2 text-xs text-[var(--color-text-secondary)] sm:grid-cols-2">
                 <div>
@@ -292,30 +376,63 @@ export function DiscoverPageClient({
                   <dd>{categoryLabel ?? "All"}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-[var(--color-text-tertiary)]">Tags (AND)</dt>
-                  <dd>{activeTags.length ? activeTags.join(", ") : "None"}</dd>
+                  <dt className="font-medium text-[var(--color-text-tertiary)]">Tag mode</dt>
+                  <dd>
+                    {hasTagFilters
+                      ? initialResult.tag_match_mode === "relaxed"
+                        ? "Relaxed (OR fallback)"
+                        : "Strict (must-haves)"
+                      : "None"}
+                  </dd>
                 </div>
               </dl>
             </div>
 
-            {initialResult.listings.length === 0 ? (
+            {initialResult.listings.length === 0 && !showingRelaxed ? (
               <div className="space-y-2 text-[var(--color-text-secondary)]">
                 <p>
-                  No listings match these filters. Try removing a tag or broadening town or category.
+                  No listings match these filters. Try moving a tag to nice-to-have, or broadening
+                  town or category.
                 </p>
                 {queryError ? (
                   <p className="text-sm text-red-600">Search error: {queryError}</p>
                 ) : null}
               </div>
             ) : (
-              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {initialResult.listings.map((listing) => (
-                  <DiscoverListingCard key={listing.id} listing={listing} tagLabelBySlug={tagLabelBySlug} />
-                ))}
-              </ul>
+              <>
+                {initialResult.listings.length > 0 ? (
+                  <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {initialResult.listings.map((listing) => (
+                      <DiscoverListingCard
+                        key={listing.id}
+                        listing={listing}
+                        labelForSlug={labelForSlug}
+                      />
+                    ))}
+                  </ul>
+                ) : null}
+
+                {showingRelaxed ? (
+                  <section className="mt-8">
+                    <h2 className="mb-3 font-headline text-lg font-bold text-[var(--color-text-primary)]">
+                      Close matches
+                    </h2>
+                    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      {initialResult.partial_listings.map((listing) => (
+                        <DiscoverListingCard
+                          key={listing.id}
+                          listing={listing}
+                          labelForSlug={labelForSlug}
+                          showTagMatch
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+              </>
             )}
 
-            {initialResult.total_pages > 1 ? (
+            {(showingRelaxed ? initialResult.partial_total_pages : initialResult.total_pages) > 1 ? (
               <div className="mt-8 flex items-center justify-center gap-3">
                 <button
                   type="button"
@@ -326,11 +443,18 @@ export function DiscoverPageClient({
                   Previous
                 </button>
                 <span className="text-sm text-[var(--color-text-secondary)]">
-                  Page {initialParams.page} of {initialResult.total_pages}
+                  Page {initialParams.page} of{" "}
+                  {showingRelaxed ? initialResult.partial_total_pages : initialResult.total_pages}
                 </span>
                 <button
                   type="button"
-                  disabled={pending || initialParams.page >= initialResult.total_pages}
+                  disabled={
+                    pending ||
+                    initialParams.page >=
+                      (showingRelaxed
+                        ? initialResult.partial_total_pages
+                        : initialResult.total_pages)
+                  }
                   onClick={() => navigate({ page: initialParams.page + 1 })}
                   className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
                 >
@@ -347,11 +471,18 @@ export function DiscoverPageClient({
 
 function DiscoverListingCard({
   listing,
-  tagLabelBySlug,
+  labelForSlug,
+  showTagMatch = false,
 }: {
   listing: DiscoverListingRow;
-  tagLabelBySlug: Map<string, string>;
+  labelForSlug: (slug: string) => string;
+  showTagMatch?: boolean;
 }) {
+  const tagMatchSummary =
+    showTagMatch && listing.tag_match
+      ? formatTagMatchSummary(listing.tag_match, labelForSlug)
+      : null;
+
   return (
     <li>
       <Link
@@ -373,6 +504,9 @@ function DiscoverListingCard({
           {listing.town_name ? (
             <p className="text-xs text-[var(--color-text-tertiary)]">{listing.town_name}</p>
           ) : null}
+          {tagMatchSummary ? (
+            <p className="mt-2 text-xs font-medium text-amber-800">{tagMatchSummary}</p>
+          ) : null}
           {listing.excerpt ? (
             <p className="mt-2 line-clamp-2 text-sm text-[var(--color-text-secondary)]">
               {listing.excerpt}
@@ -385,7 +519,7 @@ function DiscoverListingCard({
                   key={slug}
                   className="rounded bg-[var(--color-surface-muted)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]"
                 >
-                  {tagLabelBySlug.get(slug) ?? slug}
+                  {labelForSlug(slug)}
                 </li>
               ))}
             </ul>

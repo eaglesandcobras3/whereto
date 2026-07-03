@@ -7,14 +7,22 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { businessCategoryGroupForSlug } from "@/lib/business-categories/groups";
 import { serviceCategoryGroupForSlug } from "@/lib/service-categories/groups";
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
-import { rowMatchesSearchTags } from "@/lib/discovery-filters/compile-filter-query";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
 } from "@/lib/discovery-filters/resolve-category-groups";
-import type { DiscoverFilterSearchResult, DiscoverListingRow } from "@/lib/discovery-filters/types";
+import {
+  analyzeTagMatch,
+  compareTagMatchScore,
+  type TagMatchAnalysis,
+} from "@/lib/discovery-filters/tag-match";
+import type {
+  DiscoverFilterSearchResult,
+  DiscoverListingRow,
+  DiscoverTagMatch,
+} from "@/lib/discovery-filters/types";
 
 const DISCOVER_POOL_LIMIT = 2000;
 const TAG_FETCH_CHUNK = 120;
@@ -24,12 +32,42 @@ const VIEW_LISTING_SELECT =
 
 type PoolRow = Record<string, unknown>;
 
+type ScoredPoolRow = { row: PoolRow; analysis: TagMatchAnalysis };
+
+function emptyResult(
+  state: DiscoveryFilterState,
+  applied: Record<string, unknown>,
+): DiscoverFilterSearchResult {
+  return {
+    listings: [],
+    partial_listings: [],
+    total: 0,
+    partial_total: 0,
+    tag_match_mode: "none",
+    page: state.page,
+    page_size: state.page_size,
+    total_pages: 0,
+    partial_total_pages: 0,
+    applied_filters: applied,
+  };
+}
+
 function normalizeSearchTags(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
 }
 
-function mapListingRow(row: PoolRow): DiscoverListingRow {
+function toTagMatch(analysis: TagMatchAnalysis): DiscoverTagMatch {
+  return {
+    matched_required: analysis.matched_required,
+    missing_required: analysis.missing_required,
+    matched_any: analysis.matched_any,
+    missing_any: analysis.missing_any,
+    strict_match: analysis.strict_match,
+  };
+}
+
+function mapListingRow(row: PoolRow, analysis?: TagMatchAnalysis): DiscoverListingRow {
   const town = row.towns as { title?: string; slug?: string } | null;
   const cat = row.business_categories as { slug?: string } | null;
   const svc = row.service_categories as { slug?: string } | null;
@@ -39,7 +77,7 @@ function mapListingRow(row: PoolRow): DiscoverListingRow {
     row.main_image as string | null,
     row.hero_image as string | null,
   );
-  return {
+  const listing: DiscoverListingRow = {
     id: String(row.id),
     slug: String(row.slug),
     title: String(row.title),
@@ -52,6 +90,10 @@ function mapListingRow(row: PoolRow): DiscoverListingRow {
     business_type: (row.business_type as string | null) ?? null,
     search_tags: normalizeSearchTags(row.search_tags),
   };
+  if (analysis) {
+    listing.tag_match = toTagMatch(analysis);
+  }
+  return listing;
 }
 
 async function resolveTownId(
@@ -124,27 +166,63 @@ function sortPoolRows(rows: PoolRow[]): PoolRow[] {
 
 function applyBrowsePoolFilters(
   rows: PoolRow[],
-  state: DiscoveryFilterState,
   storefrontGroup: string | undefined,
   serviceGroup: string | undefined,
+  entityType: DiscoveryFilterState["entity_type"],
 ): PoolRow[] {
   let filtered = rows;
 
-  if (state.entity_type === "storefront" && storefrontGroup) {
+  if (entityType === "storefront" && storefrontGroup) {
     filtered = filtered.filter((row) => matchesStorefrontGroup(row, storefrontGroup));
   }
 
-  if (state.entity_type === "service" && serviceGroup) {
+  if (entityType === "service" && serviceGroup) {
     filtered = filtered.filter((row) => matchesServiceGroup(row, serviceGroup));
   }
 
-  if (state.tags.length) {
-    filtered = filtered.filter((row) =>
-      rowMatchesSearchTags(normalizeSearchTags(row.search_tags), state.tags),
-    );
-  }
-
   return filtered;
+}
+
+function scorePoolRows(pool: PoolRow[], state: DiscoveryFilterState): ScoredPoolRow[] {
+  return pool.map((row) => ({
+    row,
+    analysis: analyzeTagMatch(
+      normalizeSearchTags(row.search_tags),
+      state.tags_required,
+      state.tags_any,
+    ),
+  }));
+}
+
+function partitionTagMatches(scored: ScoredPoolRow[]): {
+  strict: ScoredPoolRow[];
+  relaxed: ScoredPoolRow[];
+} {
+  const strict = scored.filter((s) => s.analysis.strict_match);
+  const relaxed = scored
+    .filter((s) => !s.analysis.strict_match && s.analysis.relaxed_match)
+    .sort((a, b) => compareTagMatchScore(a.analysis, b.analysis));
+
+  return { strict, relaxed };
+}
+
+function paginateScored(
+  rows: ScoredPoolRow[],
+  page: number,
+  pageSize: number,
+): { pageRows: ScoredPoolRow[]; total: number; totalPages: number } {
+  const total = rows.length;
+  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
+  const from = (page - 1) * pageSize;
+  return {
+    pageRows: rows.slice(from, from + pageSize),
+    total,
+    totalPages,
+  };
+}
+
+function hasTagFilters(state: DiscoveryFilterState): boolean {
+  return state.tags_required.length > 0 || state.tags_any.length > 0;
 }
 
 export async function executeFilterSearch(
@@ -153,14 +231,7 @@ export async function executeFilterSearch(
 ): Promise<DiscoverFilterSearchResult> {
   const violations = validateFilterContract(state);
   if (violations.length) {
-    return {
-      listings: [],
-      total: 0,
-      page: state.page,
-      page_size: state.page_size,
-      total_pages: 0,
-      applied_filters: { ...state, contract_errors: violations },
-    };
+    return emptyResult(state, { ...state, contract_errors: violations });
   }
 
   const supabase = getServiceSupabase();
@@ -168,7 +239,9 @@ export async function executeFilterSearch(
   const serviceGroup = normalizeServiceCategoryGroupSlug(state.service_category_slug);
   const town_id = await resolveTownId(supabase, state.town_id, options?.town_slug);
 
-  const needsMemoryPass = Boolean(storefrontGroup || serviceGroup);
+  const needsMemoryPass = Boolean(
+    storefrontGroup || serviceGroup || hasTagFilters(state),
+  );
 
   let query = supabase
     .from("businesses_view")
@@ -189,10 +262,6 @@ export async function executeFilterSearch(
     query = query.eq("town_id", town_id);
   }
 
-  if (state.tags.length > 0 && !needsMemoryPass) {
-    query = query.contains("search_tags", state.tags);
-  }
-
   const q = state.q?.trim();
   if (q) {
     const safe = q.replace(/[%_,\\]/g, " ").trim();
@@ -202,6 +271,16 @@ export async function executeFilterSearch(
       );
     }
   }
+
+  const appliedBase = {
+    entity_type: state.entity_type,
+    town_id: town_id ?? null,
+    category_slug: state.category_slug ?? null,
+    service_category_slug: state.service_category_slug ?? null,
+    tags_required: state.tags_required,
+    tags_any: state.tags_any,
+    q: state.q ?? null,
+  };
 
   if (!needsMemoryPass) {
     const from = (state.page - 1) * state.page_size;
@@ -214,14 +293,7 @@ export async function executeFilterSearch(
 
     if (error) {
       console.error("executeFilterSearch", error);
-      return {
-        listings: [],
-        total: 0,
-        page: state.page,
-        page_size: state.page_size,
-        total_pages: 0,
-        applied_filters: { ...state, town_id: town_id ?? null, error: error.message },
-      };
+      return emptyResult(state, { ...appliedBase, error: error.message });
     }
 
     const rows = await attachSearchTags(supabase, (data ?? []) as PoolRow[]);
@@ -229,19 +301,16 @@ export async function executeFilterSearch(
     const total_pages = total > 0 ? Math.ceil(total / state.page_size) : 0;
 
     return {
-      listings: rows.map(mapListingRow),
+      listings: rows.map((row) => mapListingRow(row)),
+      partial_listings: [],
       total,
+      partial_total: 0,
+      tag_match_mode: "none",
       page: state.page,
       page_size: state.page_size,
       total_pages,
-      applied_filters: {
-        entity_type: state.entity_type,
-        town_id: town_id ?? null,
-        category_slug: state.category_slug ?? null,
-        service_category_slug: state.service_category_slug ?? null,
-        tags: state.tags,
-        q: state.q ?? null,
-      },
+      partial_total_pages: 0,
+      applied_filters: appliedBase,
     };
   }
 
@@ -252,41 +321,80 @@ export async function executeFilterSearch(
 
   if (error) {
     console.error("executeFilterSearch pool", error);
-    return {
-      listings: [],
-      total: 0,
-      page: state.page,
-      page_size: state.page_size,
-      total_pages: 0,
-      applied_filters: { ...state, town_id: town_id ?? null, error: error.message },
-    };
+    return emptyResult(state, { ...appliedBase, error: error.message });
   }
 
   let pool = await attachSearchTags(supabase, (data ?? []) as PoolRow[]);
-  pool = applyBrowsePoolFilters(pool, state, storefrontGroup, serviceGroup);
-  pool = sortPoolRows(pool);
+  pool = applyBrowsePoolFilters(pool, storefrontGroup, serviceGroup, state.entity_type);
 
-  const total = pool.length;
-  const total_pages = total > 0 ? Math.ceil(total / state.page_size) : 0;
-  const from = (state.page - 1) * state.page_size;
-  const pageRows = pool.slice(from, from + state.page_size);
+  if (!hasTagFilters(state)) {
+    pool = sortPoolRows(pool);
+    const { pageRows, total, totalPages } = paginateScored(
+      pool.map((row) => ({
+        row,
+        analysis: analyzeTagMatch(normalizeSearchTags(row.search_tags), [], []),
+      })),
+      state.page,
+      state.page_size,
+    );
+
+    return {
+      listings: pageRows.map(({ row }) => mapListingRow(row)),
+      partial_listings: [],
+      total,
+      partial_total: 0,
+      tag_match_mode: "none",
+      page: state.page,
+      page_size: state.page_size,
+      total_pages: totalPages,
+      partial_total_pages: 0,
+      applied_filters: {
+        ...appliedBase,
+        pool_limit: DISCOVER_POOL_LIMIT,
+        storefront_group: storefrontGroup ?? null,
+        service_group: serviceGroup ?? null,
+      },
+    };
+  }
+
+  const scored = scorePoolRows(pool, state);
+  const { strict, relaxed } = partitionTagMatches(scored);
+
+  const strictSorted = [...strict].sort((a, b) => {
+    const scoreCmp = compareTagMatchScore(a.analysis, b.analysis);
+    if (scoreCmp !== 0) return scoreCmp;
+    const featuredA = Boolean(a.row.featured);
+    const featuredB = Boolean(b.row.featured);
+    if (featuredA !== featuredB) return featuredA ? -1 : 1;
+    return String(a.row.title ?? "").localeCompare(String(b.row.title ?? ""), undefined, {
+      sensitivity: "base",
+    });
+  });
+
+  const strictPage = paginateScored(strictSorted, state.page, state.page_size);
+  const tag_match_mode = strictPage.total > 0 ? "strict" : relaxed.length > 0 ? "relaxed" : "none";
+
+  const partialPage =
+    strictPage.total === 0 && relaxed.length > 0
+      ? paginateScored(relaxed, state.page, state.page_size)
+      : { pageRows: [], total: 0, totalPages: 0 };
 
   return {
-    listings: pageRows.map(mapListingRow),
-    total,
+    listings: strictPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),
+    partial_listings: partialPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),
+    total: strictPage.total,
+    partial_total: partialPage.total,
+    tag_match_mode,
     page: state.page,
     page_size: state.page_size,
-    total_pages,
+    total_pages: strictPage.totalPages,
+    partial_total_pages: partialPage.totalPages,
     applied_filters: {
-      entity_type: state.entity_type,
-      town_id: town_id ?? null,
-      category_slug: state.category_slug ?? null,
-      service_category_slug: state.service_category_slug ?? null,
-      tags: state.tags,
-      q: state.q ?? null,
+      ...appliedBase,
       pool_limit: DISCOVER_POOL_LIMIT,
       storefront_group: storefrontGroup ?? null,
       service_group: serviceGroup ?? null,
+      tag_match_mode,
     },
   };
 }

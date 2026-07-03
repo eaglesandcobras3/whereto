@@ -17,6 +17,7 @@ export type RawDiscoverParams = {
   category?: string | null;
   service_category?: string | null;
   facet?: string | null;
+  facet_any?: string | null;
   q?: string | null;
   page?: string | null;
   page_size?: string | null;
@@ -36,7 +37,11 @@ export function parseDiscoveryFilterState(
   const category_slug = normalizeStorefrontCategoryGroupSlug(params.category ?? undefined);
   const service_category_slug = normalizeServiceCategoryGroupSlug(params.service_category ?? undefined);
 
-  const tags = parseTagSlugsFromParam(params.facet ?? undefined);
+  const tags_required = parseTagSlugsFromParam(params.facet ?? undefined);
+  const requiredSet = new Set(tags_required);
+  const tags_any = parseTagSlugsFromParam(params.facet_any ?? undefined).filter(
+    (slug) => !requiredSet.has(slug),
+  );
 
   const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const page_size = Math.min(
@@ -53,7 +58,8 @@ export function parseDiscoveryFilterState(
     town_id,
     category_slug,
     service_category_slug,
-    tags,
+    tags_required,
+    tags_any,
     q,
     page,
     page_size,

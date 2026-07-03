@@ -26,6 +26,7 @@ type Props = {
     category?: string;
     service_category?: string;
     facet?: string;
+    facet_any?: string;
     page?: string;
     q?: string;
   }>;
@@ -64,6 +65,7 @@ export default async function DiscoverPage({ searchParams }: Props) {
       category: sp.category,
       service_category: sp.service_category,
       facet: sp.facet,
+      facet_any: sp.facet_any,
       q: sp.q,
       page: sp.page,
     },
@@ -89,6 +91,7 @@ export default async function DiscoverPage({ searchParams }: Props) {
         category: filterState.category_slug,
         service_category: filterState.service_category_slug,
         facet: sp.facet,
+        facet_any: sp.facet_any,
         q: filterState.q,
         page: filterState.page,
       }}
