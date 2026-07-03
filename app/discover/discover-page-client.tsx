@@ -106,6 +106,11 @@ export function DiscoverPageClient({
     navigate({ facets: slugs, page: 1 });
   };
 
+  const queryError =
+    typeof initialResult.applied_filters.error === "string"
+      ? initialResult.applied_filters.error
+      : null;
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       <div className="coastal-hero border-b border-[var(--color-border)]">
@@ -268,9 +273,14 @@ export function DiscoverPageClient({
             </div>
 
             {initialResult.listings.length === 0 ? (
-              <p className="text-[var(--color-text-secondary)]">
-                No listings match these filters. Try removing a tag or broadening town or category.
-              </p>
+              <div className="space-y-2 text-[var(--color-text-secondary)]">
+                <p>
+                  No listings match these filters. Try removing a tag or broadening town or category.
+                </p>
+                {queryError ? (
+                  <p className="text-sm text-red-600">Search error: {queryError}</p>
+                ) : null}
+              </div>
             ) : (
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {initialResult.listings.map((listing) => (
