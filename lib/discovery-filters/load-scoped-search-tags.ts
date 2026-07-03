@@ -56,7 +56,7 @@ function applyBrowsePoolFilters(
   return filtered;
 }
 
-/** Tags that appear on listings in the current discover scope (with counts). */
+/** Tags that appear on listings in the current discover scope. */
 export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<DiscoverSearchTagOption[]> {
   const supabase = getServiceSupabase();
   const storefrontGroup = normalizeStorefrontCategoryGroupSlug(scope.category_slug);
@@ -107,10 +107,9 @@ export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<Dis
 
   return orderedSlugs.map((slug) => {
     const count = counts.get(slug) ?? 0;
-    const label = formatSearchTagLabel(slug);
     return {
       slug,
-      label: count > 0 ? `${label} (${count})` : label,
+      label: formatSearchTagLabel(slug),
       count,
     };
   });
