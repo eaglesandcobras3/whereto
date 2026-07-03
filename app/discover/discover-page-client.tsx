@@ -434,7 +434,7 @@ export function DiscoverPageClient({
             ) : (
               <>
                 {initialResult.listings.length > 0 ? (
-                  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <ul className="flex flex-col gap-4">
                     {initialResult.listings.map((listing) => (
                       <li key={listing.id} className="h-full">
                         <DiscoverListingCard
@@ -452,7 +452,7 @@ export function DiscoverPageClient({
                     <h2 className="mb-3 font-headline text-lg font-bold text-[var(--color-text-primary)]">
                       Close matches
                     </h2>
-                    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <ul className="flex flex-col gap-4">
                       {initialResult.partial_listings.map((listing) => (
                         <li key={listing.id} className="h-full">
                           <DiscoverListingCard
