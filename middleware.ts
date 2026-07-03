@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
-import { isAskEnabled, isGuidesEnabled, isOnboardEnabled, isSearchEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled, isDiscoverEnabled, isGuidesEnabled, isOnboardEnabled, isSearchEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
 import {
   categoryDbSlugFromLegacyOn30aSegment,
   categoryHubPath,
@@ -136,6 +136,24 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  const discoverDevBypass =
+    process.env.NODE_ENV === "development" && process.env.DISCOVER_ENABLED === "1";
+  if (
+    !isDiscoverEnabled(flags) &&
+    !discoverDevBypass &&
+    (pathname === "/discover" || pathname.startsWith("/discover/"))
+  ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (
+    !isDiscoverEnabled(flags) &&
+    !discoverDevBypass &&
+    (pathname === "/api/discovery" || pathname.startsWith("/api/discovery/"))
+  ) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   if (

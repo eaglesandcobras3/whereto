@@ -5,6 +5,7 @@ import {
   DEFAULT_FLAGS,
   FEATURE_FLAG_KEYS,
   isAskEnabled,
+  isDiscoverEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
@@ -17,6 +18,7 @@ export {
   DEFAULT_FLAGS,
   FEATURE_FLAG_KEYS,
   isAskEnabled,
+  isDiscoverEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
@@ -32,7 +34,9 @@ export {
   isDiscoveryEnabled,
   showHubDiscoveryUi,
   showNavbarAskUi,
+  showNavbarDiscoverUi,
   showNavbarSearchUi,
+  discoverHref,
 } from "@/lib/nav/discovery-links";
 
 export { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
@@ -63,9 +67,26 @@ export async function getAllFeatureFlags(): Promise<FeatureFlags> {
   }
 }
 
+/** Local dev escape hatch — PostHog `discover` flag still required in production. */
+export function discoverDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.DISCOVER_ENABLED === "1";
+}
+
+export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {
+  return isDiscoverEnabled(flags) || discoverDevBypassEnabled();
+}
+
 /** For route handlers: returns a 404 response when the search feature is off. */
 export async function searchApiBlocked(): Promise<NextResponse | null> {
   if (!isSearchEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when filter-first `/discover` is off. */
+export async function discoverApiBlocked(): Promise<NextResponse | null> {
+  if (!isDiscoverFeatureEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;
