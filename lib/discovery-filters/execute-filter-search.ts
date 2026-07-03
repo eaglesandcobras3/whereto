@@ -1,6 +1,5 @@
 import "server-only";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -28,11 +27,9 @@ import type {
 } from "@/lib/discovery-filters/types";
 
 const DISCOVER_POOL_LIMIT = 2000;
-const TAG_FETCH_CHUNK = 120;
 
-// search_tags lives on `businesses` only — attachSearchTags() hydrates after the view query.
 const VIEW_LISTING_SELECT =
-  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, town_id, featured, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
+  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
 
 type PoolRow = Record<string, unknown>;
 
@@ -105,34 +102,6 @@ function matchesServiceGroup(row: PoolRow, groupSlug: string): boolean {
   const slug = svc?.slug?.trim().toLowerCase();
   if (!slug) return false;
   return serviceCategoryGroupForSlug(slug as ServiceCategorySlug) === groupSlug;
-}
-
-async function attachSearchTags(
-  supabase: SupabaseClient,
-  rows: PoolRow[],
-): Promise<PoolRow[]> {
-  const needsFetch = rows.filter((row) => normalizeSearchTags(row.search_tags).length === 0);
-  if (!needsFetch.length) return rows;
-
-  const tagById = new Map<string, string[]>();
-  for (let i = 0; i < needsFetch.length; i += TAG_FETCH_CHUNK) {
-    const chunk = needsFetch.slice(i, i + TAG_FETCH_CHUNK).map((row) => String(row.id));
-    const { data, error } = await supabase.from("businesses").select("id, search_tags").in("id", chunk);
-    if (error) {
-      console.error("executeFilterSearch search_tags fetch", error);
-      continue;
-    }
-    for (const row of data ?? []) {
-      tagById.set(String((row as { id: string }).id), normalizeSearchTags((row as PoolRow).search_tags));
-    }
-  }
-
-  return rows.map((row) => {
-    const existing = normalizeSearchTags(row.search_tags);
-    if (existing.length) return row;
-    const fetched = tagById.get(String(row.id));
-    return fetched ? { ...row, search_tags: fetched } : row;
-  });
 }
 
 function sortPoolRows(rows: PoolRow[]): PoolRow[] {
@@ -276,7 +245,7 @@ export async function executeFilterSearch(
       return emptyResult(state, { ...appliedBase, error: error.message });
     }
 
-    const rows = await attachSearchTags(supabase, (data ?? []) as PoolRow[]);
+    const rows = (data ?? []) as PoolRow[];
     const total = count ?? 0;
     const total_pages = total > 0 ? Math.ceil(total / state.page_size) : 0;
 
@@ -304,7 +273,7 @@ export async function executeFilterSearch(
     return emptyResult(state, { ...appliedBase, error: error.message });
   }
 
-  let pool = await attachSearchTags(supabase, (data ?? []) as PoolRow[]);
+  let pool = (data ?? []) as PoolRow[];
   pool = applyBrowsePoolFilters(pool, storefrontGroup, serviceGroup, state.entity_type);
 
   if (!hasTagFilters(state)) {
