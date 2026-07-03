@@ -31,6 +31,7 @@ export type DiscoverServiceCategoryOption = {
 export type DiscoverSearchTagOption = {
   slug: string;
   label: string;
+  count?: number;
 };
 
 export async function loadDiscoverFilterOptions(): Promise<{
