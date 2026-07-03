@@ -9,6 +9,9 @@
  *   npx tsx scripts/export-businesses-csv.ts --all-statuses    # include draft/unpublished
  *   npx tsx scripts/export-businesses-csv.ts --include-archived
  *   npx tsx scripts/export-businesses-csv.ts --services --file path.csv
+ *
+ * Round-trip: edit the CSV, then apply with import-businesses-audit-csv.ts
+ * (matches by id when present, otherwise slug).
  */
 
 import { writeFileSync } from "fs";
@@ -251,12 +254,19 @@ function mapTagFields(row: ExportRow): Record<string, string> {
   };
 }
 
+function mapIdentityFields(row: ExportRow): Record<string, string> {
+  return {
+    title: row.title ?? "",
+    slug: row.slug ?? "",
+    id: row.id ?? "",
+  };
+}
+
 function mapStorefrontRow(row: ExportRow): Record<string, string> {
   const category = relOne(row.business_categories);
 
   return {
-    title: row.title ?? "",
-    slug: row.slug ?? "",
+    ...mapIdentityFields(row),
     ...mapListingMetaFields(row),
     ...mapSearchAndLocationFields(row),
     primary_category: category?.slug ?? "",
@@ -271,8 +281,7 @@ function mapServiceRow(row: ExportRow): Record<string, string> {
   const specialty = relOne(row.service_categories);
 
   return {
-    title: row.title ?? "",
-    slug: row.slug ?? "",
+    ...mapIdentityFields(row),
     ...mapListingMetaFields(row),
     ...mapSearchAndLocationFields(row),
     primary_category: category?.slug ?? "",
@@ -287,6 +296,7 @@ function mapServiceRow(row: ExportRow): Record<string, string> {
 const STOREFRONT_HEADERS = [
   "title",
   "slug",
+  "id",
   "listing_kind",
   "is_storefront",
   "is_service_business",
@@ -326,6 +336,7 @@ const STOREFRONT_HEADERS = [
 const SERVICE_HEADERS = [
   "title",
   "slug",
+  "id",
   "listing_kind",
   "is_storefront",
   "is_service_business",

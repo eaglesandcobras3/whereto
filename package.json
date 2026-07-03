@@ -27,7 +27,9 @@
     "backfill:search": "npx tsx scripts/backfill-search-document.ts",
     "export:storefronts": "npx tsx scripts/export-businesses-csv.ts --storefronts",
     "export:services": "npx tsx scripts/export-businesses-csv.ts --services",
-    "export:businesses": "npx tsx scripts/export-businesses-csv.ts"
+    "export:businesses": "npx tsx scripts/export-businesses-csv.ts",
+    "import:storefronts-audit": "npx tsx scripts/import-businesses-audit-csv.ts --file docs/storefronts-audit.csv",
+    "import:services-audit": "npx tsx scripts/import-businesses-audit-csv.ts --file docs/services-audit.csv"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.67",
