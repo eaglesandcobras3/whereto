@@ -64,6 +64,9 @@ type ExportRow = {
   slug: string;
   title: string;
   status: string | null;
+  published_at: string | null;
+  archived_at: string | null;
+  featured: boolean | null;
   business_type: string | null;
   is_storefront: boolean | null;
   is_service_business: boolean | null;
@@ -95,8 +98,8 @@ type ExportRow = {
 };
 
 const SELECT = `
-  id, slug, title, status, business_type,
-  is_storefront, is_service_business, is_hidden_from_search,
+  id, slug, title, status, published_at, archived_at, featured,
+  business_type, is_storefront, is_service_business, is_hidden_from_search,
   address, map_lat, map_lng, phone, website, service_area,
   excerpt, search_keywords, search_terms, embedding_summary,
   search_profile, qa_document, price_level,
@@ -184,6 +187,32 @@ function textField(value: string | number | null | undefined): string {
   return String(value);
 }
 
+function boolField(value: boolean | null | undefined): string {
+  if (value == null) return "";
+  return value ? "true" : "false";
+}
+
+function listingKind(row: ExportRow): string {
+  const storefront = row.is_storefront === true;
+  const service = row.is_service_business === true;
+  if (storefront && !service) return "storefront";
+  if (service && !storefront) return "service";
+  if (storefront && service) return "both";
+  return "unset";
+}
+
+function mapListingMetaFields(row: ExportRow): Record<string, string> {
+  return {
+    listing_kind: listingKind(row),
+    is_storefront: boolField(row.is_storefront),
+    is_service_business: boolField(row.is_service_business),
+    status: row.status ?? "",
+    published_at: row.published_at ?? "",
+    archived_at: row.archived_at ?? "",
+    featured: boolField(row.featured),
+  };
+}
+
 function mapSearchAndLocationFields(row: ExportRow): Record<string, string> {
   const town = relOne(row.towns);
   const area = relOne(row.areas);
@@ -228,7 +257,7 @@ function mapStorefrontRow(row: ExportRow): Record<string, string> {
   return {
     title: row.title ?? "",
     slug: row.slug ?? "",
-    status: row.status ?? "",
+    ...mapListingMetaFields(row),
     ...mapSearchAndLocationFields(row),
     primary_category: category?.slug ?? "",
     primary_category_title: category?.title ?? "",
@@ -244,7 +273,7 @@ function mapServiceRow(row: ExportRow): Record<string, string> {
   return {
     title: row.title ?? "",
     slug: row.slug ?? "",
-    status: row.status ?? "",
+    ...mapListingMetaFields(row),
     ...mapSearchAndLocationFields(row),
     primary_category: category?.slug ?? "",
     primary_category_title: category?.title ?? "",
@@ -258,7 +287,13 @@ function mapServiceRow(row: ExportRow): Record<string, string> {
 const STOREFRONT_HEADERS = [
   "title",
   "slug",
+  "listing_kind",
+  "is_storefront",
+  "is_service_business",
   "status",
+  "published_at",
+  "archived_at",
+  "featured",
   "town_or_area",
   "town_slug",
   "shopping_area",
@@ -291,7 +326,13 @@ const STOREFRONT_HEADERS = [
 const SERVICE_HEADERS = [
   "title",
   "slug",
+  "listing_kind",
+  "is_storefront",
+  "is_service_business",
   "status",
+  "published_at",
+  "archived_at",
+  "featured",
   "town_or_area",
   "town_slug",
   "service_area",
