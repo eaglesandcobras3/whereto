@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { rowMatchesSearchTags } from "@/lib/discovery-filters/compile-filter-query";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
-import { parseDiscoveryFilterState, parseEntityType } from "@/lib/discovery-filters/parse-filter-params";
+import { parseDiscoveryFilterState, parseEntityType, constrainTagsToScope } from "@/lib/discovery-filters/parse-filter-params";
 import { parseTagSlugsFromParam } from "@/lib/discovery-filters/parse-tag-params";
 import {
   normalizeServiceCategoryGroupSlug,
@@ -40,11 +40,11 @@ describe("parseDiscoveryFilterState", () => {
       type: "storefront",
       category: "shopping",
       facet: "kids",
-      town_id: "00000000-0000-4000-8000-000000000001",
-    });
+    }, ["00000000-0000-4000-8000-000000000001"]);
     expect(state.entity_type).toBe("storefront");
     expect(state.category_slug).toBe("shopping");
     expect(state.tags_required).toEqual(["kids"]);
+    expect(state.town_ids).toEqual(["00000000-0000-4000-8000-000000000001"]);
     expect(state.tags_any).toEqual([]);
   });
 
@@ -79,6 +79,19 @@ describe("parseDiscoveryFilterState", () => {
     });
     expect(state.tags_required).toEqual(["gluten_free"]);
     expect(state.tags_any).toEqual(["donuts"]);
+  });
+});
+
+describe("constrainTagsToScope", () => {
+  it("removes tag selections outside the scoped vocabulary", () => {
+    const state = parseDiscoveryFilterState({
+      type: "storefront",
+      facet: "gluten_free,donuts",
+      facet_any: "coffee",
+    });
+    const constrained = constrainTagsToScope(state, ["gluten_free", "coffee"]);
+    expect(constrained.tags_required).toEqual(["gluten_free"]);
+    expect(constrained.tags_any).toEqual(["coffee"]);
   });
 });
 

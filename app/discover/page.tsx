@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 import { getAllFeatureFlags, isDiscoverFeatureEnabled } from "@/lib/feature-flags";
 import { executeFilterSearch } from "@/lib/discovery-filters/execute-filter-search";
 import { loadDiscoverFilterOptions } from "@/lib/discovery-filters/load-discover-options";
+import { loadScopedSearchTags } from "@/lib/discovery-filters/load-scoped-search-tags";
 import {
+  constrainTagsToScope,
   parseDiscoveryFilterState,
   parseEntityType,
 } from "@/lib/discovery-filters/parse-filter-params";
+import { resolveTownIdsFromParam } from "@/lib/discovery-filters/resolve-town-ids";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { DiscoverPageClient } from "./discover-page-client";
 
 export const metadata: Metadata = {
@@ -32,19 +34,6 @@ type Props = {
   }>;
 };
 
-async function resolveTownIdFromSlug(slug: string | undefined): Promise<string | undefined> {
-  if (!slug?.trim()) return undefined;
-  const supabase = getServiceSupabase();
-  const { data } = await supabase
-    .from("towns")
-    .select("id")
-    .eq("slug", slug.trim())
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .maybeSingle();
-  return data ? String((data as { id: string }).id) : undefined;
-}
-
 export default async function DiscoverPage({ searchParams }: Props) {
   const flags = await getAllFeatureFlags();
   if (!isDiscoverFeatureEnabled(flags)) {
@@ -53,29 +42,44 @@ export default async function DiscoverPage({ searchParams }: Props) {
 
   const sp = await searchParams;
   const entityType = parseEntityType(sp.type);
-  const townSlug = sp.town?.trim() || undefined;
-  const resolvedTownId =
-    sp.town_id?.trim() || (await resolveTownIdFromSlug(townSlug)) || undefined;
-
-  const filterState = parseDiscoveryFilterState(
-    {
-      type: sp.type,
-      town_id: resolvedTownId,
-      town: townSlug,
-      category: sp.category,
-      service_category: sp.service_category,
-      facet: sp.facet,
-      facet_any: sp.facet_any,
-      q: sp.q,
-      page: sp.page,
-    },
-    resolvedTownId,
+  const supabase = getServiceSupabase();
+  const { town_ids, town_slugs } = await resolveTownIdsFromParam(
+    supabase,
+    sp.town,
+    sp.town_id,
   );
 
-  const [initialResult, options] = await Promise.all([
-    executeFilterSearch(filterState, { town_slug: townSlug }),
+  const tagScope = {
+    entity_type: entityType,
+    town_ids,
+    category_slug: sp.category,
+    service_category_slug: sp.service_category,
+  };
+
+  const [scopedSearchTags, options] = await Promise.all([
+    loadScopedSearchTags(tagScope),
     loadDiscoverFilterOptions(),
   ]);
+
+  const filterState = constrainTagsToScope(
+    parseDiscoveryFilterState(
+      {
+        type: sp.type,
+        town: sp.town,
+        town_id: sp.town_id,
+        category: sp.category,
+        service_category: sp.service_category,
+        facet: sp.facet,
+        facet_any: sp.facet_any,
+        q: sp.q,
+        page: sp.page,
+      },
+      town_ids,
+    ),
+    scopedSearchTags.map((tag) => tag.slug),
+  );
+
+  const initialResult = await executeFilterSearch(filterState);
 
   return (
     <DiscoverPageClient
@@ -83,15 +87,17 @@ export default async function DiscoverPage({ searchParams }: Props) {
       towns={options.towns}
       categories={options.categories}
       serviceCategories={options.serviceCategories}
-      searchTags={options.searchTags}
+      searchTags={scopedSearchTags}
       initialParams={{
         type: entityType,
-        town: townSlug,
-        town_id: resolvedTownId,
+        town: town_slugs.length ? town_slugs.join(",") : sp.town,
+        town_ids,
         category: filterState.category_slug,
         service_category: filterState.service_category_slug,
-        facet: sp.facet,
-        facet_any: sp.facet_any,
+        facet: filterState.tags_required.length
+          ? filterState.tags_required.join(",")
+          : sp.facet,
+        facet_any: filterState.tags_any.length ? filterState.tags_any.join(",") : sp.facet_any,
         q: filterState.q,
         page: filterState.page,
       }}

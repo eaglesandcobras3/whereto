@@ -20,6 +20,7 @@ import {
   SUPPLEMENT_PARTIAL_LIMIT,
   type TagMatchAnalysis,
 } from "@/lib/discovery-filters/tag-match";
+import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
 import type {
   DiscoverFilterSearchResult,
   DiscoverListingRow,
@@ -52,11 +53,6 @@ function emptyResult(
     partial_total_pages: 0,
     applied_filters: applied,
   };
-}
-
-function normalizeSearchTags(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
 }
 
 function toTagMatch(analysis: TagMatchAnalysis): DiscoverTagMatch {
@@ -96,23 +92,6 @@ function mapListingRow(row: PoolRow, analysis?: TagMatchAnalysis): DiscoverListi
     listing.tag_match = toTagMatch(analysis);
   }
   return listing;
-}
-
-async function resolveTownId(
-  supabase: SupabaseClient,
-  townId?: string,
-  townSlug?: string,
-): Promise<string | undefined> {
-  if (townId) return townId;
-  if (!townSlug?.trim()) return undefined;
-  const { data } = await supabase
-    .from("towns")
-    .select("id")
-    .eq("slug", townSlug.trim())
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .maybeSingle();
-  return data ? String((data as { id: string }).id) : undefined;
 }
 
 function matchesStorefrontGroup(row: PoolRow, groupSlug: string): boolean {
@@ -229,7 +208,6 @@ function hasTagFilters(state: DiscoveryFilterState): boolean {
 
 export async function executeFilterSearch(
   state: DiscoveryFilterState,
-  options?: { town_slug?: string },
 ): Promise<DiscoverFilterSearchResult> {
   const violations = validateFilterContract(state);
   if (violations.length) {
@@ -239,7 +217,6 @@ export async function executeFilterSearch(
   const supabase = getServiceSupabase();
   const storefrontGroup = normalizeStorefrontCategoryGroupSlug(state.category_slug);
   const serviceGroup = normalizeServiceCategoryGroupSlug(state.service_category_slug);
-  const town_id = await resolveTownId(supabase, state.town_id, options?.town_slug);
 
   const needsMemoryPass = Boolean(
     storefrontGroup || serviceGroup || hasTagFilters(state),
@@ -260,8 +237,8 @@ export async function executeFilterSearch(
     query = query.eq("is_storefront", true);
   }
 
-  if (town_id) {
-    query = query.eq("town_id", town_id);
+  if (state.town_ids.length) {
+    query = query.in("town_id", state.town_ids);
   }
 
   const q = state.q?.trim();
@@ -276,7 +253,7 @@ export async function executeFilterSearch(
 
   const appliedBase = {
     entity_type: state.entity_type,
-    town_id: town_id ?? null,
+    town_ids: state.town_ids,
     category_slug: state.category_slug ?? null,
     service_category_slug: state.service_category_slug ?? null,
     tags_required: state.tags_required,
