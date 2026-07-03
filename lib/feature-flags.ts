@@ -32,7 +32,6 @@ export {
 
 export {
   isDiscoveryEnabled,
-  showHubDiscoveryUi,
   showNavbarAskUi,
   showNavbarDiscoverUi,
   showNavbarSearchUi,
