@@ -14,8 +14,8 @@ import {
 } from "@/lib/data/service-vendors-hub";
 import { ServiceSpecialtySections } from "@/components/services/ServiceSpecialtySections";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
-import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isDiscoverEnabled } from "@/lib/feature-flags";
+import { discoveryHref, showHubDiscoveryUi } from "@/lib/nav/discovery-links";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
@@ -64,7 +64,8 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
   const listedSpecialties = categories.filter((c) => c.vendor_count > 0);
   const listedGroups = sections.length;
   const advancedSearchHref = discoveryHref(featureFlags, { type: "services" });
-  const showDiscoverySearch = isDiscoveryEnabled(featureFlags);
+  const showHubSearch = showHubDiscoveryUi(featureFlags);
+  const showAdvancedDiscoverLink = isDiscoverEnabled(featureFlags);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -94,7 +95,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
             </>
           }
         >
-          {showDiscoverySearch ? (
+          {showHubSearch ? (
             <form
               action={SERVICE_VENDORS_HUB_PATH}
               method="get"
@@ -120,7 +121,7 @@ export default async function ServiceVendorsHubPage({ searchParams }: Props) {
               </button>
             </form>
           ) : null}
-          {showDiscoverySearch ? (
+          {showAdvancedDiscoverLink ? (
             <DiscoveryUtilityLink
               href={advancedSearchHref}
               {...gaClickProps({

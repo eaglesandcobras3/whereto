@@ -216,9 +216,9 @@ export function Navbar({
                   ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
                   : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]"
               }`}
-              title="Discover by filters"
+              title="Search and filter"
             >
-              <span className="material-symbols-outlined text-[22px]">tune</span>
+              <span className="material-symbols-outlined text-[22px]">search</span>
             </Link>
           ) : null}
 

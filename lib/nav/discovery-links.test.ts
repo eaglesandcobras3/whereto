@@ -7,9 +7,18 @@ import {
   showHubDiscoveryUi,
 } from "@/lib/nav/discovery-links";
 import { BROWSE_NAV_ITEMS } from "@/lib/nav/browse-links";
+import type { FeatureFlags } from "@/lib/feature-flags-core";
 
 const askOn = { ask: true, search: true };
 const allOff = { ask: false, search: false };
+const discoverOnly: FeatureFlags = {
+  ask: false,
+  search: false,
+  discover: true,
+  search_inspector: false,
+  onboard: false,
+  guides: false,
+};
 
 describe("applyDiscoveryBrowseNav", () => {
   it("rewrites /search links to /ask but does not append an Ask nav item", () => {
@@ -47,6 +56,11 @@ describe("discovery gating helpers", () => {
   it("shows hub discovery UI when search or ask is on", () => {
     expect(showHubDiscoveryUi({ ask: false, search: true })).toBe(true);
     expect(showHubDiscoveryUi({ ask: true, search: false })).toBe(true);
+  });
+
+  it("does not show hub search UI when only discover is on", () => {
+    expect(showHubDiscoveryUi({ ask: false, search: false, discover: true } as never)).toBe(false);
+    expect(isDiscoveryEnabled({ ask: false, search: false, discover: true } as never)).toBe(true);
   });
 });
 
