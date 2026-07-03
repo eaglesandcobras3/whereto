@@ -4,44 +4,29 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { buildFacetOrFilter } from "@/lib/discovery-filters/compile-filter-query";
+import { businessCategoryGroupForSlug } from "@/lib/business-categories/groups";
+import { serviceCategoryGroupForSlug } from "@/lib/service-categories/groups";
+import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
-import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
+import type { DiscoveryFilterState, FacetTag } from "@/lib/discovery-filters/filter-state";
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
-  resolveServiceCategoryIds,
-  resolveStorefrontCategoryIds,
 } from "@/lib/discovery-filters/resolve-category-groups";
 import type { DiscoverFilterSearchResult, DiscoverListingRow } from "@/lib/discovery-filters/types";
 
-const LISTING_SELECT =
-  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, town_id, primary_category_id, service_category_id, item_tags, search_tags, atmosphere_tags, occasion_tags, meal_period_tags, dietary_tags, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
+const DISCOVER_POOL_LIMIT = 2000;
+const TAG_FETCH_CHUNK = 120;
 
-type ResolvedIds = {
-  town_id?: string;
-  category_ids?: string[];
-  service_category_ids?: string[];
-};
+const VIEW_LISTING_SELECT =
+  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, town_id, featured, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
 
-async function resolveTownId(
-  supabase: SupabaseClient,
-  townId?: string,
-  townSlug?: string,
-): Promise<string | undefined> {
-  if (townId) return townId;
-  if (!townSlug?.trim()) return undefined;
-  const { data } = await supabase
-    .from("towns")
-    .select("id")
-    .eq("slug", townSlug.trim())
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .maybeSingle();
-  return data ? String((data as { id: string }).id) : undefined;
-}
+const TAG_SELECT =
+  "id, item_tags, search_tags, atmosphere_tags, occasion_tags, meal_period_tags, dietary_tags";
 
-function mapListingRow(row: Record<string, unknown>): DiscoverListingRow {
+type PoolRow = Record<string, unknown>;
+
+function mapListingRow(row: PoolRow): DiscoverListingRow {
   const town = row.towns as { title?: string; slug?: string } | null;
   const cat = row.business_categories as { slug?: string } | null;
   const svc = row.service_categories as { slug?: string } | null;
@@ -65,6 +50,98 @@ function mapListingRow(row: Record<string, unknown>): DiscoverListingRow {
   };
 }
 
+async function resolveTownId(
+  supabase: SupabaseClient,
+  townId?: string,
+  townSlug?: string,
+): Promise<string | undefined> {
+  if (townId) return townId;
+  if (!townSlug?.trim()) return undefined;
+  const { data } = await supabase
+    .from("towns")
+    .select("id")
+    .eq("slug", townSlug.trim())
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .maybeSingle();
+  return data ? String((data as { id: string }).id) : undefined;
+}
+
+function matchesStorefrontGroup(row: PoolRow, groupSlug: string): boolean {
+  const cat = row.business_categories as { slug?: string } | null;
+  return businessCategoryGroupForSlug(cat?.slug ?? null) === groupSlug;
+}
+
+function matchesServiceGroup(row: PoolRow, groupSlug: string): boolean {
+  const svc = row.service_categories as { slug?: string } | null;
+  const slug = svc?.slug?.trim().toLowerCase();
+  if (!slug) return false;
+  return serviceCategoryGroupForSlug(slug as ServiceCategorySlug) === groupSlug;
+}
+
+function rowMatchesFacetTags(row: PoolRow, facetTags: FacetTag[]): boolean {
+  if (!facetTags.length) return true;
+  return facetTags.some((tag) => {
+    const values = row[tag.family] as string[] | null | undefined;
+    return Array.isArray(values) && values.includes(tag.slug);
+  });
+}
+
+async function attachTagColumns(
+  supabase: SupabaseClient,
+  rows: PoolRow[],
+): Promise<PoolRow[]> {
+  if (!rows.length) return rows;
+  const tagById = new Map<string, PoolRow>();
+
+  for (let i = 0; i < rows.length; i += TAG_FETCH_CHUNK) {
+    const chunk = rows.slice(i, i + TAG_FETCH_CHUNK).map((row) => String(row.id));
+    const { data, error } = await supabase.from("businesses").select(TAG_SELECT).in("id", chunk);
+    if (error) {
+      console.error("executeFilterSearch tag fetch", error);
+      continue;
+    }
+    for (const row of data ?? []) {
+      tagById.set(String((row as { id: string }).id), row as PoolRow);
+    }
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    ...(tagById.get(String(row.id)) ?? {}),
+  }));
+}
+
+function sortPoolRows(rows: PoolRow[]): PoolRow[] {
+  return [...rows].sort((a, b) => {
+    const featuredA = Boolean(a.featured);
+    const featuredB = Boolean(b.featured);
+    if (featuredA !== featuredB) return featuredA ? -1 : 1;
+    return String(a.title ?? "").localeCompare(String(b.title ?? ""), undefined, {
+      sensitivity: "base",
+    });
+  });
+}
+
+function applyBrowsePoolFilters(
+  rows: PoolRow[],
+  state: DiscoveryFilterState,
+  storefrontGroup: string | undefined,
+  serviceGroup: string | undefined,
+): PoolRow[] {
+  let filtered = rows;
+
+  if (state.entity_type === "storefront" && storefrontGroup) {
+    filtered = filtered.filter((row) => matchesStorefrontGroup(row, storefrontGroup));
+  }
+
+  if (state.entity_type === "service" && serviceGroup) {
+    filtered = filtered.filter((row) => matchesServiceGroup(row, serviceGroup));
+  }
+
+  return filtered;
+}
+
 export async function executeFilterSearch(
   state: DiscoveryFilterState,
   options?: { town_slug?: string },
@@ -82,24 +159,18 @@ export async function executeFilterSearch(
   }
 
   const supabase = getServiceSupabase();
-
   const storefrontGroup = normalizeStorefrontCategoryGroupSlug(state.category_slug);
   const serviceGroup = normalizeServiceCategoryGroupSlug(state.service_category_slug);
+  const town_id = await resolveTownId(supabase, state.town_id, options?.town_slug);
 
-  const [town_id, category_ids, service_category_ids] = await Promise.all([
-    resolveTownId(supabase, state.town_id, options?.town_slug),
-    storefrontGroup
-      ? resolveStorefrontCategoryIds(supabase, storefrontGroup)
-      : Promise.resolve(undefined),
-    serviceGroup ? resolveServiceCategoryIds(supabase, serviceGroup) : Promise.resolve(undefined),
-  ]);
+  const needsMemoryPass =
+  Boolean(storefrontGroup || serviceGroup || state.facet_tags.length > 0);
 
-  const resolved: ResolvedIds = { town_id, category_ids, service_category_ids };
-
-  // Tag columns live on `businesses`; visibility pool matches browse hubs via `businesses_view` filters.
   let query = supabase
-    .from("businesses")
-    .select(LISTING_SELECT, { count: "exact" })
+    .from("businesses_view")
+    .select(VIEW_LISTING_SELECT, {
+      count: needsMemoryPass ? undefined : "exact",
+    })
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
@@ -110,47 +181,8 @@ export async function executeFilterSearch(
     query = query.eq("is_storefront", true);
   }
 
-  if (resolved.town_id) {
-    query = query.eq("town_id", resolved.town_id);
-  }
-
-  if (state.entity_type === "storefront" && category_ids?.length) {
-    query = query.in("primary_category_id", category_ids);
-  } else if (state.entity_type === "storefront" && storefrontGroup && !category_ids?.length) {
-    return {
-      listings: [],
-      total: 0,
-      page: state.page,
-      page_size: state.page_size,
-      total_pages: 0,
-      applied_filters: {
-        ...state,
-        resolved,
-        error: `No category IDs resolved for group ${storefrontGroup}`,
-      },
-    };
-  }
-
-  if (state.entity_type === "service" && service_category_ids?.length) {
-    query = query.in("service_category_id", service_category_ids);
-  } else if (state.entity_type === "service" && serviceGroup && !service_category_ids?.length) {
-    return {
-      listings: [],
-      total: 0,
-      page: state.page,
-      page_size: state.page_size,
-      total_pages: 0,
-      applied_filters: {
-        ...state,
-        resolved,
-        error: `No service category IDs resolved for group ${serviceGroup}`,
-      },
-    };
-  }
-
-  const facetOr = buildFacetOrFilter(state.facet_tags);
-  if (facetOr) {
-    query = query.or(facetOr);
+  if (town_id) {
+    query = query.eq("town_id", town_id);
   }
 
   const q = state.q?.trim();
@@ -163,42 +195,95 @@ export async function executeFilterSearch(
     }
   }
 
-  const from = (state.page - 1) * state.page_size;
-  const to = from + state.page_size - 1;
+  if (!needsMemoryPass) {
+    const from = (state.page - 1) * state.page_size;
+    const to = from + state.page_size - 1;
 
-  const { data, error, count } = await query
+    const { data, error, count } = await query
+      .order("featured", { ascending: false })
+      .order("title", { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      console.error("executeFilterSearch", error);
+      return {
+        listings: [],
+        total: 0,
+        page: state.page,
+        page_size: state.page_size,
+        total_pages: 0,
+        applied_filters: { ...state, town_id: town_id ?? null, error: error.message },
+      };
+    }
+
+    const total = count ?? 0;
+    const total_pages = total > 0 ? Math.ceil(total / state.page_size) : 0;
+
+    return {
+      listings: (data ?? []).map((row) => mapListingRow(row as PoolRow)),
+      total,
+      page: state.page,
+      page_size: state.page_size,
+      total_pages,
+      applied_filters: {
+        entity_type: state.entity_type,
+        town_id: town_id ?? null,
+        category_slug: state.category_slug ?? null,
+        service_category_slug: state.service_category_slug ?? null,
+        facet_tags: state.facet_tags,
+        q: state.q ?? null,
+      },
+    };
+  }
+
+  const { data, error } = await query
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
-    .range(from, to);
+    .limit(DISCOVER_POOL_LIMIT);
 
   if (error) {
-    console.error("executeFilterSearch", error);
+    console.error("executeFilterSearch pool", error);
     return {
       listings: [],
       total: 0,
       page: state.page,
       page_size: state.page_size,
       total_pages: 0,
-      applied_filters: { ...state, resolved, error: error.message },
+      applied_filters: { ...state, town_id: town_id ?? null, error: error.message },
     };
   }
 
-  const total = count ?? 0;
+  let pool = applyBrowsePoolFilters((data ?? []) as PoolRow[], state, storefrontGroup, serviceGroup);
+
+  if (state.facet_tags.length > 0) {
+    pool = (await attachTagColumns(supabase, pool)).filter((row) =>
+      rowMatchesFacetTags(row, state.facet_tags),
+    );
+  }
+
+  pool = sortPoolRows(pool);
+
+  const total = pool.length;
   const total_pages = total > 0 ? Math.ceil(total / state.page_size) : 0;
+  const from = (state.page - 1) * state.page_size;
+  const pageRows = pool.slice(from, from + state.page_size);
 
   return {
-    listings: (data ?? []).map((row) => mapListingRow(row as Record<string, unknown>)),
+    listings: pageRows.map(mapListingRow),
     total,
     page: state.page,
     page_size: state.page_size,
     total_pages,
     applied_filters: {
       entity_type: state.entity_type,
-      town_id: resolved.town_id ?? null,
+      town_id: town_id ?? null,
       category_slug: state.category_slug ?? null,
       service_category_slug: state.service_category_slug ?? null,
       facet_tags: state.facet_tags,
       q: state.q ?? null,
+      pool_limit: DISCOVER_POOL_LIMIT,
+      storefront_group: storefrontGroup ?? null,
+      service_group: serviceGroup ?? null,
     },
   };
 }
