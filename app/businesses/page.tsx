@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { BusinessesHubSearch } from "@/components/BusinessesHubSearch";
 import { CategoryHubSections } from "@/components/browse/CategoryHubSections";
 import { countCategoryHubBusinesses, getCategoryHubSections } from "@/lib/data/category-hub";
 import { hubBusinessesIntro } from "@/lib/seo/page-intro-copy";
@@ -50,7 +49,7 @@ export default async function BusinessesPage() {
             </h1>
             <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
               Restaurants, coffee shops, bars, boutiques, and more across every community along
-              Scenic 30A. Search by name or describe what you&apos;re looking for.
+              Scenic 30A. Browse by category below.
             </p>
             {totalCount > 0 ? (
               <p className="text-sm text-[var(--color-text-tertiary)]">
@@ -64,9 +63,6 @@ export default async function BusinessesPage() {
               text={hubBusinessesIntro()}
               className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]"
             />
-            <div className="max-w-2xl pt-2">
-              <BusinessesHubSearch />
-            </div>
           </header>
         </div>
       </div>
