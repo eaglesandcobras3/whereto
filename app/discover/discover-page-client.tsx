@@ -2,13 +2,11 @@
 
 import { useCallback, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
+import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
-import { formatTagMatchSummary } from "@/lib/discovery-filters/format-tag-match";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
-import type { DiscoverFilterSearchResult, DiscoverListingRow } from "@/lib/discovery-filters/types";
+import type { DiscoverFilterSearchResult } from "@/lib/discovery-filters/types";
 import type {
   DiscoverCategoryOption,
   DiscoverSearchTagOption,
@@ -440,14 +438,15 @@ export function DiscoverPageClient({
             ) : (
               <>
                 {initialResult.listings.length > 0 ? (
-                  <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {initialResult.listings.map((listing) => (
-                      <DiscoverListingCard
-                        key={listing.id}
-                        listing={listing}
-                        labelForSlug={labelForSlug}
-                        showTagMatch={hasTagFilters}
-                      />
+                      <li key={listing.id} className="h-full">
+                        <DiscoverListingCard
+                          listing={listing}
+                          labelForSlug={labelForSlug}
+                          showTagMatch={hasTagFilters}
+                        />
+                      </li>
                     ))}
                   </ul>
                 ) : null}
@@ -457,14 +456,15 @@ export function DiscoverPageClient({
                     <h2 className="mb-3 font-headline text-lg font-bold text-[var(--color-text-primary)]">
                       Close matches
                     </h2>
-                    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {initialResult.partial_listings.map((listing) => (
-                        <DiscoverListingCard
-                          key={listing.id}
-                          listing={listing}
-                          labelForSlug={labelForSlug}
-                          showTagMatch
-                        />
+                        <li key={listing.id} className="h-full">
+                          <DiscoverListingCard
+                            listing={listing}
+                            labelForSlug={labelForSlug}
+                            showTagMatch
+                          />
+                        </li>
                       ))}
                     </ul>
                   </section>
@@ -506,74 +506,5 @@ export function DiscoverPageClient({
         </div>
       </div>
     </div>
-  );
-}
-
-function DiscoverListingCard({
-  listing,
-  labelForSlug,
-  showTagMatch = false,
-}: {
-  listing: DiscoverListingRow;
-  labelForSlug: (slug: string) => string;
-  showTagMatch?: boolean;
-}) {
-  const tagMatchSummary =
-    showTagMatch && listing.tag_match
-      ? formatTagMatchSummary(listing.tag_match, labelForSlug)
-      : null;
-
-  const showSummary =
-    tagMatchSummary &&
-    (listing.tag_match?.missing_required.length ||
-      listing.tag_match?.missing_any.length ||
-      listing.tag_match?.matched_any.length);
-
-  return (
-    <li>
-      <Link
-        href={`/business/${listing.slug}`}
-        className="group flex h-full flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-sm transition hover:border-[var(--color-primary)]/30"
-      >
-        <div className="relative aspect-[4/3] bg-[var(--color-surface-muted)]">
-          <RemoteCoverImage
-            src={listing.hero_image_url}
-            alt={listing.title}
-            placeholderIcon="storefront"
-            iconSize="md"
-          />
-        </div>
-        <div className="flex flex-1 flex-col p-4">
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">
-            {listing.title}
-          </h2>
-          {listing.town_name ? (
-            <p className="text-xs text-[var(--color-text-tertiary)]">{listing.town_name}</p>
-          ) : null}
-          {showSummary ? (
-            <p className="mt-2 text-xs font-medium text-amber-800">{tagMatchSummary}</p>
-          ) : null}
-          {listing.excerpt ? (
-            <p className="mt-2 line-clamp-2 text-sm text-[var(--color-text-secondary)]">
-              {listing.excerpt}
-            </p>
-          ) : null}
-          {listing.search_tags.length > 0 ? (
-            <ul className="mt-3 flex flex-wrap gap-1">
-              {listing.search_tags.map((slug) => (
-                <li
-                  key={slug}
-                  className="rounded bg-[var(--color-surface-muted)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]"
-                >
-                  {labelForSlug(slug)}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 font-mono text-[10px] text-[var(--color-text-tertiary)]">No search_tags</p>
-          )}
-        </div>
-      </Link>
-    </li>
   );
 }
