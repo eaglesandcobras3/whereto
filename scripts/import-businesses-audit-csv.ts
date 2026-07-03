@@ -20,16 +20,20 @@ import { buildSearchDocumentFields } from "../lib/search/derive-search-document"
 
 dotenv.config({ path: ".env.local" });
 
-const fileIdx = process.argv.indexOf("--file");
-const CSV_PATH = fileIdx >= 0 ? process.argv[fileIdx + 1] : undefined;
+function resolveCsvPath(): string {
+  const fileIdx = process.argv.indexOf("--file");
+  const path = fileIdx >= 0 ? process.argv[fileIdx + 1] : undefined;
+  if (!path) {
+    console.error("Usage: npx tsx scripts/import-businesses-audit-csv.ts --file path.csv [--apply] [--reembed]");
+    process.exit(1);
+  }
+  return path;
+}
+
+const CSV_PATH = resolveCsvPath();
 const APPLY = process.argv.includes("--apply");
 const REEMBED = process.argv.includes("--reembed");
 const REPORT = process.argv.includes("--report") || APPLY;
-
-if (!CSV_PATH) {
-  console.error("Usage: npx tsx scripts/import-businesses-audit-csv.ts --file path.csv [--apply] [--reembed]");
-  process.exit(1);
-}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
