@@ -81,6 +81,7 @@ export default async function DiscoverPage({ searchParams }: Props) {
       towns={options.towns}
       categories={options.categories}
       serviceCategories={options.serviceCategories}
+      searchTags={options.searchTags}
       initialParams={{
         type: entityType,
         town: townSlug,

@@ -1,26 +1,10 @@
-import type { FacetTag, FacetTagFamily } from "@/lib/discovery-filters/filter-state";
-
-const FAMILY_COLUMN: Record<FacetTagFamily, string> = {
-  item_tags: "item_tags",
-  search_tags: "search_tags",
-  atmosphere_tags: "atmosphere_tags",
-  occasion_tags: "occasion_tags",
-  meal_period_tags: "meal_period_tags",
-  dietary_tags: "dietary_tags",
-};
-
-/** PostgREST `or` clause: match any selected facet (OR across facets). */
-export function buildFacetOrFilter(facetTags: FacetTag[]): string | null {
-  if (!facetTags.length) return null;
-
-  const parts: string[] = [];
-  for (const tag of facetTags) {
-    const col = FAMILY_COLUMN[tag.family];
-    parts.push(`${col}.cs.{${tag.slug}}`);
-  }
-  return parts.join(",");
-}
-
-export function facetColumnForFamily(family: FacetTagFamily): string {
-  return FAMILY_COLUMN[family];
+/** Match when listing `search_tags` contains every required slug (Search V2 required_tags semantics). */
+export function rowMatchesSearchTags(
+  searchTags: string[] | null | undefined,
+  requiredSlugs: string[],
+): boolean {
+  if (!requiredSlugs.length) return true;
+  if (!Array.isArray(searchTags) || !searchTags.length) return false;
+  const present = new Set(searchTags);
+  return requiredSlugs.every((slug) => present.has(slug));
 }

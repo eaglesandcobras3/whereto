@@ -1,4 +1,4 @@
-import { parseFacetParamTokens } from "@/lib/discovery-filters/facet-allowlists";
+import { parseTagSlugsFromParam } from "@/lib/discovery-filters/parse-tag-params";
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
@@ -36,12 +36,7 @@ export function parseDiscoveryFilterState(
   const category_slug = normalizeStorefrontCategoryGroupSlug(params.category ?? undefined);
   const service_category_slug = normalizeServiceCategoryGroupSlug(params.service_category ?? undefined);
 
-  const facet_tags = parseFacetParamTokens(
-    params.facet ?? undefined,
-    category_slug,
-    service_category_slug,
-    entity_type,
-  );
+  const tags = parseTagSlugsFromParam(params.facet ?? undefined);
 
   const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const page_size = Math.min(
@@ -58,7 +53,7 @@ export function parseDiscoveryFilterState(
     town_id,
     category_slug,
     service_category_slug,
-    facet_tags,
+    tags,
     q,
     page,
     page_size,
