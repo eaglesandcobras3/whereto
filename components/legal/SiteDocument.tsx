@@ -1,15 +1,46 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { PAGE_SECTION_CONTAINER_CLASS } from "@/lib/layout/page-section";
 
 type SiteDocumentProps = {
   title: string;
   description?: string;
   children: ReactNode;
+  /** Use homepage section width instead of the default narrow document column. */
+  layout?: "document" | "pageSection";
+  /** Parent already applies {@link PAGE_SECTION_CONTAINER_CLASS} gutters. */
+  embedded?: boolean;
+  /** Drop bottom padding when a full-bleed section follows. */
+  flushBottom?: boolean;
 };
 
-export function SiteDocument({ title, description, children }: SiteDocumentProps) {
+export function SiteDocument({
+  title,
+  description,
+  children,
+  layout = "document",
+  embedded = false,
+  flushBottom = false,
+}: SiteDocumentProps) {
+  const articleClass =
+    layout === "pageSection"
+      ? [
+          "w-full max-w-none py-12 sm:py-16",
+          embedded ? "px-0" : PAGE_SECTION_CONTAINER_CLASS,
+          flushBottom ? "pb-0 sm:pb-0" : null,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : [
+          "mx-auto max-w-3xl py-12 sm:py-16",
+          embedded ? "px-0" : "px-4",
+          flushBottom ? "pb-0 sm:pb-0" : null,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <article className={articleClass}>
       <nav className="mb-8 text-sm text-[var(--color-text-tertiary)]">
         <Link href="/" className="transition-colors hover:text-[var(--color-primary)]">
           Home

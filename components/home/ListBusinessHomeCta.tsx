@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { isOnboardEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
+import { PAGE_SECTION_CONTAINER_CLASS } from "@/lib/layout/page-section";
 
 /**
  * Homepage call-to-action after the neighborhoods / towns strip.
@@ -27,7 +28,7 @@ export function ListBusinessHomeCta() {
         />
       </div>
 
-      <div className="relative mx-auto max-w-screen-xl px-5 sm:px-6 lg:px-8">
+      <div className={`relative ${PAGE_SECTION_CONTAINER_CLASS}`}>
         <div className="overflow-hidden rounded-3xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-sm">
           <div className="grid gap-10 p-8 md:p-12 lg:grid-cols-[1fr,minmax(0,16rem)] lg:gap-14 lg:p-14">
             <div className="min-w-0">
