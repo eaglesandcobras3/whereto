@@ -99,6 +99,7 @@ describe("validateFilterContract", () => {
   it("rejects category on service listings", () => {
     const errors = validateFilterContract({
       entity_type: "service",
+      town_ids: [],
       category_slug: "restaurants_and_bars",
       tags_required: [],
       tags_any: [],
