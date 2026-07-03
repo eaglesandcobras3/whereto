@@ -1,5 +1,6 @@
 /**
- * Export storefronts and/or service vendors with categories and tags to CSV for auditing.
+ * Export storefronts and/or service vendors with location, categories, tags,
+ * and search document fields to CSV for auditing.
  *
  * Usage:
  *   npx tsx scripts/export-businesses-csv.ts                 # both CSVs under docs/
@@ -66,7 +67,20 @@ type ExportRow = {
   business_type: string | null;
   is_storefront: boolean | null;
   is_service_business: boolean | null;
+  is_hidden_from_search: boolean | null;
+  address: string | null;
+  map_lat: number | null;
+  map_lng: number | null;
+  phone: string | null;
+  website: string | null;
   service_area: string | null;
+  excerpt: string | null;
+  search_keywords: string | null;
+  search_terms: string | null;
+  embedding_summary: string | null;
+  search_profile: string | null;
+  qa_document: string | null;
+  price_level: string | null;
   item_tags: string[] | null;
   dietary_tags: string[] | null;
   meal_period_tags: string[] | null;
@@ -82,7 +96,10 @@ type ExportRow = {
 
 const SELECT = `
   id, slug, title, status, business_type,
-  is_storefront, is_service_business, service_area,
+  is_storefront, is_service_business, is_hidden_from_search,
+  address, map_lat, map_lng, phone, website, service_area,
+  excerpt, search_keywords, search_terms, embedding_summary,
+  search_profile, qa_document, price_level,
   item_tags, dietary_tags, meal_period_tags, atmosphere_tags, occasion_tags, search_tags,
   towns ( title, slug ),
   areas ( title, slug ),
@@ -162,20 +179,39 @@ async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRo
   return all;
 }
 
-function mapStorefrontRow(row: ExportRow): Record<string, string> {
+function textField(value: string | number | null | undefined): string {
+  if (value == null) return "";
+  return String(value);
+}
+
+function mapSearchAndLocationFields(row: ExportRow): Record<string, string> {
   const town = relOne(row.towns);
   const area = relOne(row.areas);
-  const category = relOne(row.business_categories);
 
   return {
-    title: row.title ?? "",
-    slug: row.slug ?? "",
-    status: row.status ?? "",
     town_or_area: town?.title ?? "",
+    town_slug: town?.slug ?? "",
     shopping_area: area?.title ?? "",
-    primary_category: category?.slug ?? "",
-    primary_category_title: category?.title ?? "",
-    business_type: row.business_type ?? "",
+    shopping_area_slug: area?.slug ?? "",
+    service_area: row.service_area ?? "",
+    address: row.address ?? "",
+    map_lat: textField(row.map_lat),
+    map_lng: textField(row.map_lng),
+    phone: row.phone ?? "",
+    website: row.website ?? "",
+    excerpt: row.excerpt ?? "",
+    search_keywords: row.search_keywords ?? "",
+    search_terms: row.search_terms ?? "",
+    embedding_summary: row.embedding_summary ?? "",
+    search_profile: row.search_profile ?? "",
+    qa_document: row.qa_document ?? "",
+    price_level: row.price_level ?? "",
+    is_hidden_from_search: row.is_hidden_from_search ? "true" : "false",
+  };
+}
+
+function mapTagFields(row: ExportRow): Record<string, string> {
+  return {
     item_tags: jsonField(row.item_tags),
     dietary_tags: jsonField(row.dietary_tags),
     meal_period_tags: jsonField(row.meal_period_tags),
@@ -186,8 +222,22 @@ function mapStorefrontRow(row: ExportRow): Record<string, string> {
   };
 }
 
+function mapStorefrontRow(row: ExportRow): Record<string, string> {
+  const category = relOne(row.business_categories);
+
+  return {
+    title: row.title ?? "",
+    slug: row.slug ?? "",
+    status: row.status ?? "",
+    ...mapSearchAndLocationFields(row),
+    primary_category: category?.slug ?? "",
+    primary_category_title: category?.title ?? "",
+    business_type: row.business_type ?? "",
+    ...mapTagFields(row),
+  };
+}
+
 function mapServiceRow(row: ExportRow): Record<string, string> {
-  const town = relOne(row.towns);
   const category = relOne(row.business_categories);
   const specialty = relOne(row.service_categories);
 
@@ -195,20 +245,13 @@ function mapServiceRow(row: ExportRow): Record<string, string> {
     title: row.title ?? "",
     slug: row.slug ?? "",
     status: row.status ?? "",
-    town_or_area: town?.title ?? "",
-    service_area: row.service_area ?? "",
+    ...mapSearchAndLocationFields(row),
     primary_category: category?.slug ?? "",
     primary_category_title: category?.title ?? "",
     service_category: specialty?.slug ?? "",
     service_category_title: specialty?.title ?? "",
     business_type: row.business_type ?? "",
-    item_tags: jsonField(row.item_tags),
-    dietary_tags: jsonField(row.dietary_tags),
-    meal_period_tags: jsonField(row.meal_period_tags),
-    atmosphere_tags: jsonField(row.atmosphere_tags),
-    occasion_tags: jsonField(row.occasion_tags),
-    search_tags: jsonField(row.search_tags),
-    legacy_tags: jsonField(legacyTagSlugs(row)),
+    ...mapTagFields(row),
   };
 }
 
@@ -217,7 +260,22 @@ const STOREFRONT_HEADERS = [
   "slug",
   "status",
   "town_or_area",
+  "town_slug",
   "shopping_area",
+  "shopping_area_slug",
+  "address",
+  "map_lat",
+  "map_lng",
+  "phone",
+  "website",
+  "excerpt",
+  "search_keywords",
+  "search_terms",
+  "embedding_summary",
+  "search_profile",
+  "qa_document",
+  "price_level",
+  "is_hidden_from_search",
   "primary_category",
   "primary_category_title",
   "business_type",
@@ -235,7 +293,21 @@ const SERVICE_HEADERS = [
   "slug",
   "status",
   "town_or_area",
+  "town_slug",
   "service_area",
+  "address",
+  "map_lat",
+  "map_lng",
+  "phone",
+  "website",
+  "excerpt",
+  "search_keywords",
+  "search_terms",
+  "embedding_summary",
+  "search_profile",
+  "qa_document",
+  "price_level",
+  "is_hidden_from_search",
   "primary_category",
   "primary_category_title",
   "service_category",
