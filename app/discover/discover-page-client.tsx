@@ -89,14 +89,12 @@ export function DiscoverPageClient({
       const type = next.type ?? initialParams.type;
       const url = buildDiscoverUrl({
         type,
-        town: next.town !== undefined ? next.town : initialParams.town,
-        category: next.category !== undefined ? next.category : initialParams.category,
+        town: "town" in next ? next.town : initialParams.town,
+        category: "category" in next ? next.category : initialParams.category,
         service_category:
-          next.service_category !== undefined
-            ? next.service_category
-            : initialParams.service_category,
+          "service_category" in next ? next.service_category : initialParams.service_category,
         facets: next.facets ?? activeFacets,
-        q: next.q !== undefined ? next.q : initialParams.q,
+        q: "q" in next ? next.q : initialParams.q,
         page: next.page ?? 1,
       });
       startTransition(() => router.push(url));
@@ -133,7 +131,7 @@ export function DiscoverPageClient({
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => navigate({ type: "storefront", service_category: undefined, page: 1 })}
+                  onClick={() => navigate({ type: "storefront", service_category: "", page: 1 })}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium ${
                     initialParams.type === "storefront"
                       ? "bg-[var(--color-primary)] text-white"
@@ -145,7 +143,7 @@ export function DiscoverPageClient({
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => navigate({ type: "service", category: undefined, page: 1 })}
+                  onClick={() => navigate({ type: "service", category: "", page: 1 })}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium ${
                     initialParams.type === "service"
                       ? "bg-[var(--color-primary)] text-white"
@@ -165,7 +163,7 @@ export function DiscoverPageClient({
                 id="discover-town"
                 disabled={pending}
                 value={initialParams.town ?? ""}
-                onChange={(e) => navigate({ town: e.target.value || undefined, page: 1 })}
+                onChange={(e) => navigate({ town: e.target.value, page: 1 })}
                 className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
               >
                 <option value="">All towns</option>
@@ -187,7 +185,7 @@ export function DiscoverPageClient({
                   disabled={pending}
                   value={initialParams.category ?? ""}
                   onChange={(e) =>
-                    navigate({ category: e.target.value || undefined, facets: [], page: 1 })
+                    navigate({ category: e.target.value, facets: [], page: 1 })
                   }
                   className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
                 >
@@ -210,7 +208,7 @@ export function DiscoverPageClient({
                   value={initialParams.service_category ?? ""}
                   onChange={(e) =>
                     navigate({
-                      service_category: e.target.value || undefined,
+                      service_category: e.target.value,
                       facets: [],
                       page: 1,
                     })
