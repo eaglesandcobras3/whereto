@@ -76,11 +76,27 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/se
 
 ---
 
+## Discover: `businesses_view` + `search_tags`
+
+`/discover` reads `search_tags` from `businesses_view` for facet filtering and tag chips on result cards. PostgreSQL views using `SELECT b.*` do **not** pick up columns added to `businesses` later — recreate the view after search-document migrations.
+
+### Apply (Supabase SQL editor)
+
+- [ ] Run [scripts/migrations/businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql)
+
+### Verify
+
+```sql
+SELECT search_tags FROM public.businesses_view LIMIT 1;
+```
+
+Discover should load without `column businesses_view.search_tags does not exist`.
+
+---
+
 ## Backfill: business search enrichment
 
 Published businesses need **category**, **search profile** (tags + `search_profile` + `qa_document`), **derived search document** (`search_tags`, `search_terms`, `embedding_summary`), and an **embedding** vector to show on town pages and rank in search.
-
-`scripts/backfill-business-enrichment.ts` runs the full pipeline (OpenAI for missing profiles, then embeddings).
 
 ### Prerequisites
 
@@ -168,6 +184,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-03 | Discover fix: recreate `businesses_view` so `search_tags` is exposed — [businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql) |
 | 2026-06-30 | Guides admin at `/admin/guides` — markdown editor, town/area/business links, AI enrich, publish gate |
 | 2026-06-30 | Removed scheduled SEO audit from `vercel.json` — use `npm run audit:seo -- --live` manually |
 | 2026-06-29 | SEO site audit cron (`/api/cron/seo-audit`, Mon/Thu); admin `/admin/seo-audit`; `npm run audit:seo`; removed weekly RankScore guides cron from `vercel.json` |
