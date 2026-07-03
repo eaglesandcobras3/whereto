@@ -10,6 +10,7 @@ import {
   SERVICE_CATEGORY_GROUP_LABELS,
   SERVICE_CATEGORY_GROUP_SLUGS,
 } from "@/lib/service-categories/groups";
+import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 
 export type DiscoverTownOption = {
   id: string;
@@ -27,10 +28,16 @@ export type DiscoverServiceCategoryOption = {
   title: string;
 };
 
+export type DiscoverSearchTagOption = {
+  slug: string;
+  label: string;
+};
+
 export async function loadDiscoverFilterOptions(): Promise<{
   towns: DiscoverTownOption[];
   categories: DiscoverCategoryOption[];
   serviceCategories: DiscoverServiceCategoryOption[];
+  searchTags: DiscoverSearchTagOption[];
 }> {
   const supabase = getServiceSupabase();
 
@@ -41,6 +48,11 @@ export async function loadDiscoverFilterOptions(): Promise<{
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title", { ascending: true });
+
+  const vocabRes = await supabase
+    .from("search_tags_vocabulary")
+    .select("tag")
+    .order("tag", { ascending: true });
 
   return {
     towns: (townsRes.data ?? []).map((r) => {
@@ -55,5 +67,9 @@ export async function loadDiscoverFilterOptions(): Promise<{
       slug,
       title: SERVICE_CATEGORY_GROUP_LABELS[slug],
     })),
+    searchTags: (vocabRes.data ?? []).map((row) => {
+      const slug = String((row as { tag: string }).tag);
+      return { slug, label: formatSearchTagLabel(slug) };
+    }),
   };
 }
