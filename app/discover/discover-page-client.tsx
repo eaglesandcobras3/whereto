@@ -5,19 +5,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
-import {
-  getFacetAllowlistForCategory,
-  getFacetAllowlistForServiceCategory,
-  type FacetDefinition,
-} from "@/lib/discovery-filters/facet-allowlists";
+import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverFilterSearchResult, DiscoverListingRow } from "@/lib/discovery-filters/types";
-import type { DiscoverCategoryOption, DiscoverServiceCategoryOption, DiscoverTownOption } from "@/lib/discovery-filters/load-discover-options";
+import type {
+  DiscoverCategoryOption,
+  DiscoverSearchTagOption,
+  DiscoverServiceCategoryOption,
+  DiscoverTownOption,
+} from "@/lib/discovery-filters/load-discover-options";
 
 type Props = {
   initialResult: DiscoverFilterSearchResult;
   towns: DiscoverTownOption[];
   categories: DiscoverCategoryOption[];
   serviceCategories: DiscoverServiceCategoryOption[];
+  searchTags: DiscoverSearchTagOption[];
   initialParams: {
     type: "storefront" | "service";
     town?: string;
@@ -58,7 +60,7 @@ function parseFacetSlugs(facetParam: string | undefined): string[] {
   return facetParam
     .split(",")
     .map((t) => t.trim().split(":").pop() ?? t)
-    .map((s) => s.trim().toLowerCase())
+    .map((s) => s.trim().toLowerCase().replace(/\s+/g, "_"))
     .filter(Boolean);
 }
 
@@ -67,22 +69,24 @@ export function DiscoverPageClient({
   towns,
   categories,
   serviceCategories,
+  searchTags,
   initialParams,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  const activeFacets = useMemo(
+  const tagLabelBySlug = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const tag of searchTags) {
+      map.set(tag.slug, tag.label);
+    }
+    return map;
+  }, [searchTags]);
+
+  const activeTags = useMemo(
     () => parseFacetSlugs(initialParams.facet),
     [initialParams.facet],
   );
-
-  const facetOptions: FacetDefinition[] = useMemo(() => {
-    if (initialParams.type === "service") {
-      return getFacetAllowlistForServiceCategory(initialParams.service_category);
-    }
-    return getFacetAllowlistForCategory(initialParams.category);
-  }, [initialParams.type, initialParams.category, initialParams.service_category]);
 
   const navigate = useCallback(
     (next: Partial<Props["initialParams"]> & { facets?: string[]; page?: number }) => {
@@ -93,16 +97,16 @@ export function DiscoverPageClient({
         category: "category" in next ? next.category : initialParams.category,
         service_category:
           "service_category" in next ? next.service_category : initialParams.service_category,
-        facets: next.facets ?? activeFacets,
+        facets: next.facets ?? activeTags,
         q: "q" in next ? next.q : initialParams.q,
         page: next.page ?? 1,
       });
       startTransition(() => router.push(url));
     },
-    [router, initialParams, activeFacets],
+    [router, initialParams, activeTags],
   );
 
-  const setFacets = (slugs: string[]) => {
+  const setTags = (slugs: string[]) => {
     navigate({ facets: slugs, page: 1 });
   };
 
@@ -110,6 +114,11 @@ export function DiscoverPageClient({
     typeof initialResult.applied_filters.error === "string"
       ? initialResult.applied_filters.error
       : null;
+
+  const categoryLabel =
+    initialParams.type === "storefront"
+      ? categories.find((c) => c.slug === initialParams.category)?.title
+      : serviceCategories.find((c) => c.slug === initialParams.service_category)?.title;
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -120,7 +129,8 @@ export function DiscoverPageClient({
             Browse by filters
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-secondary)]">
-            Pick a town and category, then refine with tags. No AI — just structured filters.
+            Scope by town and category, then refine with search tags. Selecting multiple tags
+            requires a listing to have all of them.
           </p>
         </div>
       </div>
@@ -230,46 +240,62 @@ export function DiscoverPageClient({
               </div>
             )}
 
-            {facetOptions.length > 0 ? (
-              <div>
-                <label
-                  htmlFor="discover-facets"
-                  className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
-                >
-                  Tags
-                </label>
-                <FacetTypeaheadMultiSelect
-                  options={facetOptions}
-                  selectedSlugs={activeFacets}
-                  onChange={setFacets}
-                  disabled={pending}
-                />
-              </div>
-            ) : null}
+            <div>
+              <label
+                htmlFor="discover-facets"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+              >
+                Tags (search_tags)
+              </label>
+              <FacetTypeaheadMultiSelect
+                options={searchTags}
+                selectedSlugs={activeTags}
+                onChange={setTags}
+                disabled={pending}
+                placeholder={searchTags.length ? "Search tags…" : "No tags in vocabulary"}
+              />
+            </div>
           </aside>
 
           <main className="min-w-0 flex-1">
-            <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-              <span>
-                {pending ? "Updating…" : `${initialResult.total} result${initialResult.total === 1 ? "" : "s"}`}
-              </span>
-              {initialParams.town ? (
-                <span className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs">
-                  {towns.find((t) => t.slug === initialParams.town)?.name ?? initialParams.town}
+            <div className="mb-4 space-y-2">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                <span>
+                  {pending ? "Updating…" : `${initialResult.total} result${initialResult.total === 1 ? "" : "s"}`}
                 </span>
-              ) : null}
-              {activeFacets.map((slug) => {
-                const label =
-                  facetOptions.find((f) => f.slug === slug)?.label ?? slug.replace(/_/g, " ");
-                return (
+                {initialParams.town ? (
+                  <span className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs">
+                    {towns.find((t) => t.slug === initialParams.town)?.name ?? initialParams.town}
+                  </span>
+                ) : null}
+                {activeTags.map((slug) => (
                   <span
                     key={slug}
                     className="rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-xs text-[var(--color-primary)]"
                   >
-                    {label}
+                    {tagLabelBySlug.get(slug) ?? formatSearchTagLabel(slug)}
                   </span>
-                );
-              })}
+                ))}
+              </div>
+
+              <dl className="grid gap-1 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 px-3 py-2 text-xs text-[var(--color-text-secondary)] sm:grid-cols-2">
+                <div>
+                  <dt className="font-medium text-[var(--color-text-tertiary)]">Entity</dt>
+                  <dd>{initialParams.type}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-[var(--color-text-tertiary)]">Town</dt>
+                  <dd>{initialParams.town ?? "All towns"}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-[var(--color-text-tertiary)]">Category</dt>
+                  <dd>{categoryLabel ?? "All"}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-[var(--color-text-tertiary)]">Tags (AND)</dt>
+                  <dd>{activeTags.length ? activeTags.join(", ") : "None"}</dd>
+                </div>
+              </dl>
             </div>
 
             {initialResult.listings.length === 0 ? (
@@ -284,7 +310,7 @@ export function DiscoverPageClient({
             ) : (
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {initialResult.listings.map((listing) => (
-                  <DiscoverListingCard key={listing.id} listing={listing} />
+                  <DiscoverListingCard key={listing.id} listing={listing} tagLabelBySlug={tagLabelBySlug} />
                 ))}
               </ul>
             )}
@@ -319,7 +345,13 @@ export function DiscoverPageClient({
   );
 }
 
-function DiscoverListingCard({ listing }: { listing: DiscoverListingRow }) {
+function DiscoverListingCard({
+  listing,
+  tagLabelBySlug,
+}: {
+  listing: DiscoverListingRow;
+  tagLabelBySlug: Map<string, string>;
+}) {
   return (
     <li>
       <Link
@@ -346,6 +378,20 @@ function DiscoverListingCard({ listing }: { listing: DiscoverListingRow }) {
               {listing.excerpt}
             </p>
           ) : null}
+          {listing.search_tags.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-1">
+              {listing.search_tags.map((slug) => (
+                <li
+                  key={slug}
+                  className="rounded bg-[var(--color-surface-muted)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]"
+                >
+                  {tagLabelBySlug.get(slug) ?? slug}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 font-mono text-[10px] text-[var(--color-text-tertiary)]">No search_tags</p>
+          )}
         </div>
       </Link>
     </li>
