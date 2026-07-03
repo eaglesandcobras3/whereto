@@ -3,6 +3,10 @@ import { validateFilterContract } from "@/lib/discovery-filters/filter-contract"
 import { parseDiscoveryFilterState, parseEntityType } from "@/lib/discovery-filters/parse-filter-params";
 import { parseFacetParamTokens } from "@/lib/discovery-filters/facet-allowlists";
 import { buildFacetOrFilter } from "@/lib/discovery-filters/compile-filter-query";
+import {
+  normalizeServiceCategoryGroupSlug,
+  normalizeStorefrontCategoryGroupSlug,
+} from "@/lib/discovery-filters/resolve-category-groups";
 
 describe("parseEntityType", () => {
   it("maps services to service entity type", () => {
@@ -11,8 +15,27 @@ describe("parseEntityType", () => {
   });
 });
 
+describe("normalizeStorefrontCategoryGroupSlug", () => {
+  it("accepts rollup group slugs", () => {
+    expect(normalizeStorefrontCategoryGroupSlug("restaurants_and_bars")).toBe("restaurants_and_bars");
+    expect(normalizeStorefrontCategoryGroupSlug("shopping")).toBe("shopping");
+  });
+
+  it("maps granular slugs to rollup groups", () => {
+    expect(normalizeStorefrontCategoryGroupSlug("restaurants")).toBe("restaurants_and_bars");
+    expect(normalizeStorefrontCategoryGroupSlug("boutiques")).toBe("shopping");
+  });
+});
+
+describe("normalizeServiceCategoryGroupSlug", () => {
+  it("maps specialty slugs to service groups", () => {
+    expect(normalizeServiceCategoryGroupSlug("plumbing")).toBe("home_trades");
+    expect(normalizeServiceCategoryGroupSlug("home_trades")).toBe("home_trades");
+  });
+});
+
 describe("parseDiscoveryFilterState", () => {
-  it("parses storefront scope with category and facets", () => {
+  it("parses storefront scope with rollup category and facets", () => {
     const state = parseDiscoveryFilterState({
       type: "storefront",
       category: "shopping",
@@ -24,12 +47,13 @@ describe("parseDiscoveryFilterState", () => {
     expect(state.facet_tags).toEqual([{ family: "item_tags", slug: "kids" }]);
   });
 
-  it("parses restaurant hamburgers facet", () => {
+  it("normalizes granular restaurant category to rollup group", () => {
     const state = parseDiscoveryFilterState({
       type: "storefront",
       category: "restaurants",
       facet: "hamburgers",
     });
+    expect(state.category_slug).toBe("restaurants_and_bars");
     expect(state.facet_tags).toEqual([{ family: "item_tags", slug: "hamburgers" }]);
   });
 });
@@ -38,7 +62,7 @@ describe("validateFilterContract", () => {
   it("rejects category on service listings", () => {
     const errors = validateFilterContract({
       entity_type: "service",
-      category_slug: "restaurants",
+      category_slug: "restaurants_and_bars",
       facet_tags: [],
       page: 1,
       page_size: 24,
@@ -63,5 +87,11 @@ describe("parseFacetParamTokens", () => {
     expect(
       parseFacetParamTokens("item_tags:kids", "shopping", undefined, "storefront"),
     ).toEqual([{ family: "item_tags", slug: "kids" }]);
+  });
+
+  it("resolves facets against rollup category groups", () => {
+    expect(
+      parseFacetParamTokens("hamburgers", "restaurants_and_bars", undefined, "storefront"),
+    ).toEqual([{ family: "item_tags", slug: "hamburgers" }]);
   });
 });

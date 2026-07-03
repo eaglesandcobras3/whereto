@@ -4,6 +4,7 @@ import { useCallback, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
+import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import {
   getFacetAllowlistForCategory,
   getFacetAllowlistForServiceCategory,
@@ -103,11 +104,8 @@ export function DiscoverPageClient({
     [router, initialParams, activeFacets],
   );
 
-  const toggleFacet = (slug: string) => {
-    const next = activeFacets.includes(slug)
-      ? activeFacets.filter((s) => s !== slug)
-      : [...activeFacets, slug];
-    navigate({ facets: next, page: 1 });
+  const setFacets = (slugs: string[]) => {
+    navigate({ facets: slugs, page: 1 });
   };
 
   return (
@@ -195,7 +193,7 @@ export function DiscoverPageClient({
                 >
                   <option value="">All categories</option>
                   {categories.map((c) => (
-                    <option key={c.id} value={c.slug}>
+                    <option key={c.slug} value={c.slug}>
                       {c.title}
                     </option>
                   ))}
@@ -221,7 +219,7 @@ export function DiscoverPageClient({
                 >
                   <option value="">All specialties</option>
                   {serviceCategories.map((c) => (
-                    <option key={c.id} value={c.slug}>
+                    <option key={c.slug} value={c.slug}>
                       {c.title}
                     </option>
                   ))}
@@ -231,25 +229,18 @@ export function DiscoverPageClient({
 
             {facetOptions.length > 0 ? (
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  Refine
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {facetOptions.map((f) => {
-                    const active = activeFacets.includes(f.slug);
-                    return (
-                      <button
-                        key={`${f.family}:${f.slug}`}
-                        type="button"
-                        disabled={pending}
-                        onClick={() => toggleFacet(f.slug)}
-                        className={`discovery-chip ${active ? "discovery-chip-active" : ""}`}
-                      >
-                        #{f.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <label
+                  htmlFor="discover-facets"
+                  className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+                >
+                  Tags
+                </label>
+                <FacetTypeaheadMultiSelect
+                  options={facetOptions}
+                  selectedSlugs={activeFacets}
+                  onChange={setFacets}
+                  disabled={pending}
+                />
               </div>
             ) : null}
           </aside>
@@ -264,14 +255,18 @@ export function DiscoverPageClient({
                   {towns.find((t) => t.slug === initialParams.town)?.name ?? initialParams.town}
                 </span>
               ) : null}
-              {activeFacets.map((slug) => (
-                <span
-                  key={slug}
-                  className="rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-xs text-[var(--color-primary)]"
-                >
-                  #{slug.replace(/_/g, " ")}
-                </span>
-              ))}
+              {activeFacets.map((slug) => {
+                const label =
+                  facetOptions.find((f) => f.slug === slug)?.label ?? slug.replace(/_/g, " ");
+                return (
+                  <span
+                    key={slug}
+                    className="rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-xs text-[var(--color-primary)]"
+                  >
+                    {label}
+                  </span>
+                );
+              })}
             </div>
 
             {initialResult.listings.length === 0 ? (

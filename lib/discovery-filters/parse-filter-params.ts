@@ -1,6 +1,8 @@
-import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
-import { normalizeServiceCategorySlug } from "@/lib/service-categories/normalize";
 import { parseFacetParamTokens } from "@/lib/discovery-filters/facet-allowlists";
+import {
+  normalizeServiceCategoryGroupSlug,
+  normalizeStorefrontCategoryGroupSlug,
+} from "@/lib/discovery-filters/resolve-category-groups";
 import {
   DEFAULT_PAGE_SIZE,
   discoveryFilterStateSchema,
@@ -31,9 +33,8 @@ export function parseDiscoveryFilterState(
   resolvedTownId?: string | null,
 ): DiscoveryFilterState {
   const entity_type = parseEntityType(params.type);
-  const category_slug = normalizeBusinessCategorySlug(params.category ?? undefined) ?? undefined;
-  const service_category_slug =
-    normalizeServiceCategorySlug(params.service_category ?? undefined) ?? undefined;
+  const category_slug = normalizeStorefrontCategoryGroupSlug(params.category ?? undefined);
+  const service_category_slug = normalizeServiceCategoryGroupSlug(params.service_category ?? undefined);
 
   const facet_tags = parseFacetParamTokens(
     params.facet ?? undefined,
