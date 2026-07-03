@@ -8,7 +8,7 @@
  *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/storefronts-audit.csv --apply --reembed
  *
  * Dry-run by default. Does not create new listings — only updates existing rows.
- * Read-only export columns (listing_kind, *_title, legacy_tags, derived search_* when
+ * Read-only export columns (listing_kind, *_title, intent_tags, derived search_* when
  * enrichment inputs change) are ignored or re-derived automatically.
  */
 

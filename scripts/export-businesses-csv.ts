@@ -99,7 +99,7 @@ type ExportRow = {
   areas: Rel<{ title: string; slug: string }>;
   business_categories: Rel<{ slug: string; title: string }>;
   service_categories: Rel<{ slug: string; title: string }>;
-  business_tags: Rel<{ tags: Rel<{ slug: string }> }>;
+  intent_tags: string[] | null;
 };
 
 const SELECT = `
@@ -113,7 +113,7 @@ const SELECT = `
   areas ( title, slug ),
   business_categories ( slug, title ),
   service_categories ( slug, title ),
-  business_tags ( tags ( slug ) )
+  intent_tags
 `;
 
 function relOne<T>(rel: Rel<T>): T | null {
@@ -121,15 +121,9 @@ function relOne<T>(rel: Rel<T>): T | null {
   return Array.isArray(rel) ? (rel[0] ?? null) : rel;
 }
 
-function legacyTagSlugs(row: ExportRow): string[] {
-  const out: string[] = [];
-  const links = row.business_tags;
-  const list = Array.isArray(links) ? links : links ? [links] : [];
-  for (const link of list) {
-    const tag = relOne(link.tags);
-    if (tag?.slug) out.push(tag.slug);
-  }
-  return [...new Set(out)].sort();
+function intentTagSlugs(row: ExportRow): string[] {
+  const tags = row.intent_tags ?? [];
+  return [...new Set(tags.filter((t) => typeof t === "string" && t.trim()))].sort();
 }
 
 function jsonField(value: string[] | null | undefined): string {
@@ -254,7 +248,7 @@ function mapTagFields(row: ExportRow): Record<string, string> {
     atmosphere_tags: jsonField(row.atmosphere_tags),
     occasion_tags: jsonField(row.occasion_tags),
     search_tags: jsonField(row.search_tags),
-    legacy_tags: jsonField(legacyTagSlugs(row)),
+    intent_tags: jsonField(intentTagSlugs(row)),
   };
 }
 
@@ -336,7 +330,7 @@ const STOREFRONT_HEADERS = [
   "atmosphere_tags",
   "occasion_tags",
   "search_tags",
-  "legacy_tags",
+  "intent_tags",
 ];
 
 const SERVICE_HEADERS = [
@@ -379,7 +373,7 @@ const SERVICE_HEADERS = [
   "atmosphere_tags",
   "occasion_tags",
   "search_tags",
-  "legacy_tags",
+  "intent_tags",
 ];
 
 async function main() {
