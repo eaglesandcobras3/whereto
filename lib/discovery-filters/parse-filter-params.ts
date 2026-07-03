@@ -2,7 +2,7 @@ import { parseFacetParamTokens } from "@/lib/discovery-filters/facet-allowlists"
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
-} from "@/lib/discovery-filters/resolve-category-groups";
+} from "@/lib/discovery-filters/category-group-slugs";
 import {
   DEFAULT_PAGE_SIZE,
   discoveryFilterStateSchema,

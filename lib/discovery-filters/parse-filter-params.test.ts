@@ -6,7 +6,7 @@ import { buildFacetOrFilter } from "@/lib/discovery-filters/compile-filter-query
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
-} from "@/lib/discovery-filters/resolve-category-groups";
+} from "@/lib/discovery-filters/category-group-slugs";
 
 describe("parseEntityType", () => {
   it("maps services to service entity type", () => {

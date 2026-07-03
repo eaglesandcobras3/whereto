@@ -2,7 +2,7 @@ import allowlists from "@/data/facet-allowlists.json";
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
-} from "@/lib/discovery-filters/resolve-category-groups";
+} from "@/lib/discovery-filters/category-group-slugs";
 import type { FacetTag, FacetTagFamily } from "@/lib/discovery-filters/filter-state";
 
 export type FacetDefinition = {
