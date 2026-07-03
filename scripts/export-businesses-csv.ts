@@ -81,6 +81,9 @@ type ExportRow = {
   website: string | null;
   service_area: string | null;
   excerpt: string | null;
+  content: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
   search_keywords: string | null;
   search_terms: string | null;
   embedding_summary: string | null;
@@ -104,7 +107,7 @@ const SELECT = `
   id, slug, title, status, published_at, archived_at, featured,
   business_type, is_storefront, is_service_business, is_hidden_from_search,
   address, map_lat, map_lng, phone, website, service_area,
-  excerpt, search_keywords, search_terms, embedding_summary,
+  excerpt, content, seo_title, seo_description, search_keywords, search_terms, embedding_summary,
   search_profile, qa_document, price_level,
   item_tags, dietary_tags, meal_period_tags, atmosphere_tags, occasion_tags, search_tags,
   towns ( title, slug ),
@@ -232,6 +235,9 @@ function mapSearchAndLocationFields(row: ExportRow): Record<string, string> {
     phone: row.phone ?? "",
     website: row.website ?? "",
     excerpt: row.excerpt ?? "",
+    content: row.content ?? "",
+    seo_title: row.seo_title ?? "",
+    seo_description: row.seo_description ?? "",
     search_keywords: row.search_keywords ?? "",
     search_terms: row.search_terms ?? "",
     embedding_summary: row.embedding_summary ?? "",
@@ -314,6 +320,9 @@ const STOREFRONT_HEADERS = [
   "phone",
   "website",
   "excerpt",
+  "content",
+  "seo_title",
+  "seo_description",
   "search_keywords",
   "search_terms",
   "embedding_summary",
@@ -353,6 +362,9 @@ const SERVICE_HEADERS = [
   "phone",
   "website",
   "excerpt",
+  "content",
+  "seo_title",
+  "seo_description",
   "search_keywords",
   "search_terms",
   "embedding_summary",
