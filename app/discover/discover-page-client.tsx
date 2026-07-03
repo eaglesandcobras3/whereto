@@ -233,14 +233,16 @@ export function DiscoverPageClient({
                 Towns
               </label>
               <FacetTypeaheadMultiSelect
+                id="discover-towns"
                 options={townOptions}
                 selectedSlugs={activeTownSlugs}
                 onChange={setTownSlugs}
                 disabled={pending}
-                placeholder="Search towns…"
+                placeholder="Type a town name…"
+                emptyMessage="No towns match"
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                Leave empty for all towns. Select multiple to compare areas.
+                Leave empty for all towns. Add chips to compare areas.
               </p>
             </div>
 
@@ -308,11 +310,13 @@ export function DiscoverPageClient({
                 Must have
               </label>
               <FacetTypeaheadMultiSelect
+                id="discover-facets-required"
                 options={searchTags}
                 selectedSlugs={requiredTags}
                 onChange={setRequiredTags}
                 disabled={pending}
-                placeholder={searchTags.length ? "Required tags…" : "No tags in this scope"}
+                placeholder={searchTags.length ? "Type a tag…" : "No tags in this scope"}
+                emptyMessage="No tags match"
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                 Listing must include every selected tag.
@@ -327,11 +331,13 @@ export function DiscoverPageClient({
                 Nice to have
               </label>
               <FacetTypeaheadMultiSelect
+                id="discover-facets-any"
                 options={searchTags.filter((tag) => !requiredTags.includes(tag.slug))}
                 selectedSlugs={optionalTags}
                 onChange={setOptionalTags}
                 disabled={pending}
-                placeholder={searchTags.length ? "Optional tags…" : "No tags in this scope"}
+                placeholder={searchTags.length ? "Type a tag…" : "No tags in this scope"}
+                emptyMessage="No tags match"
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                 Boosts ranking; shown as close matches when must-haves return nothing.
