@@ -1,4 +1,8 @@
 import allowlists from "@/data/facet-allowlists.json";
+import {
+  normalizeServiceCategoryGroupSlug,
+  normalizeStorefrontCategoryGroupSlug,
+} from "@/lib/discovery-filters/category-group-slugs";
 import type { FacetTag, FacetTagFamily } from "@/lib/discovery-filters/filter-state";
 
 export type FacetDefinition = {
@@ -16,19 +20,33 @@ type AllowlistFile = Record<string, FacetAllowlistEntry>;
 
 const FILE = allowlists as AllowlistFile;
 
-export function getFacetAllowlistForCategory(categorySlug: string | undefined): FacetDefinition[] {
-  if (!categorySlug) return [];
-  const entry = FILE[categorySlug];
+function facetsForAllowlistKey(key: string | undefined): FacetDefinition[] {
+  if (!key) return [];
+  const entry = FILE[key];
   if (!entry?.facets?.length) return [];
   return entry.facets;
+}
+
+export function getFacetAllowlistForCategory(categorySlug: string | undefined): FacetDefinition[] {
+  if (!categorySlug) return [];
+  const direct = facetsForAllowlistKey(categorySlug);
+  if (direct.length) return direct;
+  const groupSlug = normalizeStorefrontCategoryGroupSlug(categorySlug);
+  return facetsForAllowlistKey(groupSlug);
 }
 
 export function getFacetAllowlistForServiceCategory(
   serviceCategorySlug: string | undefined,
 ): FacetDefinition[] {
   if (!serviceCategorySlug) return FILE._services_default?.facets ?? [];
-  const entry = FILE[serviceCategorySlug];
-  return entry?.facets ?? FILE._services_default?.facets ?? [];
+  const direct = facetsForAllowlistKey(serviceCategorySlug);
+  if (direct.length) return direct;
+  const groupSlug = normalizeServiceCategoryGroupSlug(serviceCategorySlug);
+  if (groupSlug) {
+    const grouped = facetsForAllowlistKey(groupSlug);
+    if (grouped.length) return grouped;
+  }
+  return FILE._services_default?.facets ?? [];
 }
 
 export function resolveFacetDefinition(
@@ -45,7 +63,6 @@ export function resolveFacetDefinition(
   const hit = pool.find((f) => f.slug === normalized);
   if (hit) return hit;
 
-  // Accept explicit family:slug tokens even if not in allowlist UI
   return null;
 }
 
@@ -56,6 +73,13 @@ export function parseFacetParamTokens(
   entityType: "storefront" | "service",
 ): FacetTag[] {
   if (!raw?.trim()) return [];
+
+  const normalizedCategory =
+    entityType === "storefront"
+      ? normalizeStorefrontCategoryGroupSlug(categorySlug)
+      : undefined;
+  const normalizedService =
+    entityType === "service" ? normalizeServiceCategoryGroupSlug(serviceCategorySlug) : undefined;
 
   const out: FacetTag[] = [];
   const seen = new Set<string>();
@@ -81,8 +105,8 @@ export function parseFacetParamTokens(
     if (!family) {
       const def = resolveFacetDefinition(
         normalizedSlug,
-        categorySlug,
-        serviceCategorySlug,
+        normalizedCategory ?? categorySlug,
+        normalizedService ?? serviceCategorySlug,
         entityType,
       );
       if (def) {

@@ -4,11 +4,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
-import { normalizeServiceCategorySlug } from "@/lib/service-categories/normalize";
 import { buildFacetOrFilter } from "@/lib/discovery-filters/compile-filter-query";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
+import {
+  normalizeServiceCategoryGroupSlug,
+  normalizeStorefrontCategoryGroupSlug,
+  resolveServiceCategoryIds,
+  resolveStorefrontCategoryIds,
+} from "@/lib/discovery-filters/resolve-category-groups";
 import type { DiscoverFilterSearchResult, DiscoverListingRow } from "@/lib/discovery-filters/types";
 
 const LISTING_SELECT =
@@ -16,8 +20,8 @@ const LISTING_SELECT =
 
 type ResolvedIds = {
   town_id?: string;
-  category_id?: string;
-  service_category_id?: string;
+  category_ids?: string[];
+  service_category_ids?: string[];
 };
 
 async function resolveTownId(
@@ -31,38 +35,6 @@ async function resolveTownId(
     .from("towns")
     .select("id")
     .eq("slug", townSlug.trim())
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .maybeSingle();
-  return data ? String((data as { id: string }).id) : undefined;
-}
-
-async function resolveCategoryId(
-  supabase: SupabaseClient,
-  slug: string | undefined,
-): Promise<string | undefined> {
-  const normalized = normalizeBusinessCategorySlug(slug);
-  if (!normalized) return undefined;
-  const { data } = await supabase
-    .from("business_categories")
-    .select("id")
-    .eq("slug", normalized)
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .maybeSingle();
-  return data ? String((data as { id: string }).id) : undefined;
-}
-
-async function resolveServiceCategoryId(
-  supabase: SupabaseClient,
-  slug: string | undefined,
-): Promise<string | undefined> {
-  const normalized = normalizeServiceCategorySlug(slug);
-  if (!normalized) return undefined;
-  const { data } = await supabase
-    .from("service_categories")
-    .select("id")
-    .eq("slug", normalized)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .maybeSingle();
@@ -111,16 +83,20 @@ export async function executeFilterSearch(
 
   const supabase = getServiceSupabase();
 
-  const [town_id, category_id, service_category_id] = await Promise.all([
+  const storefrontGroup = normalizeStorefrontCategoryGroupSlug(state.category_slug);
+  const serviceGroup = normalizeServiceCategoryGroupSlug(state.service_category_slug);
+
+  const [town_id, category_ids, service_category_ids] = await Promise.all([
     resolveTownId(supabase, state.town_id, options?.town_slug),
-    state.category_slug ? resolveCategoryId(supabase, state.category_slug) : Promise.resolve(undefined),
-    state.service_category_slug
-      ? resolveServiceCategoryId(supabase, state.service_category_slug)
+    storefrontGroup
+      ? resolveStorefrontCategoryIds(supabase, storefrontGroup)
       : Promise.resolve(undefined),
+    serviceGroup ? resolveServiceCategoryIds(supabase, serviceGroup) : Promise.resolve(undefined),
   ]);
 
-  const resolved: ResolvedIds = { town_id, category_id, service_category_id };
+  const resolved: ResolvedIds = { town_id, category_ids, service_category_ids };
 
+  // Tag columns live on `businesses`; visibility pool matches browse hubs via `businesses_view` filters.
   let query = supabase
     .from("businesses")
     .select(LISTING_SELECT, { count: "exact" })
@@ -131,19 +107,45 @@ export async function executeFilterSearch(
   if (state.entity_type === "service") {
     query = query.eq("is_service_business", true);
   } else {
-    query = query.eq("is_service_business", false);
+    query = query.eq("is_storefront", true);
   }
 
   if (resolved.town_id) {
     query = query.eq("town_id", resolved.town_id);
   }
 
-  if (state.entity_type === "storefront" && resolved.category_id) {
-    query = query.eq("primary_category_id", resolved.category_id);
+  if (state.entity_type === "storefront" && category_ids?.length) {
+    query = query.in("primary_category_id", category_ids);
+  } else if (state.entity_type === "storefront" && storefrontGroup && !category_ids?.length) {
+    return {
+      listings: [],
+      total: 0,
+      page: state.page,
+      page_size: state.page_size,
+      total_pages: 0,
+      applied_filters: {
+        ...state,
+        resolved,
+        error: `No category IDs resolved for group ${storefrontGroup}`,
+      },
+    };
   }
 
-  if (state.entity_type === "service" && resolved.service_category_id) {
-    query = query.eq("service_category_id", resolved.service_category_id);
+  if (state.entity_type === "service" && service_category_ids?.length) {
+    query = query.in("service_category_id", service_category_ids);
+  } else if (state.entity_type === "service" && serviceGroup && !service_category_ids?.length) {
+    return {
+      listings: [],
+      total: 0,
+      page: state.page,
+      page_size: state.page_size,
+      total_pages: 0,
+      applied_filters: {
+        ...state,
+        resolved,
+        error: `No service category IDs resolved for group ${serviceGroup}`,
+      },
+    };
   }
 
   const facetOr = buildFacetOrFilter(state.facet_tags);
@@ -155,7 +157,9 @@ export async function executeFilterSearch(
   if (q) {
     const safe = q.replace(/[%_,\\]/g, " ").trim();
     if (safe) {
-      query = query.or(`title.ilike.%${safe}%,slug.ilike.%${safe}%,search_keywords.ilike.%${safe}%`);
+      query = query.or(
+        `title.ilike.%${safe}%,slug.ilike.%${safe}%,search_keywords.ilike.%${safe}%,excerpt.ilike.%${safe}%`,
+      );
     }
   }
 
