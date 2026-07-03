@@ -5,24 +5,32 @@ import { cn } from "@/lib/utils";
 import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
 
 type Props = {
+  id?: string;
   options: DiscoverSearchTagOption[];
   selectedSlugs: string[];
   onChange: (slugs: string[]) => void;
   disabled?: boolean;
   placeholder?: string;
+  emptyMessage?: string;
 };
 
 export function FacetTypeaheadMultiSelect({
+  id,
   options,
   selectedSlugs,
   onChange,
   disabled,
   placeholder = "Search tags…",
+  emptyMessage = "No matches",
 }: Props) {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
   const listboxId = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
 
   const optionBySlug = useMemo(() => {
     const map = new Map<string, DiscoverSearchTagOption>();
@@ -34,9 +42,9 @@ export function FacetTypeaheadMultiSelect({
 
   const filteredOptions = useMemo(() => {
     const needle = query.trim().toLowerCase();
+    if (!needle) return [];
     return options.filter((option) => {
       if (selectedSlugs.includes(option.slug)) return false;
-      if (!needle) return true;
       return (
         option.label.toLowerCase().includes(needle) ||
         option.slug.replace(/_/g, " ").includes(needle)
@@ -44,11 +52,17 @@ export function FacetTypeaheadMultiSelect({
     });
   }, [options, query, selectedSlugs]);
 
+  const showSuggestions = open && query.trim().length > 0;
+  const inputDisabled = disabled || options.length === 0;
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [query, filteredOptions.length]);
+
   useEffect(() => {
     if (!open) return;
     const onDocClick = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (inputRef.current?.parentElement?.contains(target)) return;
+      if (containerRef.current?.contains(event.target as Node)) return;
       setOpen(false);
     };
     document.addEventListener("mousedown", onDocClick);
@@ -65,79 +79,139 @@ export function FacetTypeaheadMultiSelect({
 
   const removeSlug = (slug: string) => {
     onChange(selectedSlugs.filter((s) => s !== slug));
+    inputRef.current?.focus();
+  };
+
+  const focusInput = () => {
+    if (inputDisabled) return;
+    inputRef.current?.focus();
+    setOpen(true);
   };
 
   return (
-    <div className="space-y-2">
-      {selectedSlugs.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {selectedSlugs.map((slug) => {
-            const option = optionBySlug.get(slug);
-            const label = option?.label ?? slug.replace(/_/g, " ");
-            return (
+    <div ref={containerRef} className="relative">
+      <div
+        className={cn(
+          "flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-2 py-1.5",
+          inputDisabled ? "cursor-not-allowed opacity-60" : "cursor-text",
+          open && !inputDisabled ? "ring-2 ring-[var(--color-primary)]/20" : "",
+        )}
+        onMouseDown={(event) => {
+          if (inputDisabled) return;
+          if ((event.target as HTMLElement).closest("[data-chip-remove]")) return;
+          event.preventDefault();
+          focusInput();
+        }}
+      >
+        {selectedSlugs.map((slug) => {
+          const option = optionBySlug.get(slug);
+          const label = option?.label ?? slug.replace(/_/g, " ");
+          return (
+            <span
+              key={slug}
+              className="inline-flex max-w-full items-center gap-1 rounded-full bg-[var(--color-primary)]/10 py-0.5 pl-2.5 pr-1 text-xs font-medium text-[var(--color-primary)]"
+            >
+              <span className="truncate">{label}</span>
               <button
-                key={slug}
                 type="button"
+                data-chip-remove
                 disabled={disabled}
                 onClick={() => removeSlug(slug)}
-                className="inline-flex items-center gap-1 rounded-full bg-[var(--color-primary)]/10 px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/15"
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-[var(--color-primary)]/15 disabled:cursor-not-allowed"
                 aria-label={`Remove ${label}`}
               >
-                <span>{label}</span>
                 <span aria-hidden>×</span>
               </button>
-            );
-          })}
-        </div>
-      ) : null}
+            </span>
+          );
+        })}
 
-      <div className="relative">
         <input
           ref={inputRef}
-          id="discover-facets"
+          id={inputId}
           type="text"
           value={query}
-          disabled={disabled || options.length === 0}
-          placeholder={placeholder}
+          disabled={inputDisabled}
+          placeholder={selectedSlugs.length === 0 ? placeholder : "Add another…"}
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onBlur={() => {
+            window.setTimeout(() => {
+              if (!containerRef.current?.contains(document.activeElement)) {
+                setOpen(false);
+              }
+            }, 0);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               setOpen(false);
               return;
             }
-            if (event.key === "Enter" && filteredOptions[0]) {
+
+            if (event.key === "ArrowDown" && filteredOptions.length > 0) {
               event.preventDefault();
-              addSlug(filteredOptions[0].slug);
+              setOpen(true);
+              setHighlightIndex((index) => (index + 1) % filteredOptions.length);
+              return;
             }
+
+            if (event.key === "ArrowUp" && filteredOptions.length > 0) {
+              event.preventDefault();
+              setOpen(true);
+              setHighlightIndex(
+                (index) => (index - 1 + filteredOptions.length) % filteredOptions.length,
+              );
+              return;
+            }
+
+            if (event.key === "Enter") {
+              const option = filteredOptions[highlightIndex];
+              if (option) {
+                event.preventDefault();
+                addSlug(option.slug);
+              }
+              return;
+            }
+
             if (event.key === "Backspace" && !query && selectedSlugs.length > 0) {
               onChange(selectedSlugs.slice(0, -1));
             }
           }}
-          className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="min-w-[6rem] flex-1 border-0 bg-transparent px-1 py-1 text-sm outline-none placeholder:text-[var(--color-text-tertiary)]"
           role="combobox"
-          aria-expanded={open}
+          aria-expanded={showSuggestions}
           aria-controls={listboxId}
           aria-autocomplete="list"
+          aria-haspopup="listbox"
         />
+      </div>
 
-        {open && filteredOptions.length > 0 ? (
+      {showSuggestions ? (
+        filteredOptions.length > 0 ? (
           <ul
             id={listboxId}
             role="listbox"
             className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-[var(--color-border)] bg-white py-1 shadow-lg"
           >
-            {filteredOptions.map((option) => (
-              <li key={option.slug} role="option">
+            {filteredOptions.map((option, index) => (
+              <li
+                key={option.slug}
+                role="option"
+                aria-selected={index === highlightIndex}
+              >
                 <button
                   type="button"
                   className={cn(
-                    "flex w-full px-3 py-2 text-left text-sm hover:bg-[var(--color-surface-muted)]",
+                    "flex w-full px-3 py-2 text-left text-sm",
+                    index === highlightIndex
+                      ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                      : "hover:bg-[var(--color-surface-muted)]",
                   )}
                   onMouseDown={(event) => event.preventDefault()}
+                  onMouseEnter={() => setHighlightIndex(index)}
                   onClick={() => addSlug(option.slug)}
                 >
                   {option.label}
@@ -145,8 +219,12 @@ export function FacetTypeaheadMultiSelect({
               </li>
             ))}
           </ul>
-        ) : null}
-      </div>
+        ) : (
+          <p className="absolute z-20 mt-1 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-tertiary)] shadow-lg">
+            {emptyMessage}
+          </p>
+        )
+      ) : null}
     </div>
   );
 }
