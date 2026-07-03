@@ -69,7 +69,6 @@ type ExistingRow = {
   website: string | null;
   service_area: string | null;
   excerpt: string | null;
-  content: string | null;
   seo_title: string | null;
   seo_description: string | null;
   search_keywords: string | null;
@@ -92,7 +91,7 @@ const EXISTING_SELECT = `
   is_storefront, is_service_business, is_hidden_from_search,
   town_id, area_id, primary_category_id, service_category_id,
   address, map_lat, map_lng, phone, website, service_area,
-  excerpt, content, seo_title, seo_description, search_keywords, search_terms, embedding_summary,
+  excerpt, seo_title, seo_description, search_keywords, search_terms, embedding_summary,
   search_profile, qa_document, price_level, business_type,
   item_tags, dietary_tags, meal_period_tags, atmosphere_tags, occasion_tags, search_tags
 `;
@@ -334,7 +333,6 @@ function buildPatch(
   setIfChanged("website", nullableText(row.website), existing.website);
   setIfChanged("service_area", nullableText(row.service_area), existing.service_area);
   setIfChanged("excerpt", nullableText(row.excerpt), existing.excerpt);
-  setIfChanged("content", nullableText(row.content), existing.content);
   setIfChanged("seo_title", nullableText(row.seo_title), existing.seo_title);
   setIfChanged("seo_description", nullableText(row.seo_description), existing.seo_description);
   setIfChanged("search_keywords", nullableText(row.search_keywords), existing.search_keywords);
