@@ -1,0 +1,272 @@
+/**
+ * Export storefronts and/or service vendors with categories and tags to CSV for auditing.
+ *
+ * Usage:
+ *   npx tsx scripts/export-businesses-csv.ts                 # both CSVs under docs/
+ *   npx tsx scripts/export-businesses-csv.ts --storefronts
+ *   npx tsx scripts/export-businesses-csv.ts --services
+ *   npx tsx scripts/export-businesses-csv.ts --all-statuses    # include draft/unpublished
+ *   npx tsx scripts/export-businesses-csv.ts --include-archived
+ *   npx tsx scripts/export-businesses-csv.ts --services --file path.csv
+ */
+
+import { writeFileSync } from "fs";
+import { createClient } from "@supabase/supabase-js";
+import * as dotenv from "dotenv";
+
+dotenv.config({ path: ".env.local" });
+
+const ONLY_STOREFRONTS =
+  process.argv.includes("--storefronts") && !process.argv.includes("--services");
+const ONLY_SERVICES =
+  process.argv.includes("--services") && !process.argv.includes("--storefronts");
+const EXPORT_STOREFRONTS = ONLY_STOREFRONTS || (!ONLY_STOREFRONTS && !ONLY_SERVICES);
+const EXPORT_SERVICES = ONLY_SERVICES || (!ONLY_STOREFRONTS && !ONLY_SERVICES);
+const ALL_STATUSES = process.argv.includes("--all-statuses");
+const INCLUDE_ARCHIVED = process.argv.includes("--include-archived");
+
+function resolveOutputPath(kind: "storefront" | "service", defaultPath: string): string {
+  const fileIdx = process.argv.indexOf("--file");
+  if (fileIdx === -1) return defaultPath;
+
+  const p = process.argv[fileIdx + 1];
+  if (!p) throw new Error("--file requires a path");
+  if (EXPORT_STOREFRONTS && EXPORT_SERVICES) {
+    throw new Error("--file requires exactly one of --storefronts or --services");
+  }
+  if (kind === "storefront" && !EXPORT_STOREFRONTS) {
+    throw new Error("Internal: storefront path requested but storefront export disabled");
+  }
+  if (kind === "service" && !EXPORT_SERVICES) {
+    throw new Error("Internal: service path requested but service export disabled");
+  }
+  return p;
+}
+
+const STOREFRONTS_PATH = resolveOutputPath("storefront", "docs/storefronts-audit.csv");
+const SERVICES_PATH = resolveOutputPath("service", "docs/services-audit.csv");
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+type Rel<T> = T | T[] | null;
+
+type ExportRow = {
+  id: string;
+  slug: string;
+  title: string;
+  status: string | null;
+  business_type: string | null;
+  is_storefront: boolean | null;
+  is_service_business: boolean | null;
+  service_area: string | null;
+  item_tags: string[] | null;
+  dietary_tags: string[] | null;
+  meal_period_tags: string[] | null;
+  atmosphere_tags: string[] | null;
+  occasion_tags: string[] | null;
+  search_tags: string[] | null;
+  towns: Rel<{ title: string; slug: string }>;
+  areas: Rel<{ title: string; slug: string }>;
+  business_categories: Rel<{ slug: string; title: string }>;
+  service_categories: Rel<{ slug: string; title: string }>;
+  business_tags: Rel<{ tags: Rel<{ slug: string }> }>;
+};
+
+const SELECT = `
+  id, slug, title, status, business_type,
+  is_storefront, is_service_business, service_area,
+  item_tags, dietary_tags, meal_period_tags, atmosphere_tags, occasion_tags, search_tags,
+  towns ( title, slug ),
+  areas ( title, slug ),
+  business_categories ( slug, title ),
+  service_categories ( slug, title ),
+  business_tags ( tags ( slug ) )
+`;
+
+function relOne<T>(rel: Rel<T>): T | null {
+  if (!rel) return null;
+  return Array.isArray(rel) ? (rel[0] ?? null) : rel;
+}
+
+function legacyTagSlugs(row: ExportRow): string[] {
+  const out: string[] = [];
+  const links = row.business_tags;
+  const list = Array.isArray(links) ? links : links ? [links] : [];
+  for (const link of list) {
+    const tag = relOne(link.tags);
+    if (tag?.slug) out.push(tag.slug);
+  }
+  return [...new Set(out)].sort();
+}
+
+function jsonField(value: string[] | null | undefined): string {
+  return JSON.stringify(value ?? []);
+}
+
+function escapeCsvField(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function stringifyCsv(headers: string[], rows: Record<string, string>[]): string {
+  const lines = [headers.join(",")];
+  for (const row of rows) {
+    lines.push(headers.map((h) => escapeCsvField(row[h] ?? "")).join(","));
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRow[]> {
+  const pageSize = 500;
+  const all: ExportRow[] = [];
+  let from = 0;
+
+  while (true) {
+    let query = supabase
+      .from("businesses")
+      .select(SELECT)
+      .order("title", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (!INCLUDE_ARCHIVED) {
+      query = query.is("archived_at", null);
+    }
+    if (!ALL_STATUSES) {
+      query = query.eq("status", "published");
+    }
+    if (kind === "storefront") {
+      query = query.eq("is_storefront", true).eq("is_service_business", false);
+    } else {
+      query = query.eq("is_service_business", true).eq("is_storefront", false);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const batch = (data ?? []) as ExportRow[];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return all;
+}
+
+function mapStorefrontRow(row: ExportRow): Record<string, string> {
+  const town = relOne(row.towns);
+  const area = relOne(row.areas);
+  const category = relOne(row.business_categories);
+
+  return {
+    title: row.title ?? "",
+    slug: row.slug ?? "",
+    status: row.status ?? "",
+    town_or_area: town?.title ?? "",
+    shopping_area: area?.title ?? "",
+    primary_category: category?.slug ?? "",
+    primary_category_title: category?.title ?? "",
+    business_type: row.business_type ?? "",
+    item_tags: jsonField(row.item_tags),
+    dietary_tags: jsonField(row.dietary_tags),
+    meal_period_tags: jsonField(row.meal_period_tags),
+    atmosphere_tags: jsonField(row.atmosphere_tags),
+    occasion_tags: jsonField(row.occasion_tags),
+    search_tags: jsonField(row.search_tags),
+    legacy_tags: jsonField(legacyTagSlugs(row)),
+  };
+}
+
+function mapServiceRow(row: ExportRow): Record<string, string> {
+  const town = relOne(row.towns);
+  const category = relOne(row.business_categories);
+  const specialty = relOne(row.service_categories);
+
+  return {
+    title: row.title ?? "",
+    slug: row.slug ?? "",
+    status: row.status ?? "",
+    town_or_area: town?.title ?? "",
+    service_area: row.service_area ?? "",
+    primary_category: category?.slug ?? "",
+    primary_category_title: category?.title ?? "",
+    service_category: specialty?.slug ?? "",
+    service_category_title: specialty?.title ?? "",
+    business_type: row.business_type ?? "",
+    item_tags: jsonField(row.item_tags),
+    dietary_tags: jsonField(row.dietary_tags),
+    meal_period_tags: jsonField(row.meal_period_tags),
+    atmosphere_tags: jsonField(row.atmosphere_tags),
+    occasion_tags: jsonField(row.occasion_tags),
+    search_tags: jsonField(row.search_tags),
+    legacy_tags: jsonField(legacyTagSlugs(row)),
+  };
+}
+
+const STOREFRONT_HEADERS = [
+  "title",
+  "slug",
+  "status",
+  "town_or_area",
+  "shopping_area",
+  "primary_category",
+  "primary_category_title",
+  "business_type",
+  "item_tags",
+  "dietary_tags",
+  "meal_period_tags",
+  "atmosphere_tags",
+  "occasion_tags",
+  "search_tags",
+  "legacy_tags",
+];
+
+const SERVICE_HEADERS = [
+  "title",
+  "slug",
+  "status",
+  "town_or_area",
+  "service_area",
+  "primary_category",
+  "primary_category_title",
+  "service_category",
+  "service_category_title",
+  "business_type",
+  "item_tags",
+  "dietary_tags",
+  "meal_period_tags",
+  "atmosphere_tags",
+  "occasion_tags",
+  "search_tags",
+  "legacy_tags",
+];
+
+async function main() {
+  if (EXPORT_STOREFRONTS) {
+    const rows = await fetchBusinesses("storefront");
+    const csv = stringifyCsv(STOREFRONT_HEADERS, rows.map(mapStorefrontRow));
+    writeFileSync(STOREFRONTS_PATH, csv, "utf8");
+    console.log(`Wrote ${rows.length} storefronts → ${STOREFRONTS_PATH}`);
+  }
+
+  if (EXPORT_SERVICES) {
+    const rows = await fetchBusinesses("service");
+    const csv = stringifyCsv(SERVICE_HEADERS, rows.map(mapServiceRow));
+    writeFileSync(SERVICES_PATH, csv, "utf8");
+    console.log(`Wrote ${rows.length} service vendors → ${SERVICES_PATH}`);
+  }
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

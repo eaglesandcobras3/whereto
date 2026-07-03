@@ -24,7 +24,10 @@
     "eval:search:data": "npx tsx scripts/eval-search-data.ts",
     "eval:search:preflight": "npx tsx scripts/search-preflight.ts",
     "validate:tags": "npx tsx scripts/validate-tag-registry.ts",
-    "backfill:search": "npx tsx scripts/backfill-search-document.ts"
+    "backfill:search": "npx tsx scripts/backfill-search-document.ts",
+    "export:storefronts": "npx tsx scripts/export-businesses-csv.ts --storefronts",
+    "export:services": "npx tsx scripts/export-businesses-csv.ts --services",
+    "export:businesses": "npx tsx scripts/export-businesses-csv.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.67",
