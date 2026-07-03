@@ -8,7 +8,6 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
-import { GuidesHubSearch } from "@/components/GuidesHubSearch";
 import { GuideCard } from "@/components/discovery/GuideCard";
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { PRIMARY_EDITORIAL_GUIDE_PATH, PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
@@ -116,11 +115,7 @@ export default async function GuidesPage() {
         title="Travel guides"
         description="Editorial guides for planning your trip: town picks, dining, beaches, and local advice written for the Emerald Coast."
         collapsibleDescription={hubGuidesIntro()}
-      >
-        <div className="max-w-2xl pt-2">
-          <GuidesHubSearch />
-        </div>
-      </BrowseHubHero>
+      />
 
       {planningGuide ? (
         <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10">

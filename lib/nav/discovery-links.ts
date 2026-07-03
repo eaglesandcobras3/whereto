@@ -38,13 +38,13 @@ export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
   return isAskEnabled(flags);
 }
 
-/** Hub hero search bars and other discovery entry points (search, discover, or ask). */
-export function showHubDiscoveryUi(flags: DiscoveryFlags): boolean {
-  return isAskEnabled(flags) || isSearchEnabled(flags) || isDiscoverEnabled(flags as FeatureFlags);
-}
-
-export function isDiscoveryEnabled(flags: DiscoveryFlags): boolean {
-  return showHubDiscoveryUi(flags);
+/** Any discovery product enabled (search, ask, or discover). */
+export function isDiscoveryEnabled(flags: DiscoveryFlags | FeatureFlags): boolean {
+  return (
+    isAskEnabled(flags) ||
+    isSearchEnabled(flags) ||
+    isDiscoverEnabled(flags as FeatureFlags)
+  );
 }
 
 function askQueryFromParams(params?: DiscoveryLinkParams): string | undefined {

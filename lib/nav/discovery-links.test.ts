@@ -4,12 +4,20 @@ import {
   discoveryHref,
   discoveryLinkRel,
   isDiscoveryEnabled,
-  showHubDiscoveryUi,
 } from "@/lib/nav/discovery-links";
 import { BROWSE_NAV_ITEMS } from "@/lib/nav/browse-links";
+import type { FeatureFlags } from "@/lib/feature-flags-core";
 
 const askOn = { ask: true, search: true };
 const allOff = { ask: false, search: false };
+const discoverOnly: FeatureFlags = {
+  ask: false,
+  search: false,
+  discover: true,
+  search_inspector: false,
+  onboard: false,
+  guides: false,
+};
 
 describe("applyDiscoveryBrowseNav", () => {
   it("rewrites /search links to /ask but does not append an Ask nav item", () => {
@@ -38,15 +46,13 @@ describe("discoveryHref", () => {
   });
 });
 
-describe("discovery gating helpers", () => {
-  it("hides hub discovery UI when search and ask are off", () => {
-    expect(showHubDiscoveryUi(allOff)).toBe(false);
+describe("isDiscoveryEnabled", () => {
+  it("is false when search, ask, and discover are off", () => {
     expect(isDiscoveryEnabled(allOff)).toBe(false);
   });
 
-  it("shows hub discovery UI when search or ask is on", () => {
-    expect(showHubDiscoveryUi({ ask: false, search: true })).toBe(true);
-    expect(showHubDiscoveryUi({ ask: true, search: false })).toBe(true);
+  it("is true when discover is on", () => {
+    expect(isDiscoveryEnabled(discoverOnly)).toBe(true);
   });
 });
 
