@@ -30,8 +30,9 @@ import type {
 const DISCOVER_POOL_LIMIT = 2000;
 const TAG_FETCH_CHUNK = 120;
 
+// search_tags lives on `businesses` only — attachSearchTags() hydrates after the view query.
 const VIEW_LISTING_SELECT =
-  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
+  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, town_id, featured, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
 
 type PoolRow = Record<string, unknown>;
 
