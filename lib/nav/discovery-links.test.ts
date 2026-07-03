@@ -4,7 +4,6 @@ import {
   discoveryHref,
   discoveryLinkRel,
   isDiscoveryEnabled,
-  showHubDiscoveryUi,
 } from "@/lib/nav/discovery-links";
 import { BROWSE_NAV_ITEMS } from "@/lib/nav/browse-links";
 import type { FeatureFlags } from "@/lib/feature-flags-core";
@@ -47,20 +46,13 @@ describe("discoveryHref", () => {
   });
 });
 
-describe("discovery gating helpers", () => {
-  it("hides hub discovery UI when search and ask are off", () => {
-    expect(showHubDiscoveryUi(allOff)).toBe(false);
+describe("isDiscoveryEnabled", () => {
+  it("is false when search, ask, and discover are off", () => {
     expect(isDiscoveryEnabled(allOff)).toBe(false);
   });
 
-  it("shows hub discovery UI when search or ask is on", () => {
-    expect(showHubDiscoveryUi({ ask: false, search: true })).toBe(true);
-    expect(showHubDiscoveryUi({ ask: true, search: false })).toBe(true);
-  });
-
-  it("does not show hub search UI when only discover is on", () => {
-    expect(showHubDiscoveryUi({ ask: false, search: false, discover: true } as never)).toBe(false);
-    expect(isDiscoveryEnabled({ ask: false, search: false, discover: true } as never)).toBe(true);
+  it("is true when discover is on", () => {
+    expect(isDiscoveryEnabled(discoverOnly)).toBe(true);
   });
 });
 

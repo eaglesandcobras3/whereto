@@ -38,11 +38,6 @@ export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
   return isAskEnabled(flags);
 }
 
-/** Hub hero search bars — legacy `/search` and `/ask` entry only, not filter-first `/discover`. */
-export function showHubDiscoveryUi(flags: DiscoveryFlags): boolean {
-  return isAskEnabled(flags) || isSearchEnabled(flags);
-}
-
 /** Any discovery product enabled (search, ask, or discover). */
 export function isDiscoveryEnabled(flags: DiscoveryFlags | FeatureFlags): boolean {
   return (
