@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyzeTagMatch, compareTagMatchScore } from "./tag-match";
+import { analyzeTagMatch, compareTagMatchScore, resolveTagMatchMode } from "./tag-match";
 
 describe("tag-match", () => {
   it("scores strict matches higher than partial", () => {
@@ -34,5 +34,17 @@ describe("tag-match", () => {
     expect(both.strict_match).toBe(true);
     expect(requiredOnly.strict_match).toBe(true);
     expect(compareTagMatchScore(both, requiredOnly)).toBeLessThan(0);
+  });
+});
+
+describe("resolveTagMatchMode", () => {
+  it("uses relaxed when strict is empty", () => {
+    expect(resolveTagMatchMode(0, 5)).toBe("relaxed");
+    expect(resolveTagMatchMode(0, 0)).toBe("none");
+  });
+
+  it("supplements thin strict results with relaxed matches", () => {
+    expect(resolveTagMatchMode(2, 8)).toBe("supplement");
+    expect(resolveTagMatchMode(3, 8)).toBe("strict");
   });
 });

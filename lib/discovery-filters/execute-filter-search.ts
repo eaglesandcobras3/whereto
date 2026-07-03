@@ -16,6 +16,8 @@ import {
 import {
   analyzeTagMatch,
   compareTagMatchScore,
+  resolveTagMatchMode,
+  SUPPLEMENT_PARTIAL_LIMIT,
   type TagMatchAnalysis,
 } from "@/lib/discovery-filters/tag-match";
 import type {
@@ -372,12 +374,22 @@ export async function executeFilterSearch(
   });
 
   const strictPage = paginateScored(strictSorted, state.page, state.page_size);
-  const tag_match_mode = strictPage.total > 0 ? "strict" : relaxed.length > 0 ? "relaxed" : "none";
+  const tag_match_mode = resolveTagMatchMode(strictPage.total, relaxed.length);
 
-  const partialPage =
-    strictPage.total === 0 && relaxed.length > 0
-      ? paginateScored(relaxed, state.page, state.page_size)
-      : { pageRows: [], total: 0, totalPages: 0 };
+  let partialPage: { pageRows: ScoredPoolRow[]; total: number; totalPages: number };
+  if (tag_match_mode === "relaxed") {
+    partialPage = paginateScored(relaxed, state.page, state.page_size);
+  } else if (tag_match_mode === "supplement") {
+    const strictIds = new Set(strictSorted.map((s) => String(s.row.id)));
+    const supplement = relaxed.filter((s) => !strictIds.has(String(s.row.id)));
+    partialPage = {
+      pageRows: supplement.slice(0, SUPPLEMENT_PARTIAL_LIMIT),
+      total: supplement.length,
+      totalPages: 1,
+    };
+  } else {
+    partialPage = { pageRows: [], total: 0, totalPages: 0 };
+  }
 
   return {
     listings: strictPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),

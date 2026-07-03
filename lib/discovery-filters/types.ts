@@ -27,7 +27,7 @@ export type DiscoverFilterSearchResult = {
   partial_listings: DiscoverListingRow[];
   total: number;
   partial_total: number;
-  tag_match_mode: "none" | "strict" | "relaxed";
+  tag_match_mode: "none" | "strict" | "relaxed" | "supplement";
   page: number;
   page_size: number;
   total_pages: number;

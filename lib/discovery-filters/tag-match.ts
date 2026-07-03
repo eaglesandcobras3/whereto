@@ -64,3 +64,24 @@ export function analyzeTagMatch(
 export function compareTagMatchScore(a: TagMatchAnalysis, b: TagMatchAnalysis): number {
   return b.score - a.score;
 }
+
+/** When strict matches are below this count, also surface relaxed OR matches. */
+export const STRICT_SUPPLEMENT_THRESHOLD = 3;
+
+/** Max close matches shown below a thin strict result set (not paginated). */
+export const SUPPLEMENT_PARTIAL_LIMIT = 6;
+
+export type TagMatchPresentationMode = "none" | "strict" | "relaxed" | "supplement";
+
+export function resolveTagMatchMode(
+  strictTotal: number,
+  relaxedTotal: number,
+): TagMatchPresentationMode {
+  if (strictTotal === 0) {
+    return relaxedTotal > 0 ? "relaxed" : "none";
+  }
+  if (strictTotal < STRICT_SUPPLEMENT_THRESHOLD && relaxedTotal > 0) {
+    return "supplement";
+  }
+  return "strict";
+}

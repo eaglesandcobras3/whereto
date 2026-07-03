@@ -154,8 +154,10 @@ export function DiscoverPageClient({
       : serviceCategories.find((c) => c.slug === initialParams.service_category)?.title;
 
   const hasTagFilters = requiredTags.length > 0 || optionalTags.length > 0;
-  const showingRelaxed =
-    initialResult.tag_match_mode === "relaxed" && initialResult.partial_listings.length > 0;
+  const tagMode = initialResult.tag_match_mode;
+  const showingRelaxed = tagMode === "relaxed" && initialResult.partial_listings.length > 0;
+  const showingSupplement = tagMode === "supplement" && initialResult.partial_listings.length > 0;
+  const showingPartials = showingRelaxed || showingSupplement;
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -360,6 +362,11 @@ export function DiscoverPageClient({
                   No listings matched every must-have tag. These places match at least one of your
                   tags, ranked by how many fit.
                 </p>
+              ) : showingSupplement ? (
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Only {initialResult.total} listing{initialResult.total === 1 ? "" : "s"} matched
+                  every must-have tag. These close matches may still help.
+                </p>
               ) : null}
 
               <dl className="grid gap-1 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 px-3 py-2 text-xs text-[var(--color-text-secondary)] sm:grid-cols-2">
@@ -379,16 +386,18 @@ export function DiscoverPageClient({
                   <dt className="font-medium text-[var(--color-text-tertiary)]">Tag mode</dt>
                   <dd>
                     {hasTagFilters
-                      ? initialResult.tag_match_mode === "relaxed"
+                      ? tagMode === "relaxed"
                         ? "Relaxed (OR fallback)"
-                        : "Strict (must-haves)"
+                        : tagMode === "supplement"
+                          ? "Strict + close matches"
+                          : "Strict (must-haves)"
                       : "None"}
                   </dd>
                 </div>
               </dl>
             </div>
 
-            {initialResult.listings.length === 0 && !showingRelaxed ? (
+            {initialResult.listings.length === 0 && !showingPartials ? (
               <div className="space-y-2 text-[var(--color-text-secondary)]">
                 <p>
                   No listings match these filters. Try moving a tag to nice-to-have, or broadening
@@ -407,13 +416,14 @@ export function DiscoverPageClient({
                         key={listing.id}
                         listing={listing}
                         labelForSlug={labelForSlug}
+                        showTagMatch={hasTagFilters}
                       />
                     ))}
                   </ul>
                 ) : null}
 
-                {showingRelaxed ? (
-                  <section className="mt-8">
+                {showingPartials ? (
+                  <section className={initialResult.listings.length > 0 ? "mt-8" : ""}>
                     <h2 className="mb-3 font-headline text-lg font-bold text-[var(--color-text-primary)]">
                       Close matches
                     </h2>
@@ -483,6 +493,12 @@ function DiscoverListingCard({
       ? formatTagMatchSummary(listing.tag_match, labelForSlug)
       : null;
 
+  const showSummary =
+    tagMatchSummary &&
+    (listing.tag_match?.missing_required.length ||
+      listing.tag_match?.missing_any.length ||
+      listing.tag_match?.matched_any.length);
+
   return (
     <li>
       <Link
@@ -504,7 +520,7 @@ function DiscoverListingCard({
           {listing.town_name ? (
             <p className="text-xs text-[var(--color-text-tertiary)]">{listing.town_name}</p>
           ) : null}
-          {tagMatchSummary ? (
+          {showSummary ? (
             <p className="mt-2 text-xs font-medium text-amber-800">{tagMatchSummary}</p>
           ) : null}
           {listing.excerpt ? (
