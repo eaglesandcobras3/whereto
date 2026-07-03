@@ -2,7 +2,14 @@ import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
+import {
+  BUSINESS_CATEGORY_GROUP_LABELS,
+  BUSINESS_CATEGORY_GROUP_SLUGS,
+} from "@/lib/business-categories/groups";
+import {
+  SERVICE_CATEGORY_GROUP_LABELS,
+  SERVICE_CATEGORY_GROUP_SLUGS,
+} from "@/lib/service-categories/groups";
 
 export type DiscoverTownOption = {
   id: string;
@@ -11,13 +18,11 @@ export type DiscoverTownOption = {
 };
 
 export type DiscoverCategoryOption = {
-  id: string;
   slug: string;
   title: string;
 };
 
 export type DiscoverServiceCategoryOption = {
-  id: string;
   slug: string;
   title: string;
 };
@@ -29,45 +34,26 @@ export async function loadDiscoverFilterOptions(): Promise<{
 }> {
   const supabase = getServiceSupabase();
 
-  const [townsRes, categoriesRes, serviceCategoriesRes] = await Promise.all([
-    supabase
-      .from("towns")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .order("title", { ascending: true }),
-    supabase
-      .from("business_categories")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .order("title", { ascending: true }),
-    supabase
-      .from("service_categories")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .order("sort", { ascending: true }),
-  ]);
+  const townsRes = await supabase
+    .from("towns")
+    .select("id, title, slug")
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .order("title", { ascending: true });
 
   return {
     towns: (townsRes.data ?? []).map((r) => {
       const row = r as { id: string; title: string; slug: string };
       return { id: row.id, name: row.title, slug: row.slug };
     }),
-    categories: (categoriesRes.data ?? []).map((r) => {
-      const row = r as { id: string; title: string; slug: string };
-      return {
-        id: row.id,
-        slug: row.slug,
-        title: displayStorefrontCategoryTitle(row.slug, row.title),
-      };
-    }),
-    serviceCategories: (serviceCategoriesRes.data ?? []).map((r) => {
-      const row = r as { id: string; title: string; slug: string };
-      return { id: row.id, slug: row.slug, title: row.title };
-    }),
+    categories: BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => ({
+      slug,
+      title: BUSINESS_CATEGORY_GROUP_LABELS[slug],
+    })),
+    serviceCategories: SERVICE_CATEGORY_GROUP_SLUGS.map((slug) => ({
+      slug,
+      title: SERVICE_CATEGORY_GROUP_LABELS[slug],
+    })),
   };
 }
