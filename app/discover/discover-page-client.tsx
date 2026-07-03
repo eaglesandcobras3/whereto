@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { formatTagMatchSummary } from "@/lib/discovery-filters/format-tag-match";
+import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverFilterSearchResult, DiscoverListingRow } from "@/lib/discovery-filters/types";
 import type {
@@ -24,7 +25,7 @@ type Props = {
   initialParams: {
     type: "storefront" | "service";
     town?: string;
-    town_id?: string;
+    town_ids?: string[];
     category?: string;
     service_category?: string;
     facet?: string;
@@ -36,7 +37,7 @@ type Props = {
 
 function buildDiscoverUrl(params: {
   type: "storefront" | "service";
-  town?: string;
+  townSlugs: string[];
   category?: string;
   service_category?: string;
   facetsRequired: string[];
@@ -46,7 +47,7 @@ function buildDiscoverUrl(params: {
 }): string {
   const sp = new URLSearchParams();
   sp.set("type", params.type === "service" ? "services" : "storefront");
-  if (params.town) sp.set("town", params.town);
+  if (params.townSlugs.length) sp.set("town", params.townSlugs.join(","));
   if (params.type === "storefront" && params.category) sp.set("category", params.category);
   if (params.type === "service" && params.service_category) {
     sp.set("service_category", params.service_category);
@@ -92,6 +93,16 @@ export function DiscoverPageClient({
     [tagLabelBySlug],
   );
 
+  const townOptions = useMemo(
+    () => towns.map((town) => ({ slug: town.slug, label: town.name })),
+    [towns],
+  );
+
+  const activeTownSlugs = useMemo(
+    () => parseTownSlugsFromParam(initialParams.town),
+    [initialParams.town],
+  );
+
   const requiredTags = useMemo(
     () => parseFacetSlugs(initialParams.facet),
     [initialParams.facet],
@@ -104,6 +115,7 @@ export function DiscoverPageClient({
   const navigate = useCallback(
     (
       next: Partial<Props["initialParams"]> & {
+        townSlugs?: string[];
         facetsRequired?: string[];
         facetsAny?: string[];
         page?: number;
@@ -112,7 +124,7 @@ export function DiscoverPageClient({
       const type = next.type ?? initialParams.type;
       const url = buildDiscoverUrl({
         type,
-        town: "town" in next ? next.town : initialParams.town,
+        townSlugs: next.townSlugs ?? activeTownSlugs,
         category: "category" in next ? next.category : initialParams.category,
         service_category:
           "service_category" in next ? next.service_category : initialParams.service_category,
@@ -123,8 +135,12 @@ export function DiscoverPageClient({
       });
       startTransition(() => router.push(url));
     },
-    [router, initialParams, requiredTags, optionalTags],
+    [router, initialParams, activeTownSlugs, requiredTags, optionalTags],
   );
+
+  const setTownSlugs = (slugs: string[]) => {
+    navigate({ townSlugs: slugs, facetsRequired: [], facetsAny: [], page: 1 });
+  };
 
   const setRequiredTags = (slugs: string[]) => {
     const requiredSet = new Set(slugs);
@@ -210,23 +226,22 @@ export function DiscoverPageClient({
             </div>
 
             <div>
-              <label htmlFor="discover-town" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                Town
-              </label>
-              <select
-                id="discover-town"
-                disabled={pending}
-                value={initialParams.town ?? ""}
-                onChange={(e) => navigate({ town: e.target.value, page: 1 })}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+              <label
+                htmlFor="discover-towns"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
               >
-                <option value="">All towns</option>
-                {towns.map((t) => (
-                  <option key={t.id} value={t.slug}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                Towns
+              </label>
+              <FacetTypeaheadMultiSelect
+                options={townOptions}
+                selectedSlugs={activeTownSlugs}
+                onChange={setTownSlugs}
+                disabled={pending}
+                placeholder="Search towns…"
+              />
+              <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+                Leave empty for all towns. Select multiple to compare areas.
+              </p>
             </div>
 
             {initialParams.type === "storefront" ? (
@@ -297,7 +312,7 @@ export function DiscoverPageClient({
                 selectedSlugs={requiredTags}
                 onChange={setRequiredTags}
                 disabled={pending}
-                placeholder={searchTags.length ? "Required tags…" : "No tags in vocabulary"}
+                placeholder={searchTags.length ? "Required tags…" : "No tags in this scope"}
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                 Listing must include every selected tag.
@@ -316,7 +331,7 @@ export function DiscoverPageClient({
                 selectedSlugs={optionalTags}
                 onChange={setOptionalTags}
                 disabled={pending}
-                placeholder={searchTags.length ? "Optional tags…" : "No tags in vocabulary"}
+                placeholder={searchTags.length ? "Optional tags…" : "No tags in this scope"}
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                 Boosts ranking; shown as close matches when must-haves return nothing.
@@ -334,11 +349,14 @@ export function DiscoverPageClient({
                       ? `${initialResult.partial_total} close match${initialResult.partial_total === 1 ? "" : "es"}`
                       : `${initialResult.total} result${initialResult.total === 1 ? "" : "s"}`}
                 </span>
-                {initialParams.town ? (
-                  <span className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs">
-                    {towns.find((t) => t.slug === initialParams.town)?.name ?? initialParams.town}
+                {activeTownSlugs.map((slug) => (
+                  <span
+                    key={slug}
+                    className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs"
+                  >
+                    {towns.find((t) => t.slug === slug)?.name ?? slug}
                   </span>
-                ) : null}
+                ))}
                 {requiredTags.map((slug) => (
                   <span
                     key={`req-${slug}`}
@@ -375,8 +393,14 @@ export function DiscoverPageClient({
                   <dd>{initialParams.type}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-[var(--color-text-tertiary)]">Town</dt>
-                  <dd>{initialParams.town ?? "All towns"}</dd>
+                  <dt className="font-medium text-[var(--color-text-tertiary)]">Towns</dt>
+                  <dd>
+                    {activeTownSlugs.length
+                      ? activeTownSlugs
+                          .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
+                          .join(", ")
+                      : "All towns"}
+                  </dd>
                 </div>
                 <div>
                   <dt className="font-medium text-[var(--color-text-tertiary)]">Category</dt>
