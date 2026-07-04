@@ -33,6 +33,7 @@ export {
   isDiscoveryEnabled,
   showNavbarAskUi,
   showNavbarDiscoverUi,
+  showNavbarDiscoverQueryUi,
   showNavbarSearchUi,
   discoverHref,
   isDiscoverNlFeatureEnabled,

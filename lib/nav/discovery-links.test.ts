@@ -5,6 +5,7 @@ import {
   discoveryHref,
   discoveryLinkRel,
   isDiscoveryEnabled,
+  showNavbarDiscoverQueryUi,
 } from "@/lib/nav/discovery-links";
 import { BROWSE_NAV_ITEMS } from "@/lib/nav/browse-links";
 import type { FeatureFlags } from "@/lib/feature-flags-core";
@@ -66,6 +67,16 @@ describe("discoveryLinkRel", () => {
     expect(discoveryLinkRel("/search?type=services")).toBe("nofollow");
     expect(discoveryLinkRel("/ask?q=foo")).toBe("nofollow");
     expect(discoveryLinkRel("/services")).toBeUndefined();
+  });
+});
+
+describe("showNavbarDiscoverQueryUi", () => {
+  it("is true when discover is on and ask is off", () => {
+    expect(showNavbarDiscoverQueryUi(discoverOnly)).toBe(true);
+  });
+
+  it("is false when ask is on", () => {
+    expect(showNavbarDiscoverQueryUi({ ...discoverOnly, ask: true })).toBe(false);
   });
 });
 

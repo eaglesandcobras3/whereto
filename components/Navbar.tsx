@@ -13,7 +13,7 @@ import {
   applyDiscoveryBrowseNav,
   discoveryHref,
   showNavbarAskUi,
-  showNavbarDiscoverUi,
+  showNavbarDiscoverQueryUi,
   showNavbarSearchUi,
 } from "@/lib/nav/discovery-links";
 import type { User } from "@supabase/supabase-js";
@@ -65,9 +65,10 @@ export function Navbar({
   const [isNavSearchPending, startNavSearchTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isHome = pathname === "/";
-  const showSearchInNavbar =
+  const showLegacySearchInNavbar =
     showNavbarSearchUi(featureFlags) && (showSearch || !isHome);
-  const showDiscoverInNavbar = showNavbarDiscoverUi(featureFlags);
+  const showDiscoverQueryInNavbar = showNavbarDiscoverQueryUi(featureFlags);
+  const showNavQueryUi = showLegacySearchInNavbar || showDiscoverQueryInNavbar;
   const showAskInNavbar = showNavbarAskUi(featureFlags);
   const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/");
   const isDiscoverRoute = pathname === "/discover" || pathname.startsWith("/discover/");
@@ -207,21 +208,6 @@ export function Navbar({
         </Suspense>
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
-          {showDiscoverInNavbar ? (
-            <Link
-              href="/discover"
-              {...gaClickProps({ event: "nav_click", category: "header", label: "discover_filters" })}
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-premium-fast ${
-                isDiscoverRoute
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                  : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]"
-              }`}
-              title="Search and filter"
-            >
-              <span className="material-symbols-outlined text-[22px]">search</span>
-            </Link>
-          ) : null}
-
           {showAskInNavbar ? (
             <Link
               href="/ask"
@@ -237,10 +223,14 @@ export function Navbar({
             </Link>
           ) : null}
 
-          {showSearchInNavbar ? (
+          {showNavQueryUi ? (
             <button
               type="button"
-              {...gaClickProps({ event: "ui_open", category: "header", label: "search_panel" })}
+              {...gaClickProps({
+                event: "ui_open",
+                category: "header",
+                label: showDiscoverQueryInNavbar ? "discover_query_panel" : "search_panel",
+              })}
               aria-expanded={searchOpen}
               aria-controls="navbar-search-panel"
               onClick={() => {
@@ -248,11 +238,11 @@ export function Navbar({
                 setSearchOpen((o) => !o);
               }}
               className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-premium-fast ${
-                searchOpen
+                searchOpen || (showDiscoverQueryInNavbar && isDiscoverRoute)
                   ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
                   : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-logo-navy)] hover:text-[var(--color-logo-navy)]"
               }`}
-              title="Search"
+              title={showDiscoverQueryInNavbar ? "Search places on 30A" : "Search"}
             >
               <span className="material-symbols-outlined text-[22px]">search</span>
             </button>
@@ -320,7 +310,7 @@ export function Navbar({
         </div>
       </div>
 
-      {searchOpen && showSearchInNavbar ? (
+      {searchOpen && showNavQueryUi ? (
         <div
           id="navbar-search-panel"
           className="border-t border-[var(--color-border)] bg-[var(--color-site-chrome)] backdrop-blur-md"
@@ -340,14 +330,22 @@ export function Navbar({
                     if (onSearchChange) onSearchChange(e.target.value);
                     else setInternalSearch(e.target.value);
                   }}
-                  placeholder="Search places, restaurants, activities…"
+                  placeholder={
+                    showDiscoverQueryInNavbar
+                      ? "Kid-friendly lunch in Seaside, coffee near Rosemary Beach…"
+                      : "Search places, restaurants, activities…"
+                  }
                   className="w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] py-2.5 pl-11 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
                 />
               </div>
               <div className="flex shrink-0 gap-2">
                 <button
                   type="submit"
-                  {...gaClickProps({ event: "search_click", category: "header_search", label: "submit_panel" })}
+                  {...gaClickProps({
+                    event: "search_click",
+                    category: showDiscoverQueryInNavbar ? "header_discover" : "header_search",
+                    label: "submit_panel",
+                  })}
                   disabled={Boolean(searchLoading) || (!onSearchSubmit && isNavSearchPending)}
                   aria-busy={Boolean(searchLoading) || (!onSearchSubmit && isNavSearchPending) || undefined}
                   className="rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] disabled:opacity-50"
@@ -363,6 +361,23 @@ export function Navbar({
                 </button>
               </div>
             </form>
+            {showDiscoverQueryInNavbar ? (
+              <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+                Natural-language queries open filtered results on Discover.{" "}
+                <Link
+                  href="/discover"
+                  onClick={() => setSearchOpen(false)}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "header_discover",
+                    label: "browse_filters",
+                  })}
+                  className="font-medium text-[var(--color-primary)] hover:underline"
+                >
+                  Browse all filters
+                </Link>
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

@@ -80,6 +80,8 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/se
 
 When PostHog `discover_nl` is on (requires `discover`), navbar/homepage/`/discover?q=…` queries are parsed into structured discover URL params (town, category, tags) before results load.
 
+With `discover` on, the navbar search icon opens a text field (same pattern as legacy search) that routes queries to `/discover`.
+
 ### PostHog
 
 - [ ] Create boolean flag `discover_nl` in PostHog (default off; enable with `discover`)
@@ -197,6 +199,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-04 | Discover navbar: search icon opens query panel (routes to `/discover`) when `discover` flag is on |
 | 2026-07-04 | Removed PostHog `guides` feature flag — guides are always on (pages, nav, sitemap) |
 | 2026-07-04 | Discover NL: PostHog `discover_nl` flag parses natural-language queries into `/discover` filter params |
 | 2026-07-03 | Discover fix: recreate `businesses_view` so `search_tags` is exposed — [businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql) |
