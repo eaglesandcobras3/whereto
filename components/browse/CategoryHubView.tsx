@@ -1,6 +1,11 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
-import { generateBreadcrumbSchema, generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
+import { CategoryHubEditorial } from "@/components/browse/CategoryHubEditorial";
+import {
+  generateBreadcrumbSchema,
+  generateCollectionPageSchema,
+  generateItemListSchema,
+} from "@/lib/seo/breadcrumb-schema";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import type {
   CategoryBusinessRow,
@@ -13,14 +18,21 @@ type Props = {
   cat: CategoryRow;
   townGroups: CategoryTownGroup[];
   businesses: CategoryBusinessRow[];
+  seoImprovements?: boolean;
 };
 
-export function CategoryHubView({ cat, townGroups, businesses }: Props) {
+export function CategoryHubView({ cat, townGroups, businesses, seoImprovements = false }: Props) {
   const hubPath = categoryHubPath(cat.slug);
   const townCount = townGroups.filter((g) => g.slug).length;
   const intro =
     cat.excerpt?.trim() ||
     categoryHubIntro(cat.title, businesses.length, townCount);
+
+  const collectionSchema = generateCollectionPageSchema({
+    name: `${cat.title} on 30A`,
+    path: hubPath,
+    description: intro,
+  });
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -42,6 +54,12 @@ export function CategoryHubView({ cat, townGroups, businesses }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      {seoImprovements ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
+      ) : null}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
@@ -63,6 +81,8 @@ export function CategoryHubView({ cat, townGroups, businesses }: Props) {
             </>
           }
         />
+
+        {seoImprovements ? <CategoryHubEditorial categorySlug={cat.slug} /> : null}
 
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
           <div className="min-w-0 space-y-8 sm:space-y-10">

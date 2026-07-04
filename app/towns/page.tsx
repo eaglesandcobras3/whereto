@@ -1,42 +1,27 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { hubTownsIntro } from "@/lib/seo/page-intro-copy";
+import { hubTownsIntro, hubTownsCompareIntro } from "@/lib/seo/page-intro-copy";
+import { townsHubMetadata } from "@/lib/seo/hub-metadata";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import {
+  BEACH_ACCESS_PILLAR_GUIDE_PATH,
+  PRIMARY_EDITORIAL_GUIDE_PATH,
+} from "@/lib/seo/sitemap-strategy";
+import { generateCollectionPageSchema } from "@/lib/seo/breadcrumb-schema";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  ...canonicalAlternates("/towns"),
-  title: "30A Beach Towns | Florida's Emerald Coast Communities",
-  description:
-    "Explore the beach communities along Scenic 30A in South Walton, Florida, from Rosemary Beach and Seaside to Alys Beach, WaterColor, and Inlet Beach. Each town has its own feel, pace, and local character.",
-  keywords: [
-    "30A beach towns",
-    "South Walton communities",
-    "Rosemary Beach",
-    "Seaside Florida",
-    "Alys Beach",
-    "WaterColor 30A",
-    "Inlet Beach",
-    "Grayton Beach",
-    "30A Florida neighborhoods",
-    "Emerald Coast towns",
-  ],
-  ...openGraphForPage({
-    path: "/towns",
-    title: "30A Beach Towns | Florida's Emerald Coast Communities | WhereTo30A",
-    description:
-      "Every beach community along Scenic 30A, with local guides covering vibe, restaurants, beaches, and who each town is best for.",
-  }),
-};
+export const metadata: Metadata = townsHubMetadata();
 
 type TownRow = {
   id: string;
@@ -45,6 +30,29 @@ type TownRow = {
   subtitle: string | null;
   hero_image_url: string | null;
 };
+
+const TRAVEL_STYLE_LINKS = [
+  {
+    label: "Best for families",
+    href: "/guide/family-friendly-30a-beach-vacation",
+    description: "Kid-friendly towns and beaches along the corridor.",
+  },
+  {
+    label: "First-time visitors",
+    href: PRIMARY_EDITORIAL_GUIDE_PATH,
+    description: "Compare towns, beach access, and how to pace your week.",
+  },
+  {
+    label: "Beach access & parking",
+    href: BEACH_ACCESS_PILLAR_GUIDE_PATH,
+    description: "Public access points and what to know before you arrive.",
+  },
+  {
+    label: "Restaurants by town",
+    href: "/restaurants",
+    description: "Where to eat from Rosemary to Grayton.",
+  },
+] as const;
 
 async function getTowns(): Promise<TownRow[]> {
   const supabase = getServiceSupabase();
@@ -85,13 +93,35 @@ async function getTowns(): Promise<TownRow[]> {
 }
 
 export default async function TownsPage() {
-  const towns = await getTowns();
+  const [towns, flags] = await Promise.all([getTowns(), getAllFeatureFlags()]);
+  const seoImprovements = isSeoImprovementsFeatureEnabled(flags);
+  const collectionSchema = generateCollectionPageSchema({
+    name: "30A Beach Towns",
+    path: "/towns",
+    description: hubTownsIntro(),
+  });
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
+      {seoImprovements ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
+      ) : null}
+
       {/* Hero */}
       <div className="coastal-hero border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
+          {seoImprovements ? (
+            <HubBreadcrumbs
+              items={[
+                { name: "Home", href: "/" },
+                { name: "Towns", href: "/towns", current: true },
+              ]}
+              analyticsCategory="towns_hub_breadcrumb"
+            />
+          ) : null}
           <header className="max-w-3xl space-y-3">
             <p className="text-eyebrow">30A · South Walton, Florida</p>
             <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
@@ -107,6 +137,36 @@ export default async function TownsPage() {
           </header>
         </div>
       </div>
+
+      {seoImprovements ? (
+        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10">
+          <div className="mx-auto max-w-6xl px-4 md:px-10">
+            <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
+              Best 30A towns by travel style
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-[var(--color-text-secondary)]">
+              {hubTownsCompareIntro()}
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {TRAVEL_STYLE_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "towns_hub_style",
+                    label: link.href,
+                  })}
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-primary)]"
+                >
+                  <h3 className="font-semibold text-[var(--color-text-primary)]">{link.label}</h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{link.description}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Town grid */}
       <div className="mx-auto max-w-6xl px-4 py-12">

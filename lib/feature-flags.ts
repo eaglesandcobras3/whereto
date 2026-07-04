@@ -9,6 +9,7 @@ import {
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
+  isSeoImprovementsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -22,6 +23,7 @@ export {
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
+  isSeoImprovementsEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -70,6 +72,15 @@ export async function getAllFeatureFlags(): Promise<FeatureFlags> {
 /** Local dev escape hatch — PostHog `discover` flag still required in production. */
 export function discoverDevBypassEnabled(): boolean {
   return process.env.NODE_ENV === "development" && process.env.DISCOVER_ENABLED === "1";
+}
+
+/** Local dev escape hatch — PostHog `seo_improvements` flag still required in production. */
+export function seoImprovementsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.SEO_IMPROVEMENTS_ENABLED === "1";
+}
+
+export function isSeoImprovementsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isSeoImprovementsEnabled(flags) || seoImprovementsDevBypassEnabled();
 }
 
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {

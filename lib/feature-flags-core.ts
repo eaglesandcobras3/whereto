@@ -11,6 +11,7 @@ export const FEATURE_FLAG_KEYS = [
   "ask",
   "search_inspector",
   "onboard",
+  "seo_improvements",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -24,6 +25,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   ask: false,
   search_inspector: false,
   onboard: false,
+  seo_improvements: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -79,4 +81,9 @@ export function isSearchInspectorEnabled(flags: FeatureFlags): boolean {
 
 export function isOnboardEnabled(flags: FeatureFlags): boolean {
   return flags.onboard === true;
+}
+
+/** SEO sprint UI: trip planning blocks, hub clusters, town planning sections, related guides. */
+export function isSeoImprovementsEnabled(flags: FeatureFlags): boolean {
+  return flags.seo_improvements === true;
 }

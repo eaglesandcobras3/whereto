@@ -172,6 +172,9 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `ask` | `/ask`, Ask API, concierge UI |
 | `onboard` | Business portal (`/portal`, admin review) |
 | `search_inspector` | Admin search debug tools |
+| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub clusters/breadcrumbs, town planning blocks, related-guide modules, category editorial blocks |
+
+Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
 
 ---
 
@@ -199,6 +202,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-04 | PostHog `seo_improvements` flag gates new SEO sprint UI (hubs, town/guide modules, homepage trip planning) |
 | 2026-07-04 | Discover navbar: search icon opens query panel (routes to `/discover`) when `discover` flag is on |
 | 2026-07-04 | Removed PostHog `guides` feature flag — guides are always on (pages, nav, sitemap) |
 | 2026-07-04 | Discover NL: PostHog `discover_nl` flag parses natural-language queries into `/discover` filter params |
