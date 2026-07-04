@@ -118,30 +118,6 @@ describe("sitemap strategy", () => {
     expect(paths(fallback)).not.toContain("/guide");
   });
 
-  it("omits guides hub and guide URLs when guidesEnabled is false", () => {
-    const entries = buildSitemapEntries({
-      base: BASE,
-      now: new Date("2026-06-01"),
-      towns: [{ slug: "seaside" }],
-      guides: [{ slug: PRIMARY_EDITORIAL_GUIDE_SLUG }, { slug: "best-coffee-30a" }],
-      areas: [],
-      categories: [{ slug: "restaurants" }],
-      guidesEnabled: false,
-    });
-    const allPaths = paths(entries);
-    expect(allPaths).not.toContain("/guides");
-    expect(allPaths).not.toContain(PRIMARY_EDITORIAL_GUIDE_PATH);
-    expect(allPaths).not.toContain("/guide/best-coffee-30a");
-    expect(allPaths).toContain("/seaside");
-  });
-
-  it("static fallback omits guides when guidesEnabled is false", () => {
-    const fallback = staticFallbackSitemap(BASE, new Date(), false);
-    const allPaths = paths(fallback);
-    expect(allPaths).not.toContain("/guides");
-    expect(allPaths).not.toContain(PRIMARY_EDITORIAL_GUIDE_PATH);
-  });
-
   it("isExcludedSitemapPath guards business prefix", () => {
     expect(isExcludedSitemapPath("/business/foo")).toBe(true);
     expect(isExcludedSitemapPath("/guide/foo")).toBe(false);

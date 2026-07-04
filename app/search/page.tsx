@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { runSearch } from "@/lib/search/run-search";
-import { getAllFeatureFlags, isAskEnabled, isGuidesEnabled, isSearchEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isAskEnabled, isSearchEnabled } from "@/lib/feature-flags";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
@@ -241,7 +241,7 @@ export default async function SearchPage({ searchParams }: Props) {
     if (type === "towns") redirect("/towns");
     if (type === "areas") redirect("/areas");
     if (type === "businesses" || type === "stores") redirect("/businesses");
-    if (type === "guides") redirect(isGuidesEnabled(flags) ? "/guides" : "/");
+    if (type === "guides") redirect("/guides");
     if (type === "services") redirect(SERVICE_VENDORS_HUB_PATH);
   }
 
@@ -584,7 +584,6 @@ export default async function SearchPage({ searchParams }: Props) {
   }
 
   if (browseMode === "guides") {
-    if (!isGuidesEnabled(flags)) redirect("/");
     let gq = serviceSupabase
       .from("guides_view")
       .select("slug, title, excerpt, seo_description, main_image, hero_image, main_image_url, hero_image_url, status")
