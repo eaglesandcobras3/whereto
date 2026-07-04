@@ -1,4 +1,16 @@
-import { isAskEnabled, isDiscoverEnabled, isSearchEnabled, type DiscoveryFlags, type FeatureFlags } from "@/lib/feature-flags-core";
+import {
+  isAskEnabled,
+  isDiscoverEnabled,
+  isDiscoverNlEnabled,
+  isSearchEnabled,
+  type DiscoveryFlags,
+  type FeatureFlags,
+} from "@/lib/feature-flags-core";
+import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
+import {
+  hasExplicitDiscoverParams,
+  parseDiscoverQuery,
+} from "@/lib/discovery-filters/parse-discover-query";
 import type { BrowseNavItem } from "@/lib/nav/browse-links";
 
 export type { DiscoveryFlags };
@@ -62,17 +74,48 @@ function askQueryFromParams(params?: DiscoveryLinkParams): string | undefined {
 export function discoverHref(flags: FeatureFlags, params?: DiscoveryLinkParams): string {
   if (!isDiscoverEnabled(flags)) return "/";
 
-  const sp = new URLSearchParams();
-  if (params?.town?.trim()) sp.set("town", params.town.trim());
-  else if (params?.town_id?.trim()) sp.set("town_id", params.town_id.trim());
-  if (params?.type === "services") sp.set("type", "services");
-  else if (params?.type === "storefront" || params?.type === "businesses") sp.set("type", "storefront");
-  if (params?.category?.trim()) sp.set("category", params.category.trim());
-  if (params?.service_category?.trim()) sp.set("service_category", params.service_category.trim());
-  if (params?.facet?.trim()) sp.set("facet", params.facet.trim());
-  if (params?.q?.trim()) sp.set("q", params.q.trim());
-  const qs = sp.toString();
-  return qs ? `/discover?${qs}` : "/discover";
+  const effectiveParams = expandDiscoverParamsIfNl(flags, params);
+
+  return buildDiscoverUrlFromLinkParams({
+    type: effectiveParams?.type,
+    town: effectiveParams?.town,
+    town_id: effectiveParams?.town_id,
+    category: effectiveParams?.category,
+    service_category: effectiveParams?.service_category,
+    facet: effectiveParams?.facet,
+    q: effectiveParams?.q,
+  });
+}
+
+function expandDiscoverParamsIfNl(
+  flags: FeatureFlags,
+  params?: DiscoveryLinkParams,
+): DiscoveryLinkParams | undefined {
+  if (!isDiscoverNlFeatureEnabled(flags)) return params;
+  if (!params?.q?.trim()) return params;
+  if (hasExplicitDiscoverParams(params)) return params;
+
+  const parsed = parseDiscoverQuery(params.q);
+  if (!parsed.expanded) return params;
+
+  const next: DiscoveryLinkParams = {};
+  if (parsed.type) next.type = parsed.type;
+  if (parsed.town) next.town = parsed.town;
+  else if (params.town_id) next.town_id = params.town_id;
+  if (parsed.category) next.category = parsed.category;
+  if (parsed.service_category) next.service_category = parsed.service_category;
+  if (parsed.facet) next.facet = parsed.facet;
+  if (parsed.q) next.q = parsed.q;
+  return next;
+}
+
+/** PostHog `discover_nl` (requires `discover`) or local dev bypass. */
+export function isDiscoverNlFeatureEnabled(flags: FeatureFlags): boolean {
+  return isDiscoverNlEnabled(flags) || discoverNlDevBypassEnabled();
+}
+
+function discoverNlDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.DISCOVER_NL_ENABLED === "1";
 }
 
 /** Primary discovery URL — `/discover` when discover is on, else `/ask` or `/search`. */

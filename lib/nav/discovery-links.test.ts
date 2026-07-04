@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyDiscoveryBrowseNav,
+  discoverHref,
   discoveryHref,
   discoveryLinkRel,
   isDiscoveryEnabled,
@@ -14,9 +15,14 @@ const discoverOnly: FeatureFlags = {
   ask: false,
   search: false,
   discover: true,
+  discover_nl: false,
   search_inspector: false,
   onboard: false,
   guides: false,
+};
+const discoverNlOn: FeatureFlags = {
+  ...discoverOnly,
+  discover_nl: true,
 };
 
 describe("applyDiscoveryBrowseNav", () => {
@@ -61,5 +67,28 @@ describe("discoveryLinkRel", () => {
     expect(discoveryLinkRel("/search?type=services")).toBe("nofollow");
     expect(discoveryLinkRel("/ask?q=foo")).toBe("nofollow");
     expect(discoveryLinkRel("/services")).toBeUndefined();
+  });
+});
+
+describe("discoverHref with discover_nl", () => {
+  it("passes raw q when discover_nl is off", () => {
+    expect(discoverHref(discoverOnly, { q: "kid friendly lunch near seaside" })).toBe(
+      "/discover?q=kid+friendly+lunch+near+seaside",
+    );
+  });
+
+  it("expands NL query into structured discover params when discover_nl is on", () => {
+    const href = discoverHref(discoverNlOn, { q: "kid friendly lunch near seaside" });
+    expect(href).toContain("town=seaside");
+    expect(href).toContain("category=restaurants_and_bars");
+    expect(href).toContain("facet=");
+    expect(href).toContain("kid_friendly");
+    expect(href).toContain("lunch");
+  });
+
+  it("does not expand when explicit filters are already present", () => {
+    expect(
+      discoverHref(discoverNlOn, { q: "coffee", town: "seaside" }),
+    ).toBe("/discover?town=seaside&q=coffee");
   });
 });
