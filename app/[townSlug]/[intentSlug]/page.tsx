@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getTownBySlug } from "@/lib/data/town-hub";
+import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import type { Metadata } from "next";
 import {
   getServiceSupabase,
@@ -134,7 +136,11 @@ export default async function SeoIntentPage({ params }: Props) {
 
   const fullSlug = `${townSlug}/${intentSlug}`;
   const row = await loadSeoPage(fullSlug);
-  if (!row?.enriched) notFound();
+  if (!row?.enriched) {
+    const town = await getTownBySlug(townSlug);
+    if (town) redirect(`/${townSlug}`);
+    redirectToSectionHub("towns");
+  }
 
   const townLabel = townSlug
     .split("-")
