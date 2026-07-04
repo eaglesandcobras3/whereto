@@ -29,9 +29,7 @@ export function DiscoverListingCard({ listing, labelForSlug, showTagMatch = fals
 
   const showSummary =
     tagMatchSummary &&
-    (listing.tag_match?.missing_required.length ||
-      listing.tag_match?.missing_any.length ||
-      listing.tag_match?.matched_any.length);
+    (listing.tag_match?.missing.length || listing.tag_match?.matched.length);
 
   return (
     <Link

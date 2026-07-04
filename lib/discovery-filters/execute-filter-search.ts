@@ -15,8 +15,6 @@ import {
 import {
   analyzeTagMatch,
   compareTagMatchScore,
-  resolveTagMatchMode,
-  SUPPLEMENT_PARTIAL_LIMIT,
   type TagMatchAnalysis,
 } from "@/lib/discovery-filters/tag-match";
 import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
@@ -41,25 +39,18 @@ function emptyResult(
 ): DiscoverFilterSearchResult {
   return {
     listings: [],
-    partial_listings: [],
     total: 0,
-    partial_total: 0,
-    tag_match_mode: "none",
     page: state.page,
     page_size: state.page_size,
     total_pages: 0,
-    partial_total_pages: 0,
     applied_filters: applied,
   };
 }
 
 function toTagMatch(analysis: TagMatchAnalysis): DiscoverTagMatch {
   return {
-    matched_required: analysis.matched_required,
-    missing_required: analysis.missing_required,
-    matched_any: analysis.matched_any,
-    missing_any: analysis.missing_any,
-    strict_match: analysis.strict_match,
+    matched: analysis.matched,
+    missing: analysis.missing,
   };
 }
 
@@ -137,24 +128,8 @@ function applyBrowsePoolFilters(
 function scorePoolRows(pool: PoolRow[], state: DiscoveryFilterState): ScoredPoolRow[] {
   return pool.map((row) => ({
     row,
-    analysis: analyzeTagMatch(
-      normalizeSearchTags(row.search_tags),
-      state.tags_required,
-      state.tags_any,
-    ),
+    analysis: analyzeTagMatch(normalizeSearchTags(row.search_tags), state.tags),
   }));
-}
-
-function partitionTagMatches(scored: ScoredPoolRow[]): {
-  strict: ScoredPoolRow[];
-  relaxed: ScoredPoolRow[];
-} {
-  const strict = scored.filter((s) => s.analysis.strict_match);
-  const relaxed = scored
-    .filter((s) => !s.analysis.strict_match && s.analysis.relaxed_match)
-    .sort((a, b) => compareTagMatchScore(a.analysis, b.analysis));
-
-  return { strict, relaxed };
 }
 
 function paginateScored(
@@ -173,7 +148,7 @@ function paginateScored(
 }
 
 function hasTagFilters(state: DiscoveryFilterState): boolean {
-  return state.tags_required.length > 0 || state.tags_any.length > 0;
+  return state.tags.length > 0;
 }
 
 export async function executeFilterSearch(
@@ -226,8 +201,7 @@ export async function executeFilterSearch(
     town_ids: state.town_ids,
     category_slug: state.category_slug ?? null,
     service_category_slug: state.service_category_slug ?? null,
-    tags_required: state.tags_required,
-    tags_any: state.tags_any,
+    tags: state.tags,
     q: state.q ?? null,
   };
 
@@ -251,14 +225,10 @@ export async function executeFilterSearch(
 
     return {
       listings: rows.map((row) => mapListingRow(row)),
-      partial_listings: [],
       total,
-      partial_total: 0,
-      tag_match_mode: "none",
       page: state.page,
       page_size: state.page_size,
       total_pages,
-      partial_total_pages: 0,
       applied_filters: appliedBase,
     };
   }
@@ -281,7 +251,7 @@ export async function executeFilterSearch(
     const { pageRows, total, totalPages } = paginateScored(
       pool.map((row) => ({
         row,
-        analysis: analyzeTagMatch(normalizeSearchTags(row.search_tags), [], []),
+        analysis: analyzeTagMatch(normalizeSearchTags(row.search_tags), []),
       })),
       state.page,
       state.page_size,
@@ -289,14 +259,10 @@ export async function executeFilterSearch(
 
     return {
       listings: pageRows.map(({ row }) => mapListingRow(row)),
-      partial_listings: [],
       total,
-      partial_total: 0,
-      tag_match_mode: "none",
       page: state.page,
       page_size: state.page_size,
       total_pages: totalPages,
-      partial_total_pages: 0,
       applied_filters: {
         ...appliedBase,
         pool_limit: DISCOVER_POOL_LIMIT,
@@ -306,54 +272,32 @@ export async function executeFilterSearch(
     };
   }
 
-  const scored = scorePoolRows(pool, state);
-  const { strict, relaxed } = partitionTagMatches(scored);
-
-  const strictSorted = [...strict].sort((a, b) => {
-    const scoreCmp = compareTagMatchScore(a.analysis, b.analysis);
-    if (scoreCmp !== 0) return scoreCmp;
-    const featuredA = Boolean(a.row.featured);
-    const featuredB = Boolean(b.row.featured);
-    if (featuredA !== featuredB) return featuredA ? -1 : 1;
-    return String(a.row.title ?? "").localeCompare(String(b.row.title ?? ""), undefined, {
-      sensitivity: "base",
+  const scored = scorePoolRows(pool, state)
+    .filter((s) => s.analysis.matches)
+    .sort((a, b) => {
+      const scoreCmp = compareTagMatchScore(a.analysis, b.analysis);
+      if (scoreCmp !== 0) return scoreCmp;
+      const featuredA = Boolean(a.row.featured);
+      const featuredB = Boolean(b.row.featured);
+      if (featuredA !== featuredB) return featuredA ? -1 : 1;
+      return String(a.row.title ?? "").localeCompare(String(b.row.title ?? ""), undefined, {
+        sensitivity: "base",
+      });
     });
-  });
 
-  const strictPage = paginateScored(strictSorted, state.page, state.page_size);
-  const tag_match_mode = resolveTagMatchMode(strictPage.total, relaxed.length);
-
-  let partialPage: { pageRows: ScoredPoolRow[]; total: number; totalPages: number };
-  if (tag_match_mode === "relaxed") {
-    partialPage = paginateScored(relaxed, state.page, state.page_size);
-  } else if (tag_match_mode === "supplement") {
-    const strictIds = new Set(strictSorted.map((s) => String(s.row.id)));
-    const supplement = relaxed.filter((s) => !strictIds.has(String(s.row.id)));
-    partialPage = {
-      pageRows: supplement.slice(0, SUPPLEMENT_PARTIAL_LIMIT),
-      total: supplement.length,
-      totalPages: 1,
-    };
-  } else {
-    partialPage = { pageRows: [], total: 0, totalPages: 0 };
-  }
+  const tagPage = paginateScored(scored, state.page, state.page_size);
 
   return {
-    listings: strictPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),
-    partial_listings: partialPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),
-    total: strictPage.total,
-    partial_total: partialPage.total,
-    tag_match_mode,
+    listings: tagPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),
+    total: tagPage.total,
     page: state.page,
     page_size: state.page_size,
-    total_pages: strictPage.totalPages,
-    partial_total_pages: partialPage.totalPages,
+    total_pages: tagPage.totalPages,
     applied_filters: {
       ...appliedBase,
       pool_limit: DISCOVER_POOL_LIMIT,
       storefront_group: storefrontGroup ?? null,
       service_group: serviceGroup ?? null,
-      tag_match_mode,
     },
   };
 }
