@@ -17,6 +17,7 @@ import {
   PRIMARY_REGION_DB_SLUG,
   PRIMARY_REGION_HUB_PATH,
 } from "@/lib/routes/primary-region";
+import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import type { Metadata } from "next";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
@@ -372,7 +373,7 @@ export default async function TownPage({ params }: Props) {
 
   const asPlace = await getPublicPlaceBySlug(townSlug);
   if (asPlace) redirect(`/area/${townSlug}`);
-  notFound();
+  redirectToSectionHub("towns");
 }
 
 type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
