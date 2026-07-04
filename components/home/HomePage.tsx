@@ -114,6 +114,7 @@ type Props = {
     title: string;
     subtitle: string;
   };
+  seoImprovements?: boolean;
 };
 
 export function HomePage({
@@ -125,6 +126,7 @@ export function HomePage({
     subtitle:
       "From Rosemary Beach to Seaside and beyond, each town along Scenic Highway 30A has its own pace. Find where to eat, what to do, and the beach-access details worth knowing before you arrive.",
   },
+  seoImprovements = false,
 }: Props) {
   const featureFlags = useAppFeatureFlags();
 
@@ -288,7 +290,7 @@ export function HomePage({
           </section>
         )}
 
-        <TripPlanningSection />
+        {seoImprovements ? <TripPlanningSection /> : null}
 
         <ListBusinessHomeCta />
       </div>

@@ -51,7 +51,7 @@ import {
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled, type DiscoveryFlags } from "@/lib/nav/discovery-links";
 
 type SidebarArea = {
@@ -331,13 +331,17 @@ export default async function TownPage({ params }: Props) {
 
   const categorySlug = await resolveCategorySlugFromPublicPath(townSlug);
   if (categorySlug) {
-    const hub = await loadCategoryHubPage(categorySlug);
+    const [hub, flags] = await Promise.all([
+      loadCategoryHubPage(categorySlug),
+      getAllFeatureFlags(),
+    ]);
     if (!hub) notFound();
     return (
       <CategoryHubView
         cat={hub.cat}
         townGroups={hub.townGroups}
         businesses={hub.businesses}
+        seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
       />
     );
   }
@@ -354,7 +358,14 @@ export default async function TownPage({ params }: Props) {
       getTownPageData(town.id, town.slug),
       getAllFeatureFlags(),
     ]);
-    return <BasicTownPage town={town} pageData={pageData} featureFlags={featureFlags} />;
+    return (
+      <BasicTownPage
+        town={town}
+        pageData={pageData}
+        featureFlags={featureFlags}
+        seoImprovements={isSeoImprovementsFeatureEnabled(featureFlags)}
+      />
+    );
   }
 
   const asPlace = await getPublicPlaceBySlug(townSlug);
@@ -373,10 +384,12 @@ function BasicTownPage({
   town,
   pageData,
   featureFlags,
+  seoImprovements,
 }: {
   town: TownRecord;
   pageData: TownPageData;
   featureFlags: DiscoveryFlags;
+  seoImprovements: boolean;
 }) {
   const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
   const descriptor = getTownDescriptor(town.slug);
@@ -447,7 +460,7 @@ function BasicTownPage({
             fallbackIcon="location_city"
           />
 
-          {planningProfile ? (
+          {seoImprovements && planningProfile ? (
             <div className="mb-10">
               <TownPlanningSections townName={town.name} profile={planningProfile} />
             </div>
@@ -498,11 +511,13 @@ function BasicTownPage({
               </PlaceRelatedSection>
             ) : null}
 
-            <RelatedGuidesSection
-              title={`Plan your ${town.name} trip`}
-              links={relatedGuides}
-              analyticsCategory="town_related_guides"
-            />
+            {seoImprovements ? (
+              <RelatedGuidesSection
+                title={`Plan your ${town.name} trip`}
+                links={relatedGuides}
+                analyticsCategory="town_related_guides"
+              />
+            ) : null}
 
               {!hasEditorialIntro && pageData.categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">

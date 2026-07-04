@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import {
   getPublishedContentEntryBySlug,
@@ -153,7 +154,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const page = await loadGuide(slug);
+  const [page, flags] = await Promise.all([loadGuide(slug), getAllFeatureFlags()]);
+  const seoImprovements = isSeoImprovementsFeatureEnabled(flags);
 
   if (!page) notFound();
 
@@ -161,7 +163,7 @@ export default async function GuidePage({ params }: Props) {
   const hasHeroImage = Boolean(page.og_image_url);
   const lead = page.seo_description?.trim() || null;
   const showCorridorMap = slug === PRIMARY_EDITORIAL_GUIDE_SLUG;
-  const relatedGuides = relatedGuidesForSlug(slug);
+  const relatedGuides = seoImprovements ? relatedGuidesForSlug(slug) : [];
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -323,11 +325,13 @@ export default async function GuidePage({ params }: Props) {
             </figure>
           ) : null}
 
-          {showCorridorMap ? <FirstTimerTownCompareTable /> : null}
+          {seoImprovements && showCorridorMap ? <FirstTimerTownCompareTable /> : null}
 
           <MarkdownRenderer content={bodyMarkdown} />
 
-          <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
+          {seoImprovements ? (
+            <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
+          ) : null}
         </article>
       </main>
     </div>

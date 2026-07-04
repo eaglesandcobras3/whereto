@@ -26,6 +26,7 @@ import {
 } from "@/lib/seo/breadcrumb-schema";
 import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
 import { relatedGuidesForTownSlug } from "@/lib/seo/guide-related-links";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
@@ -141,7 +142,8 @@ export default async function SeoIntentPage({ params }: Props) {
   if (isReservedRootSlug(townSlug)) notFound();
 
   const fullSlug = `${townSlug}/${intentSlug}`;
-  const row = await loadSeoPage(fullSlug);
+  const [row, flags] = await Promise.all([loadSeoPage(fullSlug), getAllFeatureFlags()]);
+  const seoImprovements = isSeoImprovementsFeatureEnabled(flags);
   if (!row?.enriched) {
     const town = await getTownBySlug(townSlug);
     if (town) redirect(`/${townSlug}`);
@@ -337,11 +339,13 @@ export default async function SeoIntentPage({ params }: Props) {
           </section>
         ) : null}
 
-        <RelatedGuidesSection
-          title={`Planning guides for ${townLabel}`}
-          links={townRelatedGuides}
-          analyticsCategory="intent_related_guides"
-        />
+        {seoImprovements ? (
+          <RelatedGuidesSection
+            title={`Planning guides for ${townLabel}`}
+            links={townRelatedGuides}
+            analyticsCategory="intent_related_guides"
+          />
+        ) : null}
 
         {/* Navigation Footer */}
         <footer className="flex flex-wrap items-center justify-center gap-6 border-t border-[var(--color-border)] pt-8">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { HomePage } from "@/components/home/HomePage";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
@@ -162,6 +162,7 @@ export default async function Home({ searchParams }: HomeProps) {
       featuredBusinesses={featuredBusinesses}
       towns={townList}
       heroSettings={heroSettings}
+      seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
     />
   );
 }
