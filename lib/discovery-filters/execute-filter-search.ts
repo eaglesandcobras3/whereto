@@ -3,9 +3,6 @@ import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { businessCategoryGroupForSlug } from "@/lib/business-categories/groups";
-import { serviceCategoryGroupForSlug } from "@/lib/service-categories/groups";
-import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
 import {
@@ -13,12 +10,10 @@ import {
   normalizeStorefrontCategoryGroupSlug,
 } from "@/lib/discovery-filters/resolve-category-groups";
 import {
-  analyzeTagMatch,
-  compareTagMatchScore,
-  resolveTagMatchMode,
-  SUPPLEMENT_PARTIAL_LIMIT,
-  type TagMatchAnalysis,
-} from "@/lib/discovery-filters/tag-match";
+  compareDiscoverListingScore,
+  scoreDiscoverListing,
+  type DiscoverListingScore,
+} from "@/lib/discovery-filters/score-listing";
 import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
 import type {
   DiscoverFilterSearchResult,
@@ -29,11 +24,11 @@ import type {
 const DISCOVER_POOL_LIMIT = 2000;
 
 const VIEW_LISTING_SELECT =
-  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
+  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, is_storefront, is_service_business, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
 
 type PoolRow = Record<string, unknown>;
 
-type ScoredPoolRow = { row: PoolRow; analysis: TagMatchAnalysis };
+type ScoredPoolRow = { row: PoolRow; result: DiscoverListingScore };
 
 function emptyResult(
   state: DiscoveryFilterState,
@@ -41,29 +36,22 @@ function emptyResult(
 ): DiscoverFilterSearchResult {
   return {
     listings: [],
-    partial_listings: [],
     total: 0,
-    partial_total: 0,
-    tag_match_mode: "none",
     page: state.page,
     page_size: state.page_size,
     total_pages: 0,
-    partial_total_pages: 0,
     applied_filters: applied,
   };
 }
 
-function toTagMatch(analysis: TagMatchAnalysis): DiscoverTagMatch {
+function toTagMatch(result: DiscoverListingScore): DiscoverTagMatch {
   return {
-    matched_required: analysis.matched_required,
-    missing_required: analysis.missing_required,
-    matched_any: analysis.matched_any,
-    missing_any: analysis.missing_any,
-    strict_match: analysis.strict_match,
+    matched: result.tag_match.matched,
+    missing: result.tag_match.missing,
   };
 }
 
-function mapListingRow(row: PoolRow, analysis?: TagMatchAnalysis): DiscoverListingRow {
+function mapListingRow(row: PoolRow, result?: DiscoverListingScore): DiscoverListingRow {
   const town = row.towns as { title?: string; slug?: string } | null;
   const cat = row.business_categories as { slug?: string } | null;
   const svc = row.service_categories as { slug?: string } | null;
@@ -86,22 +74,11 @@ function mapListingRow(row: PoolRow, analysis?: TagMatchAnalysis): DiscoverListi
     business_type: (row.business_type as string | null) ?? null,
     search_tags: normalizeSearchTags(row.search_tags),
   };
-  if (analysis) {
-    listing.tag_match = toTagMatch(analysis);
+  if (result) {
+    listing.tag_match = toTagMatch(result);
+    listing.scope_match = result.scope_match;
   }
   return listing;
-}
-
-function matchesStorefrontGroup(row: PoolRow, groupSlug: string): boolean {
-  const cat = row.business_categories as { slug?: string } | null;
-  return businessCategoryGroupForSlug(cat?.slug ?? null) === groupSlug;
-}
-
-function matchesServiceGroup(row: PoolRow, groupSlug: string): boolean {
-  const svc = row.service_categories as { slug?: string } | null;
-  const slug = svc?.slug?.trim().toLowerCase();
-  if (!slug) return false;
-  return serviceCategoryGroupForSlug(slug as ServiceCategorySlug) === groupSlug;
 }
 
 function sortPoolRows(rows: PoolRow[]): PoolRow[] {
@@ -115,46 +92,16 @@ function sortPoolRows(rows: PoolRow[]): PoolRow[] {
   });
 }
 
-function applyBrowsePoolFilters(
-  rows: PoolRow[],
+function scorePoolRows(
+  pool: PoolRow[],
+  state: DiscoveryFilterState,
   storefrontGroup: string | undefined,
   serviceGroup: string | undefined,
-  entityType: DiscoveryFilterState["entity_type"],
-): PoolRow[] {
-  let filtered = rows;
-
-  if (entityType === "storefront" && storefrontGroup) {
-    filtered = filtered.filter((row) => matchesStorefrontGroup(row, storefrontGroup));
-  }
-
-  if (entityType === "service" && serviceGroup) {
-    filtered = filtered.filter((row) => matchesServiceGroup(row, serviceGroup));
-  }
-
-  return filtered;
-}
-
-function scorePoolRows(pool: PoolRow[], state: DiscoveryFilterState): ScoredPoolRow[] {
+): ScoredPoolRow[] {
   return pool.map((row) => ({
     row,
-    analysis: analyzeTagMatch(
-      normalizeSearchTags(row.search_tags),
-      state.tags_required,
-      state.tags_any,
-    ),
+    result: scoreDiscoverListing(row, state, storefrontGroup, serviceGroup),
   }));
-}
-
-function partitionTagMatches(scored: ScoredPoolRow[]): {
-  strict: ScoredPoolRow[];
-  relaxed: ScoredPoolRow[];
-} {
-  const strict = scored.filter((s) => s.analysis.strict_match);
-  const relaxed = scored
-    .filter((s) => !s.analysis.strict_match && s.analysis.relaxed_match)
-    .sort((a, b) => compareTagMatchScore(a.analysis, b.analysis));
-
-  return { strict, relaxed };
 }
 
 function paginateScored(
@@ -172,8 +119,17 @@ function paginateScored(
   };
 }
 
-function hasTagFilters(state: DiscoveryFilterState): boolean {
-  return state.tags_required.length > 0 || state.tags_any.length > 0;
+function sortScoredRows(rows: ScoredPoolRow[]): ScoredPoolRow[] {
+  return [...rows].sort((a, b) => {
+    const scoreCmp = compareDiscoverListingScore(a.result, b.result);
+    if (scoreCmp !== 0) return scoreCmp;
+    const featuredA = Boolean(a.row.featured);
+    const featuredB = Boolean(b.row.featured);
+    if (featuredA !== featuredB) return featuredA ? -1 : 1;
+    return String(a.row.title ?? "").localeCompare(String(b.row.title ?? ""), undefined, {
+      sensitivity: "base",
+    });
+  });
 }
 
 export async function executeFilterSearch(
@@ -187,10 +143,8 @@ export async function executeFilterSearch(
   const supabase = getServiceSupabase();
   const storefrontGroup = normalizeStorefrontCategoryGroupSlug(state.category_slug);
   const serviceGroup = normalizeServiceCategoryGroupSlug(state.service_category_slug);
-
-  const needsMemoryPass = Boolean(
-    storefrontGroup || serviceGroup || hasTagFilters(state),
-  );
+  const hasTags = state.tags.length > 0;
+  const needsMemoryPass = hasTags || Boolean(storefrontGroup || serviceGroup);
 
   let query = supabase
     .from("businesses_view")
@@ -201,7 +155,9 @@ export async function executeFilterSearch(
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
-  if (state.entity_type === "service") {
+  if (hasTags) {
+    query = query.or("is_storefront.eq.true,is_service_business.eq.true");
+  } else if (state.entity_type === "service") {
     query = query.eq("is_service_business", true);
   } else {
     query = query.eq("is_storefront", true);
@@ -226,9 +182,9 @@ export async function executeFilterSearch(
     town_ids: state.town_ids,
     category_slug: state.category_slug ?? null,
     service_category_slug: state.service_category_slug ?? null,
-    tags_required: state.tags_required,
-    tags_any: state.tags_any,
+    tags: state.tags,
     q: state.q ?? null,
+    filter_mode: hasTags ? "tags_hard" : "scope_hard",
   };
 
   if (!needsMemoryPass) {
@@ -251,14 +207,10 @@ export async function executeFilterSearch(
 
     return {
       listings: rows.map((row) => mapListingRow(row)),
-      partial_listings: [],
       total,
-      partial_total: 0,
-      tag_match_mode: "none",
       page: state.page,
       page_size: state.page_size,
       total_pages,
-      partial_total_pages: 0,
       applied_filters: appliedBase,
     };
   }
@@ -274,14 +226,13 @@ export async function executeFilterSearch(
   }
 
   let pool = (data ?? []) as PoolRow[];
-  pool = applyBrowsePoolFilters(pool, storefrontGroup, serviceGroup, state.entity_type);
 
-  if (!hasTagFilters(state)) {
+  if (!hasTags && !storefrontGroup && !serviceGroup) {
     pool = sortPoolRows(pool);
     const { pageRows, total, totalPages } = paginateScored(
       pool.map((row) => ({
         row,
-        analysis: analyzeTagMatch(normalizeSearchTags(row.search_tags), [], []),
+        result: scoreDiscoverListing(row, state, storefrontGroup, serviceGroup),
       })),
       state.page,
       state.page_size,
@@ -289,71 +240,33 @@ export async function executeFilterSearch(
 
     return {
       listings: pageRows.map(({ row }) => mapListingRow(row)),
-      partial_listings: [],
       total,
-      partial_total: 0,
-      tag_match_mode: "none",
       page: state.page,
       page_size: state.page_size,
       total_pages: totalPages,
-      partial_total_pages: 0,
       applied_filters: {
         ...appliedBase,
         pool_limit: DISCOVER_POOL_LIMIT,
-        storefront_group: storefrontGroup ?? null,
-        service_group: serviceGroup ?? null,
       },
     };
   }
 
-  const scored = scorePoolRows(pool, state);
-  const { strict, relaxed } = partitionTagMatches(scored);
-
-  const strictSorted = [...strict].sort((a, b) => {
-    const scoreCmp = compareTagMatchScore(a.analysis, b.analysis);
-    if (scoreCmp !== 0) return scoreCmp;
-    const featuredA = Boolean(a.row.featured);
-    const featuredB = Boolean(b.row.featured);
-    if (featuredA !== featuredB) return featuredA ? -1 : 1;
-    return String(a.row.title ?? "").localeCompare(String(b.row.title ?? ""), undefined, {
-      sensitivity: "base",
-    });
-  });
-
-  const strictPage = paginateScored(strictSorted, state.page, state.page_size);
-  const tag_match_mode = resolveTagMatchMode(strictPage.total, relaxed.length);
-
-  let partialPage: { pageRows: ScoredPoolRow[]; total: number; totalPages: number };
-  if (tag_match_mode === "relaxed") {
-    partialPage = paginateScored(relaxed, state.page, state.page_size);
-  } else if (tag_match_mode === "supplement") {
-    const strictIds = new Set(strictSorted.map((s) => String(s.row.id)));
-    const supplement = relaxed.filter((s) => !strictIds.has(String(s.row.id)));
-    partialPage = {
-      pageRows: supplement.slice(0, SUPPLEMENT_PARTIAL_LIMIT),
-      total: supplement.length,
-      totalPages: 1,
-    };
-  } else {
-    partialPage = { pageRows: [], total: 0, totalPages: 0 };
-  }
+  const scored = sortScoredRows(scorePoolRows(pool, state, storefrontGroup, serviceGroup)).filter(
+    (s) => s.result.passes,
+  );
+  const resultPage = paginateScored(scored, state.page, state.page_size);
 
   return {
-    listings: strictPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),
-    partial_listings: partialPage.pageRows.map(({ row, analysis }) => mapListingRow(row, analysis)),
-    total: strictPage.total,
-    partial_total: partialPage.total,
-    tag_match_mode,
+    listings: resultPage.pageRows.map(({ row, result }) => mapListingRow(row, result)),
+    total: resultPage.total,
     page: state.page,
     page_size: state.page_size,
-    total_pages: strictPage.totalPages,
-    partial_total_pages: partialPage.totalPages,
+    total_pages: resultPage.totalPages,
     applied_filters: {
       ...appliedBase,
       pool_limit: DISCOVER_POOL_LIMIT,
       storefront_group: storefrontGroup ?? null,
       service_group: serviceGroup ?? null,
-      tag_match_mode,
     },
   };
 }
