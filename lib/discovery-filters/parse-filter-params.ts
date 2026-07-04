@@ -17,6 +17,7 @@ export type RawDiscoverParams = {
   category?: string | null;
   service_category?: string | null;
   facet?: string | null;
+  /** @deprecated Merged into `facet` — still read for old bookmarks. */
   facet_any?: string | null;
   q?: string | null;
   page?: string | null;
@@ -29,6 +30,12 @@ export function parseEntityType(raw: string | null | undefined): DiscoveryEntity
   return "storefront";
 }
 
+function parseTagsFromParams(params: RawDiscoverParams): string[] {
+  const fromFacet = parseTagSlugsFromParam(params.facet ?? undefined);
+  const fromAny = parseTagSlugsFromParam(params.facet_any ?? undefined);
+  return [...new Set([...fromFacet, ...fromAny])];
+}
+
 export function parseDiscoveryFilterState(
   params: RawDiscoverParams,
   resolvedTownIds?: string[],
@@ -37,11 +44,7 @@ export function parseDiscoveryFilterState(
   const category_slug = normalizeStorefrontCategoryGroupSlug(params.category ?? undefined);
   const service_category_slug = normalizeServiceCategoryGroupSlug(params.service_category ?? undefined);
 
-  const tags_required = parseTagSlugsFromParam(params.facet ?? undefined);
-  const requiredSet = new Set(tags_required);
-  const tags_any = parseTagSlugsFromParam(params.facet_any ?? undefined).filter(
-    (slug) => !requiredSet.has(slug),
-  );
+  const tags = parseTagsFromParams(params);
 
   const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const page_size = Math.min(
@@ -58,8 +61,7 @@ export function parseDiscoveryFilterState(
     town_ids,
     category_slug,
     service_category_slug,
-    tags_required,
-    tags_any,
+    tags,
     q,
     page,
     page_size,
@@ -75,7 +77,6 @@ export function constrainTagsToScope(
   const allowed = new Set(scopedSlugs);
   return {
     ...state,
-    tags_required: state.tags_required.filter((slug) => allowed.has(slug)),
-    tags_any: state.tags_any.filter((slug) => allowed.has(slug)),
+    tags: state.tags.filter((slug) => allowed.has(slug)),
   };
 }
