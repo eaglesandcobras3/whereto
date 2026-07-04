@@ -7,6 +7,7 @@
 export const FEATURE_FLAG_KEYS = [
   "search",
   "discover",
+  "discover_nl",
   "ask",
   "search_inspector",
   "onboard",
@@ -20,6 +21,7 @@ export type FeatureFlags = Record<FeatureFlagKey, boolean>;
 export const DEFAULT_FLAGS: FeatureFlags = {
   search: false,
   discover: false,
+  discover_nl: false,
   ask: false,
   search_inspector: false,
   onboard: false,
@@ -66,6 +68,11 @@ export function isSearchEnabled(flags: DiscoveryFlags | FeatureFlags): boolean {
 
 export function isDiscoverEnabled(flags: FeatureFlags): boolean {
   return flags.discover === true;
+}
+
+/** Natural-language query expansion for `/discover` (requires `discover`). */
+export function isDiscoverNlEnabled(flags: FeatureFlags): boolean {
+  return flags.discover === true && flags.discover_nl === true;
 }
 
 export function isSearchInspectorEnabled(flags: FeatureFlags): boolean {

@@ -4,6 +4,7 @@ import { useCallback, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
+import { buildDiscoverUrl } from "@/lib/discovery-filters/build-discover-url";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverFilterSearchResult } from "@/lib/discovery-filters/types";
@@ -31,29 +32,6 @@ type Props = {
     page: number;
   };
 };
-
-function buildDiscoverUrl(params: {
-  type: "storefront" | "service";
-  townSlugs: string[];
-  category?: string;
-  service_category?: string;
-  tags: string[];
-  q?: string;
-  page?: number;
-}): string {
-  const sp = new URLSearchParams();
-  sp.set("type", params.type === "service" ? "services" : "storefront");
-  if (params.townSlugs.length) sp.set("town", params.townSlugs.join(","));
-  if (params.type === "storefront" && params.category) sp.set("category", params.category);
-  if (params.type === "service" && params.service_category) {
-    sp.set("service_category", params.service_category);
-  }
-  if (params.tags.length) sp.set("facet", params.tags.join(","));
-  if (params.q?.trim()) sp.set("q", params.q.trim());
-  if (params.page && params.page > 1) sp.set("page", String(params.page));
-  const qs = sp.toString();
-  return qs ? `/discover?${qs}` : "/discover";
-}
 
 function parseFacetSlugs(facetParam: string | undefined): string[] {
   if (!facetParam?.trim()) return [];

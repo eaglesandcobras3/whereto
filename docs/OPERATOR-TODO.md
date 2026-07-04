@@ -76,6 +76,27 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/se
 
 ---
 
+## Discover: natural-language query expansion (`discover_nl`)
+
+When PostHog `discover_nl` is on (requires `discover`), navbar/homepage/`/discover?q=…` queries are parsed into structured discover URL params (town, category, tags) before results load.
+
+### PostHog
+
+- [ ] Create boolean flag `discover_nl` in PostHog (default off; enable with `discover`)
+- [ ] Roll out to staging, then production once spot-checks look good
+
+### Local dev
+
+```bash
+DISCOVER_ENABLED=1 DISCOVER_NL_ENABLED=1 npm run dev
+```
+
+### Debug API
+
+`POST /api/discovery/parse-query` with `{ "query": "kid friendly lunch near seaside" }` returns parsed params (requires discover feature on).
+
+---
+
 ## Discover: `businesses_view` + `search_tags`
 
 `/discover` reads `search_tags` from `businesses_view` for facet filtering and tag chips on result cards. PostgreSQL views using `SELECT b.*` do **not** pick up columns added to `businesses` later — recreate the view after search-document migrations.
@@ -184,6 +205,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-04 | Discover NL: PostHog `discover_nl` flag parses natural-language queries into `/discover` filter params |
 | 2026-07-03 | Discover fix: recreate `businesses_view` so `search_tags` is exposed — [businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql) |
 | 2026-06-30 | Guides admin at `/admin/guides` — markdown editor, town/area/business links, AI enrich, publish gate |
 | 2026-06-30 | Removed scheduled SEO audit from `vercel.json` — use `npm run audit:seo -- --live` manually |

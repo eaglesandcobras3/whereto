@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getAllFeatureFlags, isDiscoverFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isDiscoverFeatureEnabled, isDiscoverNlFeatureEnabled } from "@/lib/feature-flags";
+import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import { executeFilterSearch } from "@/lib/discovery-filters/execute-filter-search";
 import { loadDiscoverFilterOptions } from "@/lib/discovery-filters/load-discover-options";
 import { loadScopedSearchTags } from "@/lib/discovery-filters/load-scoped-search-tags";
@@ -9,6 +10,10 @@ import {
   parseDiscoveryFilterState,
   parseEntityType,
 } from "@/lib/discovery-filters/parse-filter-params";
+import {
+  hasExplicitDiscoverParams,
+  parseDiscoverQuery,
+} from "@/lib/discovery-filters/parse-discover-query";
 import { resolveTownIdsFromParam } from "@/lib/discovery-filters/resolve-town-ids";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { DiscoverPageClient } from "./discover-page-client";
@@ -41,6 +46,18 @@ export default async function DiscoverPage({ searchParams }: Props) {
   }
 
   const sp = await searchParams;
+
+  if (
+    isDiscoverNlFeatureEnabled(flags) &&
+    sp.q?.trim() &&
+    !hasExplicitDiscoverParams(sp)
+  ) {
+    const parsed = parseDiscoverQuery(sp.q);
+    if (parsed.expanded) {
+      redirect(buildDiscoverUrlFromLinkParams(parsed));
+    }
+  }
+
   const entityType = parseEntityType(sp.type);
   const supabase = getServiceSupabase();
   const { town_ids, town_slugs } = await resolveTownIdsFromParam(
