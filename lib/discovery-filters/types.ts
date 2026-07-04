@@ -1,3 +1,5 @@
+import type { DiscoverListingScopeMatch } from "@/lib/discovery-filters/score-listing";
+
 export type DiscoverTagMatch = {
   matched: string[];
   missing: string[];
@@ -16,6 +18,7 @@ export type DiscoverListingRow = {
   business_type: string | null;
   search_tags: string[];
   tag_match?: DiscoverTagMatch;
+  scope_match?: DiscoverListingScopeMatch;
 };
 
 export type DiscoverFilterSearchResult = {

@@ -15,7 +15,7 @@ export const discoveryFilterStateSchema = z.object({
   town_ids: z.array(z.string().uuid()).default([]),
   category_slug: z.string().min(1).optional(),
   service_category_slug: z.string().min(1).optional(),
-  /** Selected tags — listings must match at least one; more matches rank higher. */
+  /** Selected tags — hard filter (match at least one) when present. */
   tags: z.array(searchTagSlugSchema).default([]),
   q: z.string().max(200).optional(),
   page: z.number().int().min(1).default(1),

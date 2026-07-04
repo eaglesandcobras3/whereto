@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
+import { formatScopeMatchNote } from "@/lib/discovery-filters/format-scope-match";
 import { formatTagMatchSummary } from "@/lib/discovery-filters/format-tag-match";
 import type { DiscoverListingRow } from "@/lib/discovery-filters/types";
 import { cn } from "@/lib/utils";
@@ -16,9 +17,17 @@ type Props = {
   listing: DiscoverListingRow;
   labelForSlug: (slug: string) => string;
   showTagMatch?: boolean;
+  preferredEntityType?: "storefront" | "service";
+  hasCategoryPreference?: boolean;
 };
 
-export function DiscoverListingCard({ listing, labelForSlug, showTagMatch = false }: Props) {
+export function DiscoverListingCard({
+  listing,
+  labelForSlug,
+  showTagMatch = false,
+  preferredEntityType = "storefront",
+  hasCategoryPreference = false,
+}: Props) {
   const thumb = businessListingImageUrl(listing.hero_image_url);
   const showImage = Boolean(thumb);
 
@@ -27,9 +36,16 @@ export function DiscoverListingCard({ listing, labelForSlug, showTagMatch = fals
       ? formatTagMatchSummary(listing.tag_match, labelForSlug)
       : null;
 
-  const showSummary =
-    tagMatchSummary &&
-    (listing.tag_match?.missing.length || listing.tag_match?.matched.length);
+  const scopeNote =
+    showTagMatch && listing.scope_match
+      ? formatScopeMatchNote(
+          listing.scope_match,
+          preferredEntityType,
+          hasCategoryPreference,
+        )
+      : null;
+
+  const matchNotes = [tagMatchSummary, scopeNote].filter(Boolean);
 
   return (
     <Link
@@ -66,8 +82,8 @@ export function DiscoverListingCard({ listing, labelForSlug, showTagMatch = fals
         {listing.town_name ? (
           <p className="text-xs text-[var(--color-text-tertiary)]">{listing.town_name}</p>
         ) : null}
-        {showSummary ? (
-          <p className="text-xs font-medium text-amber-800">{tagMatchSummary}</p>
+        {matchNotes.length ? (
+          <p className="text-xs font-medium text-amber-800">{matchNotes.join(" · ")}</p>
         ) : null}
         {listing.excerpt ? (
           <p className="line-clamp-3 text-xs leading-relaxed text-[var(--color-text-secondary)]">

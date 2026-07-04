@@ -146,6 +146,14 @@ export function DiscoverPageClient({
       : serviceCategories.find((c) => c.slug === initialParams.service_category)?.title;
 
   const hasTagFilters = selectedTags.length > 0;
+  const hasCategoryPreference = Boolean(
+    initialParams.type === "storefront"
+      ? initialParams.category
+      : initialParams.service_category,
+  );
+  const softScopeMode = hasTagFilters;
+  const typeLabel =
+    initialParams.type === "storefront" ? ", storefront businesses" : ", regional services";
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -156,8 +164,8 @@ export function DiscoverPageClient({
             Browse by filters
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-secondary)]">
-            Scope by town and category, then refine with tags. Results match at least one selected
-            tag and rank higher when more tags fit.
+            Town always narrows the list. With tags selected, type and category prefer matching
+            places but won&apos;t hide others. Without tags, type and category filter strictly.
           </p>
         </div>
       </div>
@@ -195,6 +203,11 @@ export function DiscoverPageClient({
                   Services
                 </button>
               </div>
+              <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+                {softScopeMode
+                  ? "Prefers this type; the other may appear when tags match."
+                  : "Only listings of this type are shown."}
+              </p>
             </div>
 
             <div>
@@ -242,6 +255,11 @@ export function DiscoverPageClient({
                     </option>
                   ))}
                 </select>
+                <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+                  {softScopeMode
+                    ? "Prefers this category; others may appear when tags match."
+                    : "Only listings in this category are shown."}
+                </p>
               </div>
             ) : (
               <div>
@@ -267,6 +285,11 @@ export function DiscoverPageClient({
                     </option>
                   ))}
                 </select>
+                <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+                  {softScopeMode
+                    ? "Prefers this specialty; others may appear when tags match."
+                    : "Only listings in this specialty are shown."}
+                </p>
               </div>
             )}
 
@@ -287,7 +310,9 @@ export function DiscoverPageClient({
                 emptyMessage="No tags match"
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                Match any selected tag. More matches rank higher.
+                {softScopeMode
+                  ? "Must match at least one tag. More matches rank higher."
+                  : "Add tags to search across categories and types."}
               </p>
             </div>
           </aside>
@@ -320,9 +345,14 @@ export function DiscoverPageClient({
 
               {hasTagFilters ? (
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Showing places that match at least one of your tags, best matches first.
+                  Matching at least one tag in your towns. Preferred type and category rank first.
                 </p>
-              ) : null}
+              ) : (
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Filtered by town{typeLabel}, and category when selected. Add tags to search more
+                  broadly.
+                </p>
+              )}
 
               <dl className="grid gap-1 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 px-3 py-2 text-xs text-[var(--color-text-secondary)] sm:grid-cols-2">
                 <div>
@@ -371,6 +401,8 @@ export function DiscoverPageClient({
                       listing={listing}
                       labelForSlug={labelForSlug}
                       showTagMatch={hasTagFilters}
+                      preferredEntityType={initialParams.type}
+                      hasCategoryPreference={hasCategoryPreference}
                     />
                   </li>
                 ))}
