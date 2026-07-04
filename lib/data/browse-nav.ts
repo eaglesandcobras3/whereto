@@ -23,12 +23,6 @@ export async function hasPointOfInterestAreas(): Promise<boolean> {
   }
 }
 
-/** Omit Guides from browse nav when the guides feature flag is off. */
-export function filterGuidesNavItem(items: BrowseNavItem[], guidesEnabled: boolean): BrowseNavItem[] {
-  if (guidesEnabled) return items;
-  return items.filter((item) => item.label !== "Guides");
-}
-
 /** Insert “Landmarks & parks” after “Areas” when there is at least one `point_of_interest` row. */
 export function mergeBrowseNavItems(showLandmarksParks: boolean): BrowseNavItem[] {
   if (!showLandmarksParks) return [...BROWSE_NAV_ITEMS];

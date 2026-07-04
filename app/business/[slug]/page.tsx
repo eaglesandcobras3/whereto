@@ -29,7 +29,7 @@ import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirector
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
-import { getAllFeatureFlags, isGuidesEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 
 export const revalidate = 3600;
@@ -337,44 +337,24 @@ export default async function BusinessPage({ params }: Props) {
   });
 
   let townGuides: GuideCardRow[] = [];
-  if (isGuidesEnabled(featureFlags)) {
-    if (townId != null) {
-      const { data: links } = await supabase
-        .from("guide_towns")
-        .select("guide_id")
-        .eq("town_id", townId)
-        .limit(20);
-      const gids = (links ?? [])
-        .map((l) => (l as { guide_id: string }).guide_id)
-        .filter(Boolean);
-      if (gids.length > 0) {
-        const { data: gRows } = await supabase
-          .from("guides")
-          .select("slug, title, excerpt, main_image, hero_image")
-          .in("id", gids)
-          .is("archived_at", null)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN);
-        townGuides =
-          (gRows ?? []).map((g) => ({
-            slug: g.slug,
-            title: (g as { title: string }).title,
-            excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
-            og_image_url:
-              getPublicImageUrl((g as { main_image?: string | null }).main_image) ??
-              getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
-          })) ?? [];
-      }
-    }
-    if (townGuides.length === 0) {
-      const { data: g2 } = await supabase
+  if (townId != null) {
+    const { data: links } = await supabase
+      .from("guide_towns")
+      .select("guide_id")
+      .eq("town_id", townId)
+      .limit(20);
+    const gids = (links ?? [])
+      .map((l) => (l as { guide_id: string }).guide_id)
+      .filter(Boolean);
+    if (gids.length > 0) {
+      const { data: gRows } = await supabase
         .from("guides")
         .select("slug, title, excerpt, main_image, hero_image")
+        .in("id", gids)
         .is("archived_at", null)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN)
-        .order("date_updated", { ascending: false, nullsFirst: false })
-        .limit(5);
+        .or(BROWSE_VISIBLE_NOT_HIDDEN);
       townGuides =
-        (g2 ?? []).map((g) => ({
+        (gRows ?? []).map((g) => ({
           slug: g.slug,
           title: (g as { title: string }).title,
           excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
@@ -383,6 +363,24 @@ export default async function BusinessPage({ params }: Props) {
             getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
         })) ?? [];
     }
+  }
+  if (townGuides.length === 0) {
+    const { data: g2 } = await supabase
+      .from("guides")
+      .select("slug, title, excerpt, main_image, hero_image")
+      .is("archived_at", null)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .order("date_updated", { ascending: false, nullsFirst: false })
+      .limit(5);
+    townGuides =
+      (g2 ?? []).map((g) => ({
+        slug: g.slug,
+        title: (g as { title: string }).title,
+        excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
+        og_image_url:
+          getPublicImageUrl((g as { main_image?: string | null }).main_image) ??
+          getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
+      })) ?? [];
   }
 
   const town = b.towns as { name?: string; slug?: string } | null;
