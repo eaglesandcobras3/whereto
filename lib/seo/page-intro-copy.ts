@@ -22,10 +22,6 @@ export function areaPageIntro(
   return `${areaTitle} is a ${typeLabel.toLowerCase()}${townPhrase} that many visitors use as a day-one anchor: shopping, dining, and the walkable center of a beach town rather than a single stop on the highway. The listings below are curated for this area. Use them to shortlist places before you arrive, then open the town guide for beach access, parking, and how the week actually feels here.`;
 }
 
-export function placeBrowseIntro(placeName: string): string {
-  return `Browse verified businesses in and around ${placeName} by category. Each section links to individual listings with hours, price cues, and a short local read. Handy when you are planning a day around one town instead of searching the whole Emerald Coast at once.`;
-}
-
 export function townPageIntro(townName: string, descriptor: string): string {
   return `${townName} sits on Florida's Scenic Highway 30A in South Walton. ${descriptor} Use the categories below to see restaurants, coffee, activities, and shops tied to this town, then open our guides when you want trip-planning context beyond a single listing.`;
 }

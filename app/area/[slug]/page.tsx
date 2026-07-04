@@ -4,7 +4,8 @@ import { getPublicPlaceBySlug, type PublicPlacePage } from "@/lib/data/public-pl
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { areaPageIntro, placeBrowseIntro } from "@/lib/seo/page-intro-copy";
+import { areaPageIntro } from "@/lib/seo/page-intro-copy";
+import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
 import { TownCard } from "@/components/discovery/TownCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
@@ -126,7 +127,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const place = await getPublicPlaceBySlug(raw);
   if (!place) return { title: "Area" };
   const desc = metaDescriptionSnippet(
-    place.excerpt,
+    resolvePlaceIntro({
+      excerpt: place.excerpt,
+      seoDescription: place.seo_description,
+      fallback: `Explore ${place.title} on 30A: beaches, dining, and local spots along the corridor.`,
+    }),
     `Explore ${place.title} on 30A: beaches, dining, and local spots along the corridor.`,
   );
   const pathSeg = normalizeUrlSegment(place.slug);
@@ -168,18 +173,27 @@ export default async function AreaPage({ params }: Props) {
   ];
   const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
+  const intro = resolvePlaceIntro({
+    excerpt: area.excerpt,
+    seoDescription: area.seo_description,
+    fallback: areaPageIntro(area.title, typeLabel, area.town_name),
+  });
+  const hasEditorialIntro = Boolean(
+    resolvePlaceIntro({
+      excerpt: area.excerpt,
+      seoDescription: area.seo_description,
+      fallback: "",
+    }),
+  );
+
   const areaSchema = generateAreaSchema({
     name: area.title,
     slug: area.slug,
-    description: area.excerpt,
+    description: intro,
     imageUrl: portraitUrl,
     townName: area.town_name,
     townSlug: area.town_slug,
   });
-
-  const intro =
-    area.excerpt?.trim() ||
-    areaPageIntro(area.title, typeLabel, area.town_name);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -255,7 +269,6 @@ export default async function AreaPage({ params }: Props) {
                 placeSlug={area.slug}
                 sections={categorySections}
                 analyticsCategoryPrefix="area_guide_category"
-                subheading={placeBrowseIntro(area.title)}
                 emptyMessage={
                   areaBrowseDiscoveryHref(area, featureFlags) ? (
                     <p className="text-[var(--color-text-secondary)]">
@@ -275,7 +288,7 @@ export default async function AreaPage({ params }: Props) {
                 }
               />
 
-              {!area.excerpt && categorySections.length === 0 ? (
+              {!hasEditorialIntro && categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
                   Full write-up for this place is on the way. Browse the town or nearby spots in the
                   meantime.
