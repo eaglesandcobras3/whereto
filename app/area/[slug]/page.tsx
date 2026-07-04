@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import Link from "next/link";
 import { getPublicPlaceBySlug, type PublicPlacePage } from "@/lib/data/public-place-by-slug";
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
@@ -153,7 +153,7 @@ export default async function AreaPage({ params }: Props) {
   const { slug } = await params;
   const area = await getPublicPlaceBySlug(slug);
 
-  if (!area) notFound();
+  if (!area) redirectToSectionHub("areas");
 
   const [sidebar, categorySections, featureFlags] = await Promise.all([
     getAreaSidebarData(area),
