@@ -26,14 +26,12 @@ import { AreaCard } from "@/components/discovery/AreaCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { getSiteUrl } from "@/lib/site-url";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
+import { townPageMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
-import {
-  metaDescriptionSnippet,
-  seoTitleSegmentForLayout,
-} from "@/lib/seo/metadata-snippets";
+import { getTownPlanningProfile } from "@/lib/data/town-planning";
+import { TownPlanningSections } from "@/components/town/TownPlanningSections";
+import { relatedGuidesForTownSlug } from "@/lib/seo/guide-related-links";
+import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
@@ -53,7 +51,7 @@ import {
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled, type DiscoveryFlags } from "@/lib/nav/discovery-links";
 
 type SidebarArea = {
@@ -309,31 +307,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (town) {
     const seoTitle = (town as unknown as { seo_title?: string | null }).seo_title;
     const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
-    const title = seoTitleSegmentForLayout(
-      seoTitle?.trim() || `${town.name} | Local Guide to 30A`,
-    );
-    const desc = metaDescriptionSnippet(
+    const fallbackDesc = `Local guide: ${town.name} on 30A. Restaurants, beaches, areas, and what the week actually feels like.`;
+    return townPageMetadataFromAudit(
+      town.name,
+      town.slug,
+      seoTitle,
       resolvePlaceIntro({
         excerpt: typeof town.excerpt === "string" ? town.excerpt : null,
         seoDescription: seoDesc?.trim() || null,
         fallback: "",
-      }) ||
-        seoDesc?.trim() ||
-        "",
-      `Local guide: ${town.name} on 30A. Restaurants, beaches, areas, and what the week actually feels like.`,
+      }) || seoDesc?.trim() || null,
+      fallbackDesc,
+      businessListingImageUrl(town.hero_image_thumb_url as string | null),
     );
-    const ogTitle = `${town.name} | WhereTo30A`;
-    return {
-      ...canonicalAlternates(`/${town.slug}`),
-      title,
-      description: desc,
-      ...openGraphForPage({
-        path: `/${town.slug}`,
-        title: ogTitle,
-        description: desc,
-        imageUrl: businessListingImageUrl(town.hero_image_thumb_url as string | null),
-      }),
-    };
   }
   return { title: metadataTitleSiteOnly };
 }
@@ -345,13 +331,17 @@ export default async function TownPage({ params }: Props) {
 
   const categorySlug = await resolveCategorySlugFromPublicPath(townSlug);
   if (categorySlug) {
-    const hub = await loadCategoryHubPage(categorySlug);
+    const [hub, flags] = await Promise.all([
+      loadCategoryHubPage(categorySlug),
+      getAllFeatureFlags(),
+    ]);
     if (!hub) notFound();
     return (
       <CategoryHubView
         cat={hub.cat}
         townGroups={hub.townGroups}
         businesses={hub.businesses}
+        seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
       />
     );
   }
@@ -368,7 +358,14 @@ export default async function TownPage({ params }: Props) {
       getTownPageData(town.id, town.slug),
       getAllFeatureFlags(),
     ]);
-    return <BasicTownPage town={town} pageData={pageData} featureFlags={featureFlags} />;
+    return (
+      <BasicTownPage
+        town={town}
+        pageData={pageData}
+        featureFlags={featureFlags}
+        seoImprovements={isSeoImprovementsFeatureEnabled(featureFlags)}
+      />
+    );
   }
 
   const asPlace = await getPublicPlaceBySlug(townSlug);
@@ -387,10 +384,12 @@ function BasicTownPage({
   town,
   pageData,
   featureFlags,
+  seoImprovements,
 }: {
   town: TownRecord;
   pageData: TownPageData;
   featureFlags: DiscoveryFlags;
+  seoImprovements: boolean;
 }) {
   const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
   const descriptor = getTownDescriptor(town.slug);
@@ -407,6 +406,8 @@ function BasicTownPage({
     fallback: townPageIntro(town.name, descriptor),
   });
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);
+  const planningProfile = getTownPlanningProfile(town.slug);
+  const relatedGuides = relatedGuidesForTownSlug(town.slug);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -459,6 +460,12 @@ function BasicTownPage({
             fallbackIcon="location_city"
           />
 
+          {seoImprovements && planningProfile ? (
+            <div className="mb-10">
+              <TownPlanningSections townName={town.name} profile={planningProfile} />
+            </div>
+          ) : null}
+
           <div className="min-w-0 space-y-8 sm:space-y-10">
             <PlaceCategoryBusinessSections
                 placeName={town.name}
@@ -502,6 +509,14 @@ function BasicTownPage({
                   />
                 ))}
               </PlaceRelatedSection>
+            ) : null}
+
+            {seoImprovements ? (
+              <RelatedGuidesSection
+                title={`Plan your ${town.name} trip`}
+                links={relatedGuides}
+                analyticsCategory="town_related_guides"
+              />
             ) : null}
 
               {!hasEditorialIntro && pageData.categorySections.length === 0 ? (

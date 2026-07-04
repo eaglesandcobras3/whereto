@@ -1,5 +1,6 @@
 import { withWorkflow } from "workflow/next";
 import type { NextConfig } from "next";
+import { retiredGuideRedirectRules } from "./lib/seo/retired-guide-redirects";
 
 const supabaseHost = (() => {
   const u = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -65,6 +66,7 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      ...retiredGuideRedirectRules(),
       {
         source: "/guide",
         destination: "/guide/ultimate-30a-first-timers-guide",

@@ -20,6 +20,13 @@ import {
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
 import { filterEnrichedToPublishedBusinesses } from "@/lib/shop/filter-enriched-published-businesses";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
+import {
+  generateBreadcrumbSchema,
+  generateItemListSchema,
+} from "@/lib/seo/breadcrumb-schema";
+import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
+import { relatedGuidesForTownSlug } from "@/lib/seo/guide-related-links";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
@@ -135,7 +142,8 @@ export default async function SeoIntentPage({ params }: Props) {
   if (isReservedRootSlug(townSlug)) notFound();
 
   const fullSlug = `${townSlug}/${intentSlug}`;
-  const row = await loadSeoPage(fullSlug);
+  const [row, flags] = await Promise.all([loadSeoPage(fullSlug), getAllFeatureFlags()]);
+  const seoImprovements = isSeoImprovementsFeatureEnabled(flags);
   if (!row?.enriched) {
     const town = await getTownBySlug(townSlug);
     if (town) redirect(`/${townSlug}`);
@@ -151,8 +159,30 @@ export default async function SeoIntentPage({ params }: Props) {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 
+  const pagePath = `/${townSlug}/${intentSlug}`;
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: townLabel, url: `/${townSlug}` },
+    { name: row.title, url: pagePath },
+  ]);
+  const itemListSchema = generateItemListSchema(
+    (row.enriched?.recommendations ?? []).slice(0, 20).map((rec) => ({
+      name: rec.business?.name ?? rec.business_id,
+      url: rec.business?.slug ? `/business/${rec.business.slug}` : `/business/${rec.business_id}`,
+    })),
+  );
+  const townRelatedGuides = relatedGuidesForTownSlug(townSlug);
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
       {/* Hero */}
       <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="mx-auto max-w-4xl px-4 py-10 sm:py-12">
@@ -307,6 +337,14 @@ export default async function SeoIntentPage({ params }: Props) {
               ))}
             </div>
           </section>
+        ) : null}
+
+        {seoImprovements ? (
+          <RelatedGuidesSection
+            title={`Planning guides for ${townLabel}`}
+            links={townRelatedGuides}
+            analyticsCategory="intent_related_guides"
+          />
         ) : null}
 
         {/* Navigation Footer */}

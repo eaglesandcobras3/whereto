@@ -6,6 +6,7 @@ import { isAskEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
+import { TripPlanningSection } from "@/components/home/TripPlanningSection";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
@@ -113,6 +114,7 @@ type Props = {
     title: string;
     subtitle: string;
   };
+  seoImprovements?: boolean;
 };
 
 export function HomePage({
@@ -124,6 +126,7 @@ export function HomePage({
     subtitle:
       "From Rosemary Beach to Seaside and beyond, each town along Scenic Highway 30A has its own pace. Find where to eat, what to do, and the beach-access details worth knowing before you arrive.",
   },
+  seoImprovements = false,
 }: Props) {
   const featureFlags = useAppFeatureFlags();
 
@@ -286,6 +289,8 @@ export function HomePage({
             </div>
           </section>
         )}
+
+        {seoImprovements ? <TripPlanningSection /> : null}
 
         <ListBusinessHomeCta />
       </div>

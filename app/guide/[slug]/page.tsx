@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import {
   getPublishedContentEntryBySlug,
@@ -20,6 +20,10 @@ import {
   metaDescriptionSnippet,
   seoTitleSegmentForLayout,
 } from "@/lib/seo/metadata-snippets";
+import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
+import { FirstTimerTownCompareTable } from "@/components/guide/FirstTimerTownCompareTable";
+import { relatedGuidesForSlug } from "@/lib/seo/guide-related-links";
+import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -150,14 +154,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const page = await loadGuide(slug);
+  const [page, flags] = await Promise.all([loadGuide(slug), getAllFeatureFlags()]);
+  const seoImprovements = isSeoImprovementsFeatureEnabled(flags);
 
-  if (!page) redirectToSectionHub("guides");
+  if (!page) notFound();
 
   const bodyMarkdown = stripLeadingH1MatchingTitle(page.body_markdown || "", page.title).trim();
   const hasHeroImage = Boolean(page.og_image_url);
   const lead = page.seo_description?.trim() || null;
-  const showCorridorMap = slug === "ultimate-30a-first-timers-guide";
+  const showCorridorMap = slug === PRIMARY_EDITORIAL_GUIDE_SLUG;
+  const relatedGuides = seoImprovements ? relatedGuidesForSlug(slug) : [];
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -319,7 +325,13 @@ export default async function GuidePage({ params }: Props) {
             </figure>
           ) : null}
 
+          {seoImprovements && showCorridorMap ? <FirstTimerTownCompareTable /> : null}
+
           <MarkdownRenderer content={bodyMarkdown} />
+
+          {seoImprovements ? (
+            <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
+          ) : null}
         </article>
       </main>
     </div>

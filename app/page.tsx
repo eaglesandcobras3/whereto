@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { HomePage } from "@/components/home/HomePage";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
@@ -14,23 +14,19 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
+import { homePageMetadata } from "@/lib/seo/hub-metadata";
 
 // Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
 export const revalidate = 3600;
 
-const HOME_TITLE = "WhereTo30A | Local Guide to Florida's 30A & Emerald Coast";
 const HOME_DESCRIPTION =
-  "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips from Rosemary Beach to Seaside.";
+  "Plan your 30A trip with local guides to beach towns, restaurants, shopping, beach access, and Emerald Coast travel tips.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const hero = await getHomeHeroSettings();
   return {
-    ...canonicalAlternates("/"),
-    title: { absolute: HOME_TITLE },
-    description: HOME_DESCRIPTION,
+    ...homePageMetadata(hero.imageUrl),
     keywords: [
       "30A",
       "30A Florida",
@@ -45,12 +41,6 @@ export async function generateMetadata(): Promise<Metadata> {
       "30A beach towns",
       "Florida panhandle beaches",
     ],
-    ...openGraphForPage({
-      path: "/",
-      title: HOME_TITLE,
-      description: HOME_DESCRIPTION,
-      imageUrl: hero.imageUrl,
-    }),
   };
 }
 
@@ -172,6 +162,7 @@ export default async function Home({ searchParams }: HomeProps) {
       featuredBusinesses={featuredBusinesses}
       towns={townList}
       heroSettings={heroSettings}
+      seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
     />
   );
 }
