@@ -50,7 +50,8 @@ import {
   type BrowseGroupSection,
 } from "@/lib/business-categories/group-browse-sections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { placeBrowseIntro, townPageIntro } from "@/lib/seo/page-intro-copy";
+import { townPageIntro } from "@/lib/seo/page-intro-copy";
+import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled, type DiscoveryFlags } from "@/lib/nav/discovery-links";
 
@@ -88,7 +89,7 @@ async function getTownPageData(townId: string, townSlug: string) {
   const areasRes = await supabase
       .from("areas_view")
       .select(
-        "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url",
+        "id, title, slug, excerpt, seo_description, main_image, hero_image, main_image_url, hero_image_url",
       )
       .eq("town_id", townId)
       .is("archived_at", null)
@@ -110,6 +111,8 @@ async function getTownPageData(townId: string, townSlug: string) {
       title: String(r.title),
       slug: String(r.slug),
       excerpt: typeof r.excerpt === "string" ? r.excerpt.trim() : "",
+      seo_description:
+        typeof r.seo_description === "string" ? r.seo_description.trim() : "",
       hero_image_url: heroUrl,
     };
   });
@@ -247,7 +250,14 @@ async function getTownPageData(townId: string, townSlug: string) {
       id: String(a.id),
       name: String(a.title),
       slug: String(a.slug),
-      subtitle: a.excerpt || undefined,
+      subtitle: (() => {
+        const intro = resolvePlaceIntro({
+          excerpt: a.excerpt,
+          seoDescription: a.seo_description,
+          fallback: "",
+        });
+        return intro || undefined;
+      })(),
       imageUrl: a.hero_image_url,
     }))
   ).slice(0, SIDEBAR_AREAS_LIMIT);
@@ -302,8 +312,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       seoTitle?.trim() || `${town.name} | Local Guide to 30A`,
     );
     const desc = metaDescriptionSnippet(
-      seoDesc?.trim() ||
-        (typeof town.excerpt === "string" && town.excerpt) ||
+      resolvePlaceIntro({
+        excerpt: typeof town.excerpt === "string" ? town.excerpt : null,
+        seoDescription: seoDesc?.trim() || null,
+        fallback: "",
+      }) ||
+        seoDesc?.trim() ||
         "",
       `Local guide: ${town.name} on 30A. Restaurants, beaches, areas, and what the week actually feels like.`,
     );
@@ -377,8 +391,20 @@ function BasicTownPage({
   pageData: TownPageData;
   featureFlags: DiscoveryFlags;
 }) {
+  const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
   const descriptor = getTownDescriptor(town.slug);
-  const blurb = town.excerpt?.trim() || null;
+  const hasEditorialIntro = Boolean(
+    resolvePlaceIntro({
+      excerpt: town.excerpt,
+      seoDescription: seoDesc,
+      fallback: "",
+    }),
+  );
+  const intro = resolvePlaceIntro({
+    excerpt: town.excerpt,
+    seoDescription: seoDesc,
+    fallback: townPageIntro(town.name, descriptor),
+  });
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
@@ -390,7 +416,7 @@ function BasicTownPage({
   const townSchema = generateTownSchema({
     name: town.name,
     slug: town.slug,
-    description: blurb ?? descriptor,
+    description: intro,
     imageUrl: portraitUrl,
   });
 
@@ -426,7 +452,7 @@ function BasicTownPage({
           <PlacePageHeader
             eyebrow="Town"
             title={town.name}
-            intro={blurb || townPageIntro(town.name, descriptor)}
+            intro={intro}
             portraitUrl={portraitUrl}
             portraitAlt={town.name}
             fallbackIcon="location_city"
@@ -438,7 +464,6 @@ function BasicTownPage({
                 placeSlug={town.slug}
                 sections={pageData.categorySections}
                 analyticsCategoryPrefix="town_guide_category"
-                subheading={placeBrowseIntro(town.name)}
                 emptyMessage={
                   isDiscoveryEnabled(featureFlags) ? (
                     <p className="text-[var(--color-text-secondary)]">
@@ -478,7 +503,7 @@ function BasicTownPage({
               </PlaceRelatedSection>
             ) : null}
 
-              {!blurb && pageData.categorySections.length === 0 ? (
+              {!hasEditorialIntro && pageData.categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
                   A full local guide for this town is coming soon.
                 </p>
