@@ -12,6 +12,7 @@ import {
   metaDescriptionSnippet,
   seoTitleSegmentForLayout,
 } from "@/lib/seo/metadata-snippets";
+import { generateBreadcrumbSchema, generateEventSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
@@ -175,8 +176,37 @@ export default async function EventDetailPage({ params }: Props) {
 
   const ticketWebsiteHref = externalWebsiteHref(event.website);
 
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Events", url: "/events" },
+    { name: event.title, url: `/events/${slug}` },
+  ]);
+
+  const eventSchema = generateEventSchema({
+    title: event.title,
+    slug,
+    description: event.description,
+    imageUrl: event.hero_image_url,
+    startDate: event.event_date,
+    endDate: event.end_date,
+    locationName: event.venue_name,
+    address: event.address,
+    townName: event.town_name,
+    townSlug: event.town_slug,
+    price: event.price,
+    website: event.website,
+  });
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 md:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema) }}
+      />
       <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
         <Link href="/" className="hover:text-[var(--color-primary)]">
           Home

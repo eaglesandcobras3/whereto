@@ -40,6 +40,20 @@ async function fetchBrowseableRows(
   return out;
 }
 
+async function fetchPublishedSeoPages(
+  supabase: SupabaseClient,
+): Promise<Record<string, unknown>[]> {
+  const { data, error } = await supabase
+    .from("seo_pages")
+    .select("slug, updated_at")
+    .eq("published", true);
+  if (error) {
+    console.error("sitemap: seo_pages", error);
+    return [];
+  }
+  return (data ?? []) as Record<string, unknown>[];
+}
+
 /** Build index-focused sitemap entries for `/sitemap.xml` (via `/api/sitemap-xml` rewrite). */
 export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
@@ -50,7 +64,8 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       return staticFallbackSitemap(base, now);
     }
 
-    const [towns, guides, areas, pointsOfInterest, categories] = await Promise.all([
+    const [towns, guides, areas, pointsOfInterest, categories, events, seoPages] =
+      await Promise.all([
       fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
       fetchSitemapGuides(supabase),
       fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
@@ -64,6 +79,8 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
         "business_categories",
         "slug, date_updated, published_at, date_created",
       ),
+      fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
+      fetchPublishedSeoPages(supabase),
     ]);
 
     return buildSitemapEntries({
@@ -74,6 +91,8 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       areas,
       categories,
       pointsOfInterest,
+      events,
+      seoPages,
     });
   } catch (err) {
     console.error("[sitemap] generation failed:", err);

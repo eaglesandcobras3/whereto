@@ -20,6 +20,12 @@ import {
 import { TownRecListVertical } from "@/components/discovery/TownRecListVertical";
 import { filterEnrichedToPublishedBusinesses } from "@/lib/shop/filter-enriched-published-businesses";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
+import {
+  generateBreadcrumbSchema,
+  generateItemListSchema,
+} from "@/lib/seo/breadcrumb-schema";
+import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
+import { relatedGuidesForTownSlug } from "@/lib/seo/guide-related-links";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const revalidate = 3600;
@@ -151,8 +157,30 @@ export default async function SeoIntentPage({ params }: Props) {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 
+  const pagePath = `/${townSlug}/${intentSlug}`;
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: townLabel, url: `/${townSlug}` },
+    { name: row.title, url: pagePath },
+  ]);
+  const itemListSchema = generateItemListSchema(
+    (row.enriched?.recommendations ?? []).slice(0, 20).map((rec) => ({
+      name: rec.business?.name ?? rec.business_id,
+      url: rec.business?.slug ? `/business/${rec.business.slug}` : `/business/${rec.business_id}`,
+    })),
+  );
+  const townRelatedGuides = relatedGuidesForTownSlug(townSlug);
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
       {/* Hero */}
       <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="mx-auto max-w-4xl px-4 py-10 sm:py-12">
@@ -308,6 +336,12 @@ export default async function SeoIntentPage({ params }: Props) {
             </div>
           </section>
         ) : null}
+
+        <RelatedGuidesSection
+          title={`Planning guides for ${townLabel}`}
+          links={townRelatedGuides}
+          analyticsCategory="intent_related_guides"
+        />
 
         {/* Navigation Footer */}
         <footer className="flex flex-wrap items-center justify-center gap-6 border-t border-[var(--color-border)] pt-8">

@@ -19,6 +19,10 @@ import {
   metaDescriptionSnippet,
   seoTitleSegmentForLayout,
 } from "@/lib/seo/metadata-snippets";
+import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
+import { FirstTimerTownCompareTable } from "@/components/guide/FirstTimerTownCompareTable";
+import { relatedGuidesForSlug } from "@/lib/seo/guide-related-links";
+import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -156,7 +160,8 @@ export default async function GuidePage({ params }: Props) {
   const bodyMarkdown = stripLeadingH1MatchingTitle(page.body_markdown || "", page.title).trim();
   const hasHeroImage = Boolean(page.og_image_url);
   const lead = page.seo_description?.trim() || null;
-  const showCorridorMap = slug === "ultimate-30a-first-timers-guide";
+  const showCorridorMap = slug === PRIMARY_EDITORIAL_GUIDE_SLUG;
+  const relatedGuides = relatedGuidesForSlug(slug);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -318,7 +323,11 @@ export default async function GuidePage({ params }: Props) {
             </figure>
           ) : null}
 
+          {showCorridorMap ? <FirstTimerTownCompareTable /> : null}
+
           <MarkdownRenderer content={bodyMarkdown} />
+
+          <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
         </article>
       </main>
     </div>
