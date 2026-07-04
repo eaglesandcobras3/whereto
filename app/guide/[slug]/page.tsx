@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
@@ -151,7 +152,7 @@ export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
   const page = await loadGuide(slug);
 
-  if (!page) notFound();
+  if (!page) redirectToSectionHub("guides");
 
   const bodyMarkdown = stripLeadingH1MatchingTitle(page.body_markdown || "", page.title).trim();
   const hasHeroImage = Boolean(page.og_image_url);
