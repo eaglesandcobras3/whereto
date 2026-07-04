@@ -8,6 +8,10 @@ import {
   mergeGuideSeoContentFields,
   type GuideSeoContentFields,
 } from "@/lib/guides/seo-content-fields";
+import {
+  estimateReadingTimeMinutes,
+  validateGuideMarkdown,
+} from "@/lib/guides/validate-markdown";
 
 export const GUIDE_STATUSES = ["draft", "published", "archived"] as const;
 export type GuideStatus = (typeof GUIDE_STATUSES)[number];

@@ -29,6 +29,7 @@ import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { townPageMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { getTownPlanningProfile } from "@/lib/data/town-planning";
+import { TownPlanningSections } from "@/components/town/TownPlanningSections";
 import { relatedGuidesForTownSlug } from "@/lib/seo/guide-related-links";
 import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";

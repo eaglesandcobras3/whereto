@@ -7,6 +7,7 @@ import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { TripPlanningSection } from "@/components/home/TripPlanningSection";
+import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
 
