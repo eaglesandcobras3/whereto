@@ -13,6 +13,11 @@ export const PRIMARY_EDITORIAL_GUIDE_SLUG = "ultimate-30a-first-timers-guide" as
 export const PRIMARY_EDITORIAL_GUIDE_PATH =
   `/guide/${PRIMARY_EDITORIAL_GUIDE_SLUG}` as const;
 
+export {
+  BEACH_ACCESS_PILLAR_GUIDE_PATH,
+  BEACH_ACCESS_PILLAR_GUIDE_SLUG,
+} from "@/lib/seo/retired-guide-redirects";
+
 /** Paths excluded from sitemap (still live on site, crawlable via links). */
 export const SITEMAP_EXCLUDED_PATH_PREFIXES = ["/business/"] as const;
 
