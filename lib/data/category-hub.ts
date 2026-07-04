@@ -3,11 +3,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import {
-  metaDescriptionSnippet,
-  seoTitleSegmentForLayout,
-} from "@/lib/seo/metadata-snippets";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
+import { categoryHubMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import {
@@ -286,17 +282,13 @@ export async function buildCategoryHubMetadata(slug: string): Promise<Metadata> 
   if (!cat) return { title: "Category" };
 
   const path = categoryHubPath(slug);
-  const title = seoTitleSegmentForLayout(`${cat.title} on 30A, Florida`);
-  const description = metaDescriptionSnippet(
-    cat.excerpt?.trim(),
-    `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida. Browse local options across Rosemary Beach, Seaside, WaterColor, Alys Beach, Inlet Beach, and more.`,
-  );
-  const ogTitle = `${cat.title} on 30A | WhereTo30A`;
+  const fallbackTitle = `${cat.title} on 30A, Florida`;
+  const fallbackDescription = `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida. Browse local options across Rosemary Beach, Seaside, WaterColor, Alys Beach, Inlet Beach, and more.`;
+  const meta = categoryHubMetadataFromAudit(slug, path, fallbackTitle, fallbackDescription);
 
   return {
     ...canonicalAlternates(path),
-    title,
-    description,
+    ...meta,
     keywords: [
       `${cat.title.toLowerCase()} 30A`,
       `${cat.title.toLowerCase()} South Walton`,
@@ -305,10 +297,5 @@ export async function buildCategoryHubMetadata(slug: string): Promise<Metadata> 
       `${cat.title.toLowerCase()} Seaside Florida`,
       `30A ${cat.title.toLowerCase()}`,
     ],
-    ...openGraphForPage({
-      path,
-      title: ogTitle,
-      description,
-    }),
   };
 }

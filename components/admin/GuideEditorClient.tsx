@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GuideMarkdownEditor } from "@/components/admin/GuideMarkdownEditor";
+import {
+  formatSlugListInput,
+  parseSlugListInput,
+  readGuideSeoContentFields,
+} from "@/lib/guides/seo-content-fields";
 
 type PickerOption = { id: string; label: string; sublabel?: string };
 
@@ -61,6 +66,9 @@ export function GuideEditorClient({ guideId }: Props) {
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
 
   const [seoPreview, setSeoPreview] = useState<Partial<GuideDetail>>({});
+  const [primaryKeyword, setPrimaryKeyword] = useState("");
+  const [searchIntent, setSearchIntent] = useState("");
+  const [relatedGuideSlugs, setRelatedGuideSlugs] = useState("");
 
   const [towns, setTowns] = useState<PickerOption[]>([]);
   const [areas, setAreas] = useState<PickerOption[]>([]);
@@ -116,6 +124,10 @@ export function GuideEditorClient({ guideId }: Props) {
         intent_tags: g.intent_tags,
         custom_fields: g.custom_fields,
       });
+      const seoFields = readGuideSeoContentFields(g.custom_fields);
+      setPrimaryKeyword(seoFields.primary_keyword ?? "");
+      setSearchIntent(seoFields.search_intent ?? "");
+      setRelatedGuideSlugs(formatSlugListInput(seoFields.related_guide_slugs));
       await loadOptions({ townId: g.town_id ?? undefined });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -166,8 +178,13 @@ export function GuideEditorClient({ guideId }: Props) {
       area_id: areaId || null,
       business_ids: businessIds,
       main_image_url: mainImageUrl,
+      seo_content: {
+        primary_keyword: primaryKeyword,
+        search_intent: searchIntent,
+        related_guide_slugs: parseSlugListInput(relatedGuideSlugs),
+      },
     }),
-    [title, content, status, guideType, townId, areaId, businessIds, mainImageUrl],
+    [title, content, status, guideType, townId, areaId, businessIds, mainImageUrl, primaryKeyword, searchIntent, relatedGuideSlugs],
   );
 
   async function save() {
@@ -508,6 +525,47 @@ export function GuideEditorClient({ guideId }: Props) {
                 </ul>
               ) : null}
             </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm">
+            <h2 className="font-semibold text-zinc-900">SEO intent & links</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Primary keyword and related slugs power internal linking and cannibalization checks.
+            </p>
+            <label className="mt-3 block">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Primary keyword
+              </span>
+              <input
+                value={primaryKeyword}
+                onChange={(e) => setPrimaryKeyword(e.target.value)}
+                placeholder="e.g. 30A beach access"
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="mt-3 block">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Search intent
+              </span>
+              <input
+                value={searchIntent}
+                onChange={(e) => setSearchIntent(e.target.value)}
+                placeholder="e.g. informational / planning"
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="mt-3 block">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Related guide slugs (one per line)
+              </span>
+              <textarea
+                value={relatedGuideSlugs}
+                onChange={(e) => setRelatedGuideSlugs(e.target.value)}
+                rows={4}
+                placeholder={"public-beaches-30a\nultimate-30a-first-timers-guide"}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-xs"
+              />
+            </label>
           </div>
 
           {hasSearchProfile && seoPreview.seo_title ? (

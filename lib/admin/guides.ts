@@ -5,6 +5,10 @@ import { getPublicImageUrl } from "@/lib/media/public-image-url";
 import { slugifyBusinessTitle, uniqueSlug } from "@/lib/portal/slug";
 import { isGuideEnriched, hasGuideSearchProfile } from "@/lib/guides/custom-fields";
 import {
+  mergeGuideSeoContentFields,
+  type GuideSeoContentFields,
+} from "@/lib/guides/seo-content-fields";
+import {
   estimateReadingTimeMinutes,
   validateGuideMarkdown,
 } from "@/lib/guides/validate-markdown";
@@ -64,6 +68,7 @@ export type GuideWriteInput = {
   business_ids?: string[];
   /** Set URL, pass `null` to remove, omit to leave unchanged (update only). */
   main_image_url?: string | null;
+  seo_content?: GuideSeoContentFields;
 };
 
 function parseIntentTags(raw: unknown): string[] | null {
@@ -399,6 +404,10 @@ export async function updateAdminGuide(
 
   const imagePatch = mainImagePatch(input.main_image_url);
   if (imagePatch) Object.assign(patch, imagePatch);
+
+  if (input.seo_content) {
+    patch.custom_fields = mergeGuideSeoContentFields(existing.custom_fields, input.seo_content);
+  }
 
   const { error } = await supabase.from("guides").update(patch).eq("id", id);
   if (error) throw new Error(error.message);

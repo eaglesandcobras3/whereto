@@ -130,7 +130,10 @@ export default function RootLayout({
       "@type": "ImageObject",
       url: `${siteUrl}/whereto30a.svg`,
     },
-    sameAs: [] as string[],
+    sameAs: [
+      "https://www.instagram.com/whereto30a",
+      "https://www.facebook.com/whereto30a",
+    ] as string[],
     description:
       "Your complete local guide to 30A and Florida's Emerald Coast. Discover beach towns, restaurants, shops, events, and insider tips.",
   };
@@ -143,14 +146,6 @@ export default function RootLayout({
     name: "WhereTo30A",
     description: "Local guide to 30A and Florida's Emerald Coast",
     publisher: { "@id": `${siteUrl}/#organization` },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${siteUrl}/ask?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
     inLanguage: "en-US",
   };
 

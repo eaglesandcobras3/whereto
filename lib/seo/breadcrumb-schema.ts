@@ -1,5 +1,6 @@
 import { getSiteUrl } from "@/lib/site-url";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
+import { townGeoCoordinates } from "@/lib/seo/town-coordinates";
 
 export type BreadcrumbItem = {
   name: string;
@@ -37,6 +38,51 @@ function isValidAggregateRating(
   const count = Math.floor(reviewCount);
   if (count < 1) return false;
   return rating >= 1 && rating <= 5;
+}
+
+/**
+ * Generate FAQPage JSON-LD when visible Q&A content exists on the page.
+ */
+export function generateFaqSchema(
+  faqs: Array<{ question: string; answer: string }>,
+): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+/**
+ * Generate CollectionPage JSON-LD for browse hubs.
+ */
+export function generateCollectionPageSchema(input: {
+  name: string;
+  path: string;
+  description?: string | null;
+}): object {
+  const siteUrl = getSiteUrl();
+  const pageUrl = `${siteUrl}${input.path.startsWith("/") ? input.path : `/${input.path}`}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#collection`,
+    name: input.name,
+    url: pageUrl,
+    ...(input.description ? { description: input.description } : {}),
+    isPartOf: {
+      "@type": "WebSite",
+      name: "WhereTo30A",
+      url: siteUrl,
+    },
+  };
 }
 
 /**
@@ -93,9 +139,7 @@ export function generateTownSchema(town: {
     },
     geo: {
       "@type": "GeoCoordinates",
-      // 30A general coordinates
-      latitude: 30.28,
-      longitude: -86.02,
+      ...townGeoCoordinates(town.slug),
     },
   };
 }
@@ -285,6 +329,77 @@ export function generateLocalBusinessSchema(business: {
       url: `${siteUrl}/${business.townSlug}`,
     };
   }
+
+  return schema;
+}
+
+/**
+ * Generate Event JSON-LD for event detail pages.
+ */
+export function generateEventSchema(event: {
+  title: string;
+  slug: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  locationName?: string | null;
+  address?: string | null;
+  townName?: string | null;
+  townSlug?: string | null;
+  price?: string | null;
+  website?: string | null;
+}): object {
+  const siteUrl = getSiteUrl();
+  const pageUrl = `${siteUrl}/events/${event.slug}`;
+  const imageUrl = absoluteHttpUrl(event.imageUrl);
+
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "@id": `${pageUrl}#event`,
+    name: event.title,
+    url: pageUrl,
+    startDate: event.startDate,
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+  };
+
+  if (event.endDate) schema.endDate = event.endDate;
+  if (event.description) schema.description = event.description;
+  if (imageUrl) schema.image = imageUrl;
+
+  const location: Record<string, unknown> = {
+    "@type": "Place",
+    name: event.locationName || event.townName || "30A, Florida",
+  };
+  if (event.address) {
+    location.address = {
+      "@type": "PostalAddress",
+      streetAddress: event.address,
+      addressLocality: event.townName || "30A",
+      addressRegion: "FL",
+      addressCountry: "US",
+    };
+  }
+  if (event.townName && event.townSlug) {
+    location.containedInPlace = {
+      "@type": "TouristDestination",
+      name: event.townName,
+      url: `${siteUrl}/${event.townSlug}`,
+    };
+  }
+  schema.location = location;
+
+  const sameAs = externalWebsiteHref(event.website);
+  if (sameAs) schema.sameAs = [sameAs];
+  if (event.price) schema.offers = { "@type": "Offer", price: event.price, priceCurrency: "USD" };
+
+  schema.organizer = {
+    "@type": "Organization",
+    name: "WhereTo30A",
+    url: siteUrl,
+  };
 
   return schema;
 }
