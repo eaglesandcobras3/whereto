@@ -13,6 +13,7 @@ export type PublicPlacePage = {
   title: string;
   slug: string;
   excerpt: string | null;
+  seo_description: string | null;
   content: string | null;
   areaTypeLabel: string | null;
   /** `areas` row vs `points_of_interest` — drives how related businesses are queried. */
@@ -39,7 +40,7 @@ export async function getPublicPlaceBySlug(
   const { data: areaRows, error: areaErr } = await supabase
     .from("areas_view")
     .select(
-      "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, area_type, town_id, towns(title, slug)",
+      "id, title, slug, excerpt, seo_description, content, main_image, hero_image, main_image_url, hero_image_url, area_type, town_id, towns(title, slug)",
     )
     .eq("slug", key)
     .is("archived_at", null)
@@ -65,6 +66,7 @@ export async function getPublicPlaceBySlug(
       title: String(a.title),
       slug: String(a.slug),
       excerpt: (a.excerpt as string | null) ?? null,
+      seo_description: (a.seo_description as string | null) ?? null,
       content: (a.content as string | null) ?? null,
       areaTypeLabel: (a.area_type as string | null) ?? null,
       source: "area" as const,
@@ -84,7 +86,7 @@ export async function getPublicPlaceBySlug(
   const { data: poiRows, error: poiErr } = await supabase
     .from("points_of_interest_view")
     .select(
-      "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, poi_type, town_id, area_id, towns(title, slug)",
+      "id, title, slug, excerpt, seo_description, content, main_image, hero_image, main_image_url, hero_image_url, poi_type, town_id, area_id, towns(title, slug)",
     )
     .eq("slug", key)
     .is("archived_at", null)
@@ -112,6 +114,7 @@ export async function getPublicPlaceBySlug(
     title: String(p.title),
     slug: String(p.slug),
     excerpt: (p.excerpt as string | null) ?? null,
+    seo_description: (p.seo_description as string | null) ?? null,
     content: (p.content as string | null) ?? null,
     areaTypeLabel: (p.poi_type as string | null) ?? null,
     source: "point_of_interest" as const,
