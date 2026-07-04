@@ -35,7 +35,7 @@ describe("normalizeServiceCategoryGroupSlug", () => {
 });
 
 describe("parseDiscoveryFilterState", () => {
-  it("parses storefront scope with rollup category and required tags", () => {
+  it("parses storefront scope with rollup category and tags", () => {
     const state = parseDiscoveryFilterState({
       type: "storefront",
       category: "shopping",
@@ -43,23 +43,21 @@ describe("parseDiscoveryFilterState", () => {
     }, ["00000000-0000-4000-8000-000000000001"]);
     expect(state.entity_type).toBe("storefront");
     expect(state.category_slug).toBe("shopping");
-    expect(state.tags_required).toEqual(["kids"]);
+    expect(state.tags).toEqual(["kids"]);
     expect(state.town_ids).toEqual(["00000000-0000-4000-8000-000000000001"]);
-    expect(state.tags_any).toEqual([]);
   });
 
-  it("parses multiple required tags as AND filters", () => {
+  it("parses multiple tags from facet", () => {
     const state = parseDiscoveryFilterState({
       type: "storefront",
       category: "coffee_and_treats",
       facet: "gluten_free,donuts",
       town: "rosemary-beach",
     });
-    expect(state.tags_required).toEqual(["gluten_free", "donuts"]);
-    expect(state.tags_any).toEqual([]);
+    expect(state.tags).toEqual(["gluten_free", "donuts"]);
   });
 
-  it("parses optional facet_any tags separately", () => {
+  it("merges legacy facet_any into tags", () => {
     const state = parseDiscoveryFilterState({
       type: "storefront",
       category: "coffee_and_treats",
@@ -67,18 +65,16 @@ describe("parseDiscoveryFilterState", () => {
       facet_any: "donuts",
       town: "rosemary-beach",
     });
-    expect(state.tags_required).toEqual(["gluten_free"]);
-    expect(state.tags_any).toEqual(["donuts"]);
+    expect(state.tags).toEqual(["gluten_free", "donuts"]);
   });
 
-  it("drops optional tags that duplicate required tags", () => {
+  it("dedupes tags across facet and facet_any", () => {
     const state = parseDiscoveryFilterState({
       type: "storefront",
       facet: "gluten_free",
       facet_any: "gluten_free,donuts",
     });
-    expect(state.tags_required).toEqual(["gluten_free"]);
-    expect(state.tags_any).toEqual(["donuts"]);
+    expect(state.tags).toEqual(["gluten_free", "donuts"]);
   });
 });
 
@@ -90,8 +86,7 @@ describe("constrainTagsToScope", () => {
       facet_any: "coffee",
     });
     const constrained = constrainTagsToScope(state, ["gluten_free", "coffee"]);
-    expect(constrained.tags_required).toEqual(["gluten_free"]);
-    expect(constrained.tags_any).toEqual(["coffee"]);
+    expect(constrained.tags).toEqual(["gluten_free", "coffee"]);
   });
 });
 
@@ -101,8 +96,7 @@ describe("validateFilterContract", () => {
       entity_type: "service",
       town_ids: [],
       category_slug: "restaurants_and_bars",
-      tags_required: [],
-      tags_any: [],
+      tags: [],
       page: 1,
       page_size: 24,
     });
@@ -121,10 +115,11 @@ describe("parseTagSlugsFromParam", () => {
 });
 
 describe("rowMatchesSearchTags", () => {
-  it("requires all selected tags (AND)", () => {
+  it("matches when at least one selected tag is present", () => {
     expect(rowMatchesSearchTags(["gluten_free", "donuts", "coffee"], ["gluten_free", "donuts"])).toBe(
       true,
     );
-    expect(rowMatchesSearchTags(["gluten_free"], ["gluten_free", "donuts"])).toBe(false);
+    expect(rowMatchesSearchTags(["gluten_free"], ["gluten_free", "donuts"])).toBe(true);
+    expect(rowMatchesSearchTags(["coffee"], ["gluten_free", "donuts"])).toBe(false);
   });
 });

@@ -1,87 +1,33 @@
 export type TagMatchAnalysis = {
-  matched_required: string[];
-  missing_required: string[];
-  matched_any: string[];
-  missing_any: string[];
-  /** All required present on the listing. */
-  strict_match: boolean;
-  /** At least one required or optional tag present (when any tags are in play). */
-  relaxed_match: boolean;
-  /** Higher = better fit when sorting partial results. */
+  matched: string[];
+  missing: string[];
+  /** At least one selected tag is present on the listing. */
+  matches: boolean;
+  /** Higher = better fit when sorting results. */
   score: number;
 };
 
-const REQUIRED_WEIGHT = 100;
-const ANY_WEIGHT = 10;
-const STRICT_BONUS = 1000;
-
 export function analyzeTagMatch(
   searchTags: string[] | null | undefined,
-  required: string[],
-  anyTags: string[],
+  selected: string[],
 ): TagMatchAnalysis {
   const present = new Set(
     (searchTags ?? []).filter((t) => typeof t === "string" && t.trim().length > 0),
   );
 
-  const matched_required = required.filter((t) => present.has(t));
-  const missing_required = required.filter((t) => !present.has(t));
-  const matched_any = anyTags.filter((t) => present.has(t));
-  const missing_any = anyTags.filter((t) => !present.has(t));
+  const matched = selected.filter((t) => present.has(t));
+  const missing = selected.filter((t) => !present.has(t));
 
-  const hasRequired = required.length > 0;
-  const hasAny = anyTags.length > 0;
-
-  let strict_match: boolean;
-  if (hasRequired) {
-    strict_match = matched_required.length === required.length;
-  } else if (hasAny) {
-    strict_match = matched_any.length > 0;
-  } else {
-    strict_match = true;
-  }
-
-  const desired = [...new Set([...required, ...anyTags])];
-  const relaxed_match =
-    desired.length === 0 ? true : desired.some((t) => present.has(t));
-
-  const score =
-    matched_required.length * REQUIRED_WEIGHT +
-    matched_any.length * ANY_WEIGHT +
-    (strict_match ? STRICT_BONUS : 0);
+  const matches = selected.length === 0 || matched.length > 0;
 
   return {
-    matched_required,
-    missing_required,
-    matched_any,
-    missing_any,
-    strict_match,
-    relaxed_match,
-    score,
+    matched,
+    missing,
+    matches,
+    score: matched.length,
   };
 }
 
 export function compareTagMatchScore(a: TagMatchAnalysis, b: TagMatchAnalysis): number {
   return b.score - a.score;
-}
-
-/** When strict matches are below this count, also surface relaxed OR matches. */
-export const STRICT_SUPPLEMENT_THRESHOLD = 3;
-
-/** Max close matches shown below a thin strict result set (not paginated). */
-export const SUPPLEMENT_PARTIAL_LIMIT = 6;
-
-export type TagMatchPresentationMode = "none" | "strict" | "relaxed" | "supplement";
-
-export function resolveTagMatchMode(
-  strictTotal: number,
-  relaxedTotal: number,
-): TagMatchPresentationMode {
-  if (strictTotal === 0) {
-    return relaxedTotal > 0 ? "relaxed" : "none";
-  }
-  if (strictTotal < STRICT_SUPPLEMENT_THRESHOLD && relaxedTotal > 0) {
-    return "supplement";
-  }
-  return "strict";
 }

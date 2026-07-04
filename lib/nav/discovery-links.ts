@@ -11,7 +11,6 @@ export type DiscoveryLinkParams = {
   town?: string;
   service_category?: string;
   facet?: string;
-  facet_any?: string;
   area_id?: string;
 };
 
@@ -71,7 +70,6 @@ export function discoverHref(flags: FeatureFlags, params?: DiscoveryLinkParams):
   if (params?.category?.trim()) sp.set("category", params.category.trim());
   if (params?.service_category?.trim()) sp.set("service_category", params.service_category.trim());
   if (params?.facet?.trim()) sp.set("facet", params.facet.trim());
-  if (params?.facet_any?.trim()) sp.set("facet_any", params.facet_any.trim());
   if (params?.q?.trim()) sp.set("q", params.q.trim());
   const qs = sp.toString();
   return qs ? `/discover?${qs}` : "/discover";

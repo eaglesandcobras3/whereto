@@ -94,10 +94,7 @@ export default async function DiscoverPage({ searchParams }: Props) {
         town_ids,
         category: filterState.category_slug,
         service_category: filterState.service_category_slug,
-        facet: filterState.tags_required.length
-          ? filterState.tags_required.join(",")
-          : sp.facet,
-        facet_any: filterState.tags_any.length ? filterState.tags_any.join(",") : sp.facet_any,
+        facet: filterState.tags.length ? filterState.tags.join(",") : sp.facet,
         q: filterState.q,
         page: filterState.page,
       }}
