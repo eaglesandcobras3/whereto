@@ -19,6 +19,7 @@ export {
   FEATURE_FLAG_KEYS,
   isAskEnabled,
   isDiscoverEnabled,
+  isDiscoverNlEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
@@ -36,6 +37,7 @@ export {
   showNavbarDiscoverUi,
   showNavbarSearchUi,
   discoverHref,
+  isDiscoverNlFeatureEnabled,
 } from "@/lib/nav/discovery-links";
 
 export { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
