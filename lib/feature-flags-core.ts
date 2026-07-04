@@ -11,7 +11,6 @@ export const FEATURE_FLAG_KEYS = [
   "ask",
   "search_inspector",
   "onboard",
-  "guides",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -25,7 +24,6 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   ask: false,
   search_inspector: false,
   onboard: false,
-  guides: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -81,8 +79,4 @@ export function isSearchInspectorEnabled(flags: FeatureFlags): boolean {
 
 export function isOnboardEnabled(flags: FeatureFlags): boolean {
   return flags.onboard === true;
-}
-
-export function isGuidesEnabled(flags: FeatureFlags): boolean {
-  return flags.guides === true;
 }

@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { getAllFeatureFlags, isGuidesEnabled } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
@@ -100,9 +98,6 @@ async function getGuides(): Promise<GuideRow[]> {
 }
 
 export default async function GuidesPage() {
-  const flags = await getAllFeatureFlags();
-  if (!isGuidesEnabled(flags)) redirect("/");
-
   const allGuides = await getGuides();
   const planningGuide = allGuides.find((g) => g.slug === PRIMARY_EDITORIAL_GUIDE_SLUG);
   const featuredGuides = pickDailySubset(allGuides, DAILY_FEATURED_LIMIT);

@@ -4,7 +4,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups";
 import { getListedServiceBrowseGroups } from "@/lib/data/service-browse-groups";
-import { getAllFeatureFlags, isGuidesEnabled, isOnboardEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
@@ -221,18 +221,14 @@ function FooterBrowseColumn({
   );
 }
 
-function buildCompanyLinks(listBusinessHref: string, guidesEnabled: boolean) {
+function buildCompanyLinks(listBusinessHref: string) {
   return [
   { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "about" }), name: "About", href: "/about" },
-  ...(guidesEnabled
-    ? [
-        {
-          ...gaClickProps({ event: "nav_click", category: "footer_company", label: "travel_guides" }),
-          name: "Travel guides",
-          href: "/guides",
-        },
-      ]
-    : []),
+  {
+    ...gaClickProps({ event: "nav_click", category: "footer_company", label: "travel_guides" }),
+    name: "Travel guides",
+    href: "/guides",
+  },
   {
     ...gaClickProps({ event: "nav_click", category: "footer_company", label: "all_categories" }),
     name: "All categories",
@@ -252,7 +248,7 @@ function buildCompanyLinks(listBusinessHref: string, guidesEnabled: boolean) {
 export async function SiteFooter() {
   const flags = await getAllFeatureFlags();
   const listBusinessHref = isOnboardEnabled(flags) ? "/portal/businesses/new" : "/list-your-business";
-  const companyLinks = buildCompanyLinks(listBusinessHref, isGuidesEnabled(flags));
+  const companyLinks = buildCompanyLinks(listBusinessHref);
 
   const [townLinks, areaLinks, businessGroupLinks, serviceGroupLinks, instagramUrl, tiktokUrl] =
     await Promise.all([

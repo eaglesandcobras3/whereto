@@ -170,13 +170,6 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `ask` | `/ask`, Ask API, concierge UI |
 | `onboard` | Business portal (`/portal`, admin review) |
 | `search_inspector` | Admin search debug tools |
-| `guides` | `/guides`, `/guide/[slug]`, Guides nav, home/footer guide CTAs, sitemap guide URLs |
-
-### Guides rollout
-
-- [ ] In PostHog: create boolean feature flag `guides` (default off for gradual rollout).
-- [ ] Enable for internal testers, then widen to production when ready.
-- [ ] When off: guide pages redirect home, Guides nav item hidden, `/guides` and `/guide/*` omitted from sitemap.
 
 ---
 
@@ -188,7 +181,6 @@ In-app editor at `/admin/guides` for markdown guides stored in `public.guides`.
 
 - [ ] Ensure admin access (`ADMIN_USER_IDS`, `ADMIN_EMAILS`, or `profiles.is_admin`).
 - [ ] Set `OPENAI_API_KEY` (and optional `OPENAI_MODEL`, default `gpt-4o-mini`) for the **Enrich** action.
-- [ ] Enable PostHog `guides` flag when ready to expose public guide pages.
 
 ### Workflow
 
@@ -205,6 +197,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-04 | Removed PostHog `guides` feature flag — guides are always on (pages, nav, sitemap) |
 | 2026-07-04 | Discover NL: PostHog `discover_nl` flag parses natural-language queries into `/discover` filter params |
 | 2026-07-03 | Discover fix: recreate `businesses_view` so `search_tags` is exposed — [businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql) |
 | 2026-06-30 | Guides admin at `/admin/guides` — markdown editor, town/area/business links, AI enrich, publish gate |

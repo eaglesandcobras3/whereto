@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { isAskEnabled, isGuidesEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
@@ -160,16 +160,14 @@ export function HomePage({
               </p>
 
               <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:flex-row sm:gap-4">
-                {isGuidesEnabled(featureFlags) ? (
-                  <Link
-                    href="/guides"
-                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guides" })}
-                    className="home-hero-cta-secondary"
-                  >
-                    <MsIcon name="menu_book" className="!text-xl" />
-                    Browse travel guides
-                  </Link>
-                ) : null}
+                <Link
+                  href="/guides"
+                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guides" })}
+                  className="home-hero-cta-secondary"
+                >
+                  <MsIcon name="menu_book" className="!text-xl" />
+                  Browse travel guides
+                </Link>
                 {isAskEnabled(featureFlags) ? (
                   <Link
                     href="/ask"
