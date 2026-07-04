@@ -40,6 +40,51 @@ function isValidAggregateRating(
 }
 
 /**
+ * Generate FAQPage JSON-LD when visible Q&A content exists on the page.
+ */
+export function generateFaqSchema(
+  faqs: Array<{ question: string; answer: string }>,
+): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+/**
+ * Generate CollectionPage JSON-LD for browse hubs.
+ */
+export function generateCollectionPageSchema(input: {
+  name: string;
+  path: string;
+  description?: string | null;
+}): object {
+  const siteUrl = getSiteUrl();
+  const pageUrl = `${siteUrl}${input.path.startsWith("/") ? input.path : `/${input.path}`}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#collection`,
+    name: input.name,
+    url: pageUrl,
+    ...(input.description ? { description: input.description } : {}),
+    isPartOf: {
+      "@type": "WebSite",
+      name: "WhereTo30A",
+      url: siteUrl,
+    },
+  };
+}
+
+/**
  * Generate BreadcrumbList JSON-LD schema
  * @param items Array of breadcrumb items — each must include a URL (including the current page).
  */

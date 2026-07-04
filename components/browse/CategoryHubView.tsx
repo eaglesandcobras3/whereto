@@ -1,6 +1,11 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
-import { generateBreadcrumbSchema, generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
+import { CategoryHubEditorial } from "@/components/browse/CategoryHubEditorial";
+import {
+  generateBreadcrumbSchema,
+  generateCollectionPageSchema,
+  generateItemListSchema,
+} from "@/lib/seo/breadcrumb-schema";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import type {
   CategoryBusinessRow,
@@ -21,6 +26,12 @@ export function CategoryHubView({ cat, townGroups, businesses }: Props) {
   const intro =
     cat.excerpt?.trim() ||
     categoryHubIntro(cat.title, businesses.length, townCount);
+
+  const collectionSchema = generateCollectionPageSchema({
+    name: `${cat.title} on 30A`,
+    path: hubPath,
+    description: intro,
+  });
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -44,6 +55,10 @@ export function CategoryHubView({ cat, townGroups, businesses }: Props) {
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <script
         type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+      <script
+        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <script
@@ -63,6 +78,8 @@ export function CategoryHubView({ cat, townGroups, businesses }: Props) {
             </>
           }
         />
+
+        <CategoryHubEditorial categorySlug={cat.slug} />
 
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
           <div className="min-w-0 space-y-8 sm:space-y-10">

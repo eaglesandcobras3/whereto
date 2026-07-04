@@ -1,44 +1,41 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { GuideCard } from "@/components/discovery/GuideCard";
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { PRIMARY_EDITORIAL_GUIDE_PATH, PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { hubGuidesIntro } from "@/lib/seo/page-intro-copy";
+import { hubGuidesIntro, hubGuidesClusterIntro } from "@/lib/seo/page-intro-copy";
+import { guidesHubMetadata } from "@/lib/seo/hub-metadata";
+import {
+  GUIDE_INTENT_CLUSTER_LABELS,
+  type GuideIntentCluster,
+  guideIntentForSlug,
+  guidesByCluster,
+} from "@/lib/seo/guide-intent-clusters";
+import {
+  generateCollectionPageSchema,
+  generateItemListSchema,
+} from "@/lib/seo/breadcrumb-schema";
 
 export const revalidate = 3600;
 
-const DAILY_FEATURED_LIMIT = 6;
 const GUIDE_POOL_LIMIT = 100;
 
-export const metadata: Metadata = {
-  ...canonicalAlternates("/guides"),
-  title: "30A Travel Guides | Town Tips, Dining & Trip Planning",
-  description:
-    "Browse editorial guides for Scenic 30A and South Walton, Florida: first-timer planning, town picks, dining, beaches, and local trip ideas from Rosemary Beach to Grayton Beach.",
-  keywords: [
-    "30A travel guides",
-    "30A vacation planning",
-    "South Walton guides",
-    "Emerald Coast travel tips",
-    "30A first time visitor",
-    "Rosemary Beach guide",
-    "Seaside Florida guide",
-    "30A local tips",
-  ],
-  ...openGraphForPage({
-    path: "/guides",
-    title: "30A Travel Guides | WhereTo30A",
-    description:
-      "Editorial guides for planning your 30A trip: towns, food, beaches, and on-the-ground local advice.",
-  }),
-};
+const CLUSTER_ORDER: GuideIntentCluster[] = [
+  "first_timer",
+  "beach_access",
+  "family_travel",
+  "girls_trip",
+  "town_guide",
+  "logistics",
+  "editorial",
+];
+
+export const metadata: Metadata = guidesHubMetadata();
 
 type GuideRow = {
   slug: string;
@@ -100,12 +97,45 @@ async function getGuides(): Promise<GuideRow[]> {
 export default async function GuidesPage() {
   const allGuides = await getGuides();
   const planningGuide = allGuides.find((g) => g.slug === PRIMARY_EDITORIAL_GUIDE_SLUG);
-  const featuredGuides = pickDailySubset(allGuides, DAILY_FEATURED_LIMIT);
-  const featuredSlugSet = new Set(featuredGuides.map((g) => g.slug));
-  const moreGuides = allGuides.filter((g) => !featuredSlugSet.has(g.slug));
+  const slugList = allGuides.map((g) => g.slug);
+  const clustered = guidesByCluster(slugList);
+  const mappedSlugs = new Set(
+    Object.values(clustered)
+      .flat()
+      .map((m) => m.slug),
+  );
+  const unmappedGuides = allGuides.filter((g) => !mappedSlugs.has(g.slug));
+
+  const collectionSchema = generateCollectionPageSchema({
+    name: "30A Travel Guides",
+    path: "/guides",
+    description: hubGuidesIntro(),
+  });
+  const itemListSchema = generateItemListSchema(
+    allGuides.map((g) => ({ name: g.title, url: `/guide/${g.slug}` })),
+  );
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+
+      <div className="mx-auto max-w-6xl px-4 pt-6">
+        <HubBreadcrumbs
+          items={[
+            { name: "Home", href: "/" },
+            { name: "Guides", href: "/guides", current: true },
+          ]}
+          analyticsCategory="guides_hub_breadcrumb"
+        />
+      </div>
+
       <BrowseHubHero
         title="Travel guides"
         description="Editorial guides for planning your trip: town picks, dining, beaches, and local advice written for the Emerald Coast."
@@ -148,45 +178,59 @@ export default async function GuidesPage() {
         </section>
       ) : null}
 
-      {featuredGuides.length > 0 && (
-        <section className="border-b border-[var(--color-border)] py-14">
-          <div className="mx-auto max-w-6xl px-4">
-            <header className="mb-8 space-y-2">
-              <p className="text-eyebrow">Editor&apos;s picks</p>
-              <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
-                Featured today
-              </h2>
-            </header>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredGuides.map((guide) => (
-                <GuideCard
-                  key={guide.slug}
-                  title={guide.title}
-                  slug={guide.slug}
-                  subtitle={guide.subtitle ?? undefined}
-                  imageUrl={guide.hero_image_url}
-                  analyticsCategory="guides_hub_featured"
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {CLUSTER_ORDER.map((cluster) => {
+        const mappings = clustered[cluster];
+        if (!mappings?.length) return null;
+        const guidesInCluster = mappings
+          .map((m) => allGuides.find((g) => g.slug === m.slug))
+          .filter((g): g is GuideRow => Boolean(g));
+        if (guidesInCluster.length === 0) return null;
 
-      {moreGuides.length > 0 && (
+        return (
+          <section key={cluster} className="border-b border-[var(--color-border)] py-14">
+            <div className="mx-auto max-w-6xl px-4">
+              <header className="mb-8 max-w-3xl space-y-2">
+                <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
+                  {GUIDE_INTENT_CLUSTER_LABELS[cluster]}
+                </h2>
+                <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
+                  {hubGuidesClusterIntro(cluster)}
+                </p>
+              </header>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {guidesInCluster.map((guide) => {
+                  const intent = guideIntentForSlug(guide.slug);
+                  return (
+                    <GuideCard
+                      key={guide.slug}
+                      title={guide.title}
+                      slug={guide.slug}
+                      subtitle={
+                        intent?.primaryKeyword
+                          ? `${guide.subtitle ?? ""}`.trim() || intent.primaryKeyword
+                          : (guide.subtitle ?? undefined)
+                      }
+                      imageUrl={guide.hero_image_url}
+                      analyticsCategory="guides_hub_cluster"
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        );
+      })}
+
+      {unmappedGuides.length > 0 ? (
         <section className="py-14">
           <div className="mx-auto max-w-6xl px-4">
             <header className="mb-8 space-y-2">
               <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
-                {featuredGuides.length > 0 ? "More guides" : "All guides"}
+                More guides
               </h2>
-              <p className="text-[var(--color-text-secondary)]">
-                {allGuides.length} {allGuides.length === 1 ? "guide" : "guides"} for dining, towns,
-                beaches, and trip planning.
-              </p>
             </header>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {moreGuides.map((guide) => (
+              {unmappedGuides.map((guide) => (
                 <GuideCard
                   key={guide.slug}
                   title={guide.title}
@@ -199,7 +243,7 @@ export default async function GuidesPage() {
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
       {allGuides.length === 0 && (
         <section className="py-14">

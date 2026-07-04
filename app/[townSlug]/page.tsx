@@ -26,14 +26,10 @@ import { AreaCard } from "@/components/discovery/AreaCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { getSiteUrl } from "@/lib/site-url";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
+import { townPageMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
-import {
-  metaDescriptionSnippet,
-  seoTitleSegmentForLayout,
-} from "@/lib/seo/metadata-snippets";
+import { getTownPlanningProfile } from "@/lib/data/town-planning";
+import { TownPlanningSections } from "@/components/town/TownPlanningSections";
 import { generateBreadcrumbSchema, generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
@@ -309,31 +305,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (town) {
     const seoTitle = (town as unknown as { seo_title?: string | null }).seo_title;
     const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
-    const title = seoTitleSegmentForLayout(
-      seoTitle?.trim() || `${town.name} | Local Guide to 30A`,
-    );
-    const desc = metaDescriptionSnippet(
+    const fallbackDesc = `Local guide: ${town.name} on 30A. Restaurants, beaches, areas, and what the week actually feels like.`;
+    return townPageMetadataFromAudit(
+      town.name,
+      town.slug,
+      seoTitle,
       resolvePlaceIntro({
         excerpt: typeof town.excerpt === "string" ? town.excerpt : null,
         seoDescription: seoDesc?.trim() || null,
         fallback: "",
-      }) ||
-        seoDesc?.trim() ||
-        "",
-      `Local guide: ${town.name} on 30A. Restaurants, beaches, areas, and what the week actually feels like.`,
+      }) || seoDesc?.trim() || null,
+      fallbackDesc,
+      businessListingImageUrl(town.hero_image_thumb_url as string | null),
     );
-    const ogTitle = `${town.name} | WhereTo30A`;
-    return {
-      ...canonicalAlternates(`/${town.slug}`),
-      title,
-      description: desc,
-      ...openGraphForPage({
-        path: `/${town.slug}`,
-        title: ogTitle,
-        description: desc,
-        imageUrl: businessListingImageUrl(town.hero_image_thumb_url as string | null),
-      }),
-    };
   }
   return { title: metadataTitleSiteOnly };
 }
@@ -407,6 +391,7 @@ function BasicTownPage({
     fallback: townPageIntro(town.name, descriptor),
   });
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);
+  const planningProfile = getTownPlanningProfile(town.slug);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -458,6 +443,12 @@ function BasicTownPage({
             portraitAlt={town.name}
             fallbackIcon="location_city"
           />
+
+          {planningProfile ? (
+            <div className="mb-10">
+              <TownPlanningSections townName={town.name} profile={planningProfile} />
+            </div>
+          ) : null}
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
             <PlaceCategoryBusinessSections

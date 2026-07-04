@@ -6,7 +6,7 @@ import { isAskEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
-import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
+import { TripPlanningSection } from "@/components/home/TripPlanningSection";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
 
@@ -286,6 +286,8 @@ export function HomePage({
             </div>
           </section>
         )}
+
+        <TripPlanningSection />
 
         <ListBusinessHomeCta />
       </div>
