@@ -45,6 +45,11 @@ export function showNavbarDiscoverUi(flags: FeatureFlags): boolean {
   return isDiscoverEnabled(flags);
 }
 
+/** Expandable navbar query panel when filter-first `/discover` is the primary discovery product. */
+export function showNavbarDiscoverQueryUi(flags: FeatureFlags): boolean {
+  return showNavbarDiscoverUi(flags);
+}
+
 export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
   return isAskEnabled(flags);
 }
