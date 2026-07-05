@@ -82,8 +82,6 @@ export function CategoryHubView({ cat, townGroups, businesses, seoImprovements =
           }
         />
 
-        {seoImprovements ? <CategoryHubEditorial categorySlug={cat.slug} /> : null}
-
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
           <div className="min-w-0 space-y-8 sm:space-y-10">
             <CategoryHubTownSections
@@ -97,6 +95,8 @@ export function CategoryHubView({ cat, townGroups, businesses, seoImprovements =
             />
           </div>
         </div>
+
+        {seoImprovements ? <CategoryHubEditorial categorySlug={cat.slug} /> : null}
       </main>
     </div>
   );

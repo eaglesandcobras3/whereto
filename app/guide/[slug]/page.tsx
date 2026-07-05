@@ -325,9 +325,9 @@ export default async function GuidePage({ params }: Props) {
             </figure>
           ) : null}
 
-          {seoImprovements && showCorridorMap ? <FirstTimerTownCompareTable /> : null}
-
           <MarkdownRenderer content={bodyMarkdown} />
+
+          {seoImprovements && showCorridorMap ? <FirstTimerTownCompareTable /> : null}
 
           {seoImprovements ? (
             <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />

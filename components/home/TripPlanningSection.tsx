@@ -72,7 +72,7 @@ export function TripPlanningSection() {
                 category: "home_trip_planning",
                 label: link.href,
               })}
-              className="group flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
+              className="group flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md editorial-card"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
                 <span className="material-symbols-outlined">{link.icon}</span>

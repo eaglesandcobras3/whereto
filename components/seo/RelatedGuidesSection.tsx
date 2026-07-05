@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { RelatedGuideLink } from "@/lib/seo/guide-related-links";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 type Props = {
   title?: string;
@@ -15,10 +18,23 @@ export function RelatedGuidesSection({
 }: Props) {
   if (links.length === 0) return null;
 
+  const preview =
+    links.length === 1
+      ? links[0].title
+      : `${links[0].title}, ${links[1]?.title ?? ""}`.replace(/, $/, "");
+
   return (
-    <section className="mt-12 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-container-low)] p-6">
-      <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">{title}</h2>
-      <ul className="mt-4 space-y-3">
+    <CollapsibleSection
+      variant="card"
+      headingLevel={2}
+      defaultOpen={false}
+      icon="menu_book"
+      title={title}
+      meta={<span className="text-eyebrow font-normal normal-case tracking-normal">Keep reading</span>}
+      preview={preview}
+      className="bg-[var(--color-surface-container-low)]"
+    >
+      <ul className="grid gap-4 sm:grid-cols-2">
         {links.map((link) => (
           <li key={link.slug}>
             <Link
@@ -28,20 +44,26 @@ export function RelatedGuidesSection({
                 category: analyticsCategory,
                 label: link.slug,
               })}
-              className="group block"
+              className="editorial-card group flex h-full flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
             >
-              <span className="font-medium text-[var(--color-primary)] group-hover:underline">
+              <span className="font-headline text-base font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">
                 {link.title}
               </span>
               {link.reason ? (
-                <span className="mt-0.5 block text-sm text-[var(--color-text-secondary)]">
+                <span className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
                   {link.reason}
                 </span>
               ) : null}
+              <span className="mt-auto inline-flex items-center gap-1 pt-2 text-sm font-semibold text-[var(--color-primary)]">
+                Read guide
+                <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
+                  arrow_forward
+                </span>
+              </span>
             </Link>
           </li>
         ))}
       </ul>
-    </section>
+    </CollapsibleSection>
   );
 }
