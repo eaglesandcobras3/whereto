@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { RelatedGuideLink } from "@/lib/seo/guide-related-links";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 
 type Props = {
   title?: string;
@@ -16,6 +17,8 @@ export function RelatedGuidesSection({
   links,
   analyticsCategory = "related_guides",
 }: Props) {
+  const [open, setOpen] = useState(false);
+
   if (links.length === 0) return null;
 
   const preview =
@@ -24,46 +27,60 @@ export function RelatedGuidesSection({
       : `${links[0].title}, ${links[1]?.title ?? ""}`.replace(/, $/, "");
 
   return (
-    <CollapsibleSection
-      variant="card"
-      headingLevel={2}
-      defaultOpen={false}
-      icon="menu_book"
-      title={title}
-      meta={<span className="text-eyebrow font-normal normal-case tracking-normal">Keep reading</span>}
-      preview={preview}
-      className="bg-[var(--color-surface-container-low)]"
-    >
-      <ul className="grid gap-4 sm:grid-cols-2">
-        {links.map((link) => (
-          <li key={link.slug}>
-            <Link
-              href={link.href}
-              {...gaClickProps({
-                event: "nav_click",
-                category: analyticsCategory,
-                label: link.slug,
-              })}
-              className="editorial-card group flex h-full flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
-            >
-              <span className="font-headline text-base font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">
-                {link.title}
-              </span>
-              {link.reason ? (
-                <span className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                  {link.reason}
-                </span>
-              ) : null}
-              <span className="mt-auto inline-flex items-center gap-1 pt-2 text-sm font-semibold text-[var(--color-primary)]">
-                Read guide
-                <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
-                  arrow_forward
-                </span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </CollapsibleSection>
+    <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-container-low)] shadow-premium-sm">
+      <div className="border-b border-[var(--color-border)] px-4 py-5 sm:px-6">
+        <p className="text-eyebrow mb-2">Keep reading</p>
+        <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
+          {title}
+        </h2>
+      </div>
+
+      <div className="px-4 sm:px-6">
+        <CollapsibleBrowseSection
+          compact
+          title="Guides for this trip"
+          subtitle={preview}
+          icon={
+            <span className="material-symbols-outlined text-lg" aria-hidden>
+              menu_book
+            </span>
+          }
+          open={open}
+          onToggle={() => setOpen((v) => !v)}
+          className="py-3 sm:py-3.5"
+        >
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {links.map((link) => (
+              <li key={link.slug}>
+                <Link
+                  href={link.href}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: analyticsCategory,
+                    label: link.slug,
+                  })}
+                  className="group flex h-full flex-col gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-colors hover:border-[var(--color-primary)] sm:p-4"
+                >
+                  <span className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] sm:text-base">
+                    {link.title}
+                  </span>
+                  {link.reason ? (
+                    <span className="text-xs leading-relaxed text-[var(--color-text-secondary)] sm:text-sm">
+                      {link.reason}
+                    </span>
+                  ) : null}
+                  <span className="mt-auto inline-flex items-center gap-1 pt-1 text-xs font-semibold text-[var(--color-primary)] sm:text-sm">
+                    Read guide
+                    <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
+                      arrow_forward
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </CollapsibleBrowseSection>
+      </div>
+    </section>
   );
 }

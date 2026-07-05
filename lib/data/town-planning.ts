@@ -58,7 +58,7 @@ export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
   },
   "rosemary-beach": {
     vibe: "Cobblestone walks, boutique shopping, and dinner on foot.",
-    bestFor: ["Walking to dinner", "Boutique shopping", "Girls weekends and date nights"],
+    bestFor: ["Walking to dinner", "Boutique shopping", "Date nights"],
     quickFacts: [
       { label: "Walkability", value: "High", icon: "directions_walk" },
       { label: "Beach", value: "Few blocks from center", icon: "beach_access" },
@@ -75,7 +75,7 @@ export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
       { name: "Inlet Beach", slug: "inlet-beach", note: "Quieter beaches, less foot traffic" },
       { name: "Alys Beach", slug: "alys-beach", note: "Five minutes east, different architecture" },
     ],
-    relatedGuideSlugs: ["guide-to-rosemary-beach-florida", "bachelorette-girls-trip-30a"],
+    relatedGuideSlugs: ["guide-to-rosemary-beach-florida", "public-beaches-30a"],
     faqs: [
       {
         question: "Is Rosemary Beach walkable?",
@@ -83,9 +83,9 @@ export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
           "That's the main draw. Shops, restaurants, and most beach access are on foot from the center. You'll still drive for groceries or a beach day farther west.",
       },
       {
-        question: "Is Rosemary good for a girls trip?",
+        question: "When is Rosemary busiest?",
         answer:
-          "Popular pick. Walkable dining, photo spots, and enough going on that you don't need a packed itinerary every day.",
+          "Summer weekends and holiday weeks. Weekdays are calmer. Book dinner early if you're staying peak season.",
       },
     ],
   },
@@ -110,7 +110,7 @@ export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
     ],
     relatedGuideSlugs: [
       "ultimate-30a-first-timers-guide",
-      "bachelorette-girls-trip-30a",
+      "guide-to-rosemary-beach-florida",
       "public-beaches-30a",
     ],
     faqs: [
