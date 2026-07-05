@@ -11,11 +11,22 @@ type Props = {
   profile: TownPlanningProfile;
 };
 
+function previewText(text: string, max = 72): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max).trim()}…`;
+}
+
 export function TownPlanningSections({ townName, profile }: Props) {
   const faqSchema =
     profile.faqs && profile.faqs.length > 0
       ? generateFaqSchema(profile.faqs)
       : null;
+
+  const hasNearby = Boolean(profile.nearbyTowns?.length);
+  const hasDining = Boolean(profile.diningStyle);
+  const hasFaqs = Boolean(profile.faqs?.length);
+  const nearbyPreview = profile.nearbyTowns?.map((t) => t.name).join(", ");
 
   return (
     <>
@@ -26,45 +37,46 @@ export function TownPlanningSections({ townName, profile }: Props) {
         />
       ) : null}
 
-      <CollapsibleSection
-        variant="card"
-        headingLevel={2}
-        defaultOpen={false}
-        icon="location_city"
-        title={`${townName} at a glance`}
-        meta={<span className="text-eyebrow font-normal normal-case tracking-normal">Town profile</span>}
-        preview={profile.vibe}
-        className="bg-[var(--color-surface-container-low)]"
-      >
-        <div className="space-y-8">
-          <p className="text-base leading-relaxed text-[var(--color-text-primary)] sm:text-lg">
+      <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-container-low)] shadow-premium-sm">
+        <header className="border-b border-[var(--color-border)] p-5 sm:p-6">
+          <p className="text-eyebrow mb-2">Town profile</p>
+          <h2 className="text-editorial-headline text-2xl text-primary sm:text-3xl">
+            {townName} at a glance
+          </h2>
+          <p className="mt-3 text-base leading-relaxed text-[var(--color-text-primary)]">
             {profile.vibe}
           </p>
 
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {profile.quickFacts.map((fact) => (
               <div
                 key={fact.label}
-                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 sm:p-4"
+                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 sm:px-3.5 sm:py-3"
               >
-                <dt className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-tertiary)]">
-                  <span className="material-symbols-outlined !text-base text-[var(--color-primary)]">
+                <dt className="flex items-center gap-1 text-[0.6875rem] font-medium text-[var(--color-text-tertiary)] sm:text-xs">
+                  <span className="material-symbols-outlined !text-sm text-[var(--color-primary)]">
                     {fact.icon}
                   </span>
                   {fact.label}
                 </dt>
-                <dd className="mt-1.5 text-sm font-semibold leading-snug text-[var(--color-text-primary)]">
+                <dd className="mt-1 text-sm font-semibold leading-snug text-[var(--color-text-primary)]">
                   {fact.value}
                 </dd>
               </div>
             ))}
           </dl>
+        </header>
 
-          <div>
-            <h3 className="font-headline text-sm font-bold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              Good fit if you want
-            </h3>
-            <ul className="mt-3 flex flex-wrap gap-2">
+        <div className="px-4 sm:px-6">
+          <CollapsibleSection
+            variant="plain"
+            headingLevel={3}
+            defaultOpen={false}
+            icon="thumb_up"
+            title="Good fit if you want"
+            preview={profile.bestFor.slice(0, 3).join(" · ")}
+          >
+            <ul className="flex flex-wrap gap-2">
               {profile.bestFor.map((item) => (
                 <li
                   key={item}
@@ -74,44 +86,66 @@ export function TownPlanningSections({ townName, profile }: Props) {
                 </li>
               ))}
             </ul>
-          </div>
+          </CollapsibleSection>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                Beach
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {profile.beachAccess}
-              </p>
-            </div>
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                Parking
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {profile.parking}
-              </p>
-            </div>
-            {profile.diningStyle ? (
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:col-span-1">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  Dining
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                  {profile.diningStyle}
-                </p>
-              </div>
-            ) : null}
-          </div>
+          <CollapsibleSection
+            variant="plain"
+            headingLevel={3}
+            defaultOpen={false}
+            icon="beach_access"
+            title="Beach"
+            preview={
+              profile.quickFacts.find((f) => f.label === "Beach")?.value ??
+              previewText(profile.beachAccess)
+            }
+          >
+            <p className="prose-editorial text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              {profile.beachAccess}
+            </p>
+          </CollapsibleSection>
 
-          {profile.nearbyTowns && profile.nearbyTowns.length > 0 ? (
-            <div>
-              <h3 className="font-headline text-sm font-bold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                Nearby towns
-              </h3>
-              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                {profile.nearbyTowns.map((t) => (
+          <CollapsibleSection
+            variant="plain"
+            headingLevel={3}
+            defaultOpen={false}
+            icon="local_parking"
+            title="Parking"
+            preview={previewText(profile.parking)}
+          >
+            <p className="prose-editorial text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              {profile.parking}
+            </p>
+          </CollapsibleSection>
+
+          {hasDining ? (
+            <CollapsibleSection
+              variant="plain"
+              headingLevel={3}
+              defaultOpen={false}
+              icon="restaurant"
+              title="Dining"
+              preview={
+                profile.quickFacts.find((f) => f.label === "Dining")?.value ??
+                previewText(profile.diningStyle!)
+              }
+            >
+              <p className="prose-editorial text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                {profile.diningStyle}
+              </p>
+            </CollapsibleSection>
+          ) : null}
+
+          {hasNearby ? (
+            <CollapsibleSection
+              variant="plain"
+              headingLevel={3}
+              defaultOpen={false}
+              icon="near_me"
+              title="Nearby towns"
+              preview={nearbyPreview}
+            >
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {profile.nearbyTowns!.map((t) => (
                   <li key={t.slug}>
                     <Link
                       href={`/${t.slug}`}
@@ -134,30 +168,42 @@ export function TownPlanningSections({ townName, profile }: Props) {
                   </li>
                 ))}
               </ul>
-            </div>
+            </CollapsibleSection>
           ) : null}
 
-          {profile.faqs && profile.faqs.length > 0 ? (
-            <div>
-              <h3 className="font-headline text-sm font-bold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                Quick answers
-              </h3>
-              <dl className="mt-3 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-                {profile.faqs.map((faq) => (
-                  <div key={faq.question} className="px-4 py-3.5 sm:px-5 sm:py-4">
-                    <dt className="text-sm font-semibold text-[var(--color-text-primary)]">
-                      {faq.question}
-                    </dt>
-                    <dd className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                      {faq.answer}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+          {hasFaqs
+            ? profile.faqs!.map((faq, index) => (
+                <CollapsibleSection
+                  key={faq.question}
+                  variant="plain"
+                  headingLevel={3}
+                  defaultOpen={false}
+                  icon="help"
+                  title={faq.question}
+                  preview={previewText(faq.answer)}
+                  trimTrailingSpace={index === profile.faqs!.length - 1}
+                >
+                  <p className="prose-editorial text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    {faq.answer}
+                  </p>
+                </CollapsibleSection>
+              ))
+            : null}
+
+          {!hasFaqs ? (
+            <CollapsibleSection
+              variant="plain"
+              headingLevel={3}
+              defaultOpen={false}
+              title=""
+              trimTrailingSpace
+              className="hidden"
+            >
+              {null}
+            </CollapsibleSection>
           ) : null}
         </div>
-      </CollapsibleSection>
+      </section>
     </>
   );
 }
