@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { buildDiscoverUrl } from "@/lib/discovery-filters/build-discover-url";
+import { appliedTagsFromFilters } from "@/lib/discovery-filters/merge-scoped-search-tags";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverFilterSearchResult } from "@/lib/discovery-filters/types";
@@ -76,10 +77,11 @@ export function DiscoverPageClient({
     [initialParams.town],
   );
 
-  const selectedTags = useMemo(
-    () => parseFacetSlugs(initialParams.facet),
-    [initialParams.facet],
-  );
+  const selectedTags = useMemo(() => {
+    const fromApplied = appliedTagsFromFilters(initialResult.applied_filters);
+    if (fromApplied.length) return fromApplied;
+    return parseFacetSlugs(initialParams.facet);
+  }, [initialResult.applied_filters, initialParams.facet]);
 
   const navigate = useCallback(
     (
