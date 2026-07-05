@@ -86,6 +86,7 @@ With `discover` on, the navbar search icon opens a text field (same pattern as l
 
 - [x] Boolean flag `discover_nl` (requires `discover`) — rolled out
 - [ ] Create alert on event `discover_tag_unresolved` (new/unmatched search terms)
+- [ ] Optional: dashboard on `discover_nl_parsed` — filter by `used_llm`, `deterministic_confidence`, `confused_terms`
 
 ### Supabase
 
@@ -102,7 +103,7 @@ Requires `OPENAI_API_KEY` for LLM fallback (deterministic-only without it).
 
 ### Debug API
 
-`POST /api/discovery/parse-query` with `{ "query": "froyo near grayton" }` returns parsed params plus `resolver` (`deterministic` | `llm` | `hybrid`).
+`POST /api/discovery/parse-query` with `{ "query": "froyo near grayton" }` returns `parsed`, `telemetry` (`resolver`, `deterministic_confidence`, `doubt_reasons`, `confused_terms`, `used_llm`).
 
 ---
 
@@ -209,6 +210,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-05 | Discover NL: PostHog `discover_nl_parsed` event — resolver, confidence, doubt_reasons, confused_terms |
 | 2026-07-05 | Discover NL: hybrid LLM tag resolver under `discover_nl`, `discover_search_gaps` table + `/admin/discover-gaps`, PostHog `discover_tag_unresolved` |
 | 2026-07-04 | PostHog `seo_improvements` flag gates new SEO sprint UI (hubs, town/guide modules, homepage trip planning) |
 | 2026-07-04 | Discover navbar: search icon opens query panel (routes to `/discover`) when `discover` flag is on |

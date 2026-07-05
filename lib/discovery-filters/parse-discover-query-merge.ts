@@ -10,8 +10,39 @@ import {
 
 export type DiscoverParseResolver = "deterministic" | "llm" | "hybrid";
 
+export type DiscoverParseConfidence = "high" | "low";
+
+export type DiscoverParseDoubtReport = {
+  confidence: DiscoverParseConfidence;
+  doubtReasons: string[];
+};
+
 function dedupe(items: string[]): string[] {
   return [...new Set(items)];
+}
+
+/** Explain why deterministic parse is or is not extremely confident. */
+export function describeDiscoverParseDoubt(
+  parsed: ParsedDiscoverQuery,
+): DiscoverParseDoubtReport {
+  const reasons: string[] = [];
+  const signals = parsed.deterministicSignals;
+
+  if (!parsed.expanded) reasons.push("not_expanded");
+  if ((parsed.unresolvedTerms?.length ?? 0) > 0) reasons.push("unresolved_terms");
+  if (signals?.hasResidualQ) reasons.push("residual_q");
+  if (signals?.usedHeuristicCategory) reasons.push("heuristic_category");
+  if (signals?.usedAliasOrThemeCategory) reasons.push("alias_or_theme_category");
+  if (!signals?.matchedRuleId) reasons.push("no_rule_match");
+
+  const confidence: DiscoverParseConfidence = isExtremelyConfidentDeterministicParse(
+    parsed,
+    signals,
+  )
+    ? "high"
+    : "low";
+
+  return { confidence, doubtReasons: reasons };
 }
 
 /**

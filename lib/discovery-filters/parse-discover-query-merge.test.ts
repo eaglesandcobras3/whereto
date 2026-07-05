@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  describeDiscoverParseDoubt,
   isExtremelyConfidentDeterministicParse,
   mergeDiscoverLlmParse,
   needsDiscoverLlmFallback,
@@ -11,6 +12,37 @@ const ruleOnlySignals = {
   usedHeuristicCategory: false,
   usedAliasOrThemeCategory: false,
 };
+
+describe("describeDiscoverParseDoubt", () => {
+  it("reports high confidence for clean rule matches", () => {
+    const report = describeDiscoverParseDoubt({
+      expanded: true,
+      category: "coffee_and_treats",
+      type: "storefront",
+      deterministicSignals: ruleOnlySignals,
+    });
+    expect(report.confidence).toBe("high");
+    expect(report.doubtReasons).not.toContain("no_rule_match");
+  });
+
+  it("lists doubt reasons for heuristic expansion", () => {
+    const report = describeDiscoverParseDoubt({
+      expanded: true,
+      category: "restaurants_and_bars",
+      facet: "kid_friendly,lunch",
+      town: "seaside",
+      deterministicSignals: {
+        matchedRuleId: undefined,
+        hasResidualQ: false,
+        usedHeuristicCategory: true,
+        usedAliasOrThemeCategory: false,
+      },
+    });
+    expect(report.confidence).toBe("low");
+    expect(report.doubtReasons).toContain("heuristic_category");
+    expect(report.doubtReasons).toContain("no_rule_match");
+  });
+});
 
 describe("isExtremelyConfidentDeterministicParse", () => {
   it("is true only for a clean rule match with structured output", () => {

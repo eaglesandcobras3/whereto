@@ -23,5 +23,9 @@ export async function POST(request: Request) {
   }
 
   const parsed = await parseDiscoverQueryAsync(query);
-  return NextResponse.json({ query, parsed });
+  return NextResponse.json({
+    query,
+    parsed,
+    telemetry: parsed.telemetry,
+  });
 }
