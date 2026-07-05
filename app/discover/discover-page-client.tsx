@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard";
+import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { buildDiscoverUrl } from "@/lib/discovery-filters/build-discover-url";
 import { appliedTagsFromFilters } from "@/lib/discovery-filters/merge-scoped-search-tags";
@@ -300,11 +301,19 @@ export function DiscoverPageClient({
           <main className="min-w-0 flex-1">
             <div className="mb-4 space-y-2">
               <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                <span>
-                  {pending
-                    ? "Updating…"
-                    : `${initialResult.total} result${initialResult.total === 1 ? "" : "s"}`}
-                </span>
+                {pending ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className="inline-block size-3.5 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+                      aria-hidden
+                    />
+                    Updating results…
+                  </span>
+                ) : (
+                  <span>
+                    {initialResult.total} result{initialResult.total === 1 ? "" : "s"}
+                  </span>
+                )}
                 {activeTownSlugs.map((slug) => (
                   <span
                     key={slug}
@@ -364,7 +373,9 @@ export function DiscoverPageClient({
               </dl>
             </div>
 
-            {initialResult.listings.length === 0 ? (
+            {pending ? (
+              <DiscoverPageLoading message="Updating results…" variant="results" />
+            ) : initialResult.listings.length === 0 ? (
               <div className="space-y-2 text-[var(--color-text-secondary)]">
                 <p>
                   No listings match these filters. Try fewer tags, or broaden town or category.
