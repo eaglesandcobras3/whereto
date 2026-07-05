@@ -15,7 +15,7 @@ export function TownPlanningSections({ townName, profile }: Props) {
       : null;
 
   return (
-    <div className="space-y-10">
+    <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-container-low)] p-6 sm:p-8">
       {faqSchema ? (
         <script
           type="application/ld+json"
@@ -23,122 +23,141 @@ export function TownPlanningSections({ townName, profile }: Props) {
         />
       ) : null}
 
-      <section>
-        <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
-          What {townName} is best for
+      <header className="mb-8 max-w-2xl">
+        <p className="text-eyebrow mb-3">Trip planning</p>
+        <h2 className="text-editorial-headline text-2xl text-primary sm:text-3xl">
+          Planning your {townName} stay
         </h2>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {profile.bestFor.map((item) => (
-            <li
-              key={item}
-              className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-container-low)] px-3 py-1 text-sm text-[var(--color-text-secondary)]"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-      </section>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
+          Beach access, parking, and what this town fits best — the details visitors ask about most.
+        </p>
+      </header>
 
-      <section className="grid gap-6 sm:grid-cols-2">
+      <div className="space-y-8">
         <div>
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-            Beach access
-          </h2>
-          <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-            {profile.beachAccess}
-          </p>
-        </div>
-        <div>
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-            Parking & crowds
-          </h2>
-          <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-            {profile.parking}
-          </p>
-        </div>
-      </section>
-
-      {profile.diningStyle ? (
-        <section>
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-            Dining style
-          </h2>
-          <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-            {profile.diningStyle}
-          </p>
-        </section>
-      ) : null}
-
-      {profile.nearbyTowns && profile.nearbyTowns.length > 0 ? (
-        <section>
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-            Nearby pairings
-          </h2>
-          <ul className="mt-3 space-y-2">
-            {profile.nearbyTowns.map((t) => (
-              <li key={t.slug}>
-                <Link
-                  href={`/${t.slug}`}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "town_planning_nearby",
-                    label: t.slug,
-                  })}
-                  className="text-sm font-medium text-[var(--color-primary)] hover:underline"
-                >
-                  {t.name}
-                </Link>
-                {t.note ? (
-                  <span className="text-sm text-[var(--color-text-secondary)]"> — {t.note}</span>
-                ) : null}
+          <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+            What {townName} is best for
+          </h3>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {profile.bestFor.map((item) => (
+              <li
+                key={item}
+                className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-sm font-medium text-[var(--color-text-secondary)]"
+              >
+                {item}
               </li>
             ))}
           </ul>
-        </section>
-      ) : null}
+        </div>
 
-      {profile.relatedGuideSlugs && profile.relatedGuideSlugs.length > 0 ? (
-        <section>
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-            Related guides
-          </h2>
-          <ul className="mt-3 flex flex-wrap gap-3">
-            {profile.relatedGuideSlugs.map((slug) => (
-              <li key={slug}>
-                <Link
-                  href={`/guide/${slug}`}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "town_planning_guide",
-                    label: slug,
-                  })}
-                  className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+            <h3 className="font-headline text-base font-bold text-[var(--color-text-primary)]">
+              Beach access
+            </h3>
+            <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              {profile.beachAccess}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+            <h3 className="font-headline text-base font-bold text-[var(--color-text-primary)]">
+              Parking & crowds
+            </h3>
+            <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              {profile.parking}
+            </p>
+          </div>
+        </div>
+
+        {profile.diningStyle ? (
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+            <h3 className="font-headline text-base font-bold text-[var(--color-text-primary)]">
+              Dining style
+            </h3>
+            <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              {profile.diningStyle}
+            </p>
+          </div>
+        ) : null}
+
+        {profile.nearbyTowns && profile.nearbyTowns.length > 0 ? (
+          <div>
+            <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+              Nearby pairings
+            </h3>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {profile.nearbyTowns.map((t) => (
+                <li key={t.slug}>
+                  <Link
+                    href={`/${t.slug}`}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "town_planning_nearby",
+                      label: t.slug,
+                    })}
+                    className="editorial-card group flex h-full flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm transition-all hover:border-[var(--color-primary)]"
+                  >
+                    <span className="font-semibold text-[var(--color-primary)] group-hover:underline">
+                      {t.name}
+                    </span>
+                    {t.note ? (
+                      <span className="mt-1 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                        {t.note}
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {profile.relatedGuideSlugs && profile.relatedGuideSlugs.length > 0 ? (
+          <div>
+            <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+              Related guides
+            </h3>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {profile.relatedGuideSlugs.map((slug) => (
+                <li key={slug}>
+                  <Link
+                    href={`/guide/${slug}`}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "town_planning_guide",
+                      label: slug,
+                    })}
+                    className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-sm font-medium text-[var(--color-primary)] transition-colors hover:border-[var(--color-primary)]"
+                  >
+                    {slug.replace(/-/g, " ")}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {profile.faqs && profile.faqs.length > 0 ? (
+          <div>
+            <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+              Frequently asked questions
+            </h3>
+            <dl className="mt-4 space-y-3">
+              {profile.faqs.map((faq) => (
+                <div
+                  key={faq.question}
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5"
                 >
-                  {slug.replace(/-/g, " ")}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {profile.faqs && profile.faqs.length > 0 ? (
-        <section>
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-            Frequently asked questions
-          </h2>
-          <dl className="mt-4 space-y-4">
-            {profile.faqs.map((faq) => (
-              <div key={faq.question}>
-                <dt className="font-semibold text-[var(--color-text-primary)]">{faq.question}</dt>
-                <dd className="prose-editorial mt-1 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                  {faq.answer}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ) : null}
-    </div>
+                  <dt className="font-semibold text-[var(--color-text-primary)]">{faq.question}</dt>
+                  <dd className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    {faq.answer}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
