@@ -18,8 +18,18 @@ export type ParsedDiscoverQuery = {
   unresolvedTerms?: string[];
   /** How this parse was produced (server hybrid path only). */
   resolver?: "deterministic" | "llm" | "hybrid";
+  /** Signals for server LLM gating — not used in URL building. */
+  deterministicSignals?: DeterministicParseSignals;
   /** True when parsing extracted structured filters beyond a raw `q` pass-through. */
   expanded: boolean;
+};
+
+/** Metadata from the deterministic pass — used to decide LLM fallback. */
+export type DeterministicParseSignals = {
+  matchedRuleId?: string;
+  hasResidualQ: boolean;
+  usedHeuristicCategory: boolean;
+  usedAliasOrThemeCategory: boolean;
 };
 
 const FOOD_CONTEXT_RE =
@@ -145,6 +155,8 @@ export function parseDiscoverQuery(
   const plan = resolveQueryPlan(trimmed);
   const normalized = normalizeQuery(trimmed);
   const categoryFields = resolveCategoryFromPlan(plan);
+  let usedHeuristicCategory = false;
+  let usedAliasOrThemeCategory = false;
 
   const tagResolution = resolveQueryTags(trimmed, plan, {
     vocabulary: options?.vocabulary,
@@ -156,6 +168,7 @@ export function parseDiscoverQuery(
     !categoryFields.service_category &&
     tagResolution.categorySlug
   ) {
+    usedAliasOrThemeCategory = true;
     const rollup = normalizeStorefrontCategoryGroupSlug(tagResolution.categorySlug);
     if (rollup) {
       categoryFields.type = "storefront";
@@ -168,6 +181,7 @@ export function parseDiscoverQuery(
     !categoryFields.service_category &&
     FOOD_CONTEXT_RE.test(normalized)
   ) {
+    usedHeuristicCategory = true;
     categoryFields.type = "storefront";
     categoryFields.category = "restaurants_and_bars";
   }
@@ -177,12 +191,20 @@ export function parseDiscoverQuery(
     !categoryFields.service_category &&
     SERVICE_HINT_RE.test(normalized)
   ) {
+    usedHeuristicCategory = true;
     categoryFields.type = "services";
   }
 
   const allTags = tagResolution.tags;
   const town = plan.townSlug ?? undefined;
   const q = buildResidualQuery(normalized, plan, plan.townSlug, allTags);
+
+  const deterministicSignals: DeterministicParseSignals = {
+    matchedRuleId: plan.matchedRuleId,
+    hasResidualQ: Boolean(q?.trim()),
+    usedHeuristicCategory,
+    usedAliasOrThemeCategory,
+  };
 
   const expanded = Boolean(
     town ||
@@ -198,6 +220,7 @@ export function parseDiscoverQuery(
       unresolvedTerms: tagResolution.unresolvedTerms.length
         ? tagResolution.unresolvedTerms
         : [trimmed.toLowerCase()],
+      deterministicSignals,
       expanded: false,
     };
   }
@@ -212,6 +235,7 @@ export function parseDiscoverQuery(
     unresolvedTerms: tagResolution.unresolvedTerms.length
       ? tagResolution.unresolvedTerms
       : undefined,
+    deterministicSignals,
     expanded: true,
   };
 }

@@ -58,5 +58,23 @@ describe("parseDiscoverQuery", () => {
     expect(parsed.expanded).toBe(true);
     expect(parsed.category).toBe("coffee_and_treats");
     expect(parsed.town).toBe("seaside");
+    expect(parsed.deterministicSignals?.usedAliasOrThemeCategory).toBe(true);
+  });
+
+  it("flags non-rule expansion for kid friendly lunch (LLM should run server-side)", () => {
+    const parsed = parseDiscoverQuery("kid friendly lunch near seaside");
+    expect(parsed.expanded).toBe(true);
+    expect(parsed.deterministicSignals?.matchedRuleId).toBeFalsy();
+    expect(
+      parsed.deterministicSignals?.usedHeuristicCategory ||
+        parsed.deterministicSignals?.usedAliasOrThemeCategory,
+    ).toBe(true);
+  });
+
+  it("marks coffee as extreme-confidence rule match", () => {
+    const parsed = parseDiscoverQuery("coffee");
+    expect(parsed.deterministicSignals?.matchedRuleId).toBe("category_coffee");
+    expect(parsed.deterministicSignals?.usedHeuristicCategory).toBe(false);
+    expect(parsed.deterministicSignals?.hasResidualQ).toBe(false);
   });
 });

@@ -72,8 +72,8 @@ function scheduleGapRecording(
 }
 
 /**
- * Hybrid discover NL parse: deterministic fast path, then low-cost LLM when needed.
- * Loads live vocabulary, caches by normalized query, records unresolved terms.
+ * Hybrid discover NL parse: deterministic fast path, then low-cost LLM unless the
+ * rule match is extremely confident. Loads live vocabulary, caches, records gaps.
  */
 export async function parseDiscoverQueryAsync(
   rawQuery: string,

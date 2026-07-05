@@ -1,8 +1,76 @@
 import { describe, expect, it } from "vitest";
 import {
+  isExtremelyConfidentDeterministicParse,
   mergeDiscoverLlmParse,
   needsDiscoverLlmFallback,
 } from "@/lib/discovery-filters/parse-discover-query-merge";
+
+const ruleOnlySignals = {
+  matchedRuleId: "category_coffee",
+  hasResidualQ: false,
+  usedHeuristicCategory: false,
+  usedAliasOrThemeCategory: false,
+};
+
+describe("isExtremelyConfidentDeterministicParse", () => {
+  it("is true only for a clean rule match with structured output", () => {
+    expect(
+      isExtremelyConfidentDeterministicParse(
+        {
+          expanded: true,
+          category: "coffee_and_treats",
+          type: "storefront",
+        },
+        ruleOnlySignals,
+      ),
+    ).toBe(true);
+  });
+
+  it("is false without a matched rule", () => {
+    expect(
+      isExtremelyConfidentDeterministicParse(
+        {
+          expanded: true,
+          category: "restaurants_and_bars",
+          facet: "kid_friendly,lunch",
+          town: "seaside",
+        },
+        {
+          matchedRuleId: undefined,
+          hasResidualQ: false,
+          usedHeuristicCategory: true,
+          usedAliasOrThemeCategory: false,
+        },
+      ),
+    ).toBe(false);
+  });
+
+  it("is false when residual q remains", () => {
+    expect(
+      isExtremelyConfidentDeterministicParse(
+        {
+          expanded: true,
+          category: "coffee_and_treats",
+          q: "wifi",
+        },
+        { ...ruleOnlySignals, hasResidualQ: true },
+      ),
+    ).toBe(false);
+  });
+
+  it("is false when alias or theme set category", () => {
+    expect(
+      isExtremelyConfidentDeterministicParse(
+        {
+          expanded: true,
+          category: "coffee_and_treats",
+          town: "seaside",
+        },
+        { ...ruleOnlySignals, usedAliasOrThemeCategory: true },
+      ),
+    ).toBe(false);
+  });
+});
 
 describe("needsDiscoverLlmFallback", () => {
   it("is true when deterministic did not expand", () => {
@@ -15,17 +83,40 @@ describe("needsDiscoverLlmFallback", () => {
         expanded: true,
         category: "coffee_and_treats",
         unresolvedTerms: ["froyo"],
+        deterministicSignals: {
+          matchedRuleId: undefined,
+          hasResidualQ: false,
+          usedHeuristicCategory: false,
+          usedAliasOrThemeCategory: true,
+        },
       }),
     ).toBe(true);
   });
 
-  it("is false when fully resolved", () => {
+  it("is true for heuristic-only expansion even when fully structured", () => {
     expect(
       needsDiscoverLlmFallback({
         expanded: true,
         category: "restaurants_and_bars",
         facet: "kid_friendly,lunch",
         town: "seaside",
+        deterministicSignals: {
+          matchedRuleId: undefined,
+          hasResidualQ: false,
+          usedHeuristicCategory: true,
+          usedAliasOrThemeCategory: false,
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("is false only for extreme-confidence rule matches", () => {
+    expect(
+      needsDiscoverLlmFallback({
+        expanded: true,
+        category: "coffee_and_treats",
+        type: "storefront",
+        deterministicSignals: ruleOnlySignals,
       }),
     ).toBe(false);
   });

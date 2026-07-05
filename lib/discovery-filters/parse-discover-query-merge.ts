@@ -1,9 +1,12 @@
+import type { DiscoverNlLlmParse } from "@/lib/discovery-filters/parse-discover-query-llm";
+import type {
+  DeterministicParseSignals,
+  ParsedDiscoverQuery,
+} from "@/lib/discovery-filters/parse-discover-query";
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
 } from "@/lib/discovery-filters/category-group-slugs";
-import type { DiscoverNlLlmParse } from "@/lib/discovery-filters/parse-discover-query-llm";
-import type { ParsedDiscoverQuery } from "@/lib/discovery-filters/parse-discover-query";
 
 export type DiscoverParseResolver = "deterministic" | "llm" | "hybrid";
 
@@ -11,10 +14,36 @@ function dedupe(items: string[]): string[] {
   return [...new Set(items)];
 }
 
-/** True when deterministic parsing should be augmented with LLM. */
+/**
+ * Skip LLM only when deterministic parsing hit a search-query rule with no doubt signals.
+ * Any heuristic, alias, theme, residual text, or unresolved term → use LLM.
+ */
+export function isExtremelyConfidentDeterministicParse(
+  parsed: ParsedDiscoverQuery,
+  signals: DeterministicParseSignals | undefined,
+): boolean {
+  if (!parsed.expanded || !signals) return false;
+  if ((parsed.unresolvedTerms?.length ?? 0) > 0) return false;
+  if (signals.hasResidualQ) return false;
+  if (signals.usedHeuristicCategory) return false;
+  if (signals.usedAliasOrThemeCategory) return false;
+  if (!signals.matchedRuleId) return false;
+
+  return Boolean(
+    parsed.category ||
+      parsed.service_category ||
+      parsed.facet ||
+      parsed.town ||
+      parsed.type,
+  );
+}
+
+/** True unless deterministic parse is extremely confident — default is LLM. */
 export function needsDiscoverLlmFallback(parsed: ParsedDiscoverQuery): boolean {
-  if (!parsed.expanded) return true;
-  return (parsed.unresolvedTerms?.length ?? 0) > 0;
+  return !isExtremelyConfidentDeterministicParse(
+    parsed,
+    parsed.deterministicSignals,
+  );
 }
 
 /** Merge LLM output into deterministic parse; deterministic wins on conflicts. */
@@ -65,6 +94,7 @@ export function mergeDiscoverLlmParse(
     facet: allTags.length ? allTags.join(",") : undefined,
     q: expanded ? q : deterministic.q ?? q,
     unresolvedTerms: unresolvedTerms.length ? unresolvedTerms : undefined,
+    deterministicSignals: deterministic.deterministicSignals,
     expanded,
     resolver,
   };
