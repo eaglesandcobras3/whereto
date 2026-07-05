@@ -68,7 +68,7 @@ export function parseDiscoveryFilterState(
   });
 }
 
-/** Drop tag selections that are not available in the current scoped vocabulary. */
+/** Drop tag selections from picker options outside scoped vocabulary (does not affect search). */
 export function constrainTagsToScope(
   state: DiscoveryFilterState,
   scopedSlugs: string[],
