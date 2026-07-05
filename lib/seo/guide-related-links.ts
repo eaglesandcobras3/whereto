@@ -12,9 +12,10 @@ export type RelatedGuideLink = {
   reason?: string;
 };
 
-const SLUG_TITLE_OVERRIDES: Record<string, string> = Object.fromEntries(
-  GUIDE_INTENT_MAP.map((m) => [m.slug, titleFromSlug(m.slug)]),
-);
+const SLUG_TITLE_OVERRIDES: Record<string, string> = {
+  ...Object.fromEntries(GUIDE_INTENT_MAP.map((m) => [m.slug, titleFromSlug(m.slug)])),
+  "bachelorette-girls-trip-30a": "Weekend with friends on 30A",
+};
 
 function titleFromSlug(slug: string): string {
   return slug
