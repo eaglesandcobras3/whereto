@@ -24,19 +24,19 @@ export function TownPlanningSections({ townName, profile }: Props) {
       ) : null}
 
       <header className="mb-8 max-w-2xl">
-        <p className="text-eyebrow mb-3">Trip planning</p>
+        <p className="text-eyebrow mb-3">Before you go</p>
         <h2 className="text-editorial-headline text-2xl text-primary sm:text-3xl">
-          Planning your {townName} stay
+          What to know about {townName}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-          Beach access, parking, and what this town fits best — the details visitors ask about most.
+          Beach access, parking, and whether this town matches how you like to spend a week on 30A.
         </p>
       </header>
 
       <div className="space-y-8">
         <div>
           <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-            What {townName} is best for
+            Good fit if you want
           </h3>
           <ul className="mt-4 flex flex-wrap gap-2">
             {profile.bestFor.map((item) => (
@@ -53,7 +53,7 @@ export function TownPlanningSections({ townName, profile }: Props) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <h3 className="font-headline text-base font-bold text-[var(--color-text-primary)]">
-              Beach access
+              Getting to the beach
             </h3>
             <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
               {profile.beachAccess}
@@ -61,7 +61,7 @@ export function TownPlanningSections({ townName, profile }: Props) {
           </div>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <h3 className="font-headline text-base font-bold text-[var(--color-text-primary)]">
-              Parking & crowds
+              Parking
             </h3>
             <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
               {profile.parking}
@@ -72,7 +72,7 @@ export function TownPlanningSections({ townName, profile }: Props) {
         {profile.diningStyle ? (
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <h3 className="font-headline text-base font-bold text-[var(--color-text-primary)]">
-              Dining style
+              Where to eat
             </h3>
             <p className="prose-editorial mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
               {profile.diningStyle}
@@ -83,7 +83,7 @@ export function TownPlanningSections({ townName, profile }: Props) {
         {profile.nearbyTowns && profile.nearbyTowns.length > 0 ? (
           <div>
             <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-              Nearby pairings
+              Worth pairing with
             </h3>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               {profile.nearbyTowns.map((t) => (
@@ -140,7 +140,7 @@ export function TownPlanningSections({ townName, profile }: Props) {
         {profile.faqs && profile.faqs.length > 0 ? (
           <div>
             <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-              Frequently asked questions
+              Common questions
             </h3>
             <dl className="mt-4 space-y-3">
               {profile.faqs.map((faq) => (
