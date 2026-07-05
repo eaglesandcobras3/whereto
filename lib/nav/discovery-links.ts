@@ -7,10 +7,6 @@ import {
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
-import {
-  hasExplicitDiscoverParams,
-  parseDiscoverQuery,
-} from "@/lib/discovery-filters/parse-discover-query";
 import type { BrowseNavItem } from "@/lib/nav/browse-links";
 
 export type { DiscoveryFlags };
@@ -79,39 +75,15 @@ function askQueryFromParams(params?: DiscoveryLinkParams): string | undefined {
 export function discoverHref(flags: FeatureFlags, params?: DiscoveryLinkParams): string {
   if (!isDiscoverEnabled(flags)) return "/";
 
-  const effectiveParams = expandDiscoverParamsIfNl(flags, params);
-
   return buildDiscoverUrlFromLinkParams({
-    type: effectiveParams?.type,
-    town: effectiveParams?.town,
-    town_id: effectiveParams?.town_id,
-    category: effectiveParams?.category,
-    service_category: effectiveParams?.service_category,
-    facet: effectiveParams?.facet,
-    q: effectiveParams?.q,
+    type: params?.type,
+    town: params?.town,
+    town_id: params?.town_id,
+    category: params?.category,
+    service_category: params?.service_category,
+    facet: params?.facet,
+    q: params?.q,
   });
-}
-
-function expandDiscoverParamsIfNl(
-  flags: FeatureFlags,
-  params?: DiscoveryLinkParams,
-): DiscoveryLinkParams | undefined {
-  if (!isDiscoverNlFeatureEnabled(flags)) return params;
-  if (!params?.q?.trim()) return params;
-  if (hasExplicitDiscoverParams(params)) return params;
-
-  const parsed = parseDiscoverQuery(params.q);
-  if (!parsed.expanded) return params;
-
-  const next: DiscoveryLinkParams = {};
-  if (parsed.type) next.type = parsed.type;
-  if (parsed.town) next.town = parsed.town;
-  else if (params.town_id) next.town_id = params.town_id;
-  if (parsed.category) next.category = parsed.category;
-  if (parsed.service_category) next.service_category = parsed.service_category;
-  if (parsed.facet) next.facet = parsed.facet;
-  if (parsed.q) next.q = parsed.q;
-  return next;
 }
 
 /** PostHog `discover_nl` (requires `discover`) or local dev bypass. */

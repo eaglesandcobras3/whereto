@@ -1,8 +1,8 @@
-import { normalizeAskVibeTags } from "@/lib/ask/search-input";
 import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
 } from "@/lib/discovery-filters/category-group-slugs";
+import { resolveQueryTags } from "@/lib/discovery-filters/resolve-query-tags";
 import { normalizeQuery } from "@/lib/query-normalize";
 import { normalizeServiceCategorySlug } from "@/lib/service-categories/normalize";
 import { resolveQueryPlan } from "@/lib/search/resolve-query-plan";
@@ -14,24 +14,13 @@ export type ParsedDiscoverQuery = {
   service_category?: string;
   facet?: string;
   q?: string;
+  /** Terms the user likely meant as a tag but could not resolve to vocabulary. */
+  unresolvedTerms?: string[];
+  /** How this parse was produced (server hybrid path only). */
+  resolver?: "deterministic" | "llm" | "hybrid";
   /** True when parsing extracted structured filters beyond a raw `q` pass-through. */
   expanded: boolean;
 };
-
-const DIETARY_PATTERNS: ReadonlyArray<[RegExp, string]> = [
-  [/\bgluten[- ]?free\b/, "gluten_free"],
-  [/\bvegan\b/, "vegan"],
-  [/\bvegetarian\b/, "vegetarian"],
-  [/\bdairy[- ]?free\b/, "dairy_free"],
-];
-
-const MEAL_PATTERNS: ReadonlyArray<[RegExp, string]> = [
-  [/\bbreakfast\b/, "breakfast"],
-  [/\bbrunch\b/, "brunch"],
-  [/\blunch\b/, "lunch"],
-  [/\bdinner\b/, "dinner"],
-  [/\blate[- ]?night\b/, "late_night"],
-];
 
 const FOOD_CONTEXT_RE =
   /\b(lunch|dinner|breakfast|brunch|restaurant|restaurants|eat|food|dining)\b/;
@@ -60,30 +49,10 @@ const RESIDUAL_STOP_WORDS = new Set([
   "with",
 ]);
 
-function dedupeStrings(items: string[]): string[] {
-  return [...new Set(items)];
-}
-
-function extractTagsFromNormalized(normalized: string): string[] {
-  const vibeRaw: string[] = [];
-  if (/\bkid|kids|child|children|family\b/.test(normalized)) vibeRaw.push("kid_friendly");
-  if (/\bdog|dogs|pet\b/.test(normalized)) vibeRaw.push("pet_friendly");
-  if (/\bromantic\b/.test(normalized)) vibeRaw.push("romantic");
-  if (/\bwaterfront\b/.test(normalized)) vibeRaw.push("waterfront");
-  if (/\blive music\b/.test(normalized)) vibeRaw.push("live_music");
-  if (/\bhappy hour\b/.test(normalized)) vibeRaw.push("happy_hour");
-
-  const fromVibe = normalizeAskVibeTags(vibeRaw) ?? [];
-  const direct: string[] = [];
-  for (const [re, tag] of DIETARY_PATTERNS) {
-    if (re.test(normalized)) direct.push(tag);
-  }
-  for (const [re, tag] of MEAL_PATTERNS) {
-    if (re.test(normalized)) direct.push(tag);
-  }
-
-  return dedupeStrings([...fromVibe, ...direct]);
-}
+export type ParseDiscoverQueryOptions = {
+  /** Full tag vocabulary (server). Defaults to static subset when omitted. */
+  vocabulary?: ReadonlySet<string>;
+};
 
 function resolveCategoryFromPlan(plan: ReturnType<typeof resolveQueryPlan>): {
   type?: "storefront" | "services";
@@ -115,6 +84,7 @@ function buildResidualQuery(
   normalized: string,
   plan: ReturnType<typeof resolveQueryPlan>,
   townSlug: string | null,
+  resolvedTags: string[],
 ): string | undefined {
   let terms =
     plan.searchTerms.length > 0
@@ -127,6 +97,12 @@ function buildResidualQuery(
   }
 
   terms = terms.filter((token) => !RESIDUAL_STOP_WORDS.has(token));
+
+  for (const tag of resolvedTags) {
+    for (const token of tag.replace(/_/g, " ").split(/\s+/)) {
+      terms = terms.filter((t) => t !== token);
+    }
+  }
 
   const joined = terms.join(" ").trim();
   return joined || undefined;
@@ -157,15 +133,35 @@ export function hasExplicitDiscoverParams(params: {
 
 /**
  * Map a natural-language query to discover URL params using deterministic rules,
- * town extraction, and vibe/dietary/meal tag heuristics.
+ * town extraction, curated tag aliases, theme detection, and vocabulary lookup.
  */
-export function parseDiscoverQuery(rawQuery: string): ParsedDiscoverQuery {
+export function parseDiscoverQuery(
+  rawQuery: string,
+  options?: ParseDiscoverQueryOptions,
+): ParsedDiscoverQuery {
   const trimmed = rawQuery.trim();
   if (!trimmed) return { expanded: false };
 
   const plan = resolveQueryPlan(trimmed);
   const normalized = normalizeQuery(trimmed);
   const categoryFields = resolveCategoryFromPlan(plan);
+
+  const tagResolution = resolveQueryTags(trimmed, plan, {
+    vocabulary: options?.vocabulary,
+    townSlug: plan.townSlug,
+  });
+
+  if (
+    !categoryFields.category &&
+    !categoryFields.service_category &&
+    tagResolution.categorySlug
+  ) {
+    const rollup = normalizeStorefrontCategoryGroupSlug(tagResolution.categorySlug);
+    if (rollup) {
+      categoryFields.type = "storefront";
+      categoryFields.category = rollup;
+    }
+  }
 
   if (
     !categoryFields.category &&
@@ -184,16 +180,9 @@ export function parseDiscoverQuery(rawQuery: string): ParsedDiscoverQuery {
     categoryFields.type = "services";
   }
 
-  const ruleTags = dedupeStrings([
-    ...plan.requiredTags,
-    ...plan.anyTags,
-    ...(plan.vibeTags ?? []),
-  ]);
-  const textTags = extractTagsFromNormalized(normalized);
-  const allTags = dedupeStrings([...ruleTags, ...textTags]);
-
+  const allTags = tagResolution.tags;
   const town = plan.townSlug ?? undefined;
-  const q = buildResidualQuery(normalized, plan, plan.townSlug);
+  const q = buildResidualQuery(normalized, plan, plan.townSlug, allTags);
 
   const expanded = Boolean(
     town ||
@@ -204,7 +193,13 @@ export function parseDiscoverQuery(rawQuery: string): ParsedDiscoverQuery {
   );
 
   if (!expanded) {
-    return { q: trimmed, expanded: false };
+    return {
+      q: trimmed,
+      unresolvedTerms: tagResolution.unresolvedTerms.length
+        ? tagResolution.unresolvedTerms
+        : [trimmed.toLowerCase()],
+      expanded: false,
+    };
   }
 
   return {
@@ -214,6 +209,9 @@ export function parseDiscoverQuery(rawQuery: string): ParsedDiscoverQuery {
     service_category: categoryFields.service_category,
     facet: allTags.length ? allTags.join(",") : undefined,
     q,
+    unresolvedTerms: tagResolution.unresolvedTerms.length
+      ? tagResolution.unresolvedTerms
+      : undefined,
     expanded: true,
   };
 }

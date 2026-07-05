@@ -52,4 +52,11 @@ describe("parseDiscoverQuery", () => {
     expect(parsed.facet).toContain("gluten_free");
     expect(parsed.category).toBe("restaurants_and_bars");
   });
+
+  it("expands froyo to coffee_and_treats via alias fast path", () => {
+    const parsed = parseDiscoverQuery("froyo near seaside");
+    expect(parsed.expanded).toBe(true);
+    expect(parsed.category).toBe("coffee_and_treats");
+    expect(parsed.town).toBe("seaside");
+  });
 });

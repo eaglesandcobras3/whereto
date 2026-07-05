@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { discoverApiBlocked } from "@/lib/feature-flags";
-import { parseDiscoverQuery } from "@/lib/discovery-filters/parse-discover-query";
+import { parseDiscoverQueryAsync } from "@/lib/discovery-filters/parse-discover-query-async";
 
 type Body = {
   query?: string;
@@ -22,6 +22,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "query is required" }, { status: 400 });
   }
 
-  const parsed = parseDiscoverQuery(query);
+  const parsed = await parseDiscoverQueryAsync(query);
   return NextResponse.json({ query, parsed });
 }
