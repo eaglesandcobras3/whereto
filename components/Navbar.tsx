@@ -350,7 +350,13 @@ export function Navbar({
                   aria-busy={Boolean(searchLoading) || (!onSearchSubmit && isNavSearchPending) || undefined}
                   className="rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-primary-light)] disabled:opacity-50"
                 >
-                  {searchLoading || (!onSearchSubmit && isNavSearchPending) ? "Searching…" : "Search"}
+                  {searchLoading || (!onSearchSubmit && isNavSearchPending)
+                    ? showDiscoverQueryInNavbar
+                      ? "Finding places…"
+                      : "Searching…"
+                    : showDiscoverQueryInNavbar
+                      ? "Discover"
+                      : "Search"}
                 </button>
                 <button
                   type="button"
