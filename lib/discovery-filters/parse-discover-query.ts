@@ -200,7 +200,7 @@ export function parseDiscoverQuery(
   const q = buildResidualQuery(normalized, plan, plan.townSlug, allTags);
 
   const deterministicSignals: DeterministicParseSignals = {
-    matchedRuleId: plan.matchedRuleId,
+    matchedRuleId: plan.matchedRuleId ?? undefined,
     hasResidualQ: Boolean(q?.trim()),
     usedHeuristicCategory,
     usedAliasOrThemeCategory,
