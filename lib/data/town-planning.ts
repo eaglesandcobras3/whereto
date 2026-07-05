@@ -58,7 +58,7 @@ export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
   },
   "rosemary-beach": {
     vibe: "Cobblestone walks, boutique shopping, and dinner on foot.",
-    bestFor: ["Walking to dinner", "Boutique shopping", "Girls weekends and date nights"],
+    bestFor: ["Walking to dinner", "Boutique shopping", "Weekends with friends"],
     quickFacts: [
       { label: "Walkability", value: "High", icon: "directions_walk" },
       { label: "Beach", value: "Few blocks from center", icon: "beach_access" },
@@ -83,7 +83,7 @@ export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
           "That's the main draw. Shops, restaurants, and most beach access are on foot from the center. You'll still drive for groceries or a beach day farther west.",
       },
       {
-        question: "Is Rosemary good for a girls trip?",
+        question: "Is Rosemary good for a friends weekend?",
         answer:
           "Popular pick. Walkable dining, photo spots, and enough going on that you don't need a packed itinerary every day.",
       },

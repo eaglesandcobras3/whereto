@@ -14,7 +14,7 @@ const TOWN_COMPARE_ROWS = [
     slug: "rosemary-beach",
     vibe: "European-style, boutique",
     beachAccess: "Walkable access points",
-    bestFor: "Girls trips, date nights",
+    bestFor: "Friends weekends, date nights",
   },
   {
     town: "Grayton Beach",
