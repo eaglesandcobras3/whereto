@@ -6,7 +6,9 @@ import { executeFilterSearch } from "@/lib/discovery-filters/execute-filter-sear
 import { loadDiscoverFilterOptions } from "@/lib/discovery-filters/load-discover-options";
 import { loadScopedSearchTags } from "@/lib/discovery-filters/load-scoped-search-tags";
 import {
-  constrainTagsToScope,
+  mergeActiveTagsIntoScopedOptions,
+} from "@/lib/discovery-filters/merge-scoped-search-tags";
+import {
   parseDiscoveryFilterState,
   parseEntityType,
 } from "@/lib/discovery-filters/parse-filter-params";
@@ -76,22 +78,24 @@ export default async function DiscoverPage({ searchParams }: Props) {
     loadDiscoverFilterOptions(),
   ]);
 
-  const filterState = constrainTagsToScope(
-    parseDiscoveryFilterState(
-      {
-        type: sp.type,
-        town: sp.town,
-        town_id: sp.town_id,
-        category: sp.category,
-        service_category: sp.service_category,
-        facet: sp.facet,
-        facet_any: sp.facet_any,
-        q: sp.q,
-        page: sp.page,
-      },
-      town_ids,
-    ),
-    scopedSearchTags.map((tag) => tag.slug),
+  const filterState = parseDiscoveryFilterState(
+    {
+      type: sp.type,
+      town: sp.town,
+      town_id: sp.town_id,
+      category: sp.category,
+      service_category: sp.service_category,
+      facet: sp.facet,
+      facet_any: sp.facet_any,
+      q: sp.q,
+      page: sp.page,
+    },
+    town_ids,
+  );
+
+  const searchTags = mergeActiveTagsIntoScopedOptions(
+    scopedSearchTags,
+    filterState.tags,
   );
 
   const initialResult = await executeFilterSearch(filterState);
@@ -102,14 +106,14 @@ export default async function DiscoverPage({ searchParams }: Props) {
       towns={options.towns}
       categories={options.categories}
       serviceCategories={options.serviceCategories}
-      searchTags={scopedSearchTags}
+      searchTags={searchTags}
       initialParams={{
         type: entityType,
         town: town_slugs.length ? town_slugs.join(",") : sp.town,
         town_ids,
         category: filterState.category_slug,
         service_category: filterState.service_category_slug,
-        facet: filterState.tags.length ? filterState.tags.join(",") : sp.facet,
+        facet: filterState.tags.length ? filterState.tags.join(",") : undefined,
         q: filterState.q,
         page: filterState.page,
       }}
