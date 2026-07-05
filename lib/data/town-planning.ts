@@ -1,24 +1,10 @@
-/** Per-town planning attributes — scannable “profile” content for town pages. */
-export type TownQuickFact = {
-  label: string;
-  value: string;
-  icon: string;
-};
+import type { PlacePlanningProfile } from "@/lib/data/place-planning";
 
-export type TownPlanningProfile = {
-  /** One-line summary, like an Airbnb listing subtitle. */
-  vibe: string;
-  bestFor: string[];
-  quickFacts: TownQuickFact[];
-  beachAccess: string;
-  parking: string;
-  diningStyle?: string;
-  nearbyTowns?: Array<{ name: string; slug: string; note?: string }>;
-  relatedGuideSlugs?: string[];
-  faqs?: Array<{ question: string; answer: string }>;
-};
+/** @deprecated Use PlacePlanningProfile */
+export type TownQuickFact = PlacePlanningProfile["quickFacts"][number];
+export type TownPlanningProfile = PlacePlanningProfile;
 
-export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
+export const TOWN_PLANNING: Record<string, PlacePlanningProfile> = {
   "inlet-beach": {
     vibe: "Quieter eastern 30A with wide beaches and a more residential feel.",
     bestFor: ["A quieter base", "Camp Helen day trips", "Wide beaches without high-rises"],
@@ -660,6 +646,6 @@ export const TOWN_PLANNING: Record<string, TownPlanningProfile> = {
   },
 };
 
-export function getTownPlanningProfile(slug: string): TownPlanningProfile | null {
+export function getTownPlanningProfile(slug: string): PlacePlanningProfile | null {
   return TOWN_PLANNING[slug] ?? null;
 }
