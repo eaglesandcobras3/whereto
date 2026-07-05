@@ -4,6 +4,7 @@ import {
   guideIntentForSlug,
 } from "@/lib/seo/guide-intent-clusters";
 import { getTownPlanningProfile } from "@/lib/data/town-planning";
+import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 
 export type RelatedGuideLink = {
   slug: string;
@@ -15,6 +16,7 @@ export type RelatedGuideLink = {
 const SLUG_TITLE_OVERRIDES: Record<string, string> = {
   ...Object.fromEntries(GUIDE_INTENT_MAP.map((m) => [m.slug, titleFromSlug(m.slug)])),
   "bachelorette-girls-trip-30a": "Weekend with friends on 30A",
+  "guide-to-rosemary-beach-florida": "Rosemary Beach guide",
 };
 
 function titleFromSlug(slug: string): string {
@@ -84,6 +86,19 @@ export function relatedGuidesForTownSlug(townSlug: string, limit = 4): RelatedGu
     "ultimate-30a-first-timers-guide",
     "public-beaches-30a",
   ];
+  return slugsToLinks(slugs, limit);
+}
+
+export function relatedGuidesForAreaSlug(areaSlug: string, limit = 4): RelatedGuideLink[] {
+  const profile = getAreaPlanningProfile(areaSlug);
+  const slugs = profile?.relatedGuideSlugs ?? [
+    "ultimate-30a-first-timers-guide",
+    "public-beaches-30a",
+  ];
+  return slugsToLinks(slugs, limit);
+}
+
+function slugsToLinks(slugs: string[], limit: number): RelatedGuideLink[] {
   return slugs.slice(0, limit).map((s) => ({
     slug: s,
     title: SLUG_TITLE_OVERRIDES[s] ?? titleFromSlug(s),
