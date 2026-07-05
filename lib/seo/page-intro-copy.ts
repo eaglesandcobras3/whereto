@@ -23,7 +23,7 @@ export function areaPageIntro(
 }
 
 export function townPageIntro(townName: string, descriptor: string): string {
-  return `${townName} sits on Florida's Scenic Highway 30A in South Walton. ${descriptor} Use the categories below to see restaurants, coffee, activities, and shops tied to this town, then open our guides when you want trip-planning context beyond a single listing.`;
+  return `${townName} is on Scenic Highway 30A in South Walton. ${descriptor} Browse restaurants, coffee, shops, and things to do below, or open a guide when you want help picking a home base.`;
 }
 
 export function hubTownsIntro(): string {

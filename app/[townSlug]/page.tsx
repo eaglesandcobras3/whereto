@@ -460,12 +460,6 @@ function BasicTownPage({
             fallbackIcon="location_city"
           />
 
-          {seoImprovements && planningProfile ? (
-            <div className="mb-10">
-              <TownPlanningSections townName={town.name} profile={planningProfile} />
-            </div>
-          ) : null}
-
           <div className="min-w-0 space-y-8 sm:space-y-10">
             <PlaceCategoryBusinessSections
                 placeName={town.name}
@@ -509,6 +503,10 @@ function BasicTownPage({
                   />
                 ))}
               </PlaceRelatedSection>
+            ) : null}
+
+            {seoImprovements && planningProfile ? (
+              <TownPlanningSections townName={town.name} profile={planningProfile} />
             ) : null}
 
             {seoImprovements ? (

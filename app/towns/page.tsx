@@ -138,36 +138,6 @@ export default async function TownsPage() {
         </div>
       </div>
 
-      {seoImprovements ? (
-        <section className="border-b border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10">
-          <div className="mx-auto max-w-6xl px-4 md:px-10">
-            <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-              Best 30A towns by travel style
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm text-[var(--color-text-secondary)]">
-              {hubTownsCompareIntro()}
-            </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {TRAVEL_STYLE_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "towns_hub_style",
-                    label: link.href,
-                  })}
-                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-primary)]"
-                >
-                  <h3 className="font-semibold text-[var(--color-text-primary)]">{link.label}</h3>
-                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{link.description}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       {/* Town grid */}
       <div className="mx-auto max-w-6xl px-4 py-12">
         {towns.length === 0 ? (
@@ -189,6 +159,43 @@ export default async function TownsPage() {
           </div>
         )}
       </div>
+
+      {seoImprovements ? (
+        <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-20">
+          <div className="mx-auto max-w-6xl px-4 md:px-10">
+            <div className="mb-10 max-w-2xl md:mb-12">
+              <p className="text-eyebrow mb-3">Plan your trip</p>
+              <h2 className="text-editorial-headline text-3xl text-primary sm:text-4xl">
+                Best 30A towns by travel style
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-[var(--color-text-secondary)]">
+                {hubTownsCompareIntro()}
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {TRAVEL_STYLE_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "towns_hub_style",
+                    label: link.href,
+                  })}
+                  className="editorial-card group flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
+                >
+                  <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">
+                    {link.label}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    {link.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* 30A corridor map */}
       <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10 sm:py-14">
