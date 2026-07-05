@@ -21,7 +21,11 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
+import { getAreaPlanningProfile } from "@/lib/data/area-planning";
+import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
+import { relatedGuidesForAreaSlug } from "@/lib/seo/guide-related-links";
+import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
 import {
   discoveryHref,
   isDiscoveryEnabled,
@@ -160,6 +164,9 @@ export default async function AreaPage({ params }: Props) {
     getCategorySectionsForPublicPlace(area),
     getAllFeatureFlags(),
   ]);
+  const seoImprovements = isSeoImprovementsFeatureEnabled(featureFlags);
+  const planningProfile = getAreaPlanningProfile(area.slug);
+  const relatedGuides = relatedGuidesForAreaSlug(area.slug);
 
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
   const typeLabel = areaTypeLabel(area.areaTypeLabel);
@@ -287,6 +294,18 @@ export default async function AreaPage({ params }: Props) {
                   )
                 }
               />
+
+            {seoImprovements && planningProfile ? (
+              <AreaPlanningSections areaName={area.title} profile={planningProfile} />
+            ) : null}
+
+            {seoImprovements ? (
+              <RelatedGuidesSection
+                title={`Guides for ${area.title}`}
+                links={relatedGuides}
+                analyticsCategory="area_related_guides"
+              />
+            ) : null}
 
               {!hasEditorialIntro && categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">
