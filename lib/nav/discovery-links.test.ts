@@ -19,6 +19,7 @@ const discoverOnly: FeatureFlags = {
   discover_nl: false,
   search_inspector: false,
   onboard: false,
+  seo_improvements: false,
 };
 const discoverNlOn: FeatureFlags = {
   ...discoverOnly,
@@ -87,13 +88,10 @@ describe("discoverHref with discover_nl", () => {
     );
   });
 
-  it("expands NL query into structured discover params when discover_nl is on", () => {
-    const href = discoverHref(discoverNlOn, { q: "kid friendly lunch near seaside" });
-    expect(href).toContain("town=seaside");
-    expect(href).toContain("category=restaurants_and_bars");
-    expect(href).toContain("facet=");
-    expect(href).toContain("kid_friendly");
-    expect(href).toContain("lunch");
+  it("passes raw q when discover_nl is on (server expands on /discover)", () => {
+    expect(discoverHref(discoverNlOn, { q: "kid friendly lunch near seaside" })).toBe(
+      "/discover?q=kid+friendly+lunch+near+seaside",
+    );
   });
 
   it("does not expand when explicit filters are already present", () => {

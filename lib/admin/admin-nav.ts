@@ -32,6 +32,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     requiresOnboard: true,
   },
   {
+    href: "/admin/discover-gaps",
+    title: "Discover search gaps",
+    description: "Unresolved discover NL terms — grow tags and listing coverage.",
+  },
+  {
     href: "/admin/search-debug",
     title: "Search debug",
     description: "Inspect hybrid search results and ranking signals.",
