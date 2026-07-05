@@ -31,7 +31,7 @@ export function hubTownsIntro(): string {
 }
 
 export function hubTownsCompareIntro(): string {
-  return "Not sure which town fits? Families often gravitate toward Seaside and WaterColor for walkability. Girls trips and date nights lean Rosemary and Alys. Grayton and Santa Rosa Beach feel more laid-back. Use the links below to match your trip style, then open individual town pages for listings and local context.";
+  return "Not sure which town fits? Families often gravitate toward Seaside and WaterColor for walkability. Friends weekends and date nights lean Rosemary and Alys. Grayton and Santa Rosa Beach feel more laid-back. Use the links below to match your trip style, then open individual town pages for listings and local context.";
 }
 
 export function hubAreasIntro(): string {

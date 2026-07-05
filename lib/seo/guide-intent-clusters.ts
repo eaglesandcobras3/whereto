@@ -82,7 +82,7 @@ export const GUIDE_INTENT_CLUSTER_LABELS: Record<GuideIntentCluster, string> = {
   first_timer: "First-time planning",
   beach_access: "Beach access",
   family_travel: "Family travel",
-  girls_trip: "Girls trips",
+  girls_trip: "Weekends with friends",
   seasonal: "Seasonal guides",
   dining: "Dining",
   lodging: "Where to stay",

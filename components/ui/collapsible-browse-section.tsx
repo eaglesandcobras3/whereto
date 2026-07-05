@@ -18,6 +18,8 @@ type Props = {
   /** Stable DOM id for in-page / cross-page anchors (e.g. `/categories#restaurants_and_bars`). */
   sectionId?: string;
   className?: string;
+  /** Smaller trigger type — matches nested rows on town profiles. */
+  compact?: boolean;
 };
 
 export function CollapsibleBrowseSection({
@@ -30,6 +32,7 @@ export function CollapsibleBrowseSection({
   children,
   sectionId,
   className,
+  compact = false,
 }: Props) {
   const baseId = useId();
   const triggerId = `${baseId}-trigger`;
@@ -37,7 +40,12 @@ export function CollapsibleBrowseSection({
 
   return (
     <section id={sectionId} className={cn(className)}>
-      <h3 className="m-0 font-headline text-lg font-bold sm:text-xl">
+      <h3
+        className={cn(
+          "m-0 font-headline font-bold",
+          compact ? "text-base font-semibold sm:text-lg" : "text-lg sm:text-xl",
+        )}
+      >
         <button
           type="button"
           id={triggerId}
@@ -47,7 +55,12 @@ export function CollapsibleBrowseSection({
           className={TRIGGER_CLASS}
         >
           {icon ? (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-container-high)] text-[var(--color-primary)]">
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-container-high)] text-[var(--color-primary)]",
+                compact ? "h-8 w-8" : "h-10 w-10",
+              )}
+            >
               {icon}
             </span>
           ) : null}
