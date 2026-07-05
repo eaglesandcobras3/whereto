@@ -10,10 +10,8 @@ import {
   parseDiscoveryFilterState,
   parseEntityType,
 } from "@/lib/discovery-filters/parse-filter-params";
-import {
-  hasExplicitDiscoverParams,
-  parseDiscoverQuery,
-} from "@/lib/discovery-filters/parse-discover-query";
+import { hasExplicitDiscoverParams } from "@/lib/discovery-filters/parse-discover-query";
+import { parseDiscoverQueryAsync } from "@/lib/discovery-filters/parse-discover-query-async";
 import { resolveTownIdsFromParam } from "@/lib/discovery-filters/resolve-town-ids";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { DiscoverPageClient } from "./discover-page-client";
@@ -52,7 +50,7 @@ export default async function DiscoverPage({ searchParams }: Props) {
     sp.q?.trim() &&
     !hasExplicitDiscoverParams(sp)
   ) {
-    const parsed = parseDiscoverQuery(sp.q);
+    const parsed = await parseDiscoverQueryAsync(sp.q);
     if (parsed.expanded) {
       redirect(buildDiscoverUrlFromLinkParams(parsed));
     }
