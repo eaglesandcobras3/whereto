@@ -79,9 +79,9 @@ const TRENDS: TrendDef[] = [
   },
   {
     slug: "discover-low-results",
-    name: "Discover: low result filters (≤3)",
+    name: "Discover: low result filters",
     description:
-      "Active filter sets returning 3 or fewer listings — likely tag coverage gaps. Break down by filter_key.",
+      "Active filter sets with thin results: ≤3 for one town, ≤5 for all towns or 2+ towns. Break down by filter_key.",
     series: [{ event: "discover_low_results", name: "Low result searches" }],
     interval: "day",
     breakdown: "filter_key",
@@ -171,7 +171,7 @@ const ALERTS: AlertDef[] = [
   {
     slug: "alert-discover-low-results",
     insightSlug: "discover-low-results",
-    name: "Discover: filter returned ≤3 results",
+    name: "Discover: filter returned thin results",
     condition: "absolute_value",
     moreThan: 0,
     interval: "daily",

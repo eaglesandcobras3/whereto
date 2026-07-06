@@ -190,7 +190,7 @@ Product analytics project: **455090** on `us.posthog.com`. Full catalog: [postho
 ### Alerts to verify
 
 - [ ] `discover_tag_unresolved` — any new unresolved NL search term (daily)
-- [ ] `discover_low_results` — filter returned ≤3 listings; check `filter_key` breakdown (daily)
+- [ ] `discover_low_results` — thin filter results (≤3 one town, ≤5 all/2+ towns); check `filter_key` breakdown (daily)
 - [ ] `not_found` — 404 spike (>10/day)
 - [ ] Auth failures — sign-in/sign-up errors (>5/day)
 - [ ] Operator leads — listing request or claim received (any >0)

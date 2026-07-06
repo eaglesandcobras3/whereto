@@ -3,6 +3,7 @@ import "server-only";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 import {
   buildDiscoverFilterKey,
+  getDiscoverLowResultsMax,
   shouldTrackDiscoverLowResults,
 } from "@/lib/discovery-filters/discover-low-results";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
@@ -28,6 +29,7 @@ export async function trackDiscoverLowResults(
 
   const applied = result.applied_filters;
   const filterKey = buildDiscoverFilterKey(state);
+  const lowResultsThreshold = getDiscoverLowResultsMax(state);
 
   try {
     await posthog.capture({
@@ -35,6 +37,13 @@ export async function trackDiscoverLowResults(
       event: "discover_low_results",
       properties: {
         result_count: result.total,
+        low_results_threshold: lowResultsThreshold,
+        town_scope:
+          state.town_ids.length === 0
+            ? "all"
+            : state.town_ids.length === 1
+              ? "single"
+              : "multi",
         filter_key: filterKey,
         entity_type: state.entity_type,
         town_ids: state.town_ids,

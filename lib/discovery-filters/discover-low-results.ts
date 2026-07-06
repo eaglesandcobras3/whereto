@@ -1,7 +1,21 @@
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
 import type { DiscoverFilterSearchResult } from "@/lib/discovery-filters/types";
 
-export const DISCOVER_LOW_RESULTS_MAX = 3;
+/** Max results before alerting when one town is selected. */
+export const DISCOVER_LOW_RESULTS_MAX_SINGLE_TOWN = 3;
+
+/** Max results before alerting when all towns or 2+ towns are selected. */
+export const DISCOVER_LOW_RESULTS_MAX_MULTI_OR_ALL_TOWNS = 5;
+
+/** @deprecated Use getDiscoverLowResultsMax — kept for tests/docs references */
+export const DISCOVER_LOW_RESULTS_MAX = DISCOVER_LOW_RESULTS_MAX_SINGLE_TOWN;
+
+/** Threshold depends on town scope: stricter for a single town, looser for all or multi-town. */
+export function getDiscoverLowResultsMax(state: DiscoveryFilterState): number {
+  return state.town_ids.length === 1
+    ? DISCOVER_LOW_RESULTS_MAX_SINGLE_TOWN
+    : DISCOVER_LOW_RESULTS_MAX_MULTI_OR_ALL_TOWNS;
+}
 
 /** True when the user narrowed Discover beyond the default entity type alone. */
 export function hasActiveDiscoverFilters(state: DiscoveryFilterState): boolean {
@@ -32,7 +46,7 @@ export function shouldTrackDiscoverLowResults(
   result: DiscoverFilterSearchResult,
 ): boolean {
   if (state.page !== 1) return false;
-  if (result.total > DISCOVER_LOW_RESULTS_MAX) return false;
+  if (result.total > getDiscoverLowResultsMax(state)) return false;
   if (!hasActiveDiscoverFilters(state)) return false;
   if (typeof result.applied_filters.error === "string") return false;
   if (Array.isArray(result.applied_filters.contract_errors)) return false;

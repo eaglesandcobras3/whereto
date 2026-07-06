@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDiscoverFilterKey,
-  DISCOVER_LOW_RESULTS_MAX,
+  DISCOVER_LOW_RESULTS_MAX_MULTI_OR_ALL_TOWNS,
+  DISCOVER_LOW_RESULTS_MAX_SINGLE_TOWN,
+  getDiscoverLowResultsMax,
   hasActiveDiscoverFilters,
   shouldTrackDiscoverLowResults,
 } from "@/lib/discovery-filters/discover-low-results";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
 import type { DiscoverFilterSearchResult } from "@/lib/discovery-filters/types";
+
+const townA = "a0000000-0000-4000-8000-000000000001";
+const townB = "b0000000-0000-4000-8000-000000000002";
+const townC = "c0000000-0000-4000-8000-000000000003";
 
 const baseState: DiscoveryFilterState = {
   entity_type: "storefront",
@@ -33,6 +39,29 @@ function result(total: number, applied: Record<string, unknown> = {}): DiscoverF
   };
 }
 
+describe("getDiscoverLowResultsMax", () => {
+  it("uses 3 for a single town", () => {
+    expect(getDiscoverLowResultsMax({ ...baseState, town_ids: [townA] })).toBe(
+      DISCOVER_LOW_RESULTS_MAX_SINGLE_TOWN,
+    );
+  });
+
+  it("uses 5 for all towns", () => {
+    expect(getDiscoverLowResultsMax(baseState)).toBe(
+      DISCOVER_LOW_RESULTS_MAX_MULTI_OR_ALL_TOWNS,
+    );
+  });
+
+  it("uses 5 for two or more towns", () => {
+    expect(getDiscoverLowResultsMax({ ...baseState, town_ids: [townA, townB] })).toBe(
+      DISCOVER_LOW_RESULTS_MAX_MULTI_OR_ALL_TOWNS,
+    );
+    expect(
+      getDiscoverLowResultsMax({ ...baseState, town_ids: [townA, townB, townC] }),
+    ).toBe(DISCOVER_LOW_RESULTS_MAX_MULTI_OR_ALL_TOWNS);
+  });
+});
+
 describe("hasActiveDiscoverFilters", () => {
   it("is false for entity type only", () => {
     expect(hasActiveDiscoverFilters(baseState)).toBe(false);
@@ -47,32 +76,53 @@ describe("buildDiscoverFilterKey", () => {
   it("includes entity, towns, category, tags, and q", () => {
     const key = buildDiscoverFilterKey({
       ...baseState,
-      town_ids: ["b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2"],
+      town_ids: [townA],
       category_slug: "food",
       tags: ["outdoor", "froyo"],
       q: "Pizza",
     });
     expect(key).toBe(
-      "storefront|towns:b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2|category:food|tags:froyo+outdoor|q:pizza",
+      `storefront|towns:${townA}|category:food|tags:froyo+outdoor|q:pizza`,
     );
   });
 });
 
 describe("shouldTrackDiscoverLowResults", () => {
-  it(`tracks when total is <= ${DISCOVER_LOW_RESULTS_MAX} with active filters`, () => {
+  it("tracks at or below 3 for a single town", () => {
     expect(
       shouldTrackDiscoverLowResults(
-        { ...baseState, tags: ["froyo"] },
-        result(2),
+        { ...baseState, town_ids: [townA], tags: ["froyo"] },
+        result(3),
       ),
     ).toBe(true);
-  });
-
-  it("does not track when total is above threshold", () => {
     expect(
       shouldTrackDiscoverLowResults(
-        { ...baseState, tags: ["froyo"] },
+        { ...baseState, town_ids: [townA], tags: ["froyo"] },
         result(4),
+      ),
+    ).toBe(false);
+  });
+
+  it("tracks at or below 5 for all towns", () => {
+    expect(
+      shouldTrackDiscoverLowResults({ ...baseState, tags: ["froyo"] }, result(5)),
+    ).toBe(true);
+    expect(
+      shouldTrackDiscoverLowResults({ ...baseState, tags: ["froyo"] }, result(6)),
+    ).toBe(false);
+  });
+
+  it("tracks at or below 5 for two towns", () => {
+    expect(
+      shouldTrackDiscoverLowResults(
+        { ...baseState, town_ids: [townA, townB], tags: ["froyo"] },
+        result(5),
+      ),
+    ).toBe(true);
+    expect(
+      shouldTrackDiscoverLowResults(
+        { ...baseState, town_ids: [townA, townB], tags: ["froyo"] },
+        result(6),
       ),
     ).toBe(false);
   });

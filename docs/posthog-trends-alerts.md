@@ -66,7 +66,7 @@ The script tags created insights with `w30a:<slug>` so re-runs are idempotent.
 | Slug | Event(s) | Why |
 |------|----------|-----|
 | `discover-tag-unresolved` | `discover_tag_unresolved` | New NL search terms missing from vocabulary → `/admin/discover-gaps` |
-| `discover-low-results` | `discover_low_results` | Filter returned ≤3 listings — break down by `filter_key` for tag coverage gaps |
+| `discover-low-results` | `discover_low_results` | Thin result sets — ≤3 (one town) or ≤5 (all / 2+ towns); break down by `filter_key` |
 | `discover-nl-parsed` | `discover_nl_parsed` | NL parse volume; filter `used_llm`, `deterministic_confidence`, `confused_terms` in UI |
 | `discover-nl-llm` | `discover_nl_parsed` where `used_llm = true` | LLM fallback rate |
 | `not-found-404` | `not_found` | Broken links / bad inbound URLs |
@@ -108,12 +108,21 @@ Tune thresholds after a week of baseline traffic.
 
 ### Discover low results — reading `filter_key`
 
-When a user applies town, category, tags, or text on `/discover` and gets **3 or fewer** results, the app emits `discover_low_results` with:
+When a user applies town, category, tags, or text on `/discover` and the result set is **thin**, the app emits `discover_low_results`:
+
+| Town scope | Alert threshold |
+|------------|-----------------|
+| **One town** selected | ≤ **3** results |
+| **All towns** (none selected) or **2+ towns** | ≤ **5** results |
+
+Properties on each event:
 
 | Property | Example | Use |
 |----------|---------|-----|
 | `filter_key` | `storefront\|towns:all\|category:food\|tags:froyo\|q:none` | Stable breakdown in trends/alerts |
 | `result_count` | `2` | How thin the result set was |
+| `low_results_threshold` | `3` or `5` | Which rule applied |
+| `town_scope` | `single`, `multi`, or `all` | Town selection shape |
 | `tags` | `["froyo"]` | Tags to backfill on businesses |
 | `category_slug` / `service_category_slug` | `food` | Category scope |
 | `town_ids` | UUIDs | Town scope (resolve in Supabase admin) |
@@ -141,7 +150,7 @@ Only **page 1** with at least one active filter (not entity-type alone) is track
 | `ask_results_shared` | `ShareArtifactButton` | Share actions |
 | `discover_nl_parsed` | `track-discover-nl-parse.ts` | NL resolver telemetry |
 | `discover_tag_unresolved` | `record-discover-search-gaps.ts` | Vocabulary gaps |
-| `discover_low_results` | `track-discover-low-results.ts` | ≤3 results for an active Discover filter set |
+| `discover_low_results` | `track-discover-low-results.ts` | Thin results: ≤3 (one town) or ≤5 (all / 2+ towns) |
 | `not_found` | `PostHogNotFoundCapture` | 404 page |
 | `$ai_generation` | `instrumentation.ts` + Ask engine | LLM observability |
 
