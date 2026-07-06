@@ -20,6 +20,7 @@ import type {
   DiscoverListingRow,
   DiscoverTagMatch,
 } from "@/lib/discovery-filters/types";
+import { trackDiscoverLowResults } from "@/lib/discovery-filters/track-discover-low-results";
 
 const DISCOVER_POOL_LIMIT = 2000;
 
@@ -132,6 +133,15 @@ function sortScoredRows(rows: ScoredPoolRow[]): ScoredPoolRow[] {
   });
 }
 
+function emitDiscoverLowResultsTelemetry(
+  state: DiscoveryFilterState,
+  result: DiscoverFilterSearchResult,
+): void {
+  void trackDiscoverLowResults({ state, result }).catch((err) => {
+    console.error("trackDiscoverLowResults", err);
+  });
+}
+
 export async function executeFilterSearch(
   state: DiscoveryFilterState,
 ): Promise<DiscoverFilterSearchResult> {
@@ -205,7 +215,7 @@ export async function executeFilterSearch(
     const total = count ?? 0;
     const total_pages = total > 0 ? Math.ceil(total / state.page_size) : 0;
 
-    return {
+    const searchResult = {
       listings: rows.map((row) => mapListingRow(row)),
       total,
       page: state.page,
@@ -213,6 +223,8 @@ export async function executeFilterSearch(
       total_pages,
       applied_filters: appliedBase,
     };
+    emitDiscoverLowResultsTelemetry(state, searchResult);
+    return searchResult;
   }
 
   const { data, error } = await query
@@ -238,7 +250,7 @@ export async function executeFilterSearch(
       state.page_size,
     );
 
-    return {
+    const searchResult = {
       listings: pageRows.map(({ row }) => mapListingRow(row)),
       total,
       page: state.page,
@@ -249,6 +261,8 @@ export async function executeFilterSearch(
         pool_limit: DISCOVER_POOL_LIMIT,
       },
     };
+    emitDiscoverLowResultsTelemetry(state, searchResult);
+    return searchResult;
   }
 
   const scored = sortScoredRows(scorePoolRows(pool, state, storefrontGroup, serviceGroup)).filter(
@@ -256,7 +270,7 @@ export async function executeFilterSearch(
   );
   const resultPage = paginateScored(scored, state.page, state.page_size);
 
-  return {
+  const searchResult = {
     listings: resultPage.pageRows.map(({ row, result }) => mapListingRow(row, result)),
     total: resultPage.total,
     page: state.page,
@@ -269,4 +283,6 @@ export async function executeFilterSearch(
       service_group: serviceGroup ?? null,
     },
   };
+  emitDiscoverLowResultsTelemetry(state, searchResult);
+  return searchResult;
 }
