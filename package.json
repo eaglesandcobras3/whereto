@@ -29,7 +29,8 @@
     "export:services": "npx tsx scripts/export-businesses-csv.ts --services",
     "export:businesses": "npx tsx scripts/export-businesses-csv.ts",
     "import:storefronts-audit": "npx tsx scripts/import-businesses-audit-csv.ts --file docs/storefronts-audit.csv",
-    "import:services-audit": "npx tsx scripts/import-businesses-audit-csv.ts --file docs/services-audit.csv"
+    "import:services-audit": "npx tsx scripts/import-businesses-audit-csv.ts --file docs/services-audit.csv",
+    "posthog:setup-trends-alerts": "npx tsx scripts/posthog-setup-trends-alerts.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.67",
