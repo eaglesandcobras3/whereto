@@ -78,6 +78,16 @@ const TRENDS: TrendDef[] = [
     tags: ["discover", "operator"],
   },
   {
+    slug: "discover-low-results",
+    name: "Discover: low result filters (≤3)",
+    description:
+      "Active filter sets returning 3 or fewer listings — likely tag coverage gaps. Break down by filter_key.",
+    series: [{ event: "discover_low_results", name: "Low result searches" }],
+    interval: "day",
+    breakdown: "filter_key",
+    tags: ["discover", "operator"],
+  },
+  {
     slug: "discover-nl-parsed",
     name: "Discover NL: parse volume",
     description: "NL query parses; filter used_llm in PostHog UI for LLM vs deterministic.",
@@ -154,6 +164,14 @@ const ALERTS: AlertDef[] = [
     slug: "alert-discover-tag-unresolved",
     insightSlug: "discover-tag-unresolved",
     name: "Discover: new unresolved search tag",
+    condition: "absolute_value",
+    moreThan: 0,
+    interval: "daily",
+  },
+  {
+    slug: "alert-discover-low-results",
+    insightSlug: "discover-low-results",
+    name: "Discover: filter returned ≤3 results",
     condition: "absolute_value",
     moreThan: 0,
     interval: "daily",

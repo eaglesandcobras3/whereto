@@ -190,6 +190,7 @@ Product analytics project: **455090** on `us.posthog.com`. Full catalog: [postho
 ### Alerts to verify
 
 - [ ] `discover_tag_unresolved` — any new unresolved NL search term (daily)
+- [ ] `discover_low_results` — filter returned ≤3 listings; check `filter_key` breakdown (daily)
 - [ ] `not_found` — 404 spike (>10/day)
 - [ ] Auth failures — sign-in/sign-up errors (>5/day)
 - [ ] Operator leads — listing request or claim received (any >0)
@@ -237,6 +238,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return ≤3 listings; trend + alert in setup script |
 | 2026-07-06 | PostHog trends & alerts: `scripts/posthog-setup-trends-alerts.ts`, [posthog-trends-alerts.md](posthog-trends-alerts.md) |
 | 2026-07-05 | Discover NL: PostHog `discover_nl_parsed` event — resolver, confidence, doubt_reasons, confused_terms |
 | 2026-07-05 | Discover NL: hybrid LLM tag resolver under `discover_nl`, `discover_search_gaps` table + `/admin/discover-gaps`, PostHog `discover_tag_unresolved` |

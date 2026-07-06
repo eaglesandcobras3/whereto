@@ -66,6 +66,7 @@ The script tags created insights with `w30a:<slug>` so re-runs are idempotent.
 | Slug | Event(s) | Why |
 |------|----------|-----|
 | `discover-tag-unresolved` | `discover_tag_unresolved` | New NL search terms missing from vocabulary → `/admin/discover-gaps` |
+| `discover-low-results` | `discover_low_results` | Filter returned ≤3 listings — break down by `filter_key` for tag coverage gaps |
 | `discover-nl-parsed` | `discover_nl_parsed` | NL parse volume; filter `used_llm`, `deterministic_confidence`, `confused_terms` in UI |
 | `discover-nl-llm` | `discover_nl_parsed` where `used_llm = true` | LLM fallback rate |
 | `not-found-404` | `not_found` | Broken links / bad inbound URLs |
@@ -89,6 +90,7 @@ Alerts only work on **Trend** insights. For each alert: open the insight → **A
 | Alert | Insight | Condition | Threshold | Check interval |
 |-------|---------|-----------|-----------|----------------|
 | Discover: new unresolved search tag | `discover_tag_unresolved` trend | absolute value | more than **0** | daily |
+| Discover: low result filter | `discover_low_results` trend | absolute value | more than **0** | daily |
 | 404 spike | `not_found` trend | absolute value | more than **10** | daily |
 | Auth failures | auth failures trend | absolute value | more than **5** | daily |
 | New operator lead | operator leads trend (series 0) | absolute value | more than **0** | daily |
@@ -103,6 +105,23 @@ On each alert:
 3. Optional: **webhook** for PagerDuty or custom routing.
 
 Tune thresholds after a week of baseline traffic.
+
+### Discover low results — reading `filter_key`
+
+When a user applies town, category, tags, or text on `/discover` and gets **3 or fewer** results, the app emits `discover_low_results` with:
+
+| Property | Example | Use |
+|----------|---------|-----|
+| `filter_key` | `storefront\|towns:all\|category:food\|tags:froyo\|q:none` | Stable breakdown in trends/alerts |
+| `result_count` | `2` | How thin the result set was |
+| `tags` | `["froyo"]` | Tags to backfill on businesses |
+| `category_slug` / `service_category_slug` | `food` | Category scope |
+| `town_ids` | UUIDs | Town scope (resolve in Supabase admin) |
+| `q` | `pizza` | Free-text leg of the filter |
+
+In PostHog, open the **Discover: low result filters** insight and break down by **`filter_key`** to see which combinations need more tagged businesses.
+
+Only **page 1** with at least one active filter (not entity-type alone) is tracked.
 
 ## Event catalog (instrumented in code)
 
@@ -122,6 +141,7 @@ Tune thresholds after a week of baseline traffic.
 | `ask_results_shared` | `ShareArtifactButton` | Share actions |
 | `discover_nl_parsed` | `track-discover-nl-parse.ts` | NL resolver telemetry |
 | `discover_tag_unresolved` | `record-discover-search-gaps.ts` | Vocabulary gaps |
+| `discover_low_results` | `track-discover-low-results.ts` | ≤3 results for an active Discover filter set |
 | `not_found` | `PostHogNotFoundCapture` | 404 page |
 | `$ai_generation` | `instrumentation.ts` + Ask engine | LLM observability |
 
