@@ -112,6 +112,35 @@ const TRENDS: TrendDef[] = [
     tags: ["discover"],
   },
   {
+    slug: "discover-nl-low-confidence",
+    name: "Discover NL: low-confidence parses",
+    description: "NL parses where deterministic_confidence is low — resolver doubt before tag gaps.",
+    series: [
+      {
+        event: "discover_nl_parsed",
+        name: "Low confidence",
+        properties: [
+          {
+            key: "deterministic_confidence",
+            value: "low",
+            operator: "exact",
+            type: "event",
+          },
+        ],
+      },
+    ],
+    interval: "day",
+    tags: ["discover", "operator"],
+  },
+  {
+    slug: "js-exceptions",
+    name: "JS exceptions ($exception)",
+    description: "Client-side errors captured via PostHog exception tracking.",
+    series: [{ event: "$exception", name: "Exceptions" }],
+    interval: "day",
+    tags: ["health"],
+  },
+  {
     slug: "not-found-404",
     name: "404 not found hits",
     description: "Global 404 page renders — broken links or bad inbound URLs.",
@@ -136,8 +165,16 @@ const TRENDS: TrendDef[] = [
     description: "Server-confirmed listing requests and business claims.",
     series: [
       { event: "listing_request_received", name: "Listing requests" },
-      { event: "business_claim_received", name: "Business claims" },
+      { event: "business_claim_received", name: "Business claims (email)" },
     ],
+    interval: "day",
+    tags: ["operator"],
+  },
+  {
+    slug: "portal-claim-submitted",
+    name: "Portal claims (authenticated)",
+    description: "Logged-in ownership claims via ClaimListingForm (client-side confirm).",
+    series: [{ event: "claim_submit_success", name: "Portal claims" }],
     interval: "day",
     tags: ["operator"],
   },
@@ -195,11 +232,60 @@ const ALERTS: AlertDef[] = [
   {
     slug: "alert-operator-listing",
     insightSlug: "operator-leads",
-    name: "New operator lead (listing or claim)",
+    name: "New listing request received",
     condition: "absolute_value",
     moreThan: 0,
     interval: "daily",
     seriesIndex: 0,
+  },
+  {
+    slug: "alert-operator-claim-email",
+    insightSlug: "operator-leads",
+    name: "New business claim received (email)",
+    condition: "absolute_value",
+    moreThan: 0,
+    interval: "daily",
+    seriesIndex: 1,
+  },
+  {
+    slug: "alert-portal-claim",
+    insightSlug: "portal-claim-submitted",
+    name: "New portal claim submitted",
+    condition: "absolute_value",
+    moreThan: 0,
+    interval: "daily",
+  },
+  {
+    slug: "alert-business-feedback",
+    insightSlug: "business-feedback",
+    name: "New business feedback submitted",
+    condition: "absolute_value",
+    moreThan: 0,
+    interval: "daily",
+  },
+  {
+    slug: "alert-js-exceptions",
+    insightSlug: "js-exceptions",
+    name: "JS exceptions (>5/day)",
+    condition: "absolute_value",
+    moreThan: 5,
+    interval: "daily",
+  },
+  {
+    slug: "alert-discover-nl-low-confidence",
+    insightSlug: "discover-nl-low-confidence",
+    name: "Discover NL: low-confidence parse",
+    condition: "absolute_value",
+    moreThan: 0,
+    interval: "daily",
+  },
+  {
+    slug: "alert-discover-nl-llm-spike",
+    insightSlug: "discover-nl-llm",
+    name: "Discover NL: LLM fallback spike (>50% vs prior week)",
+    condition: "relative_increase",
+    moreThan: 50,
+    interval: "weekly",
   },
   {
     slug: "alert-ask-drop",
@@ -443,7 +529,7 @@ async function main() {
   console.log("\nDone.");
   console.log(`Dashboard: ${HOST}/project/${PROJECT_ID}/dashboard/${DASHBOARD_ID}`);
   console.log("Manual steps: connect Slack in PostHog alert settings if you want channel notifications.");
-  console.log("See docs/posthog-trends-alerts.md for the full catalog and UI fallback.");
+  console.log("See docs/posthog-trends-alerts.md — especially «Manual setup required» for monitors not provisioned by this script.");
 }
 
 main().catch((err) => {

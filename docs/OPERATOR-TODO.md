@@ -187,14 +187,28 @@ Product analytics project: **455090** on `us.posthog.com`. Full catalog: [postho
 
 - [x] Dashboard [1673843](https://us.posthog.com/project/455090/dashboard/1673843) — signups, Ask volume, saves, funnel, operator leads
 
-### Alerts to verify
+### Alerts to verify (script-provisioned)
 
 - [ ] `discover_tag_unresolved` — any new unresolved NL search term (daily)
 - [ ] `discover_low_results` — thin filter results (≤3 one town, ≤5 all/2+ towns); check `filter_key` breakdown (daily)
+- [ ] `discover_nl_parsed` low confidence + LLM fallback spike (daily / weekly)
 - [ ] `not_found` — 404 spike (>10/day)
+- [ ] `$exception` — JS errors (>5/day)
 - [ ] Auth failures — sign-in/sign-up errors (>5/day)
-- [ ] Operator leads — listing request or claim received (any >0)
+- [ ] Listing request, email claim, portal claim, business feedback — any >0 (daily)
 - [ ] Ask volume — relative drop >50% week-over-week
+
+### Manual setup (not in script)
+
+See [posthog-trends-alerts.md § Manual setup required](posthog-trends-alerts.md#manual-setup-required). High priority:
+
+- [ ] Slack/email on every alert
+- [ ] Ask zero-volume alert on insight MU1NzUK9
+- [ ] LLM daily cost alert in AI Observability
+- [ ] Funnel: `listing_request_submitted` → `listing_request_received`
+- [ ] Funnel: `business_saved` → `business_save_completed`
+- [ ] Weekly dashboard subscription (1673843)
+- [ ] Review `/admin/discover-gaps` when tag alerts fire
 
 ---
 
@@ -238,7 +252,8 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
-| 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return ≤3 listings; trend + alert in setup script |
+| 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |
+| 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return thin listings; town-aware thresholds |
 | 2026-07-06 | PostHog trends & alerts: `scripts/posthog-setup-trends-alerts.ts`, [posthog-trends-alerts.md](posthog-trends-alerts.md) |
 | 2026-07-05 | Discover NL: PostHog `discover_nl_parsed` event — resolver, confidence, doubt_reasons, confused_terms |
 | 2026-07-05 | Discover NL: hybrid LLM tag resolver under `discover_nl`, `discover_search_gaps` table + `/admin/discover-gaps`, PostHog `discover_tag_unresolved` |
