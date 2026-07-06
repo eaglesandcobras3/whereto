@@ -85,8 +85,8 @@ With `discover` on, the navbar search icon opens a text field (same pattern as l
 ### PostHog
 
 - [x] Boolean flag `discover_nl` (requires `discover`) — rolled out
-- [ ] Create alert on event `discover_tag_unresolved` (new/unmatched search terms)
-- [ ] Optional: dashboard on `discover_nl_parsed` — filter by `used_llm`, `deterministic_confidence`, `confused_terms`
+- [ ] Create alert on `discover_tag_unresolved` — use `npm run posthog:setup-trends-alerts` or [posthog-trends-alerts.md](posthog-trends-alerts.md)
+- [ ] Optional: `discover_nl_parsed` / LLM fallback trends — provisioned by the same script
 
 ### Supabase
 
@@ -170,6 +170,48 @@ npx tsx scripts/backfill-business-categories.ts --apply
 
 ---
 
+## PostHog trends & alerts
+
+Product analytics project: **455090** on `us.posthog.com`. Full catalog: [posthog-trends-alerts.md](posthog-trends-alerts.md).
+
+### Setup
+
+- [ ] Create PostHog **personal API key** (`insight:read/write`, `alert:read/write`) — not the project ingest key
+- [ ] Add to `.env.local`: `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_SUBSCRIBED_USER_ID` (your numeric user id)
+- [ ] Preview: `npm run posthog:setup-trends-alerts -- --dry-run`
+- [ ] Provision: `npm run posthog:setup-trends-alerts`
+- [ ] Connect **Slack** (or email) on alerts in PostHog UI — see [posthog-trends-alerts.md](posthog-trends-alerts.md)
+- [ ] Tune alert thresholds after ~1 week of baseline traffic
+
+### Wizard baseline (already exists)
+
+- [x] Dashboard [1673843](https://us.posthog.com/project/455090/dashboard/1673843) — signups, Ask volume, saves, funnel, operator leads
+
+### Alerts to verify (script-provisioned)
+
+- [ ] `discover_tag_unresolved` — any new unresolved NL search term (daily)
+- [ ] `discover_low_results` — thin filter results (≤3 one town, ≤5 all/2+ towns); check `filter_key` breakdown (daily)
+- [ ] `discover_nl_parsed` low confidence + LLM fallback spike (daily / weekly)
+- [ ] `not_found` — 404 spike (>10/day)
+- [ ] `$exception` — JS errors (>5/day)
+- [ ] Auth failures — sign-in/sign-up errors (>5/day)
+- [ ] Listing request, email claim, portal claim, business feedback — any >0 (daily)
+- [ ] Ask volume — relative drop >50% week-over-week
+
+### Manual setup (not in script)
+
+See [posthog-trends-alerts.md § Manual setup required](posthog-trends-alerts.md#manual-setup-required). High priority:
+
+- [ ] Slack/email on every alert
+- [ ] Ask zero-volume alert on insight MU1NzUK9
+- [ ] LLM daily cost alert in AI Observability
+- [ ] Funnel: `listing_request_submitted` → `listing_request_received`
+- [ ] Funnel: `business_saved` → `business_save_completed`
+- [ ] Weekly dashboard subscription (1673843)
+- [ ] Review `/admin/discover-gaps` when tag alerts fire
+
+---
+
 ## Feature flags (PostHog)
 
 Product visibility flags are boolean keys in PostHog. Code defaults are **off** when PostHog is unavailable.
@@ -210,6 +252,9 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |
+| 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return thin listings; town-aware thresholds |
+| 2026-07-06 | PostHog trends & alerts: `scripts/posthog-setup-trends-alerts.ts`, [posthog-trends-alerts.md](posthog-trends-alerts.md) |
 | 2026-07-05 | Discover NL: PostHog `discover_nl_parsed` event — resolver, confidence, doubt_reasons, confused_terms |
 | 2026-07-05 | Discover NL: hybrid LLM tag resolver under `discover_nl`, `discover_search_gaps` table + `/admin/discover-gaps`, PostHog `discover_tag_unresolved` |
 | 2026-07-04 | PostHog `seo_improvements` flag gates new SEO sprint UI (hubs, town/guide modules, homepage trip planning) |
