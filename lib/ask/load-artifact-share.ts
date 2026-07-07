@@ -15,7 +15,7 @@ export async function loadArtifactShareBySlug(
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("artifact_shares")
-    .select("slug, title, summary_text, artifact_snapshot, access_count")
+    .select("slug, title, summary_text, artifact_snapshot")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -25,11 +25,6 @@ export async function loadArtifactShareBySlug(
   if (!snapshot || typeof snapshot !== "object" || !("type" in snapshot)) {
     return null;
   }
-
-  void supabase
-    .from("artifact_shares")
-    .update({ access_count: ((data.access_count as number) ?? 0) + 1 })
-    .eq("slug", slug);
 
   return {
     slug: data.slug as string,

@@ -5,7 +5,7 @@ import { loadArtifactShareBySlug } from "@/lib/ask/load-artifact-share";
 
 export const metadata: Metadata = {
   description: "Shared recommendations and search results from WhereTo30A.",
-  robots: { index: false, follow: true },
+  robots: { index: false, follow: false },
 };
 
 export default async function SharePage({
