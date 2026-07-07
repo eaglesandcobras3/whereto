@@ -6,16 +6,39 @@ General operator tasks for WhereTo30A (env, deploy, shared infra).
 
 ---
 
-## Optional tables: `content_entries` and `seo_pages`
+## Static build: `content_entries` + `seo_pages`
 
-These tables are **not required** for a successful production build. The app reads `public.guides` directly and skips optional lookups when the tables are absent.
+Run once in the **Supabase SQL editor** (production):
 
-Apply only if you want the extra CMS overlay or town intent SEO pages:
+- [ ] [scripts/migrations/static-build-supabase.sql](../scripts/migrations/static-build-supabase.sql)
 
-- [ ] [scripts/migrations/content-entries-table.sql](../scripts/migrations/content-entries-table.sql) — optional guide CMS overlay (archive/draft slugs override stale `guides` rows)
-- [ ] [scripts/migrations/seo-pages-table.sql](../scripts/migrations/seo-pages-table.sql) — town intent pages like `/rosemary-beach/coffee` (populate via `lib/cron/seo-publish.ts` from `query_cache`)
+This file:
 
-Without `seo_pages`, `/[townSlug]/[intentSlug]` routes are not pre-rendered and are omitted from the sitemap. Without `content_entries`, guides continue to load from `public.guides`.
+1. Creates `public.content_entries` (empty is fine — guides still load from `public.guides`)
+2. Creates `public.seo_pages`
+3. Publishes `seo_pages` from existing `query_cache` rows via `sync_seo_pages_from_query_cache()`
+4. Prints row counts and sample slugs to verify
+
+Then **redeploy on Vercel** so `generateStaticParams` pre-renders intent URLs like `/rosemary-beach/coffee`.
+
+### If `seo_pages` count is zero after step 3
+
+`query_cache` has no `seo_eligible` rows yet. That data requires the app precompute job (OpenAI ranking) — it cannot be generated in SQL. After precompute exists in the repo, run it once, then in Supabase:
+
+```sql
+select * from public.sync_seo_pages_from_query_cache();
+```
+
+and redeploy again.
+
+### Guides
+
+`/guide/[slug]` already static-generates from `public.guides` at build time. You do **not** need to backfill `content_entries` unless you want the CMS overlay later.
+
+Individual table files (same DDL, split for reference):
+
+- [scripts/migrations/content-entries-table.sql](../scripts/migrations/content-entries-table.sql)
+- [scripts/migrations/seo-pages-table.sql](../scripts/migrations/seo-pages-table.sql)
 
 ---
 
@@ -281,6 +304,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-07 | Static build SQL: `static-build-supabase.sql` creates tables + `sync_seo_pages_from_query_cache()` for Supabase editor |
 | 2026-07-07 | Optional tables: `content_entries` + `seo_pages` migrations; build/sitemap skip gracefully when tables are absent |
 | 2026-07-07 | Cron cleanup: removed dead disabled `/api/cron/*` routes and removed all scheduled Vercel crons; remaining cron-style routes are manual/on-demand only |
 | 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |
