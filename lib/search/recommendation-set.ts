@@ -291,7 +291,7 @@ export type EnrichedRecommendationPayload = {
 /**
  * Legacy path: rank + OpenAI synthesis + enrichment for `query_cache` / SEO payloads.
  * **Not used by live `/search`** — see `runSearch` → `buildMinimalSearchResult` and [docs/search-legacy.md](../../docs/search-legacy.md).
- * Still referenced by `lib/cron/recommendation-precompute.ts` (cron route disabled).
+ * Still referenced by offline/maintenance search helpers.
  */
 export async function buildRecommendationSet(options: {
   supabase: SupabaseClient;

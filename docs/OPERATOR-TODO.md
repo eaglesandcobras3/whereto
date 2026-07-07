@@ -76,6 +76,18 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/se
 
 ---
 
+## Active Vercel cron jobs
+
+Only these routes are scheduled in `vercel.json`:
+
+- [ ] `/api/cron/cache-prune` — prune expired `query_cache`
+- [ ] `/api/cron/search-stats` — refresh search cluster business stats
+- [ ] `/api/cron/indexnow` — submit core hub URLs to IndexNow
+
+The old disabled cron endpoints were removed from the codebase. Keep any future scheduled jobs mirrored in both `vercel.json` and this checklist.
+
+---
+
 ## Discover: natural-language query expansion (`discover_nl`)
 
 When PostHog `discover_nl` is on (requires `discover`), `/discover?q=…` runs a **hybrid parser** on the server: deterministic rules first, then a low-cost LLM fallback (`gpt-4o-mini`, `temperature: 0`) when expansion is incomplete or terms do not map to `search_tags_vocabulary`. The navbar passes raw `q` — expansion happens on page load (redirect to structured params).
@@ -252,6 +264,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-07 | Cron cleanup: removed dead disabled `/api/cron/*` routes; active scheduled jobs are now only `cache-prune`, `search-stats`, and `indexnow` |
 | 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |
 | 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return thin listings; town-aware thresholds |
 | 2026-07-06 | PostHog trends & alerts: `scripts/posthog-setup-trends-alerts.ts`, [posthog-trends-alerts.md](posthog-trends-alerts.md) |

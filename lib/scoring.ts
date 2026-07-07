@@ -35,7 +35,7 @@ export type BusinessRowWithTags = BusinessForScore & {
   ai_summary?: string | null;
   /** Legacy field; map API photos are not used for new listings. */
   legacy_photo_refs?: string[] | null;
-  /** Public Storage URL for listing hero (from `/api/cron/business-images`). */
+  /** Public Storage URL for listing hero (stored in Supabase Storage). */
   hero_image_url?: string | null;
 };
 
