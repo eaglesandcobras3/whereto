@@ -21,11 +21,6 @@ AI-assisted local discovery for Florida’s 30A corridor.
 - `npm test` — Vitest (scoring, API route mocks, feedback, rate limit, etc.)
 - `npm run test:e2e` — Playwright (mocks `/api/*`; starts dev server; set `CI=1` in CI)
 
-Cron routes under `/api/cron/*` expect `Authorization: Bearer $CRON_SECRET` in production; in `NODE_ENV=development` the secret check is skipped for easier local runs.
+Cron-style routes under `/api/cron/*` expect `Authorization: Bearer $CRON_SECRET` in production; in `NODE_ENV=development` the secret check is skipped for easier local runs.
 
-Active scheduled cron routes are defined in `vercel.json`:
-- `/api/cron/cache-prune`
-- `/api/cron/search-stats`
-- `/api/cron/indexnow`
-
-Other cron-style routes (for example `/api/cron/seo-audit` and `/api/cron/rankscore-guides`) are manual/on-demand maintenance endpoints, not scheduled jobs.
+There are currently **no scheduled Vercel crons**. Remaining cron-style routes (for example `/api/cron/cache-prune`, `/api/cron/search-stats`, `/api/cron/indexnow`, `/api/cron/seo-audit`, and `/api/cron/rankscore-guides`) are manual/on-demand maintenance endpoints only.

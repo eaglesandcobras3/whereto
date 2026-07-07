@@ -76,15 +76,19 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/se
 
 ---
 
-## Active Vercel cron jobs
+## Cron jobs
 
-Only these routes are scheduled in `vercel.json`:
+There are currently **no scheduled Vercel cron jobs**.
+
+These endpoints remain available for manual/on-demand maintenance only:
 
 - [ ] `/api/cron/cache-prune` — prune expired `query_cache`
 - [ ] `/api/cron/search-stats` — refresh search cluster business stats
 - [ ] `/api/cron/indexnow` — submit core hub URLs to IndexNow
+- [ ] `/api/cron/seo-audit` — run SEO audit manually
+- [ ] `/api/cron/rankscore-guides` — manual RankScore guide sync
 
-The old disabled cron endpoints were removed from the codebase. Keep any future scheduled jobs mirrored in both `vercel.json` and this checklist.
+If a future job really needs a schedule, re-add it deliberately and mirror it in both deployment config and this checklist.
 
 ---
 
@@ -264,7 +268,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
-| 2026-07-07 | Cron cleanup: removed dead disabled `/api/cron/*` routes; active scheduled jobs are now only `cache-prune`, `search-stats`, and `indexnow` |
+| 2026-07-07 | Cron cleanup: removed dead disabled `/api/cron/*` routes and removed all scheduled Vercel crons; remaining cron-style routes are manual/on-demand only |
 | 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |
 | 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return thin listings; town-aware thresholds |
 | 2026-07-06 | PostHog trends & alerts: `scripts/posthog-setup-trends-alerts.ts`, [posthog-trends-alerts.md](posthog-trends-alerts.md) |
