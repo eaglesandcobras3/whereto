@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMissingRelationError } from "@/lib/postgrest-errors";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isGuideEligibleForSitemap } from "@/lib/seo/sitemap-guide-eligibility";
 
@@ -18,6 +19,7 @@ export async function fetchArchivedGuideContentEntrySlugs(
       .eq("content_type", "guide")
       .eq("status", status);
     if (error) {
+      if (isMissingRelationError(error)) return slugs;
       console.error(`sitemap: content_entries (${status})`, error);
       continue;
     }

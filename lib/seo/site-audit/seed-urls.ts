@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMissingRelationError } from "@/lib/postgrest-errors";
 import { businessBrowseGroupHubPath } from "@/lib/business-categories/browse-group-nav";
 import { BUSINESS_CATEGORY_GROUP_SLUGS } from "@/lib/business-categories/groups";
 import { serviceBrowseGroupHubPath } from "@/lib/service-categories/browse-group-nav";
@@ -69,15 +70,19 @@ export async function collectSeedUrls(input: {
     }
 
     if (input.includeSeoIntentUrls !== false) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("seo_pages")
         .select("slug")
         .eq("published", true);
-      for (const row of data ?? []) {
-        const full = String((row as { slug: string }).slug ?? "").trim();
-        const i = full.indexOf("/");
-        if (i <= 0) continue;
-        seeds.add(normalizeAuditUrl(`${base}/${full}`));
+      if (!error) {
+        for (const row of data ?? []) {
+          const full = String((row as { slug: string }).slug ?? "").trim();
+          const i = full.indexOf("/");
+          if (i <= 0) continue;
+          seeds.add(normalizeAuditUrl(`${base}/${full}`));
+        }
+      } else if (!isMissingRelationError(error)) {
+        console.warn("[seo-audit] seo_pages seed skipped:", error.message);
       }
     }
 

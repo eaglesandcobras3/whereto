@@ -1,4 +1,5 @@
 import "server-only";
+import { isMissingRelationError } from "@/lib/postgrest-errors";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 export type ContentEntry = {
@@ -39,7 +40,11 @@ export async function listContentEntries(options?: {
   } else if (options?.limit) {
     q = q.limit(options.limit);
   }
-  const { data } = await q;
+  const { data, error } = await q;
+  if (error) {
+    if (isMissingRelationError(error)) return [];
+    throw error;
+  }
   return data ?? [];
 }
 
@@ -60,15 +65,23 @@ export async function listContentEntriesPage(options?: {
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);
   if (options?.type) q = q.eq("content_type", options.type);
-  const { data, count } = await q;
+  const { data, count, error } = await q;
+  if (error) {
+    if (isMissingRelationError(error)) return { entries: [], total: 0 };
+    throw error;
+  }
   return { entries: data ?? [], total: count ?? 0 };
 }
 
 export async function listContentEntryTypes(): Promise<string[]> {
   const supabase = getServiceSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("content_entries")
     .select("content_type");
+  if (error) {
+    if (isMissingRelationError(error)) return [];
+    throw error;
+  }
   const uniq = new Set(
     (data ?? [])
       .map((row) => String(row.content_type ?? "").trim())
@@ -79,11 +92,15 @@ export async function listContentEntryTypes(): Promise<string[]> {
 
 export async function getContentEntryById(id: string): Promise<ContentEntry | null> {
   const supabase = getServiceSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("content_entries")
     .select("*")
     .eq("id", id)
     .maybeSingle();
+  if (error) {
+    if (isMissingRelationError(error)) return null;
+    throw error;
+  }
   return (data as ContentEntry | null) ?? null;
 }
 
@@ -92,25 +109,33 @@ export async function getPublishedContentEntryBySlug(
   slug: string,
 ): Promise<ContentEntry | null> {
   const supabase = getServiceSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("content_entries")
     .select("*")
     .eq("content_type", contentType)
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
+  if (error) {
+    if (isMissingRelationError(error)) return null;
+    throw error;
+  }
   return (data as ContentEntry | null) ?? null;
 }
 
 /** When a guide slug is archived in content_entries, do not fall back to a stale `guides` row. */
 export async function isGuideArchivedInContentEntries(slug: string): Promise<boolean> {
   const supabase = getServiceSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("content_entries")
     .select("status")
     .eq("content_type", "guide")
     .eq("slug", slug)
     .maybeSingle();
+  if (error) {
+    if (isMissingRelationError(error)) return false;
+    throw error;
+  }
   const status = (data as { status?: string } | null)?.status;
   return status === "archived" || status === "draft";
 }

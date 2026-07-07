@@ -2,6 +2,7 @@ import "server-only";
 
 import type { MetadataRoute } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMissingRelationError } from "@/lib/postgrest-errors";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -48,7 +49,9 @@ async function fetchPublishedSeoPages(
     .select("slug, updated_at")
     .eq("published", true);
   if (error) {
-    console.error("sitemap: seo_pages", error);
+    if (!isMissingRelationError(error)) {
+      console.error("sitemap: seo_pages", error);
+    }
     return [];
   }
   return (data ?? []) as Record<string, unknown>[];

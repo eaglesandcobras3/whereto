@@ -3,10 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { getTownBySlug } from "@/lib/data/town-hub";
 import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import type { Metadata } from "next";
-import {
-  getServiceSupabase,
-  getServiceSupabaseOrNull,
-} from "@/lib/supabase/service-role";
+import { isMissingRelationError } from "@/lib/postgrest-errors";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_HUB_PATH } from "@/lib/routes/primary-region";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
@@ -36,12 +34,15 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
-  const { data } = await supabase
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase
     .from("seo_pages")
     .select("slug")
     .eq("published", true);
+  if (error) {
+    if (isMissingRelationError(error)) return [];
+    throw error;
+  }
   const out: { townSlug: string; intentSlug: string }[] = [];
   for (const row of data ?? []) {
     const full = row.slug as string;
@@ -66,7 +67,7 @@ type SeoRow = {
 async function loadSeoPage(fullSlug: string) {
   try {
     const supabase = getServiceSupabase();
-    const { data: page } = await supabase
+    const { data: page, error: pageError } = await supabase
       .from("seo_pages")
       .select(
         "title, meta_description, content_intro, recommendation_set_id, town_id",
@@ -74,6 +75,10 @@ async function loadSeoPage(fullSlug: string) {
       .eq("slug", fullSlug)
       .eq("published", true)
       .maybeSingle();
+    if (pageError) {
+      if (isMissingRelationError(pageError)) return null;
+      throw pageError;
+    }
     if (!page) return null;
     const row = page as SeoRow;
     const { data: cache } = await supabase

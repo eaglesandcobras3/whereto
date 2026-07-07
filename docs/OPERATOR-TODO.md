@@ -6,6 +6,19 @@ General operator tasks for WhereTo30A (env, deploy, shared infra).
 
 ---
 
+## Optional tables: `content_entries` and `seo_pages`
+
+These tables are **not required** for a successful production build. The app reads `public.guides` directly and skips optional lookups when the tables are absent.
+
+Apply only if you want the extra CMS overlay or town intent SEO pages:
+
+- [ ] [scripts/migrations/content-entries-table.sql](../scripts/migrations/content-entries-table.sql) — optional guide CMS overlay (archive/draft slugs override stale `guides` rows)
+- [ ] [scripts/migrations/seo-pages-table.sql](../scripts/migrations/seo-pages-table.sql) — town intent pages like `/rosemary-beach/coffee` (populate via `lib/cron/seo-publish.ts` from `query_cache`)
+
+Without `seo_pages`, `/[townSlug]/[intentSlug]` routes are not pre-rendered and are omitted from the sitemap. Without `content_entries`, guides continue to load from `public.guides`.
+
+---
+
 ## RankScore → Guides sync
 
 Pull completed RankScore articles into `public.guides` (published at `/guide/[slug]` and listed on `/guides`).
@@ -268,6 +281,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
+| 2026-07-07 | Optional tables: `content_entries` + `seo_pages` migrations; build/sitemap skip gracefully when tables are absent |
 | 2026-07-07 | Cron cleanup: removed dead disabled `/api/cron/*` routes and removed all scheduled Vercel crons; remaining cron-style routes are manual/on-demand only |
 | 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |
 | 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return thin listings; town-aware thresholds |
