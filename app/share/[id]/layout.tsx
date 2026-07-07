@@ -7,7 +7,7 @@ type MetaProps = { params: Promise<{ id: string }> };
 
 /** Share snapshots are session-like; keep link equity on canonical hub/detail pages. */
 const SHARE_NOINDEX: Pick<Metadata, "robots"> = {
-  robots: { index: false, follow: true },
+  robots: { index: false, follow: false },
 };
 
 export async function generateMetadata({ params }: MetaProps): Promise<Metadata> {

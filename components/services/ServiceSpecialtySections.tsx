@@ -14,6 +14,7 @@ import {
 import type { ServiceSpecialtySection } from "@/lib/data/service-vendors-hub";
 import Link from "next/link";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 type Props = {
   sections: ServiceSpecialtySection[];
@@ -25,15 +26,7 @@ type Props = {
 };
 
 function useIsDesktop() {
-  const [desktop, setDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    setDesktop(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return desktop;
+  return useMediaQuery("(min-width: 1024px)");
 }
 
 export function ServiceSpecialtySections({
@@ -49,7 +42,8 @@ export function ServiceSpecialtySections({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    if (isDesktop) {
+    if (!isDesktop) return;
+    queueMicrotask(() => {
       setExpandedIds((prev) => {
         if (prev.size > 0) return prev;
         const initial = new Set<string>();
@@ -58,7 +52,7 @@ export function ServiceSpecialtySections({
         }
         return initial;
       });
-    }
+    });
   }, [isDesktop, defaultExpandedCount, sections]);
 
   useEffect(() => {

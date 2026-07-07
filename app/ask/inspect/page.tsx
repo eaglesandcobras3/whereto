@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getAllFeatureFlags, isSearchInspectorEnabled } from "@/lib/feature-flags";
 import { InspectFlow } from "@/components/ask/inspect/InspectFlow";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Search Inspector | WhereTo30A",
   description:

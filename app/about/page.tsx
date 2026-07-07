@@ -63,14 +63,14 @@ export default function AboutPage() {
             </a>
           </p>
           <p>
-            Spotted something wrong on a listing?{" "}
-            <Link
-              href="/feedback"
-              {...gaClickProps({ event: "nav_click", category: "about", label: "feedback_form_contact" })}
+            Spotted something wrong on a listing? Email{" "}
+            <a
+              href="mailto:feedback@whereto30a.com"
+              {...gaClickProps({ event: "contact_click", category: "about", label: "email_feedback" })}
               className="font-medium underline-offset-4 hover:underline"
             >
-              Send us a correction
-            </Link>
+              feedback@whereto30a.com
+            </a>
             .
           </p>
         </SiteDocument>

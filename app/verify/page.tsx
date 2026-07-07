@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 /** Confirms the `/verify` path works; town checks use the API route (see copy below). */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default function VerifyIndexPage() {
   const example = "/api/debug/town/rosemary-beach";
   return (

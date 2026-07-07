@@ -20,6 +20,7 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import * as path from 'path';
 import * as fs from 'fs';
+import { execSync } from 'child_process';
 import * as dotenv from 'dotenv';
 import {
   computeComposite,
@@ -527,7 +528,7 @@ async function main() {
 
   if (MILESTONE) {
     const gitSha = (() => {
-      try { return require('child_process').execSync('git rev-parse --short HEAD').toString().trim(); }
+      try { return execSync('git rev-parse --short HEAD').toString().trim(); }
       catch { return 'unknown'; }
     })();
     const report: BaselineReport = {

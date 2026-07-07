@@ -76,6 +76,8 @@ export function Navbar({
   const isAccount = pathname === "/profile" || pathname.startsWith("/profile/");
   const isPortalRoute = pathname === "/portal" || pathname.startsWith("/portal/");
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const visiblePortalNav = Boolean(user && onboardEnabled && showPortalNav);
+  const visibleAdminNav = Boolean(user && showAdminNav);
   const showAuth = true;
   /** Product: keep /saved and /login routes; hide nav links to them. */
   const showHeaderSaved = false;
@@ -95,11 +97,7 @@ export function Navbar({
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      setShowAdminNav(false);
-      setShowPortalNav(false);
-      return;
-    }
+    if (!user) return;
     fetch("/api/admin/me")
       .then(async (res) => {
         const j = (await res.json()) as { showAdminNav?: boolean };
@@ -109,10 +107,7 @@ export function Navbar({
   }, [user]);
 
   useEffect(() => {
-    if (!user || !onboardEnabled) {
-      setShowPortalNav(false);
-      return;
-    }
+    if (!user || !onboardEnabled) return;
     fetch("/api/portal/me")
       .then(async (res) => {
         const j = (await res.json()) as { hasPortalActivity?: boolean };
@@ -271,7 +266,7 @@ export function Navbar({
                 Saved
               </Link>
             ) : null}
-            {showAuth && user && showPortalNav ? (
+            {showAuth && user && visiblePortalNav ? (
               <Link
                 {...gaClickProps({ event: "nav_click", category: "header_auth", label: "business_portal" })}
                 href="/portal"
@@ -280,7 +275,7 @@ export function Navbar({
                 Business Portal
               </Link>
             ) : null}
-            {showAuth && user && showAdminNav ? (
+            {showAuth && user && visibleAdminNav ? (
               <Link
                 {...gaClickProps({ event: "nav_click", category: "header_auth", label: "admin" })}
                 href="/admin"
@@ -396,8 +391,8 @@ export function Navbar({
           isSaved={isSaved}
           isAccount={isAccount}
           isPortalRoute={isPortalRoute}
-          showPortalNav={showPortalNav}
-          showAdminNav={showAdminNav}
+          showPortalNav={visiblePortalNav}
+          showAdminNav={visibleAdminNav}
           isAdminRoute={isAdminRoute}
           showAuth={showAuth}
           showSaved={showSaved}

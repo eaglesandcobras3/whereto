@@ -129,7 +129,7 @@ export function refineSearch(opts: {
   const hasArtifact = isSearchResultsArtifact(opts.existingArtifact);
   const forkSession = shouldForkSession(opts.intent);
   let activeFilters = opts.activeFilters;
-  let refinementHistory = [...opts.refinementHistory];
+  const refinementHistory = [...opts.refinementHistory];
 
   if (opts.intent === "refine" || opts.intent === "compare") {
     activeFilters = mergeFilters(activeFilters, { query: opts.message });

@@ -10,6 +10,8 @@ import { resolveQueryPlan } from "@/lib/search/resolve-query-plan";
 export type ParsedDiscoverQuery = {
   type?: "storefront" | "services";
   town?: string;
+  /** `near` expands to a corridor zone; `exact` keeps the named town only. */
+  town_scope?: "exact" | "near";
   category?: string;
   service_category?: string;
   facet?: string;
@@ -56,6 +58,7 @@ const RESIDUAL_STOP_WORDS = new Set([
   "children",
   "family",
   "and",
+  "or",
   "with",
 ]);
 
@@ -93,16 +96,26 @@ function resolveCategoryFromPlan(plan: ReturnType<typeof resolveQueryPlan>): {
 function buildResidualQuery(
   normalized: string,
   plan: ReturnType<typeof resolveQueryPlan>,
-  townSlug: string | null,
+  townSlugs: string[],
   resolvedTags: string[],
+  hasCategoryRollup: boolean,
 ): string | undefined {
+  if (plan.matchedRuleId && hasCategoryRollup) {
+    return undefined;
+  }
+
   let terms =
     plan.searchTerms.length > 0
       ? [...plan.searchTerms]
       : normalized.split(/\s+/).filter(Boolean);
 
-  if (townSlug) {
-    const townTokens = new Set(townSlug.replace(/-/g, " ").split(/\s+/).filter(Boolean));
+  if (townSlugs.length) {
+    const townTokens = new Set<string>();
+    for (const slug of townSlugs) {
+      for (const token of slug.replace(/-/g, " ").split(/\s+/).filter(Boolean)) {
+        townTokens.add(token);
+      }
+    }
     terms = terms.filter((token) => !townTokens.has(token));
   }
 
@@ -160,7 +173,7 @@ export function parseDiscoverQuery(
 
   const tagResolution = resolveQueryTags(trimmed, plan, {
     vocabulary: options?.vocabulary,
-    townSlug: plan.townSlug,
+    townSlugs: plan.townSlugs,
   });
 
   if (
@@ -196,8 +209,24 @@ export function parseDiscoverQuery(
   }
 
   const allTags = tagResolution.tags;
-  const town = plan.townSlug ?? undefined;
-  const q = buildResidualQuery(normalized, plan, plan.townSlug, allTags);
+  const townSlugs = plan.townSlugs;
+  const town = townSlugs.length ? townSlugs.join(",") : undefined;
+  const town_scope =
+    !town
+      ? undefined
+      : townSlugs.length > 1 || plan.scope === "exact"
+        ? "exact"
+        : "near";
+  const hasCategoryRollup = Boolean(
+    categoryFields.category || categoryFields.service_category,
+  );
+  const q = buildResidualQuery(
+    normalized,
+    plan,
+    townSlugs,
+    allTags,
+    hasCategoryRollup,
+  );
 
   const deterministicSignals: DeterministicParseSignals = {
     matchedRuleId: plan.matchedRuleId ?? undefined,
@@ -228,6 +257,7 @@ export function parseDiscoverQuery(
   return {
     type: categoryFields.type,
     town,
+    town_scope,
     category: categoryFields.category,
     service_category: categoryFields.service_category,
     facet: allTags.length ? allTags.join(",") : undefined,

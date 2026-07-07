@@ -2,7 +2,6 @@ import {
   isAskEnabled,
   isDiscoverEnabled,
   isDiscoverNlEnabled,
-  isSearchEnabled,
   type DiscoveryFlags,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
@@ -31,9 +30,8 @@ const TYPE_ASK_QUERIES: Record<string, string> = {
 };
 
 export function showNavbarSearchUi(flags: DiscoveryFlags): boolean {
-  if (isAskEnabled(flags)) return false;
-  if (isDiscoverEnabled(flags as FeatureFlags)) return false;
-  return isSearchEnabled(flags);
+  void flags;
+  return false;
 }
 
 export function showNavbarDiscoverUi(flags: FeatureFlags): boolean {
@@ -54,7 +52,6 @@ export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
 export function isDiscoveryEnabled(flags: DiscoveryFlags | FeatureFlags): boolean {
   return (
     isAskEnabled(flags) ||
-    isSearchEnabled(flags) ||
     isDiscoverEnabled(flags as FeatureFlags)
   );
 }
@@ -95,7 +92,7 @@ function discoverNlDevBypassEnabled(): boolean {
   return process.env.NODE_ENV === "development" && process.env.DISCOVER_NL_ENABLED === "1";
 }
 
-/** Primary discovery URL — `/discover` when discover is on, else `/ask` or `/search`. */
+/** Primary discovery URL — `/discover` when discover is on, else `/ask`. */
 export function discoveryHref(
   flags: DiscoveryFlags,
   params?: DiscoveryLinkParams,
@@ -110,16 +107,7 @@ export function discoveryHref(
     return "/ask";
   }
 
-  if (!isSearchEnabled(flags)) return "/";
-
-  const sp = new URLSearchParams();
-  if (params?.q?.trim()) sp.set("q", params.q.trim());
-  if (params?.type) sp.set("type", params.type);
-  if (params?.category) sp.set("category", params.category);
-  if (params?.town_id) sp.set("town_id", params.town_id);
-  if (params?.area_id) sp.set("area_id", params.area_id);
-  const qs = sp.toString();
-  return qs ? `/search?${qs}` : "/search";
+  return "/";
 }
 
 export function discoveryLinkRel(href: string): "nofollow" | undefined {

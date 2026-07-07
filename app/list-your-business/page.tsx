@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "List your business",
   description:
     "Request to add your Emerald Coast business or service to WhereTo30A. Submissions are reviewed before publication.",
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: false },
   ...openGraphForPage({
     path: "/list-your-business",
     title: "List your business | WhereTo30A",

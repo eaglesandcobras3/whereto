@@ -1,6 +1,6 @@
 /**
- * Server-side toggles for OpenAI spend on user-facing search (`runSearch`, `/api/search`, `/search`).
- * Defaults preserve existing behavior.
+ * Server-side toggles for OpenAI spend in internal search pipelines
+ * (Discover/Ask/admin tooling that still uses `runSearch` helpers).
  */
 
 function readEnvFlag(name: string, defaultOn: boolean): boolean {

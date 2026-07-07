@@ -1,7 +1,7 @@
 import rulesData from "@/data/search-query-rules.json";
 import { normalizeQuery, emptyQueryPlan, explicitFiltersToPartialPlan } from "@/lib/search/query-plan-v2";
 import type { QueryPlan, ExplicitV2Filters } from "@/lib/search/query-plan-v2";
-import { extractTownFromNormalizedQuery } from "@/lib/ai/search-ai";
+import { extractTownsFromNormalizedQuery } from "@/lib/ai/town-query-aliases";
 
 type RulePlan = {
   categorySlug?: string;
@@ -54,19 +54,33 @@ const IN_PREPOSITION_RE = /\bin\b/;
  * Reuses the canonical town alias list from the V1 keyword fast path so the
  * two pipelines can't drift on what counts as a town mention.
  */
-function extractTownScope(normalizedQuery: string): { townSlug: string; scope: "exact" | "near" } | null {
-  const townSlug = extractTownFromNormalizedQuery(normalizedQuery);
-  if (!townSlug) return null;
-  if (NEAR_PREPOSITION_RE.test(normalizedQuery)) return { townSlug, scope: "near" };
-  if (IN_PREPOSITION_RE.test(normalizedQuery)) return { townSlug, scope: "exact" };
-  // Bare town mention with no preposition — default to "near", matching V1's keyword-path default.
-  return { townSlug, scope: "near" };
+function extractTownScope(
+  normalizedQuery: string,
+): { townSlugs: string[]; scope: "exact" | "near" } | null {
+  const townSlugs = extractTownsFromNormalizedQuery(normalizedQuery);
+  if (!townSlugs.length) return null;
+  const scope = NEAR_PREPOSITION_RE.test(normalizedQuery)
+    ? "near"
+    : IN_PREPOSITION_RE.test(normalizedQuery)
+      ? "exact"
+      : "near";
+  return { townSlugs, scope };
+}
+
+function applyExtractedTowns(
+  merged: QueryPlan,
+  extractedTown: { townSlugs: string[]; scope: "exact" | "near" },
+): void {
+  merged.townSlugs = extractedTown.townSlugs;
+  merged.townSlug = extractedTown.townSlugs[0] ?? null;
+  merged.scope =
+    extractedTown.townSlugs.length > 1 ? "exact" : extractedTown.scope;
 }
 
 function mergePlanLayers(
   base: QueryPlan,
   rulePlan: RulePlan | null,
-  extractedTown: { townSlug: string; scope: "exact" | "near" } | null,
+  extractedTown: { townSlugs: string[]; scope: "exact" | "near" } | null,
   explicit: Partial<QueryPlan>,
 ): QueryPlan {
   const merged: QueryPlan = { ...base };
@@ -82,14 +96,16 @@ function mergePlanLayers(
 
   // Free-text town mention fills townSlug/scope when no rule already set one.
   if (extractedTown && merged.townSlug == null) {
-    merged.townSlug = extractedTown.townSlug;
-    merged.scope    = extractedTown.scope;
+    applyExtractedTowns(merged, extractedTown);
   }
 
   // Explicit UI filters always win over rule-derived and extracted fields.
   if (explicit.categorySlug        != null) merged.categorySlug        = explicit.categorySlug;
   if (explicit.serviceCategorySlug != null) merged.serviceCategorySlug = explicit.serviceCategorySlug;
-  if (explicit.townSlug            != null) merged.townSlug            = explicit.townSlug;
+  if (explicit.townSlug            != null) {
+    merged.townSlug = explicit.townSlug;
+    merged.townSlugs = [explicit.townSlug];
+  }
   if (explicit.priceLevel          != null) merged.priceLevel          = explicit.priceLevel;
   if (explicit.vibeTags?.length)            merged.vibeTags            = explicit.vibeTags;
   if (explicit.scope               != null) merged.scope               = explicit.scope;

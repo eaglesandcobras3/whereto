@@ -32,26 +32,21 @@ import {
   type DiscoveryFlags,
 } from "@/lib/nav/discovery-links";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  try {
-    const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
-    const supabase = getServiceSupabaseOrNull();
-    if (!supabase) return [];
-    const [areas, pois] = await Promise.all([
-      supabase.from("areas").select("slug").is("archived_at", null).eq("status", "published"),
-      supabase.from("points_of_interest").select("slug").is("archived_at", null).eq("status", "published"),
-    ]);
-    const slugs = new Set<string>();
-    for (const r of [...(areas.data ?? []), ...(pois.data ?? [])]) {
-      const s = String((r as { slug: string }).slug);
-      if (s) slugs.add(s);
-    }
-    return [...slugs].map((slug) => ({ slug }));
-  } catch {
-    return [];
+  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
+  const supabase = getServiceSupabase();
+  const [areas, pois] = await Promise.all([
+    supabase.from("areas").select("slug").is("archived_at", null).eq("status", "published"),
+    supabase.from("points_of_interest").select("slug").is("archived_at", null).eq("status", "published"),
+  ]);
+  const slugs = new Set<string>();
+  for (const r of [...(areas.data ?? []), ...(pois.data ?? [])]) {
+    const s = String((r as { slug: string }).slug);
+    if (s) slugs.add(s);
   }
+  return [...slugs].map((slug) => ({ slug }));
 }
 
 type SidebarTownLink = { name: string; slug: string };
@@ -81,17 +76,13 @@ function areaSectionSearchHref(
   place: PublicPlacePage,
   categorySlug: string,
 ): string | null {
-  const params = new URLSearchParams();
-  if (place.source === "area") {
-    params.set("area_id", place.id);
-  } else if (place.parent_area_id) {
-    params.set("area_id", place.parent_area_id);
-  } else if (!place.town_id) {
+  if (!place.town_id) {
     return null;
   }
-  if (place.town_id?.trim()) params.set("town_id", place.town_id.trim());
+  const params = new URLSearchParams();
+  params.set("town_id", place.town_id.trim());
   params.set("category", categorySlug);
-  return `/search?${params.toString()}`;
+  return `/discover?type=storefront&${params.toString()}`;
 }
 
 function areaBrowseDiscoveryHref(

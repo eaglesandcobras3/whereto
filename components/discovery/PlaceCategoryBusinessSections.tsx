@@ -6,6 +6,7 @@ import { browseGroupIcon } from "@/lib/business-categories/group-browse-sections
 import type { BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
 import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 type Props = {
   placeName: string;
@@ -20,15 +21,7 @@ type Props = {
 };
 
 function useIsDesktop() {
-  const [desktop, setDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    setDesktop(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return desktop;
+  return useMediaQuery("(min-width: 1024px)");
 }
 
 export function PlaceCategoryBusinessSections({
@@ -46,7 +39,8 @@ export function PlaceCategoryBusinessSections({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    if (isDesktop) {
+    if (!isDesktop) return;
+    queueMicrotask(() => {
       setExpandedIds((prev) => {
         if (prev.size > 0) return prev;
         const initial = new Set<string>();
@@ -55,7 +49,7 @@ export function PlaceCategoryBusinessSections({
         }
         return initial;
       });
-    }
+    });
   }, [isDesktop, defaultExpandedCount, sections]);
 
   if (sections.length === 0) {

@@ -61,7 +61,7 @@ export async function getTownBySlug(slug: string) {
     .limit(1);
 
   if (error) {
-    // eslint-disable-next-line no-console
+     
     console.error("getTownBySlug", { slug: key, error });
     return null;
   }
@@ -250,8 +250,8 @@ export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeat
 }
 
 /**
- * All listable `areas` for a town. `points_of_interest` is a separate product surface
- * (/search?type=access); the town hub only lists the `areas` table for now.
+ * All listable `areas` for a town. `points_of_interest` is a separate product surface;
+ * the town hub only lists the `areas` table for now.
  */
 export async function getTownAreasForLocalGuide(
   townId: string,

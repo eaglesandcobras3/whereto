@@ -9,7 +9,9 @@ Two-layer eval model:
 | Query eval | `scripts/eval-search.ts` | For this query, are results right? |
 | Data eval | `scripts/eval-search-data.ts` | Is each business findable on its own terms? |
 
-Both layers feed into `scripts/search-preflight.ts` — the single go/no-go gate before enabling search.
+Both layers feed into `scripts/search-preflight.ts` — a **manual** go/no-go gate when tuning search/discover ranking locally.
+
+**GitLab/GitHub CI** runs `lint`, `npm test`, and `npm run build` only. Search eval is not a merge gate (legacy `/search` is retired; `/discover` is the live surface).
 
 ## Quick commands
 

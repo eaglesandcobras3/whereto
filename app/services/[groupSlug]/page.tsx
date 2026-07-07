@@ -11,7 +11,7 @@ import {
 } from "@/lib/data/service-browse-group-hub";
 import { ServiceBrowseGroupHubView } from "@/components/services/ServiceBrowseGroupHubView";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 type Props = { params: Promise<{ groupSlug: string }> };
 

@@ -3,6 +3,7 @@ export type DiscoverEntityType = "storefront" | "service";
 export type BuildDiscoverUrlParams = {
   type?: DiscoverEntityType;
   townSlugs?: string[];
+  townScope?: "exact" | "near";
   category?: string;
   service_category?: string;
   tags?: string[];
@@ -21,6 +22,8 @@ export function buildDiscoverUrl(params: BuildDiscoverUrlParams): string {
 
   const townSlugs = params.townSlugs?.filter(Boolean) ?? [];
   if (townSlugs.length) sp.set("town", townSlugs.join(","));
+  if (params.townScope === "near") sp.set("town_scope", "near");
+  else if (params.townScope === "exact") sp.set("town_scope", "exact");
 
   if (entityType === "storefront" && params.category) sp.set("category", params.category);
   else if (!entityType && params.category) sp.set("category", params.category);
@@ -45,6 +48,7 @@ export type DiscoverUrlLinkParams = {
   type?: string;
   town?: string;
   town_id?: string;
+  town_scope?: string;
   category?: string;
   service_category?: string;
   facet?: string;
@@ -62,6 +66,7 @@ export function buildDiscoverUrlFromLinkParams(params: DiscoverUrlLinkParams): s
     if (params.category?.trim()) sp.set("category", params.category.trim());
     if (params.service_category?.trim()) sp.set("service_category", params.service_category.trim());
     if (params.facet?.trim()) sp.set("facet", params.facet.trim());
+    if (params.town_scope?.trim()) sp.set("town_scope", params.town_scope.trim());
     if (params.q?.trim()) sp.set("q", params.q.trim());
     if (params.page && params.page > 1) sp.set("page", String(params.page));
     return `/discover?${sp.toString()}`;
@@ -87,6 +92,12 @@ export function buildDiscoverUrlFromLinkParams(params: DiscoverUrlLinkParams): s
   return buildDiscoverUrl({
     type,
     townSlugs,
+    townScope:
+      params.town_scope === "near"
+        ? "near"
+        : params.town_scope === "exact"
+          ? "exact"
+          : undefined,
     category: params.category,
     service_category: params.service_category,
     tags,
