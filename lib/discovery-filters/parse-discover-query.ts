@@ -10,6 +10,8 @@ import { resolveQueryPlan } from "@/lib/search/resolve-query-plan";
 export type ParsedDiscoverQuery = {
   type?: "storefront" | "services";
   town?: string;
+  /** `near` expands to a corridor zone; `exact` keeps the named town only. */
+  town_scope?: "exact" | "near";
   category?: string;
   service_category?: string;
   facet?: string;
@@ -95,7 +97,12 @@ function buildResidualQuery(
   plan: ReturnType<typeof resolveQueryPlan>,
   townSlug: string | null,
   resolvedTags: string[],
+  hasCategoryRollup: boolean,
 ): string | undefined {
+  if (plan.matchedRuleId && hasCategoryRollup) {
+    return undefined;
+  }
+
   let terms =
     plan.searchTerms.length > 0
       ? [...plan.searchTerms]
@@ -197,7 +204,22 @@ export function parseDiscoverQuery(
 
   const allTags = tagResolution.tags;
   const town = plan.townSlug ?? undefined;
-  const q = buildResidualQuery(normalized, plan, plan.townSlug, allTags);
+  const town_scope =
+    town && plan.scope === "exact"
+      ? "exact"
+      : town
+        ? "near"
+        : undefined;
+  const hasCategoryRollup = Boolean(
+    categoryFields.category || categoryFields.service_category,
+  );
+  const q = buildResidualQuery(
+    normalized,
+    plan,
+    plan.townSlug,
+    allTags,
+    hasCategoryRollup,
+  );
 
   const deterministicSignals: DeterministicParseSignals = {
     matchedRuleId: plan.matchedRuleId ?? undefined,
@@ -228,6 +250,7 @@ export function parseDiscoverQuery(
   return {
     type: categoryFields.type,
     town,
+    town_scope,
     category: categoryFields.category,
     service_category: categoryFields.service_category,
     facet: allTags.length ? allTags.join(",") : undefined,

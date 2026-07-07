@@ -71,6 +71,20 @@ describe("parseDiscoverQuery", () => {
     ).toBe(true);
   });
 
+  it("routes donuts near rosemary with near scope and no redundant q", () => {
+    const parsed = parseDiscoverQuery("donuts near rosemary");
+    expect(parsed.expanded).toBe(true);
+    expect(parsed.town).toBe("rosemary-beach");
+    expect(parsed.town_scope).toBe("near");
+    expect(parsed.category).toBe("coffee_and_treats");
+    expect(parsed.q).toBeUndefined();
+  });
+
+  it("keeps exact scope for donuts in rosemary beach", () => {
+    const parsed = parseDiscoverQuery("donuts in rosemary beach");
+    expect(parsed.town_scope).toBe("exact");
+  });
+
   it("marks coffee as extreme-confidence rule match", () => {
     const parsed = parseDiscoverQuery("coffee");
     expect(parsed.deterministicSignals?.matchedRuleId).toBe("category_coffee");

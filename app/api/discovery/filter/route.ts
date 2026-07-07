@@ -12,10 +12,17 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const sp = url.searchParams;
   const supabase = getServiceSupabase();
+  const townScope =
+    sp.get("town_scope") === "near"
+      ? "near"
+      : sp.get("town_scope") === "exact"
+        ? "exact"
+        : undefined;
   const { town_ids } = await resolveTownIdsFromParam(
     supabase,
     sp.get("town"),
     sp.get("town_id"),
+    { townScope },
   );
 
   const state = parseDiscoveryFilterState(
