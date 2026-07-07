@@ -1,7 +1,12 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
-import { isAskEnabled, isDiscoverEnabled, isOnboardEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
+import {
+  isAskEnabled,
+  isDiscoverEnabled,
+  isOnboardEnabled,
+  isSearchInspectorEnabled,
+} from "@/lib/feature-flags-core";
 import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import {
   categoryDbSlugFromLegacyOn30aSegment,
@@ -11,6 +16,24 @@ import { businessBrowseGroupFromPublicSegment } from "@/lib/business-categories/
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 import { isPortalProtectedPath, portalLoginNextPath } from "@/lib/portal/portal-paths";
+
+function pathnameNeedsFeatureFlags(pathname: string): boolean {
+  if (pathname === "/ask" || pathname.startsWith("/ask/")) return true;
+  if (pathname === "/discover" || pathname.startsWith("/discover/")) return true;
+  if (pathname === "/api/discovery" || pathname.startsWith("/api/discovery/")) return true;
+  if (pathname === "/list-your-business") return true;
+  if (pathname === "/portal" || pathname.startsWith("/portal/")) return true;
+  if (pathname.startsWith("/api/portal/")) return true;
+  if (pathname === "/admin/review" || pathname.startsWith("/api/admin/review")) return true;
+  if (pathname === "/admin/subscriptions" || pathname.startsWith("/api/admin/subscriptions")) {
+    return true;
+  }
+  if (pathname.startsWith("/api/admin/businesses")) return true;
+  if (pathname === "/admin/search-debug" || pathname.startsWith("/admin/search-debug/")) {
+    return true;
+  }
+  return false;
+}
 
 /** Legacy `/*-on-30a` category URLs → short canonical paths (e.g. `/restaurants`). */
 function maybeRedirectLegacyCategoryOn30a(request: NextRequest): NextResponse | null {
@@ -97,6 +120,24 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
 }
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const legacyOn30aRedirect = maybeRedirectLegacyCategoryOn30a(request);
+  if (legacyOn30aRedirect) return legacyOn30aRedirect;
+
+  const legacyCategoryRedirect = maybeRedirectLegacyCategory(request);
+  if (legacyCategoryRedirect) return legacyCategoryRedirect;
+
+  const searchRedirect = maybeRedirectSearch(request);
+  if (searchRedirect) return searchRedirect;
+
+  const needsFlags = pathnameNeedsFeatureFlags(pathname);
+  const needsAuth = isPortalProtectedPath(pathname);
+
+  if (!needsFlags && !needsAuth) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -107,8 +148,9 @@ export async function middleware(request: NextRequest) {
     process.env.sb_publishable_key ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  let authenticatedUserId: string | undefined;
   let supabase: ReturnType<typeof createServerClient> | undefined;
+  let authenticatedUserId: string | undefined;
+  let portalUser: { id: string } | null = null;
 
   if (supabaseUrl && supabaseKey) {
     supabase = createServerClient(supabaseUrl, supabaseKey, {
@@ -128,14 +170,16 @@ export async function middleware(request: NextRequest) {
       },
     });
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    authenticatedUserId = user?.id;
+    if (needsAuth) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      portalUser = user;
+      authenticatedUserId = user?.id;
+    }
   }
 
   const flags = await getFeatureFlagsForMiddleware(request, authenticatedUserId);
-  const { pathname } = request.nextUrl;
 
   if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
     return NextResponse.redirect(new URL("/", request.url));
@@ -173,30 +217,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (!isSearchInspectorEnabled(flags) &&
+  if (
+    isOnboardEnabled(flags) &&
+    pathname === "/list-your-business"
+  ) {
+    return NextResponse.redirect(new URL("/portal/businesses/new", request.url));
+  }
+
+  if (
+    !isSearchInspectorEnabled(flags) &&
     (pathname === "/admin/search-debug" || pathname.startsWith("/admin/search-debug/"))
   ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  const legacyOn30aRedirect = maybeRedirectLegacyCategoryOn30a(request);
-  if (legacyOn30aRedirect) return legacyOn30aRedirect;
-
-  const legacyCategoryRedirect = maybeRedirectLegacyCategory(request);
-  if (legacyCategoryRedirect) return legacyCategoryRedirect;
-
-  const searchRedirect = maybeRedirectSearch(request);
-  if (searchRedirect) return searchRedirect;
-
   if (!supabase) {
     return supabaseResponse;
   }
 
-  if (isOnboardEnabled(flags) && isPortalProtectedPath(pathname)) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+  if (isOnboardEnabled(flags) && needsAuth) {
+    if (!portalUser) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("next", portalLoginNextPath(pathname, request.nextUrl.search));
       return NextResponse.redirect(loginUrl);

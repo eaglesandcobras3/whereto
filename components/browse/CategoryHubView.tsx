@@ -13,15 +13,15 @@ import type {
   CategoryTownGroup,
 } from "@/lib/data/category-hub";
 import { categoryHubIntro } from "@/lib/seo/page-intro-copy";
+import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 
 type Props = {
   cat: CategoryRow;
   townGroups: CategoryTownGroup[];
   businesses: CategoryBusinessRow[];
-  seoImprovements?: boolean;
 };
 
-export function CategoryHubView({ cat, townGroups, businesses, seoImprovements = false }: Props) {
+export function CategoryHubView({ cat, townGroups, businesses }: Props) {
   const hubPath = categoryHubPath(cat.slug);
   const townCount = townGroups.filter((g) => g.slug).length;
   const intro =
@@ -54,12 +54,12 @@ export function CategoryHubView({ cat, townGroups, businesses, seoImprovements =
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
-      {seoImprovements ? (
+      <SeoImprovementsGate>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
         />
-      ) : null}
+      </SeoImprovementsGate>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
@@ -96,7 +96,9 @@ export function CategoryHubView({ cat, townGroups, businesses, seoImprovements =
           </div>
         </div>
 
-        {seoImprovements ? <CategoryHubEditorial categorySlug={cat.slug} /> : null}
+        <SeoImprovementsGate>
+          <CategoryHubEditorial categorySlug={cat.slug} />
+        </SeoImprovementsGate>
       </main>
     </div>
   );

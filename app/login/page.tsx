@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LoginForm } from "@/app/login/login-form";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -14,7 +13,9 @@ export default function LoginPage() {
       <p className="mt-2 text-sm text-zinc-600">
         Sign in to access saves, admin features, and personalized results.
       </p>
-      <LoginForm />
+      <Suspense fallback={<p className="text-sm text-zinc-500">Loading form…</p>}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }

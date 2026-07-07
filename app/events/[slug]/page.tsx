@@ -14,8 +14,7 @@ import {
 } from "@/lib/seo/metadata-snippets";
 import { generateBreadcrumbSchema, generateEventSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
-import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
+import { EventsBreadcrumbLink } from "@/components/feature-flags/EventsBreadcrumbLink";
 
 export const revalidate = 21600;
 
@@ -168,7 +167,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [event, featureFlags] = await Promise.all([loadEvent(slug), getAllFeatureFlags()]);
+  const event = await loadEvent(slug);
   if (!event) notFound();
 
   const heroIsRemote =
@@ -212,13 +211,7 @@ export default async function EventDetailPage({ params }: Props) {
           Home
         </Link>
         <span className="material-symbols-outlined !text-xs opacity-40">chevron_right</span>
-        {isDiscoveryEnabled(featureFlags) ? (
-          <Link href={discoveryHref(featureFlags, { type: "events" })} className="hover:text-[var(--color-primary)]">
-            Events
-          </Link>
-        ) : (
-          <span className="text-[var(--color-text-secondary)]">Events</span>
-        )}
+        <EventsBreadcrumbLink />
         <span className="material-symbols-outlined !text-xs opacity-40">chevron_right</span>
         <span className="text-[var(--color-text-secondary)]">{event.title}</span>
       </nav>
