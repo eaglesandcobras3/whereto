@@ -6,6 +6,7 @@ import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard"
 import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { buildDiscoverUrl, buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
+import type { DiscoverUrlLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import {
   fetchDiscoverFilter,
   type DiscoverFilterApiParams,
@@ -136,7 +137,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         if (!res.ok) return;
         const body = (await res.json()) as { parsed?: { expanded?: boolean } & Record<string, unknown> };
         if (!body.parsed?.expanded) return;
-        router.replace(buildDiscoverUrlFromLinkParams(body.parsed));
+        router.replace(buildDiscoverUrlFromLinkParams(body.parsed as DiscoverUrlLinkParams));
       } catch {
         /* NL expansion is best-effort */
       }

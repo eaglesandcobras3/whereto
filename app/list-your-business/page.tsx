@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SiteDocument } from "@/components/legal/SiteDocument";
-import { ListBusinessForm, type ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
-import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { ListYourBusinessClient } from "@/components/listing-request/ListYourBusinessClient";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
+
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/list-your-business"),
@@ -23,37 +22,7 @@ export const metadata: Metadata = {
   }),
 };
 
-async function loadTowns(): Promise<ListBusinessTownOption[]> {
-  try {
-    const supabase = getServiceSupabase();
-    const townsRes = await supabase
-      .from("towns")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .order("title");
-    if (townsRes.error) {
-      console.error("list-your-business towns", townsRes.error);
-    }
-    return (townsRes.data ?? []).map((t) => ({
-      id: t.id as string,
-      title: (t as { title: string }).title,
-      slug: t.slug as string,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-export default async function ListYourBusinessPage() {
-  const flags = await getAllFeatureFlags();
-  if (isOnboardEnabled(flags)) {
-    redirect("/portal/businesses/new");
-  }
-
-  const towns = await loadTowns();
-
+export default function ListYourBusinessPage() {
   return (
     <SiteDocument
       title="List your business"
@@ -66,20 +35,9 @@ export default async function ListYourBusinessPage() {
         </Link>
         .
       </p>
-      {towns.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          Town directory is temporarily unavailable. Please try again later or email{" "}
-          <a
-            className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
-            href="mailto:hello@whereto30a.com"
-          >
-            hello@whereto30a.com
-          </a>
-          .
-        </p>
-      ) : (
-        <ListBusinessForm towns={towns} />
-      )}
+      <Suspense fallback={<p className="text-sm text-[var(--color-text-secondary)]">Loading form…</p>}>
+        <ListYourBusinessClient />
+      </Suspense>
     </SiteDocument>
   );
 }
