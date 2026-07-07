@@ -431,6 +431,20 @@ describe("no rule match — FTS fallback", () => {
 
 // ── Longest-phrase-wins ───────────────────────────────────────────────────────
 
+describe("multi-town extraction", () => {
+  it("extracts multiple towns from and/or lists with exact scope", () => {
+    const plan = resolveQueryPlan("donuts in rosemary seaside and alys");
+    expect(plan.townSlugs).toEqual(["rosemary-beach", "seaside", "alys-beach"]);
+    expect(plan.scope).toBe("exact");
+  });
+
+  it("keeps near scope for a single-town proximity query", () => {
+    const plan = resolveQueryPlan("donuts near rosemary");
+    expect(plan.townSlugs).toEqual(["rosemary-beach"]);
+    expect(plan.scope).toBe("near");
+  });
+});
+
 describe("longest phrase wins", () => {
   it("'golf carts' matches collision_mobility_rental not collision_golf_activity", () => {
     // Both rules have phrases containing 'golf'. 'golf carts' (10 chars) beats 'golf course' (11)

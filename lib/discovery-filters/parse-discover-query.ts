@@ -58,6 +58,7 @@ const RESIDUAL_STOP_WORDS = new Set([
   "children",
   "family",
   "and",
+  "or",
   "with",
 ]);
 
@@ -95,7 +96,7 @@ function resolveCategoryFromPlan(plan: ReturnType<typeof resolveQueryPlan>): {
 function buildResidualQuery(
   normalized: string,
   plan: ReturnType<typeof resolveQueryPlan>,
-  townSlug: string | null,
+  townSlugs: string[],
   resolvedTags: string[],
   hasCategoryRollup: boolean,
 ): string | undefined {
@@ -108,8 +109,13 @@ function buildResidualQuery(
       ? [...plan.searchTerms]
       : normalized.split(/\s+/).filter(Boolean);
 
-  if (townSlug) {
-    const townTokens = new Set(townSlug.replace(/-/g, " ").split(/\s+/).filter(Boolean));
+  if (townSlugs.length) {
+    const townTokens = new Set<string>();
+    for (const slug of townSlugs) {
+      for (const token of slug.replace(/-/g, " ").split(/\s+/).filter(Boolean)) {
+        townTokens.add(token);
+      }
+    }
     terms = terms.filter((token) => !townTokens.has(token));
   }
 
@@ -167,7 +173,7 @@ export function parseDiscoverQuery(
 
   const tagResolution = resolveQueryTags(trimmed, plan, {
     vocabulary: options?.vocabulary,
-    townSlug: plan.townSlug,
+    townSlugs: plan.townSlugs,
   });
 
   if (
@@ -203,20 +209,21 @@ export function parseDiscoverQuery(
   }
 
   const allTags = tagResolution.tags;
-  const town = plan.townSlug ?? undefined;
+  const townSlugs = plan.townSlugs;
+  const town = townSlugs.length ? townSlugs.join(",") : undefined;
   const town_scope =
-    town && plan.scope === "exact"
-      ? "exact"
-      : town
-        ? "near"
-        : undefined;
+    !town
+      ? undefined
+      : townSlugs.length > 1 || plan.scope === "exact"
+        ? "exact"
+        : "near";
   const hasCategoryRollup = Boolean(
     categoryFields.category || categoryFields.service_category,
   );
   const q = buildResidualQuery(
     normalized,
     plan,
-    plan.townSlug,
+    townSlugs,
     allTags,
     hasCategoryRollup,
   );
