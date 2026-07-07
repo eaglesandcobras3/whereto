@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
@@ -244,17 +245,29 @@ function buildCompanyLinks(listBusinessHref: string) {
 ];
 }
 
+const getCachedFooterBrowseData = unstable_cache(
+  async () => {
+    const [townLinks, areaLinks, businessGroupLinks, serviceGroupLinks] =
+      await Promise.all([
+        getFooterTowns(),
+        getFooterAreas(),
+        getFooterBusinessBrowseGroups(),
+        getFooterServiceBrowseGroups(),
+      ]);
+    return { townLinks, areaLinks, businessGroupLinks, serviceGroupLinks };
+  },
+  ["site-footer-browse-data"],
+  { revalidate: 3600 },
+);
+
 export async function SiteFooter() {
   const flags = await getAllFeatureFlags();
   const listBusinessHref = isOnboardEnabled(flags) ? "/portal/businesses/new" : "/list-your-business";
   const companyLinks = buildCompanyLinks(listBusinessHref);
 
-  const [townLinks, areaLinks, businessGroupLinks, serviceGroupLinks, instagramUrl, tiktokUrl] =
+  const [{ townLinks, areaLinks, businessGroupLinks, serviceGroupLinks }, instagramUrl, tiktokUrl] =
     await Promise.all([
-    getFooterTowns(),
-    getFooterAreas(),
-    getFooterBusinessBrowseGroups(),
-    getFooterServiceBrowseGroups(),
+    getCachedFooterBrowseData(),
     Promise.resolve(getSiteInstagramUrl()),
     Promise.resolve(getSiteTikTokUrl()),
   ]);

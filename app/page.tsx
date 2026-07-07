@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { HomePage } from "@/components/home/HomePage";
+import { HomeQueryRedirect } from "@/components/home/HomeQueryRedirect";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
-import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
@@ -44,18 +43,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-type HomeProps = {
-  searchParams: Promise<{ q?: string | string[] }>;
-};
-
-export default async function Home({ searchParams }: HomeProps) {
+export default async function Home() {
   const flags = await getAllFeatureFlags();
-  const { q } = await searchParams;
-  const query = typeof q === "string" ? q : Array.isArray(q) ? q[0] : undefined;
-  if (query?.trim() && isDiscoveryEnabled(flags)) {
-    redirect(discoveryHref(flags, { q: query.trim() }));
-  }
-
   const heroSettings = await getHomeHeroSettings();
   const supabase = getServiceSupabase();
 
@@ -158,11 +147,14 @@ export default async function Home({ searchParams }: HomeProps) {
     });
 
   return (
-    <HomePage
-      featuredBusinesses={featuredBusinesses}
-      towns={townList}
-      heroSettings={heroSettings}
-      seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
-    />
+    <>
+      <HomeQueryRedirect />
+      <HomePage
+        featuredBusinesses={featuredBusinesses}
+        towns={townList}
+        heroSettings={heroSettings}
+        seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
+      />
+    </>
   );
 }
