@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Metadata } from "next";
-import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import {
   metaDescriptionSnippet,
@@ -59,8 +59,7 @@ function mapBrowseGroupBusinessRow(row: Record<string, unknown>): CategoryBusine
 export async function loadBrowseGroupHubPage(
   groupSlug: BusinessCategoryGroupSlug,
 ): Promise<BrowseGroupHubPage | null> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return null;
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("businesses_view")
     .select(BROWSE_GROUP_BUSINESS_SELECT)

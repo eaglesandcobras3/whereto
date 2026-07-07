@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -19,7 +19,7 @@ import {
 import { generateCollectionPageSchema } from "@/lib/seo/breadcrumb-schema";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export const metadata: Metadata = townsHubMetadata();
 
@@ -55,8 +55,7 @@ const TRAVEL_STYLE_LINKS = [
 ] as const;
 
 async function getTowns(): Promise<TownRow[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("towns_view")
     .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort")

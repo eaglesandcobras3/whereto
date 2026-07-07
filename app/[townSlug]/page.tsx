@@ -267,10 +267,10 @@ async function getTownPageData(townId: string, townSlug: string) {
 type Props = { params: Promise<{ townSlug: string }> };
 
 /**
- * Town guides are read-heavy and change infrequently enough for hour-level ISR.
+ * Town guides are read-heavy and change infrequently enough for multi-hour ISR.
  * This keeps repeated bot traffic on the same slug off the server function.
  */
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
   const categorySegments = new Set(
@@ -278,23 +278,17 @@ export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
   );
   const segments = new Set(categorySegments);
 
-  try {
-    const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
-    const supabase = getServiceSupabaseOrNull();
-    if (supabase) {
-      const { data } = await supabase
-        .from("towns")
-        .select("slug")
-        .is("archived_at", null)
-        .order("slug");
-      for (const row of data ?? []) {
-        const slug = String((row as { slug: string }).slug);
-        if (!slug || isReservedRootSlug(slug) || categorySegments.has(slug)) continue;
-        segments.add(slug);
-      }
-    }
-  } catch {
-    // category segments only
+  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from("towns")
+    .select("slug")
+    .is("archived_at", null)
+    .order("slug");
+  for (const row of data ?? []) {
+    const slug = String((row as { slug: string }).slug);
+    if (!slug || isReservedRootSlug(slug) || categorySegments.has(slug)) continue;
+    segments.add(slug);
   }
 
   return [...segments].map((townSlug) => ({ townSlug }));

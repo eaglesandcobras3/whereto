@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
@@ -23,7 +23,7 @@ import {
 } from "@/lib/seo/breadcrumb-schema";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 const DAILY_FEATURED_LIMIT = 6;
 const GUIDE_POOL_LIMIT = 100;
@@ -59,8 +59,7 @@ function guideSubtitle(
 }
 
 async function getGuides(): Promise<GuideRow[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("guides")
     .select(

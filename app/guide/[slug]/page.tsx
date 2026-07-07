@@ -27,24 +27,19 @@ import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  try {
-    const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
-    const supabase = getServiceSupabaseOrNull();
-    if (!supabase) return [];
-    const { data } = await supabase
-      .from("guides")
-      .select("slug")
-      .is("archived_at", null)
-      .eq("status", "published");
-    return (data ?? [])
-      .map((r) => ({ slug: String((r as { slug: string }).slug) }))
-      .filter((r) => r.slug);
-  } catch {
-    return [];
-  }
+  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from("guides")
+    .select("slug")
+    .is("archived_at", null)
+    .eq("status", "published");
+  return (data ?? [])
+    .map((r) => ({ slug: String((r as { slug: string }).slug) }))
+    .filter((r) => r.slug);
 }
 
 type Props = { params: Promise<{ slug: string }> };

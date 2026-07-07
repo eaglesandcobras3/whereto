@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { normalizeServiceCategorySlug } from "@/lib/service-categories/normalize";
 import { groupListedServiceCategories } from "@/lib/service-categories/group-listed-categories";
@@ -53,9 +53,7 @@ export type ServiceSpecialtySection = {
 };
 
 function vendorBaseQuery() {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return null;
-  return supabase
+  return getServiceSupabase()
     .from("businesses_view")
     .select(
       "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, service_category_id, service_category_slug, service_category_title, towns ( title )",
@@ -88,8 +86,7 @@ function mapVendorRow(row: Record<string, unknown>): ServiceVendorRow {
 }
 
 export async function listServiceCategories(): Promise<ServiceCategoryRow[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
+  const supabase = getServiceSupabase();
   const { data: cats, error } = await supabase
     .from("service_categories")
     .select("id, title, slug, excerpt, sort")
@@ -102,16 +99,13 @@ export async function listServiceCategories(): Promise<ServiceCategoryRow[]> {
     return [];
   }
 
-  const vendorQuery = getServiceSupabaseOrNull();
-  const { data: vendors } = vendorQuery
-    ? await vendorQuery
-        .from("businesses_view")
-        .select("service_category_id")
-        .is("archived_at", null)
-        .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .eq("is_service_business", true)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    : { data: [] as { service_category_id: string | null }[] };
+  const { data: vendors } = await getServiceSupabase()
+    .from("businesses_view")
+    .select("service_category_id")
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_service_business", true)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const counts = new Map<string, number>();
   for (const row of vendors ?? []) {
@@ -159,18 +153,6 @@ export async function getServiceVendorsPage(input: {
   const activeCategory = specialtySlug ? await getServiceCategoryBySlug(specialtySlug) : null;
 
   let q = vendorBaseQuery();
-  if (!q) {
-    return {
-      vendors: [],
-      totalCount: 0,
-      page,
-      pageSize,
-      totalPages: 0,
-      categories,
-      activeCategory,
-      query: trimmedQ,
-    };
-  }
 
   if (activeCategory) {
     q = q.eq("service_category_id", activeCategory.id);
@@ -218,9 +200,7 @@ export async function getServiceVendorsPage(input: {
 }
 
 export async function countServiceVendors(): Promise<number> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return 0;
-  const { count, error } = await supabase
+  const { count, error } = await getServiceSupabase()
     .from("businesses_view")
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
@@ -243,9 +223,7 @@ export async function getServiceSpecialtySections(
   const categoryIds = categories.map((c) => c.id);
   const trimmedQ = query?.trim() ?? "";
 
-  let q = vendorBaseQuery();
-  if (!q) return [];
-  q = q.in("service_category_id", categoryIds);
+  let q = vendorBaseQuery().in("service_category_id", categoryIds);
 
   if (trimmedQ) {
     const safe = trimmedQ.replace(/[%_,\\]/g, " ").trim();
@@ -304,9 +282,7 @@ export async function getServiceSpecialtySections(
 export async function loadServiceBrowseGroupVendors(
   groupSlug: ServiceCategoryGroupSlug,
 ): Promise<ServiceVendorRow[]> {
-  const q = vendorBaseQuery();
-  if (!q) return [];
-  const { data, error } = await q
+  const { data, error } = await vendorBaseQuery()
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(HUB_VENDOR_POOL_LIMIT);

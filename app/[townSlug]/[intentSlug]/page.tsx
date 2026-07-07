@@ -29,7 +29,7 @@ import { relatedGuidesForTownSlug } from "@/lib/seo/guide-related-links";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 type Props = {
   params: Promise<{ townSlug: string; intentSlug: string }>;

@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Metadata } from "next";
-import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { categoryHubMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
@@ -64,8 +64,7 @@ export type CategoryHubSection = BrowseGroupSection;
 
 export async function listPublishedCategorySlugs(): Promise<string[]> {
   try {
-    const supabase = getServiceSupabaseOrNull();
-    if (!supabase) return [];
+    const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("business_categories")
       .select("slug")
@@ -81,8 +80,7 @@ export async function listPublishedCategorySlugs(): Promise<string[]> {
 }
 
 export async function loadCategory(slug: string): Promise<CategoryRow | null> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return null;
+  const supabase = getServiceSupabase();
   const { data } = await supabase
     .from("business_categories")
     .select("id, title, slug, excerpt")
@@ -110,8 +108,7 @@ export async function resolveCategorySlugFromPublicPath(
 export async function loadBusinessesForCategory(
   categoryId: string,
 ): Promise<CategoryBusinessRow[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
+  const supabase = getServiceSupabase();
   const { data } = await supabase
     .from("businesses_view")
     .select(
@@ -220,9 +217,7 @@ function mapCategoryHubBusinessRow(row: Record<string, unknown>) {
 }
 
 export async function countCategoryHubBusinesses(): Promise<number> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return 0;
-  const { count, error } = await supabase
+  const { count, error } = await getServiceSupabase()
     .from("businesses_view")
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
@@ -238,8 +233,7 @@ export async function countCategoryHubBusinesses(): Promise<number> {
 }
 
 export async function getCategoryHubSections(): Promise<CategoryHubSection[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
+  const supabase = getServiceSupabase();
 
   const { data: businessRows, error: bizErr } = await supabase
     .from("businesses_view")

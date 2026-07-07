@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { HomePage } from "@/components/home/HomePage";
 import { HomeQueryRedirect } from "@/components/home/HomeQueryRedirect";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
-import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
@@ -18,7 +18,7 @@ import { homePageMetadata } from "@/lib/seo/hub-metadata";
 
 // Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 const HOME_DESCRIPTION =
   "Plan your 30A trip with local guides to beach towns, restaurants, shopping, beach access, and Emerald Coast travel tips.";
@@ -47,23 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   const flags = await getAllFeatureFlags();
   const heroSettings = await getHomeHeroSettings();
-  const supabase = getServiceSupabaseOrNull();
-
-  if (!supabase) {
-    return (
-      <>
-        <Suspense fallback={null}>
-          <HomeQueryRedirect />
-        </Suspense>
-        <HomePage
-          featuredBusinesses={[]}
-          towns={[]}
-          heroSettings={heroSettings}
-          seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
-        />
-      </>
-    );
-  }
+  const supabase = getServiceSupabase();
 
   const { data: townRows, error: townErr } = await supabase
     .from("towns_view")

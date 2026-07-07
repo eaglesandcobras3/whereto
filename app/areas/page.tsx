@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { AreaCard } from "@/components/discovery/AreaCard";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
@@ -9,7 +9,7 @@ import { hubAreasIntro } from "@/lib/seo/page-intro-copy";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/areas"),
@@ -65,8 +65,7 @@ function areaSubtitle(
 }
 
 async function getAreas(): Promise<AreaRow[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("areas_view")
     .select(
