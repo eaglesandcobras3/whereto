@@ -266,7 +266,11 @@ async function getTownPageData(townId: string, townSlug: string) {
 
 type Props = { params: Promise<{ townSlug: string }> };
 
-export const revalidate = 60;
+/**
+ * Town guides are read-heavy and change infrequently enough for hour-level ISR.
+ * This keeps repeated bot traffic on the same slug off the server function.
+ */
+export const revalidate = 3600;
 
 export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
   const categorySegments = new Set(
