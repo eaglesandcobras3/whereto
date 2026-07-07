@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import type { Metadata } from "next";
+import { BusinessFeedbackForm } from "@/components/feedback/BusinessFeedbackForm";
 import { FeedbackPrefillShell } from "@/components/feedback/FeedbackPrefillShell";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
@@ -58,7 +60,13 @@ export default function FeedbackPage() {
         and related sections.
       </p>
       <h2>Feedback form</h2>
-      <FeedbackPrefillShell />
+      <Suspense fallback={<FeedbackPrefillShellFallback />}>
+        <FeedbackPrefillShell />
+      </Suspense>
     </SiteDocument>
   );
+}
+
+function FeedbackPrefillShellFallback() {
+  return <BusinessFeedbackForm />;
 }

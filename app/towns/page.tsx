@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -55,7 +55,8 @@ const TRAVEL_STYLE_LINKS = [
 ] as const;
 
 async function getTowns(): Promise<TownRow[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("towns_view")
     .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort")

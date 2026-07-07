@@ -1,7 +1,7 @@
 import "server-only";
 
 import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
@@ -11,7 +11,8 @@ import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
  */
 export async function hasPointOfInterestAreas(): Promise<boolean> {
   try {
-    const supabase = getServiceSupabase();
+    const supabase = getServiceSupabaseOrNull();
+    if (!supabase) return false;
     const { count, error } = await supabase
       .from("points_of_interest")
       .select("id", { count: "exact", head: true })

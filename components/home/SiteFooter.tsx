@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups";
@@ -14,7 +14,8 @@ const FOOTER_BROWSE_LIMIT = 500;
 type FooterBrowseLink = { name: string; slug: string; href: string };
 
 async function getBusinessCountsByColumn(column: "town_id" | "area_id" | "primary_category_id"): Promise<Map<string, number>> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return new Map<string, number>();
   const { data } = await supabase
     .from("businesses_view")
     .select(column)
@@ -31,7 +32,8 @@ async function getBusinessCountsByColumn(column: "town_id" | "area_id" | "primar
 }
 
 async function getFooterTowns(): Promise<FooterBrowseLink[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const [{ data, error }, bizCounts] = await Promise.all([
     supabase
       .from("towns")
@@ -74,7 +76,8 @@ async function getFooterTowns(): Promise<FooterBrowseLink[]> {
 }
 
 async function getFooterAreas(): Promise<FooterBrowseLink[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const [{ data, error }, bizCounts] = await Promise.all([
     supabase
       .from("areas_view")

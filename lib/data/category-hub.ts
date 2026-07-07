@@ -81,7 +81,8 @@ export async function listPublishedCategorySlugs(): Promise<string[]> {
 }
 
 export async function loadCategory(slug: string): Promise<CategoryRow | null> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return null;
   const { data } = await supabase
     .from("business_categories")
     .select("id, title, slug, excerpt")
@@ -109,7 +110,8 @@ export async function resolveCategorySlugFromPublicPath(
 export async function loadBusinessesForCategory(
   categoryId: string,
 ): Promise<CategoryBusinessRow[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const { data } = await supabase
     .from("businesses_view")
     .select(
@@ -218,7 +220,9 @@ function mapCategoryHubBusinessRow(row: Record<string, unknown>) {
 }
 
 export async function countCategoryHubBusinesses(): Promise<number> {
-  const { count, error } = await getServiceSupabase()
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return 0;
+  const { count, error } = await supabase
     .from("businesses_view")
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
@@ -234,7 +238,8 @@ export async function countCategoryHubBusinesses(): Promise<number> {
 }
 
 export async function getCategoryHubSections(): Promise<CategoryHubSection[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
 
   const { data: businessRows, error: bizErr } = await supabase
     .from("businesses_view")

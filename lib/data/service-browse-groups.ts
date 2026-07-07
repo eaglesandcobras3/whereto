@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
@@ -22,7 +22,8 @@ export type ListedServiceBrowseGroup = ServiceBrowseGroupNavItem & {
 
 /** Service browse groups that have at least one vendor (hub / footer). */
 export async function getListedServiceBrowseGroups(): Promise<ListedServiceBrowseGroup[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("businesses_view")

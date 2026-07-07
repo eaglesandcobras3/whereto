@@ -5,6 +5,8 @@ import { ProfileListBusinessCta } from "@/components/profile/ProfileListBusiness
 import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 import { loadPortalAccountSummary } from "@/lib/portal/load-portal-account-summary";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProfilePage() {
   const supabase = await createSupabaseServerClient();
   const {

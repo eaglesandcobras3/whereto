@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { HomePage } from "@/components/home/HomePage";
 import { HomeQueryRedirect } from "@/components/home/HomeQueryRedirect";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
@@ -46,7 +47,23 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   const flags = await getAllFeatureFlags();
   const heroSettings = await getHomeHeroSettings();
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+
+  if (!supabase) {
+    return (
+      <>
+        <Suspense fallback={null}>
+          <HomeQueryRedirect />
+        </Suspense>
+        <HomePage
+          featuredBusinesses={[]}
+          towns={[]}
+          heroSettings={heroSettings}
+          seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
+        />
+      </>
+    );
+  }
 
   const { data: townRows, error: townErr } = await supabase
     .from("towns_view")
@@ -148,7 +165,9 @@ export default async function Home() {
 
   return (
     <>
-      <HomeQueryRedirect />
+      <Suspense fallback={null}>
+        <HomeQueryRedirect />
+      </Suspense>
       <HomePage
         featuredBusinesses={featuredBusinesses}
         towns={townList}

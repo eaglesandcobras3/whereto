@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Business Portal",
   robots: { index: false, follow: false },
