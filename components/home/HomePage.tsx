@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { isAskEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
+import { useSeoImprovementsFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { TripPlanningSection } from "@/components/home/TripPlanningSection";
@@ -114,7 +115,6 @@ type Props = {
     title: string;
     subtitle: string;
   };
-  seoImprovements?: boolean;
 };
 
 export function HomePage({
@@ -126,9 +126,9 @@ export function HomePage({
     subtitle:
       "From Rosemary Beach to Seaside and beyond, each town along Scenic Highway 30A has its own pace. Find where to eat, what to do, and the beach-access details worth knowing before you arrive.",
   },
-  seoImprovements = false,
 }: Props) {
   const featureFlags = useAppFeatureFlags();
+  const seoImprovements = useSeoImprovementsFeatureEnabled();
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface antialiased">

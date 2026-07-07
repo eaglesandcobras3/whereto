@@ -29,8 +29,7 @@ import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirector
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
-import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
+import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 
 export const revalidate = 21600;
 
@@ -311,10 +310,7 @@ export default async function BusinessPage({ params }: Props) {
   }
 
   const supabase = getServiceSupabase();
-  const [featureFlags, townId] = await Promise.all([
-    getAllFeatureFlags(),
-    Promise.resolve(b.town_id as string | null),
-  ]);
+  const townId = b.town_id as string | null;
   const businessId = b.id as string;
 
   type GuideCardRow = {
@@ -866,10 +862,10 @@ export default async function BusinessPage({ params }: Props) {
                       analyticsCategory={`business_similar_${gaBiz}`}
                     />
                   ) : null}
-                  {townId && isDiscoveryEnabled(featureFlags) ? (
+                  {townId ? (
                     <p className={relatedBusinesses.length > 0 ? "mt-4" : ""}>
-                      <Link
-                        href={discoveryHref(featureFlags, { town_id: townId })}
+                      <DiscoveryNavLink
+                        params={{ town_id: townId }}
                         {...gaClickProps({
                           event: "nav_click",
                           category: "business_detail_sidebar",
@@ -883,7 +879,7 @@ export default async function BusinessPage({ params }: Props) {
                         }
                       >
                         View more
-                      </Link>
+                      </DiscoveryNavLink>
                     </p>
                   ) : null}
                 </div>

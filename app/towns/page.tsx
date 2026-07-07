@@ -11,13 +11,13 @@ import { hubTownsIntro, hubTownsCompareIntro } from "@/lib/seo/page-intro-copy";
 import { townsHubMetadata } from "@/lib/seo/hub-metadata";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
+import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import {
   BEACH_ACCESS_PILLAR_GUIDE_PATH,
   PRIMARY_EDITORIAL_GUIDE_PATH,
 } from "@/lib/seo/sitemap-strategy";
 import { generateCollectionPageSchema } from "@/lib/seo/breadcrumb-schema";
-import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 
 export const revalidate = 21600;
 
@@ -93,8 +93,7 @@ async function getTowns(): Promise<TownRow[]> {
 }
 
 export default async function TownsPage() {
-  const [towns, flags] = await Promise.all([getTowns(), getAllFeatureFlags()]);
-  const seoImprovements = isSeoImprovementsFeatureEnabled(flags);
+  const towns = await getTowns();
   const collectionSchema = generateCollectionPageSchema({
     name: "30A Beach Towns",
     path: "/towns",
@@ -103,17 +102,17 @@ export default async function TownsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      {seoImprovements ? (
+      <SeoImprovementsGate>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
         />
-      ) : null}
+      </SeoImprovementsGate>
 
       {/* Hero */}
       <div className="coastal-hero border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
-          {seoImprovements ? (
+          <SeoImprovementsGate>
             <HubBreadcrumbs
               items={[
                 { name: "Home", href: "/" },
@@ -121,7 +120,7 @@ export default async function TownsPage() {
               ]}
               analyticsCategory="towns_hub_breadcrumb"
             />
-          ) : null}
+          </SeoImprovementsGate>
           <header className="max-w-3xl space-y-3">
             <p className="text-eyebrow">30A · South Walton, Florida</p>
             <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
@@ -160,7 +159,7 @@ export default async function TownsPage() {
         )}
       </div>
 
-      {seoImprovements ? (
+      <SeoImprovementsGate>
         <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-20">
           <div className="mx-auto max-w-6xl px-4 md:px-10">
             <div className="mb-10 max-w-2xl md:mb-12">
@@ -195,7 +194,7 @@ export default async function TownsPage() {
             </div>
           </div>
         </section>
-      ) : null}
+      </SeoImprovementsGate>
 
       {/* 30A corridor map */}
       <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10 sm:py-14">

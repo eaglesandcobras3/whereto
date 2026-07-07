@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { HomePage } from "@/components/home/HomePage";
 import { HomeQueryRedirect } from "@/components/home/HomeQueryRedirect";
-import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
@@ -45,7 +44,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const flags = await getAllFeatureFlags();
   const heroSettings = await getHomeHeroSettings();
   const supabase = getServiceSupabase();
 
@@ -156,7 +154,6 @@ export default async function Home() {
         featuredBusinesses={featuredBusinesses}
         towns={townList}
         heroSettings={heroSettings}
-        seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
       />
     </>
   );

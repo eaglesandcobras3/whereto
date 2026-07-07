@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
+import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { guideHeroGradient } from "@/lib/guides/hero-gradient";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
@@ -130,8 +130,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const [page, flags] = await Promise.all([loadGuide(slug), getAllFeatureFlags()]);
-  const seoImprovements = isSeoImprovementsFeatureEnabled(flags);
+  const page = await loadGuide(slug);
 
   if (!page) notFound();
 
@@ -139,7 +138,7 @@ export default async function GuidePage({ params }: Props) {
   const hasHeroImage = Boolean(page.og_image_url);
   const lead = page.seo_description?.trim() || null;
   const showCorridorMap = slug === PRIMARY_EDITORIAL_GUIDE_SLUG;
-  const relatedGuides = seoImprovements ? relatedGuidesForSlug(slug) : [];
+  const relatedGuides = relatedGuidesForSlug(slug);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -303,11 +302,15 @@ export default async function GuidePage({ params }: Props) {
 
           <MarkdownRenderer content={bodyMarkdown} />
 
-          {seoImprovements && showCorridorMap ? <FirstTimerTownCompareTable /> : null}
-
-          {seoImprovements ? (
-            <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
+          {showCorridorMap ? (
+            <SeoImprovementsGate>
+              <FirstTimerTownCompareTable />
+            </SeoImprovementsGate>
           ) : null}
+
+          <SeoImprovementsGate>
+            <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
+          </SeoImprovementsGate>
         </article>
       </main>
     </div>

@@ -1,21 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getAllFeatureFlags, isDiscoverFeatureEnabled, isDiscoverNlFeatureEnabled } from "@/lib/feature-flags";
-import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
-import { executeFilterSearch } from "@/lib/discovery-filters/execute-filter-search";
+import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
+import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { loadDiscoverFilterOptions } from "@/lib/discovery-filters/load-discover-options";
-import { loadScopedSearchTags } from "@/lib/discovery-filters/load-scoped-search-tags";
-import {
-  mergeActiveTagsIntoScopedOptions,
-} from "@/lib/discovery-filters/merge-scoped-search-tags";
-import {
-  parseDiscoveryFilterState,
-  parseEntityType,
-} from "@/lib/discovery-filters/parse-filter-params";
-import { hasExplicitDiscoverParams } from "@/lib/discovery-filters/parse-discover-query";
-import { parseDiscoverQueryAsync } from "@/lib/discovery-filters/parse-discover-query-async";
-import { resolveTownIdsFromParam } from "@/lib/discovery-filters/resolve-town-ids";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { DiscoverPageClient } from "./discover-page-client";
 
 export const metadata: Metadata = {
@@ -25,103 +12,25 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Props = {
-  searchParams: Promise<{
-    type?: string;
-    town?: string;
-    town_id?: string;
-    town_scope?: string;
-    category?: string;
-    service_category?: string;
-    facet?: string;
-    facet_any?: string;
-    page?: string;
-    q?: string;
-  }>;
-};
+/** Discover access is gated in middleware; filter options change infrequently. */
+export const revalidate = 21600;
 
-export default async function DiscoverPage({ searchParams }: Props) {
-  const flags = await getAllFeatureFlags();
-  if (!isDiscoverFeatureEnabled(flags)) {
-    redirect("/");
-  }
+const getCachedDiscoverOptions = unstable_cache(
+  loadDiscoverFilterOptions,
+  ["discover-filter-options"],
+  { revalidate: 21600 },
+);
 
-  const sp = await searchParams;
-
-  if (
-    isDiscoverNlFeatureEnabled(flags) &&
-    sp.q?.trim() &&
-    !hasExplicitDiscoverParams(sp)
-  ) {
-    const parsed = await parseDiscoverQueryAsync(sp.q);
-    if (parsed.expanded) {
-      redirect(buildDiscoverUrlFromLinkParams(parsed));
-    }
-  }
-
-  const entityType = parseEntityType(sp.type);
-  const supabase = getServiceSupabase();
-  const townScope =
-    sp.town_scope === "near" ? "near" : sp.town_scope === "exact" ? "exact" : undefined;
-  const { town_ids, town_slugs } = await resolveTownIdsFromParam(
-    supabase,
-    sp.town,
-    sp.town_id,
-    { townScope },
-  );
-
-  const tagScope = {
-    entity_type: entityType,
-    town_ids,
-    category_slug: sp.category,
-    service_category_slug: sp.service_category,
-  };
-
-  const [scopedSearchTags, options] = await Promise.all([
-    loadScopedSearchTags(tagScope),
-    loadDiscoverFilterOptions(),
-  ]);
-
-  const filterState = parseDiscoveryFilterState(
-    {
-      type: sp.type,
-      town: sp.town,
-      town_id: sp.town_id,
-      category: sp.category,
-      service_category: sp.service_category,
-      facet: sp.facet,
-      facet_any: sp.facet_any,
-      q: sp.q,
-      page: sp.page,
-    },
-    town_ids,
-  );
-
-  const searchTags = mergeActiveTagsIntoScopedOptions(
-    scopedSearchTags,
-    filterState.tags,
-  );
-
-  const initialResult = await executeFilterSearch(filterState);
+export default async function DiscoverPage() {
+  const options = await getCachedDiscoverOptions();
 
   return (
-    <DiscoverPageClient
-      initialResult={initialResult}
-      towns={options.towns}
-      categories={options.categories}
-      serviceCategories={options.serviceCategories}
-      searchTags={searchTags}
-      initialParams={{
-        type: entityType,
-        town: town_slugs.length ? town_slugs.join(",") : sp.town,
-        town_scope: townScope,
-        town_ids,
-        category: filterState.category_slug,
-        service_category: filterState.service_category_slug,
-        facet: filterState.tags.length ? filterState.tags.join(",") : undefined,
-        q: filterState.q,
-        page: filterState.page,
-      }}
-    />
+    <Suspense fallback={<DiscoverPageLoading message="Loading discover…" />}>
+      <DiscoverPageClient
+        towns={options.towns}
+        categories={options.categories}
+        serviceCategories={options.serviceCategories}
+      />
+    </Suspense>
   );
 }
