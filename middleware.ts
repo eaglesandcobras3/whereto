@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
-import { isAskEnabled, isDiscoverEnabled, isOnboardEnabled, isSearchEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled, isDiscoverEnabled, isOnboardEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
 import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import {
   categoryDbSlugFromLegacyOn30aSegment,
@@ -138,16 +138,6 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (!isSearchEnabled(flags) && (pathname === "/search" || pathname.startsWith("/search/"))) {
-    if (isAskEnabled(flags)) {
-      const url = new URL("/ask", request.url);
-      const q = request.nextUrl.searchParams.get("q")?.trim();
-      if (q) url.searchParams.set("q", q);
-      return NextResponse.redirect(url);
-    }
     return NextResponse.redirect(new URL("/", request.url));
   }
 
