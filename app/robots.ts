@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/ask",
           "/discover",
           "/feedback",
+          "/list-your-business",
           "/share/",
           // Auth flows — not indexable landing pages
           "/login",

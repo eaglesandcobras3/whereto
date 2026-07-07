@@ -140,7 +140,7 @@ function mapEventToBrowseRow(
 
 /** Search is a utility surface; hub routes (`/towns`, `/categories`, …) are the indexable landing pages. */
 const SEARCH_NOINDEX: Pick<Metadata, "robots"> = {
-  robots: { index: false, follow: true },
+  robots: { index: false, follow: false },
 };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
