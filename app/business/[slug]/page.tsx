@@ -541,23 +541,17 @@ export default async function BusinessPage({ params }: Props) {
 
           {/* Article Header - Horizontal layout with thumbnail */}
           <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start">
-            {/* Hero thumbnail */}
-            <div className="relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40 md:w-48">
-              {heroImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
+            {/* Hero thumbnail — omit when no listing photo */}
+            {heroImage ? (
+              <div className="relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40 md:w-48">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={heroImage}
                   alt={b.name as string}
                   className="h-full w-full object-cover"
                 />
-              ) : (
-                <div className="flex h-full items-center justify-center text-zinc-400">
-                  <span className="material-symbols-outlined !text-4xl" aria-hidden>
-                    storefront
-                  </span>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : null}
 
             {/* Title and meta */}
             <div className="flex-1">
