@@ -33,8 +33,8 @@ export async function generateMetadata({
     ...canonicalAlternates("/feedback"),
     title: FEEDBACK_TITLE,
     description: FEEDBACK_DESCRIPTION,
-    // Bare /feedback is the indexable landing page; ?p= / ?title= variants are form prefill only.
-    robots: hasPrefillParams ? { index: false, follow: true } : { index: true, follow: true },
+    // This route is for listing correction workflows, not public discovery.
+    robots: { index: false, follow: hasPrefillParams },
     ...openGraphForPage({
       path: "/feedback",
       title: "Listing feedback | WhereTo30A",

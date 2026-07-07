@@ -239,7 +239,6 @@ function buildCompanyLinks(listBusinessHref: string) {
     name: "List your business",
     href: listBusinessHref,
   },
-  { ...gaClickProps({ event: "cta_click", category: "footer_company", label: "correct_listing" }), name: "Correct a listing", href: "/feedback" },
   { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "privacy" }), name: "Privacy", href: "/privacy" },
   { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "terms" }), name: "Terms", href: "/terms" },
 ];
