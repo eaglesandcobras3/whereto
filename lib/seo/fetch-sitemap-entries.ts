@@ -2,7 +2,6 @@ import "server-only";
 
 import type { MetadataRoute } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isMissingRelationError } from "@/lib/postgrest-errors";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -41,22 +40,6 @@ async function fetchBrowseableRows(
   return out;
 }
 
-async function fetchPublishedSeoPages(
-  supabase: SupabaseClient,
-): Promise<Record<string, unknown>[]> {
-  const { data, error } = await supabase
-    .from("seo_pages")
-    .select("slug, updated_at")
-    .eq("published", true);
-  if (error) {
-    if (!isMissingRelationError(error)) {
-      console.error("sitemap: seo_pages", error);
-    }
-    return [];
-  }
-  return (data ?? []) as Record<string, unknown>[];
-}
-
 /** Build index-focused sitemap entries for `/sitemap.xml` (via `/api/sitemap-xml` rewrite). */
 export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
@@ -67,8 +50,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       return staticFallbackSitemap(base, now);
     }
 
-    const [towns, guides, areas, pointsOfInterest, categories, events, seoPages] =
-      await Promise.all([
+    const [towns, guides, areas, pointsOfInterest, categories, events] = await Promise.all([
       fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
       fetchSitemapGuides(supabase),
       fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
@@ -83,7 +65,6 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
         "slug, date_updated, published_at, date_created",
       ),
       fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
-      fetchPublishedSeoPages(supabase),
     ]);
 
     return buildSitemapEntries({
@@ -95,7 +76,6 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       categories,
       pointsOfInterest,
       events,
-      seoPages,
     });
   } catch (err) {
     console.error("[sitemap] generation failed:", err);

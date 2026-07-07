@@ -6,42 +6,6 @@ General operator tasks for WhereTo30A (env, deploy, shared infra).
 
 ---
 
-## Static build: `content_entries` + `seo_pages`
-
-Run once in the **Supabase SQL editor** (production):
-
-- [ ] [scripts/migrations/static-build-supabase.sql](../scripts/migrations/static-build-supabase.sql)
-
-This file:
-
-1. Creates `public.content_entries` (empty is fine — guides still load from `public.guides`)
-2. Creates `public.seo_pages`
-3. Publishes `seo_pages` from existing `query_cache` rows via `sync_seo_pages_from_query_cache()`
-4. Prints row counts and sample slugs to verify
-
-Then **redeploy on Vercel** so `generateStaticParams` pre-renders intent URLs like `/rosemary-beach/coffee`.
-
-### If `seo_pages` count is zero after step 3
-
-`query_cache` has no `seo_eligible` rows yet. That data requires the app precompute job (OpenAI ranking) — it cannot be generated in SQL. After precompute exists in the repo, run it once, then in Supabase:
-
-```sql
-select * from public.sync_seo_pages_from_query_cache();
-```
-
-and redeploy again.
-
-### Guides
-
-`/guide/[slug]` already static-generates from `public.guides` at build time. You do **not** need to backfill `content_entries` unless you want the CMS overlay later.
-
-Individual table files (same DDL, split for reference):
-
-- [scripts/migrations/content-entries-table.sql](../scripts/migrations/content-entries-table.sql)
-- [scripts/migrations/seo-pages-table.sql](../scripts/migrations/seo-pages-table.sql)
-
----
-
 ## RankScore → Guides sync
 
 Pull completed RankScore articles into `public.guides` (published at `/guide/[slug]` and listed on `/guides`).
@@ -304,8 +268,7 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 | Date | Change |
 |------|--------|
-| 2026-07-07 | Static build SQL: `static-build-supabase.sql` creates tables + `sync_seo_pages_from_query_cache()` for Supabase editor |
-| 2026-07-07 | Optional tables: `content_entries` + `seo_pages` migrations; build/sitemap skip gracefully when tables are absent |
+| 2026-07-07 | Removed orphan town intent pages (`seo_pages`, `/[townSlug]/[intentSlug]`) and unused `content_entries` overlay |
 | 2026-07-07 | Cron cleanup: removed dead disabled `/api/cron/*` routes and removed all scheduled Vercel crons; remaining cron-style routes are manual/on-demand only |
 | 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |
 | 2026-07-06 | Discover: PostHog `discover_low_results` when active filters return thin listings; town-aware thresholds |
