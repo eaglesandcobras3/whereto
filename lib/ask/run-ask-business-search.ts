@@ -343,9 +343,9 @@ export async function runAskBusinessSearch(opts: RunOpts): Promise<AskBusinessSe
   const searchInput = applySessionTownToInput(opts.input, opts.sessionHints);
   // Keep the user's full wording (incl. clarification chips); do not strip to keywords.
   const verbatimQuery = buildAskSearchQuery(searchInput.query, userMessage);
-  let themes = detectQueryThemes(verbatimQuery);
+  const themes = detectQueryThemes(verbatimQuery);
   // User wording stays intact; only light weather hints may append (never time-of-day).
-  let rawQuery = opts.ambient
+  const rawQuery = opts.ambient
     ? applyAmbientToSearchQuery(enrichQueryForContext(verbatimQuery), themes, opts.ambient)
     : enrichQueryForContext(verbatimQuery);
 

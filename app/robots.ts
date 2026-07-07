@@ -18,6 +18,9 @@ export default function robots(): MetadataRoute.Robots {
           // Utility / session surfaces (also noindex in page metadata)
           "/search",
           "/ask",
+          "/discover",
+          "/feedback",
+          "/list-your-business",
           "/share/",
           // Auth flows — not indexable landing pages
           "/login",

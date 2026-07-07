@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { searchIntentSchema, type SearchIntent } from "@/lib/intent-schema";
 import type { BusinessRowWithTags } from "@/lib/scoring";
+import {
+  extractTownFromNormalizedQuery,
+  extractTownsFromNormalizedQuery,
+} from "@/lib/ai/town-query-aliases";
 
 const PARSE_SYSTEM = `You are a query parser for WhereTo30A, a local business discovery app for Florida's 30A corridor.
 Parse the user's natural language query into a structured search intent. Output JSON only.
@@ -161,30 +165,8 @@ export async function synthesizeWithOpenAI(
   return JSON.parse(text) as unknown;
 }
 
-/** Town slug when a 30A place name appears in normalized query text. */
-export function extractTownFromNormalizedQuery(normalized: string): string | null {
-  const towns: [string, string][] = [
-    ["carillon", "carillon-beach"],
-    ["inlet", "inlet-beach"],
-    ["rosemary", "rosemary-beach"],
-    ["seacrest", "seacrest-beach"],
-    ["alys", "alys-beach"],
-    ["watersound", "watersound"],
-    ["seagrove", "seagrove-beach"],
-    ["seaside", "seaside"],
-    ["watercolor", "watercolor"],
-    ["grayton", "grayton-beach"],
-    ["blue mountain", "blue-mountain-beach"],
-    ["santa rosa", "santa-rosa-beach"],
-    ["gulf place", "gulf-place"],
-    ["dune allen", "dune-allen-beach"],
-    ["sandestin", "sandestin"],
-  ];
-  for (const [needle, slug] of towns) {
-    if (normalized.includes(needle)) return slug;
-  }
-  return null;
-}
+/** @see extractTownFromNormalizedQuery in town-query-aliases */
+export { extractTownFromNormalizedQuery, extractTownsFromNormalizedQuery } from "@/lib/ai/town-query-aliases";
 
 /** When a town token appears in the query, assume proximity search; otherwise corridor-wide. */
 function keywordIntentLocation(normalized: string): {

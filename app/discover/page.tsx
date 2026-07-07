@@ -30,6 +30,7 @@ type Props = {
     type?: string;
     town?: string;
     town_id?: string;
+    town_scope?: string;
     category?: string;
     service_category?: string;
     facet?: string;
@@ -60,10 +61,13 @@ export default async function DiscoverPage({ searchParams }: Props) {
 
   const entityType = parseEntityType(sp.type);
   const supabase = getServiceSupabase();
+  const townScope =
+    sp.town_scope === "near" ? "near" : sp.town_scope === "exact" ? "exact" : undefined;
   const { town_ids, town_slugs } = await resolveTownIdsFromParam(
     supabase,
     sp.town,
     sp.town_id,
+    { townScope },
   );
 
   const tagScope = {
@@ -110,6 +114,7 @@ export default async function DiscoverPage({ searchParams }: Props) {
       initialParams={{
         type: entityType,
         town: town_slugs.length ? town_slugs.join(",") : sp.town,
+        town_scope: townScope,
         town_ids,
         category: filterState.category_slug,
         service_category: filterState.service_category_slug,

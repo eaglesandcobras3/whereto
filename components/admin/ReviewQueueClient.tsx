@@ -33,7 +33,7 @@ export function ReviewQueueClient() {
   }, []);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function act(id: string, action: "approve" | "reject" | "needs_changes") {

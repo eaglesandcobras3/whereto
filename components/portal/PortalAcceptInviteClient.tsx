@@ -1,25 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export function PortalAcceptInviteClient() {
-  const searchParams = useSearchParams();
+function AcceptInviteWithToken({ token }: { token: string }) {
   const router = useRouter();
-  const token = searchParams.get("token")?.trim() ?? "";
-  const [status, setStatus] = useState<"idle" | "working" | "ok" | "error">("idle");
+  const [status, setStatus] = useState<"working" | "ok" | "error">("working");
   const [message, setMessage] = useState<string | null>(null);
   const [businessTitle, setBusinessTitle] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Missing invite token.");
-      return;
-    }
-
-    setStatus("working");
     fetch("/api/portal/invites/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,7 +32,7 @@ export function PortalAcceptInviteClient() {
       });
   }, [token]);
 
-  if (status === "working" || status === "idle") {
+  if (status === "working") {
     return <p className="text-sm text-[var(--color-text-secondary)]">Accepting invite…</p>;
   }
 
@@ -75,4 +66,21 @@ export function PortalAcceptInviteClient() {
       </Link>
     </div>
   );
+}
+
+export function PortalAcceptInviteClient({ token }: { token: string }) {
+  if (!token) {
+    return (
+      <div>
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+          Missing invite token.
+        </p>
+        <Link href="/login" className="mt-4 inline-block text-sm font-semibold text-[var(--color-primary)] hover:underline">
+          Sign in
+        </Link>
+      </div>
+    );
+  }
+
+  return <AcceptInviteWithToken token={token} />;
 }

@@ -23,7 +23,7 @@ import {
 } from "@/lib/seo/breadcrumb-schema";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 const DAILY_FEATURED_LIMIT = 6;
 const GUIDE_POOL_LIMIT = 100;

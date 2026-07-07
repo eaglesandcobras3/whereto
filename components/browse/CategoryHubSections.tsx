@@ -11,6 +11,7 @@ import {
 } from "@/lib/business-categories/browse-group-nav";
 import type { CategoryHubSection } from "@/lib/data/category-hub";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 type Props = {
   sections: CategoryHubSection[];
@@ -21,18 +22,6 @@ type Props = {
   defaultExpandedCount?: number;
 };
 
-function useIsDesktop() {
-  const [desktop, setDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    setDesktop(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return desktop;
-}
-
 export function CategoryHubSections({
   sections,
   analyticsCategoryPrefix,
@@ -41,11 +30,12 @@ export function CategoryHubSections({
   emptyMessage,
   defaultExpandedCount = 1,
 }: Props) {
-  const isDesktop = useIsDesktop();
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    if (isDesktop) {
+    if (!isDesktop) return;
+    queueMicrotask(() => {
       setExpandedIds((prev) => {
         if (prev.size > 0) return prev;
         const initial = new Set<string>();
@@ -54,7 +44,7 @@ export function CategoryHubSections({
         }
         return initial;
       });
-    }
+    });
   }, [isDesktop, defaultExpandedCount, sections]);
 
   useEffect(() => {
@@ -63,9 +53,11 @@ export function CategoryHubSections({
     if (!hash || !isBusinessBrowseGroupSlug(hash)) return;
     if (!sections.some((s) => s.slug === hash)) return;
 
-    setExpandedIds((prev) => new Set([...prev, hash]));
-    requestAnimationFrame(() => {
-      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    queueMicrotask(() => {
+      setExpandedIds((prev) => new Set([...prev, hash]));
+      requestAnimationFrame(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     });
   }, [sections]);
 

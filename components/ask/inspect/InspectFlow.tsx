@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react/no-unescaped-entities -- internal search inspector UI */
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { StageCard } from "@/components/ask/inspect/StageCard";

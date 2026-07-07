@@ -26,7 +26,9 @@ export type QueryPlan = {
   requiredTags: string[];
   /** Soft filter: any overlap (&&) boosts score but does not exclude. */
   anyTags: string[];
-  /** Town slug for geo-scoped queries (from explicit UI filter, not rules). */
+  /** Town slug(s) for geo-scoped queries (from explicit UI filter or NL extraction). */
+  townSlugs: string[];
+  /** First town slug — backward compatible alias for {@link townSlugs}[0]. */
   townSlug: string | null;
   scope: "exact" | "near" | "anywhere";
   /** Tokens passed to the SQL FTS query (websearch_to_tsquery). */
@@ -54,6 +56,7 @@ export function emptyQueryPlan(rawQuery: string, normalizedQuery: string): Query
     serviceCategorySlug: null,
     requiredTags: [],
     anyTags: [],
+    townSlugs: [],
     townSlug: null,
     scope: "anywhere",
     searchTerms: [],
@@ -64,7 +67,10 @@ export function emptyQueryPlan(rawQuery: string, normalizedQuery: string): Query
 
 export function explicitFiltersToPartialPlan(opts: ExplicitV2Filters): Partial<QueryPlan> {
   const out: Partial<QueryPlan> = {};
-  if (opts.townSlug != null)            out.townSlug = opts.townSlug;
+  if (opts.townSlug != null) {
+    out.townSlug = opts.townSlug;
+    out.townSlugs = [opts.townSlug];
+  }
   if (opts.categorySlug != null)        out.categorySlug = opts.categorySlug;
   if (opts.serviceCategorySlug != null) out.serviceCategorySlug = opts.serviceCategorySlug;
   if (opts.priceLevel != null)          out.priceLevel = opts.priceLevel;

@@ -14,7 +14,7 @@ import {
 import { ServiceSpecialtySections } from "@/components/services/ServiceSpecialtySections";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates(SERVICE_VENDORS_HUB_PATH),

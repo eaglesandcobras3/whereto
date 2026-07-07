@@ -68,7 +68,6 @@ export async function runSiteAudit(
       fetchFn,
       supabase: options.supabase ?? null,
       includeBusinessUrls: options.includeBusinessUrls,
-      includeSeoIntentUrls: options.includeSeoIntentUrls,
     }),
     fetchRobotsInfo(baseUrl, fetchFn),
     fetchFn(`${baseUrl}/llms.txt`, { cache: "no-store" }).catch(() => null),

@@ -19,7 +19,7 @@ import {
 import { generateCollectionPageSchema } from "@/lib/seo/breadcrumb-schema";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export const metadata: Metadata = townsHubMetadata();
 

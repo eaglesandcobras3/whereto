@@ -32,7 +32,7 @@ import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 /** Allow on-demand ISR for slugs not returned at build time (e.g. newly published). */
 export const dynamicParams = true;
@@ -40,36 +40,31 @@ export const dynamicParams = true;
 const STATIC_PARAMS_PAGE_SIZE = 1000;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  try {
-    const supabase = getServiceSupabaseOrNull();
-    if (!supabase) return [];
-    const out: { slug: string }[] = [];
-    let from = 0;
-    for (;;) {
-      const { data, error } = await supabase
-        .from("businesses_view")
-        .select("slug")
-        .is("archived_at", null)
-        .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN)
-        .order("id", { ascending: true })
-        .range(from, from + STATIC_PARAMS_PAGE_SIZE - 1);
-      if (error) {
-        console.error("business generateStaticParams:", error);
-        break;
-      }
-      const batch = data ?? [];
-      for (const row of batch) {
-        const slug = String((row as { slug: string }).slug ?? "").trim();
-        if (slug) out.push({ slug });
-      }
-      if (batch.length < STATIC_PARAMS_PAGE_SIZE) break;
-      from += STATIC_PARAMS_PAGE_SIZE;
+  const supabase = getServiceSupabase();
+  const out: { slug: string }[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("businesses_view")
+      .select("slug")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .order("id", { ascending: true })
+      .range(from, from + STATIC_PARAMS_PAGE_SIZE - 1);
+    if (error) {
+      console.error("business generateStaticParams:", error);
+      break;
     }
-    return out;
-  } catch {
-    return [];
+    const batch = data ?? [];
+    for (const row of batch) {
+      const slug = String((row as { slug: string }).slug ?? "").trim();
+      if (slug) out.push({ slug });
+    }
+    if (batch.length < STATIC_PARAMS_PAGE_SIZE) break;
+    from += STATIC_PARAMS_PAGE_SIZE;
   }
+  return out;
 }
 
 type Props = { params: Promise<{ slug: string }> };

@@ -195,9 +195,14 @@ function stripMatchedPhrases(normalized: string, phrases: string[]): string {
   return out.replace(/\s+/g, " ").trim();
 }
 
-function stripTownTokens(tokens: string[], townSlug: string | null): string[] {
-  if (!townSlug) return tokens;
-  const townTokens = new Set(townSlug.replace(/-/g, " ").split(/\s+/).filter(Boolean));
+function stripTownTokens(tokens: string[], townSlugs: string[]): string[] {
+  if (!townSlugs.length) return tokens;
+  const townTokens = new Set<string>();
+  for (const slug of townSlugs) {
+    for (const token of slug.replace(/-/g, " ").split(/\s+/).filter(Boolean)) {
+      townTokens.add(token);
+    }
+  }
   return tokens.filter((token) => !townTokens.has(token));
 }
 
@@ -211,11 +216,14 @@ export function resolveQueryTags(
   options?: {
     vocabulary?: ReadonlySet<string>;
     townSlug?: string | null;
+    townSlugs?: string[];
   },
 ): ResolvedQueryTags {
   const normalized = normalizeQuery(rawQuery);
   const vocabulary = options?.vocabulary ?? getStaticSearchTagVocabulary();
-  const townSlug = options?.townSlug ?? plan.townSlug ?? null;
+  const townSlugs =
+    options?.townSlugs ??
+    (options?.townSlug ? [options.townSlug] : plan.townSlugs.length ? plan.townSlugs : plan.townSlug ? [plan.townSlug] : []);
 
   const ruleTags = dedupeStrings([
     ...plan.requiredTags,
@@ -249,7 +257,7 @@ export function resolveQueryTags(
   }
 
   let residualTokens = tokensFromNormalized(residual);
-  residualTokens = stripTownTokens(residualTokens, townSlug);
+  residualTokens = stripTownTokens(residualTokens, townSlugs);
   residualTokens = residualTokens.filter((token) => !RESIDUAL_STOP_WORDS.has(token));
 
   const unresolvedTerms: string[] = [];

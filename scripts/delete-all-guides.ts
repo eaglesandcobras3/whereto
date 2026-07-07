@@ -1,5 +1,5 @@
 /**
- * Delete every row in public.guides and related junction / content_entries rows.
+ * Delete every row in public.guides and related junction rows.
  *
  * Usage:
  *   npx tsx scripts/delete-all-guides.ts           # report counts only
@@ -73,10 +73,6 @@ async function main() {
     guide_towns: await countTable(supabase, "guide_towns"),
     guide_areas: await countTable(supabase, "guide_areas"),
     guide_businesses: await countTable(supabase, "guide_businesses"),
-    content_entries: await countTable(supabase, "content_entries", {
-      column: "content_type",
-      value: "guide",
-    }),
   };
 
   console.log(APPLY ? "Deleting guides…\n" : "Guide deletion preview (dry run)\n");
@@ -84,7 +80,7 @@ async function main() {
     console.log(`  ${table}: ${n}`);
   }
 
-  if (counts.guides === 0 && counts.content_entries === 0) {
+  if (counts.guides === 0) {
     console.log("\nNothing to delete.");
     return;
   }
@@ -98,10 +94,6 @@ async function main() {
     guide_businesses: await deleteAll(supabase, "guide_businesses"),
     guide_areas: await deleteAll(supabase, "guide_areas"),
     guide_towns: await deleteAll(supabase, "guide_towns"),
-    content_entries: await deleteAll(supabase, "content_entries", {
-      column: "content_type",
-      value: "guide",
-    }),
     guides: await deleteAll(supabase, "guides"),
   };
 

@@ -56,10 +56,6 @@ export function FacetTypeaheadMultiSelect({
   const inputDisabled = disabled || options.length === 0;
 
   useEffect(() => {
-    setHighlightIndex(0);
-  }, [query, filteredOptions.length]);
-
-  useEffect(() => {
     if (!open) return;
     const onDocClick = (event: MouseEvent) => {
       if (containerRef.current?.contains(event.target as Node)) return;
@@ -135,6 +131,7 @@ export function FacetTypeaheadMultiSelect({
           placeholder={selectedSlugs.length === 0 ? placeholder : "Add another…"}
           onChange={(event) => {
             setQuery(event.target.value);
+            setHighlightIndex(0);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}

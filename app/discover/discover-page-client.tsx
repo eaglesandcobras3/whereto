@@ -26,6 +26,7 @@ type Props = {
   initialParams: {
     type: "storefront" | "service";
     town?: string;
+    town_scope?: "exact" | "near";
     town_ids?: string[];
     category?: string;
     service_category?: string;
@@ -96,6 +97,10 @@ export function DiscoverPageClient({
       const url = buildDiscoverUrl({
         type,
         townSlugs: next.townSlugs ?? activeTownSlugs,
+        townScope:
+          "townSlugs" in next && next.townSlugs !== undefined
+            ? undefined
+            : initialParams.town_scope,
         category: "category" in next ? next.category : initialParams.category,
         service_category:
           "service_category" in next ? next.service_category : initialParams.service_category,

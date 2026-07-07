@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Metadata } from "next";
-import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { categoryHubMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
@@ -64,8 +64,7 @@ export type CategoryHubSection = BrowseGroupSection;
 
 export async function listPublishedCategorySlugs(): Promise<string[]> {
   try {
-    const supabase = getServiceSupabaseOrNull();
-    if (!supabase) return [];
+    const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("business_categories")
       .select("slug")

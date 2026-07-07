@@ -16,7 +16,7 @@ export type PrecomputeTemplate = {
   queryKey: (townSlug: string) => string;
   categorySlug: string;
   attributes: string[];
-  /** Path segment under town for `seo_pages.slug` (e.g. coffee → seaside/coffee). */
+  /** Path segment used in precomputed query_cache rows (e.g. coffee for town coffee picks). */
   seoSlug: string;
   /** Human town name injected into AI raw query. */
   rawQuery: (townName: string) => string;

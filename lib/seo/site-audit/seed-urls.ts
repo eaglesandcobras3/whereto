@@ -14,7 +14,6 @@ export async function collectSeedUrls(input: {
   fetchFn?: typeof fetch;
   supabase?: SupabaseClient | null;
   includeBusinessUrls?: boolean;
-  includeSeoIntentUrls?: boolean;
 }): Promise<{ seedUrls: string[]; sitemapUrls: string[] }> {
   const base = input.baseUrl.replace(/\/$/, "");
   const fetchFn = input.fetchFn ?? fetch;
@@ -65,19 +64,6 @@ export async function collectSeedUrls(input: {
         }
         if (batch.length < SEED_PAGE_SIZE) break;
         from += SEED_PAGE_SIZE;
-      }
-    }
-
-    if (input.includeSeoIntentUrls !== false) {
-      const { data } = await supabase
-        .from("seo_pages")
-        .select("slug")
-        .eq("published", true);
-      for (const row of data ?? []) {
-        const full = String((row as { slug: string }).slug ?? "").trim();
-        const i = full.indexOf("/");
-        if (i <= 0) continue;
-        seeds.add(normalizeAuditUrl(`${base}/${full}`));
       }
     }
 
