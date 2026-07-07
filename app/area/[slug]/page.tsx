@@ -81,17 +81,13 @@ function areaSectionSearchHref(
   place: PublicPlacePage,
   categorySlug: string,
 ): string | null {
-  const params = new URLSearchParams();
-  if (place.source === "area") {
-    params.set("area_id", place.id);
-  } else if (place.parent_area_id) {
-    params.set("area_id", place.parent_area_id);
-  } else if (!place.town_id) {
+  if (!place.town_id) {
     return null;
   }
-  if (place.town_id?.trim()) params.set("town_id", place.town_id.trim());
+  const params = new URLSearchParams();
+  params.set("town_id", place.town_id.trim());
   params.set("category", categorySlug);
-  return `/search?${params.toString()}`;
+  return `/discover?type=storefront&${params.toString()}`;
 }
 
 function areaBrowseDiscoveryHref(

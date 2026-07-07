@@ -1,14 +1,14 @@
+import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import { setSpecialtySlugsOnParams } from "@/lib/routes/service-vendor-labels";
 
 /** Regional / mobile service providers (`is_service_business=true`) — not the storefront category. */
 export const SERVICE_VENDORS_HUB_PATH = "/services" as const;
 
 export function serviceVendorsSearchHref(specialtySlug?: string): string {
-  const params = new URLSearchParams({ type: "services" });
-  if (specialtySlug?.trim()) {
-    setSpecialtySlugsOnParams(params, [specialtySlug.trim()]);
-  }
-  return `/search?${params.toString()}`;
+  return buildDiscoverUrlFromLinkParams({
+    type: "services",
+    service_category: specialtySlug?.trim() || undefined,
+  });
 }
 
 export function serviceVendorsHubHref(input?: {
