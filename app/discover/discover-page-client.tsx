@@ -1,15 +1,23 @@
 "use client";
 
-import { useCallback, useMemo, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard";
 import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
-import { buildDiscoverUrl } from "@/lib/discovery-filters/build-discover-url";
+import { buildDiscoverUrl, buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
+import {
+  fetchDiscoverFilter,
+  type DiscoverFilterApiParams,
+  type DiscoverFilterApiResponse,
+} from "@/lib/discovery-filters/discover-filter-api";
 import { appliedTagsFromFilters } from "@/lib/discovery-filters/merge-scoped-search-tags";
+import { parseEntityType } from "@/lib/discovery-filters/parse-filter-params";
+import { hasExplicitDiscoverParams } from "@/lib/discovery-filters/parse-discover-query";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
-import type { DiscoverFilterSearchResult } from "@/lib/discovery-filters/types";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
+import { isDiscoverNlFeatureEnabled } from "@/lib/nav/discovery-links";
 import type {
   DiscoverCategoryOption,
   DiscoverSearchTagOption,
@@ -18,22 +26,20 @@ import type {
 } from "@/lib/discovery-filters/load-discover-options";
 
 type Props = {
-  initialResult: DiscoverFilterSearchResult;
   towns: DiscoverTownOption[];
   categories: DiscoverCategoryOption[];
   serviceCategories: DiscoverServiceCategoryOption[];
-  searchTags: DiscoverSearchTagOption[];
-  initialParams: {
-    type: "storefront" | "service";
-    town?: string;
-    town_scope?: "exact" | "near";
-    town_ids?: string[];
-    category?: string;
-    service_category?: string;
-    facet?: string;
-    q?: string;
-    page: number;
-  };
+};
+
+type DiscoverParams = {
+  type: "storefront" | "service";
+  town?: string;
+  town_scope?: "exact" | "near";
+  category?: string;
+  service_category?: string;
+  facet?: string;
+  q?: string;
+  page: number;
 };
 
 function parseFacetSlugs(facetParam: string | undefined): string[] {
@@ -45,16 +51,110 @@ function parseFacetSlugs(facetParam: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export function DiscoverPageClient({
-  initialResult,
-  towns,
-  categories,
-  serviceCategories,
-  searchTags,
-  initialParams,
-}: Props) {
+function paramsFromSearchParams(sp: URLSearchParams): DiscoverParams {
+  const townScope = sp.get("town_scope");
+  return {
+    type: parseEntityType(sp.get("type")),
+    town: sp.get("town")?.trim() || undefined,
+    town_scope:
+      townScope === "near" ? "near" : townScope === "exact" ? "exact" : undefined,
+    category: sp.get("category")?.trim() || undefined,
+    service_category: sp.get("service_category")?.trim() || undefined,
+    facet: sp.get("facet")?.trim() || sp.get("facet_any")?.trim() || undefined,
+    q: sp.get("q")?.trim() || undefined,
+    page: Math.max(1, Number.parseInt(sp.get("page") ?? "1", 10) || 1),
+  };
+}
+
+function toApiParams(params: DiscoverParams): DiscoverFilterApiParams {
+  return {
+    type: params.type === "service" ? "services" : "storefront",
+    town: params.town,
+    town_scope: params.town_scope,
+    category: params.category,
+    service_category: params.service_category,
+    facet: params.facet,
+    q: params.q,
+    page: params.page > 1 ? String(params.page) : undefined,
+  };
+}
+export function DiscoverPageClient({ towns, categories, serviceCategories }: Props) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const searchParams = useSearchParams();
+  const featureFlags = useAppFeatureFlags();
+  const navigatingRef = useRef(false);
+  const nlHandledRef = useRef<string | null>(null);
+
+  const urlParams = useMemo(
+    () => paramsFromSearchParams(searchParams),
+    [searchParams],
+  );
+
+  const [params, setParams] = useState<DiscoverParams>(urlParams);
+  const [result, setResult] = useState<DiscoverFilterApiResponse | null>(null);
+  const [searchTags, setSearchTags] = useState<DiscoverSearchTagOption[]>([]);
+  const [pending, setPending] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const loadResults = useCallback(async (nextParams: DiscoverParams, signal?: AbortSignal) => {
+    setPending(true);
+    setFetchError(null);
+    try {
+      const data = await fetchDiscoverFilter(toApiParams(nextParams), signal);
+      if (signal?.aborted) return;
+      setResult(data);
+      setSearchTags(data.search_tags);
+      setParams(nextParams);
+    } catch (err) {
+      if (signal?.aborted) return;
+      setFetchError(err instanceof Error ? err.message : "Could not load results");
+    } finally {
+      if (!signal?.aborted) setPending(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const q = searchParams.get("q")?.trim();
+    if (!q || hasExplicitDiscoverParams(Object.fromEntries(searchParams.entries()))) {
+      return;
+    }
+    if (!isDiscoverNlFeatureEnabled(featureFlags)) {
+      return;
+    }
+    if (nlHandledRef.current === q) return;
+    nlHandledRef.current = q;
+
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const res = await fetch("/api/discovery/parse-query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: q }),
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const body = (await res.json()) as { parsed?: { expanded?: boolean } & Record<string, unknown> };
+        if (!body.parsed?.expanded) return;
+        router.replace(buildDiscoverUrlFromLinkParams(body.parsed));
+      } catch {
+        /* NL expansion is best-effort */
+      }
+    })();
+
+    return () => controller.abort();
+  }, [featureFlags, router, searchParams]);
+
+  const paramsKey = searchParams.toString();
+
+  useEffect(() => {
+    if (navigatingRef.current) return;
+
+    const controller = new AbortController();
+    void loadResults(urlParams, controller.signal);
+
+    return () => controller.abort();
+  }, [loadResults, paramsKey, urlParams]);
 
   const tagLabelBySlug = useMemo(() => {
     const map = new Map<string, string>();
@@ -75,42 +175,67 @@ export function DiscoverPageClient({
   );
 
   const activeTownSlugs = useMemo(
-    () => parseTownSlugsFromParam(initialParams.town),
-    [initialParams.town],
+    () => parseTownSlugsFromParam(params.town),
+    [params.town],
   );
 
   const selectedTags = useMemo(() => {
-    const fromApplied = appliedTagsFromFilters(initialResult.applied_filters);
-    if (fromApplied.length) return fromApplied;
-    return parseFacetSlugs(initialParams.facet);
-  }, [initialResult.applied_filters, initialParams.facet]);
+    if (result) {
+      const fromApplied = appliedTagsFromFilters(result.applied_filters);
+      if (fromApplied.length) return fromApplied;
+    }
+    return parseFacetSlugs(params.facet);
+  }, [result, params.facet]);
 
   const navigate = useCallback(
     (
-      next: Partial<Props["initialParams"]> & {
+      next: Partial<DiscoverParams> & {
         townSlugs?: string[];
         tags?: string[];
         page?: number;
       },
     ) => {
-      const type = next.type ?? initialParams.type;
-      const url = buildDiscoverUrl({
+      const type = next.type ?? params.type;
+      const townSlugs = next.townSlugs ?? activeTownSlugs;
+      const tags = next.tags ?? selectedTags;
+      const nextParams: DiscoverParams = {
         type,
-        townSlugs: next.townSlugs ?? activeTownSlugs,
-        townScope:
+        town: townSlugs.length ? townSlugs.join(",") : undefined,
+        town_scope:
           "townSlugs" in next && next.townSlugs !== undefined
             ? undefined
-            : initialParams.town_scope,
-        category: "category" in next ? next.category : initialParams.category,
+            : params.town_scope,
+        category: "category" in next ? next.category : params.category,
         service_category:
-          "service_category" in next ? next.service_category : initialParams.service_category,
-        tags: next.tags ?? selectedTags,
-        q: "q" in next ? next.q : initialParams.q,
+          "service_category" in next ? next.service_category : params.service_category,
+        facet: tags.length ? tags.join(",") : undefined,
+        q: "q" in next ? next.q : params.q,
         page: next.page ?? 1,
+      };
+
+      const url = buildDiscoverUrl({
+        type: nextParams.type,
+        townSlugs,
+        townScope: nextParams.town_scope,
+        category: nextParams.category,
+        service_category: nextParams.service_category,
+        tags,
+        q: nextParams.q,
+        page: nextParams.page,
       });
-      startTransition(() => router.push(url));
+
+      navigatingRef.current = true;
+      router.replace(url, { scroll: false });
+
+      void (async () => {
+        try {
+          await loadResults(nextParams);
+        } finally {
+          navigatingRef.current = false;
+        }
+      })();
     },
-    [router, initialParams, activeTownSlugs, selectedTags],
+    [activeTownSlugs, loadResults, params, router, selectedTags],
   );
 
   const setTownSlugs = (slugs: string[]) => {
@@ -122,24 +247,27 @@ export function DiscoverPageClient({
   };
 
   const queryError =
-    typeof initialResult.applied_filters.error === "string"
-      ? initialResult.applied_filters.error
+    result && typeof result.applied_filters.error === "string"
+      ? result.applied_filters.error
       : null;
 
   const categoryLabel =
-    initialParams.type === "storefront"
-      ? categories.find((c) => c.slug === initialParams.category)?.title
-      : serviceCategories.find((c) => c.slug === initialParams.service_category)?.title;
+    params.type === "storefront"
+      ? categories.find((c) => c.slug === params.category)?.title
+      : serviceCategories.find((c) => c.slug === params.service_category)?.title;
 
   const hasTagFilters = selectedTags.length > 0;
   const hasCategoryPreference = Boolean(
-    initialParams.type === "storefront"
-      ? initialParams.category
-      : initialParams.service_category,
+    params.type === "storefront" ? params.category : params.service_category,
   );
   const softScopeMode = hasTagFilters;
   const typeLabel =
-    initialParams.type === "storefront" ? ", storefront businesses" : ", regional services";
+    params.type === "storefront" ? ", storefront businesses" : ", regional services";
+
+  const total = result?.total ?? 0;
+  const listings = result?.listings ?? [];
+  const totalPages = result?.total_pages ?? 0;
+  const showResultsLoading = pending && !result;
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -169,7 +297,7 @@ export function DiscoverPageClient({
                   disabled={pending}
                   onClick={() => navigate({ type: "storefront", service_category: "", page: 1 })}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-                    initialParams.type === "storefront"
+                    params.type === "storefront"
                       ? "bg-[var(--color-primary)] text-white"
                       : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
                   }`}
@@ -181,7 +309,7 @@ export function DiscoverPageClient({
                   disabled={pending}
                   onClick={() => navigate({ type: "service", category: "", page: 1 })}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-                    initialParams.type === "service"
+                    params.type === "service"
                       ? "bg-[var(--color-primary)] text-white"
                       : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
                   }`}
@@ -217,7 +345,7 @@ export function DiscoverPageClient({
               </p>
             </div>
 
-            {initialParams.type === "storefront" ? (
+            {params.type === "storefront" ? (
               <div>
                 <label htmlFor="discover-category" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   Category
@@ -225,7 +353,7 @@ export function DiscoverPageClient({
                 <select
                   id="discover-category"
                   disabled={pending}
-                  value={initialParams.category ?? ""}
+                  value={params.category ?? ""}
                   onChange={(e) =>
                     navigate({
                       category: e.target.value,
@@ -255,7 +383,7 @@ export function DiscoverPageClient({
                 <select
                   id="discover-service-category"
                   disabled={pending}
-                  value={initialParams.service_category ?? ""}
+                  value={params.service_category ?? ""}
                   onChange={(e) =>
                     navigate({
                       service_category: e.target.value,
@@ -316,7 +444,7 @@ export function DiscoverPageClient({
                   </span>
                 ) : (
                   <span>
-                    {initialResult.total} result{initialResult.total === 1 ? "" : "s"}
+                    {total} result{total === 1 ? "" : "s"}
                   </span>
                 )}
                 {activeTownSlugs.map((slug) => (
@@ -351,7 +479,7 @@ export function DiscoverPageClient({
               <dl className="grid gap-1 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 px-3 py-2 text-xs text-[var(--color-text-secondary)] sm:grid-cols-2">
                 <div>
                   <dt className="font-medium text-[var(--color-text-tertiary)]">Entity</dt>
-                  <dd>{initialParams.type}</dd>
+                  <dd>{params.type}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-[var(--color-text-tertiary)]">Towns</dt>
@@ -378,9 +506,15 @@ export function DiscoverPageClient({
               </dl>
             </div>
 
-            {pending ? (
+            {fetchError ? (
+              <p className="text-sm text-red-600">{fetchError}</p>
+            ) : null}
+
+            {showResultsLoading ? (
+              <DiscoverPageLoading message="Loading results…" variant="results" />
+            ) : pending ? (
               <DiscoverPageLoading message="Updating results…" variant="results" />
-            ) : initialResult.listings.length === 0 ? (
+            ) : listings.length === 0 ? (
               <div className="space-y-2 text-[var(--color-text-secondary)]">
                 <p>
                   No listings match these filters. Try fewer tags, or broaden town or category.
@@ -391,13 +525,13 @@ export function DiscoverPageClient({
               </div>
             ) : (
               <ul className="flex flex-col gap-4">
-                {initialResult.listings.map((listing) => (
+                {listings.map((listing) => (
                   <li key={listing.id} className="h-full">
                     <DiscoverListingCard
                       listing={listing}
                       labelForSlug={labelForSlug}
                       showTagMatch={hasTagFilters}
-                      preferredEntityType={initialParams.type}
+                      preferredEntityType={params.type}
                       hasCategoryPreference={hasCategoryPreference}
                     />
                   </li>
@@ -405,23 +539,23 @@ export function DiscoverPageClient({
               </ul>
             )}
 
-            {initialResult.total_pages > 1 ? (
+            {totalPages > 1 ? (
               <div className="mt-8 flex items-center justify-center gap-3">
                 <button
                   type="button"
-                  disabled={pending || initialParams.page <= 1}
-                  onClick={() => navigate({ page: initialParams.page - 1 })}
+                  disabled={pending || params.page <= 1}
+                  onClick={() => navigate({ page: params.page - 1 })}
                   className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
                 >
                   Previous
                 </button>
                 <span className="text-sm text-[var(--color-text-secondary)]">
-                  Page {initialParams.page} of {initialResult.total_pages}
+                  Page {params.page} of {totalPages}
                 </span>
                 <button
                   type="button"
-                  disabled={pending || initialParams.page >= initialResult.total_pages}
-                  onClick={() => navigate({ page: initialParams.page + 1 })}
+                  disabled={pending || params.page >= totalPages}
+                  onClick={() => navigate({ page: params.page + 1 })}
                   className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
                 >
                   Next
