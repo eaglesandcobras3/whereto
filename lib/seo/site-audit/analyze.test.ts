@@ -10,6 +10,7 @@ describe("classifyPageKind", () => {
     expect(classifyPageKind("/services/home-trades")).toBe("service_group");
     expect(classifyPageKind("/restaurants")).toBe("category_hub");
     expect(classifyPageKind("/seaside")).toBe("town");
+    expect(classifyPageKind("/rosemary-beach/coffee")).toBe("other");
   });
 });
 

@@ -29,7 +29,6 @@ export type PageKind =
   | "browse_group"
   | "service_group"
   | "business"
-  | "seo_intent"
   | "event"
   | "utility"
   | "other";
@@ -102,6 +101,5 @@ export type RunSiteAuditOptions = {
   maxDepth?: number;
   timeBudgetMs?: number;
   includeBusinessUrls?: boolean;
-  includeSeoIntentUrls?: boolean;
   onProgress?: (done: number, total: number) => void;
 };

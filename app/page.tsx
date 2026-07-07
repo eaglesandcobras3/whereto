@@ -1,8 +1,8 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { HomePage } from "@/components/home/HomePage";
+import { HomeQueryRedirect } from "@/components/home/HomeQueryRedirect";
 import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
-import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
@@ -18,7 +18,7 @@ import { homePageMetadata } from "@/lib/seo/hub-metadata";
 
 // Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 const HOME_DESCRIPTION =
   "Plan your 30A trip with local guides to beach towns, restaurants, shopping, beach access, and Emerald Coast travel tips.";
@@ -44,18 +44,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-type HomeProps = {
-  searchParams: Promise<{ q?: string | string[] }>;
-};
-
-export default async function Home({ searchParams }: HomeProps) {
+export default async function Home() {
   const flags = await getAllFeatureFlags();
-  const { q } = await searchParams;
-  const query = typeof q === "string" ? q : Array.isArray(q) ? q[0] : undefined;
-  if (query?.trim() && isDiscoveryEnabled(flags)) {
-    redirect(discoveryHref(flags, { q: query.trim() }));
-  }
-
   const heroSettings = await getHomeHeroSettings();
   const supabase = getServiceSupabase();
 
@@ -158,11 +148,16 @@ export default async function Home({ searchParams }: HomeProps) {
     });
 
   return (
-    <HomePage
-      featuredBusinesses={featuredBusinesses}
-      towns={townList}
-      heroSettings={heroSettings}
-      seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
-    />
+    <>
+      <Suspense fallback={null}>
+        <HomeQueryRedirect />
+      </Suspense>
+      <HomePage
+        featuredBusinesses={featuredBusinesses}
+        towns={townList}
+        heroSettings={heroSettings}
+        seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
+      />
+    </>
   );
 }

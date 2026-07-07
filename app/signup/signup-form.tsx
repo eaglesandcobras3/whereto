@@ -1,20 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import posthog from "posthog-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { identifyPostHogUserAndWaitForFlags } from "@/lib/analytics/posthog-auth";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
-export function SignupForm({ nextPath }: { nextPath: string }) {
+function resolveNextPath(raw: string | null | undefined, fallback: string): string {
+  const candidate = raw?.trim();
+  if (candidate && candidate.startsWith("/") && !candidate.startsWith("//")) {
+    return candidate;
+  }
+  return fallback;
+}
+
+export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
+  const resolvedNextPath = resolveNextPath(
+    searchParams.get("next"),
+    nextPath,
+  );
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +60,7 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
         });
       }
       posthog.capture("user_signed_up", { method: "email" });
-      const next = nextPath.startsWith("/") ? nextPath : "/profile";
+      const next = resolveNextPath(resolvedNextPath, "/profile");
       router.push(next);
       router.refresh();
     } catch (err) {
@@ -100,7 +113,7 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
       <p className="mt-4 text-sm text-zinc-600">
         Already have an account?{" "}
         <Link
-          href={`/login?next=${encodeURIComponent(nextPath)}`}
+          href={`/login?next=${encodeURIComponent(resolvedNextPath)}`}
           {...gaClickProps({ event: "nav_click", category: "auth_signup", label: "login_redirect" })}
           className="text-teal-700 hover:underline"
         >
@@ -112,7 +125,7 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
         {...gaClickProps({ event: "nav_click", category: "auth_signup", label: "back_to_search" })}
         className="mt-4 text-sm text-teal-700 hover:underline"
       >
-        ← Back to search
+        ← Back to home
       </Link>
     </>
   );

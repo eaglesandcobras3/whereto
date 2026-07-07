@@ -110,13 +110,13 @@ export default function TermsPage() {
         </li>
       </ul>
       <p>
-        <strong>Correction policy.</strong> Share credible corrections through our{" "}
-        <Link
-          href="/feedback"
-          {...gaClickProps({ event: "nav_click", category: "terms", label: "feedback_form" })}
+        <strong>Correction policy.</strong> Share credible corrections through the correction link on the affected listing or by emailing{" "}
+        <a
+          href="mailto:feedback@whereto30a.com"
+          {...gaClickProps({ event: "contact_click", category: "terms", label: "email_feedback" })}
         >
-          listing feedback form
-        </Link>, whether you&apos;re flagging inaccuracies, misleading comparisons, likeness disputes,
+          feedback@whereto30a.com
+        </a>, whether you&apos;re flagging inaccuracies, misleading comparisons, likeness disputes,
         scraped or imported duplicates, OCR or ingestion issues, suspected impersonations, discriminatory taxonomy that ought not remain, infringing or unlawful
         editorial copy; omission of plainly required disclosures when you identify the statute or rule and furnish substantiation. We
         review good-faith requests with commercially reasonable diligence and endeavor to annotate, downgrade prominence, correct, or remove

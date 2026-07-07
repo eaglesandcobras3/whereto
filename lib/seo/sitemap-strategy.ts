@@ -57,7 +57,6 @@ export type BuildSitemapInput = {
   /** POIs resolve at `/area/[slug]` — deduped against areas. */
   pointsOfInterest?: SitemapRow[];
   events?: SitemapRow[];
-  seoPages?: SitemapRow[];
 };
 
 export function pathnameFromSitemapUrl(base: string, url: string): string {
@@ -111,7 +110,6 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     categories,
     pointsOfInterest = [],
     events = [],
-    seoPages = [],
   } = input;
   const entries: MetadataRoute.Sitemap = [];
 
@@ -202,17 +200,6 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
       lastModified: pickSitemapDate(ev, now),
       changeFrequency: "weekly",
       priority: 0.65,
-    });
-  }
-
-  for (const page of seoPages) {
-    const fullSlug = String(page.slug ?? "").trim();
-    if (!fullSlug || !fullSlug.includes("/")) continue;
-    entries.push({
-      url: `${base}/${fullSlug}`,
-      lastModified: pickSitemapDate(page, now),
-      changeFrequency: "monthly",
-      priority: 0.7,
     });
   }
 

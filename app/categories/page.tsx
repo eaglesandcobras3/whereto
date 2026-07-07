@@ -6,7 +6,7 @@ import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubSections } from "@/components/browse/CategoryHubSections";
 import { countCategoryHubBusinesses, getCategoryHubSections } from "@/lib/data/category-hub";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/categories"),

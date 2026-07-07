@@ -49,7 +49,7 @@ export function classifyPageKind(pathname: string): PageKind {
   if (isCategoryHubPublicPath(path)) return "category_hub";
 
   const parts = path.split("/").filter(Boolean);
-  if (parts.length === 2) return "seo_intent";
+  if (parts.length === 2) return "other";
   if (parts.length === 1) {
     if (UTILITY_PREFIXES.some((p) => path.startsWith(p))) return "utility";
     return "town";

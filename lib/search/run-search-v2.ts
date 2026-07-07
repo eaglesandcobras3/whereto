@@ -149,10 +149,21 @@ async function resolveServiceCategoryId(
 
 async function resolveTownIds(
   supabase: ReturnType<typeof getServiceSupabase>,
-  townSlug: string,
+  townSlugs: string[],
   scope: "exact" | "near" | "anywhere",
 ): Promise<string[] | null> {
-  if (scope === "anywhere") return null;
+  if (!townSlugs.length || scope === "anywhere") return null;
+
+  if (townSlugs.length > 1 || scope === "exact") {
+    const { data } = await supabase
+      .from("towns")
+      .select("id")
+      .in("slug", townSlugs);
+    const ids = (data ?? []).map((row) => String((row as { id: string }).id));
+    return ids.length ? ids : null;
+  }
+
+  const townSlug = townSlugs[0];
   const { data: townRow } = await supabase
     .from("towns")
     .select("id")
@@ -238,8 +249,8 @@ export async function runSearchV2(opts: RunSearchV2Options): Promise<SearchResul
           opts.openaiKey,
         ).catch(() => null)
       : Promise.resolve(null),
-    plan.townSlug
-      ? resolveTownIds(supabase, plan.townSlug, plan.scope)
+    plan.townSlugs.length
+      ? resolveTownIds(supabase, plan.townSlugs, plan.scope)
       : Promise.resolve(null),
   ]);
 

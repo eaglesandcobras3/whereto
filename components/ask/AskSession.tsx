@@ -16,12 +16,14 @@ export function AskSession({ towns, initialQuery }: Props) {
   const [sessionKey, setSessionKey] = useState<string | null>(null);
 
   useEffect(() => {
-    let key = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    if (!key) {
-      key = crypto.randomUUID();
-      sessionStorage.setItem(SESSION_STORAGE_KEY, key);
-    }
-    setSessionKey(key);
+    queueMicrotask(() => {
+      let key = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (!key) {
+        key = crypto.randomUUID();
+        sessionStorage.setItem(SESSION_STORAGE_KEY, key);
+      }
+      setSessionKey(key);
+    });
   }, []);
 
   if (!sessionKey) {

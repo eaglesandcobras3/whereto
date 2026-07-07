@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
-import { isAskEnabled, isDiscoverEnabled, isOnboardEnabled, isSearchEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
+import { isAskEnabled, isDiscoverEnabled, isOnboardEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags-core";
+import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import {
   categoryDbSlugFromLegacyOn30aSegment,
   categoryHubPath,
@@ -76,7 +77,23 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return null;
+  const specialty = sp.get("specialty")?.trim() || sp.get("service_category")?.trim() || undefined;
+  const discoverTarget = buildDiscoverUrlFromLinkParams({
+    type:
+      type === "services"
+        ? "services"
+        : type === "businesses"
+          ? "storefront"
+          : undefined,
+    town_id: sp.get("town_id")?.trim() || undefined,
+    category: sp.get("category")?.trim() || undefined,
+    service_category: specialty,
+    facet: sp.get("tags")?.trim() || undefined,
+    q: sp.get("q")?.trim() || undefined,
+    page: Number(sp.get("page") || "1"),
+  });
+
+  return NextResponse.redirect(new URL(discoverTarget, request.url), 308);
 }
 
 export async function middleware(request: NextRequest) {
@@ -121,16 +138,6 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!isAskEnabled(flags) && (pathname === "/ask" || pathname.startsWith("/ask/"))) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (!isSearchEnabled(flags) && (pathname === "/search" || pathname.startsWith("/search/"))) {
-    if (isAskEnabled(flags)) {
-      const url = new URL("/ask", request.url);
-      const q = request.nextUrl.searchParams.get("q")?.trim();
-      if (q) url.searchParams.set("q", q);
-      return NextResponse.redirect(url);
-    }
     return NextResponse.redirect(new URL("/", request.url));
   }
 

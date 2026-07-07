@@ -20,6 +20,7 @@ import type {
   DiscoverListingRow,
   DiscoverTagMatch,
 } from "@/lib/discovery-filters/types";
+import { buildDiscoverTextOrClause } from "@/lib/discovery-filters/build-discover-text-or-clause";
 import { trackDiscoverLowResults } from "@/lib/discovery-filters/track-discover-low-results";
 
 const DISCOVER_POOL_LIMIT = 2000;
@@ -179,11 +180,9 @@ export async function executeFilterSearch(
 
   const q = state.q?.trim();
   if (q) {
-    const safe = q.replace(/[%_,\\]/g, " ").trim();
-    if (safe) {
-      query = query.or(
-        `title.ilike.%${safe}%,slug.ilike.%${safe}%,search_keywords.ilike.%${safe}%,excerpt.ilike.%${safe}%`,
-      );
+    const orClause = buildDiscoverTextOrClause(q);
+    if (orClause) {
+      query = query.or(orClause);
     }
   }
 

@@ -30,7 +30,6 @@ const EXPECTED_JSON_LD: Partial<Record<PageKind, string[]>> = {
   category_hub: ["ItemList", "BreadcrumbList"],
   browse_group: ["ItemList", "BreadcrumbList"],
   service_group: ["ItemList", "BreadcrumbList"],
-  seo_intent: ["ItemList", "BreadcrumbList"],
   event: ["Event", "BreadcrumbList"],
 };
 
@@ -477,7 +476,6 @@ export function analyzeSiteWide(input: {
     "browse_group",
     "service_group",
     "business",
-    "seo_intent",
     "event",
   ]);
 
@@ -490,7 +488,6 @@ export function analyzeSiteWide(input: {
       page.kind !== "business" &&
       page.kind !== "browse_group" &&
       page.kind !== "service_group" &&
-      page.kind !== "seo_intent" &&
       page.kind !== "event" &&
       page.kind !== "utility" &&
       !path.startsWith("/business/");

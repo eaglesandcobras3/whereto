@@ -10,7 +10,7 @@ import {
 import { BROWSE_NAV_ITEMS } from "@/lib/nav/browse-links";
 import type { FeatureFlags } from "@/lib/feature-flags-core";
 
-const askOn = { ask: true, search: true };
+const askOn = { ask: true, search: false };
 const allOff = { ask: false, search: false };
 const discoverOnly: FeatureFlags = {
   ask: false,
@@ -65,8 +65,8 @@ describe("isDiscoveryEnabled", () => {
 
 describe("discoveryLinkRel", () => {
   it("marks robots-disallowed discovery URLs as nofollow", () => {
-    expect(discoveryLinkRel("/search?type=services")).toBe("nofollow");
     expect(discoveryLinkRel("/ask?q=foo")).toBe("nofollow");
+    expect(discoveryLinkRel("/discover?q=coffee")).toBe("nofollow");
     expect(discoveryLinkRel("/services")).toBeUndefined();
   });
 });

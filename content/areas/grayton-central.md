@@ -6,7 +6,7 @@ entity_type: area
 area_type: point_of_interest
 slug: grayton-central
 status: published
-# Omit from /search?type=areas and /search?type=access; still shown on Grayton Beach town hub.
+# Omit from generic browse surfaces; still shown on Grayton Beach town hub.
 include_in_site_browse: false
 
 region: 30a

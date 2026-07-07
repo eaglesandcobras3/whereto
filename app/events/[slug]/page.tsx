@@ -17,7 +17,7 @@ import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 
-export const revalidate = 1800;
+export const revalidate = 21600;
 
 type Props = { params: Promise<{ slug: string }> };
 

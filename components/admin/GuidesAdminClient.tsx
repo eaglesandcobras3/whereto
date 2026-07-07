@@ -68,7 +68,7 @@ export function GuidesAdminClient() {
   }, [filter]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   if (loading) return <p className="text-sm text-zinc-500">Loading guides…</p>;

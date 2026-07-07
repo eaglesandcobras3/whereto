@@ -1,8 +1,14 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { expandCorridorTownSlugsForNearSearch } from "@/lib/discovery-filters/corridor-town-scope";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
+
+export type ResolveTownIdsOptions = {
+  /** When `near`, expand anchor town(s) to a realistic corridor zone. */
+  townScope?: "exact" | "near";
+};
 
 export async function resolveTownIdsFromSlugs(
   supabase: SupabaseClient,
@@ -33,13 +39,36 @@ export async function resolveTownIdsFromSlugs(
   return [...ids];
 }
 
+function slugsForSearch(
+  townSlugs: string[],
+  options?: ResolveTownIdsOptions,
+): { slugs: string[]; searchAllTowns: boolean } {
+  if (!townSlugs.length || options?.townScope !== "near") {
+    return { slugs: townSlugs, searchAllTowns: false };
+  }
+  return expandCorridorTownSlugsForNearSearch(townSlugs);
+}
+
+function parseTownScope(raw: string | null | undefined): "exact" | "near" | undefined {
+  const value = raw?.trim().toLowerCase();
+  if (value === "near" || value === "exact") return value;
+  return undefined;
+}
+
 export async function resolveTownIdsFromParam(
   supabase: SupabaseClient,
   townParam: string | null | undefined,
   townIdParam: string | null | undefined,
+  options?: ResolveTownIdsOptions,
 ): Promise<{ town_ids: string[]; town_slugs: string[] }> {
   const town_slugs = parseTownSlugsFromParam(townParam ?? undefined);
   const extraIds = townIdParam?.trim() ? [townIdParam.trim()] : [];
-  const town_ids = await resolveTownIdsFromSlugs(supabase, town_slugs, extraIds);
+  const { slugs: searchSlugs, searchAllTowns } = slugsForSearch(town_slugs, options);
+
+  if (searchAllTowns) {
+    return { town_ids: extraIds.length ? extraIds : [], town_slugs };
+  }
+
+  const town_ids = await resolveTownIdsFromSlugs(supabase, searchSlugs, extraIds);
   return { town_ids, town_slugs };
 }

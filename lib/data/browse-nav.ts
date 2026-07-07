@@ -1,5 +1,6 @@
 import "server-only";
 
+import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
 import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
@@ -28,7 +29,7 @@ export function mergeBrowseNavItems(showLandmarksParks: boolean): BrowseNavItem[
   if (!showLandmarksParks) return [...BROWSE_NAV_ITEMS];
   const landmarksParks: BrowseNavItem = {
     label: "Landmarks & parks",
-    href: "/search?type=access",
+    href: buildDiscoverUrlFromLinkParams({ q: "landmarks parks beach access" }),
     activeTypes: ["access"],
   };
   const idx = BROWSE_NAV_ITEMS.findIndex((i) => i.label === "Areas");

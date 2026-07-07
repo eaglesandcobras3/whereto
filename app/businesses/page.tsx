@@ -7,7 +7,7 @@ import { countCategoryHubBusinesses, getCategoryHubSections } from "@/lib/data/c
 import { hubBusinessesIntro } from "@/lib/seo/page-intro-copy";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/businesses"),
