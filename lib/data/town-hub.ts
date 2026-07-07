@@ -61,7 +61,7 @@ export async function getTownBySlug(slug: string) {
     .limit(1);
 
   if (error) {
-    // eslint-disable-next-line no-console
+     
     console.error("getTownBySlug", { slug: key, error });
     return null;
   }

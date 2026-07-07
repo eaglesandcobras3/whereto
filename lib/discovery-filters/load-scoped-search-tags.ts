@@ -86,7 +86,7 @@ export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<Dis
     return [];
   }
 
-  let pool = applyBrowsePoolFilters(
+  const pool = applyBrowsePoolFilters(
     (data ?? []) as PoolRow[],
     storefrontGroup,
     serviceGroup,

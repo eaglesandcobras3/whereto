@@ -51,7 +51,7 @@ export async function getPublicPlaceBySlug(
   const area = areaRows?.[0];
 
   if (areaErr) {
-    // eslint-disable-next-line no-console
+     
     console.error("getPublicPlaceBySlug areas", { slug: key, areaErr });
   } else if (area) {
     const a = area as Record<string, unknown>;
@@ -95,7 +95,7 @@ export async function getPublicPlaceBySlug(
     .limit(1);
 
   if (poiErr) {
-    // eslint-disable-next-line no-console
+     
     console.error("getPublicPlaceBySlug points_of_interest", { slug: key, poiErr });
     return null;
   }

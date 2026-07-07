@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import { PortalAcceptInviteClient } from "@/components/portal/PortalAcceptInviteClient";
 import { PortalShell } from "@/components/portal/PortalShell";
 import { requirePortalUser } from "@/lib/portal/require-portal-user";
@@ -27,11 +26,9 @@ export default async function PortalAcceptInvitePage({ searchParams }: Props) {
   return (
     <PortalShell>
       <h1 className="font-headline text-2xl font-semibold text-[var(--color-text-primary)]">Accept team invite</h1>
-      <Suspense fallback={<p className="mt-6 text-sm text-[var(--color-text-secondary)]">Loading…</p>}>
-        <div className="mt-6">
-          <PortalAcceptInviteClient />
-        </div>
-      </Suspense>
+      <div className="mt-6">
+        <PortalAcceptInviteClient token={token?.trim() ?? ""} />
+      </div>
     </PortalShell>
   );
 }

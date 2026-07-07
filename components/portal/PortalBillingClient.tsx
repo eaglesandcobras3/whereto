@@ -99,7 +99,7 @@ export function PortalBillingClient() {
   }, []);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   useEffect(() => {
@@ -124,7 +124,7 @@ export function PortalBillingClient() {
       setErr(j.error ?? "Could not start checkout.");
       return;
     }
-    window.location.href = j.url;
+    globalThis.location.assign(j.url);
   }
 
   async function openBillingPortal(businessId: string) {
@@ -141,7 +141,7 @@ export function PortalBillingClient() {
       setErr(j.error ?? "Could not open billing portal.");
       return;
     }
-    window.location.href = j.url;
+    globalThis.location.assign(j.url);
   }
 
   if (loading) {

@@ -40,7 +40,7 @@ export function PortalTeamClient({ businessId, businessTitle }: Props) {
   }, [businessId]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function sendInvite(e: React.FormEvent) {

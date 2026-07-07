@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function isRemote(url: string | null | undefined) {
   return !!url && (url.startsWith("https://") || url.startsWith("http://"));
@@ -24,7 +24,7 @@ const iconSizeClass: Record<IconSize, string> = {
   md: "text-4xl",
 };
 
-export function RemoteCoverImage({
+function RemoteCoverImageInner({
   src,
   alt,
   fill = true,
@@ -34,11 +34,6 @@ export function RemoteCoverImage({
   iconSize = "md",
 }: RemoteCoverImageProps) {
   const [broken, setBroken] = useState(false);
-
-  useEffect(() => {
-    setBroken(false);
-  }, [src]);
-
   const showImage = isRemote(src) && !broken;
 
   if (!showImage) {
@@ -63,4 +58,8 @@ export function RemoteCoverImage({
       onError={() => setBroken(true)}
     />
   );
+}
+
+export function RemoteCoverImage(props: RemoteCoverImageProps) {
+  return <RemoteCoverImageInner key={props.src ?? "none"} {...props} />;
 }

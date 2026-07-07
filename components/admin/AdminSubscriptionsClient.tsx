@@ -42,7 +42,7 @@ export function AdminSubscriptionsClient() {
   }, []);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function act(businessId: string, action: string, planSlug?: string) {

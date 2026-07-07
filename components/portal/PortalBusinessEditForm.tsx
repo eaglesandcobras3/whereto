@@ -70,7 +70,7 @@ export function PortalBusinessEditForm({ businessId }: Props) {
   }, [businessId]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {

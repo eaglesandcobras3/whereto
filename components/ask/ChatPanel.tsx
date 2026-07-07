@@ -104,17 +104,18 @@ export function ChatPanel({
   );
 
   useEffect(() => {
-    if (refineMessage?.trim()) {
+    if (!refineMessage?.trim()) return;
+    queueMicrotask(() => {
       submit(refineMessage);
       onRefineConsumed?.();
-    }
+    });
   }, [refineMessage, onRefineConsumed, submit]);
 
   useEffect(() => {
     const q = initialQuery?.trim();
     if (!q || initialQuerySent.current || busy) return;
     initialQuerySent.current = true;
-    submit(q);
+    queueMicrotask(() => submit(q));
   }, [initialQuery, busy, submit]);
 
   useEffect(() => {

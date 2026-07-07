@@ -46,7 +46,7 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
   }, [businessId]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   const activeCount = photos.filter((p) => p.status === "pending" || p.status === "approved").length;
