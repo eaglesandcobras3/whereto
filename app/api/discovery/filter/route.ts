@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { discoverApiBlocked } from "@/lib/feature-flags";
 import { executeFilterSearch } from "@/lib/discovery-filters/execute-filter-search";
-import { parseDiscoveryFilterState } from "@/lib/discovery-filters/parse-filter-params";
+import { loadScopedSearchTags } from "@/lib/discovery-filters/load-scoped-search-tags";
+import { mergeActiveTagsIntoScopedOptions } from "@/lib/discovery-filters/merge-scoped-search-tags";
+import {
+  parseDiscoveryFilterState,
+  parseEntityType,
+} from "@/lib/discovery-filters/parse-filter-params";
 import { resolveTownIdsFromParam } from "@/lib/discovery-filters/resolve-town-ids";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
@@ -41,7 +46,17 @@ export async function GET(request: Request) {
     town_ids,
   );
 
-  const result = await executeFilterSearch(state);
+  const [result, scopedSearchTags] = await Promise.all([
+    executeFilterSearch(state),
+    loadScopedSearchTags({
+      entity_type: parseEntityType(sp.get("type")),
+      town_ids,
+      category_slug: sp.get("category") ?? undefined,
+      service_category_slug: sp.get("service_category") ?? undefined,
+    }),
+  ]);
 
-  return NextResponse.json(result);
+  const search_tags = mergeActiveTagsIntoScopedOptions(scopedSearchTags, state.tags);
+
+  return NextResponse.json({ ...result, search_tags });
 }

@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { ClaimListingForm } from "@/components/ClaimListingForm";
-import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
+import { isOnboardEnabled } from "@/lib/feature-flags-core";
 
 type Props = {
   businessId: string;
@@ -10,14 +13,14 @@ type Props = {
   claimedByUserId: string | null;
 };
 
-export async function BusinessClaimSection({
+export function BusinessClaimSection({
   businessId,
   businessTitle,
   claimStatus,
   userId,
   claimedByUserId,
 }: Props) {
-  const onboard = isOnboardEnabled(await getAllFeatureFlags());
+  const onboard = isOnboardEnabled(useAppFeatureFlags());
 
   if (!onboard) {
     return (

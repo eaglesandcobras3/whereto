@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { SignupForm } from "@/app/signup/signup-form";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -14,7 +13,9 @@ export default function SignupPage() {
       <p className="mt-2 text-sm text-zinc-600">
         Sign up to save your favorites and access personalized features.
       </p>
-      <SignupForm />
+      <Suspense fallback={<p className="text-sm text-zinc-500">Loading form…</p>}>
+        <SignupForm />
+      </Suspense>
     </div>
   );
 }

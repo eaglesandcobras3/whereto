@@ -51,8 +51,8 @@ import {
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
-import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
-import { discoveryHref, isDiscoveryEnabled, type DiscoveryFlags } from "@/lib/nav/discovery-links";
+import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
+import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
 
 type SidebarArea = {
   id: string;
@@ -329,17 +329,13 @@ export default async function TownPage({ params }: Props) {
 
   const categorySlug = await resolveCategorySlugFromPublicPath(townSlug);
   if (categorySlug) {
-    const [hub, flags] = await Promise.all([
-      loadCategoryHubPage(categorySlug),
-      getAllFeatureFlags(),
-    ]);
+    const hub = await loadCategoryHubPage(categorySlug);
     if (!hub) notFound();
     return (
       <CategoryHubView
         cat={hub.cat}
         townGroups={hub.townGroups}
         businesses={hub.businesses}
-        seoImprovements={isSeoImprovementsFeatureEnabled(flags)}
       />
     );
   }
@@ -352,16 +348,11 @@ export default async function TownPage({ params }: Props) {
 
   const town = await getTownBySlug(townSlug);
   if (town) {
-    const [pageData, featureFlags] = await Promise.all([
-      getTownPageData(town.id, town.slug),
-      getAllFeatureFlags(),
-    ]);
+    const pageData = await getTownPageData(town.id, town.slug);
     return (
       <BasicTownPage
         town={town}
         pageData={pageData}
-        featureFlags={featureFlags}
-        seoImprovements={isSeoImprovementsFeatureEnabled(featureFlags)}
       />
     );
   }
@@ -381,13 +372,9 @@ type TownPageData = {
 function BasicTownPage({
   town,
   pageData,
-  featureFlags,
-  seoImprovements,
 }: {
   town: TownRecord;
   pageData: TownPageData;
-  featureFlags: DiscoveryFlags;
-  seoImprovements: boolean;
 }) {
   const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
   const descriptor = getTownDescriptor(town.slug);
@@ -465,21 +452,7 @@ function BasicTownPage({
                 sections={pageData.categorySections}
                 analyticsCategoryPrefix="town_guide_category"
                 emptyMessage={
-                  isDiscoveryEnabled(featureFlags) ? (
-                    <p className="text-[var(--color-text-secondary)]">
-                      No business listings in {town.name} yet.{" "}
-                      <Link
-                        href={discoveryHref(featureFlags, { town_id: town.id })}
-                        className="font-medium text-[var(--color-primary)] hover:underline"
-                      >
-                        Search all of 30A
-                      </Link>
-                    </p>
-                  ) : (
-                    <p className="text-[var(--color-text-secondary)]">
-                      No business listings in {town.name} yet.
-                    </p>
-                  )
+                  <TownEmptyDiscoveryMessage townName={town.name} townId={town.id} />
                 }
               />
 
@@ -503,17 +476,19 @@ function BasicTownPage({
               </PlaceRelatedSection>
             ) : null}
 
-            {seoImprovements && planningProfile ? (
-              <TownPlanningSections townName={town.name} profile={planningProfile} />
+            {planningProfile ? (
+              <SeoImprovementsGate>
+                <TownPlanningSections townName={town.name} profile={planningProfile} />
+              </SeoImprovementsGate>
             ) : null}
 
-            {seoImprovements ? (
+            <SeoImprovementsGate>
               <RelatedGuidesSection
                 title={`Plan your ${town.name} trip`}
                 links={relatedGuides}
                 analyticsCategory="town_related_guides"
               />
-            ) : null}
+            </SeoImprovementsGate>
 
               {!hasEditorialIntro && pageData.categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">

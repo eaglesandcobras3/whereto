@@ -21,16 +21,12 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
-import { getAllFeatureFlags, isSeoImprovementsFeatureEnabled } from "@/lib/feature-flags";
 import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
 import { relatedGuidesForAreaSlug } from "@/lib/seo/guide-related-links";
 import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
-import {
-  discoveryHref,
-  isDiscoveryEnabled,
-  type DiscoveryFlags,
-} from "@/lib/nav/discovery-links";
+import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
+import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyDiscoveryMessage";
 
 export const revalidate = 21600;
 
@@ -85,25 +81,6 @@ function areaSectionSearchHref(
   return `/discover?type=storefront&${params.toString()}`;
 }
 
-function areaBrowseDiscoveryHref(
-  place: PublicPlacePage,
-  flags: DiscoveryFlags,
-): string | null {
-  if (!isDiscoveryEnabled(flags)) return null;
-
-  const townId = place.town_id?.trim() || undefined;
-  if (place.source === "area") {
-    return discoveryHref(flags, { area_id: place.id, town_id: townId });
-  }
-  if (place.parent_area_id) {
-    return discoveryHref(flags, { area_id: place.parent_area_id, town_id: townId });
-  }
-  if (townId) {
-    return discoveryHref(flags, { town_id: townId });
-  }
-  return null;
-}
-
 async function getAreaSidebarData(place: PublicPlacePage): Promise<AreaSidebarData> {
   const townLink = await resolveTownLink(place);
   return { townLink };
@@ -150,12 +127,10 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) redirectToSectionHub("areas");
 
-  const [sidebar, categorySections, featureFlags] = await Promise.all([
+  const [sidebar, categorySections] = await Promise.all([
     getAreaSidebarData(area),
     getCategorySectionsForPublicPlace(area),
-    getAllFeatureFlags(),
   ]);
-  const seoImprovements = isSeoImprovementsFeatureEnabled(featureFlags);
   const planningProfile = getAreaPlanningProfile(area.slug);
   const relatedGuides = relatedGuidesForAreaSlug(area.slug);
 
@@ -267,36 +242,22 @@ export default async function AreaPage({ params }: Props) {
                 placeSlug={area.slug}
                 sections={categorySections}
                 analyticsCategoryPrefix="area_guide_category"
-                emptyMessage={
-                  areaBrowseDiscoveryHref(area, featureFlags) ? (
-                    <p className="text-[var(--color-text-secondary)]">
-                      No business listings in {area.title} yet.{" "}
-                      <Link
-                        href={areaBrowseDiscoveryHref(area, featureFlags)!}
-                        className="font-medium text-[var(--color-primary)] hover:underline"
-                      >
-                        Search nearby
-                      </Link>
-                    </p>
-                  ) : (
-                    <p className="text-[var(--color-text-secondary)]">
-                      No business listings in {area.title} yet.
-                    </p>
-                  )
-                }
+                emptyMessage={<AreaEmptyDiscoveryMessage place={area} />}
               />
 
-            {seoImprovements && planningProfile ? (
-              <AreaPlanningSections areaName={area.title} profile={planningProfile} />
+            {planningProfile ? (
+              <SeoImprovementsGate>
+                <AreaPlanningSections areaName={area.title} profile={planningProfile} />
+              </SeoImprovementsGate>
             ) : null}
 
-            {seoImprovements ? (
+            <SeoImprovementsGate>
               <RelatedGuidesSection
                 title={`Guides for ${area.title}`}
                 links={relatedGuides}
                 analyticsCategory="area_related_guides"
               />
-            ) : null}
+            </SeoImprovementsGate>
 
               {!hasEditorialIntro && categorySections.length === 0 ? (
                 <p className="prose-editorial text-zinc-500">

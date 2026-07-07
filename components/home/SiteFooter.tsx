@@ -5,7 +5,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups";
 import { getListedServiceBrowseGroups } from "@/lib/data/service-browse-groups";
-import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
+import { FooterCompanyLinks } from "@/components/home/FooterCompanyLinks";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
@@ -222,29 +222,6 @@ function FooterBrowseColumn({
   );
 }
 
-function buildCompanyLinks(listBusinessHref: string) {
-  return [
-  { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "about" }), name: "About", href: "/about" },
-  {
-    ...gaClickProps({ event: "nav_click", category: "footer_company", label: "travel_guides" }),
-    name: "Travel guides",
-    href: "/guides",
-  },
-  {
-    ...gaClickProps({ event: "nav_click", category: "footer_company", label: "all_categories" }),
-    name: "All categories",
-    href: "/categories",
-  },
-  {
-    ...gaClickProps({ event: "cta_click", category: "footer_company", label: "list_your_business" }),
-    name: "List your business",
-    href: listBusinessHref,
-  },
-  { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "privacy" }), name: "Privacy", href: "/privacy" },
-  { ...gaClickProps({ event: "nav_click", category: "footer_company", label: "terms" }), name: "Terms", href: "/terms" },
-];
-}
-
 const getCachedFooterBrowseData = unstable_cache(
   async () => {
     const [townLinks, areaLinks, businessGroupLinks, serviceGroupLinks] =
@@ -261,10 +238,6 @@ const getCachedFooterBrowseData = unstable_cache(
 );
 
 export async function SiteFooter() {
-  const flags = await getAllFeatureFlags();
-  const listBusinessHref = isOnboardEnabled(flags) ? "/portal/businesses/new" : "/list-your-business";
-  const companyLinks = buildCompanyLinks(listBusinessHref);
-
   const [{ townLinks, areaLinks, businessGroupLinks, serviceGroupLinks }, instagramUrl, tiktokUrl] =
     await Promise.all([
     getCachedFooterBrowseData(),
@@ -346,18 +319,7 @@ export async function SiteFooter() {
             <div className={`${footerColumnClass} flex flex-col gap-8`}>
               <div>
                 <h3 className="text-eyebrow mb-3">Company</h3>
-                <ul className="flex flex-col gap-1">
-                  {companyLinks.map((link) => {
-                    const { name, href, ...analytics } = link;
-                    return (
-                      <li key={href}>
-                        <Link href={href} {...analytics} className={footerLinkClass}>
-                          {name}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <FooterCompanyLinks />
               </div>
             </div>
           </div>

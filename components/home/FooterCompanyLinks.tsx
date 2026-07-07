@@ -1,0 +1,64 @@
+"use client";
+
+import Link from "next/link";
+import { useAppFeatureFlags } from "@/lib/feature-flags-client";
+import { isOnboardEnabled } from "@/lib/feature-flags-core";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
+
+const footerLinkClass =
+  "text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]";
+
+export function FooterCompanyLinks() {
+  const flags = useAppFeatureFlags();
+  const listBusinessHref = isOnboardEnabled(flags)
+    ? "/portal/businesses/new"
+    : "/list-your-business";
+
+  const companyLinks = [
+    {
+      name: "About",
+      href: "/about",
+      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "about" }),
+    },
+    {
+      name: "Travel guides",
+      href: "/guides",
+      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "travel_guides" }),
+    },
+    {
+      name: "All categories",
+      href: "/categories",
+      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "all_categories" }),
+    },
+    {
+      name: "List your business",
+      href: listBusinessHref,
+      ...gaClickProps({ event: "cta_click", category: "footer_company", label: "list_your_business" }),
+    },
+    {
+      name: "Privacy",
+      href: "/privacy",
+      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "privacy" }),
+    },
+    {
+      name: "Terms",
+      href: "/terms",
+      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "terms" }),
+    },
+  ];
+
+  return (
+    <ul className="flex flex-col gap-1">
+      {companyLinks.map((link) => {
+        const { name, href, ...analytics } = link;
+        return (
+          <li key={name}>
+            <Link href={href} {...analytics} className={footerLinkClass}>
+              {name}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
