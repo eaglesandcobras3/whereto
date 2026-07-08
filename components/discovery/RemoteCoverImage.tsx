@@ -55,6 +55,7 @@ function RemoteCoverImageInner({
       fill={fill}
       className={className}
       sizes={sizes}
+      loading="lazy"
       onError={() => setBroken(true)}
     />
   );

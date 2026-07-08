@@ -212,7 +212,7 @@ export default async function TownsPage() {
               width={1200}
               height={600}
               className="h-auto w-full"
-              priority={false}
+              loading="lazy"
             />
           </div>
         </div>
