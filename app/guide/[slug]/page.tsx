@@ -291,6 +291,7 @@ export default async function GuidePage({ params }: Props) {
                   alt="Map of beach towns along Scenic Highway 30A from Inlet Beach to Dune Allen"
                   width={1200}
                   height={600}
+                  loading="lazy"
                   className="h-auto w-full"
                 />
               </div>

@@ -66,6 +66,7 @@ export function BusinessPreviewCard({
             alt={name}
             fill
             unoptimized
+            loading="lazy"
             className="object-cover"
             sizes="(min-width: 768px) 9rem, 7rem"
           />
