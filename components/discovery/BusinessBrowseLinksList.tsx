@@ -43,6 +43,7 @@ export function BusinessBrowseLinksList({
                   alt={rb.name}
                   width={64}
                   height={96}
+                  loading="lazy"
                   className="aspect-[2/3] w-16 shrink-0 rounded-lg object-cover"
                 />
               ) : (

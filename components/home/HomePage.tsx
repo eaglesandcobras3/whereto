@@ -57,6 +57,7 @@ function DesignImg({
       className={className}
       sizes={sizes}
       priority={priority}
+      loading={priority ? undefined : "lazy"}
       unoptimized={src.startsWith("http")}
     />
   );

@@ -63,7 +63,13 @@ export function AreaCard({
             `}
           >
             {imageUrl ? (
-              <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+              <img
+                src={imageUrl}
+                alt={name}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
             ) : null}
           </div>
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />

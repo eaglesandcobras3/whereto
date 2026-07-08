@@ -69,6 +69,7 @@ export function DiscoverListingCard({
             alt={listing.title}
             fill
             unoptimized
+            loading="lazy"
             className="object-cover"
             sizes="(min-width: 768px) 9rem, 7rem"
           />

@@ -38,6 +38,7 @@ export function MarkdownBusinessCard({ slug, markdownNote, business }: Props) {
             alt={title}
             width={96}
             height={144}
+            loading="lazy"
             className="aspect-[2/3] w-20 shrink-0 rounded-xl object-cover sm:w-24"
           />
         ) : (
