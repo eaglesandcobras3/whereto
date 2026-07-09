@@ -28,6 +28,7 @@ import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 
@@ -425,7 +426,7 @@ export default async function BusinessPage({ params }: Props) {
 
   const breadcrumbItems = [
     { name: "Home", url: "/" },
-    ...(town?.slug && town?.name ? [{ name: town.name, url: `/${town.slug}` }] : []),
+    ...(town?.slug && town?.name ? [{ name: town.name, url: townPagePath(town.slug) }] : []),
     ...(breadcrumbCategoryLabel
       ? [
           {
@@ -505,7 +506,7 @@ export default async function BusinessPage({ params }: Props) {
               <>
                 <span className="text-zinc-300">/</span>
                 <Link
-                  href={`/${town.slug}`}
+                  href={townPagePath(town.slug)}
                   {...gaClickProps({
                     event: "nav_click",
                     category: "business_detail_breadcrumb",
@@ -561,9 +562,9 @@ export default async function BusinessPage({ params }: Props) {
 
               {/* Quick meta row */}
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-zinc-500">
-                {town?.name && (
+                {town?.name && town?.slug && (
                   <Link
-                    href={`/${town.slug}`}
+                    href={townPagePath(town.slug)}
                     {...gaClickProps({
                       event: "nav_click",
                       category: "business_detail_meta",
@@ -809,7 +810,7 @@ export default async function BusinessPage({ params }: Props) {
                     {town?.slug && town?.name ? (
                       <li>
                         <Link
-                          href={`/${town.slug}`}
+                          href={townPagePath(town.slug)}
                           {...gaClickProps({
                             event: "nav_click",
                             category: "business_detail_sidebar",
@@ -888,7 +889,7 @@ export default async function BusinessPage({ params }: Props) {
                       <li key={g.slug}>
                         <Link
                           href={
-                            g.slug === town?.slug ? `/${g.slug}` : `/guide/${g.slug}`
+                            g.slug === town?.slug ? townPagePath(g.slug) : `/guide/${g.slug}`
                           }
                           {...gaClickProps({
                             event: "nav_click",

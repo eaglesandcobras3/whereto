@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Inter, Manrope, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AnalyticsClickCapture } from "@/components/analytics/AnalyticsClickCapture";
-import { PostHogPageView } from "@/components/analytics/PostHogPageView";
 import { PostHogAuthSync } from "@/components/analytics/PostHogAuthSync";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -202,9 +200,6 @@ export default function RootLayout({
         </PostHogProvider>
         <Analytics />
         <AnalyticsClickCapture />
-        <Suspense fallback={null}>
-          <PostHogPageView />
-        </Suspense>
       </body>
     </html>
   );

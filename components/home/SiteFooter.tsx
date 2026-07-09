@@ -7,6 +7,7 @@ import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups
 import { getListedServiceBrowseGroups } from "@/lib/data/service-browse-groups";
 import { FooterCompanyLinks } from "@/components/home/FooterCompanyLinks";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
 const FOOTER_BROWSE_LIMIT = 500;
@@ -60,7 +61,7 @@ async function getFooterTowns(): Promise<FooterBrowseLink[]> {
     .map((t) => ({
       name: (t as unknown as { title: string }).title,
       slug: t.slug as string,
-      href: `/${t.slug as string}`,
+      href: townPagePath(t.slug as string),
       _count: bizCounts.get(t.id as string) ?? 0,
     }))
     .sort((a, b) => {
