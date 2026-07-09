@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 type Props = {
   name: string;
@@ -37,7 +38,7 @@ export function TownCard({
 }: Props) {
   return (
     <Link
-      href={`/${slug}`}
+      href={townPagePath(slug)}
       {...gaClickProps({ event: "nav_click", category: analyticsCategory, label: slug })}
       className={`
         group block overflow-hidden rounded-[var(--radius-listing)]

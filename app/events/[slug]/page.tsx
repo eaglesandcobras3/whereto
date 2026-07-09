@@ -15,6 +15,7 @@ import {
 import { generateBreadcrumbSchema, generateEventSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { EventsBreadcrumbLink } from "@/components/feature-flags/EventsBreadcrumbLink";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 export const revalidate = 21600;
 
@@ -254,7 +255,7 @@ export default async function EventDetailPage({ params }: Props) {
         </h1>
         <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--color-text-secondary)]">
           {event.town_slug && event.town_name ? (
-            <Link href={`/${event.town_slug}`} className="hover:text-[var(--color-primary)]">
+            <Link href={townPagePath(event.town_slug)} className="hover:text-[var(--color-primary)]">
               {event.town_name}
             </Link>
           ) : null}

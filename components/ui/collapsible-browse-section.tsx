@@ -8,7 +8,7 @@ const TRIGGER_CLASS =
 
 type Props = {
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   icon?: ReactNode;
   open: boolean;
   onToggle: () => void;

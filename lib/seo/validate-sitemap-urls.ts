@@ -1,5 +1,6 @@
 import { isCategoryHubPublicPath } from "@/lib/routes/category-hub-path";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
+import { townPagePath } from "@/lib/routes/town-page-path";
 import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
   PRIMARY_EDITORIAL_GUIDE_SLUG,
@@ -75,14 +76,7 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
     }
   }
 
-  const hasTown = paths.some((p) => {
-    if (p.split("/").filter(Boolean).length !== 1) return false;
-    if (p.startsWith("/guide/") || p.startsWith("/area/")) return false;
-    if (p === "/" || requiredHubs.includes(p) || isExcludedSitemapPath(p)) return false;
-    if (isCategoryHubPublicPath(p)) return false;
-    if (p === SERVICE_VENDORS_HUB_PATH) return false;
-    return true;
-  });
+  const hasTown = paths.some((p) => p.startsWith("/town/"));
   if (!hasTown) {
     violations.push({ rule: "town-pages", detail: "Expected at least one town page" });
   }
@@ -96,14 +90,11 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
     (p) => p.startsWith("/guide/") && p !== PRIMARY_EDITORIAL_GUIDE_PATH,
   );
   const townPaths = new Set(
-    paths.filter((p) => {
-      const parts = p.split("/").filter(Boolean);
-      return parts.length === 1 && !isExcludedSitemapPath(p) && !requiredHubs.includes(p);
-    }),
+    paths.filter((p) => p.startsWith("/town/")),
   );
   for (const guidePath of otherGuides) {
     const slug = guidePath.replace("/guide/", "");
-    if (townPaths.has(`/${slug}`)) {
+    if (townPaths.has(townPagePath(slug))) {
       violations.push({
         rule: "no-duplicate-town-guide",
         detail: `Guide duplicates town hub: ${guidePath}`,

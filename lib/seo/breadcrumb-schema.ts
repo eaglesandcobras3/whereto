@@ -1,6 +1,7 @@
 import { getSiteUrl } from "@/lib/site-url";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { townGeoCoordinates } from "@/lib/seo/town-coordinates";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 export type BreadcrumbItem = {
   name: string;
@@ -118,14 +119,15 @@ export function generateTownSchema(town: {
 }): object {
   const siteUrl = getSiteUrl();
   const imageUrl = absoluteHttpUrl(town.imageUrl);
+  const pagePath = townPagePath(town.slug);
 
   return {
     "@context": "https://schema.org",
     "@type": "TouristDestination",
-    "@id": `${siteUrl}/${town.slug}#place`,
+    "@id": `${siteUrl}${pagePath}#place`,
     name: town.name,
     description: town.description || `Discover ${town.name} on Florida's scenic Highway 30A.`,
-    url: `${siteUrl}/${town.slug}`,
+    url: `${siteUrl}${pagePath}`,
     ...(imageUrl ? { image: imageUrl } : {}),
     touristType: ["Beach Vacation", "Family Travel", "Couples Getaway"],
     includesAttraction: {
@@ -171,7 +173,7 @@ export function generateAreaSchema(area: {
           containedInPlace: {
             "@type": "TouristDestination",
             name: area.townName,
-            url: `${siteUrl}/${area.townSlug}`,
+            url: `${siteUrl}${townPagePath(area.townSlug)}`,
           },
         }
       : {}),
@@ -326,7 +328,7 @@ export function generateLocalBusinessSchema(business: {
     schema.areaServed = {
       "@type": "Place",
       name: business.townName,
-      url: `${siteUrl}/${business.townSlug}`,
+      url: `${siteUrl}${townPagePath(business.townSlug)}`,
     };
   }
 
@@ -386,7 +388,7 @@ export function generateEventSchema(event: {
     location.containedInPlace = {
       "@type": "TouristDestination",
       name: event.townName,
-      url: `${siteUrl}/${event.townSlug}`,
+      url: `${siteUrl}${townPagePath(event.townSlug)}`,
     };
   }
   schema.location = location;

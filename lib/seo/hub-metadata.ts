@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { townPagePath } from "@/lib/routes/town-page-path";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import {
   metaDescriptionSnippet,
@@ -118,12 +119,13 @@ export function townPageMetadataFromAudit(
     seoDescription?.trim() || audit?.description || fallbackDescription,
     fallbackDescription,
   );
+  const path = townPagePath(townSlug);
   return {
-    ...canonicalAlternates(`/${townSlug}`),
+    ...canonicalAlternates(path),
     title,
     description,
     ...openGraphForPage({
-      path: `/${townSlug}`,
+      path,
       title: `${townName} | WhereTo30A`,
       description,
       imageUrl,

@@ -9,7 +9,8 @@ describe("classifyPageKind", () => {
     expect(classifyPageKind("/categories/restaurants-and-bars")).toBe("browse_group");
     expect(classifyPageKind("/services/home-trades")).toBe("service_group");
     expect(classifyPageKind("/restaurants")).toBe("category_hub");
-    expect(classifyPageKind("/seaside")).toBe("town");
+    expect(classifyPageKind("/town/seaside")).toBe("town");
+    expect(classifyPageKind("/seaside")).toBe("other");
     expect(classifyPageKind("/rosemary-beach/coffee")).toBe("other");
   });
 });
@@ -54,8 +55,8 @@ describe("analyzePage", () => {
 
   it("does not flag text ratio when framework scripts inflate full HTML bytes", () => {
     const page: CrawledPage = {
-      url: "https://whereto30a.com/seaside",
-      finalUrl: "https://whereto30a.com/seaside",
+      url: "https://whereto30a.com/town/seaside",
+      finalUrl: "https://whereto30a.com/town/seaside",
       status: 200,
       redirectHops: 0,
       kind: "town",
@@ -65,7 +66,7 @@ describe("analyzePage", () => {
         title: "Seaside",
         metaDescription: "Town guide",
         robotsMeta: null,
-        canonicalHref: "https://whereto30a.com/seaside",
+        canonicalHref: "https://whereto30a.com/town/seaside",
         h1Texts: ["Seaside"],
         ogTitle: null,
         ogDescription: null,

@@ -9,7 +9,7 @@ export type BrowseNavItem = {
 };
 
 export const BROWSE_NAV_ITEMS: BrowseNavItem[] = [
-  { label: "Towns", href: "/towns", activePaths: ["/towns"] },
+  { label: "Towns", href: "/towns", activePaths: ["/towns", "/town"] },
   { label: "Areas", href: "/areas", activePaths: ["/areas", "/area"] },
   {
     label: "Businesses",

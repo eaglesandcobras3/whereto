@@ -6,7 +6,7 @@ export type FeedbackPageHrefOptions = {
 };
 
 /**
- * Stable query key: relative path (`/business/foo`, `/rosemary-beach`, `/guide/bar`).
+ * Stable query key: relative path (`/business/foo`, `/town/rosemary-beach`, `/guide/bar`).
  * Keep this narrow so the feedback page can remain a simple static shell with optional
  * client-side prefill based on one path parameter.
  */
