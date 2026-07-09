@@ -1,23 +1,27 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import {
+  BUSINESS_INDEX_MIN_UNIQUE_TEXT,
+  type BusinessIndexReadinessFields,
+  isBusinessIndexReady,
+} from "@/lib/seo/business-index-readiness";
 import type { AuditIssue } from "./types";
 
-const MIN_UNIQUE_TEXT = 80;
 const PAGE_SIZE = 500;
 
-type BusinessRow = {
-  slug: string | null;
+type BusinessRow = BusinessIndexReadinessFields & {
   title: string | null;
-  excerpt: string | null;
-  content: string | null;
-  address: string | null;
-  hero_image: string | null;
-  main_image: string | null;
-  hero_image_url: string | null;
-  main_image_url: string | null;
-  primary_category_id: string | null;
-  town_id: string | null;
-  is_hidden_from_search: boolean | null;
+};
+
+export type BusinessIndexabilityStats = {
+  total: number;
+  indexReady: number;
+  missingText: number;
+  missingImage: number;
+  missingAddress: number;
+  missingCategory: number;
+  missingTown: number;
+  hiddenFromSearch: number;
 };
 
 function textLen(...parts: Array<string | null | undefined>): number {
@@ -32,17 +36,6 @@ function hasImage(row: BusinessRow): boolean {
       row.main_image_url?.trim(),
   );
 }
-
-export type BusinessIndexabilityStats = {
-  total: number;
-  indexReady: number;
-  missingText: number;
-  missingImage: number;
-  missingAddress: number;
-  missingCategory: number;
-  missingTown: number;
-  hiddenFromSearch: number;
-};
 
 /** DB-side audit: listing fields that affect whether Google will index a business URL. */
 export async function auditBusinessIndexability(
@@ -99,7 +92,7 @@ export async function auditBusinessIndexability(
     const name = row.title?.trim() || slug;
 
     const uniqueText = textLen(row.excerpt, row.content);
-    const hasUniqueText = uniqueText >= MIN_UNIQUE_TEXT;
+    const hasUniqueText = uniqueText >= BUSINESS_INDEX_MIN_UNIQUE_TEXT;
     const image = hasImage(row);
     const address = Boolean(row.address?.trim());
     const category = row.primary_category_id != null;
@@ -113,14 +106,13 @@ export async function auditBusinessIndexability(
     if (!town) stats.missingTown++;
     if (hidden) stats.hiddenFromSearch++;
 
-    const ready = hasUniqueText && image && address && category && town && !hidden;
-    if (ready) {
+    if (isBusinessIndexReady(row)) {
       stats.indexReady++;
       continue;
     }
 
     const gaps: string[] = [];
-    if (!hasUniqueText) gaps.push(`unique text < ${MIN_UNIQUE_TEXT} chars`);
+    if (!hasUniqueText) gaps.push(`unique text < ${BUSINESS_INDEX_MIN_UNIQUE_TEXT} chars`);
     if (!image) gaps.push("no hero/main image");
     if (!address) gaps.push("no address");
     if (!category) gaps.push("no category");
