@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
+import type { AuthSessionUser } from "@/lib/auth/types";
 import { BROWSE_NAV_ITEMS, isBrowseNavActive, type BrowseNavItem } from "@/lib/nav/browse-links";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -27,7 +27,7 @@ type Props = {
   showAuth: boolean;
   showSaved: boolean;
   showLogin: boolean;
-  user: User | null;
+  user: AuthSessionUser | null;
 };
 
 export function NavbarMobileMenu({

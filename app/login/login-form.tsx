@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import posthog from "posthog-js";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { signInWithPasswordAction } from "@/lib/auth/actions";
 import { identifyPostHogUserAndWaitForFlags } from "@/lib/analytics/posthog-auth";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -33,16 +33,11 @@ export function LoginForm({ nextPath = "/profile" }: { nextPath?: string }) {
     setStatus("loading");
     setMessage("");
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      await identifyPostHogUserAndWaitForFlags({
-        id: data.user.id,
-        email: data.user.email,
-      });
+      const result = await signInWithPasswordAction(email, password);
+      if (!result.ok) throw new Error(result.error);
+      if (result.user) {
+        await identifyPostHogUserAndWaitForFlags(result.user);
+      }
       posthog.capture("user_signed_in", { method: "email" });
       const next = resolveNextPath(resolvedNextPath, "/profile");
       router.push(next);

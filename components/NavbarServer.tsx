@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { getSessionUser } from "@/lib/auth/get-session-user";
 import { hasPointOfInterestAreas, mergeBrowseNavItems } from "@/lib/data/browse-nav";
 import { Navbar } from "./Navbar";
 
@@ -18,7 +19,10 @@ const getCachedPointOfInterestVisibility = unstable_cache(
  * Discovery flags come from PostHog on the client (`useAppFeatureFlags`).
  */
 export async function NavbarServer({ compact, showSearch }: Props) {
-  const showLandmarksParks = await getCachedPointOfInterestVisibility();
+  const [showLandmarksParks, initialUser] = await Promise.all([
+    getCachedPointOfInterestVisibility(),
+    getSessionUser(),
+  ]);
   const browseNavItems = mergeBrowseNavItems(showLandmarksParks);
 
   return (
@@ -26,6 +30,7 @@ export async function NavbarServer({ compact, showSearch }: Props) {
       compact={compact}
       showSearch={showSearch}
       browseNavItems={browseNavItems}
+      initialUser={initialUser}
     />
   );
 }

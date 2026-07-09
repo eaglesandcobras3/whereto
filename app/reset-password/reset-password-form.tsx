@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { updatePasswordAction } from "@/lib/auth/actions";
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -30,9 +30,8 @@ export function ResetPasswordForm() {
     }
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      const result = await updatePasswordAction(password);
+      if (!result.ok) throw new Error(result.error);
       setStatus("success");
       setMessage("Password updated successfully.");
       setTimeout(() => {
