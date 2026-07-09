@@ -1,4 +1,5 @@
 import type { PlacePlanningProfile } from "@/lib/data/place-planning";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
   "rosemary-beach-town-center": {
@@ -17,8 +18,8 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Coffee to upscale dinner on foot. Most guests eat here multiple nights without getting in the car.",
     nearbyLinks: [
-      { name: "Rosemary Beach", href: "/rosemary-beach", note: "Full town guide" },
-      { name: "Inlet Beach", href: "/inlet-beach", note: "Quieter neighbor east" },
+      { name: "Rosemary Beach", href: townPagePath("rosemary-beach"), note: "Full town guide" },
+      { name: "Inlet Beach", href: townPagePath("inlet-beach"), note: "Quieter neighbor east" },
     ],
     relatedGuideSlugs: [
       "guide-to-rosemary-beach-florida",
@@ -54,8 +55,8 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Airstream tacos, sit-down restaurants, and sweets around the green. Go early or late to skip the crush.",
     nearbyLinks: [
-      { name: "Seaside", href: "/seaside", note: "Full town guide" },
-      { name: "WaterColor", href: "/watercolor", note: "Quieter neighbor" },
+      { name: "Seaside", href: townPagePath("seaside"), note: "Full town guide" },
+      { name: "WaterColor", href: townPagePath("watercolor"), note: "Quieter neighbor" },
     ],
     relatedGuideSlugs: [
       "ultimate-30a-first-timers-guide",
@@ -91,8 +92,8 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Polished restaurants and cocktail spots. Evenings feel like the main event.",
     nearbyLinks: [
-      { name: "Alys Beach", href: "/alys-beach", note: "Full town guide" },
-      { name: "Rosemary Beach", href: "/rosemary-beach", note: "More boutiques east" },
+      { name: "Alys Beach", href: townPagePath("alys-beach"), note: "Full town guide" },
+      { name: "Rosemary Beach", href: townPagePath("rosemary-beach"), note: "More boutiques east" },
     ],
     relatedGuideSlugs: [
       "ultimate-30a-first-timers-guide",
@@ -127,8 +128,8 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Breakfast through casual dinner along one walkable row. Good when you want one stop for the whole group.",
     nearbyLinks: [
-      { name: "Inlet Beach", href: "/inlet-beach", note: "Full town guide" },
-      { name: "Rosemary Beach", href: "/rosemary-beach", note: "Town center nearby" },
+      { name: "Inlet Beach", href: townPagePath("inlet-beach"), note: "Full town guide" },
+      { name: "Rosemary Beach", href: townPagePath("rosemary-beach"), note: "Town center nearby" },
     ],
     relatedGuideSlugs: [
       "ultimate-30a-first-timers-guide",
@@ -164,8 +165,8 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Casual lunch and early dinner. Strong when you want food close to home base without a big night out.",
     nearbyLinks: [
-      { name: "Seacrest Beach", href: "/seacrest-beach", note: "Full town guide" },
-      { name: "Rosemary Beach", href: "/rosemary-beach", note: "Upscale dining east" },
+      { name: "Seacrest Beach", href: townPagePath("seacrest-beach"), note: "Full town guide" },
+      { name: "Rosemary Beach", href: townPagePath("rosemary-beach"), note: "Upscale dining east" },
     ],
     relatedGuideSlugs: [
       "ultimate-30a-first-timers-guide",
@@ -201,8 +202,8 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Multiple stalls under one roof with outdoor seating. No single reservation for the whole group.",
     nearbyLinks: [
-      { name: "WaterSound", href: "/watersound", note: "Full town guide" },
-      { name: "Seagrove Beach", href: "/seagrove-beach", note: "Restaurant corridor" },
+      { name: "WaterSound", href: townPagePath("watersound"), note: "Full town guide" },
+      { name: "Seagrove Beach", href: townPagePath("seagrove-beach"), note: "Restaurant corridor" },
     ],
     relatedGuideSlugs: [
       "ultimate-30a-first-timers-guide",
@@ -237,7 +238,7 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Black Bear Bread and nearby spots for breakfast. Dinner is usually farther toward the beach strip.",
     nearbyLinks: [
-      { name: "Grayton Beach", href: "/grayton-beach", note: "Full town guide" },
+      { name: "Grayton Beach", href: townPagePath("grayton-beach"), note: "Full town guide" },
     ],
     relatedGuideSlugs: [
       "public-beaches-30a",
@@ -272,8 +273,8 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Chain and local mix — good for covering different tastes in one trip.",
     nearbyLinks: [
-      { name: "Sandestin", href: "/sandestin", note: "Full town guide" },
-      { name: "Miramar Beach", href: "/miramar-beach", note: "Beach strip west" },
+      { name: "Sandestin", href: townPagePath("sandestin"), note: "Full town guide" },
+      { name: "Miramar Beach", href: townPagePath("miramar-beach"), note: "Beach strip west" },
     ],
     relatedGuideSlugs: [
       "how-far-is-30a-from-destin",
@@ -308,7 +309,7 @@ export const AREA_PLANNING: Record<string, PlacePlanningProfile> = {
     diningStyle:
       "Everything from casual chains to seafood on the strip. Built for volume, not intimacy.",
     nearbyLinks: [
-      { name: "Panama City Beach", href: "/panama-city-beach", note: "Full town guide" },
+      { name: "Panama City Beach", href: townPagePath("panama-city-beach"), note: "Full town guide" },
     ],
     relatedGuideSlugs: [
       "how-to-get-to-30a-florida",

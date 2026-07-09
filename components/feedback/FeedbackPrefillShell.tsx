@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { BusinessFeedbackForm } from "@/components/feedback/BusinessFeedbackForm";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 function firstParam(
   searchParams: URLSearchParams,
@@ -28,7 +29,7 @@ function buildPrefilledListingContext(searchParams: URLSearchParams): string | u
   } else if (firstParam(searchParams, "business")) {
     path = `/business/${encodeURIComponent(firstParam(searchParams, "business")!)}`;
   } else if (firstParam(searchParams, "town")) {
-    path = `/${encodeURIComponent(firstParam(searchParams, "town")!)}`;
+    path = townPagePath(firstParam(searchParams, "town")!);
   } else if (firstParam(searchParams, "guide")) {
     path = `/guide/${encodeURIComponent(firstParam(searchParams, "guide")!)}`;
   } else if (firstParam(searchParams, "area")) {

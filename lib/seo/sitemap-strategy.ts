@@ -6,6 +6,7 @@ import {
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_DB_SLUG } from "@/lib/routes/primary-region";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 /** Featured first-timer guide — canonical path (not `/guide` hub). */
 export const PRIMARY_EDITORIAL_GUIDE_SLUG = "ultimate-30a-first-timers-guide" as const;
@@ -135,7 +136,7 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     if (!slug || isReservedRootSlug(slug) || slug === PRIMARY_REGION_DB_SLUG) continue;
     townSlugs.add(slug);
     entries.push({
-      url: `${base}/${slug}`,
+      url: `${base}${townPagePath(slug)}`,
       lastModified: pickSitemapDate(t, now),
       changeFrequency: "weekly",
       priority: 0.85,

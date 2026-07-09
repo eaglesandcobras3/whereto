@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 const TOWN_COMPARE_ROWS = [
   {
@@ -67,7 +68,7 @@ export function FirstTimerTownCompareTable() {
               <tr key={row.slug} className="border-t border-[var(--color-border)]">
                 <td className="px-5 py-3.5">
                   <Link
-                    href={`/${row.slug}`}
+                    href={townPagePath(row.slug)}
                     {...gaClickProps({
                       event: "nav_click",
                       category: "first_timer_compare",
@@ -91,7 +92,7 @@ export function FirstTimerTownCompareTable() {
         {TOWN_COMPARE_ROWS.map((row) => (
           <li key={row.slug}>
             <Link
-              href={`/${row.slug}`}
+              href={townPagePath(row.slug)}
               {...gaClickProps({
                 event: "nav_click",
                 category: "first_timer_compare",

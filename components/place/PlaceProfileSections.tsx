@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { PlacePlanningProfile } from "@/lib/data/place-planning";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { townPagePath } from "@/lib/routes/town-page-path";
 import { generateFaqSchema } from "@/lib/seo/breadcrumb-schema";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 
@@ -49,7 +50,7 @@ export function PlaceProfileSections({
     profile.nearbyLinks ??
     profile.nearbyTowns?.map((t) => ({
       name: t.name,
-      href: `/${t.slug}`,
+      href: townPagePath(t.slug),
       note: t.note,
     })) ??
     [];

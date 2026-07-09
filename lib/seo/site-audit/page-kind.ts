@@ -35,6 +35,7 @@ export function classifyPageKind(pathname: string): PageKind {
   if (path.startsWith("/business/")) return "business";
   if (path.startsWith("/area/")) return "area";
   if (path.startsWith("/guide/")) return "guide";
+  if (path.startsWith("/town/")) return "town";
   if (path.startsWith("/events/")) return "event";
   if (path.startsWith("/categories/")) {
     const segment = path.split("/")[2] ?? "";
@@ -52,7 +53,7 @@ export function classifyPageKind(pathname: string): PageKind {
   if (parts.length === 2) return "other";
   if (parts.length === 1) {
     if (UTILITY_PREFIXES.some((p) => path.startsWith(p))) return "utility";
-    return "town";
+    return "other";
   }
   return "other";
 }

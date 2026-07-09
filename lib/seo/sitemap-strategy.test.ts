@@ -62,8 +62,8 @@ describe("sitemap strategy", () => {
 
   it("includes towns, areas, categories, and non-duplicate guides", () => {
     const allPaths = paths(sample);
-    expect(allPaths).toContain("/rosemary-beach");
-    expect(allPaths).toContain("/seaside");
+    expect(allPaths).toContain("/town/rosemary-beach");
+    expect(allPaths).toContain("/town/seaside");
     expect(allPaths).toContain("/area/rosemary-beach-town-center");
     expect(allPaths).toContain("/restaurants");
     expect(allPaths).toContain("/guide/best-coffee-30a");
@@ -100,7 +100,7 @@ describe("sitemap strategy", () => {
     );
     expect(byPath.get("/")).toBe(1.0);
     expect(byPath.get("/towns")).toBe(0.9);
-    expect(byPath.get("/rosemary-beach")).toBe(0.85);
+    expect(byPath.get("/town/rosemary-beach")).toBe(0.85);
     expect(byPath.get(PRIMARY_EDITORIAL_GUIDE_PATH)).toBe(0.8);
     expect(byPath.get("/restaurants")).toBe(0.75);
     expect(byPath.get("/area/rosemary-beach-town-center")).toBe(0.7);

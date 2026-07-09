@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { AdjacentBusinessPreview } from "@/lib/data/town-hub";
+import { townPagePath } from "@/lib/routes/town-page-path";
 import { SectionBlock } from "@/components/discovery/SectionBlock";
 import { TagPills } from "@/components/discovery/TagPills";
 import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
@@ -53,7 +54,7 @@ export function AdjacentBusinessCarousel({ businesses }: Props) {
                   Details
                 </Link>
                 <Link
-                  href={`/${b.townSlug}`}
+                  href={townPagePath(b.townSlug)}
                   className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:underline"
                 >
                   {b.townName} guide

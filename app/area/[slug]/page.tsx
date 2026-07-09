@@ -21,6 +21,7 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
+import { townPagePath } from "@/lib/routes/town-page-path";
 import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
 import { relatedGuidesForAreaSlug } from "@/lib/seo/guide-related-links";
@@ -140,7 +141,7 @@ export default async function AreaPage({ params }: Props) {
   const breadcrumbItems = [
     { name: "Home", url: "/" },
     ...(area.town_slug && area.town_name
-      ? [{ name: area.town_name, url: `/${area.town_slug}` }]
+      ? [{ name: area.town_name, url: townPagePath(area.town_slug) }]
       : []),
     { name: area.title, url: areaPath },
   ];
@@ -193,7 +194,7 @@ export default async function AreaPage({ params }: Props) {
               <>
                 <span className="text-zinc-300">/</span>
                 <Link
-                  href={`/${area.town_slug}`}
+                  href={townPagePath(area.town_slug)}
                   {...gaClickProps({
                     event: "nav_click",
                     category: "area_breadcrumb",
@@ -220,7 +221,7 @@ export default async function AreaPage({ params }: Props) {
               area.town_name && area.town_slug ? (
                 <div className="mt-2 text-sm text-zinc-500 sm:mt-3">
                   <Link
-                    href={`/${area.town_slug}`}
+                    href={townPagePath(area.town_slug)}
                     {...gaClickProps({
                       event: "nav_click",
                       category: "area_header",
