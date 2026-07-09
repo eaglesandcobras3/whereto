@@ -21,6 +21,15 @@ export {
 /** Paths excluded from sitemap (still live on site, crawlable via links). */
 export const SITEMAP_EXCLUDED_PATH_PREFIXES = ["/business/"] as const;
 
+/** Child sitemap paths referenced by `/sitemap.xml` index. */
+export const SITEMAP_HUBS_PATH = "/sitemap-hubs.xml" as const;
+export const SITEMAP_BUSINESSES_PATH = "/sitemap-businesses.xml" as const;
+
+export const SITEMAP_BUSINESS_ENTRY = {
+  changeFreq: "weekly" as const,
+  priority: 0.6,
+} as const;
+
 export const SITEMAP_EXCLUDED_EXACT_PATHS = new Set([
   "/about",
   "/feedback",

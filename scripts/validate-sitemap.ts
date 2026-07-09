@@ -7,9 +7,13 @@
  *   npx tsx scripts/validate-sitemap.ts --live
  *   SITEMAP_URL=https://whereto30a.com/sitemap.xml npx tsx scripts/validate-sitemap.ts --live --max=50
  */
+import { isSitemapIndexXml } from "../lib/seo/sitemap-xml";
 import {
   checkSitemapUrlLive,
+  collectSitemapPageUrls,
   parseSitemapLocs,
+  validateBusinessSitemapStructure,
+  validateSitemapIndexStructure,
   validateSitemapStructure,
 } from "../lib/seo/validate-sitemap-urls";
 
@@ -38,12 +42,40 @@ async function main() {
   }
 
   const xml = await res.text();
-  const urls = parseSitemapLocs(xml);
   const base = siteBaseFromSitemapUrl(sitemapUrl);
+  const violations = [];
 
-  console.log(`Found ${urls.length} URLs`);
+  if (isSitemapIndexXml(xml)) {
+    const childSitemapUrls = parseSitemapLocs(xml);
+    console.log(`Sitemap index with ${childSitemapUrls.length} child sitemaps`);
+    violations.push(...validateSitemapIndexStructure(base, childSitemapUrls));
 
-  const violations = validateSitemapStructure(base, urls);
+    for (const childUrl of childSitemapUrls) {
+      const childRes = await fetch(childUrl);
+      if (!childRes.ok) {
+        violations.push({
+          rule: "child-sitemap-fetch",
+          url: childUrl,
+          detail: `Failed to fetch child sitemap: HTTP ${childRes.status}`,
+        });
+        continue;
+      }
+      const childXml = await childRes.text();
+      const childUrls = parseSitemapLocs(childXml);
+      const childPath = new URL(childUrl).pathname;
+      if (childPath.endsWith("sitemap-hubs.xml")) {
+        violations.push(...validateSitemapStructure(base, childUrls));
+      } else if (childPath.endsWith("sitemap-businesses.xml")) {
+        violations.push(...validateBusinessSitemapStructure(base, childUrls));
+      }
+      console.log(`  ${childPath}: ${childUrls.length} URLs`);
+    }
+  } else {
+    const urls = parseSitemapLocs(xml);
+    console.log(`Found ${urls.length} URLs`);
+    violations.push(...validateAllSitemapPageUrls(base, urls));
+  }
+
   if (violations.length > 0) {
     console.error("\nStructure violations:");
     for (const v of violations) {
@@ -54,7 +86,8 @@ async function main() {
   }
 
   if (live) {
-    const toCheck = maxLive > 0 ? urls.slice(0, maxLive) : urls;
+    const pageUrls = await collectSitemapPageUrls(sitemapUrl);
+    const toCheck = maxLive > 0 ? pageUrls.slice(0, maxLive) : pageUrls;
     console.log(`\nLive checks (${toCheck.length} URLs)...`);
     const failures: Awaited<ReturnType<typeof checkSitemapUrlLive>>[] = [];
     for (const url of toCheck) {

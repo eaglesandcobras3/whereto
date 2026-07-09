@@ -40,7 +40,7 @@ async function fetchBrowseableRows(
   return out;
 }
 
-/** Build index-focused sitemap entries for `/sitemap.xml` (via `/api/sitemap-xml` rewrite). */
+/** Build hub/editorial sitemap entries for `/sitemap-hubs.xml`. */
 export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
   const now = new Date();

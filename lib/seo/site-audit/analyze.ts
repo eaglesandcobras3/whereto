@@ -1,7 +1,7 @@
 import {
   extractCanonicalHref,
   isNoindexHtml,
-  validateSitemapStructure,
+  validateAllSitemapPageUrls,
   type SitemapRuleViolation,
 } from "@/lib/seo/validate-sitemap-urls";
 import type { CrawledPage, AuditIssue, ParsedPageHtml, PageKind } from "./types";
@@ -642,7 +642,7 @@ function classifyPathKind(url: string): PageKind {
 }
 
 export function sitemapViolationsFromUrls(base: string, urls: string[]): SitemapRuleViolation[] {
-  return validateSitemapStructure(base, urls);
+  return validateAllSitemapPageUrls(base, urls);
 }
 
 export { extractCanonicalHref, isNoindexHtml };

@@ -3,7 +3,7 @@ import { businessBrowseGroupHubPath } from "@/lib/business-categories/browse-gro
 import { BUSINESS_CATEGORY_GROUP_SLUGS } from "@/lib/business-categories/groups";
 import { serviceBrowseGroupHubPath } from "@/lib/service-categories/browse-group-nav";
 import { SERVICE_CATEGORY_GROUP_SLUGS } from "@/lib/service-categories/groups";
-import { parseSitemapLocs } from "@/lib/seo/validate-sitemap-urls";
+import { collectSitemapPageUrls } from "@/lib/seo/validate-sitemap-urls";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeAuditUrl } from "./page-kind";
 
@@ -20,10 +20,7 @@ export async function collectSeedUrls(input: {
 
   let sitemapUrls: string[] = [];
   try {
-    const res = await fetchFn(`${base}/sitemap.xml`, { cache: "no-store" });
-    if (res.ok) {
-      sitemapUrls = parseSitemapLocs(await res.text());
-    }
+    sitemapUrls = await collectSitemapPageUrls(`${base}/sitemap.xml`, fetchFn);
   } catch {
   }
 

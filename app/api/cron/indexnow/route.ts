@@ -25,6 +25,7 @@ export async function GET(request: Request) {
     `${base}/categories`,
     `${base}/towns`,
     `${base}/sitemap.xml`,
+    `${base}/sitemap-businesses.xml`,
   ]);
 
   return NextResponse.json({ ok: result.ok, status: result.status });
