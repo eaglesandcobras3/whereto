@@ -486,8 +486,6 @@ export function analyzeSiteWide(input: {
     const inSitemap = sitemapNorm.has(norm);
     const shouldBeInSitemap =
       page.kind !== "business" &&
-      page.kind !== "browse_group" &&
-      page.kind !== "service_group" &&
       page.kind !== "event" &&
       page.kind !== "utility" &&
       !path.startsWith("/business/");

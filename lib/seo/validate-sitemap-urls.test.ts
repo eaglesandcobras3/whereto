@@ -38,6 +38,25 @@ describe("validateSitemapStructure", () => {
     expect(violations.some((v) => v.rule === "no-business-urls")).toBe(true);
   });
 
+  it("fails on legacy granular /categories/[slug] but allows rollup groups", () => {
+    const entries = buildSitemapEntries({
+      base: BASE,
+      now: new Date(),
+      towns: [{ slug: "seaside" }],
+      guides: [{ slug: PRIMARY_EDITORIAL_GUIDE_SLUG }],
+      areas: [{ slug: "seaside-town-center" }],
+      categories: [{ slug: "restaurants" }],
+    });
+    const hubUrls = entries.map((e) => e.url);
+    expect(validateSitemapStructure(BASE, hubUrls)).toEqual([]);
+
+    const legacyViolations = validateSitemapStructure(BASE, [
+      ...hubUrls,
+      `${BASE}/categories/restaurants`,
+    ]);
+    expect(legacyViolations.some((v) => v.rule === "no-legacy-category-urls")).toBe(true);
+  });
+
   it("fails when standalone /guide is present", () => {
     const violations = validateSitemapStructure(BASE, [
       `${BASE}/`,

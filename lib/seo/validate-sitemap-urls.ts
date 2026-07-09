@@ -1,4 +1,6 @@
 import { isCategoryHubPublicPath } from "@/lib/routes/category-hub-path";
+import { businessBrowseGroupFromPublicSegment } from "@/lib/business-categories/browse-group-nav";
+import { serviceBrowseGroupFromPublicSegment } from "@/lib/service-categories/browse-group-nav";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
@@ -6,6 +8,8 @@ import {
   SITEMAP_BUSINESSES_PATH,
   SITEMAP_EXCLUDED_EXACT_PATHS,
   SITEMAP_HUBS_PATH,
+  listSitemapBrowseGroupPaths,
+  listSitemapServiceGroupPaths,
   isExcludedSitemapPath,
   pathnameFromSitemapUrl,
 } from "@/lib/seo/sitemap-strategy";
@@ -25,6 +29,18 @@ export function parseSitemapLocs(xml: string): string[] {
     locs.push(m[1].trim());
   }
   return locs;
+}
+
+export function isSitemapBrowseGroupPath(pathname: string): boolean {
+  if (!pathname.startsWith("/categories/")) return false;
+  const segment = pathname.split("/")[2] ?? "";
+  return businessBrowseGroupFromPublicSegment(segment) !== null;
+}
+
+export function isSitemapServiceGroupPath(pathname: string): boolean {
+  if (!pathname.startsWith(`${SERVICE_VENDORS_HUB_PATH}/`)) return false;
+  const segment = pathname.split("/")[2] ?? "";
+  return serviceBrowseGroupFromPublicSegment(segment) !== null;
 }
 
 /** Structural rules for hub-focused child sitemap (no HTTP). */
@@ -121,12 +137,47 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
       detail: "Expected at least one category hub (e.g. /restaurants)",
     });
   }
-  if (paths.some((p) => p.startsWith("/categories/") && p !== "/categories")) {
-    violations.push({
-      rule: "no-legacy-category-urls",
-      detail: "Legacy /categories/[slug] URLs must not appear in sitemap",
-    });
+
+  for (const path of paths) {
+    if (!path.startsWith("/categories/") || path === "/categories") continue;
+    if (!isSitemapBrowseGroupPath(path)) {
+      violations.push({
+        rule: "no-legacy-category-urls",
+        url: `${base}${path}`,
+        detail: `Legacy /categories/[slug] URLs must not appear in sitemap: ${path}`,
+      });
+    }
   }
+
+  for (const path of paths) {
+    if (!path.startsWith(`${SERVICE_VENDORS_HUB_PATH}/`)) continue;
+    if (!isSitemapServiceGroupPath(path)) {
+      violations.push({
+        rule: "no-invalid-service-group-urls",
+        url: `${base}${path}`,
+        detail: `Only rollup service group URLs are allowed under ${SERVICE_VENDORS_HUB_PATH}/: ${path}`,
+      });
+    }
+  }
+
+  for (const requiredPath of listSitemapBrowseGroupPaths()) {
+    if (!pathSet.has(requiredPath)) {
+      violations.push({
+        rule: "browse-group-pages",
+        detail: `Missing rollup browse group ${requiredPath}`,
+      });
+    }
+  }
+
+  for (const requiredPath of listSitemapServiceGroupPaths()) {
+    if (!pathSet.has(requiredPath)) {
+      violations.push({
+        rule: "service-group-pages",
+        detail: `Missing rollup service group ${requiredPath}`,
+      });
+    }
+  }
+
   if (paths.some((p) => p.endsWith("-on-30a") && p.split("/").filter(Boolean).length === 1)) {
     violations.push({
       rule: "no-legacy-on-30a-category-urls",

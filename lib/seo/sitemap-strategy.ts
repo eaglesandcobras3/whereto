@@ -1,5 +1,13 @@
 import type { MetadataRoute } from "next";
 import {
+  businessBrowseGroupHubPath,
+} from "@/lib/business-categories/browse-group-nav";
+import { BUSINESS_CATEGORY_GROUP_SLUGS } from "@/lib/business-categories/groups";
+import {
+  serviceBrowseGroupHubPath,
+} from "@/lib/service-categories/browse-group-nav";
+import { SERVICE_CATEGORY_GROUP_SLUGS } from "@/lib/service-categories/groups";
+import {
   categoryHubPath,
   isCategoryHubPublicPath,
 } from "@/lib/routes/category-hub-path";
@@ -29,6 +37,22 @@ export const SITEMAP_BUSINESS_ENTRY = {
   changeFreq: "weekly" as const,
   priority: 0.6,
 } as const;
+
+/** Rolled-up storefront and service browse groups (e.g. `/categories/restaurants-and-bars`). */
+export const SITEMAP_BROWSE_GROUP_ENTRY = {
+  changeFreq: "weekly" as const,
+  priority: 0.72,
+} as const;
+
+/** Canonical rollup browse group paths for the hub sitemap. */
+export function listSitemapBrowseGroupPaths(): string[] {
+  return BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => businessBrowseGroupHubPath(slug));
+}
+
+/** Canonical rollup service group paths for the hub sitemap. */
+export function listSitemapServiceGroupPaths(): string[] {
+  return SERVICE_CATEGORY_GROUP_SLUGS.map((slug) => serviceBrowseGroupHubPath(slug));
+}
 
 export const SITEMAP_EXCLUDED_EXACT_PATHS = new Set([
   "/about",
@@ -135,6 +159,24 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
       lastModified: now,
       changeFrequency: hub.changeFreq,
       priority: hub.priority,
+    });
+  }
+
+  for (const path of listSitemapBrowseGroupPaths()) {
+    entries.push({
+      url: `${base}${path}`,
+      lastModified: now,
+      changeFrequency: SITEMAP_BROWSE_GROUP_ENTRY.changeFreq,
+      priority: SITEMAP_BROWSE_GROUP_ENTRY.priority,
+    });
+  }
+
+  for (const path of listSitemapServiceGroupPaths()) {
+    entries.push({
+      url: `${base}${path}`,
+      lastModified: now,
+      changeFrequency: SITEMAP_BROWSE_GROUP_ENTRY.changeFreq,
+      priority: SITEMAP_BROWSE_GROUP_ENTRY.priority,
     });
   }
 
