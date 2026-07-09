@@ -90,10 +90,13 @@ export async function resolveTownIdsFromParam(
   town_slugs: string[];
   effective_town_slugs: string[];
   anchor_town_ids: string[];
+  anchor_town_slugs: string[];
 }> {
   const town_slugs = parseTownSlugsFromParam(townParam ?? undefined);
   const extraIds = townIdParam?.trim() ? [townIdParam.trim()] : [];
   const { slugs: searchSlugs, searchAllTowns } = slugsForSearch(town_slugs, options);
+  const anchor_town_slugs =
+    options?.townScope === "near" && town_slugs.length ? town_slugs : [];
   const effective_town_slugs = await resolveEffectiveTownSlugs(
     supabase,
     town_slugs,
@@ -108,9 +111,15 @@ export async function resolveTownIdsFromParam(
       : [];
 
   if (searchAllTowns) {
-    return { town_ids: extraIds.length ? extraIds : [], town_slugs, effective_town_slugs, anchor_town_ids };
+    return {
+      town_ids: extraIds.length ? extraIds : [],
+      town_slugs,
+      effective_town_slugs,
+      anchor_town_ids,
+      anchor_town_slugs,
+    };
   }
 
   const town_ids = await resolveTownIdsFromSlugs(supabase, searchSlugs, extraIds);
-  return { town_ids, town_slugs, effective_town_slugs, anchor_town_ids };
+  return { town_ids, town_slugs, effective_town_slugs, anchor_town_ids, anchor_town_slugs };
 }

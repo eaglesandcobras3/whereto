@@ -8,6 +8,8 @@ export type BuildDiscoverUrlParams = {
   service_category?: string;
   tags?: string[];
   q?: string;
+  /** Original NL query — display only, not used for search after expansion. */
+  nlQuery?: string;
   page?: number;
 };
 
@@ -38,6 +40,7 @@ export function buildDiscoverUrl(params: BuildDiscoverUrlParams): string {
   if (tags.length) sp.set("facet", tags.join(","));
 
   if (params.q?.trim()) sp.set("q", params.q.trim());
+  if (params.nlQuery?.trim()) sp.set("nl_q", params.nlQuery.trim());
   if (params.page && params.page > 1) sp.set("page", String(params.page));
 
   const qs = sp.toString();
@@ -53,6 +56,7 @@ export type DiscoverUrlLinkParams = {
   service_category?: string;
   facet?: string;
   q?: string;
+  nl_q?: string;
   page?: number;
 };
 
@@ -68,6 +72,7 @@ export function buildDiscoverUrlFromLinkParams(params: DiscoverUrlLinkParams): s
     if (params.facet?.trim()) sp.set("facet", params.facet.trim());
     if (params.town_scope?.trim()) sp.set("town_scope", params.town_scope.trim());
     if (params.q?.trim()) sp.set("q", params.q.trim());
+    if (params.nl_q?.trim()) sp.set("nl_q", params.nl_q.trim());
     if (params.page && params.page > 1) sp.set("page", String(params.page));
     return `/discover?${sp.toString()}`;
   }
@@ -102,6 +107,7 @@ export function buildDiscoverUrlFromLinkParams(params: DiscoverUrlLinkParams): s
     service_category: params.service_category,
     tags,
     q: params.q,
+    nlQuery: params.nl_q,
     page: params.page,
   });
 }

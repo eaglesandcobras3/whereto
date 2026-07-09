@@ -122,4 +122,34 @@ describe("scoreDiscoverListing", () => {
 
     expect(anchorScore.score).toBeGreaterThan(nearbyScore.score);
   });
+
+  it("soft-ranks restaurants and markets for cuisine tags without a category filter", () => {
+    const restaurant = {
+      ...baseRow,
+      business_categories: { slug: "restaurants" },
+      search_tags: ["seafood"],
+    };
+    const market = {
+      ...baseRow,
+      business_categories: { slug: "specialty_retail" },
+      search_tags: ["seafood"],
+      title: "Harbor Market",
+    };
+    const boutique = {
+      ...baseRow,
+      business_categories: { slug: "boutiques" },
+      search_tags: ["seafood"],
+      title: "Coastal Boutique",
+    };
+    const filterState = state({ tags: ["seafood"] });
+
+    const restaurantScore = scoreDiscoverListing(restaurant, filterState, undefined, undefined);
+    const marketScore = scoreDiscoverListing(market, filterState, undefined, undefined);
+    const boutiqueScore = scoreDiscoverListing(boutique, filterState, undefined, undefined);
+
+    expect(restaurantScore.passes).toBe(true);
+    expect(marketScore.passes).toBe(true);
+    expect(restaurantScore.score).toBeGreaterThan(boutiqueScore.score);
+    expect(marketScore.score).toBeGreaterThan(boutiqueScore.score);
+  });
 });

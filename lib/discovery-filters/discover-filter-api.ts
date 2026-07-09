@@ -5,6 +5,8 @@ export type DiscoverFilterApiResponse = DiscoverFilterSearchResult & {
   search_tags: DiscoverSearchTagOption[];
   /** Town slugs actually included in the search (after near/all expansion). */
   effective_town_slugs: string[];
+  /** Named anchor town(s) for near searches — ranked first in results. */
+  anchor_town_slugs: string[];
 };
 
 export type DiscoverFilterApiParams = {
