@@ -649,6 +649,28 @@ body {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
+/* iOS Safari zooms focused fields when computed font-size is below 16px. */
+@media (max-width: 1023px) {
+  :where(
+    input:not(
+      [type="checkbox"],
+      [type="radio"],
+      [type="hidden"],
+      [type="button"],
+      [type="submit"],
+      [type="reset"],
+      [type="file"],
+      [type="image"],
+      [type="range"],
+      [type="color"]
+    ),
+    select,
+    textarea
+  ) {
+    font-size: 16px !important;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Pill / Tag Styles
    -------------------------------------------------------------------------- */
