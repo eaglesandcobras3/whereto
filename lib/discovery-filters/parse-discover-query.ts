@@ -3,6 +3,7 @@ import {
   normalizeStorefrontCategoryGroupSlug,
 } from "@/lib/discovery-filters/category-group-slugs";
 import { resolveQueryTags } from "@/lib/discovery-filters/resolve-query-tags";
+import { hasCuisineProductTags } from "@/lib/discovery-filters/cuisine-product-tags";
 import { normalizeQuery } from "@/lib/query-normalize";
 import { normalizeServiceCategorySlug } from "@/lib/service-categories/normalize";
 import { resolveQueryPlan } from "@/lib/search/resolve-query-plan";
@@ -209,6 +210,16 @@ export function parseDiscoverQuery(
   }
 
   const allTags = tagResolution.tags;
+
+  if (
+    !categoryFields.category &&
+    !categoryFields.service_category &&
+    !categoryFields.type &&
+    hasCuisineProductTags(allTags)
+  ) {
+    categoryFields.type = "storefront";
+  }
+
   const townSlugs = plan.townSlugs;
   const town = townSlugs.length ? townSlugs.join(",") : undefined;
   const town_scope =

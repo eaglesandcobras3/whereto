@@ -1,6 +1,10 @@
 import { businessCategoryGroupForSlug } from "@/lib/business-categories/groups";
 import { serviceCategoryGroupForSlug } from "@/lib/service-categories/groups";
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
+import {
+  CUISINE_PREFERRED_STOREFRONT_GROUPS,
+  hasCuisineProductTags,
+} from "@/lib/discovery-filters/cuisine-product-tags";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
 import { analyzeTagMatch, type TagMatchAnalysis } from "@/lib/discovery-filters/tag-match";
 import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
@@ -8,6 +12,10 @@ import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregat
 const TAG_WEIGHT = 100;
 const ENTITY_TYPE_WEIGHT = 50;
 const CATEGORY_WEIGHT = 40;
+/** Cuisine/product tag searches prefer restaurants and markets without hard-filtering. */
+const CUISINE_CATEGORY_WEIGHT = 35;
+/** Near-search anchor town — listed before other towns in the expanded zone. */
+const TOWN_ANCHOR_WEIGHT = 75;
 
 export type DiscoverListingScopeMatch = {
   entity_type_match: boolean;
@@ -60,6 +68,8 @@ function rowMatchesCategory(
   return true;
 }
 
+const CUISINE_PREFERRED_GROUP_SET = new Set<string>(CUISINE_PREFERRED_STOREFRONT_GROUPS);
+
 export function scoreDiscoverListing(
   row: PoolRow,
   state: DiscoveryFilterState,
@@ -87,6 +97,20 @@ export function scoreDiscoverListing(
   if (hasTags) {
     if (entity_type_match) score += ENTITY_TYPE_WEIGHT;
     if (category_match) score += CATEGORY_WEIGHT;
+    if (hasCuisineProductTags(state.tags) && !storefrontGroup && !serviceGroup) {
+      const cat = row.business_categories as { slug?: string } | null;
+      const group = businessCategoryGroupForSlug(cat?.slug ?? null);
+      if (group && CUISINE_PREFERRED_GROUP_SET.has(group)) {
+        score += CUISINE_CATEGORY_WEIGHT;
+      }
+    }
+  }
+
+  if (state.anchor_town_ids.length) {
+    const townId = String(row.town_id ?? "");
+    if (townId && state.anchor_town_ids.includes(townId)) {
+      score += TOWN_ANCHOR_WEIGHT;
+    }
   }
 
   return {
