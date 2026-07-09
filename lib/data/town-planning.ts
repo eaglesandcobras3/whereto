@@ -59,6 +59,7 @@ export const TOWN_PLANNING: Record<string, PlacePlanningProfile> = {
       "Walkable from casual to upscale. Easy to split pool afternoons and a dressed-up dinner without getting in the car.",
     nearbyTowns: [
       { name: "Inlet Beach", slug: "inlet-beach", note: "Quieter beaches, less foot traffic" },
+      { name: "Seacrest Beach", slug: "seacrest-beach", note: "Residential stretch just east" },
       { name: "Alys Beach", slug: "alys-beach", note: "Five minutes east, different architecture" },
     ],
     relatedGuideSlugs: ["guide-to-rosemary-beach-florida", "public-beaches-30a"],

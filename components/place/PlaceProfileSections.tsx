@@ -6,12 +6,15 @@ import type { PlacePlanningProfile } from "@/lib/data/place-planning";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { generateFaqSchema } from "@/lib/seo/breadcrumb-schema";
+import { LinkifiedTownText } from "@/components/seo/LinkifiedTownText";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 
 type Props = {
   placeName: string;
   profile: PlacePlanningProfile;
   profileLabel: string;
+  /** When set, inline town links skip this slug (town detail self-link). */
+  placeSlug?: string;
   accessSectionTitle?: string;
   nearbySectionTitle?: string;
   nearbyAnalyticsCategory?: string;
@@ -35,6 +38,7 @@ export function PlaceProfileSections({
   placeName,
   profile,
   profileLabel,
+  placeSlug,
   accessSectionTitle = "Beach",
   nearbySectionTitle = "Nearby",
   nearbyAnalyticsCategory = "place_profile_nearby",
@@ -68,6 +72,18 @@ export function PlaceProfileSections({
     profile.quickFacts.find((f) => f.label === "Beach")?.value ??
     previewText(profile.beachAccess);
 
+  const linkifyCategory = nearbyAnalyticsCategory.replace(/_nearby$/, "_inline_link");
+
+  function linkedText(text: string) {
+    return (
+      <LinkifiedTownText
+        text={text}
+        excludeSlug={placeSlug}
+        analyticsCategory={linkifyCategory}
+      />
+    );
+  }
+
   return (
     <>
       {faqSchema ? (
@@ -84,7 +100,7 @@ export function PlaceProfileSections({
             {placeName} at a glance
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-            {profile.vibe}
+            {linkedText(profile.vibe)}
           </p>
 
           <dl className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-4 sm:gap-2.5">
@@ -98,7 +114,7 @@ export function PlaceProfileSections({
                   {fact.label}
                 </dt>
                 <dd className="mt-1 text-xs font-semibold leading-snug text-[var(--color-text-primary)] sm:text-sm">
-                  {fact.value}
+                  {linkedText(fact.value)}
                 </dd>
               </div>
             ))}
@@ -137,7 +153,7 @@ export function PlaceProfileSections({
             className="py-3 sm:py-3.5"
           >
             <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-              {profile.beachAccess}
+              {linkedText(profile.beachAccess)}
             </p>
           </CollapsibleBrowseSection>
 
@@ -151,7 +167,7 @@ export function PlaceProfileSections({
             className="py-3 sm:py-3.5"
           >
             <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-              {profile.parking}
+              {linkedText(profile.parking)}
             </p>
           </CollapsibleBrowseSection>
 
@@ -169,7 +185,7 @@ export function PlaceProfileSections({
               className="py-3 sm:py-3.5"
             >
               <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {profile.diningStyle}
+                {linkedText(profile.diningStyle)}
               </p>
             </CollapsibleBrowseSection>
           ) : null}
@@ -178,7 +194,13 @@ export function PlaceProfileSections({
             <CollapsibleBrowseSection
               compact
               title={nearbySectionTitle}
-              subtitle={nearbyLinks.map((t) => t.name).join(", ")}
+              subtitle={
+                <LinkifiedTownText
+                  text={nearbyLinks.map((t) => t.name).join(", ")}
+                  excludeSlug={placeSlug}
+                  analyticsCategory={linkifyCategory}
+                />
+              }
               icon={<MsIcon name="near_me" className="text-lg" />}
               open={openIds.has("nearby")}
               onToggle={() => toggle("nearby")}
@@ -223,7 +245,7 @@ export function PlaceProfileSections({
               className="py-3 sm:py-3.5"
             >
               <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {faq.answer}
+                {linkedText(faq.answer)}
               </p>
             </CollapsibleBrowseSection>
           ))}

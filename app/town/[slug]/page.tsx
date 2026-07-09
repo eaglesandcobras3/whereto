@@ -404,7 +404,11 @@ function BasicTownPage({
 
             {planningProfile ? (
               <SeoImprovementsGate>
-                <TownPlanningSections townName={town.name} profile={planningProfile} />
+                <TownPlanningSections
+                  townName={town.name}
+                  townSlug={town.slug}
+                  profile={planningProfile}
+                />
               </SeoImprovementsGate>
             ) : null}
 
