@@ -12,9 +12,11 @@ import {
   checkSitemapUrlLive,
   collectSitemapPageUrls,
   parseSitemapLocs,
+  validateAllSitemapPageUrls,
   validateBusinessSitemapStructure,
   validateSitemapIndexStructure,
   validateSitemapStructure,
+  type SitemapRuleViolation,
 } from "../lib/seo/validate-sitemap-urls";
 
 function siteBaseFromSitemapUrl(sitemapUrl: string): string {
@@ -43,7 +45,7 @@ async function main() {
 
   const xml = await res.text();
   const base = siteBaseFromSitemapUrl(sitemapUrl);
-  const violations = [];
+  const violations: SitemapRuleViolation[] = [];
 
   if (isSitemapIndexXml(xml)) {
     const childSitemapUrls = parseSitemapLocs(xml);
