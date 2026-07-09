@@ -194,13 +194,7 @@ export function PlaceProfileSections({
             <CollapsibleBrowseSection
               compact
               title={nearbySectionTitle}
-              subtitle={
-                <LinkifiedTownText
-                  text={nearbyLinks.map((t) => t.name).join(", ")}
-                  excludeSlug={placeSlug}
-                  analyticsCategory={linkifyCategory}
-                />
-              }
+              subtitle={nearbyLinks.map((t) => t.name).join(", ")}
               icon={<MsIcon name="near_me" className="text-lg" />}
               open={openIds.has("nearby")}
               onToggle={() => toggle("nearby")}
