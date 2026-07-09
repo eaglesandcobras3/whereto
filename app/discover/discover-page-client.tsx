@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard";
+import {
+  DiscoverFilterInterpretation,
+  formatDiscoverInterpretation,
+} from "@/components/discovery/DiscoverFilterInterpretation";
 import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { buildDiscoverUrl, buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
@@ -40,6 +44,7 @@ type DiscoverParams = {
   service_category?: string;
   facet?: string;
   q?: string;
+  nl_q?: string;
   page: number;
 };
 
@@ -63,6 +68,7 @@ function paramsFromSearchParams(sp: URLSearchParams): DiscoverParams {
     service_category: sp.get("service_category")?.trim() || undefined,
     facet: sp.get("facet")?.trim() || sp.get("facet_any")?.trim() || undefined,
     q: sp.get("q")?.trim() || undefined,
+    nl_q: sp.get("nl_q")?.trim() || undefined,
     page: Math.max(1, Number.parseInt(sp.get("page") ?? "1", 10) || 1),
   };
 }
@@ -137,7 +143,12 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         if (!res.ok) return;
         const body = (await res.json()) as { parsed?: { expanded?: boolean } & Record<string, unknown> };
         if (!body.parsed?.expanded) return;
-        router.replace(buildDiscoverUrlFromLinkParams(body.parsed as DiscoverUrlLinkParams));
+        router.replace(
+          buildDiscoverUrlFromLinkParams({
+            ...(body.parsed as DiscoverUrlLinkParams),
+            nl_q: q,
+          }),
+        );
       } catch {
         /* NL expansion is best-effort */
       }
@@ -180,6 +191,28 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     [params.town],
   );
 
+  const displayTownSlugs = useMemo(() => {
+    if (result?.effective_town_slugs) {
+      return result.effective_town_slugs;
+    }
+    return activeTownSlugs;
+  }, [result, activeTownSlugs]);
+
+  const anchorTownSlugs = useMemo(() => {
+    if (result?.anchor_town_slugs?.length) {
+      return result.anchor_town_slugs;
+    }
+    if (params.town_scope === "near" && activeTownSlugs.length) {
+      return activeTownSlugs;
+    }
+    return [];
+  }, [result, params.town_scope, activeTownSlugs]);
+
+  const townNameForSlug = useCallback(
+    (slug: string) => towns.find((town) => town.slug === slug)?.name ?? slug,
+    [towns],
+  );
+
   const selectedTags = useMemo(() => {
     if (result) {
       const fromApplied = appliedTagsFromFilters(result.applied_filters);
@@ -211,6 +244,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           "service_category" in next ? next.service_category : params.service_category,
         facet: tags.length ? tags.join(",") : undefined,
         q: "q" in next ? next.q : params.q,
+        nl_q: "nl_q" in next ? next.nl_q : params.nl_q,
         page: next.page ?? 1,
       };
 
@@ -222,6 +256,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         service_category: nextParams.service_category,
         tags,
         q: nextParams.q,
+        nlQuery: nextParams.nl_q,
         page: nextParams.page,
       });
 
@@ -262,6 +297,49 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     params.type === "storefront" ? params.category : params.service_category,
   );
   const softScopeMode = hasTagFilters;
+  const showMatchReason = hasTagFilters || anchorTownSlugs.length > 0;
+  const nlQuery = params.nl_q;
+  const filterInterpretation = useMemo(
+    () =>
+      formatDiscoverInterpretation({
+        nlQuery,
+        type: params.type,
+        tags: selectedTags,
+        categoryLabel:
+          params.type === "storefront"
+            ? categories.find((c) => c.slug === params.category)?.title
+            : undefined,
+        serviceCategoryLabel:
+          params.type === "service"
+            ? serviceCategories.find((c) => c.slug === params.service_category)?.title
+            : undefined,
+        anchorTownNames: anchorTownSlugs.map(townNameForSlug),
+        effectiveTownNames: displayTownSlugs.map(townNameForSlug),
+        townScope: params.town_scope,
+        labelForSlug,
+      }),
+    [
+      anchorTownSlugs,
+      categories,
+      displayTownSlugs,
+      labelForSlug,
+      nlQuery,
+      params.category,
+      params.service_category,
+      params.town_scope,
+      params.type,
+      selectedTags,
+      serviceCategories,
+      townNameForSlug,
+    ],
+  );
+  const hasActiveFilters = Boolean(
+    selectedTags.length ||
+      displayTownSlugs.length ||
+      params.category ||
+      params.service_category ||
+      nlQuery,
+  );
   const typeLabel =
     params.type === "storefront" ? ", storefront businesses" : ", regional services";
 
@@ -326,23 +404,35 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
             </div>
 
             <div>
-              <label
-                htmlFor="discover-towns"
-                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
-              >
-                Towns
-              </label>
+              <div className="mb-2 flex items-center gap-2">
+                <label
+                  htmlFor="discover-towns"
+                  className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+                >
+                  Towns
+                </label>
+                {pending ? (
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
+                    <span
+                      className="inline-block size-3 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+                      aria-hidden
+                    />
+                    Updating…
+                  </span>
+                ) : null}
+              </div>
               <FacetTypeaheadMultiSelect
                 id="discover-towns"
                 options={townOptions}
-                selectedSlugs={activeTownSlugs}
+                selectedSlugs={displayTownSlugs}
                 onChange={setTownSlugs}
                 disabled={pending}
+                loading={pending}
                 placeholder="Type a town name…"
                 emptyMessage="No towns match"
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                Leave empty for all towns. Add chips to compare areas.
+                Active search towns appear as chips. Remove any to narrow results.
               </p>
             </div>
 
@@ -361,7 +451,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                       page: 1,
                     })
                   }
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-base"
                 >
                   <option value="">All categories</option>
                   {categories.map((c) => (
@@ -391,7 +481,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                       page: 1,
                     })
                   }
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-base"
                 >
                   <option value="">All specialties</option>
                   {serviceCategories.map((c) => (
@@ -409,18 +499,30 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
             )}
 
             <div>
-              <label
-                htmlFor="discover-facets"
-                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
-              >
-                Tags
-              </label>
+              <div className="mb-2 flex items-center gap-2">
+                <label
+                  htmlFor="discover-facets"
+                  className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+                >
+                  Tags
+                </label>
+                {pending ? (
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
+                    <span
+                      className="inline-block size-3 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+                      aria-hidden
+                    />
+                    Updating…
+                  </span>
+                ) : null}
+              </div>
               <FacetTypeaheadMultiSelect
                 id="discover-facets"
                 options={searchTags}
                 selectedSlugs={selectedTags}
                 onChange={setSelectedTags}
                 disabled={pending}
+                loading={pending}
                 placeholder={searchTags.length ? "Type a tag…" : "No tags in this scope"}
                 emptyMessage="No tags match"
               />
@@ -433,6 +535,16 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           </aside>
 
           <main className="min-w-0 flex-1">
+            {hasActiveFilters ? (
+              <div className="mb-4">
+                <DiscoverFilterInterpretation
+                  nlQuery={nlQuery}
+                  interpretation={filterInterpretation}
+                  loading={pending}
+                />
+              </div>
+            ) : null}
+
             <div className="mb-4 space-y-2">
               <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
                 {pending ? (
@@ -448,7 +560,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                     {total} result{total === 1 ? "" : "s"}
                   </span>
                 )}
-                {activeTownSlugs.map((slug) => (
+                {displayTownSlugs.map((slug) => (
                   <span
                     key={slug}
                     className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs"
@@ -485,8 +597,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 <div>
                   <dt className="font-medium text-[var(--color-text-tertiary)]">Towns</dt>
                   <dd>
-                    {activeTownSlugs.length
-                      ? activeTownSlugs
+                    {displayTownSlugs.length
+                      ? displayTownSlugs
                           .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
                           .join(", ")
                       : "All towns"}
@@ -532,6 +644,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                       listing={listing}
                       labelForSlug={labelForSlug}
                       showTagMatch={hasTagFilters}
+                      showMatchReason={showMatchReason}
+                      anchorTownSlugs={anchorTownSlugs}
                       preferredEntityType={params.type}
                       hasCategoryPreference={hasCategoryPreference}
                     />

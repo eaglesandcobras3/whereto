@@ -95,6 +95,7 @@ describe("validateFilterContract", () => {
     const errors = validateFilterContract({
       entity_type: "service",
       town_ids: [],
+      anchor_town_ids: [],
       category_slug: "restaurants_and_bars",
       tags: [],
       page: 1,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { formatScopeMatchNote } from "@/lib/discovery-filters/format-scope-match";
+import { formatDiscoverMatchReason } from "@/lib/discovery-filters/format-discover-match-reason";
 import { formatTagMatchSummary } from "@/lib/discovery-filters/format-tag-match";
 import type { DiscoverListingRow } from "@/lib/discovery-filters/types";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,8 @@ type Props = {
   listing: DiscoverListingRow;
   labelForSlug: (slug: string) => string;
   showTagMatch?: boolean;
+  showMatchReason?: boolean;
+  anchorTownSlugs?: string[];
   preferredEntityType?: "storefront" | "service";
   hasCategoryPreference?: boolean;
 };
@@ -25,6 +28,8 @@ export function DiscoverListingCard({
   listing,
   labelForSlug,
   showTagMatch = false,
+  showMatchReason = false,
+  anchorTownSlugs,
   preferredEntityType = "storefront",
   hasCategoryPreference = false,
 }: Props) {
@@ -45,7 +50,12 @@ export function DiscoverListingCard({
         )
       : null;
 
-  const matchNotes = [tagMatchSummary, scopeNote].filter(Boolean);
+  const matchReason =
+    showMatchReason
+      ? formatDiscoverMatchReason({ listing, anchorTownSlugs, labelForSlug })
+      : null;
+
+  const matchNotes = [matchReason ?? tagMatchSummary, scopeNote].filter(Boolean);
 
   return (
     <Link
