@@ -1,7 +1,7 @@
 import {
   extractCanonicalHref,
   isNoindexHtml,
-  validateSitemapStructure,
+  validateAllSitemapPageUrls,
   type SitemapRuleViolation,
 } from "@/lib/seo/validate-sitemap-urls";
 import type { CrawledPage, AuditIssue, ParsedPageHtml, PageKind } from "./types";
@@ -486,8 +486,6 @@ export function analyzeSiteWide(input: {
     const inSitemap = sitemapNorm.has(norm);
     const shouldBeInSitemap =
       page.kind !== "business" &&
-      page.kind !== "browse_group" &&
-      page.kind !== "service_group" &&
       page.kind !== "event" &&
       page.kind !== "utility" &&
       !path.startsWith("/business/");
@@ -642,7 +640,7 @@ function classifyPathKind(url: string): PageKind {
 }
 
 export function sitemapViolationsFromUrls(base: string, urls: string[]): SitemapRuleViolation[] {
-  return validateSitemapStructure(base, urls);
+  return validateAllSitemapPageUrls(base, urls);
 }
 
 export { extractCanonicalHref, isNoindexHtml };
