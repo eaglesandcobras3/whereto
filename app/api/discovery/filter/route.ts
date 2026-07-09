@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       : sp.get("town_scope") === "exact"
         ? "exact"
         : undefined;
-  const { town_ids } = await resolveTownIdsFromParam(
+  const { town_ids, effective_town_slugs } = await resolveTownIdsFromParam(
     supabase,
     sp.get("town"),
     sp.get("town_id"),
@@ -58,5 +58,5 @@ export async function GET(request: Request) {
 
   const search_tags = mergeActiveTagsIntoScopedOptions(scopedSearchTags, state.tags);
 
-  return NextResponse.json({ ...result, search_tags });
+  return NextResponse.json({ ...result, search_tags, effective_town_slugs });
 }
