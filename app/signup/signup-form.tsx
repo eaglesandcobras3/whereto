@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import posthog from "posthog-js";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { signUpAction } from "@/lib/auth/actions";
 import { identifyPostHogUserAndWaitForFlags } from "@/lib/analytics/posthog-auth";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -47,17 +47,10 @@ export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
     }
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      if (error) throw error;
-      if (data.user) {
-        await identifyPostHogUserAndWaitForFlags({
-          id: data.user.id,
-          email: data.user.email,
-        });
+      const result = await signUpAction(email, password);
+      if (!result.ok) throw new Error(result.error);
+      if (result.user) {
+        await identifyPostHogUserAndWaitForFlags(result.user);
       }
       posthog.capture("user_signed_up", { method: "email" });
       const next = resolveNextPath(resolvedNextPath, "/profile");

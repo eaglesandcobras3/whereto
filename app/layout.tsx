@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Manrope, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AnalyticsClickCapture } from "@/components/analytics/AnalyticsClickCapture";
-import { PostHogAuthSync } from "@/components/analytics/PostHogAuthSync";
+import { AuthAnalyticsBridge } from "@/components/auth/AuthAnalyticsBridge";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { NavbarServer } from "@/components/NavbarServer";
@@ -191,7 +191,7 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col bg-background font-body text-on-surface">
         <PostHogProvider>
-          <PostHogAuthSync />
+          <AuthAnalyticsBridge />
           <ThemeProvider>
             <NavbarServer compact showSearch />
             <main className="flex-1">{children}</main>
