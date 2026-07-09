@@ -2,6 +2,7 @@
 
 import type { TownResultsArtifact } from "@/lib/ask/types";
 import { EditorialResultsArtifactView } from "@/components/ask/EditorialResultsArtifact";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 type Props = {
   artifact: TownResultsArtifact;
@@ -11,7 +12,7 @@ export function TownResultsArtifactView({ artifact }: Props) {
   return (
     <EditorialResultsArtifactView
       title={artifact.title}
-      hrefForSlug={(slug) => `/${slug}`}
+      hrefForSlug={(slug) => townPagePath(slug)}
       results={artifact.results.map((t) => ({
         id: t.id,
         title: t.title,

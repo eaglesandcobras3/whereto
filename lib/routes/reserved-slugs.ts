@@ -34,6 +34,7 @@ export const RESERVED_ROOT_SLUGS = new Set([
   "share",
   "signup",
   "terms",
+  "town",
   "towns",
   "verify",
 ]);

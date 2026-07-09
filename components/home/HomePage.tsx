@@ -10,6 +10,7 @@ import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesM
 import { TripPlanningSection } from "@/components/home/TripPlanningSection";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { townPagePath } from "@/lib/routes/town-page-path";
 import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
 
 function MsIcon({
@@ -254,7 +255,7 @@ export function HomePage({
                 {towns.map((town) => (
                   <Link
                     key={town.slug}
-                    href={`/${town.slug}`}
+                    href={townPagePath(town.slug)}
                     className="group editorial-card flex flex-row items-stretch gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:border-primary/25 hover:shadow-md"
                   >
                     <div className="relative aspect-[2/3] w-28 shrink-0 self-start bg-zinc-100 sm:w-32 md:w-36">

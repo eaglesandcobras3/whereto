@@ -43,7 +43,7 @@ describe("validateSitemapStructure", () => {
       `${BASE}/areas`,
       `${BASE}/categories`,
       `${BASE}/services`,
-      `${BASE}/seaside`,
+      `${BASE}/town/seaside`,
       `${BASE}/area/x`,
       `${BASE}/restaurants`,
     ]);
@@ -57,7 +57,7 @@ describe("validateSitemapStructure", () => {
       `${BASE}/areas`,
       `${BASE}/categories`,
       `${BASE}/services`,
-      `${BASE}/seaside`,
+      `${BASE}/town/seaside`,
       `${BASE}/area/x`,
       `${BASE}/restaurants`,
     ]);
