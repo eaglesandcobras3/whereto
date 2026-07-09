@@ -68,6 +68,8 @@ function rowMatchesCategory(
   return true;
 }
 
+const CUISINE_PREFERRED_GROUP_SET = new Set<string>(CUISINE_PREFERRED_STOREFRONT_GROUPS);
+
 export function scoreDiscoverListing(
   row: PoolRow,
   state: DiscoveryFilterState,
@@ -98,7 +100,7 @@ export function scoreDiscoverListing(
     if (hasCuisineProductTags(state.tags) && !storefrontGroup && !serviceGroup) {
       const cat = row.business_categories as { slug?: string } | null;
       const group = businessCategoryGroupForSlug(cat?.slug ?? null);
-      if (group && CUISINE_PREFERRED_STOREFRONT_GROUPS.includes(group)) {
+      if (group && CUISINE_PREFERRED_GROUP_SET.has(group)) {
         score += CUISINE_CATEGORY_WEIGHT;
       }
     }

@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { expandCorridorTownSlugsForNearSearch } from "@/lib/discovery-filters/corridor-town-scope";
-import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS, BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 
 export type ResolveTownIdsOptions = {

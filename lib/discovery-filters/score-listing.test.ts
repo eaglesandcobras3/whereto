@@ -137,9 +137,9 @@ describe("scoreDiscoverListing", () => {
     };
     const boutique = {
       ...baseRow,
-      business_categories: { slug: "boutiques" },
+      business_categories: { slug: "activities" },
       search_tags: ["seafood"],
-      title: "Coastal Boutique",
+      title: "Coastal Activity",
     };
     const filterState = state({ tags: ["seafood"] });
 
