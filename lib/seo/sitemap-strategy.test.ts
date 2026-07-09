@@ -60,6 +60,14 @@ describe("sitemap strategy", () => {
     expect(allPaths).toContain("/guide/best-coffee-30a");
   });
 
+  it("includes rollup storefront and service browse groups", () => {
+    const allPaths = paths(sample);
+    expect(allPaths).toContain("/categories/restaurants-and-bars");
+    expect(allPaths).toContain("/categories/coffee-and-treats");
+    expect(allPaths).toContain("/services/home-trades");
+    expect(allPaths).toContain("/services/health-wellness");
+  });
+
   it("includes towns, areas, categories, and non-duplicate guides", () => {
     const allPaths = paths(sample);
     expect(allPaths).toContain("/town/rosemary-beach");
