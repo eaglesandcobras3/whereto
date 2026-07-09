@@ -10,6 +10,7 @@ type Props = {
   selectedSlugs: string[];
   onChange: (slugs: string[]) => void;
   disabled?: boolean;
+  loading?: boolean;
   placeholder?: string;
   emptyMessage?: string;
 };
@@ -20,6 +21,7 @@ export function FacetTypeaheadMultiSelect({
   selectedSlugs,
   onChange,
   disabled,
+  loading,
   placeholder = "Search tags…",
   emptyMessage = "No matches",
 }: Props) {
@@ -53,7 +55,7 @@ export function FacetTypeaheadMultiSelect({
   }, [options, query, selectedSlugs]);
 
   const showSuggestions = open && query.trim().length > 0;
-  const inputDisabled = disabled || options.length === 0;
+  const inputDisabled = disabled || loading || options.length === 0;
 
   useEffect(() => {
     if (!open) return;
@@ -85,11 +87,15 @@ export function FacetTypeaheadMultiSelect({
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" aria-busy={loading || undefined}>
       <div
         className={cn(
           "flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-2 py-1.5",
-          inputDisabled ? "cursor-not-allowed opacity-60" : "cursor-text",
+          inputDisabled
+            ? selectedSlugs.length > 0
+              ? "cursor-not-allowed"
+              : "cursor-not-allowed opacity-60"
+            : "cursor-text",
           open && !inputDisabled ? "ring-2 ring-[var(--color-primary)]/20" : "",
         )}
         onMouseDown={(event) => {
@@ -128,7 +134,13 @@ export function FacetTypeaheadMultiSelect({
           type="text"
           value={query}
           disabled={inputDisabled}
-          placeholder={selectedSlugs.length === 0 ? placeholder : "Add another…"}
+          placeholder={
+            loading
+              ? "Loading…"
+              : selectedSlugs.length === 0
+                ? placeholder
+                : "Add another…"
+          }
           onChange={(event) => {
             setQuery(event.target.value);
             setHighlightIndex(0);
@@ -177,13 +189,20 @@ export function FacetTypeaheadMultiSelect({
               onChange(selectedSlugs.slice(0, -1));
             }
           }}
-          className="min-w-[6rem] flex-1 border-0 bg-transparent px-1 py-1 text-sm outline-none placeholder:text-[var(--color-text-tertiary)]"
+          className="min-w-[6rem] flex-1 border-0 bg-transparent px-1 py-1 text-base outline-none placeholder:text-[var(--color-text-tertiary)]"
           role="combobox"
           aria-expanded={showSuggestions}
           aria-controls={listboxId}
           aria-autocomplete="list"
           aria-haspopup="listbox"
         />
+
+        {loading ? (
+          <span
+            className="inline-block size-4 shrink-0 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+            aria-hidden
+          />
+        ) : null}
       </div>
 
       {showSuggestions ? (

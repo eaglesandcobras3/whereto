@@ -13,6 +13,7 @@ function state(overrides: Partial<Parameters<typeof scoreDiscoverListing>[1]> = 
   return {
     entity_type: "storefront" as const,
     town_ids: [],
+    anchor_town_ids: [],
     tags: [],
     page: 1,
     page_size: 24,
@@ -98,5 +99,57 @@ describe("scoreDiscoverListing", () => {
     expect(match.passes).toBe(true);
     expect(wrongCategory.passes).toBe(false);
     expect(wrongType.passes).toBe(false);
+  });
+
+  it("prioritizes anchor town listings in near searches", () => {
+    const anchorTownId = "00000000-0000-4000-8000-0000000000aa";
+    const otherTownId = "00000000-0000-4000-8000-0000000000bb";
+    const anchorRow = { ...baseRow, town_id: anchorTownId };
+    const nearbyRow = { ...baseRow, town_id: otherTownId, title: "AAA Nearby" };
+
+    const anchorScore = scoreDiscoverListing(
+      anchorRow,
+      state({ anchor_town_ids: [anchorTownId] }),
+      undefined,
+      undefined,
+    );
+    const nearbyScore = scoreDiscoverListing(
+      nearbyRow,
+      state({ anchor_town_ids: [anchorTownId] }),
+      undefined,
+      undefined,
+    );
+
+    expect(anchorScore.score).toBeGreaterThan(nearbyScore.score);
+  });
+
+  it("soft-ranks restaurants and markets for cuisine tags without a category filter", () => {
+    const restaurant = {
+      ...baseRow,
+      business_categories: { slug: "restaurants" },
+      search_tags: ["seafood"],
+    };
+    const market = {
+      ...baseRow,
+      business_categories: { slug: "specialty_retail" },
+      search_tags: ["seafood"],
+      title: "Harbor Market",
+    };
+    const boutique = {
+      ...baseRow,
+      business_categories: { slug: "activities" },
+      search_tags: ["seafood"],
+      title: "Coastal Activity",
+    };
+    const filterState = state({ tags: ["seafood"] });
+
+    const restaurantScore = scoreDiscoverListing(restaurant, filterState, undefined, undefined);
+    const marketScore = scoreDiscoverListing(market, filterState, undefined, undefined);
+    const boutiqueScore = scoreDiscoverListing(boutique, filterState, undefined, undefined);
+
+    expect(restaurantScore.passes).toBe(true);
+    expect(marketScore.passes).toBe(true);
+    expect(restaurantScore.score).toBeGreaterThan(boutiqueScore.score);
+    expect(marketScore.score).toBeGreaterThan(boutiqueScore.score);
   });
 });

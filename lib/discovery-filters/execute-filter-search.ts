@@ -83,17 +83,6 @@ function mapListingRow(row: PoolRow, result?: DiscoverListingScore): DiscoverLis
   return listing;
 }
 
-function sortPoolRows(rows: PoolRow[]): PoolRow[] {
-  return [...rows].sort((a, b) => {
-    const featuredA = Boolean(a.featured);
-    const featuredB = Boolean(b.featured);
-    if (featuredA !== featuredB) return featuredA ? -1 : 1;
-    return String(a.title ?? "").localeCompare(String(b.title ?? ""), undefined, {
-      sensitivity: "base",
-    });
-  });
-}
-
 function scorePoolRows(
   pool: PoolRow[],
   state: DiscoveryFilterState,
@@ -155,7 +144,9 @@ export async function executeFilterSearch(
   const storefrontGroup = normalizeStorefrontCategoryGroupSlug(state.category_slug);
   const serviceGroup = normalizeServiceCategoryGroupSlug(state.service_category_slug);
   const hasTags = state.tags.length > 0;
-  const needsMemoryPass = hasTags || Boolean(storefrontGroup || serviceGroup);
+  const needsAnchorSort = state.anchor_town_ids.length > 0;
+  const needsMemoryPass =
+    hasTags || Boolean(storefrontGroup || serviceGroup) || needsAnchorSort;
 
   let query = supabase
     .from("businesses_view")
@@ -189,6 +180,7 @@ export async function executeFilterSearch(
   const appliedBase = {
     entity_type: state.entity_type,
     town_ids: state.town_ids,
+    anchor_town_ids: state.anchor_town_ids,
     category_slug: state.category_slug ?? null,
     service_category_slug: state.service_category_slug ?? null,
     tags: state.tags,
@@ -236,21 +228,14 @@ export async function executeFilterSearch(
     return emptyResult(state, { ...appliedBase, error: error.message });
   }
 
-  let pool = (data ?? []) as PoolRow[];
+  const pool = (data ?? []) as PoolRow[];
 
   if (!hasTags && !storefrontGroup && !serviceGroup) {
-    pool = sortPoolRows(pool);
-    const { pageRows, total, totalPages } = paginateScored(
-      pool.map((row) => ({
-        row,
-        result: scoreDiscoverListing(row, state, storefrontGroup, serviceGroup),
-      })),
-      state.page,
-      state.page_size,
-    );
+    const scored = sortScoredRows(scorePoolRows(pool, state, storefrontGroup, serviceGroup));
+    const { pageRows, total, totalPages } = paginateScored(scored, state.page, state.page_size);
 
     const searchResult = {
-      listings: pageRows.map(({ row }) => mapListingRow(row)),
+      listings: pageRows.map(({ row, result }) => mapListingRow(row, result)),
       total,
       page: state.page,
       page_size: state.page_size,

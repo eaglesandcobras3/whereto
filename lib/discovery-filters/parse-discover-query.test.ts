@@ -105,4 +105,15 @@ describe("parseDiscoverQuery", () => {
     expect(parsed.deterministicSignals?.usedHeuristicCategory).toBe(false);
     expect(parsed.deterministicSignals?.hasResidualQ).toBe(false);
   });
+
+  it("expands seafood near rosemary into tag, near town, and storefront without locking category", () => {
+    const parsed = parseDiscoverQuery("seafood near rosemary");
+    expect(parsed.expanded).toBe(true);
+    expect(parsed.town).toBe("rosemary-beach");
+    expect(parsed.town_scope).toBe("near");
+    expect(parsed.facet).toContain("seafood");
+    expect(parsed.type).toBe("storefront");
+    expect(parsed.category).toBeUndefined();
+    expect(parsed.q).toBeUndefined();
+  });
 });

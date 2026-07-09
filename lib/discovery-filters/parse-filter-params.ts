@@ -39,6 +39,7 @@ function parseTagsFromParams(params: RawDiscoverParams): string[] {
 export function parseDiscoveryFilterState(
   params: RawDiscoverParams,
   resolvedTownIds?: string[],
+  anchorTownIds?: string[],
 ): DiscoveryFilterState {
   const entity_type = parseEntityType(params.type);
   const category_slug = normalizeStorefrontCategoryGroupSlug(params.category ?? undefined);
@@ -59,6 +60,7 @@ export function parseDiscoveryFilterState(
   return discoveryFilterStateSchema.parse({
     entity_type,
     town_ids,
+    anchor_town_ids: anchorTownIds ?? [],
     category_slug,
     service_category_slug,
     tags,
