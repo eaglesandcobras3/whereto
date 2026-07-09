@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, Suspense, useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
@@ -16,7 +15,7 @@ import {
   showNavbarDiscoverQueryUi,
   showNavbarSearchUi,
 } from "@/lib/nav/discovery-links";
-import type { User } from "@supabase/supabase-js";
+import type { AuthSessionUser } from "@/lib/auth/types";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { gaEvent } from "@/lib/analytics/gtag-runner";
 
@@ -31,6 +30,8 @@ type Props = {
   searchLoading?: boolean;
   /** Browse links (server can inject conditional items, e.g. Landmarks & parks). */
   browseNavItems?: BrowseNavItem[];
+  /** Session from server (refreshed via `router.refresh()` after auth changes). */
+  initialUser?: AuthSessionUser | null;
 };
 
 function navLinkClass(active: boolean) {
@@ -49,6 +50,7 @@ export function Navbar({
   onSearchSubmit,
   searchLoading,
   browseNavItems: browseNavItemsProp = BROWSE_NAV_ITEMS,
+  initialUser = null,
 }: Props) {
   const featureFlags = useAppFeatureFlags();
   const onboardEnabled = isOnboardEnabled(featureFlags);
@@ -56,7 +58,7 @@ export function Navbar({
 
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthSessionUser | null>(initialUser);
   const [showAdminNav, setShowAdminNav] = useState(false);
   const [showPortalNav, setShowPortalNav] = useState(false);
   const [internalSearch, setInternalSearch] = useState("");
@@ -90,11 +92,8 @@ export function Navbar({
   }, []);
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-    });
-  }, []);
+    setUser(initialUser);
+  }, [initialUser]);
 
   useEffect(() => {
     if (!user) return;

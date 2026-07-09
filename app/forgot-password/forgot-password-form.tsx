@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { requestPasswordResetAction } from "@/lib/auth/actions";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export function ForgotPasswordForm() {
@@ -16,11 +16,8 @@ export function ForgotPasswordForm() {
     setMessage("");
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
+      const result = await requestPasswordResetAction(email);
+      if (!result.ok) throw new Error(result.error);
       setStatus("sent");
       setMessage("Check your email for the reset link.");
     } catch (err) {
