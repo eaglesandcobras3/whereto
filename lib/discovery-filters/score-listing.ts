@@ -8,6 +8,8 @@ import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregat
 const TAG_WEIGHT = 100;
 const ENTITY_TYPE_WEIGHT = 50;
 const CATEGORY_WEIGHT = 40;
+/** Near-search anchor town — listed before other towns in the expanded zone. */
+const TOWN_ANCHOR_WEIGHT = 75;
 
 export type DiscoverListingScopeMatch = {
   entity_type_match: boolean;
@@ -87,6 +89,13 @@ export function scoreDiscoverListing(
   if (hasTags) {
     if (entity_type_match) score += ENTITY_TYPE_WEIGHT;
     if (category_match) score += CATEGORY_WEIGHT;
+  }
+
+  if (state.anchor_town_ids.length) {
+    const townId = String(row.town_id ?? "");
+    if (townId && state.anchor_town_ids.includes(townId)) {
+      score += TOWN_ANCHOR_WEIGHT;
+    }
   }
 
   return {

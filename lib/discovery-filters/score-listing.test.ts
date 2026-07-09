@@ -13,6 +13,7 @@ function state(overrides: Partial<Parameters<typeof scoreDiscoverListing>[1]> = 
   return {
     entity_type: "storefront" as const,
     town_ids: [],
+    anchor_town_ids: [],
     tags: [],
     page: 1,
     page_size: 24,
@@ -98,5 +99,27 @@ describe("scoreDiscoverListing", () => {
     expect(match.passes).toBe(true);
     expect(wrongCategory.passes).toBe(false);
     expect(wrongType.passes).toBe(false);
+  });
+
+  it("prioritizes anchor town listings in near searches", () => {
+    const anchorTownId = "00000000-0000-4000-8000-0000000000aa";
+    const otherTownId = "00000000-0000-4000-8000-0000000000bb";
+    const anchorRow = { ...baseRow, town_id: anchorTownId };
+    const nearbyRow = { ...baseRow, town_id: otherTownId, title: "AAA Nearby" };
+
+    const anchorScore = scoreDiscoverListing(
+      anchorRow,
+      state({ anchor_town_ids: [anchorTownId] }),
+      undefined,
+      undefined,
+    );
+    const nearbyScore = scoreDiscoverListing(
+      nearbyRow,
+      state({ anchor_town_ids: [anchorTownId] }),
+      undefined,
+      undefined,
+    );
+
+    expect(anchorScore.score).toBeGreaterThan(nearbyScore.score);
   });
 });

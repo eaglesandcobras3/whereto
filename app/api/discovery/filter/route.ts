@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       : sp.get("town_scope") === "exact"
         ? "exact"
         : undefined;
-  const { town_ids, effective_town_slugs } = await resolveTownIdsFromParam(
+  const { town_ids, effective_town_slugs, anchor_town_ids } = await resolveTownIdsFromParam(
     supabase,
     sp.get("town"),
     sp.get("town_id"),
@@ -44,6 +44,7 @@ export async function GET(request: Request) {
       page_size: sp.get("page_size"),
     },
     town_ids,
+    anchor_town_ids,
   );
 
   const [result, scopedSearchTags] = await Promise.all([

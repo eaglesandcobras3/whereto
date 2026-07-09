@@ -13,6 +13,8 @@ export type DiscoveryEntityType = z.infer<typeof discoveryEntityTypeSchema>;
 export const discoveryFilterStateSchema = z.object({
   entity_type: discoveryEntityTypeSchema,
   town_ids: z.array(z.string().uuid()).default([]),
+  /** Named town(s) from a near search — ranked above other towns in the expanded zone. */
+  anchor_town_ids: z.array(z.string().uuid()).default([]),
   category_slug: z.string().min(1).optional(),
   service_category_slug: z.string().min(1).optional(),
   /** Selected tags — hard filter (match at least one) when present. */
