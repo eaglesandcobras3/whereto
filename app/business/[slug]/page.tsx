@@ -7,8 +7,7 @@ import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public
 import { TagPills } from "@/components/discovery/TagPills";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
-import { CollapsibleSection } from "@/components/ui/collapsible-section";
-import { markdownSectionPreview } from "@/lib/markdown/section-meta";
+import { BusinessProfileCollapsibleSections } from "@/components/business/BusinessProfileCollapsibleSections";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
@@ -634,99 +633,14 @@ export default async function BusinessPage({ params }: Props) {
                 />
               ) : null}
 
-              {/* Vibe Tags - Editorial badges */}
-              {vibe?.length ? (
-                <CollapsibleSection
-                  icon="spa"
-                  headingLevel={2}
-                  preview={`${vibe.slice(0, 3).join(" · ")}${vibe.length > 3 ? " · …" : ""}`}
-                  title="The Vibe"
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {vibe.map((v) => (
-                      <span key={v} className="editorial-chip">
-                        {v}
-                      </span>
-                    ))}
-                  </div>
-                </CollapsibleSection>
-              ) : null}
-
-              {/* About - prose style */}
-              {!hasMarkdown && b.ai_summary ? (
-                <CollapsibleSection
-                  icon="storefront"
-                  headingLevel={2}
-                  preview={markdownSectionPreview(String(b.ai_summary), 150)}
-                  title="About"
-                >
-                  <p className="text-base leading-relaxed text-zinc-700 sm:text-lg">
-                    {b.ai_summary as string}
-                  </p>
-                </CollapsibleSection>
-              ) : null}
-
-              {/* Local Tip - Pull quote style */}
-              {localTip ? (
-                <CollapsibleSection
-                  icon="lightbulb"
-                  headingLevel={2}
-                  preview={markdownSectionPreview(localTip, 120)}
-                  title="Local tip"
-                >
-                  <div className="pull-quote border-0 p-0">
-                    <p className="text-base leading-relaxed sm:text-lg">{localTip}</p>
-                  </div>
-                </CollapsibleSection>
-              ) : null}
-
-              {/* Good For / Skip If - Two column layout */}
-              {goodFor?.length || notIdealFor?.length ? (
-                <CollapsibleSection
-                  icon="groups"
-                  headingLevel={2}
-                  preview={[
-                    goodFor?.length ? `Great for ${goodFor.slice(0, 2).join(", ")}` : null,
-                    notIdealFor?.length ? `Skip if ${notIdealFor.slice(0, 2).join(", ")}` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  title="Who it's for"
-                >
-                  <div className="grid gap-8 sm:grid-cols-2">
-                    {goodFor?.length ? (
-                      <div>
-                        <h3 className="text-eyebrow mb-4">Great for</h3>
-                        <ul className="space-y-2.5">
-                          {goodFor.map((g) => (
-                            <li key={g} className="flex items-center gap-2.5 text-zinc-700">
-                              <span className="material-symbols-outlined !text-base text-green-600">
-                                check_circle
-                              </span>
-                              <span>{g}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                    {notIdealFor?.length ? (
-                      <div>
-                        <h3 className="text-eyebrow mb-4">Skip if</h3>
-                        <ul className="space-y-2.5">
-                          {notIdealFor.map((n) => (
-                            <li key={n} className="flex items-center gap-2.5 text-zinc-500">
-                              <span className="material-symbols-outlined !text-base text-zinc-300">
-                                remove_circle
-                              </span>
-                              <span>{n}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
-                </CollapsibleSection>
-              ) : null}
+              <BusinessProfileCollapsibleSections
+                vibe={vibe}
+                aboutSummary={b.ai_summary ? String(b.ai_summary) : null}
+                showAbout={!hasMarkdown}
+                localTip={localTip}
+                goodFor={goodFor}
+                notIdealFor={notIdealFor}
+              />
 
               {/* Tags - linked for SEO */}
               {tagSlugs.length > 0 && (
