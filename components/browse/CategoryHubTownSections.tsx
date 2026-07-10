@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 import type { CategoryTownGroup } from "@/lib/data/category-hub";
+import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 
 type Props = {
   townGroups: CategoryTownGroup[];
@@ -20,25 +21,14 @@ export function CategoryHubTownSections({
   categorySlug,
   emptyMessage,
 }: Props) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    const first = townGroups[0];
-    return first ? new Set([groupKey(first)]) : new Set();
+  const { expandedIds, toggle } = usePersistedExpandedSectionIds({
+    sectionIds: townGroups.map(groupKey),
+    defaultExpandedCount: 1,
+    desktopOnlyDefaults: false,
   });
 
   if (townGroups.length === 0) {
     return emptyMessage ? <div>{emptyMessage}</div> : null;
-  }
-
-  function toggle(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
   }
 
   return (
