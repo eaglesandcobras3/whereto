@@ -40,8 +40,10 @@ export function usePersistedExpandedSectionIds({
   const onHashAppliedRef = useRef(onHashApplied);
   const isValidHashRef = useRef(isValidHash);
 
-  onHashAppliedRef.current = onHashApplied;
-  isValidHashRef.current = isValidHash;
+  useEffect(() => {
+    onHashAppliedRef.current = onHashApplied;
+    isValidHashRef.current = isValidHash;
+  }, [onHashApplied, isValidHash]);
 
   const sectionIdsKey = sectionIds.join("\0");
 
