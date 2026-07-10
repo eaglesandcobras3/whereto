@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { browseGroupIcon } from "@/lib/business-categories/group-browse-sections";
 import type { BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
 import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 
 type Props = {
   placeName: string;
@@ -20,10 +20,6 @@ type Props = {
   defaultExpandedCount?: number;
 };
 
-function useIsDesktop() {
-  return useMediaQuery("(min-width: 1024px)");
-}
-
 export function PlaceCategoryBusinessSections({
   placeName,
   placeSlug,
@@ -34,38 +30,13 @@ export function PlaceCategoryBusinessSections({
   emptyMessage,
   defaultExpandedCount = 1,
 }: Props) {
-  const isDesktop = useIsDesktop();
-
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    if (!isDesktop) return;
-    queueMicrotask(() => {
-      setExpandedIds((prev) => {
-        if (prev.size > 0) return prev;
-        const initial = new Set<string>();
-        for (let i = 0; i < Math.min(defaultExpandedCount, sections.length); i++) {
-          initial.add(sections[i]!.id);
-        }
-        return initial;
-      });
-    });
-  }, [isDesktop, defaultExpandedCount, sections]);
+  const { expandedIds, toggle } = usePersistedExpandedSectionIds({
+    sectionIds: sections.map((section) => section.id),
+    defaultExpandedCount,
+  });
 
   if (sections.length === 0) {
     return emptyMessage ? <div>{emptyMessage}</div> : null;
-  }
-
-  function toggle(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
   }
 
   return (

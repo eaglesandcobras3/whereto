@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import {
@@ -14,7 +14,7 @@ import {
 import type { ServiceSpecialtySection } from "@/lib/data/service-vendors-hub";
 import Link from "next/link";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 
 type Props = {
   sections: ServiceSpecialtySection[];
@@ -25,10 +25,6 @@ type Props = {
   defaultExpandedCount?: number;
 };
 
-function useIsDesktop() {
-  return useMediaQuery("(min-width: 1024px)");
-}
-
 export function ServiceSpecialtySections({
   sections,
   analyticsCategoryPrefix,
@@ -38,22 +34,10 @@ export function ServiceSpecialtySections({
   defaultExpandedCount = 1,
 }: Props) {
   const router = useRouter();
-  const isDesktop = useIsDesktop();
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    if (!isDesktop) return;
-    queueMicrotask(() => {
-      setExpandedIds((prev) => {
-        if (prev.size > 0) return prev;
-        const initial = new Set<string>();
-        for (let i = 0; i < Math.min(defaultExpandedCount, sections.length); i++) {
-          initial.add(sections[i]!.id);
-        }
-        return initial;
-      });
-    });
-  }, [isDesktop, defaultExpandedCount, sections]);
+  const { expandedIds, toggle } = usePersistedExpandedSectionIds({
+    sectionIds: sections.map((section) => section.id),
+    defaultExpandedCount,
+  });
 
   useEffect(() => {
     if (sections.length === 0) return;
@@ -64,18 +48,6 @@ export function ServiceSpecialtySections({
 
   if (sections.length === 0) {
     return emptyMessage ? <div>{emptyMessage}</div> : null;
-  }
-
-  function toggle(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
   }
 
   return (

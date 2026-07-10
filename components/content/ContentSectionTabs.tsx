@@ -3,6 +3,7 @@
 import { type ReactNode } from "react";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { cn } from "@/lib/utils";
+import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 
 export type ContentTabSection = {
   id: string;
@@ -23,6 +24,13 @@ export function ContentSectionTabs({
   description,
   className,
 }: Props) {
+  const { expandedIds, setExpanded } = usePersistedExpandedSectionIds({
+    sectionIds: sections.map((section) => section.id),
+    defaultExpandedCount: 1,
+    desktopOnlyDefaults: false,
+    storageScope: "content",
+  });
+
   if (sections.length === 0) return null;
 
   const showHeader = Boolean(heading || description);
@@ -38,7 +46,8 @@ export function ContentSectionTabs({
           <CollapsibleSection
             key={section.id}
             variant="plain"
-            defaultOpen={index === 0}
+            open={expandedIds.has(section.id)}
+            onOpenChange={(open) => setExpanded(section.id, open)}
             trimTrailingSpace={index === sections.length - 1}
             title={section.title}
           >
