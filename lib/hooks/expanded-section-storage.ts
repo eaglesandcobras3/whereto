@@ -1,7 +1,8 @@
 export const EXPANDED_SECTIONS_STORAGE_PREFIX = "w30a_expanded_sections:";
 
-export function expandedSectionsStorageKey(pathname: string): string {
-  return `${EXPANDED_SECTIONS_STORAGE_PREFIX}${pathname}`;
+export function expandedSectionsStorageKey(pathname: string, scope?: string): string {
+  const base = `${EXPANDED_SECTIONS_STORAGE_PREFIX}${pathname}`;
+  return scope ? `${base}:${scope}` : base;
 }
 
 export function parseStoredExpandedSectionIds(

@@ -17,6 +17,8 @@ export type UsePersistedExpandedSectionIdsOptions = {
   defaultExpandedCount?: number;
   /** When true (default), `defaultExpandedCount` applies only at lg+. */
   desktopOnlyDefaults?: boolean;
+  /** Namespace when multiple section groups share one pathname. */
+  storageScope?: string;
   /** Optional guard before treating a URL hash as a section id. */
   isValidHash?: (hash: string) => boolean;
   /** Runs after a hash-matched section is expanded (e.g. scroll into view). */
@@ -27,6 +29,7 @@ export function usePersistedExpandedSectionIds({
   sectionIds,
   defaultExpandedCount = 0,
   desktopOnlyDefaults = true,
+  storageScope,
   isValidHash,
   onHashApplied,
 }: UsePersistedExpandedSectionIdsOptions) {
@@ -45,7 +48,7 @@ export function usePersistedExpandedSectionIds({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const storageKey = expandedSectionsStorageKey(pathname);
+    const storageKey = expandedSectionsStorageKey(pathname, storageScope);
     const stored = parseStoredExpandedSectionIds(
       sessionStorage.getItem(storageKey),
       sectionIds,
@@ -83,14 +86,28 @@ export function usePersistedExpandedSectionIds({
     isDesktop,
     defaultExpandedCount,
     desktopOnlyDefaults,
+    storageScope,
     sectionIds,
   ]);
 
   useEffect(() => {
     if (!initializedRef.current || typeof window === "undefined") return;
-    const storageKey = expandedSectionsStorageKey(pathname);
+    const storageKey = expandedSectionsStorageKey(pathname, storageScope);
     sessionStorage.setItem(storageKey, serializeExpandedSectionIds(expandedIds));
-  }, [expandedIds, pathname]);
+  }, [expandedIds, pathname, storageScope]);
+
+  const setExpanded = useCallback((id: string, open: boolean) => {
+    setExpandedIds((prev) => {
+      if (open === prev.has(id)) return prev;
+      const next = new Set(prev);
+      if (open) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  }, []);
 
   const toggle = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -104,5 +121,5 @@ export function usePersistedExpandedSectionIds({
     });
   }, []);
 
-  return { expandedIds, toggle };
+  return { expandedIds, toggle, setExpanded };
 }

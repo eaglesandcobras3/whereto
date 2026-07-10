@@ -12,6 +12,12 @@ describe("expandedSectionsStorageKey", () => {
       "w30a_expanded_sections:/categories",
     );
   });
+
+  it("adds an optional namespace for multiple groups on one page", () => {
+    expect(expandedSectionsStorageKey("/business/foo", "content")).toBe(
+      "w30a_expanded_sections:/business/foo:content",
+    );
+  });
 });
 
 describe("parseStoredExpandedSectionIds", () => {
