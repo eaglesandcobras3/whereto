@@ -17,6 +17,9 @@ describe("expandedSectionsStorageKey", () => {
     expect(expandedSectionsStorageKey("/business/foo", "content")).toBe(
       "w30a_expanded_sections:/business/foo:content",
     );
+    expect(expandedSectionsStorageKey("/business/foo", "cards")).toBe(
+      "w30a_expanded_sections:/business/foo:cards",
+    );
   });
 });
 
