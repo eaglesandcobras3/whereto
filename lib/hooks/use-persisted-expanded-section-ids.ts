@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import {
   defaultExpandedSectionIds,
+  expandedSectionSetsEqual,
   expandedSectionsStorageKey,
   parseStoredExpandedSectionIds,
+  sectionIdsFromKey,
   serializeExpandedSectionIds,
 } from "@/lib/hooks/expanded-section-storage";
 
@@ -34,9 +35,8 @@ export function usePersistedExpandedSectionIds({
   onHashApplied,
 }: UsePersistedExpandedSectionIdsOptions) {
   const pathname = usePathname();
-  const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-  const initializedRef = useRef(false);
+  const hydratedRef = useRef(false);
   const onHashAppliedRef = useRef(onHashApplied);
   const isValidHashRef = useRef(isValidHash);
 
@@ -50,17 +50,22 @@ export function usePersistedExpandedSectionIds({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    hydratedRef.current = false;
+
+    const currentSectionIds = sectionIdsFromKey(sectionIdsKey);
     const storageKey = expandedSectionsStorageKey(pathname, storageScope);
     const stored = parseStoredExpandedSectionIds(
       sessionStorage.getItem(storageKey),
-      sectionIds,
+      currentSectionIds,
     );
+
+    const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
 
     let next: Set<string>;
     if (stored !== null) {
       next = stored;
     } else if (!desktopOnlyDefaults || isDesktop) {
-      next = defaultExpandedSectionIds(sectionIds, defaultExpandedCount);
+      next = defaultExpandedSectionIds(currentSectionIds, defaultExpandedCount);
     } else {
       next = new Set();
     }
@@ -68,32 +73,29 @@ export function usePersistedExpandedSectionIds({
     const hash = window.location.hash.replace(/^#/, "");
     if (
       hash &&
-      sectionIds.includes(hash) &&
+      currentSectionIds.includes(hash) &&
       (!isValidHashRef.current || isValidHashRef.current(hash))
     ) {
       next = new Set([...next, hash]);
-      queueMicrotask(() => {
+      requestAnimationFrame(() => {
         onHashAppliedRef.current?.(hash);
       });
     }
 
-    initializedRef.current = false;
     queueMicrotask(() => {
-      setExpandedIds(next);
-      initializedRef.current = true;
+      setExpandedIds((prev) => (expandedSectionSetsEqual(prev, next) ? prev : next));
+      hydratedRef.current = true;
     });
   }, [
     pathname,
     sectionIdsKey,
-    isDesktop,
     defaultExpandedCount,
     desktopOnlyDefaults,
     storageScope,
-    sectionIds,
   ]);
 
   useEffect(() => {
-    if (!initializedRef.current || typeof window === "undefined") return;
+    if (!hydratedRef.current || typeof window === "undefined") return;
     const storageKey = expandedSectionsStorageKey(pathname, storageScope);
     sessionStorage.setItem(storageKey, serializeExpandedSectionIds(expandedIds));
   }, [expandedIds, pathname, storageScope]);
