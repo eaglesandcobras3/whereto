@@ -7,6 +7,7 @@ import {
   defaultExpandedSectionIds,
   expandedSectionsStorageKey,
   parseStoredExpandedSectionIds,
+  sectionIdsFromKey,
   serializeExpandedSectionIds,
 } from "@/lib/hooks/expanded-section-storage";
 
@@ -50,17 +51,18 @@ export function usePersistedExpandedSectionIds({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const currentSectionIds = sectionIdsFromKey(sectionIdsKey);
     const storageKey = expandedSectionsStorageKey(pathname, storageScope);
     const stored = parseStoredExpandedSectionIds(
       sessionStorage.getItem(storageKey),
-      sectionIds,
+      currentSectionIds,
     );
 
     let next: Set<string>;
     if (stored !== null) {
       next = stored;
     } else if (!desktopOnlyDefaults || isDesktop) {
-      next = defaultExpandedSectionIds(sectionIds, defaultExpandedCount);
+      next = defaultExpandedSectionIds(currentSectionIds, defaultExpandedCount);
     } else {
       next = new Set();
     }
@@ -68,7 +70,7 @@ export function usePersistedExpandedSectionIds({
     const hash = window.location.hash.replace(/^#/, "");
     if (
       hash &&
-      sectionIds.includes(hash) &&
+      currentSectionIds.includes(hash) &&
       (!isValidHashRef.current || isValidHashRef.current(hash))
     ) {
       next = new Set([...next, hash]);
@@ -89,7 +91,6 @@ export function usePersistedExpandedSectionIds({
     defaultExpandedCount,
     desktopOnlyDefaults,
     storageScope,
-    sectionIds,
   ]);
 
   useEffect(() => {

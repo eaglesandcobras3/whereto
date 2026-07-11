@@ -3,6 +3,7 @@ import {
   defaultExpandedSectionIds,
   expandedSectionsStorageKey,
   parseStoredExpandedSectionIds,
+  sectionIdsFromKey,
   serializeExpandedSectionIds,
 } from "@/lib/hooks/expanded-section-storage";
 
@@ -56,5 +57,16 @@ describe("defaultExpandedSectionIds", () => {
   it("expands the first N section ids", () => {
     expect(defaultExpandedSectionIds(["a", "b", "c"], 2)).toEqual(new Set(["a", "b"]));
     expect(defaultExpandedSectionIds(["a"], 3)).toEqual(new Set(["a"]));
+  });
+});
+
+describe("sectionIdsFromKey", () => {
+  it("round-trips section id lists", () => {
+    expect(sectionIdsFromKey("food\0retail\0services")).toEqual([
+      "food",
+      "retail",
+      "services",
+    ]);
+    expect(sectionIdsFromKey("")).toEqual([]);
   });
 });

@@ -37,3 +37,7 @@ export function defaultExpandedSectionIds(
   }
   return initial;
 }
+
+export function sectionIdsFromKey(sectionIdsKey: string): string[] {
+  return sectionIdsKey.length > 0 ? sectionIdsKey.split("\0") : [];
+}
