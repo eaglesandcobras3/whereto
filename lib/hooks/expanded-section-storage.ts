@@ -41,3 +41,11 @@ export function defaultExpandedSectionIds(
 export function sectionIdsFromKey(sectionIdsKey: string): string[] {
   return sectionIdsKey.length > 0 ? sectionIdsKey.split("\0") : [];
 }
+
+export function expandedSectionSetsEqual(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const id of a) {
+    if (!b.has(id)) return false;
+  }
+  return true;
+}

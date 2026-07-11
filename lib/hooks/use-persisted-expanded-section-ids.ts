@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import {
   defaultExpandedSectionIds,
+  expandedSectionSetsEqual,
   expandedSectionsStorageKey,
   parseStoredExpandedSectionIds,
   sectionIdsFromKey,
@@ -35,9 +35,8 @@ export function usePersistedExpandedSectionIds({
   onHashApplied,
 }: UsePersistedExpandedSectionIdsOptions) {
   const pathname = usePathname();
-  const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-  const initializedRef = useRef(false);
+  const hydratedRef = useRef(false);
   const onHashAppliedRef = useRef(onHashApplied);
   const isValidHashRef = useRef(isValidHash);
 
@@ -51,12 +50,16 @@ export function usePersistedExpandedSectionIds({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    hydratedRef.current = false;
+
     const currentSectionIds = sectionIdsFromKey(sectionIdsKey);
     const storageKey = expandedSectionsStorageKey(pathname, storageScope);
     const stored = parseStoredExpandedSectionIds(
       sessionStorage.getItem(storageKey),
       currentSectionIds,
     );
+
+    const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
 
     let next: Set<string>;
     if (stored !== null) {
@@ -74,27 +77,25 @@ export function usePersistedExpandedSectionIds({
       (!isValidHashRef.current || isValidHashRef.current(hash))
     ) {
       next = new Set([...next, hash]);
-      queueMicrotask(() => {
+      requestAnimationFrame(() => {
         onHashAppliedRef.current?.(hash);
       });
     }
 
-    initializedRef.current = false;
     queueMicrotask(() => {
-      setExpandedIds(next);
-      initializedRef.current = true;
+      setExpandedIds((prev) => (expandedSectionSetsEqual(prev, next) ? prev : next));
+      hydratedRef.current = true;
     });
   }, [
     pathname,
     sectionIdsKey,
-    isDesktop,
     defaultExpandedCount,
     desktopOnlyDefaults,
     storageScope,
   ]);
 
   useEffect(() => {
-    if (!initializedRef.current || typeof window === "undefined") return;
+    if (!hydratedRef.current || typeof window === "undefined") return;
     const storageKey = expandedSectionsStorageKey(pathname, storageScope);
     sessionStorage.setItem(storageKey, serializeExpandedSectionIds(expandedIds));
   }, [expandedIds, pathname, storageScope]);

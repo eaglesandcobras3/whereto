@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultExpandedSectionIds,
+  expandedSectionSetsEqual,
   expandedSectionsStorageKey,
   parseStoredExpandedSectionIds,
   sectionIdsFromKey,
@@ -68,5 +69,12 @@ describe("sectionIdsFromKey", () => {
       "services",
     ]);
     expect(sectionIdsFromKey("")).toEqual([]);
+  });
+});
+
+describe("expandedSectionSetsEqual", () => {
+  it("compares set contents regardless of insertion order", () => {
+    expect(expandedSectionSetsEqual(new Set(["a", "b"]), new Set(["b", "a"]))).toBe(true);
+    expect(expandedSectionSetsEqual(new Set(["a"]), new Set(["a", "b"]))).toBe(false);
   });
 });
