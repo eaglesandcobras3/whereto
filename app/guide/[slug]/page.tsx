@@ -46,7 +46,7 @@ async function loadGuide(slug: string) {
 
     const { data: g } = await supabase
       .from("guides")
-      .select("title, content, excerpt, seo_title, seo_description, main_image, hero_image, main_image_url, hero_image_url, status, date_created, date_updated")
+      .select("id, title, content, excerpt, seo_title, seo_description, main_image, hero_image, main_image_url, hero_image_url, status, date_created, date_updated")
       .eq("slug", slug)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -54,6 +54,7 @@ async function loadGuide(slug: string) {
       .maybeSingle();
     if (g) {
       const row = g as {
+        id: string;
         title: string;
         content: string | null;
         excerpt: string | null;
@@ -72,7 +73,25 @@ async function loadGuide(slug: string) {
         row.main_image,
         row.hero_image,
       );
+
+      const { data: bizLinks } = await supabase
+        .from("guide_businesses")
+        .select("business_id, businesses ( title, slug )")
+        .eq("guide_id", row.id)
+        .order("sort", { ascending: true, nullsFirst: false });
+
+      const linkedBusinesses = (bizLinks ?? [])
+        .map((link) => {
+          const biz = (link as { businesses?: { title?: string; slug?: string } | null }).businesses;
+          const bizSlug = biz?.slug?.trim();
+          const title = biz?.title?.trim();
+          if (!bizSlug || !title) return null;
+          return { slug: bizSlug, title };
+        })
+        .filter((b): b is { slug: string; title: string } => Boolean(b));
+
       return {
+        id: row.id,
         title: row.title,
         body_markdown: row.content ?? "",
         seo_title: row.seo_title,
@@ -80,6 +99,7 @@ async function loadGuide(slug: string) {
         og_image_url: img,
         date_published: row.date_created ?? null,
         date_modified: row.date_updated ?? null,
+        linked_businesses: linkedBusinesses,
       };
     }
 
@@ -139,6 +159,10 @@ export default async function GuidePage({ params }: Props) {
   const lead = page.seo_description?.trim() || null;
   const showCorridorMap = slug === PRIMARY_EDITORIAL_GUIDE_SLUG;
   const relatedGuides = relatedGuidesForSlug(slug);
+  const linkedBusinesses =
+    "linked_businesses" in page && Array.isArray(page.linked_businesses)
+      ? (page.linked_businesses as { slug: string; title: string }[])
+      : [];
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -206,6 +230,24 @@ export default async function GuidePage({ params }: Props) {
                   <p className="prose-editorial mt-6 max-w-2xl text-lg text-[var(--color-text-secondary)]">
                     {lead}
                   </p>
+                ) : null}
+                {linkedBusinesses.length > 0 ? (
+                  <div className="mt-5 flex flex-wrap gap-1.5">
+                    {linkedBusinesses.map((b) => (
+                      <Link
+                        key={b.slug}
+                        href={`/business/${b.slug}`}
+                        {...gaClickProps({
+                          event: "nav_click",
+                          category: "guide_linked_business",
+                          label: b.slug,
+                        })}
+                        className="inline-flex items-center rounded-full bg-[var(--color-surface-secondary)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                      >
+                        {b.title}
+                      </Link>
+                    ))}
+                  </div>
                 ) : null}
               </header>
             </div>
@@ -279,6 +321,24 @@ export default async function GuidePage({ params }: Props) {
                 <p className="prose-editorial mb-10 text-lg text-[var(--color-text-secondary)]">
                   {lead}
                 </p>
+              ) : null}
+              {linkedBusinesses.length > 0 ? (
+                <div className={`${lead ? "-mt-6" : ""} mb-10 flex flex-wrap gap-1.5`}>
+                  {linkedBusinesses.map((b) => (
+                    <Link
+                      key={b.slug}
+                      href={`/business/${b.slug}`}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "guide_linked_business",
+                        label: b.slug,
+                      })}
+                      className="inline-flex items-center rounded-full bg-[var(--color-surface-secondary)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                    >
+                      {b.title}
+                    </Link>
+                  ))}
+                </div>
               ) : null}
             </>
           ) : null}

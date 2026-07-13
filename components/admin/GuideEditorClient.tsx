@@ -26,6 +26,7 @@ type GuideDetail = {
   summary: string | null;
   excerpt: string | null;
   intent_tags: string[] | null;
+  search_tags?: string[];
   custom_fields: Record<string, unknown> | null;
   enriched: boolean;
   town_id: string | null;
@@ -62,6 +63,9 @@ export function GuideEditorClient({ guideId }: Props) {
   const [areaId, setAreaId] = useState<string>("");
   const [businessIds, setBusinessIds] = useState<string[]>([]);
   const [businessLabels, setBusinessLabels] = useState<Record<string, string>>({});
+  const [searchTags, setSearchTags] = useState<string[]>([]);
+  const [tagDraft, setTagDraft] = useState("");
+  const [tagVocabulary, setTagVocabulary] = useState<string[]>([]);
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
 
@@ -84,12 +88,14 @@ export function GuideEditorClient({ guideId }: Props) {
       towns?: PickerOption[];
       areas?: PickerOption[];
       businesses?: PickerOption[];
+      tagVocabulary?: string[];
       error?: string;
     };
     if (!res.ok) throw new Error(j.error ?? "Failed to load options");
     if (j.towns) setTowns(j.towns);
     if (j.areas) setAreas(j.areas);
     if (j.businesses) setBusinessResults(j.businesses);
+    if (j.tagVocabulary) setTagVocabulary(j.tagVocabulary);
   }, []);
 
   const loadGuide = useCallback(async () => {
@@ -111,6 +117,7 @@ export function GuideEditorClient({ guideId }: Props) {
       setAreaId(g.area_id ?? "");
       setBusinessIds(g.business_ids);
       setBusinessLabels(g.business_labels ?? {});
+      setSearchTags(g.search_tags ?? []);
       setMainImageUrl(g.main_image_url ?? null);
       setMainImagePreview(g.main_image_preview_url ?? g.main_image_url ?? null);
       setSeoPreview({
@@ -138,16 +145,18 @@ export function GuideEditorClient({ guideId }: Props) {
 
   useEffect(() => {
     if (isNew) {
-      loadOptions().catch(() => {});
+      loadOptions().catch((e) => {
+        setError(e instanceof Error ? e.message : "Failed to load options");
+      });
     } else {
       loadGuide();
     }
   }, [isNew, loadGuide, loadOptions]);
 
   useEffect(() => {
-    if (townId) {
-      loadOptions({ townId }).catch(() => {});
-    }
+    loadOptions({ townId: townId || undefined }).catch((e) => {
+      setError(e instanceof Error ? e.message : "Failed to load town options");
+    });
   }, [townId, loadOptions]);
 
   useEffect(() => {
@@ -156,10 +165,10 @@ export function GuideEditorClient({ guideId }: Props) {
       return;
     }
     const t = setTimeout(() => {
-      loadOptions({ businessQuery }).catch(() => {});
+      loadOptions({ townId: townId || undefined, businessQuery }).catch(() => {});
     }, 300);
     return () => clearTimeout(t);
-  }, [businessQuery, loadOptions]);
+  }, [businessQuery, townId, loadOptions]);
 
   const hasSearchProfile = Boolean(
     typeof seoPreview.custom_fields?.search_profile === "string" &&
@@ -177,6 +186,7 @@ export function GuideEditorClient({ guideId }: Props) {
       town_id: townId || null,
       area_id: areaId || null,
       business_ids: businessIds,
+      search_tags: searchTags,
       main_image_url: mainImageUrl,
       seo_content: {
         primary_keyword: primaryKeyword,
@@ -184,8 +194,36 @@ export function GuideEditorClient({ guideId }: Props) {
         related_guide_slugs: parseSlugListInput(relatedGuideSlugs),
       },
     }),
-    [title, content, status, guideType, townId, areaId, businessIds, mainImageUrl, primaryKeyword, searchIntent, relatedGuideSlugs],
+    [
+      title,
+      content,
+      status,
+      guideType,
+      townId,
+      areaId,
+      businessIds,
+      searchTags,
+      mainImageUrl,
+      primaryKeyword,
+      searchIntent,
+      relatedGuideSlugs,
+    ],
   );
+
+  function addSearchTag(raw: string) {
+    const tag = raw
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!tag) return;
+    setSearchTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
+    setTagDraft("");
+  }
+
+  function removeSearchTag(tag: string) {
+    setSearchTags((prev) => prev.filter((t) => t !== tag));
+  }
 
   async function save() {
     setSaving(true);
@@ -475,6 +513,51 @@ export function GuideEditorClient({ guideId }: Props) {
                 ))}
               </select>
             </label>
+
+            <div className="mt-3">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Search tags
+              </span>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Same vocabulary as business search tags. Makes guides findable and matchable to listings.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {searchTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => removeSearchTag(tag)}
+                    className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 hover:bg-zinc-200"
+                    title="Remove tag"
+                  >
+                    {tag.replace(/_/g, " ")}
+                    <span aria-hidden>×</span>
+                  </button>
+                ))}
+              </div>
+              <input
+                list="guide-search-tag-vocab"
+                type="text"
+                value={tagDraft}
+                onChange={(e) => setTagDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    addSearchTag(tagDraft);
+                  }
+                }}
+                onBlur={() => {
+                  if (tagDraft.trim()) addSearchTag(tagDraft);
+                }}
+                placeholder="Add tag (Enter)"
+                className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <datalist id="guide-search-tag-vocab">
+                {tagVocabulary.map((tag) => (
+                  <option key={tag} value={tag} />
+                ))}
+              </datalist>
+            </div>
 
             <div className="mt-3">
               <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">

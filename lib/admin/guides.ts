@@ -28,6 +28,7 @@ export type AdminGuideListItem = {
   date_updated: string | null;
   enriched: boolean;
   town_name: string | null;
+  search_tags: string[];
 };
 
 export type AdminGuideDetail = {
@@ -45,6 +46,7 @@ export type AdminGuideDetail = {
   summary: string | null;
   excerpt: string | null;
   intent_tags: string[] | null;
+  search_tags: string[];
   custom_fields: Record<string, unknown> | null;
   enriched: boolean;
   town_id: string | null;
@@ -66,6 +68,7 @@ export type GuideWriteInput = {
   town_id?: string | null;
   area_id?: string | null;
   business_ids?: string[];
+  search_tags?: string[] | null;
   /** Set URL, pass `null` to remove, omit to leave unchanged (update only). */
   main_image_url?: string | null;
   seo_content?: GuideSeoContentFields;
@@ -75,6 +78,24 @@ function parseIntentTags(raw: unknown): string[] | null {
   if (!Array.isArray(raw)) return null;
   const tags = raw.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
   return tags.length ? tags : null;
+}
+
+function normalizeSearchTags(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    const tag = item
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!tag || seen.has(tag)) continue;
+    seen.add(tag);
+    out.push(tag);
+  }
+  return out;
 }
 
 /** Persist admin-uploaded main image URL; clears legacy Directus UUID on `main_image`. */
@@ -91,12 +112,12 @@ export function mainImagePatch(
 
 export async function listAdminGuides(
   supabase: SupabaseClient,
-  opts?: { status?: string; limit?: number },
+  opts?: { status?: string; q?: string; limit?: number },
 ): Promise<AdminGuideListItem[]> {
   const limit = opts?.limit ?? 100;
   let q = supabase
     .from("guides")
-    .select("id, slug, title, status, guide_type, date_updated, custom_fields")
+    .select("id, slug, title, status, guide_type, date_updated, custom_fields, search_tags")
     .order("date_updated", { ascending: false, nullsFirst: false })
     .limit(limit);
   if (opts?.status === "active") {
@@ -113,37 +134,49 @@ export async function listAdminGuides(
   const ids = guides.map((g) => String((g as { id: string }).id));
   const { data: townLinks } = await supabase
     .from("guide_towns")
-    .select("guide_id, towns ( name )")
+    .select("guide_id, towns ( title )")
     .in("guide_id", ids);
 
   const townByGuide = new Map<string, string>();
   for (const link of townLinks ?? []) {
     const gid = String((link as { guide_id: string }).guide_id);
-    const name = (link.towns as { name?: string } | null)?.name;
+    const name = (link.towns as { title?: string } | null)?.title;
     if (name && !townByGuide.has(gid)) townByGuide.set(gid, name);
   }
 
-  return guides.map((g) => {
-    const row = g as {
-      id: string;
-      slug: string;
-      title: string;
-      status: string;
-      guide_type: string | null;
-      date_updated: string | null;
-      custom_fields: unknown;
-    };
-    return {
-      id: row.id,
-      slug: row.slug,
-      title: row.title,
-      status: row.status,
-      guide_type: row.guide_type,
-      date_updated: row.date_updated,
-      enriched: isGuideEnriched(row.custom_fields),
-      town_name: townByGuide.get(row.id) ?? null,
-    };
-  });
+  const needle = opts?.q?.trim().toLowerCase() ?? "";
+
+  return guides
+    .map((g) => {
+      const row = g as {
+        id: string;
+        slug: string;
+        title: string;
+        status: string;
+        guide_type: string | null;
+        date_updated: string | null;
+        custom_fields: unknown;
+        search_tags: unknown;
+      };
+      return {
+        id: row.id,
+        slug: row.slug,
+        title: row.title,
+        status: row.status,
+        guide_type: row.guide_type,
+        date_updated: row.date_updated,
+        enriched: isGuideEnriched(row.custom_fields),
+        town_name: townByGuide.get(row.id) ?? null,
+        search_tags: normalizeSearchTags(row.search_tags),
+      };
+    })
+    .filter((row) => {
+      if (!needle) return true;
+      if (row.title.toLowerCase().includes(needle)) return true;
+      if (row.slug.toLowerCase().includes(needle)) return true;
+      if (row.town_name?.toLowerCase().includes(needle)) return true;
+      return row.search_tags.some((t) => t.includes(needle) || t.replace(/_/g, " ").includes(needle));
+    });
 }
 
 export async function getAdminGuideById(
@@ -153,7 +186,7 @@ export async function getAdminGuideById(
   const { data: guide } = await supabase
     .from("guides")
     .select(
-      "id, slug, title, content, status, guide_type, seo_title, seo_description, og_title, og_description, search_keywords, summary, excerpt, intent_tags, custom_fields, main_image_url, main_image, date_updated, published_at",
+      "id, slug, title, content, status, guide_type, seo_title, seo_description, og_title, og_description, search_keywords, summary, excerpt, intent_tags, search_tags, custom_fields, main_image_url, main_image, date_updated, published_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -175,6 +208,7 @@ export async function getAdminGuideById(
     summary: string | null;
     excerpt: string | null;
     intent_tags: unknown;
+    search_tags: unknown;
     custom_fields: unknown;
     main_image_url: string | null;
     main_image: string | null;
@@ -220,6 +254,7 @@ export async function getAdminGuideById(
     summary: row.summary,
     excerpt: row.excerpt,
     intent_tags: parseIntentTags(row.intent_tags),
+    search_tags: normalizeSearchTags(row.search_tags),
     custom_fields: cf,
     enriched: isGuideEnriched(row.custom_fields),
     town_id: (townRes.data as { town_id?: string } | null)?.town_id ?? null,
@@ -354,6 +389,9 @@ export async function createAdminGuide(
     published_at: null,
   };
   Object.assign(insertPayload, mainImagePatch(input.main_image_url) ?? {});
+  if (input.search_tags !== undefined) {
+    insertPayload.search_tags = normalizeSearchTags(input.search_tags);
+  }
 
   const { error } = await supabase.from("guides").insert(insertPayload);
   if (error) throw new Error(error.message);
@@ -408,6 +446,9 @@ export async function updateAdminGuide(
   if (input.seo_content) {
     patch.custom_fields = mergeGuideSeoContentFields(existing.custom_fields, input.seo_content);
   }
+  if (input.search_tags !== undefined) {
+    patch.search_tags = normalizeSearchTags(input.search_tags);
+  }
 
   const { error } = await supabase.from("guides").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
@@ -426,11 +467,11 @@ export async function listTownPickerOptions(
 ): Promise<GuidePickerOption[]> {
   const { data } = await supabase
     .from("towns")
-    .select("id, name, slug")
-    .order("name", { ascending: true });
+    .select("id, title, slug")
+    .order("title", { ascending: true });
   return (data ?? []).map((r) => ({
     id: String((r as { id: string }).id),
-    label: String((r as { name: string }).name),
+    label: String((r as { title: string }).title),
     sublabel: String((r as { slug: string }).slug),
   }));
 }
@@ -439,16 +480,28 @@ export async function listAreaPickerOptions(
   supabase: SupabaseClient,
   townId?: string | null,
 ): Promise<GuidePickerOption[]> {
-  let q = supabase.from("areas").select("id, name, slug, town_id").order("name", {
+  let q = supabase.from("areas").select("id, title, slug, town_id").order("title", {
     ascending: true,
   });
   if (townId) q = q.eq("town_id", townId);
   const { data } = await q;
   return (data ?? []).map((r) => ({
     id: String((r as { id: string }).id),
-    label: String((r as { name: string }).name),
+    label: String((r as { title: string }).title),
     sublabel: String((r as { slug: string }).slug),
   }));
+}
+
+export async function listSearchTagVocabulary(
+  supabase: SupabaseClient,
+): Promise<string[]> {
+  const { data } = await supabase
+    .from("search_tags_vocabulary")
+    .select("tag")
+    .order("tag", { ascending: true });
+  return (data ?? [])
+    .map((r) => String((r as { tag: string }).tag ?? "").trim())
+    .filter(Boolean);
 }
 
 export async function searchBusinessPickerOptions(

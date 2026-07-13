@@ -252,15 +252,16 @@ In-app editor at `/admin/guides` for markdown guides stored in `public.guides`.
 
 - [ ] Ensure admin access (`ADMIN_USER_IDS`, `ADMIN_EMAILS`, or `profiles.is_admin`).
 - [ ] Set `OPENAI_API_KEY` (and optional `OPENAI_MODEL`, default `gpt-4o-mini`) for the **Enrich** action.
+- [x] Apply [scripts/migrations/guides-search-tags.sql](../scripts/migrations/guides-search-tags.sql) (`guides.search_tags`)
 
 ### Workflow
 
-1. **New guide** — write markdown, optionally link a town, place (area), and businesses.
+1. **New guide** — write markdown, optionally link a town, place (area), and businesses; add **search tags**.
 2. **Save draft** — content is validated as markdown only.
 3. **Enrich** — generates SEO title/description, OG fields, keywords, summary, intent tags, and `custom_fields.search_profile`.
 4. **Publish** — blocked until enriched; sets `status=published` and `published_at`.
 
-Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
+Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`. Business pages prefer guides linked via `guide_businesses`, then town guides.
 
 ---
 
@@ -302,6 +303,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
+| 2026-07-13 | Guides: fixed town/area pickers (`title`); added `guides.search_tags`; admin tag chips + list search; business pages prefer `guide_businesses` |
 | 2026-07-13 | Business detail: show `overview` paragraphs instead of full content collapsible sections; recreated `businesses_view` to expose `overview` |
 | 2026-07-13 | Business `overview` column + backfill from content preamble (`scripts/migrations/businesses-overview.sql`, `scripts/backfill-business-overview.ts`) |
 | 2026-07-07 | Removed orphan town intent pages (`seo_pages`, `/[townSlug]/[intentSlug]`) and unused `content_entries` overlay |

@@ -12,6 +12,7 @@ type GuideRow = {
   date_updated: string | null;
   enriched: boolean;
   town_name: string | null;
+  search_tags?: string[];
 };
 
 const STATUS_FILTERS = ["active", "draft", "published", "archived"] as const;
@@ -51,13 +52,15 @@ function statusBadge(status: string, enriched: boolean) {
 export function GuidesAdminClient() {
   const [guides, setGuides] = useState<GuideRow[]>([]);
   const [filter, setFilter] = useState<StatusFilter>("active");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
-    const qs = `?status=${encodeURIComponent(filter)}`;
-    fetch(`/api/admin/guides${qs}`)
+    const params = new URLSearchParams({ status: filter });
+    if (query.trim()) params.set("q", query.trim());
+    fetch(`/api/admin/guides?${params.toString()}`)
       .then(async (res) => {
         const j = (await res.json()) as { guides?: GuideRow[]; error?: string };
         if (!res.ok) throw new Error(j.error ?? "Failed to load guides");
@@ -65,13 +68,16 @@ export function GuidesAdminClient() {
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filter, query]);
 
   useEffect(() => {
-    queueMicrotask(() => load());
-  }, [load]);
+    const t = setTimeout(() => {
+      queueMicrotask(() => load());
+    }, query ? 250 : 0);
+    return () => clearTimeout(t);
+  }, [load, query]);
 
-  if (loading) return <p className="text-sm text-zinc-500">Loading guides…</p>;
+  if (loading && guides.length === 0) return <p className="text-sm text-zinc-500">Loading guides…</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
 
   return (
@@ -101,13 +107,23 @@ export function GuidesAdminClient() {
         </Link>
       </div>
 
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search title, town, or tags…"
+        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+      />
+
       <p className="text-sm text-zinc-600">{guides.length} guide{guides.length === 1 ? "" : "s"}</p>
 
       {guides.length === 0 ? (
         <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-600">
           {filter === "archived"
             ? "No archived guides."
-            : "No guides yet. Create one to get started."}
+            : query.trim()
+              ? "No guides match that search."
+              : "No guides yet. Create one to get started."}
         </p>
       ) : (
         <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white shadow-sm">
@@ -125,6 +141,12 @@ export function GuidesAdminClient() {
                     {g.guide_type ? g.guide_type : null}
                     {!g.town_name && !g.guide_type ? "Guide" : null}
                   </p>
+                  {g.search_tags && g.search_tags.length > 0 ? (
+                    <p className="mt-1 truncate text-xs text-zinc-400">
+                      {g.search_tags.slice(0, 6).map((t) => t.replace(/_/g, " ")).join(" · ")}
+                      {g.search_tags.length > 6 ? " …" : ""}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {statusBadge(g.status, g.enriched)}

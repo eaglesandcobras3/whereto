@@ -3087,6 +3087,7 @@ export type Database = {
           published_at: string | null
           reading_time_minutes: number | null
           search_keywords: string | null
+          search_tags: string[] | null
           seo_description: string | null
           seo_title: string | null
           slug: string
@@ -3118,6 +3119,7 @@ export type Database = {
           published_at?: string | null
           reading_time_minutes?: number | null
           search_keywords?: string | null
+          search_tags?: string[] | null
           seo_description?: string | null
           seo_title?: string | null
           slug?: string
@@ -3149,6 +3151,7 @@ export type Database = {
           published_at?: string | null
           reading_time_minutes?: number | null
           search_keywords?: string | null
+          search_tags?: string[] | null
           seo_description?: string | null
           seo_title?: string | null
           slug?: string

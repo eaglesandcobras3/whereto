@@ -9,9 +9,13 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const status = url.searchParams.get("status") ?? undefined;
+  const q = url.searchParams.get("q") ?? undefined;
 
   const supabase = getServiceSupabase();
-  const guides = await listAdminGuides(supabase, { status: status || undefined });
+  const guides = await listAdminGuides(supabase, {
+    status: status || undefined,
+    q: q || undefined,
+  });
   return NextResponse.json({ guides });
 }
 

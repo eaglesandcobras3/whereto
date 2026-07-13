@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   listAreaPickerOptions,
+  listSearchTagVocabulary,
   listTownPickerOptions,
   searchBusinessPickerOptions,
 } from "@/lib/admin/guides";
@@ -16,13 +17,14 @@ export async function GET(req: Request) {
   const businessQuery = url.searchParams.get("businessQuery") ?? "";
 
   const supabase = getServiceSupabase();
-  const [towns, areas, businesses] = await Promise.all([
+  const [towns, areas, businesses, tagVocabulary] = await Promise.all([
     listTownPickerOptions(supabase),
     listAreaPickerOptions(supabase, townId),
     businessQuery.trim()
       ? searchBusinessPickerOptions(supabase, businessQuery)
       : Promise.resolve([]),
+    listSearchTagVocabulary(supabase),
   ]);
 
-  return NextResponse.json({ towns, areas, businesses });
+  return NextResponse.json({ towns, areas, businesses, tagVocabulary });
 }
