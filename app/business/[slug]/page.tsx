@@ -6,15 +6,18 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
-import { MarkdownCollapsibleSections } from "@/components/place/MarkdownCollapsibleSections";
 import { BusinessProfileCollapsibleSections } from "@/components/business/BusinessProfileCollapsibleSections";
-import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
+import { extractOverviewFromContent } from "@/lib/business/extract-overview";
+import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
-import { BusinessBrowseLinksList } from "@/components/discovery/BusinessBrowseLinksList";
+import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
+import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
+import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
+import type { RelatedGuideLink } from "@/lib/seo/guide-related-links";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import {
   businessListingTitleSegment,
@@ -71,24 +74,6 @@ type Props = { params: Promise<{ slug: string }> };
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function intentTagsToFakeTagRows(
-  raw: unknown,
-): { tags: { slug: string; name: string } | null }[] {
-  if (raw == null) return [];
-  if (Array.isArray(raw)) {
-    return raw.map((t) => {
-      if (typeof t === "string")
-        return { tags: { slug: t, name: t } };
-      if (t && typeof t === "object" && "slug" in t) {
-        const o = t as { slug?: string; name?: string };
-        return { tags: { slug: o.slug ?? "tag", name: o.name ?? o.slug ?? "Tag" } };
-      }
-      return { tags: null };
-    });
-  }
-  return [];
-}
-
 async function loadBusiness(slug: string) {
   try {
     const supabase = getServiceSupabase();
@@ -96,9 +81,9 @@ async function loadBusiness(slug: string) {
     const sel = `
         id, slug, title, address, town_id, area_id, primary_category_id, map_lat, map_lng, phone, website,
         email, menu_url, booking_url, service_area, hours,
-        excerpt, content, main_image, hero_image, main_image_url, hero_image_url,
+        excerpt, content, overview, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
-        claim_status, intent_tags, status, published_at, price_level,
+        claim_status, search_tags, status, published_at, price_level,
         towns ( title, slug ),
         areas ( title, slug ),
         business_categories ( title, slug )
@@ -216,7 +201,7 @@ async function loadBusiness(slug: string) {
             slug: category.slug,
           }
         : null,
-      business_tags: intentTagsToFakeTagRows(row.intent_tags),
+      business_tags: null,
       pages: null,
       ai_vibe: null,
       ai_crowd: null,
@@ -324,7 +309,7 @@ export default async function BusinessPage({ params }: Props) {
     businessId,
     townId,
     primaryCategoryId: (b.primary_category_id as string | null) ?? null,
-    limit: 5,
+    limit: 6,
   });
 
   let townGuides: GuideCardRow[] = [];
@@ -383,22 +368,7 @@ export default async function BusinessPage({ params }: Props) {
     hasPhysicalLocation && normalizedCategoryName === "services"
       ? "Business"
       : category?.name ?? null;
-  const tagRows = b.business_tags as
-    | { tags: { slug?: string; name?: string } | null }[]
-    | null;
-  const tagItems: Array<{ slug?: string | null; name?: string | null }> = [];
-  for (const row of tagRows ?? []) {
-    const t = row.tags;
-    if (t && typeof t === "object") {
-      tagItems.push({
-        slug: "slug" in t ? (t.slug ?? null) : null,
-        name: "name" in t ? (t.name ?? null) : null,
-      });
-    }
-  }
-  const tagSlugs = tagItems
-    .map((tag) => tag.slug?.trim())
-    .filter((slug): slug is string => Boolean(slug));
+  const tagSlugs = normalizeSearchTags(b.search_tags);
 
   const heroImage = businessListingImageUrl(b.hero_image_url as string | null);
   const hasCoords = b.lat != null && b.lng != null;
@@ -465,13 +435,25 @@ export default async function BusinessPage({ params }: Props) {
     priceRange,
   });
 
-  const fromContent = typeof b.content === "string" && b.content.trim() ? b.content.trim() : "";
-  const fromPages = (b.pages as { body_markdown?: string } | null)?.body_markdown?.trim() ?? "";
-  const rawMarkdown = fromContent || fromPages;
-  const cleanedMarkdown = rawMarkdown
-    ? stripLeadingH1MatchingTitle(rawMarkdown, b.name as string).trim()
-    : "";
-  const hasMarkdown = cleanedMarkdown.length > 0;
+  const overviewText =
+    (typeof b.overview === "string" && b.overview.trim()) ||
+    extractOverviewFromContent(
+      typeof b.content === "string" ? b.content : null,
+      b.name as string,
+    ) ||
+    "";
+  const overviewParagraphs = overviewText
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const hasOverview = overviewParagraphs.length > 0;
+
+  const relatedGuideLinks: RelatedGuideLink[] = townGuides.map((g) => ({
+    slug: g.slug,
+    title: g.title,
+    href: g.slug === town?.slug ? townPagePath(g.slug) : `/guide/${g.slug}`,
+    reason: g.excerpt?.trim() || undefined,
+  }));
 
   const gaBiz = String(b.slug);
 
@@ -586,7 +568,10 @@ export default async function BusinessPage({ params }: Props) {
               {oneLiner ? (
                 <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
               ) : null}
-              {!hasMarkdown ? (
+              {tagSlugs.length > 0 ? (
+                <TagPills tags={tagSlugs} className="mt-3" />
+              ) : null}
+              {!hasOverview ? (
                 <p className="prose-editorial mt-4 text-base leading-relaxed text-zinc-600">
                   {businessListingIntro(
                     b.name as string,
@@ -623,33 +608,29 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
             <div className="space-y-4">
-
-              {hasMarkdown ? (
-                <MarkdownCollapsibleSections
-                  content={cleanedMarkdown}
-                  fallbackTitle={`About ${b.name as string}`}
-                  heading={`About ${b.name as string}`}
-                  description="What to expect, when to go, and tips from our local editors."
-                />
+              {hasOverview ? (
+                <div className="space-y-4">
+                  {overviewParagraphs.map((paragraph, index) => (
+                    <p
+                      key={index}
+                      className="text-base leading-relaxed text-zinc-700 sm:text-lg"
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
               ) : null}
+
+              <BusinessDirectoryDisclaimer variant="flag" businessSlug={String(b.slug)} />
 
               <BusinessProfileCollapsibleSections
                 vibe={vibe}
                 aboutSummary={b.ai_summary ? String(b.ai_summary) : null}
-                showAbout={!hasMarkdown}
+                showAbout={!hasOverview}
                 localTip={localTip}
                 goodFor={goodFor}
                 notIdealFor={notIdealFor}
               />
-
-              {/* Tags - linked for SEO */}
-              {tagSlugs.length > 0 && (
-                <div>
-                  <h2 className="text-eyebrow mb-4">Tags</h2>
-                  <TagPills tags={tagSlugs} />
-                </div>
-              )}
-
             </div>
 
             {/* Sidebar */}
@@ -760,74 +741,68 @@ export default async function BusinessPage({ params }: Props) {
                   </ul>
                 </section>
               )}
-
-              {/* Related businesses - horizontal card style */}
-              {(relatedBusinesses.length > 0 || townId) && (
-                <div>
-                  {relatedBusinesses.length > 0 ? (
-                    <BusinessBrowseLinksList
-                      title={town?.name ? `Similar in ${town.name}` : "Similar places"}
-                      items={relatedBusinesses}
-                      analyticsCategory={`business_similar_${gaBiz}`}
-                    />
-                  ) : null}
-                  {townId ? (
-                    <p className={relatedBusinesses.length > 0 ? "mt-4" : ""}>
-                      <DiscoveryNavLink
-                        params={{ town_id: townId }}
-                        {...gaClickProps({
-                          event: "nav_click",
-                          category: "business_detail_sidebar",
-                          label: `${gaBiz}_view_more_town_search`,
-                        })}
-                        className="text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
-                        aria-label={
-                          town?.name
-                            ? `View more businesses in ${town.name}`
-                            : "View more businesses in this town"
-                        }
-                      >
-                        View more
-                      </DiscoveryNavLink>
-                    </p>
-                  ) : null}
-                </div>
-              )}
-
-              {/* Town guides */}
-              {townGuides.length > 0 && (
-                <section className="border-t border-[var(--color-border)] pt-6">
-                  <h2 className="text-eyebrow mb-4">Guides &amp; Stories</h2>
-                  <ul className="space-y-4">
-                    {townGuides.slice(0, 3).map((g) => (
-                      <li key={g.slug}>
-                        <Link
-                          href={
-                            g.slug === town?.slug ? townPagePath(g.slug) : `/guide/${g.slug}`
-                          }
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "business_detail_sidebar",
-                            label: `${gaBiz}_guide_${g.slug}`,
-                          })}
-                          className="group block"
-                        >
-                          <p className="font-headline text-sm font-bold leading-snug text-zinc-900 transition-colors group-hover:text-[var(--color-primary)]">
-                            {g.title}
-                          </p>
-                          {g.excerpt && (
-                            <p className="mt-1 line-clamp-2 text-xs text-zinc-500">{g.excerpt}</p>
-                          )}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              <BusinessDirectoryDisclaimer variant="flag" businessSlug={String(b.slug)} />
             </aside>
           </div>
+
+          {(relatedBusinesses.length > 0 || relatedGuideLinks.length > 0) ? (
+            <div className="mt-10 space-y-8 sm:mt-12 sm:space-y-10">
+              {relatedBusinesses.length > 0 ? (
+                <div className="space-y-4">
+                  <PlaceRelatedSection
+                    title={town?.name ? `Similar in ${town.name}` : "Similar places"}
+                    description={
+                      town?.name
+                        ? `More spots near ${b.name as string} in ${town.name}.`
+                        : `More spots like ${b.name as string}.`
+                    }
+                  >
+                    {relatedBusinesses.map((rb) => (
+                      <BusinessPreviewCard
+                        key={rb.id}
+                        name={rb.name}
+                        slug={rb.slug}
+                        excerpt={rb.ai_one_liner ?? rb.ai_summary}
+                        heroImageUrl={rb.hero_image_url}
+                        analyticsCategory={`business_similar_${gaBiz}`}
+                        analyticsLabel={rb.slug}
+                      />
+                    ))}
+                  </PlaceRelatedSection>
+                  {townId ? (
+                    <DiscoveryNavLink
+                      params={{ town_id: townId }}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "business_detail_related",
+                        label: `${gaBiz}_view_more_town_search`,
+                      })}
+                      className="inline-flex text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
+                      aria-label={
+                        town?.name
+                          ? `View more businesses in ${town.name}`
+                          : "View more businesses in this town"
+                      }
+                    >
+                      View more
+                    </DiscoveryNavLink>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {relatedGuideLinks.length > 0 ? (
+                <RelatedGuidesSection
+                  title={
+                    town?.name
+                      ? `Guides for ${town.name}`
+                      : "Guides & stories"
+                  }
+                  links={relatedGuideLinks}
+                  analyticsCategory={`business_related_guides_${gaBiz}`}
+                  collapsible={false}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </main>
     </div>

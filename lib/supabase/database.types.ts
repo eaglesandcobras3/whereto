@@ -492,6 +492,7 @@ export type Database = {
           map_lat: number | null
           map_lng: number | null
           menu_url: string | null
+          overview: string | null
           phone: string | null
           price_level: string | null
           primary_category_id: string | null
@@ -541,6 +542,7 @@ export type Database = {
           map_lat?: number | null
           map_lng?: number | null
           menu_url?: string | null
+          overview?: string | null
           phone?: string | null
           price_level?: string | null
           primary_category_id?: string | null
@@ -590,6 +592,7 @@ export type Database = {
           map_lat?: number | null
           map_lng?: number | null
           menu_url?: string | null
+          overview?: string | null
           phone?: string | null
           price_level?: string | null
           primary_category_id?: string | null

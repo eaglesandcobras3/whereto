@@ -264,10 +264,46 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`.
 
 ---
 
+## Backfill: business `overview` from content
+
+Copies the opening overview paragraph from `businesses.content` (text before the first `##` heading — the same block labeled **Overview** on business pages) into a dedicated `overview` column. Does **not** call OpenAI or rewrite `content`.
+
+### Apply column
+
+- [x] Run [scripts/migrations/businesses-overview.sql](../scripts/migrations/businesses-overview.sql) in Supabase SQL editor (or `npx supabase db query --linked -f scripts/migrations/businesses-overview.sql`)
+
+### Run backfill
+
+```bash
+npx tsx scripts/backfill-business-overview.ts --dry-run
+npx tsx scripts/backfill-business-overview.ts --apply
+# overwrite existing overview values:
+npx tsx scripts/backfill-business-overview.ts --apply --force
+```
+
+- [x] Initial backfill applied (2026-07-13): **561** rows populated; **69** had no pre-`##` preamble (left `overview` null)
+
+### Verify
+
+```sql
+SELECT count(*) FILTER (WHERE overview IS NOT NULL) AS with_overview,
+       count(*) FILTER (WHERE content IS NOT NULL AND content <> '') AS with_content
+FROM public.businesses
+WHERE archived_at IS NULL;
+```
+
+Optional: if Discover (or anything else) needs `overview` on `businesses_view`, re-run [scripts/migrations/businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql) after the column exists.
+
+- [x] Recreated `businesses_view` (2026-07-13) so business detail can select `overview`
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-07-13 | Business detail: show `overview` paragraphs instead of full content collapsible sections; recreated `businesses_view` to expose `overview` |
+| 2026-07-13 | Business `overview` column + backfill from content preamble (`scripts/migrations/businesses-overview.sql`, `scripts/backfill-business-overview.ts`) |
 | 2026-07-07 | Removed orphan town intent pages (`seo_pages`, `/[townSlug]/[intentSlug]`) and unused `content_entries` overlay |
 | 2026-07-07 | Cron cleanup: removed dead disabled `/api/cron/*` routes and removed all scheduled Vercel crons; remaining cron-style routes are manual/on-demand only |
 | 2026-07-06 | PostHog: expanded provisioner (exceptions, claims, feedback, NL confidence); manual-setup table in posthog-trends-alerts.md |

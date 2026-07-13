@@ -10,12 +10,56 @@ type Props = {
   title?: string;
   links: RelatedGuideLink[];
   analyticsCategory?: string;
+  /** When false, guide cards render expanded with no collapse control. Default true. */
+  collapsible?: boolean;
 };
+
+function GuideLinksGrid({
+  links,
+  analyticsCategory,
+}: {
+  links: RelatedGuideLink[];
+  analyticsCategory: string;
+}) {
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {links.map((link) => (
+        <li key={link.slug}>
+          <Link
+            href={link.href}
+            {...gaClickProps({
+              event: "nav_click",
+              category: analyticsCategory,
+              label: link.slug,
+            })}
+            className="group flex h-full flex-col gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-colors hover:border-[var(--color-primary)] sm:p-4"
+          >
+            <span className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] sm:text-base">
+              {link.title}
+            </span>
+            {link.reason ? (
+              <span className="text-xs leading-relaxed text-[var(--color-text-secondary)] sm:text-sm">
+                {link.reason}
+              </span>
+            ) : null}
+            <span className="mt-auto inline-flex items-center gap-1 pt-1 text-xs font-semibold text-[var(--color-primary)] sm:text-sm">
+              Read guide
+              <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
+                arrow_forward
+              </span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function RelatedGuidesSection({
   title = "Related guides",
   links,
   analyticsCategory = "related_guides",
+  collapsible = true,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -35,51 +79,28 @@ export function RelatedGuidesSection({
         </h2>
       </div>
 
-      <div className="px-4 sm:px-6">
-        <CollapsibleBrowseSection
-          compact
-          title="Guides for this trip"
-          subtitle={preview}
-          icon={
-            <span className="material-symbols-outlined text-lg" aria-hidden>
-              menu_book
-            </span>
-          }
-          open={open}
-          onToggle={() => setOpen((v) => !v)}
-          className="py-3 sm:py-3.5"
-        >
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {links.map((link) => (
-              <li key={link.slug}>
-                <Link
-                  href={link.href}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: analyticsCategory,
-                    label: link.slug,
-                  })}
-                  className="group flex h-full flex-col gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-colors hover:border-[var(--color-primary)] sm:p-4"
-                >
-                  <span className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] sm:text-base">
-                    {link.title}
-                  </span>
-                  {link.reason ? (
-                    <span className="text-xs leading-relaxed text-[var(--color-text-secondary)] sm:text-sm">
-                      {link.reason}
-                    </span>
-                  ) : null}
-                  <span className="mt-auto inline-flex items-center gap-1 pt-1 text-xs font-semibold text-[var(--color-primary)] sm:text-sm">
-                    Read guide
-                    <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
-                      arrow_forward
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </CollapsibleBrowseSection>
+      <div className="px-4 pb-5 sm:px-6 sm:pb-6">
+        {collapsible ? (
+          <CollapsibleBrowseSection
+            compact
+            title="Guides for this trip"
+            subtitle={preview}
+            icon={
+              <span className="material-symbols-outlined text-lg" aria-hidden>
+                menu_book
+              </span>
+            }
+            open={open}
+            onToggle={() => setOpen((v) => !v)}
+            className="py-3 sm:py-3.5"
+          >
+            <GuideLinksGrid links={links} analyticsCategory={analyticsCategory} />
+          </CollapsibleBrowseSection>
+        ) : (
+          <div className="pt-4">
+            <GuideLinksGrid links={links} analyticsCategory={analyticsCategory} />
+          </div>
+        )}
       </div>
     </section>
   );
