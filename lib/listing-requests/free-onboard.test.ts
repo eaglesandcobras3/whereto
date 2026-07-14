@@ -78,6 +78,17 @@ describe("free onboard schema limits", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it("accepts website without http scheme", () => {
+    const parsed = freeOnboardBodySchema.safeParse({
+      ...base,
+      website: "amavida.com",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.website).toBe("https://amavida.com");
+    }
+  });
+
   it("rejects over-limit title excerpt overview", () => {
     expect(
       freeOnboardBodySchema.safeParse({

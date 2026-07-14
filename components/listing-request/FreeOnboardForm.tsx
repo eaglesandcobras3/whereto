@@ -404,11 +404,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           <input
             name="website"
             id="website"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
             defaultValue={prefill?.website ?? ""}
-            placeholder="https://"
+            placeholder="example.com"
             className={`${inputClass} mt-1.5`}
           />
+          <p className={helpClass}>http(s) optional — we add https when needed.</p>
         </div>
         <div>
           <label className={labelClass} htmlFor="phone">

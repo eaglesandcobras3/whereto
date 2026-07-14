@@ -1,6 +1,7 @@
 /** Free intake field limits and shared Zod schemas. */
 
 import { z } from "zod";
+import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 
 export const FREE_ONBOARD_TITLE_MAX = 80;
 export const FREE_ONBOARD_EXCERPT_MAX = 160;
@@ -16,12 +17,12 @@ export const FREE_ONBOARD_TYPES = {
 export type FreeOnboardReviewType =
   (typeof FREE_ONBOARD_TYPES)[keyof typeof FREE_ONBOARD_TYPES];
 
-const optionalUrl = z
+/** Accepts bare domains or full URLs; empty → null. Scheme is added when missing. */
+const optionalWebsite = z
   .string()
   .max(500)
   .optional()
-  .transform((s) => (s ?? "").trim())
-  .refine((s) => s === "" || /^https?:\/\/.+/i.test(s), "Use a full URL starting with http:// or https://");
+  .transform((s) => externalWebsiteHref(s));
 
 export const freeOnboardLocationSchema = z.object({
   id: z.string().trim().min(1).max(64).optional(),
@@ -41,7 +42,7 @@ export const freeOnboardBodySchema = z.object({
   is_storefront: z.boolean().optional().default(false),
   is_service_business: z.boolean().optional().default(false),
   locations: z.array(freeOnboardLocationSchema).min(1).max(FREE_ONBOARD_LOCATIONS_MAX),
-  website: optionalUrl.transform((s) => (s === "" ? null : s)),
+  website: optionalWebsite,
   phone: z
     .string()
     .max(40)
