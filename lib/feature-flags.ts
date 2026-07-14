@@ -3,12 +3,12 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   DEFAULT_FLAGS,
-  FEATURE_FLAG_KEYS,
   isAskEnabled,
   isDiscoverEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
+  isReviewQueueEnabled,
   isSeoImprovementsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
@@ -23,6 +23,8 @@ export {
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
+  isFreeOnboardEnabled,
+  isReviewQueueEnabled,
   isSeoImprovementsEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
@@ -122,6 +124,14 @@ export async function searchInspectorApiBlocked(): Promise<NextResponse | null> 
 /** For route handlers: returns a 404 when the business portal is off. */
 export async function onboardApiBlocked(): Promise<NextResponse | null> {
   if (!isOnboardEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when neither portal nor free intake review is enabled. */
+export async function reviewApiBlocked(): Promise<NextResponse | null> {
+  if (!isReviewQueueEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;

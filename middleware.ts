@@ -4,7 +4,9 @@ import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
 import {
   isAskEnabled,
   isDiscoverEnabled,
+  isFreeOnboardEnabled,
   isOnboardEnabled,
+  isReviewQueueEnabled,
   isSearchInspectorEnabled,
 } from "@/lib/feature-flags-core";
 import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
@@ -208,8 +210,6 @@ export async function middleware(request: NextRequest) {
     (pathname === "/portal" ||
       pathname.startsWith("/portal/") ||
       pathname.startsWith("/api/portal/") ||
-      pathname === "/admin/review" ||
-      pathname.startsWith("/api/admin/review") ||
       pathname === "/admin/subscriptions" ||
       pathname.startsWith("/api/admin/subscriptions") ||
       pathname.startsWith("/api/admin/businesses"))
@@ -218,7 +218,15 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
+    !isReviewQueueEnabled(flags) &&
+    (pathname === "/admin/review" || pathname.startsWith("/api/admin/review"))
+  ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (
     isOnboardEnabled(flags) &&
+    !isFreeOnboardEnabled(flags) &&
     pathname === "/list-your-business"
   ) {
     return NextResponse.redirect(new URL("/portal/businesses/new", request.url));

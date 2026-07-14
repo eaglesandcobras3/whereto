@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ReviewQueueClient } from "@/components/admin/ReviewQueueClient";
-import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isReviewQueueEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 
 export const metadata = {
@@ -11,7 +11,7 @@ export const metadata = {
 
 export default async function AdminReviewPage() {
   const flags = await getAllFeatureFlags();
-  if (!isOnboardEnabled(flags)) {
+  if (!isReviewQueueEnabled(flags)) {
     redirect("/");
   }
 
@@ -21,8 +21,8 @@ export default async function AdminReviewPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <AdminPageHeader
-        title="Portal review queue"
-        description="Approve or reject business claims and new listing submissions."
+        title="Listing review queue"
+        description="Approve or reject free intake submissions, claims, edits, and photos."
       />
       <div className="mt-8">
         <ReviewQueueClient />

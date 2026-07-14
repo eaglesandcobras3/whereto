@@ -2,10 +2,12 @@ import Link from "next/link";
 
 type Props = {
   onboardEnabled: boolean;
+  freeOnboardEnabled?: boolean;
 };
 
-export function ProfileListBusinessCta({ onboardEnabled }: Props) {
-  const href = onboardEnabled ? "/portal/businesses/new" : "/list-your-business";
+export function ProfileListBusinessCta({ onboardEnabled, freeOnboardEnabled }: Props) {
+  const href =
+    freeOnboardEnabled || !onboardEnabled ? "/list-your-business" : "/portal/businesses/new";
 
   return (
     <section className="border-t border-zinc-100 pt-8">
