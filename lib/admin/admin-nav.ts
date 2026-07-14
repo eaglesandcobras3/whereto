@@ -2,6 +2,8 @@ export type AdminNavItem = {
   href: string;
   title: string;
   description: string;
+  /** Hidden when neither `onboard` nor `free_onboard` is on */
+  requiresReviewQueue?: boolean;
   /** Hidden when the `onboard` feature flag is off */
   requiresOnboard?: boolean;
   /** Hidden when the `search_inspector` feature flag is off */
@@ -22,8 +24,8 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     href: "/admin/review",
     title: "Review queue",
-    description: "Approve or reject new listings, claims, edits, and photos.",
-    requiresOnboard: true,
+    description: "Approve or reject free intake, claims, edits, and photos.",
+    requiresReviewQueue: true,
   },
   {
     href: "/admin/subscriptions",
@@ -46,9 +48,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
 
 export function adminNavItemsForSession(flags: {
   onboardEnabled: boolean;
+  freeOnboardEnabled?: boolean;
   searchInspectorEnabled: boolean;
 }): AdminNavItem[] {
+  const reviewEnabled = flags.onboardEnabled || flags.freeOnboardEnabled === true;
   return ADMIN_NAV_ITEMS.filter((item) => {
+    if (item.requiresReviewQueue && !reviewEnabled) return false;
     if (item.requiresOnboard && !flags.onboardEnabled) return false;
     if (item.requiresSearchInspector && !flags.searchInspectorEnabled) return false;
     return true;
