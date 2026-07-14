@@ -93,4 +93,6 @@ export type FreeOnboardPayload = {
   marketing_opt_in: boolean;
   target_business_id: string | null;
   locations: FreeOnboardLocationPayload[];
+  /** Set after the single submitter decision email is sent for this intake. */
+  submitter_notified?: boolean;
 };

@@ -51,7 +51,7 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
         : "";
     text = opts.isUpdate
       ? `Good news — your requested updates for ${title} are live on WhereTo30A.${linkBlock}\n\nQuestions? Email hello@whereto30a.com`
-      : `Good news — ${title} is now live on WhereTo30A.${linkBlock}\n\nQuestions? Email hello@whereto30a.com`;
+      : `Good news — ${title} is now live on WhereTo30A.${linkBlock}\n\nThis is one confirmation for your whole submission${links.length > 1 ? ` (${links.length} locations)` : ""}.\n\nQuestions? Email hello@whereto30a.com`;
   } else {
     subject = opts.isUpdate
       ? `Update on your request for ${title}`

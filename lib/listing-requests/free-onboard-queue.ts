@@ -22,16 +22,35 @@ function createdListingSlugs(payload: FreeOnboardPayload): string[] {
     .map((l) => String(l.resulting_business_slug));
 }
 
-async function notifyApproved(payload: FreeOnboardPayload, isUpdate: boolean): Promise<void> {
+/**
+ * One email per intake form submission — never per location.
+ * Guards with `submitter_notified` so approve-all / multi-create cannot double-send.
+ */
+async function notifySubmitterOnce(
+  supabase: SupabaseClient,
+  itemId: string,
+  payload: FreeOnboardPayload,
+  opts: {
+    event: "approved" | "rejected";
+    isUpdate: boolean;
+    adminNotes?: string | null;
+  },
+): Promise<void> {
+  if (payload.submitter_notified) return;
   const to = payload.submitter_email?.trim();
   if (!to) return;
+
   await sendFreeOnboardSubmitterEmail({
     to,
-    event: "approved",
-    businessTitle: payload.title,
-    listingPaths: createdListingSlugs(payload),
-    isUpdate,
+    event: opts.event,
+    businessTitle: payload.title || "your business",
+    listingPaths: opts.event === "approved" ? createdListingSlugs(payload) : undefined,
+    adminNotes: opts.adminNotes,
+    isUpdate: opts.isUpdate,
   });
+
+  payload.submitter_notified = true;
+  await savePayload(supabase, itemId, payload);
 }
 
 async function loadTakenSlugs(supabase: SupabaseClient): Promise<Set<string>> {
@@ -82,7 +101,10 @@ async function finalizeIfComplete(
     .eq("id", itemId);
   if (error) throw new Error(error.message);
   if (opts?.notify !== false) {
-    await notifyApproved(payload, opts?.isUpdate === true);
+    await notifySubmitterOnce(supabase, itemId, payload, {
+      event: "approved",
+      isUpdate: opts?.isUpdate === true,
+    });
   }
   return "approved";
 }
@@ -104,6 +126,7 @@ export async function createFreeListingForLocation(
   itemId: string,
   locationId: string,
   reviewerId: string,
+  opts?: { deferNotify?: boolean },
 ): Promise<{ businessId: string; businessSlug: string; reviewStatus: "pending" | "approved" }> {
   const { data: item, error } = await supabase
     .from("portal_review_items")
@@ -182,6 +205,7 @@ export async function createFreeListingForLocation(
   const isUpdate = item.type === FREE_ONBOARD_TYPES.update;
   const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
     isUpdate,
+    notify: opts?.deferNotify !== true,
   });
   return {
     businessId: created.id as string,
@@ -235,12 +259,10 @@ export async function skipFreeListingLocation(
         .eq("id", itemId);
       const to = payload.submitter_email?.trim();
       if (to) {
-        await sendFreeOnboardSubmitterEmail({
-          to,
+        await notifySubmitterOnce(supabase, itemId, payload, {
           event: "rejected",
-          businessTitle: payload.title,
-          adminNotes: "All locations were skipped during review.",
           isUpdate,
+          adminNotes: "All locations were skipped during review.",
         });
       }
       return { reviewStatus: "pending" };
@@ -261,12 +283,33 @@ export async function approveAllFreeLocations(
   if (error || !item) throw new Error("Review item not found");
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
 
-  const payload = asPayload((item.payload as Record<string, unknown>) ?? {});
+  const starting = asPayload((item.payload as Record<string, unknown>) ?? {});
   let created = 0;
-  for (const loc of payload.locations) {
+  for (const loc of starting.locations) {
     if (loc.status !== "pending") continue;
-    await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId);
+    // Defer submitter email until every location is handled — one email per form.
+    await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId, {
+      deferNotify: true,
+    });
     created += 1;
+  }
+
+  const { data: refreshed } = await supabase
+    .from("portal_review_items")
+    .select("payload, status, type")
+    .eq("id", itemId)
+    .maybeSingle();
+  const payload = asPayload((refreshed?.payload as Record<string, unknown>) ?? starting);
+  if ((refreshed?.status as string) === "approved") {
+    await notifySubmitterOnce(supabase, itemId, payload, {
+      event: "approved",
+      isUpdate: refreshed?.type === FREE_ONBOARD_TYPES.update,
+    });
+  } else if ((refreshed?.status as string) === "pending") {
+    await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
+      isUpdate: item.type === FREE_ONBOARD_TYPES.update,
+      notify: true,
+    });
   }
   return { created };
 }
@@ -353,10 +396,12 @@ export async function approveFreeUpdate(
   }
   await savePayload(supabase, itemId, payload, businessId);
 
-  // Extra locations beyond the first become new sibling listings
+  // Extra locations beyond the first become new sibling listings (no per-location emails).
   for (const loc of payload.locations.slice(1)) {
     if (loc.status === "pending") {
-      await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId);
+      await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId, {
+        deferNotify: true,
+      });
     }
   }
 
@@ -365,12 +410,20 @@ export async function approveFreeUpdate(
     .select("payload, status")
     .eq("id", itemId)
     .maybeSingle();
+  const latest = asPayload((refreshed?.payload as Record<string, unknown>) ?? payload);
   if ((refreshed?.status as string) === "pending") {
-    const latest = asPayload((refreshed?.payload as Record<string, unknown>) ?? payload);
     for (const loc of latest.locations) {
       if (loc.status === "pending") loc.status = "skipped";
     }
-    await finalizeIfComplete(supabase, itemId, reviewerId, latest, { isUpdate: true });
+    await finalizeIfComplete(supabase, itemId, reviewerId, latest, {
+      isUpdate: true,
+      notify: true,
+    });
+  } else if ((refreshed?.status as string) === "approved") {
+    await notifySubmitterOnce(supabase, itemId, latest, {
+      event: "approved",
+      isUpdate: true,
+    });
   }
 
   return { businessId };
@@ -405,14 +458,9 @@ export async function rejectFreeIntake(
     .eq("id", itemId);
   if (updErr) throw new Error(updErr.message);
 
-  const to = payload.submitter_email?.trim();
-  if (to) {
-    await sendFreeOnboardSubmitterEmail({
-      to,
-      event: "rejected",
-      businessTitle: payload.title || "your business",
-      adminNotes,
-      isUpdate: item.type === FREE_ONBOARD_TYPES.update,
-    });
-  }
+  await notifySubmitterOnce(supabase, itemId, payload, {
+    event: "rejected",
+    isUpdate: item.type === FREE_ONBOARD_TYPES.update,
+    adminNotes,
+  });
 }
