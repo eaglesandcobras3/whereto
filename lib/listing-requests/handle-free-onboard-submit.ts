@@ -84,7 +84,7 @@ export async function handleFreeOnboardListingRequest(
     return NextResponse.json({ error: "Choose a valid category." }, { status: 400 });
   }
 
-  let { data: vocabTags } = await supabase.from("search_tags_vocabulary").select("tag");
+  const { data: vocabTags } = await supabase.from("search_tags_vocabulary").select("tag");
   const allowed = new Set((vocabTags ?? []).map((t) => String((t as { tag: string }).tag)));
   const searchTags = d.search_tags.filter((t) => allowed.has(t)).slice(0, 6);
 

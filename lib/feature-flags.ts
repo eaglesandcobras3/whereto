@@ -3,13 +3,11 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   DEFAULT_FLAGS,
-  FEATURE_FLAG_KEYS,
   isAskEnabled,
   isDiscoverEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
-  isFreeOnboardEnabled,
   isReviewQueueEnabled,
   isSeoImprovementsEnabled,
   type FeatureFlags,
