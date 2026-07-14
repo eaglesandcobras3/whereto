@@ -30,10 +30,6 @@ export function hubTownsIntro(): string {
   return "Scenic Highway 30A strings together distinct beach communities, each with its own architecture, dining scene, and beach-access reality. Pick a town below to see local businesses by category, nearby areas and districts, and editorial guides linked to that community. If you are new to the corridor, compare two or three towns before you book. Seaside and Rosemary feel different from Grayton or Santa Rosa Beach, and the right match depends on how you want the week to run.";
 }
 
-export function hubTownsCompareIntro(): string {
-  return "Not sure which town fits? Families often gravitate toward Seaside and WaterColor for walkability. Friends weekends and date nights lean Rosemary and Alys. Grayton and Santa Rosa Beach feel more laid-back. Use the links below to match your trip style, then open individual town pages for listings and local context.";
-}
-
 export function hubAreasIntro(): string {
   return "Beyond the beach, 30A is built around walkable town centers, shopping districts, and gathering spots that shape how visitors spend an afternoon. Each area page groups nearby restaurants, shops, and activities so you can plan around a place, not just a pin on the map. Open a town guide from any area when you need parking context, beach access, and where to eat after you browse.";
 }
@@ -44,27 +40,6 @@ export function hubBusinessesIntro(): string {
 
 export function hubGuidesIntro(): string {
   return "Our guides are written for trip planning and on-the-ground decisions: first-timer overviews, town-specific notes, dining angles, and beach-day context for South Walton. Start with the featured planning guide if you are new to 30A, then open town pages when you want listings grouped by community.";
-}
-
-const GUIDE_CLUSTER_INTROS: Partial<Record<string, string>> = {
-  first_timer:
-    "New to the corridor? These guides cover when to visit, how to get here, and how to choose a home base.",
-  beach_access:
-    "Public access points, parking realities, and beach rules — the practical details every 30A visitor needs.",
-  family_travel:
-    "Kid-friendly towns, beaches, and pacing tips for a week that works for the whole group.",
-  girls_trip:
-    "Walkable towns, dining, and photo-worthy stops for a friends weekend on the Emerald Coast.",
-  town_guide: "Deep dives on individual communities — vibe, logistics, and what makes each town distinct.",
-  logistics: "Airports, groceries, distances, and the small planning details that save time on arrival day.",
-  editorial: "Local context and stories that help you understand how 30A got its name and character.",
-};
-
-export function hubGuidesClusterIntro(cluster: string): string {
-  return (
-    GUIDE_CLUSTER_INTROS[cluster] ??
-    "Editorial guides for planning and exploring Scenic Highway 30A."
-  );
 }
 
 export function hubServicesIntro(): string {

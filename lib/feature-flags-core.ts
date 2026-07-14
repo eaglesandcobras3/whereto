@@ -83,7 +83,7 @@ export function isOnboardEnabled(flags: FeatureFlags): boolean {
   return flags.onboard === true;
 }
 
-/** SEO sprint UI: trip planning blocks, hub clusters, town planning sections, related guides. */
+/** SEO sprint UI: trip planning blocks, town/area planning sections, hub breadcrumbs/schema, category editorial. */
 export function isSeoImprovementsEnabled(flags: FeatureFlags): boolean {
   return flags.seo_improvements === true;
 }

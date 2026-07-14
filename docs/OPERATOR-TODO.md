@@ -238,7 +238,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `ask` | `/ask`, Ask API, concierge UI |
 | `onboard` | Business portal (`/portal`, admin review) |
 | `search_inspector` | Admin search debug tools |
-| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub clusters/breadcrumbs, town planning blocks, related-guide modules, category editorial blocks |
+| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, town/area planning blocks, category editorial blocks (not guide modules or hub guide clustering) |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
 
@@ -303,6 +303,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
+| 2026-07-14 | `seo_improvements`: removed related-guide modules from town/area pages, intent-cluster grouping on `/guides`, and towns-hub travel-style guide links |
 | 2026-07-13 | Guides: fixed town/area pickers (`title`); added `guides.search_tags`; admin tag chips + list search; business pages prefer `guide_businesses` |
 | 2026-07-13 | Business detail: show `overview` paragraphs instead of full content collapsible sections; recreated `businesses_view` to expose `overview` |
 | 2026-07-13 | Business `overview` column + backfill from content preamble (`scripts/migrations/businesses-overview.sql`, `scripts/backfill-business-overview.ts`) |
