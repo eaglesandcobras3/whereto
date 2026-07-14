@@ -3,8 +3,6 @@ import {
   type GuideIntentMapping,
   guideIntentForSlug,
 } from "@/lib/seo/guide-intent-clusters";
-import { getTownPlanningProfile } from "@/lib/data/town-planning";
-import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 
 export type RelatedGuideLink = {
   slug: string;
@@ -78,30 +76,4 @@ export function relatedGuidesForSlug(slug: string, limit = 6): RelatedGuideLink[
   }
 
   return out.slice(0, limit);
-}
-
-export function relatedGuidesForTownSlug(townSlug: string, limit = 4): RelatedGuideLink[] {
-  const profile = getTownPlanningProfile(townSlug);
-  const slugs = profile?.relatedGuideSlugs ?? [
-    "ultimate-30a-first-timers-guide",
-    "public-beaches-30a",
-  ];
-  return slugsToLinks(slugs, limit);
-}
-
-export function relatedGuidesForAreaSlug(areaSlug: string, limit = 4): RelatedGuideLink[] {
-  const profile = getAreaPlanningProfile(areaSlug);
-  const slugs = profile?.relatedGuideSlugs ?? [
-    "ultimate-30a-first-timers-guide",
-    "public-beaches-30a",
-  ];
-  return slugsToLinks(slugs, limit);
-}
-
-function slugsToLinks(slugs: string[], limit: number): RelatedGuideLink[] {
-  return slugs.slice(0, limit).map((s) => ({
-    slug: s,
-    title: SLUG_TITLE_OVERRIDES[s] ?? titleFromSlug(s),
-    href: `/guide/${s}`,
-  }));
 }

@@ -1,14 +1,12 @@
 import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import Link from "next/link";
-import { getPublicPlaceBySlug, type PublicPlacePage } from "@/lib/data/public-place-by-slug";
+import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
-import { TownCard } from "@/components/discovery/TownCard";
-import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
@@ -19,13 +17,9 @@ import {
 } from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
-import { relatedGuidesForAreaSlug } from "@/lib/seo/guide-related-links";
-import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyDiscoveryMessage";
 
@@ -44,47 +38,6 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
     if (s) slugs.add(s);
   }
   return [...slugs].map((slug) => ({ slug }));
-}
-
-type SidebarTownLink = { name: string; slug: string };
-
-type AreaSidebarData = {
-  townLink: SidebarTownLink | null;
-};
-
-async function resolveTownLink(place: PublicPlacePage): Promise<SidebarTownLink | null> {
-  if (place.town_slug?.trim() && place.town_name?.trim()) {
-    return { name: place.town_name.trim(), slug: place.town_slug.trim() };
-  }
-  if (!place.town_id?.trim()) return null;
-  const supabase = getServiceSupabase();
-  const { data: row } = await supabase
-    .from("towns")
-    .select("title, slug")
-    .eq("id", place.town_id.trim())
-    .is("archived_at", null)
-    .maybeSingle();
-  if (!row) return null;
-  const t = row as { title: string; slug: string };
-  return { name: t.title, slug: t.slug };
-}
-
-function areaSectionSearchHref(
-  place: PublicPlacePage,
-  categorySlug: string,
-): string | null {
-  if (!place.town_id) {
-    return null;
-  }
-  const params = new URLSearchParams();
-  params.set("town_id", place.town_id.trim());
-  params.set("category", categorySlug);
-  return `/discover?type=storefront&${params.toString()}`;
-}
-
-async function getAreaSidebarData(place: PublicPlacePage): Promise<AreaSidebarData> {
-  const townLink = await resolveTownLink(place);
-  return { townLink };
 }
 
 type Props = { params: Promise<{ slug: string }> };
@@ -128,12 +81,8 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) redirectToSectionHub("areas");
 
-  const [sidebar, categorySections] = await Promise.all([
-    getAreaSidebarData(area),
-    getCategorySectionsForPublicPlace(area),
-  ]);
+  const categorySections = await getCategorySectionsForPublicPlace(area);
   const planningProfile = getAreaPlanningProfile(area.slug);
-  const relatedGuides = relatedGuidesForAreaSlug(area.slug);
 
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
   const typeLabel = areaTypeLabel(area.areaTypeLabel);
@@ -239,12 +188,12 @@ export default async function AreaPage({ params }: Props) {
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
             <PlaceCategoryBusinessSections
-                placeName={area.title}
-                placeSlug={area.slug}
-                sections={categorySections}
-                analyticsCategoryPrefix="area_guide_category"
-                emptyMessage={<AreaEmptyDiscoveryMessage place={area} />}
-              />
+              placeName={area.title}
+              placeSlug={area.slug}
+              sections={categorySections}
+              analyticsCategoryPrefix="area_guide_category"
+              emptyMessage={<AreaEmptyDiscoveryMessage place={area} />}
+            />
 
             {planningProfile ? (
               <SeoImprovementsGate>
@@ -252,20 +201,12 @@ export default async function AreaPage({ params }: Props) {
               </SeoImprovementsGate>
             ) : null}
 
-            <SeoImprovementsGate>
-              <RelatedGuidesSection
-                title={`Guides for ${area.title}`}
-                links={relatedGuides}
-                analyticsCategory="area_related_guides"
-              />
-            </SeoImprovementsGate>
-
-              {!hasEditorialIntro && categorySections.length === 0 ? (
-                <p className="prose-editorial text-zinc-500">
-                  Full write-up for this place is on the way. Browse the town or nearby spots in the
-                  meantime.
-                </p>
-              ) : null}
+            {!hasEditorialIntro && categorySections.length === 0 ? (
+              <p className="prose-editorial text-zinc-500">
+                Full write-up for this place is on the way. Browse the town or nearby spots in the
+                meantime.
+              </p>
+            ) : null}
           </div>
         </div>
       </main>

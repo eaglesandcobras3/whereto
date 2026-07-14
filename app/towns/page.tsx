@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
@@ -7,16 +6,11 @@ import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { hubTownsIntro, hubTownsCompareIntro } from "@/lib/seo/page-intro-copy";
+import { hubTownsIntro } from "@/lib/seo/page-intro-copy";
 import { townsHubMetadata } from "@/lib/seo/hub-metadata";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
-import { gaClickProps } from "@/lib/analytics/ga-click-props";
-import {
-  BEACH_ACCESS_PILLAR_GUIDE_PATH,
-  PRIMARY_EDITORIAL_GUIDE_PATH,
-} from "@/lib/seo/sitemap-strategy";
 import { generateCollectionPageSchema } from "@/lib/seo/breadcrumb-schema";
 
 export const revalidate = 21600;
@@ -30,29 +24,6 @@ type TownRow = {
   subtitle: string | null;
   hero_image_url: string | null;
 };
-
-const TRAVEL_STYLE_LINKS = [
-  {
-    label: "Best for families",
-    href: "/guide/family-friendly-30a-beach-vacation",
-    description: "Kid-friendly towns and beaches along the corridor.",
-  },
-  {
-    label: "First-time visitors",
-    href: PRIMARY_EDITORIAL_GUIDE_PATH,
-    description: "Compare towns, beach access, and how to pace your week.",
-  },
-  {
-    label: "Beach access & parking",
-    href: BEACH_ACCESS_PILLAR_GUIDE_PATH,
-    description: "Public access points and what to know before you arrive.",
-  },
-  {
-    label: "Restaurants by town",
-    href: "/restaurants",
-    description: "Where to eat from Rosemary to Grayton.",
-  },
-] as const;
 
 async function getTowns(): Promise<TownRow[]> {
   const supabase = getServiceSupabase();
@@ -158,43 +129,6 @@ export default async function TownsPage() {
           </div>
         )}
       </div>
-
-      <SeoImprovementsGate>
-        <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14 md:py-20">
-          <div className="mx-auto max-w-6xl px-4 md:px-10">
-            <div className="mb-10 max-w-2xl md:mb-12">
-              <p className="text-eyebrow mb-3">Plan your trip</p>
-              <h2 className="text-editorial-headline text-3xl text-primary sm:text-4xl">
-                Best 30A towns by travel style
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-[var(--color-text-secondary)]">
-                {hubTownsCompareIntro()}
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {TRAVEL_STYLE_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "towns_hub_style",
-                    label: link.href,
-                  })}
-                  className="editorial-card group flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
-                >
-                  <h3 className="font-headline text-lg font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">
-                    {link.label}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                    {link.description}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      </SeoImprovementsGate>
 
       {/* 30A corridor map */}
       <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10 sm:py-14">
