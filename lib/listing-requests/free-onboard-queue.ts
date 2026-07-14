@@ -4,6 +4,7 @@ import {
   buildFreeOnboardSeoTitle,
   buildFreeOnboardSlug,
 } from "@/lib/listing-requests/free-onboard-derived";
+import { sendFreeOnboardSubmitterEmail } from "@/lib/listing-requests/free-onboard-notify";
 import {
   FREE_ONBOARD_TYPES,
   type FreeOnboardLocationPayload,
@@ -13,6 +14,24 @@ import { buildSearchDocumentFields } from "@/lib/search/derive-search-document";
 
 function asPayload(raw: Record<string, unknown>): FreeOnboardPayload {
   return raw as unknown as FreeOnboardPayload;
+}
+
+function createdListingSlugs(payload: FreeOnboardPayload): string[] {
+  return payload.locations
+    .filter((l) => l.status === "created" && l.resulting_business_slug)
+    .map((l) => String(l.resulting_business_slug));
+}
+
+async function notifyApproved(payload: FreeOnboardPayload, isUpdate: boolean): Promise<void> {
+  const to = payload.submitter_email?.trim();
+  if (!to) return;
+  await sendFreeOnboardSubmitterEmail({
+    to,
+    event: "approved",
+    businessTitle: payload.title,
+    listingPaths: createdListingSlugs(payload),
+    isUpdate,
+  });
 }
 
 async function loadTakenSlugs(supabase: SupabaseClient): Promise<Set<string>> {
@@ -46,8 +65,12 @@ async function finalizeIfComplete(
   itemId: string,
   reviewerId: string,
   payload: FreeOnboardPayload,
+  opts?: { isUpdate?: boolean; notify?: boolean },
 ): Promise<"pending" | "approved"> {
   if (!allLocationsResolved(payload.locations)) return "pending";
+  const anyCreated = payload.locations.some((l) => l.status === "created");
+  if (!anyCreated) return "pending";
+
   const { error } = await supabase
     .from("portal_review_items")
     .update({
@@ -58,6 +81,9 @@ async function finalizeIfComplete(
     })
     .eq("id", itemId);
   if (error) throw new Error(error.message);
+  if (opts?.notify !== false) {
+    await notifyApproved(payload, opts?.isUpdate === true);
+  }
   return "approved";
 }
 
@@ -122,6 +148,7 @@ export async function createFreeListingForLocation(
     address: loc.address,
     website: payload.website,
     phone: payload.phone,
+    email: payload.submitter_email,
     excerpt: payload.excerpt,
     overview: payload.overview,
     content: payload.overview,
@@ -152,7 +179,10 @@ export async function createFreeListingForLocation(
   loc.town_slug = town.slug;
 
   await savePayload(supabase, itemId, payload, created.id as string);
-  const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload);
+  const isUpdate = item.type === FREE_ONBOARD_TYPES.update;
+  const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
+    isUpdate,
+  });
   return {
     businessId: created.id as string,
     businessSlug: created.slug as string,
@@ -184,10 +214,14 @@ export async function skipFreeListingLocation(
 
   loc.status = "skipped";
   await savePayload(supabase, itemId, payload);
-  const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload);
-  if (reviewStatus === "approved") {
-    const anyCreated = payload.locations.some((l) => l.status === "created");
-    if (!anyCreated) {
+  const isUpdate = item.type === FREE_ONBOARD_TYPES.update;
+  const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
+    isUpdate,
+  });
+  if (
+    allLocationsResolved(payload.locations) &&
+    !payload.locations.some((l) => l.status === "created")
+  ) {
       // All skipped — treat as rejected rather than approved empty
       await supabase
         .from("portal_review_items")
@@ -199,8 +233,17 @@ export async function skipFreeListingLocation(
           payload,
         })
         .eq("id", itemId);
+      const to = payload.submitter_email?.trim();
+      if (to) {
+        await sendFreeOnboardSubmitterEmail({
+          to,
+          event: "rejected",
+          businessTitle: payload.title,
+          adminNotes: "All locations were skipped during review.",
+          isUpdate,
+        });
+      }
       return { reviewStatus: "pending" };
-    }
   }
   return { reviewStatus };
 }
@@ -285,6 +328,7 @@ export async function approveFreeUpdate(
     address: primaryLoc?.address ?? null,
     website: payload.website,
     phone: payload.phone,
+    email: payload.submitter_email,
     excerpt: payload.excerpt,
     overview: payload.overview,
     content: payload.overview,
@@ -326,7 +370,7 @@ export async function approveFreeUpdate(
     for (const loc of latest.locations) {
       if (loc.status === "pending") loc.status = "skipped";
     }
-    await finalizeIfComplete(supabase, itemId, reviewerId, latest);
+    await finalizeIfComplete(supabase, itemId, reviewerId, latest, { isUpdate: true });
   }
 
   return { businessId };
@@ -340,7 +384,7 @@ export async function rejectFreeIntake(
 ): Promise<void> {
   const { data: item, error } = await supabase
     .from("portal_review_items")
-    .select("id, type, status")
+    .select("id, type, status, payload")
     .eq("id", itemId)
     .maybeSingle();
   if (error || !item) throw new Error("Review item not found");
@@ -349,6 +393,7 @@ export async function rejectFreeIntake(
     throw new Error("Not a free intake item");
   }
 
+  const payload = asPayload((item.payload as Record<string, unknown>) ?? {});
   const { error: updErr } = await supabase
     .from("portal_review_items")
     .update({
@@ -359,4 +404,15 @@ export async function rejectFreeIntake(
     })
     .eq("id", itemId);
   if (updErr) throw new Error(updErr.message);
+
+  const to = payload.submitter_email?.trim();
+  if (to) {
+    await sendFreeOnboardSubmitterEmail({
+      to,
+      event: "rejected",
+      businessTitle: payload.title || "your business",
+      adminNotes,
+      isUpdate: item.type === FREE_ONBOARD_TYPES.update,
+    });
+  }
 }
