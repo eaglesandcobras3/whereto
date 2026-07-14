@@ -19,6 +19,7 @@ const discoverOnly: FeatureFlags = {
   discover_nl: false,
   search_inspector: false,
   onboard: false,
+  free_onboard: false,
   seo_improvements: false,
 };
 const discoverNlOn: FeatureFlags = {

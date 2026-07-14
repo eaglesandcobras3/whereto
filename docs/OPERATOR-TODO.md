@@ -236,11 +236,18 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 |------|----------|
 | `search` | `/search`, search API, nav search UI |
 | `ask` | `/ask`, Ask API, concierge UI |
-| `onboard` | Business portal (`/portal`, admin review) |
+| `onboard` | Business portal (`/portal`, admin subscriptions) |
+| `free_onboard` | Free no-account intake form (`/list-your-business`), multi-location review queue (`/admin/review`) |
 | `search_inspector` | Admin search debug tools |
 | `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, town/area planning blocks, category editorial blocks (not guide modules or hub guide clustering) |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
+
+### Free onboard setup
+
+- [ ] Create PostHog boolean flag `free_onboard` (default off).
+- [ ] Apply [scripts/migrations/free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) so `portal_review_items.submitted_by` can be NULL for anonymous intake.
+- [ ] Confirm `/admin/review` is reachable for admins when `free_onboard` is on (even if `onboard` is off).
 
 ---
 
@@ -303,6 +310,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
+| 2026-07-14 | PostHog `free_onboard`: no-account multi-location intake → `portal_review_items`; admin create/skip per location; SQL [free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) |
 | 2026-07-14 | `seo_improvements`: removed related-guide modules from town/area pages, intent-cluster grouping on `/guides`, and towns-hub travel-style guide links |
 | 2026-07-13 | Guides: fixed town/area pickers (`title`); added `guides.search_tags`; admin tag chips + list search; business pages prefer `guide_businesses` |
 | 2026-07-13 | Business detail: show `overview` paragraphs instead of full content collapsible sections; recreated `businesses_view` to expose `overview` |

@@ -11,6 +11,7 @@ export const FEATURE_FLAG_KEYS = [
   "ask",
   "search_inspector",
   "onboard",
+  "free_onboard",
   "seo_improvements",
 ] as const;
 
@@ -25,6 +26,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   ask: false,
   search_inspector: false,
   onboard: false,
+  free_onboard: false,
   seo_improvements: false,
 };
 
@@ -81,6 +83,16 @@ export function isSearchInspectorEnabled(flags: FeatureFlags): boolean {
 
 export function isOnboardEnabled(flags: FeatureFlags): boolean {
   return flags.onboard === true;
+}
+
+/** Free no-account intake form + admin review queue (no portal account/payments). */
+export function isFreeOnboardEnabled(flags: FeatureFlags): boolean {
+  return flags.free_onboard === true;
+}
+
+/** Admin review queue is available for portal onboard and/or free intake. */
+export function isReviewQueueEnabled(flags: FeatureFlags): boolean {
+  return isOnboardEnabled(flags) || isFreeOnboardEnabled(flags);
 }
 
 /** SEO sprint UI: trip planning blocks, town/area planning sections, hub breadcrumbs/schema, category editorial. */

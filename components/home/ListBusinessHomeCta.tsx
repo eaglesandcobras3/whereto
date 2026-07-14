@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { isOnboardEnabled } from "@/lib/feature-flags-core";
+import { isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { PAGE_SECTION_CONTAINER_CLASS } from "@/lib/layout/page-section";
 
@@ -11,7 +11,10 @@ import { PAGE_SECTION_CONTAINER_CLASS } from "@/lib/layout/page-section";
  */
 export function ListBusinessHomeCta() {
   const flags = useAppFeatureFlags();
-  const listHref = isOnboardEnabled(flags) ? "/portal/businesses/new" : "/list-your-business";
+  const listHref =
+    isFreeOnboardEnabled(flags) || !isOnboardEnabled(flags)
+      ? "/list-your-business"
+      : "/portal/businesses/new";
 
   return (
     <section

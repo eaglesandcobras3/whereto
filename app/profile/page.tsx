@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileBusinessPortalSection } from "@/components/profile/ProfileBusinessPortalSection";
 import { ProfileListBusinessCta } from "@/components/profile/ProfileListBusinessCta";
-import { getAllFeatureFlags, isOnboardEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags";
 import { loadPortalAccountSummary } from "@/lib/portal/load-portal-account-summary";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export default async function ProfilePage() {
 
   const flags = await getAllFeatureFlags();
   const onboardEnabled = isOnboardEnabled(flags);
+  const freeOnboardEnabled = isFreeOnboardEnabled(flags);
   const portalSummary = onboardEnabled ? await loadPortalAccountSummary(user.id) : null;
 
   return (
@@ -77,7 +78,10 @@ export default async function ProfilePage() {
               {portalSummary?.hasPortalActivity ? (
                 <ProfileBusinessPortalSection summary={portalSummary} />
               ) : (
-                <ProfileListBusinessCta onboardEnabled={onboardEnabled} />
+                <ProfileListBusinessCta
+                  onboardEnabled={onboardEnabled}
+                  freeOnboardEnabled={freeOnboardEnabled}
+                />
               )}
 
               <section className="border-t border-zinc-100 pt-4">

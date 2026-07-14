@@ -2,23 +2,28 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ListBusinessForm,
   type ListBusinessTownOption,
 } from "@/components/listing-request/ListBusinessForm";
+import { FreeOnboardForm } from "@/components/listing-request/FreeOnboardForm";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { isOnboardEnabled } from "@/lib/feature-flags-core";
+import { isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags-core";
 import { fetchPublicTowns } from "@/lib/public/fetch-public-towns-client";
 
 export function ListYourBusinessClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const businessSlug = searchParams.get("business")?.trim() || null;
   const flags = useAppFeatureFlags();
+  const freeOnboard = isFreeOnboardEnabled(flags);
+  const onboard = isOnboardEnabled(flags);
   const [towns, setTowns] = useState<ListBusinessTownOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOnboardEnabled(flags)) {
+    if (!freeOnboard && onboard) {
       router.replace("/portal/businesses/new");
       return;
     }
@@ -36,9 +41,9 @@ export function ListYourBusinessClient() {
       });
 
     return () => controller.abort();
-  }, [flags, router]);
+  }, [flags, router, freeOnboard, onboard]);
 
-  if (isOnboardEnabled(flags)) {
+  if (!freeOnboard && onboard) {
     return (
       <p className="text-sm text-[var(--color-text-secondary)]">Redirecting to Business Portal…</p>
     );
@@ -65,6 +70,10 @@ export function ListYourBusinessClient() {
         .
       </p>
     );
+  }
+
+  if (freeOnboard) {
+    return <FreeOnboardForm towns={towns} businessSlug={businessSlug} />;
   }
 
   return <ListBusinessForm towns={towns} />;

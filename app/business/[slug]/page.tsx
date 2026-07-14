@@ -33,6 +33,7 @@ import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
+import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
 
 export const revalidate = 21600;
 
@@ -286,6 +287,9 @@ export default async function BusinessPage({ params }: Props) {
   const { slug } = await params;
   const b = await loadBusiness(slug);
   if (!b) notFound();
+
+  const flags = await getAllFeatureFlags();
+  const freeOnboardEnabled = isFreeOnboardEnabled(flags);
 
   const row = b as Record<string, unknown>;
   const rawSlug = row.slug;
@@ -650,6 +654,18 @@ export default async function BusinessPage({ params }: Props) {
               ) : null}
 
               <BusinessDirectoryDisclaimer variant="flag" businessSlug={String(b.slug)} />
+
+              {freeOnboardEnabled ? (
+                <p className="text-sm text-zinc-600">
+                  Own or manage this business?{" "}
+                  <Link
+                    href={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}
+                    className="font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
+                  >
+                    Update this listing
+                  </Link>
+                </p>
+              ) : null}
 
               <BusinessProfileCollapsibleSections
                 vibe={vibe}
