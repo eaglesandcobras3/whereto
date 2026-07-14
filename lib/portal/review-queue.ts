@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   approveAllFreeLocations,
+  approveFreeRemoval,
   approveFreeUpdate,
   rejectFreeIntake,
 } from "@/lib/listing-requests/free-onboard-queue";
@@ -361,6 +362,11 @@ export async function approveReviewItem(
     return;
   }
 
+  if (row.type === FREE_ONBOARD_TYPES.removal) {
+    await approveFreeRemoval(supabase, itemId, reviewerId);
+    return;
+  }
+
   throw new Error(`Approve not implemented for type: ${row.type}`);
 }
 
@@ -460,7 +466,11 @@ export async function rejectReviewItem(
 
   const row = item as ReviewItemRow;
 
-  if (row.type === FREE_ONBOARD_TYPES.newListing || row.type === FREE_ONBOARD_TYPES.update) {
+  if (
+    row.type === FREE_ONBOARD_TYPES.newListing ||
+    row.type === FREE_ONBOARD_TYPES.update ||
+    row.type === FREE_ONBOARD_TYPES.removal
+  ) {
     await rejectFreeIntake(supabase, itemId, reviewerId, adminNotes);
     return;
   }

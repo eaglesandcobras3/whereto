@@ -9,6 +9,7 @@ import {
   FREE_ONBOARD_OVERVIEW_MAX,
   FREE_ONBOARD_TITLE_MAX,
   freeOnboardBodySchema,
+  freeOnboardRemovalBodySchema,
 } from "@/lib/listing-requests/free-onboard-schema";
 import {
   isFreeOnboardEnabled,
@@ -106,6 +107,37 @@ describe("free onboard schema limits", () => {
       freeOnboardBodySchema.safeParse({
         ...base,
         overview: "o".repeat(FREE_ONBOARD_OVERVIEW_MAX + 1),
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("free onboard removal schema", () => {
+  it("accepts slim removal payload", () => {
+    const parsed = freeOnboardRemovalBodySchema.safeParse({
+      intent: "removal",
+      submitter_name: "Pat",
+      submitter_email: "pat@example.com",
+      target_business_slug: "amavida-seaside",
+      target_business_id: "33333333-3333-4333-8333-333333333333",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("requires intent removal and slug", () => {
+    expect(
+      freeOnboardRemovalBodySchema.safeParse({
+        submitter_name: "Pat",
+        submitter_email: "pat@example.com",
+        target_business_slug: "amavida-seaside",
+      }).success,
+    ).toBe(false);
+    expect(
+      freeOnboardRemovalBodySchema.safeParse({
+        intent: "removal",
+        submitter_name: "Pat",
+        submitter_email: "pat@example.com",
+        target_business_slug: "",
       }).success,
     ).toBe(false);
   });

@@ -5,6 +5,7 @@ import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 import { getAllFeatureFlags, isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags";
 
 import { findSimilarBusinessesForListingRequest } from "@/lib/listing-requests/find-similar-businesses";
+import { handleFreeOnboardRemovalRequest } from "@/lib/listing-requests/handle-free-onboard-removal";
 import { handleFreeOnboardListingRequest } from "@/lib/listing-requests/handle-free-onboard-submit";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
@@ -88,6 +89,13 @@ export async function POST(request: NextRequest) {
         },
         { status: 503 },
       );
+    }
+    if (
+      json != null &&
+      typeof json === "object" &&
+      (json as { intent?: unknown }).intent === "removal"
+    ) {
+      return handleFreeOnboardRemovalRequest(request, json, supabase);
     }
     return handleFreeOnboardListingRequest(request, json, supabase);
   }

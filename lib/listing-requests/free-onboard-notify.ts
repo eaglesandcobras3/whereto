@@ -24,6 +24,7 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
   listingPaths?: string[];
   adminNotes?: string | null;
   isUpdate?: boolean;
+  isRemoval?: boolean;
 }): Promise<void> {
   const resendKey = process.env.RESEND_API_KEY?.trim();
   if (!resendKey) {
@@ -41,7 +42,19 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
   let subject: string;
   let text: string;
 
-  if (opts.event === "approved") {
+  if (opts.isRemoval) {
+    if (opts.event === "approved") {
+      subject = `${title} has been removed from WhereTo30A`;
+      text = `We've removed ${title} from WhereTo30A as requested.\n\nQuestions? Email hello@whereto30a.com`;
+    } else {
+      subject = `Update on your removal request for ${title}`;
+      text = `We could not remove ${title} from WhereTo30A at this time.`;
+      if (opts.adminNotes) {
+        text += `\n\nNote from our team: ${opts.adminNotes}`;
+      }
+      text += `\n\nQuestions? Email hello@whereto30a.com`;
+    }
+  } else if (opts.event === "approved") {
     subject = opts.isUpdate
       ? `Your update for ${title} is live on WhereTo30A`
       : `${title} is now live on WhereTo30A`;

@@ -12,10 +12,19 @@ export const FREE_ONBOARD_SEARCH_TAGS_MAX = 6;
 export const FREE_ONBOARD_TYPES = {
   newListing: "free_new_listing",
   update: "free_update",
+  removal: "free_removal",
 } as const;
 
 export type FreeOnboardReviewType =
   (typeof FREE_ONBOARD_TYPES)[keyof typeof FREE_ONBOARD_TYPES];
+
+export function isFreeOnboardReviewType(type: string): type is FreeOnboardReviewType {
+  return (
+    type === FREE_ONBOARD_TYPES.newListing ||
+    type === FREE_ONBOARD_TYPES.update ||
+    type === FREE_ONBOARD_TYPES.removal
+  );
+}
 
 /** Accepts bare domains or full URLs; empty → null. Scheme is added when missing. */
 const optionalWebsite = z
@@ -63,6 +72,30 @@ export const freeOnboardBodySchema = z.object({
 });
 
 export type FreeOnboardBody = z.infer<typeof freeOnboardBodySchema>;
+
+/** Slim body for “delete my listing” from the update form. */
+export const freeOnboardRemovalBodySchema = z.object({
+  intent: z.literal("removal"),
+  _hp_company_website: z.string().max(200).optional(),
+  submitter_name: z.string().trim().min(1).max(120),
+  submitter_email: z.string().trim().email().max(320),
+  target_business_id: z.string().uuid().optional().nullable(),
+  target_business_slug: z.string().trim().min(1).max(200),
+});
+
+export type FreeOnboardRemovalBody = z.infer<typeof freeOnboardRemovalBodySchema>;
+
+export type FreeOnboardRemovalPayload = {
+  source: "free_onboard";
+  intent: "removal";
+  submitter_name: string;
+  submitter_email: string;
+  title: string;
+  target_business_id: string;
+  target_business_slug: string;
+  /** Set after the single submitter decision email is sent for this intake. */
+  submitter_notified?: boolean;
+};
 
 export type FreeOnboardLocationPayload = {
   id: string;

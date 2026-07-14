@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FREE_ONBOARD_TYPES } from "@/lib/listing-requests/free-onboard-schema";
+import { FREE_ONBOARD_TYPES, isFreeOnboardReviewType } from "@/lib/listing-requests/free-onboard-schema";
 
 type ReviewItem = {
   id: string;
@@ -25,7 +25,7 @@ type FreeLocation = {
 };
 
 function isFreeType(type: string) {
-  return type === FREE_ONBOARD_TYPES.newListing || type === FREE_ONBOARD_TYPES.update;
+  return isFreeOnboardReviewType(type);
 }
 
 function freeLocations(payload: Record<string, unknown>): FreeLocation[] {
@@ -254,82 +254,96 @@ export function ReviewQueueClient() {
                       {String(item.payload.submitter_name ?? "")} &lt;
                       {String(item.payload.submitter_email ?? "")}&gt;
                     </p>
-                    <p>
-                      <span className="font-medium text-zinc-800">Excerpt:</span>{" "}
-                      {String(item.payload.excerpt ?? "")}
-                    </p>
-                    <p className="whitespace-pre-wrap">
-                      <span className="font-medium text-zinc-800">Overview:</span>{" "}
-                      {String(item.payload.overview ?? "")}
-                    </p>
-                    <p>
-                      <span className="font-medium text-zinc-800">Category:</span>{" "}
-                      {String(item.payload.category_title ?? item.payload.category_id ?? "")}
-                    </p>
-                    <p>
-                      <span className="font-medium text-zinc-800">Search tags:</span>{" "}
-                      {Array.isArray(item.payload.search_tags)
-                        ? (item.payload.search_tags as string[]).join(", ")
-                        : "—"}
-                    </p>
-                    <p>
-                      <span className="font-medium text-zinc-800">Search keywords:</span>{" "}
-                      {String(item.payload.search_keywords ?? "—")}
-                    </p>
-
-                    <div className="space-y-2">
-                      <p className="font-medium text-zinc-800">
-                        Locations — create one listing per location (pending until all are handled)
+                    {item.type === FREE_ONBOARD_TYPES.removal ? (
+                      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+                        Removal request — approving will archive this listing (hide from the public
+                        site). Confirm the submitter is an authorized owner before approving.
                       </p>
-                      {locations.map((loc) => (
-                        <div
-                          key={loc.id}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
-                        >
-                          <div>
-                            <p className="font-medium text-zinc-900">
-                              {loc.town_title ?? loc.town_id}
-                              {loc.address ? ` — ${loc.address}` : ""}
-                            </p>
-                            <p className="text-xs text-zinc-500">status: {loc.status}</p>
-                            {loc.resulting_business_slug ? (
-                              <a
-                                href={`/business/${encodeURIComponent(loc.resulting_business_slug)}`}
-                                className="text-xs text-[var(--color-primary)] hover:underline"
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Open created listing
-                              </a>
-                            ) : null}
-                          </div>
-                          {item.status === "pending" && loc.status === "pending" ? (
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                disabled={acting === item.id}
-                                onClick={() =>
-                                  void act(item.id, "create_location", { location_id: loc.id })
-                                }
-                                className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
-                              >
-                                Create listing
-                              </button>
-                              <button
-                                type="button"
-                                disabled={acting === item.id}
-                                onClick={() =>
-                                  void act(item.id, "skip_location", { location_id: loc.id })
-                                }
-                                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 disabled:opacity-50"
-                              >
-                                Skip
-                              </button>
+                    ) : (
+                      <>
+                        <p>
+                          <span className="font-medium text-zinc-800">Excerpt:</span>{" "}
+                          {String(item.payload.excerpt ?? "")}
+                        </p>
+                        <p className="whitespace-pre-wrap">
+                          <span className="font-medium text-zinc-800">Overview:</span>{" "}
+                          {String(item.payload.overview ?? "")}
+                        </p>
+                        <p>
+                          <span className="font-medium text-zinc-800">Category:</span>{" "}
+                          {String(item.payload.category_title ?? item.payload.category_id ?? "")}
+                        </p>
+                        <p>
+                          <span className="font-medium text-zinc-800">Search tags:</span>{" "}
+                          {Array.isArray(item.payload.search_tags)
+                            ? (item.payload.search_tags as string[]).join(", ")
+                            : "—"}
+                        </p>
+                        <p>
+                          <span className="font-medium text-zinc-800">Search keywords:</span>{" "}
+                          {String(item.payload.search_keywords ?? "—")}
+                        </p>
+
+                        <div className="space-y-2">
+                          <p className="font-medium text-zinc-800">
+                            Locations — create one listing per location (pending until all are
+                            handled)
+                          </p>
+                          {locations.map((loc) => (
+                            <div
+                              key={loc.id}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
+                            >
+                              <div>
+                                <p className="font-medium text-zinc-900">
+                                  {loc.town_title ?? loc.town_id}
+                                  {loc.address ? ` — ${loc.address}` : ""}
+                                </p>
+                                <p className="text-xs text-zinc-500">status: {loc.status}</p>
+                                {loc.resulting_business_slug ? (
+                                  <a
+                                    href={`/business/${encodeURIComponent(loc.resulting_business_slug)}`}
+                                    className="text-xs text-[var(--color-primary)] hover:underline"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Open created listing
+                                  </a>
+                                ) : null}
+                              </div>
+                              {item.status === "pending" && loc.status === "pending" ? (
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={acting === item.id}
+                                    onClick={() =>
+                                      void act(item.id, "create_location", {
+                                        location_id: loc.id,
+                                      })
+                                    }
+                                    className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                                  >
+                                    Create listing
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={acting === item.id}
+                                    onClick={() =>
+                                      void act(item.id, "skip_location", {
+                                        location_id: loc.id,
+                                      })
+                                    }
+                                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 disabled:opacity-50"
+                                  >
+                                    Skip
+                                  </button>
+                                </div>
+                              ) : null}
                             </div>
-                          ) : null}
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <dl className="mt-4 space-y-1 text-sm text-zinc-600">
@@ -391,16 +405,19 @@ export function ReviewQueueClient() {
                             onClick={() =>
                               void act(
                                 item.id,
-                                item.type === FREE_ONBOARD_TYPES.update
+                                item.type === FREE_ONBOARD_TYPES.update ||
+                                  item.type === FREE_ONBOARD_TYPES.removal
                                   ? "approve"
                                   : "approve_all_locations",
                               )
                             }
                             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
                           >
-                            {item.type === FREE_ONBOARD_TYPES.update
-                              ? "Approve update (+ extra locations)"
-                              : "Approve all locations"}
+                            {item.type === FREE_ONBOARD_TYPES.removal
+                              ? "Approve removal (archive)"
+                              : item.type === FREE_ONBOARD_TYPES.update
+                                ? "Approve update (+ extra locations)"
+                                : "Approve all locations"}
                           </button>
                           <button
                             type="button"

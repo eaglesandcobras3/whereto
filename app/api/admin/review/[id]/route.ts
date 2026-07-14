@@ -72,7 +72,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
         .maybeSingle();
       if (
         item?.type === FREE_ONBOARD_TYPES.newListing ||
-        item?.type === FREE_ONBOARD_TYPES.update
+        item?.type === FREE_ONBOARD_TYPES.update ||
+        item?.type === FREE_ONBOARD_TYPES.removal
       ) {
         return NextResponse.json(
           { error: "Use reject for free intake, or create/skip locations." },

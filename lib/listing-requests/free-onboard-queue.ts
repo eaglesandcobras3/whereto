@@ -9,11 +9,16 @@ import {
   FREE_ONBOARD_TYPES,
   type FreeOnboardLocationPayload,
   type FreeOnboardPayload,
+  type FreeOnboardRemovalPayload,
 } from "@/lib/listing-requests/free-onboard-schema";
 import { buildSearchDocumentFields } from "@/lib/search/derive-search-document";
 
 function asPayload(raw: Record<string, unknown>): FreeOnboardPayload {
   return raw as unknown as FreeOnboardPayload;
+}
+
+function asRemovalPayload(raw: Record<string, unknown>): FreeOnboardRemovalPayload {
+  return raw as unknown as FreeOnboardRemovalPayload;
 }
 
 function createdListingSlugs(payload: FreeOnboardPayload): string[] {
@@ -29,10 +34,11 @@ function createdListingSlugs(payload: FreeOnboardPayload): string[] {
 async function notifySubmitterOnce(
   supabase: SupabaseClient,
   itemId: string,
-  payload: FreeOnboardPayload,
+  payload: FreeOnboardPayload | FreeOnboardRemovalPayload,
   opts: {
     event: "approved" | "rejected";
     isUpdate: boolean;
+    isRemoval?: boolean;
     adminNotes?: string | null;
   },
 ): Promise<void> {
@@ -44,13 +50,21 @@ async function notifySubmitterOnce(
     to,
     event: opts.event,
     businessTitle: payload.title || "your business",
-    listingPaths: opts.event === "approved" ? createdListingSlugs(payload) : undefined,
+    listingPaths:
+      opts.event === "approved" && !opts.isRemoval && "locations" in payload
+        ? createdListingSlugs(payload)
+        : undefined,
     adminNotes: opts.adminNotes,
     isUpdate: opts.isUpdate,
+    isRemoval: opts.isRemoval === true,
   });
 
   payload.submitter_notified = true;
-  await savePayload(supabase, itemId, payload);
+  if ("locations" in payload) {
+    await savePayload(supabase, itemId, payload);
+  } else {
+    await saveRemovalPayload(supabase, itemId, payload);
+  }
 }
 
 async function loadTakenSlugs(supabase: SupabaseClient): Promise<Set<string>> {
@@ -118,6 +132,18 @@ async function savePayload(
   const patch: Record<string, unknown> = { payload };
   if (businessId) patch.business_id = businessId;
   const { error } = await supabase.from("portal_review_items").update(patch).eq("id", itemId);
+  if (error) throw new Error(error.message);
+}
+
+async function saveRemovalPayload(
+  supabase: SupabaseClient,
+  itemId: string,
+  payload: FreeOnboardRemovalPayload,
+): Promise<void> {
+  const { error } = await supabase
+    .from("portal_review_items")
+    .update({ payload })
+    .eq("id", itemId);
   if (error) throw new Error(error.message);
 }
 
@@ -442,11 +468,16 @@ export async function rejectFreeIntake(
     .maybeSingle();
   if (error || !item) throw new Error("Review item not found");
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
-  if (item.type !== FREE_ONBOARD_TYPES.newListing && item.type !== FREE_ONBOARD_TYPES.update) {
+  if (
+    item.type !== FREE_ONBOARD_TYPES.newListing &&
+    item.type !== FREE_ONBOARD_TYPES.update &&
+    item.type !== FREE_ONBOARD_TYPES.removal
+  ) {
     throw new Error("Not a free intake item");
   }
 
-  const payload = asPayload((item.payload as Record<string, unknown>) ?? {});
+  const isRemoval = item.type === FREE_ONBOARD_TYPES.removal;
+  const raw = (item.payload as Record<string, unknown>) ?? {};
   const { error: updErr } = await supabase
     .from("portal_review_items")
     .update({
@@ -458,9 +489,82 @@ export async function rejectFreeIntake(
     .eq("id", itemId);
   if (updErr) throw new Error(updErr.message);
 
+  if (isRemoval) {
+    await notifySubmitterOnce(supabase, itemId, asRemovalPayload(raw), {
+      event: "rejected",
+      isUpdate: false,
+      isRemoval: true,
+      adminNotes,
+    });
+  } else {
+    await notifySubmitterOnce(supabase, itemId, asPayload(raw), {
+      event: "rejected",
+      isUpdate: item.type === FREE_ONBOARD_TYPES.update,
+      adminNotes,
+    });
+  }
+}
+
+/** Soft-archive the target listing after admin confirms the removal request. */
+export async function approveFreeRemoval(
+  supabase: SupabaseClient,
+  itemId: string,
+  reviewerId: string,
+): Promise<{ businessId: string }> {
+  const { data: item, error } = await supabase
+    .from("portal_review_items")
+    .select("id, type, status, business_id, payload")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error || !item) throw new Error("Review item not found");
+  if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
+  if (item.type !== FREE_ONBOARD_TYPES.removal) throw new Error("Not a free removal item");
+
+  const payload = asRemovalPayload((item.payload as Record<string, unknown>) ?? {});
+  const businessId = payload.target_business_id ?? (item.business_id as string | null);
+  if (!businessId) throw new Error("Removal missing target business");
+
+  const { data: existing } = await supabase
+    .from("businesses")
+    .select("id, title, slug, archived_at")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!existing) throw new Error("Business not found");
+
+  if (!existing.archived_at) {
+    const now = new Date().toISOString();
+    const { error: archErr } = await supabase
+      .from("businesses")
+      .update({
+        status: "archived",
+        archived_at: now,
+        is_hidden_from_search: true,
+      })
+      .eq("id", businessId);
+    if (archErr) throw new Error(archErr.message);
+  }
+
+  if (!payload.title && existing.title) {
+    payload.title = String(existing.title);
+  }
+
+  const { error: updErr } = await supabase
+    .from("portal_review_items")
+    .update({
+      status: "approved",
+      reviewed_by: reviewerId,
+      reviewed_at: new Date().toISOString(),
+      business_id: businessId,
+      payload,
+    })
+    .eq("id", itemId);
+  if (updErr) throw new Error(updErr.message);
+
   await notifySubmitterOnce(supabase, itemId, payload, {
-    event: "rejected",
-    isUpdate: item.type === FREE_ONBOARD_TYPES.update,
-    adminNotes,
+    event: "approved",
+    isUpdate: false,
+    isRemoval: true,
   });
+
+  return { businessId };
 }

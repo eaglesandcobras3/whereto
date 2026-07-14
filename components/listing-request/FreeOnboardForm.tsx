@@ -61,10 +61,16 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [doneRemoval, setDoneRemoval] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [searchTagOptions, setSearchTagOptions] = useState<string[]>([]);
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
+  const [removalOpen, setRemovalOpen] = useState(false);
+  const [removalName, setRemovalName] = useState("");
+  const [removalEmail, setRemovalEmail] = useState("");
+  const [removalPending, setRemovalPending] = useState(false);
+  const [removalErr, setRemovalErr] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -212,6 +218,58 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     });
   }
 
+  async function submitRemoval() {
+    setRemovalErr(null);
+    const name = removalName.trim();
+    const email = removalEmail.trim();
+    if (!name || !email) {
+      setRemovalErr("Name and email are required so we can confirm ownership.");
+      return;
+    }
+    if (!businessSlug && !prefill?.slug) {
+      setRemovalErr("Missing listing. Refresh the page and try again.");
+      return;
+    }
+
+    setRemovalPending(true);
+    const res = await fetch("/api/listing-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intent: "removal",
+        submitter_name: name,
+        submitter_email: email,
+        target_business_id: prefill?.id ?? null,
+        target_business_slug: prefill?.slug ?? businessSlug,
+      }),
+    });
+    const j = (await res.json()) as {
+      ok?: boolean;
+      error?: string;
+      fieldErrors?: Record<string, string[] | undefined>;
+    };
+    setRemovalPending(false);
+
+    if (!res.ok) {
+      if (j.fieldErrors) {
+        const first = Object.values(j.fieldErrors).flat()[0];
+        setRemovalErr(first ?? j.error ?? "Something went wrong.");
+      } else {
+        setRemovalErr(j.error ?? "Something went wrong.");
+      }
+      return;
+    }
+
+    setRemovalOpen(false);
+    setDoneRemoval(true);
+    setDone(true);
+    captureEvent("listing_request_submitted", {
+      business_title: prefill?.title ?? businessSlug ?? "listing",
+      free_onboard: true,
+      is_removal: true,
+    });
+  }
+
   if (done) {
     return (
       <div className="mt-10 space-y-6">
@@ -219,12 +277,15 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           className="rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-sm"
           role="status"
         >
-          <SubmissionThankYou />
+          <SubmissionThankYou variant={doneRemoval ? "removal" : "default"} />
         </div>
         <button
           type="button"
           className="text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
-          onClick={() => setDone(false)}
+          onClick={() => {
+            setDone(false);
+            setDoneRemoval(false);
+          }}
         >
           Submit another request
         </button>
@@ -559,7 +620,23 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         {pending ? "Sending…" : isUpdate ? "Submit update request" : "Submit listing request"}
       </button>
 
-      {!isUpdate ? (
+      {isUpdate ? (
+        <div className="border-t border-[var(--color-border)] pt-6">
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Need this listing taken down instead?
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setRemovalErr(null);
+              setRemovalOpen(true);
+            }}
+            className="mt-2 text-sm font-medium text-red-700 underline-offset-2 hover:underline"
+          >
+            Delete my listing
+          </button>
+        </div>
+      ) : (
         <p className="text-xs text-[var(--color-text-tertiary)]">
           Already listed?{" "}
           <Link href="/feedback" className="underline-offset-2 hover:underline">
@@ -567,6 +644,88 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           </Link>{" "}
           or open a listing and use Update this listing.
         </p>
+      )}
+
+      {removalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          role="presentation"
+          onClick={() => {
+            if (!removalPending) setRemovalOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="removal-dialog-title"
+            className="w-full max-w-md rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="removal-dialog-title"
+              className="font-headline text-lg font-semibold text-[var(--color-text-primary)]"
+            >
+              Request listing removal
+            </h2>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              This sends a removal request to our team — your listing stays live until we approve
+              it. We use your name and email to confirm you&apos;re authorized before taking it
+              down.
+            </p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className={labelClass} htmlFor="removal_submitter_name">
+                  Name
+                </label>
+                <input
+                  id="removal_submitter_name"
+                  value={removalName}
+                  onChange={(e) => setRemovalName(e.target.value)}
+                  required
+                  autoComplete="name"
+                  className={`${inputClass} mt-1.5`}
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="removal_submitter_email">
+                  Email
+                </label>
+                <input
+                  id="removal_submitter_email"
+                  type="email"
+                  value={removalEmail}
+                  onChange={(e) => setRemovalEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className={`${inputClass} mt-1.5`}
+                />
+              </div>
+            </div>
+            {removalErr ? (
+              <p className="mt-3 text-sm text-red-700 dark:text-red-300" role="alert">
+                {removalErr}
+              </p>
+            ) : null}
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={removalPending}
+                onClick={() => void submitRemoval()}
+                className="rounded-xl bg-red-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-50"
+              >
+                {removalPending ? "Sending…" : "Confirm removal request"}
+              </button>
+              <button
+                type="button"
+                disabled={removalPending}
+                onClick={() => setRemovalOpen(false)}
+                className="rounded-xl border border-[var(--color-border-strong)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </form>
   );
