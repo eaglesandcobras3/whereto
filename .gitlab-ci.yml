@@ -1,11 +1,11 @@
 stages:
   - check
 
-# MR / main gate: same essentials as .github/workflows/ci.yml (lint, unit tests, production build).
+# MR / main gate: lint, unit tests, production build, Playwright e2e.
 # Search quality eval (npm run eval:search) is a manual/local tool — not a deploy gate.
 check:
   stage: check
-  image: node:20
+  image: mcr.microsoft.com/playwright:v1.59.1-noble
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
@@ -14,7 +14,9 @@ check:
     - npm run lint
     - npm test
     - npm run build
+    - npm run test:e2e
   variables:
+    CI: "1"
     NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_not_real_00000000
     SUPABASE_SECRET_KEY: sb_secret_ci_placeholder_not_real_00000000

@@ -1,35 +1,26 @@
 import { expect, test } from "@playwright/test";
+import { gotoOk, trackSupabaseBrowserApi } from "./helpers";
 
-function isSupabaseAuthOrRestRequest(url: string): boolean {
-  return /supabase\.co\/(auth|rest)\/v1\//.test(url);
-}
+/** Public browse surfaces must not mount a browser Supabase auth/REST client. */
+const PUBLIC_BROWSE_PATHS = [
+  "/",
+  "/towns",
+  "/areas",
+  "/businesses",
+  "/categories",
+  "/services",
+  "/guides",
+  "/about",
+  "/login",
+] as const;
 
 test.describe("No browser Supabase client", () => {
-  test("home page does not call Supabase auth or REST APIs", async ({ page }) => {
-    const supabaseApiRequests: string[] = [];
-    page.on("request", (request) => {
-      if (isSupabaseAuthOrRestRequest(request.url())) {
-        supabaseApiRequests.push(request.url());
-      }
+  for (const path of PUBLIC_BROWSE_PATHS) {
+    test(`${path} does not call Supabase auth or REST APIs on load`, async ({ page }) => {
+      const supabaseApiRequests = trackSupabaseBrowserApi(page);
+      await gotoOk(page, path);
+      await page.waitForLoadState("networkidle");
+      expect(supabaseApiRequests).toEqual([]);
     });
-
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-
-    expect(supabaseApiRequests).toEqual([]);
-  });
-
-  test("login page does not call Supabase auth or REST APIs on load", async ({ page }) => {
-    const supabaseApiRequests: string[] = [];
-    page.on("request", (request) => {
-      if (isSupabaseAuthOrRestRequest(request.url())) {
-        supabaseApiRequests.push(request.url());
-      }
-    });
-
-    await page.goto("/login");
-    await page.waitForLoadState("networkidle");
-
-    expect(supabaseApiRequests).toEqual([]);
-  });
+  }
 });

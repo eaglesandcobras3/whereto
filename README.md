@@ -19,7 +19,7 @@ AI-assisted local discovery for Florida’s 30A corridor.
 - `npm run build` — production build
 - `npm run lint` — ESLint
 - `npm test` — Vitest (scoring, API route mocks, feedback, rate limit, etc.)
-- `npm run test:e2e` — Playwright (mocks `/api/*`; starts dev server; set `CI=1` in CI)
+- `npm run test:e2e` — Playwright public-surface suite (`e2e/`; starts dev server locally, production server when `CI=1`). Detail-page specs need `E2E_LIVE_DATA=1` plus a real Supabase project (or seeded secrets).
 
 Cron-style routes under `/api/cron/*` expect `Authorization: Bearer $CRON_SECRET` in production; in `NODE_ENV=development` the secret check is skipped for easier local runs.
 
