@@ -73,12 +73,15 @@ export const freeOnboardBodySchema = z.object({
 
 export type FreeOnboardBody = z.infer<typeof freeOnboardBodySchema>;
 
+export const FREE_ONBOARD_REMOVAL_REASON_MAX = 500;
+
 /** Slim body for “delete my listing” from the update form. */
 export const freeOnboardRemovalBodySchema = z.object({
   intent: z.literal("removal"),
   _hp_company_website: z.string().max(200).optional(),
   submitter_name: z.string().trim().min(1).max(120),
   submitter_email: z.string().trim().email().max(320),
+  reason: z.string().trim().min(10).max(FREE_ONBOARD_REMOVAL_REASON_MAX),
   target_business_id: z.string().uuid().optional().nullable(),
   target_business_slug: z.string().trim().min(1).max(200),
 });
@@ -91,6 +94,7 @@ export type FreeOnboardRemovalPayload = {
   submitter_name: string;
   submitter_email: string;
   title: string;
+  reason: string;
   target_business_id: string;
   target_business_slug: string;
   /** Set after the single submitter decision email is sent for this intake. */

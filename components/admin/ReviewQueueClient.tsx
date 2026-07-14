@@ -255,10 +255,16 @@ export function ReviewQueueClient() {
                       {String(item.payload.submitter_email ?? "")}&gt;
                     </p>
                     {item.type === FREE_ONBOARD_TYPES.removal ? (
-                      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
-                        Removal request — approving will archive this listing (hide from the public
-                        site). Confirm the submitter is an authorized owner before approving.
-                      </p>
+                      <>
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+                          Removal request — approving will archive this listing (hide from the public
+                          site). Confirm the submitter is an authorized owner before approving.
+                        </p>
+                        <p className="whitespace-pre-wrap">
+                          <span className="font-medium text-zinc-800">Reason:</span>{" "}
+                          {String(item.payload.reason ?? "—")}
+                        </p>
+                      </>
                     ) : (
                       <>
                         <p>

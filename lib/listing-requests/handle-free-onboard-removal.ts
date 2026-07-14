@@ -67,6 +67,7 @@ export async function handleFreeOnboardRemovalRequest(
     submitter_name: d.submitter_name,
     submitter_email: d.submitter_email,
     title,
+    reason: d.reason,
     target_business_id: businessId,
     target_business_slug: slug,
   };
@@ -112,6 +113,8 @@ export async function handleFreeOnboardRemovalRequest(
       `Slug: ${slug}`,
       `Target business id: ${businessId}`,
       "",
+      `Reason: ${d.reason}`,
+      "",
       `Review queue: ${baseUrl}/admin/review`,
       `Review item: ${reviewItem.id}`,
     ].join("\n");
@@ -121,6 +124,7 @@ export async function handleFreeOnboardRemovalRequest(
 <p>Submitted via <strong>/list-your-business</strong> (free_onboard).</p>
 <p><strong>Submitter:</strong> ${escapeHtml(d.submitter_name)} &lt;${escapeHtml(d.submitter_email)}&gt;</p>
 <p><strong>Business:</strong> ${escapeHtml(title)} (<code>${escapeHtml(slug)}</code>)</p>
+<p><strong>Reason:</strong><br/>${escapeHtml(d.reason).replace(/\r?\n/g, "<br>")}</p>
 <p><a href="${escapeHtml(`${baseUrl}/admin/review`)}">Open review queue</a> · item ${escapeHtml(String(reviewItem.id))}</p>
 </body></html>`;
 

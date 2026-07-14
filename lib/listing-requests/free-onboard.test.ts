@@ -113,31 +113,39 @@ describe("free onboard schema limits", () => {
 });
 
 describe("free onboard removal schema", () => {
+  const removalBase = {
+    intent: "removal" as const,
+    submitter_name: "Pat",
+    submitter_email: "pat@example.com",
+    reason: "Business permanently closed this season.",
+    target_business_slug: "amavida-seaside",
+    target_business_id: "33333333-3333-4333-8333-333333333333",
+  };
+
   it("accepts slim removal payload", () => {
-    const parsed = freeOnboardRemovalBodySchema.safeParse({
-      intent: "removal",
-      submitter_name: "Pat",
-      submitter_email: "pat@example.com",
-      target_business_slug: "amavida-seaside",
-      target_business_id: "33333333-3333-4333-8333-333333333333",
-    });
+    const parsed = freeOnboardRemovalBodySchema.safeParse(removalBase);
     expect(parsed.success).toBe(true);
   });
 
-  it("requires intent removal and slug", () => {
+  it("requires intent removal, slug, and reason", () => {
     expect(
       freeOnboardRemovalBodySchema.safeParse({
         submitter_name: "Pat",
         submitter_email: "pat@example.com",
+        reason: removalBase.reason,
         target_business_slug: "amavida-seaside",
       }).success,
     ).toBe(false);
     expect(
       freeOnboardRemovalBodySchema.safeParse({
-        intent: "removal",
-        submitter_name: "Pat",
-        submitter_email: "pat@example.com",
+        ...removalBase,
         target_business_slug: "",
+      }).success,
+    ).toBe(false);
+    expect(
+      freeOnboardRemovalBodySchema.safeParse({
+        ...removalBase,
+        reason: "too short",
       }).success,
     ).toBe(false);
   });

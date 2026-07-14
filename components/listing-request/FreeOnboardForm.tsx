@@ -9,6 +9,7 @@ import {
   FREE_ONBOARD_EXCERPT_MAX,
   FREE_ONBOARD_LOCATIONS_MAX,
   FREE_ONBOARD_OVERVIEW_MAX,
+  FREE_ONBOARD_REMOVAL_REASON_MAX,
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TITLE_MAX,
 } from "@/lib/listing-requests/free-onboard-schema";
@@ -69,6 +70,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [removalOpen, setRemovalOpen] = useState(false);
   const [removalName, setRemovalName] = useState("");
   const [removalEmail, setRemovalEmail] = useState("");
+  const [removalReason, setRemovalReason] = useState("");
   const [removalPending, setRemovalPending] = useState(false);
   const [removalErr, setRemovalErr] = useState<string | null>(null);
 
@@ -222,8 +224,13 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     setRemovalErr(null);
     const name = removalName.trim();
     const email = removalEmail.trim();
+    const reason = removalReason.trim();
     if (!name || !email) {
       setRemovalErr("Name and email are required so we can confirm ownership.");
+      return;
+    }
+    if (reason.length < 10) {
+      setRemovalErr("Please share a brief reason for removal (at least 10 characters).");
       return;
     }
     if (!businessSlug && !prefill?.slug) {
@@ -239,6 +246,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         intent: "removal",
         submitter_name: name,
         submitter_email: email,
+        reason,
         target_business_id: prefill?.id ?? null,
         target_business_slug: prefill?.slug ?? businessSlug,
       }),
@@ -699,6 +707,22 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
                   autoComplete="email"
                   className={`${inputClass} mt-1.5`}
                 />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="removal_reason">
+                  Reason for removal
+                </label>
+                <textarea
+                  id="removal_reason"
+                  value={removalReason}
+                  onChange={(e) => setRemovalReason(e.target.value.slice(0, FREE_ONBOARD_REMOVAL_REASON_MAX))}
+                  required
+                  rows={3}
+                  maxLength={FREE_ONBOARD_REMOVAL_REASON_MAX}
+                  placeholder="e.g. Business closed, duplicate listing, wrong business…"
+                  className={`${inputClass} mt-1.5`}
+                />
+                <CharCount value={removalReason} max={FREE_ONBOARD_REMOVAL_REASON_MAX} />
               </div>
             </div>
             {removalErr ? (
