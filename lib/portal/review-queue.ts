@@ -1,4 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  approveAllFreeLocations,
+  approveFreeRemoval,
+  approveFreeUpdate,
+  rejectFreeIntake,
+} from "@/lib/listing-requests/free-onboard-queue";
+import { FREE_ONBOARD_TYPES } from "@/lib/listing-requests/free-onboard-schema";
 import { ensureBusinessSubscription } from "@/lib/portal/entitlements";
 import { sendPortalOwnerEmail } from "@/lib/portal/notifications";
 import { uniqueSlug } from "@/lib/portal/slug";
@@ -10,7 +17,7 @@ export type ReviewItemRow = {
   type: string;
   status: string;
   business_id: string | null;
-  submitted_by: string;
+  submitted_by: string | null;
   payload: Record<string, unknown>;
   admin_notes: string | null;
   created_at: string;
@@ -18,11 +25,12 @@ export type ReviewItemRow = {
 
 async function submitterEmail(
   supabase: SupabaseClient,
-  userId: string,
+  userId: string | null,
   payload: Record<string, unknown>,
 ): Promise<string | null> {
   const fromPayload = typeof payload.submitter_email === "string" ? payload.submitter_email : null;
   if (fromPayload) return fromPayload;
+  if (!userId) return null;
 
   const { data } = await supabase.auth.admin.getUserById(userId);
   return data.user?.email ?? null;
@@ -35,6 +43,7 @@ async function approveClaim(
 ): Promise<{ businessId: string; businessTitle: string }> {
   const businessId = item.business_id;
   if (!businessId) throw new Error("Claim missing business_id");
+  if (!item.submitted_by) throw new Error("Claim missing submitter");
 
   const { data: biz } = await supabase
     .from("businesses")
@@ -197,6 +206,8 @@ async function approveNewListing(
     search_keywords: null,
   });
 
+  if (!item.submitted_by) throw new Error("Listing submitter missing");
+
   const insertRow: Record<string, unknown> = {
     title,
     slug,
@@ -341,6 +352,21 @@ export async function approveReviewItem(
     return;
   }
 
+  if (row.type === FREE_ONBOARD_TYPES.newListing) {
+    await approveAllFreeLocations(supabase, itemId, reviewerId);
+    return;
+  }
+
+  if (row.type === FREE_ONBOARD_TYPES.update) {
+    await approveFreeUpdate(supabase, itemId, reviewerId);
+    return;
+  }
+
+  if (row.type === FREE_ONBOARD_TYPES.removal) {
+    await approveFreeRemoval(supabase, itemId, reviewerId);
+    return;
+  }
+
   throw new Error(`Approve not implemented for type: ${row.type}`);
 }
 
@@ -439,6 +465,15 @@ export async function rejectReviewItem(
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
 
   const row = item as ReviewItemRow;
+
+  if (
+    row.type === FREE_ONBOARD_TYPES.newListing ||
+    row.type === FREE_ONBOARD_TYPES.update ||
+    row.type === FREE_ONBOARD_TYPES.removal
+  ) {
+    await rejectFreeIntake(supabase, itemId, reviewerId, adminNotes);
+    return;
+  }
 
   if (row.type === "claim" && row.business_id) {
     await supabase

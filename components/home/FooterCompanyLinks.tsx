@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { isOnboardEnabled } from "@/lib/feature-flags-core";
+import { isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags-core";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const footerLinkClass =
@@ -10,9 +10,10 @@ const footerLinkClass =
 
 export function FooterCompanyLinks() {
   const flags = useAppFeatureFlags();
-  const listBusinessHref = isOnboardEnabled(flags)
-    ? "/portal/businesses/new"
-    : "/list-your-business";
+  const listBusinessHref =
+    isFreeOnboardEnabled(flags) || !isOnboardEnabled(flags)
+      ? "/list-your-business"
+      : "/portal/businesses/new";
 
   const companyLinks = [
     {
