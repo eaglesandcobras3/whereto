@@ -14,8 +14,6 @@ import { townPageMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { getTownPlanningProfile } from "@/lib/data/town-planning";
 import { TownPlanningSections } from "@/components/town/TownPlanningSections";
-import { relatedGuidesForTownSlug } from "@/lib/seo/guide-related-links";
-import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
 import { generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -334,7 +332,6 @@ function BasicTownPage({
   });
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);
   const planningProfile = getTownPlanningProfile(town.slug);
-  const relatedGuides = relatedGuidesForTownSlug(town.slug);
   const townPath = townPagePath(town.slug);
 
   const townSchema = generateTownSchema({
@@ -411,14 +408,6 @@ function BasicTownPage({
                 />
               </SeoImprovementsGate>
             ) : null}
-
-            <SeoImprovementsGate>
-              <RelatedGuidesSection
-                title={`Plan your ${town.name} trip`}
-                links={relatedGuides}
-                analyticsCategory="town_related_guides"
-              />
-            </SeoImprovementsGate>
 
             {!hasEditorialIntro && pageData.categorySections.length === 0 ? (
               <p className="prose-editorial text-zinc-500">
