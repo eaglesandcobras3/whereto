@@ -48,9 +48,14 @@ export default async function ListYourBusinessPage({ searchParams }: PageProps) 
       description="Submit a request to add or update a local listing. We review every submission before it appears on the site."
       afterDescription={
         !isUpdate ? (
-          <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
-            Looking to update an existing business? Go to your business page and click Update this
-            Listing.
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+            <span className="material-symbols-outlined !text-sm" aria-hidden>
+              flag
+            </span>
+            <span>
+              Looking to update an existing business? Go to your business page and click{" "}
+              <span className="underline underline-offset-2">Update this Listing</span>.
+            </span>
           </p>
         ) : null
       }
