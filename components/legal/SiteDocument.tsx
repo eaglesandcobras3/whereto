@@ -5,6 +5,8 @@ import { PAGE_SECTION_CONTAINER_CLASS } from "@/lib/layout/page-section";
 type SiteDocumentProps = {
   title: string;
   description?: string;
+  /** Extra content directly under the page description (same header stack). */
+  afterDescription?: ReactNode;
   children: ReactNode;
   /** Use homepage section width instead of the default narrow document column. */
   layout?: "document" | "pageSection";
@@ -12,15 +14,19 @@ type SiteDocumentProps = {
   embedded?: boolean;
   /** Drop bottom padding when a full-bleed section follows. */
   flushBottom?: boolean;
+  /** Override the default top margin on the document body. */
+  contentClassName?: string;
 };
 
 export function SiteDocument({
   title,
   description,
+  afterDescription,
   children,
   layout = "document",
   embedded = false,
   flushBottom = false,
+  contentClassName,
 }: SiteDocumentProps) {
   const articleClass =
     layout === "pageSection"
@@ -57,15 +63,16 @@ export function SiteDocument({
         {description ? (
           <p className="mt-3 text-base text-[var(--color-text-secondary)]">{description}</p>
         ) : null}
+        {afterDescription}
       </header>
       <div
-        className="prose prose-zinc mt-10 max-w-none
+        className={`prose prose-zinc max-w-none
         prose-headings:font-headline prose-headings:tracking-tight prose-headings:text-[var(--color-text-primary)]
         prose-h2:mt-10 prose-h2:text-xl
         prose-p:text-[var(--color-text-secondary)] prose-p:leading-relaxed
         prose-li:text-[var(--color-text-secondary)]
         prose-a:text-[var(--color-primary)] prose-a:no-underline hover:prose-a:underline
-        prose-strong:text-[var(--color-text-primary)]"
+        prose-strong:text-[var(--color-text-primary)] ${contentClassName ?? "mt-10"}`}
       >
         {children}
       </div>

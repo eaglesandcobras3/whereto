@@ -653,19 +653,15 @@ export default async function BusinessPage({ params }: Props) {
                 </div>
               ) : null}
 
-              <BusinessDirectoryDisclaimer variant="flag" businessSlug={String(b.slug)} />
-
-              {freeOnboardEnabled ? (
-                <p className="text-sm text-zinc-600">
-                  Own or manage this business?{" "}
-                  <Link
-                    href={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}
-                    className="font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
-                  >
-                    Update this listing
-                  </Link>
-                </p>
-              ) : null}
+              <BusinessDirectoryDisclaimer
+                variant="flag"
+                businessSlug={String(b.slug)}
+                updateListingHref={
+                  freeOnboardEnabled
+                    ? `/list-your-business?business=${encodeURIComponent(String(b.slug))}`
+                    : undefined
+                }
+              />
 
               <BusinessProfileCollapsibleSections
                 vibe={vibe}

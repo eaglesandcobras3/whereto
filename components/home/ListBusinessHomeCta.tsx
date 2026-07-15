@@ -58,7 +58,7 @@ export function ListBusinessHomeCta() {
                   <span className="material-symbols-outlined !text-xl" aria-hidden>
                     storefront
                   </span>
-                  Add your business
+                  List your business
                 </Link>
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
                   No listing fee · quick form
