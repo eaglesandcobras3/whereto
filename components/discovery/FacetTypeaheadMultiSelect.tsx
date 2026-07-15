@@ -65,12 +65,6 @@ export function FacetTypeaheadMultiSelect({
   const inputDisabled = disabled || loading || options.length === 0 || atMax;
 
   useEffect(() => {
-    if (!atMax) return;
-    setQuery("");
-    setOpen(false);
-  }, [atMax]);
-
-  useEffect(() => {
     if (!open) return;
     const onDocClick = (event: MouseEvent) => {
       if (containerRef.current?.contains(event.target as Node)) return;
