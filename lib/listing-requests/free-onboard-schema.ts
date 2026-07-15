@@ -11,6 +11,24 @@ export const FREE_ONBOARD_SEARCH_TAGS_MAX = 6;
 /** Comma-separated SEO keyword phrases — keep within a practical SERP/meta budget. */
 export const FREE_ONBOARD_SEARCH_KEYWORDS_MAX = 255;
 
+/**
+ * Parse a comma-separated suggested-tags field into trimmed unique phrases.
+ * Keeps human-readable wording for operator review (not written to search_tags until approved/vocab).
+ */
+export function parseSuggestedTagsInput(raw: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(",")) {
+    const tag = part.trim().slice(0, 64);
+    if (!tag) continue;
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tag);
+  }
+  return out;
+}
+
 export const FREE_ONBOARD_TYPES = {
   newListing: "free_new_listing",
   update: "free_update",
@@ -93,6 +111,11 @@ export const freeOnboardBodySchema = z
       .array(z.string().trim().min(1).max(64))
       .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
       .default([]),
+    /** Freeform tag proposals for operators — share the 6-tag budget with search_tags. */
+    suggested_tags: z
+      .array(z.string().trim().min(1).max(64))
+      .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
+      .default([]),
     search_keywords: z
       .string()
       .max(FREE_ONBOARD_SEARCH_KEYWORDS_MAX)
@@ -129,6 +152,13 @@ export const freeOnboardBodySchema = z
         code: z.ZodIssueCode.custom,
         message: "Locations are only allowed when you have a physical location.",
         path: ["locations"],
+      });
+    }
+    if (data.search_tags.length + data.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Choose at most ${FREE_ONBOARD_SEARCH_TAGS_MAX} tags total across search tags and suggested tags.`,
+        path: ["suggested_tags"],
       });
     }
   });
@@ -188,6 +218,8 @@ export type FreeOnboardPayload = {
   category_id: string;
   category_title?: string | null;
   search_tags: string[];
+  /** Submitter proposals for tags missing from vocabulary; not applied to businesses.search_tags. */
+  suggested_tags?: string[];
   search_keywords: string | null;
   marketing_opt_in: boolean;
   target_business_id: string | null;

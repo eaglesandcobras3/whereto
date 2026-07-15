@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reviewApiBlocked } from "@/lib/feature-flags";
 import {
+  FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TYPES,
   freeOnboardBodySchema,
   type FreeOnboardLocationPayload,
@@ -80,7 +81,11 @@ export async function POST(request: NextRequest) {
     excerpt: d.excerpt,
     overview: d.overview,
     category_id: d.category_id,
-    search_tags: d.search_tags.slice(0, 6),
+    search_tags: d.search_tags.slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX),
+    suggested_tags: d.suggested_tags.slice(
+      0,
+      Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - Math.min(d.search_tags.length, FREE_ONBOARD_SEARCH_TAGS_MAX)),
+    ),
     search_keywords: d.search_keywords,
     marketing_opt_in: d.marketing_opt_in,
     target_business_id: targetBusinessId,
