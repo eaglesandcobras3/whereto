@@ -7,6 +7,7 @@ import {
 import {
   FREE_ONBOARD_EXCERPT_MAX,
   FREE_ONBOARD_OVERVIEW_MAX,
+  FREE_ONBOARD_SEARCH_KEYWORDS_MAX,
   FREE_ONBOARD_TITLE_MAX,
   freeOnboardBodySchema,
   freeOnboardRemovalBodySchema,
@@ -158,6 +159,15 @@ describe("free onboard schema limits", () => {
       freeOnboardBodySchema.safeParse({
         ...base,
         submitter_email: "not-an-email",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects over-limit search keywords", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        search_keywords: "k".repeat(FREE_ONBOARD_SEARCH_KEYWORDS_MAX + 1),
       }).success,
     ).toBe(false);
   });

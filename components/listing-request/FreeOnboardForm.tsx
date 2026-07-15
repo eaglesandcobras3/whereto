@@ -12,6 +12,7 @@ import {
   FREE_ONBOARD_LOCATIONS_MAX,
   FREE_ONBOARD_OVERVIEW_MAX,
   FREE_ONBOARD_REMOVAL_REASON_MAX,
+  FREE_ONBOARD_SEARCH_KEYWORDS_MAX,
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TITLE_MAX,
 } from "@/lib/listing-requests/free-onboard-schema";
@@ -334,12 +335,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
   return (
     <form onSubmit={submit} className="not-prose mt-10 space-y-6">
-      {isUpdate ? (
-        <p className="-mt-2 text-sm text-[var(--color-text-secondary)]">
-          Suggest updates for this listing. Our team reviews every request before anything goes live.
-        </p>
-      ) : null}
-
       <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden>
         <label htmlFor="_hp_company_website">Company website</label>
         <input id="_hp_company_website" name="_hp_company_website" type="text" tabIndex={-1} autoComplete="off" />
@@ -371,6 +366,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         <input
           type="checkbox"
           name="marketing_opt_in"
+          defaultChecked
           className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)]"
         />
         <span>Yes, send me marketing emails about WhereTo30A for business owners.</span>
@@ -419,9 +415,25 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
       {showLocations ? (
         <div className="space-y-4">
-          <div>
-            <p className={labelClass}>Locations</p>
-            <p className={helpClass}>Select town and provide address for each location</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className={labelClass}>Locations</p>
+              <p className={helpClass}>Select town and provide address for each location</p>
+            </div>
+            {locations.length < FREE_ONBOARD_LOCATIONS_MAX ? (
+              <button
+                type="button"
+                className="mt-0.5 shrink-0 text-sm text-[var(--color-text-tertiary)] underline underline-offset-2 hover:text-[var(--color-primary)]"
+                onClick={() =>
+                  setLocations((prev) => [
+                    ...prev,
+                    { key: newLocationKey(), town_id: "", address: "" },
+                  ])
+                }
+              >
+                Add
+              </button>
+            ) : null}
           </div>
 
           {locations.map((loc, index) => (
@@ -484,21 +496,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               </div>
             </div>
           ))}
-
-          {locations.length < FREE_ONBOARD_LOCATIONS_MAX ? (
-            <button
-              type="button"
-              className="text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
-              onClick={() =>
-                setLocations((prev) => [
-                  ...prev,
-                  { key: newLocationKey(), town_id: "", address: "" },
-                ])
-              }
-            >
-              Include additional location
-            </button>
-          ) : null}
         </div>
       ) : null}
 
@@ -590,12 +587,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         <p className={labelClass}>Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX})</p>
         <p className={helpClass}>
           These tags help people discover your business in search. Use specific keywords like pizza,
-          seafood, or happy hour instead of broad terms like restaurant.
+          seafood, or waterfront instead of broad terms like restaurant. Do not tag location — town
+          is selected separately above.
         </p>
         <div className="mt-2">
           <FacetTypeaheadMultiSelect
             options={tagOptions}
             selectedSlugs={selectedTags}
+            maxSelected={FREE_ONBOARD_SEARCH_TAGS_MAX}
             onChange={(slugs) => {
               if (slugs.length > FREE_ONBOARD_SEARCH_TAGS_MAX) return;
               setSelectedTags(slugs);
@@ -617,10 +616,12 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           id="search_keywords"
           name="search_keywords"
           value={searchKeywords}
-          onChange={(e) => setSearchKeywords(e.target.value)}
+          maxLength={FREE_ONBOARD_SEARCH_KEYWORDS_MAX}
+          onChange={(e) => setSearchKeywords(e.target.value.slice(0, FREE_ONBOARD_SEARCH_KEYWORDS_MAX))}
           className={`${inputClass} mt-1.5`}
           placeholder="Comma-separated phrases"
         />
+        <CharCount value={searchKeywords} max={FREE_ONBOARD_SEARCH_KEYWORDS_MAX} />
         <p className={helpClass}>
           These keywords help search engines like Google understand your business. Enter
           comma-separated search phrases, such as pizza restaurant in Rosemary Beach, best seafood on
