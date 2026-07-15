@@ -637,7 +637,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               onClick={() => setSuggestedTagsOpen(true)}
               className="shrink-0 text-xs font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
             >
-              Suggest tags
+              Add new tags
             </button>
           ) : null}
         </div>
