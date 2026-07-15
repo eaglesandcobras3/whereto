@@ -689,10 +689,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               type="button"
               disabled={removalPending}
               onClick={() => setRemovalOpen(false)}
-              className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-full text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] disabled:opacity-50"
+              className="absolute right-2.5 top-2.5 inline-flex size-10 items-center justify-center rounded-full text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] disabled:opacity-50"
               aria-label="Close"
             >
-              <span aria-hidden className="text-lg leading-none">
+              <span aria-hidden className="text-2xl leading-none">
                 ×
               </span>
             </button>
