@@ -53,8 +53,8 @@ export default async function ListYourBusinessPage({ searchParams }: PageProps) 
               flag
             </span>
             <span>
-              Looking to update an existing business? Go to your business page and click{" "}
-              <span className="underline underline-offset-2">Update this Listing</span>.
+              Looking to update an existing business? Go to your business page and update your
+              listing.
             </span>
           </p>
         ) : null
