@@ -8,9 +8,11 @@ import {
   FREE_ONBOARD_EXCERPT_MAX,
   FREE_ONBOARD_OVERVIEW_MAX,
   FREE_ONBOARD_SEARCH_KEYWORDS_MAX,
+  FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TITLE_MAX,
   freeOnboardBodySchema,
   freeOnboardRemovalBodySchema,
+  parseSuggestedTagsInput,
 } from "@/lib/listing-requests/free-onboard-schema";
 import {
   isFreeOnboardEnabled,
@@ -172,6 +174,35 @@ describe("free onboard schema limits", () => {
     ).toBe(false);
   });
 
+  it("accepts suggested tags within the shared six-tag budget", () => {
+    const parsed = freeOnboardBodySchema.safeParse({
+      ...base,
+      search_tags: ["coffee", "wifi"],
+      suggested_tags: ["marketing", "product development", "engineering", "branding"],
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects when search tags plus suggested tags exceed six", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        search_tags: ["coffee", "wifi", "pastries"],
+        suggested_tags: ["marketing", "product development", "engineering", "branding"],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects more than six suggested tags alone", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        search_tags: [],
+        suggested_tags: Array.from({ length: FREE_ONBOARD_SEARCH_TAGS_MAX + 1 }, (_, i) => `tag_${i}`),
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects over-limit title excerpt overview", () => {
     expect(
       freeOnboardBodySchema.safeParse({
@@ -191,6 +222,20 @@ describe("free onboard schema limits", () => {
         overview: "o".repeat(FREE_ONBOARD_OVERVIEW_MAX + 1),
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("parseSuggestedTagsInput", () => {
+  it("splits, trims, and dedupes case-insensitively", () => {
+    expect(parseSuggestedTagsInput(" Marketing, product development, marketing , Engineering ")).toEqual([
+      "Marketing",
+      "product development",
+      "Engineering",
+    ]);
+  });
+
+  it("ignores empty segments", () => {
+    expect(parseSuggestedTagsInput("foo,, bar,")).toEqual(["foo", "bar"]);
   });
 });
 
