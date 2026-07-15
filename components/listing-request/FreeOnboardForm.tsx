@@ -364,16 +364,17 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             autoComplete="email"
             className={`${inputClass} mt-1.5`}
           />
-          <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm">
-            <input
-              type="checkbox"
-              name="marketing_opt_in"
-              className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
-            />
-            <span>Yes, send me marketing emails about WhereTo30A for business owners.</span>
-          </label>
         </div>
       </div>
+
+      <label className="flex w-full cursor-pointer items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          name="marketing_opt_in"
+          className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)]"
+        />
+        <span>Yes, send me marketing emails about WhereTo30A for business owners.</span>
+      </label>
 
       <div>
         <label className={labelClass} htmlFor="title">
@@ -392,7 +393,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
-        <legend className={`${labelClass} px-1`}>Where does your business happen?</legend>
+        <legend className={`${labelClass} px-1`}>Do customers visit your business location?</legend>
         <p className="text-xs text-[var(--color-text-tertiary)]">Choose one.</p>
         <label className="flex cursor-pointer items-start gap-3 text-sm">
           <input
@@ -402,7 +403,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             onChange={() => setPresenceExclusive("storefront")}
             className="mt-1 h-4 w-4 border-[var(--color-border-strong)]"
           />
-          <span>Yes — we have a physical location customers visit</span>
+          <span>Yes, customers visit our physical location</span>
         </label>
         <label className="flex cursor-pointer items-start gap-3 text-sm">
           <input
@@ -412,7 +413,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             onChange={() => setPresenceExclusive("service")}
             className="mt-1 h-4 w-4 border-[var(--color-border-strong)]"
           />
-          <span>No — we&apos;re a service business (mobile, appointment, or regional)</span>
+          <span>No, we provide services at customers&apos; locations or by appointment</span>
         </label>
       </fieldset>
 
