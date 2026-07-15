@@ -648,10 +648,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               Suggested tags
             </label>
             <p className={helpClass}>
-              Can&apos;t find the right tag above? Suggest new ones as a comma-separated list (for
-              example marketing, product development, engineering). Our team reviews suggestions
-              before they go live. Suggestions share the same {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag
-              limit as the list above — they are not the same as SEO keywords below.
+              Can&apos;t find the right tag above? Suggest new ones as a comma-separated list. Our
+              team reviews suggestions before they go live. Suggestions share the same{" "}
+              {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag limit as the list above — they are not the same as
+              SEO keywords below.
             </p>
             <input
               id="suggested_tags"
@@ -668,7 +668,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               }}
               disabled={suggestedTagSlotsRemaining === 0 && suggestedTags.length === 0}
               className={`${inputClass} mt-1.5`}
-              placeholder="marketing, product development, engineering"
+              placeholder="Enter new tags here"
               autoComplete="off"
             />
             <p className={helpClass}>
