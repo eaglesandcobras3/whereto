@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reviewApiBlocked } from "@/lib/feature-flags";
+import { promoteSelectedSuggestedTags } from "@/lib/listing-requests/apply-suggested-tags";
 import {
   approveAllFreeLocations,
   createFreeListingForLocation,
@@ -11,6 +12,15 @@ import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+function parseApplySuggestedTags(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((t): t is string => typeof t === "string")
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const blocked = await reviewApiBlocked();
@@ -24,6 +34,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     action?: string;
     admin_notes?: string;
     location_id?: string;
+    apply_suggested_tags?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -34,14 +45,21 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const action = String(body.action ?? "").trim();
   const adminNotes = String(body.admin_notes ?? "").trim().slice(0, 2000) || null;
   const locationId = typeof body.location_id === "string" ? body.location_id.trim() : "";
+  const applySuggestedTags = parseApplySuggestedTags(body.apply_suggested_tags);
 
   const supabase = getServiceSupabase();
+
+  async function promoteIfRequested() {
+    if (applySuggestedTags.length === 0) return;
+    await promoteSelectedSuggestedTags(supabase, id, applySuggestedTags);
+  }
 
   try {
     if (action === "create_location") {
       if (!locationId) {
         return NextResponse.json({ error: "location_id required" }, { status: 400 });
       }
+      await promoteIfRequested();
       const result = await createFreeListingForLocation(supabase, id, locationId, admin.userId);
       return NextResponse.json({ ok: true, ...result });
     }
@@ -53,10 +71,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ ok: true, ...result });
     }
     if (action === "approve_all_locations") {
+      await promoteIfRequested();
       const result = await approveAllFreeLocations(supabase, id, admin.userId);
       return NextResponse.json({ ok: true, ...result });
     }
     if (action === "approve") {
+      await promoteIfRequested();
       await approveReviewItem(supabase, id, admin.userId);
       return NextResponse.json({ ok: true, status: "approved" });
     }

@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FREE_ONBOARD_TYPES, isFreeOnboardReviewType } from "@/lib/listing-requests/free-onboard-schema";
+import { suggestionToVocabSlug } from "@/lib/listing-requests/apply-suggested-tags";
+import {
+  FREE_ONBOARD_SEARCH_TAGS_MAX,
+  FREE_ONBOARD_TYPES,
+  isFreeOnboardReviewType,
+} from "@/lib/listing-requests/free-onboard-schema";
 
 type ReviewItem = {
   id: string;
@@ -34,12 +39,33 @@ function freeLocations(payload: Record<string, unknown>): FreeLocation[] {
   return raw.filter((l): l is FreeLocation => l != null && typeof l === "object" && "id" in l);
 }
 
+function payloadStringArray(payload: Record<string, unknown>, key: string): string[] {
+  const raw = payload[key];
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
+}
+
+function previewMergedTags(searchTags: string[], selectedSuggestions: string[]): string[] {
+  const merged = [...searchTags];
+  const seen = new Set(merged.map((t) => t.toLowerCase()));
+  for (const suggestion of selectedSuggestions) {
+    const slug = suggestionToVocabSlug(suggestion);
+    if (!slug || seen.has(slug)) continue;
+    if (merged.length >= FREE_ONBOARD_SEARCH_TAGS_MAX) break;
+    merged.push(slug);
+    seen.add(slug);
+  }
+  return merged;
+}
+
 export function ReviewQueueClient() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  /** Suggested tag phrases selected for promote+apply, keyed by review item id. */
+  const [promoteByItem, setPromoteByItem] = useState<Record<string, string[]>>({});
   const [view, setView] = useState<"pending" | "completed">("pending");
   const [showManual, setShowManual] = useState(false);
   const [manualJson, setManualJson] = useState(
@@ -73,7 +99,16 @@ export function ReviewQueueClient() {
       .then(async (res) => {
         const j = (await res.json()) as { items?: ReviewItem[]; error?: string };
         if (!res.ok) throw new Error(j.error ?? "Failed to load queue");
-        setItems(j.items ?? []);
+        const nextItems = j.items ?? [];
+        setItems(nextItems);
+        setPromoteByItem((prev) => {
+          const next = { ...prev };
+          for (const item of nextItems) {
+            if (next[item.id] !== undefined) continue;
+            next[item.id] = payloadStringArray(item.payload, "suggested_tags");
+          }
+          return next;
+        });
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
@@ -88,6 +123,18 @@ export function ReviewQueueClient() {
     return items.filter((i) => i.status === "approved" || i.status === "rejected");
   }, [items, view]);
 
+  function togglePromote(itemId: string, suggestion: string, checked: boolean) {
+    setPromoteByItem((prev) => {
+      const current = prev[itemId] ?? [];
+      const key = suggestion.toLowerCase();
+      const without = current.filter((s) => s.toLowerCase() !== key);
+      return {
+        ...prev,
+        [itemId]: checked ? [...without, suggestion] : without,
+      };
+    });
+  }
+
   async function act(
     id: string,
     action: string,
@@ -95,12 +142,17 @@ export function ReviewQueueClient() {
   ) {
     setActing(id);
     setError(null);
+    const shouldApplyTags =
+      action === "approve" ||
+      action === "approve_all_locations" ||
+      action === "create_location";
     const res = await fetch(`/api/admin/review/${encodeURIComponent(id)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action,
         admin_notes: notes[id] ?? "",
+        ...(shouldApplyTags ? { apply_suggested_tags: promoteByItem[id] ?? [] } : {}),
         ...extra,
       }),
     });
@@ -110,6 +162,11 @@ export function ReviewQueueClient() {
       setError(j.error ?? "Action failed");
       return;
     }
+    setPromoteByItem((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     load();
   }
 
@@ -282,24 +339,80 @@ export function ReviewQueueClient() {
                         </p>
                         <p>
                           <span className="font-medium text-zinc-800">Search tags:</span>{" "}
-                          {Array.isArray(item.payload.search_tags)
-                            ? (item.payload.search_tags as string[]).join(", ")
-                            : "—"}
+                          {payloadStringArray(item.payload, "search_tags").join(", ") || "—"}
                         </p>
-                        <p>
-                          <span className="font-medium text-zinc-800">Suggested tags:</span>{" "}
-                          {Array.isArray(item.payload.suggested_tags) &&
-                          (item.payload.suggested_tags as string[]).length > 0
-                            ? (item.payload.suggested_tags as string[]).join(", ")
-                            : "—"}
-                          {Array.isArray(item.payload.suggested_tags) &&
-                          (item.payload.suggested_tags as string[]).length > 0 ? (
-                            <span className="mt-1 block text-xs text-amber-800">
-                              Not applied on approve — add to vocabulary first if appropriate, then
-                              assign on the listing.
-                            </span>
-                          ) : null}
-                        </p>
+                        {(() => {
+                          const suggested = payloadStringArray(item.payload, "suggested_tags");
+                          const searchTags = payloadStringArray(item.payload, "search_tags");
+                          const selected = promoteByItem[item.id] ?? suggested;
+                          const preview = previewMergedTags(searchTags, selected);
+                          if (suggested.length === 0) {
+                            return (
+                              <p>
+                                <span className="font-medium text-zinc-800">Suggested tags:</span> —
+                              </p>
+                            );
+                          }
+                          if (item.status !== "pending") {
+                            return (
+                              <p>
+                                <span className="font-medium text-zinc-800">Suggested tags:</span>{" "}
+                                {suggested.join(", ")}
+                              </p>
+                            );
+                          }
+                          return (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+                              <p className="font-medium text-zinc-800">Suggested tags</p>
+                              <p className="mt-1 text-xs text-amber-900">
+                                Check tags to add to the vocabulary and apply on the listing when you
+                                approve (max {FREE_ONBOARD_SEARCH_TAGS_MAX} total with search tags).
+                                Unchecked stay unused.
+                              </p>
+                              <ul className="mt-2 space-y-1.5">
+                                {suggested.map((suggestion) => {
+                                  const slug = suggestionToVocabSlug(suggestion);
+                                  const checked = selected.some(
+                                    (s) => s.toLowerCase() === suggestion.toLowerCase(),
+                                  );
+                                  return (
+                                    <li key={suggestion}>
+                                      <label className="flex cursor-pointer items-start gap-2 text-sm">
+                                        <input
+                                          type="checkbox"
+                                          className="mt-0.5"
+                                          checked={checked}
+                                          onChange={(e) =>
+                                            togglePromote(item.id, suggestion, e.target.checked)
+                                          }
+                                        />
+                                        <span>
+                                          <span className="font-medium">{suggestion}</span>
+                                          {slug ? (
+                                            <span className="ml-1 text-xs text-zinc-600">
+                                              → {slug}
+                                            </span>
+                                          ) : (
+                                            <span className="ml-1 text-xs text-red-700">
+                                              (invalid — cannot promote)
+                                            </span>
+                                          )}
+                                        </span>
+                                      </label>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                              <p className="mt-2 text-xs text-zinc-700">
+                                <span className="font-medium">On approve:</span>{" "}
+                                {preview.length > 0 ? preview.join(", ") : "—"}
+                                {preview.length >= FREE_ONBOARD_SEARCH_TAGS_MAX
+                                  ? ` (${FREE_ONBOARD_SEARCH_TAGS_MAX}-tag cap)`
+                                  : ""}
+                              </p>
+                            </div>
+                          );
+                        })()}
                         <p>
                           <span className="font-medium text-zinc-800">Search keywords:</span>{" "}
                           {String(item.payload.search_keywords ?? "—")}
