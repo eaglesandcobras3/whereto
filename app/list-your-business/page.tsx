@@ -61,21 +61,21 @@ export default async function ListYourBusinessPage({ searchParams }: PageProps) 
       }
       contentClassName="mt-6"
     >
-      <p className="not-prose text-sm text-[var(--color-text-secondary)]">
+      <Suspense fallback={<p className="text-sm text-[var(--color-text-secondary)]">Loading form…</p>}>
+        <ListYourBusinessClient />
+      </Suspense>
+      <p className="not-prose mt-10 text-xs leading-relaxed text-[var(--color-text-tertiary)]">
         By submitting you represent you are authorized to request the listing and that operational
         facts you supply are accurate to the best of your knowledge. See representation and
         indemnity language in{" "}
         <Link
           href="/terms#directory-and-business-listings"
-          className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
+          className="underline underline-offset-2 hover:text-[var(--color-primary)]"
         >
           Terms&nbsp;§&nbsp;5–8
         </Link>
         .
       </p>
-      <Suspense fallback={<p className="text-sm text-[var(--color-text-secondary)]">Loading form…</p>}>
-        <ListYourBusinessClient />
-      </Suspense>
     </SiteDocument>
   );
 }
