@@ -87,6 +87,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   ]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [suggestedTagsInput, setSuggestedTagsInput] = useState("");
+  const [suggestedTagsOpen, setSuggestedTagsOpen] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [presence, setPresence] = useState<Presence>("");
   const [searchKeywords, setSearchKeywords] = useState("");
@@ -604,11 +605,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <div>
-        <p className={labelClass}>
-          Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX} total with suggested tags)
-        </p>
+        <p className={labelClass}>Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX})</p>
         <p className={helpClass}>
-          These tags help people discover your business in search. Use specific keywords like pizza,
+          Pick from our list — these power on-site discovery. Use specific keywords like pizza,
           seafood, or waterfront instead of broad terms like restaurant. Do not tag location — town
           is selected separately above.
         </p>
@@ -625,45 +624,60 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             emptyMessage="No matching tags"
           />
         </div>
-        <p className={helpClass}>
-          {tagSlotsUsed}/{FREE_ONBOARD_SEARCH_TAGS_MAX} tags used (
-          {selectedTags.length} from vocabulary
-          {suggestedTags.length > 0 ? `, ${suggestedTags.length} suggested` : ""})
-        </p>
-      </div>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <p className="text-xs text-[var(--color-text-tertiary)]">
+            {tagSlotsUsed}/{FREE_ONBOARD_SEARCH_TAGS_MAX} tags used
+            {suggestedTags.length > 0
+              ? ` (${selectedTags.length} from list, ${suggestedTags.length} suggested)`
+              : null}
+          </p>
+          {!suggestedTagsOpen ? (
+            <button
+              type="button"
+              onClick={() => setSuggestedTagsOpen(true)}
+              className="shrink-0 text-xs font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
+            >
+              Suggest tags
+            </button>
+          ) : null}
+        </div>
 
-      <div>
-        <label className={labelClass} htmlFor="suggested_tags">
-          Suggested tags
-        </label>
-        <p className={helpClass}>
-          Missing a tag that fits? Suggest new ones as a comma-separated list (for example marketing,
-          product development, engineering). Suggestions are reviewed by our team and share the same{" "}
-          {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag limit as the search tags above.
-        </p>
-        <input
-          id="suggested_tags"
-          name="suggested_tags"
-          value={suggestedTagsInput}
-          onChange={(e) => {
-            const next = e.target.value;
-            const parsed = parseSuggestedTagsInput(next);
-            if (parsed.length > suggestedTagSlotsRemaining) {
-              setSuggestedTagsInput(parsed.slice(0, suggestedTagSlotsRemaining).join(", "));
-              return;
-            }
-            setSuggestedTagsInput(next);
-          }}
-          disabled={suggestedTagSlotsRemaining === 0 && suggestedTags.length === 0}
-          className={`${inputClass} mt-1.5`}
-          placeholder="marketing, product development, engineering"
-          autoComplete="off"
-        />
-        <p className={helpClass}>
-          {suggestedTags.length} suggested ·{" "}
-          {Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - tagSlotsUsed)} of {FREE_ONBOARD_SEARCH_TAGS_MAX}{" "}
-          total slots left
-        </p>
+        {suggestedTagsOpen ? (
+          <div className="mt-3">
+            <label className={labelClass} htmlFor="suggested_tags">
+              Suggested tags
+            </label>
+            <p className={helpClass}>
+              Can&apos;t find the right tag above? Suggest new ones as a comma-separated list (for
+              example marketing, product development, engineering). Our team reviews suggestions
+              before they go live. Suggestions share the same {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag
+              limit as the list above — they are not the same as SEO keywords below.
+            </p>
+            <input
+              id="suggested_tags"
+              name="suggested_tags"
+              value={suggestedTagsInput}
+              onChange={(e) => {
+                const next = e.target.value;
+                const parsed = parseSuggestedTagsInput(next);
+                if (parsed.length > suggestedTagSlotsRemaining) {
+                  setSuggestedTagsInput(parsed.slice(0, suggestedTagSlotsRemaining).join(", "));
+                  return;
+                }
+                setSuggestedTagsInput(next);
+              }}
+              disabled={suggestedTagSlotsRemaining === 0 && suggestedTags.length === 0}
+              className={`${inputClass} mt-1.5`}
+              placeholder="marketing, product development, engineering"
+              autoComplete="off"
+            />
+            <p className={helpClass}>
+              {suggestedTags.length} suggested ·{" "}
+              {Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - tagSlotsUsed)} of{" "}
+              {FREE_ONBOARD_SEARCH_TAGS_MAX} total slots left
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div>
