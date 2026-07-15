@@ -246,8 +246,12 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 ### Free onboard setup
 
 - [ ] Create PostHog boolean flag `free_onboard` (default off).
-- [ ] Apply [scripts/migrations/free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) so `portal_review_items.submitted_by` can be NULL for anonymous intake.
+- [ ] Apply [scripts/migrations/free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql):
+  - `portal_review_items.submitted_by` nullable for anonymous intake
+  - `portal_review_items_type_check` allows `free_new_listing`, `free_update`, `free_removal` (in addition to portal `claim` / `new_listing` / `edit` / `photo`)
 - [ ] Confirm `/admin/review` is reachable for admins when `free_onboard` is on (even if `onboard` is off).
+
+If `/list-your-business` fails with `portal_review_items_type_check` (Postgres `23514`), re-run the migration script — the type check must include the free intake values.
 
 ---
 
@@ -310,6 +314,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | Free onboard SQL: extend `portal_review_items_type_check` for `free_new_listing` / `free_update` / `free_removal` (fixes 23514 on intake submit) |
 | 2026-07-14 | PostHog `free_onboard`: no-account multi-location intake → `portal_review_items`; admin create/skip per location; submitter emailed when live/rejected; SQL [free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) |
 | 2026-07-14 | `seo_improvements`: removed related-guide modules from town/area pages, intent-cluster grouping on `/guides`, and towns-hub travel-style guide links |
 | 2026-07-13 | Guides: fixed town/area pickers (`title`); added `guides.search_tags`; admin tag chips + list search; business pages prefer `guide_businesses` |
