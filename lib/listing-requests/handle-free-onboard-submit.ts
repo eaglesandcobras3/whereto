@@ -48,32 +48,49 @@ export async function handleFreeOnboardListingRequest(
     return NextResponse.json({ error: "Too many submissions. Please try again later." }, { status: 429 });
   }
 
-  if (!d.is_storefront && !d.is_service_business) {
+  if (d.is_storefront && d.is_service_business) {
     return NextResponse.json(
-      { error: "Select whether you have a physical location, offer a service, or both." },
+      { error: "Choose either a physical location or a service business — not both." },
       { status: 400 },
     );
   }
 
-  const townIds = [...new Set(d.locations.map((l) => l.town_id))];
-  const { data: towns, error: townErr } = await supabase
-    .from("towns")
-    .select("id, title, slug")
-    .in("id", townIds)
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
-
-  if (townErr || !towns || towns.length !== townIds.length) {
-    return NextResponse.json({ error: "Choose valid towns for each location." }, { status: 400 });
+  if (!d.is_storefront && !d.is_service_business) {
+    return NextResponse.json(
+      { error: "Select whether you have a physical location or operate as a service business." },
+      { status: 400 },
+    );
   }
 
-  const townById = new Map(
-    towns.map((t) => [
-      String(t.id),
-      { title: String(t.title ?? ""), slug: String(t.slug ?? "") },
-    ]),
-  );
+  if (d.is_storefront && d.locations.length < 1) {
+    return NextResponse.json(
+      { error: "Add at least one town and address for your physical location." },
+      { status: 400 },
+    );
+  }
+
+  const townById = new Map<string, { title: string; slug: string }>();
+  if (d.locations.length > 0) {
+    const townIds = [...new Set(d.locations.map((l) => l.town_id))];
+    const { data: towns, error: townErr } = await supabase
+      .from("towns")
+      .select("id, title, slug")
+      .in("id", townIds)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN);
+
+    if (townErr || !towns || towns.length !== townIds.length) {
+      return NextResponse.json({ error: "Choose valid towns for each location." }, { status: 400 });
+    }
+
+    for (const t of towns) {
+      townById.set(String(t.id), {
+        title: String(t.title ?? ""),
+        slug: String(t.slug ?? ""),
+      });
+    }
+  }
 
   const { data: category } = await supabase
     .from("business_categories")

@@ -90,6 +90,78 @@ describe("free onboard schema limits", () => {
     }
   });
 
+  it("does not double-prefix https when already present", () => {
+    const parsed = freeOnboardBodySchema.safeParse({
+      ...base,
+      website: "https://amavida.com",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.website).toBe("https://amavida.com");
+    }
+  });
+
+  it("rejects invalid website and phone values", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        website: "not a url",
+      }).success,
+    ).toBe(false);
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        phone: "123",
+      }).success,
+    ).toBe(false);
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        phone: "(850) 555-1212",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects selecting both storefront and service", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        is_storefront: true,
+        is_service_business: true,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("allows service-only intakes without locations", () => {
+    const parsed = freeOnboardBodySchema.safeParse({
+      ...base,
+      is_storefront: false,
+      is_service_business: true,
+      locations: [],
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("requires locations for physical storefronts", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        is_storefront: true,
+        is_service_business: false,
+        locations: [],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects invalid submitter email", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        submitter_email: "not-an-email",
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects over-limit title excerpt overview", () => {
     expect(
       freeOnboardBodySchema.safeParse({

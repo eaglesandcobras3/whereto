@@ -90,7 +90,8 @@ async function resolveTown(
 }
 
 function allLocationsResolved(locations: FreeOnboardLocationPayload[]): boolean {
-  return locations.length > 0 && locations.every((l) => l.status === "created" || l.status === "skipped");
+  if (locations.length === 0) return true;
+  return locations.every((l) => l.status === "created" || l.status === "skipped");
 }
 
 async function finalizeIfComplete(
@@ -101,7 +102,11 @@ async function finalizeIfComplete(
   opts?: { isUpdate?: boolean; notify?: boolean },
 ): Promise<"pending" | "approved"> {
   if (!allLocationsResolved(payload.locations)) return "pending";
-  const anyCreated = payload.locations.some((l) => l.status === "created");
+  // Service-only intakes may have zero locations; updates can also approve with no location rows.
+  const anyCreated =
+    payload.locations.length === 0
+      ? opts?.isUpdate === true || payload.is_service_business
+      : payload.locations.some((l) => l.status === "created");
   if (!anyCreated) return "pending";
 
   const { error } = await supabase
@@ -311,13 +316,22 @@ export async function approveAllFreeLocations(
 
   const starting = asPayload((item.payload as Record<string, unknown>) ?? {});
   let created = 0;
-  for (const loc of starting.locations) {
-    if (loc.status !== "pending") continue;
-    // Defer submitter email until every location is handled — one email per form.
-    await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId, {
+
+  // Service-only intakes may have no location rows — create one listing without a town.
+  if (starting.locations.length === 0 && starting.is_service_business) {
+    await createFreeServiceListingWithoutTown(supabase, itemId, reviewerId, {
       deferNotify: true,
     });
-    created += 1;
+    created = 1;
+  } else {
+    for (const loc of starting.locations) {
+      if (loc.status !== "pending") continue;
+      // Defer submitter email until every location is handled — one email per form.
+      await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId, {
+        deferNotify: true,
+      });
+      created += 1;
+    }
   }
 
   const { data: refreshed } = await supabase
@@ -338,6 +352,102 @@ export async function approveAllFreeLocations(
     });
   }
   return { created };
+}
+
+/** Create a single listing for a service-only intake with no town/address rows. */
+async function createFreeServiceListingWithoutTown(
+  supabase: SupabaseClient,
+  itemId: string,
+  reviewerId: string,
+  opts?: { deferNotify?: boolean },
+): Promise<{ businessId: string; businessSlug: string; reviewStatus: "pending" | "approved" }> {
+  const { data: item, error } = await supabase
+    .from("portal_review_items")
+    .select("id, type, status, payload")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error || !item) throw new Error("Review item not found");
+  if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
+  if (item.type !== FREE_ONBOARD_TYPES.newListing) {
+    throw new Error("Service-only create is for new listings");
+  }
+
+  const payload = asPayload((item.payload as Record<string, unknown>) ?? {});
+  if (!payload.is_service_business || payload.locations.length > 0) {
+    throw new Error("Not a zero-location service intake");
+  }
+
+  const taken = await loadTakenSlugs(supabase);
+  const slug = buildFreeOnboardSlug(payload.title, null, taken);
+  const seoTitle = buildFreeOnboardSeoTitle(payload.title, undefined);
+  const seoDescription = buildFreeOnboardSeoDescription(payload.excerpt);
+  const searchDoc = buildSearchDocumentFields({
+    title: payload.title,
+    excerpt: payload.excerpt,
+    business_type: null,
+    search_keywords: payload.search_keywords,
+  });
+  const tags =
+    payload.search_tags.length > 0
+      ? payload.search_tags.slice(0, 6)
+      : searchDoc.search_tags;
+
+  const insertRow: Record<string, unknown> = {
+    title: payload.title,
+    slug,
+    status: "published",
+    town_id: null,
+    address: null,
+    website: payload.website,
+    phone: payload.phone,
+    email: payload.submitter_email,
+    excerpt: payload.excerpt,
+    overview: payload.overview,
+    content: payload.overview,
+    is_storefront: false,
+    is_service_business: true,
+    claim_status: "unclaimed",
+    published_at: new Date().toISOString(),
+    primary_category_id: payload.category_id,
+    search_tags: tags,
+    search_keywords: payload.search_keywords,
+    search_terms: searchDoc.search_terms,
+    embedding_summary: searchDoc.embedding_summary,
+    seo_title: seoTitle,
+    seo_description: seoDescription,
+  };
+
+  const { data: createdBiz, error: createErr } = await supabase
+    .from("businesses")
+    .insert(insertRow)
+    .select("id, slug")
+    .single();
+  if (createErr || !createdBiz) throw new Error(createErr?.message ?? "Could not create business");
+
+  // Synthetic resolved location so finalize/email link paths stay consistent.
+  payload.locations = [
+    {
+      id: `svc-${crypto.randomUUID().slice(0, 8)}`,
+      town_id: "",
+      town_title: null,
+      town_slug: null,
+      address: null,
+      status: "created",
+      resulting_business_id: createdBiz.id as string,
+      resulting_business_slug: createdBiz.slug as string,
+    },
+  ];
+
+  await savePayload(supabase, itemId, payload, createdBiz.id as string);
+  const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
+    isUpdate: false,
+    notify: opts?.deferNotify !== true,
+  });
+  return {
+    businessId: createdBiz.id as string,
+    businessSlug: createdBiz.slug as string,
+    reviewStatus,
+  };
 }
 
 export async function approveFreeUpdate(

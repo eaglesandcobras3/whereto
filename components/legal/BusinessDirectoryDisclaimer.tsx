@@ -6,9 +6,19 @@ type Props = {
   variant?: "card" | "plain" | "flag";
   businessSlug?: string;
   className?: string;
+  /**
+   * When set with `variant="flag"`, replaces the correction CTA with an update-listing
+   * link (same compact flag styling).
+   */
+  updateListingHref?: string;
 };
 
-export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, className = "" }: Props) {
+export function BusinessDirectoryDisclaimer({
+  variant = "card",
+  businessSlug,
+  className = "",
+  updateListingHref,
+}: Props) {
   const feedbackHref =
     businessSlug !== undefined && String(businessSlug).trim().length > 0
       ? feedbackPageHref(`/business/${normalizeUrlSegment(String(businessSlug).trim())}`)
@@ -18,9 +28,31 @@ export function BusinessDirectoryDisclaimer({ variant = "card", businessSlug, cl
   const linkCn = "underline underline-offset-2 hover:text-[var(--color-primary)]";
 
   if (variant === "flag") {
+    if (updateListingHref) {
+      return (
+        <p className={`flex items-center gap-1.5 ${base}`}>
+          <span className="material-symbols-outlined !text-sm" aria-hidden>
+            flag
+          </span>
+          <span>
+            Own or manage this business?{" "}
+            <Link href={updateListingHref} className={linkCn}>
+              Update this listing
+            </Link>
+            {" · "}
+            <Link href="/terms#directory-and-business-listings" className={linkCn}>
+              Listing terms
+            </Link>
+          </span>
+        </p>
+      );
+    }
+
     return (
       <p className={`flex items-center gap-1.5 ${base}`}>
-        <span className="material-symbols-outlined !text-sm" aria-hidden>flag</span>
+        <span className="material-symbols-outlined !text-sm" aria-hidden>
+          flag
+        </span>
         <span>
           See something wrong?{" "}
           <Link href={feedbackHref} className={linkCn}>

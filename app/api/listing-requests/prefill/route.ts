@@ -4,6 +4,7 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
+import { FREE_ONBOARD_OVERVIEW_MAX } from "@/lib/listing-requests/free-onboard-schema";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 /** Prefill payload for update/claim free intake (`?business=slug`). */
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
       excerpt: (data.excerpt as string | null) ?? null,
       overview:
         (data.overview as string | null) ??
-        (typeof data.content === "string" ? data.content.slice(0, 1000) : null),
+        (typeof data.content === "string" ? data.content.slice(0, FREE_ONBOARD_OVERVIEW_MAX) : null),
       is_storefront: Boolean(data.is_storefront),
       is_service_business: Boolean(data.is_service_business),
       category_id: data.primary_category_id ? String(data.primary_category_id) : null,
