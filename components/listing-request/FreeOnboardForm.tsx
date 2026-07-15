@@ -612,6 +612,11 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         <label className={labelClass} htmlFor="search_keywords">
           SEO keywords
         </label>
+        <p className={helpClass}>
+          These keywords help search engines like Google understand your business. Enter
+          comma-separated search phrases, such as pizza restaurant in Rosemary Beach, best seafood on
+          30A, or gluten-free restaurant near Seaside.
+        </p>
         <input
           id="search_keywords"
           name="search_keywords"
@@ -622,11 +627,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           placeholder="Comma-separated phrases"
         />
         <CharCount value={searchKeywords} max={FREE_ONBOARD_SEARCH_KEYWORDS_MAX} />
-        <p className={helpClass}>
-          These keywords help search engines like Google understand your business. Enter
-          comma-separated search phrases, such as pizza restaurant in Rosemary Beach, best seafood on
-          30A, or gluten-free restaurant near Seaside.
-        </p>
       </div>
 
       {err ? (
