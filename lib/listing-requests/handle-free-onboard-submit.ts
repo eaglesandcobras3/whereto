@@ -2,7 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
+import { normalizeSearchTagSlug } from "@/lib/discovery-filters/search-tag-label";
 import {
+  FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TYPES,
   freeOnboardBodySchema,
   type FreeOnboardLocationPayload,
@@ -103,7 +105,28 @@ export async function handleFreeOnboardListingRequest(
 
   const { data: vocabTags } = await supabase.from("search_tags_vocabulary").select("tag");
   const allowed = new Set((vocabTags ?? []).map((t) => String((t as { tag: string }).tag)));
-  const searchTags = d.search_tags.filter((t) => allowed.has(t)).slice(0, 6);
+  const searchTags = d.search_tags.filter((t) => allowed.has(t));
+  const searchTagKeys = new Set(searchTags.map((t) => t.toLowerCase()));
+  // Promote suggestions that already exist in vocabulary; keep the rest for operator review.
+  const suggestedTags: string[] = [];
+  for (const raw of d.suggested_tags) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const slug = normalizeSearchTagSlug(trimmed);
+    if (slug && allowed.has(slug)) {
+      if (!searchTagKeys.has(slug)) {
+        searchTags.push(slug);
+        searchTagKeys.add(slug);
+      }
+      continue;
+    }
+    if (allowed.has(trimmed) || searchTagKeys.has(trimmed.toLowerCase())) continue;
+    suggestedTags.push(trimmed);
+  }
+  const combinedBudget = FREE_ONBOARD_SEARCH_TAGS_MAX;
+  const cappedSearchTags = searchTags.slice(0, combinedBudget);
+  const remainingSlots = Math.max(0, combinedBudget - cappedSearchTags.length);
+  const cappedSuggestedTags = suggestedTags.slice(0, remainingSlots);
 
   let targetBusinessId = d.target_business_id ?? null;
   if (d.target_business_slug && !targetBusinessId) {
@@ -141,7 +164,8 @@ export async function handleFreeOnboardListingRequest(
     overview: d.overview,
     category_id: d.category_id,
     category_title: String(category.title ?? ""),
-    search_tags: searchTags,
+    search_tags: cappedSearchTags,
+    suggested_tags: cappedSuggestedTags,
     search_keywords: d.search_keywords,
     marketing_opt_in: d.marketing_opt_in,
     target_business_id: targetBusinessId,
@@ -221,7 +245,8 @@ export async function handleFreeOnboardListingRequest(
       "",
       `Overview: ${d.overview}`,
       "",
-      `Search tags: ${searchTags.join(", ") || "(none)"}`,
+      `Search tags: ${cappedSearchTags.join(", ") || "(none)"}`,
+      `Suggested tags: ${cappedSuggestedTags.join(", ") || "(none)"}`,
       `Search keywords: ${d.search_keywords ?? "(none)"}`,
       d.website ? `Website: ${d.website}` : null,
       d.phone ? `Phone: ${d.phone}` : null,
@@ -249,7 +274,8 @@ export async function handleFreeOnboardListingRequest(
   .join("")}</ol>
 <p><strong>Excerpt:</strong> ${escapeHtml(d.excerpt)}</p>
 <p><strong>Overview:</strong><br/>${escapeHtml(d.overview).replace(/\r?\n/g, "<br>")}</p>
-<p><strong>Search tags:</strong> ${escapeHtml(searchTags.join(", ") || "(none)")}<br/>
+<p><strong>Search tags:</strong> ${escapeHtml(cappedSearchTags.join(", ") || "(none)")}<br/>
+<strong>Suggested tags:</strong> ${escapeHtml(cappedSuggestedTags.join(", ") || "(none)")}<br/>
 <strong>Search keywords:</strong> ${escapeHtml(d.search_keywords ?? "(none)")}</p>
 <p><a href="${escapeHtml(`${baseUrl}/admin/review`)}">Open review queue</a> · item ${escapeHtml(String(reviewItem.id))}</p>
 </body></html>`;

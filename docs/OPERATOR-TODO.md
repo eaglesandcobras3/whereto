@@ -248,6 +248,7 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Create PostHog boolean flag `free_onboard` (default off).
 - [ ] Apply [scripts/migrations/free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) so `portal_review_items.submitted_by` can be NULL for anonymous intake.
 - [ ] Confirm `/admin/review` is reachable for admins when `free_onboard` is on (even if `onboard` is off).
+- [ ] When a review item shows **Suggested tags**, decide whether to add them to `search_tags_vocabulary` (seed/migration or SQL), then assign matching tags on the listing — approval does **not** auto-apply suggested tags.
 
 ---
 
@@ -310,6 +311,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | Free intake: submitters can propose comma-separated **suggested tags** sharing the 6-tag budget with vocabulary search tags; shown in `/admin/review` but not written to `businesses.search_tags` on approve |
 | 2026-07-14 | PostHog `free_onboard`: no-account multi-location intake → `portal_review_items`; admin create/skip per location; submitter emailed when live/rejected; SQL [free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) |
 | 2026-07-14 | `seo_improvements`: removed related-guide modules from town/area pages, intent-cluster grouping on `/guides`, and towns-hub travel-style guide links |
 | 2026-07-13 | Guides: fixed town/area pickers (`title`); added `guides.search_tags`; admin tag chips + list search; business pages prefer `guide_businesses` |

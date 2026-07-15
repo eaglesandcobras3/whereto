@@ -57,6 +57,7 @@ export function ReviewQueueClient() {
         overview: "",
         category_id: "",
         search_tags: [],
+        suggested_tags: [],
         search_keywords: "",
         marketing_opt_in: false,
         target_business_id: null,
@@ -284,6 +285,20 @@ export function ReviewQueueClient() {
                           {Array.isArray(item.payload.search_tags)
                             ? (item.payload.search_tags as string[]).join(", ")
                             : "—"}
+                        </p>
+                        <p>
+                          <span className="font-medium text-zinc-800">Suggested tags:</span>{" "}
+                          {Array.isArray(item.payload.suggested_tags) &&
+                          (item.payload.suggested_tags as string[]).length > 0
+                            ? (item.payload.suggested_tags as string[]).join(", ")
+                            : "—"}
+                          {Array.isArray(item.payload.suggested_tags) &&
+                          (item.payload.suggested_tags as string[]).length > 0 ? (
+                            <span className="mt-1 block text-xs text-amber-800">
+                              Not applied on approve — add to vocabulary first if appropriate, then
+                              assign on the listing.
+                            </span>
+                          ) : null}
                         </p>
                         <p>
                           <span className="font-medium text-zinc-800">Search keywords:</span>{" "}

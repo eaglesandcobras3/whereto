@@ -15,6 +15,7 @@ import {
   FREE_ONBOARD_SEARCH_KEYWORDS_MAX,
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TITLE_MAX,
+  parseSuggestedTagsInput,
 } from "@/lib/listing-requests/free-onboard-schema";
 
 const inputClass =
@@ -85,6 +86,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     { key: newLocationKey(), town_id: "", address: "" },
   ]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [suggestedTagsInput, setSuggestedTagsInput] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [presence, setPresence] = useState<Presence>("");
   const [searchKeywords, setSearchKeywords] = useState("");
@@ -161,6 +163,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       .map((slug) => ({ slug, label: formatSearchTagLabel(slug) }));
   }, [searchTagOptions, selectedTags]);
 
+  const suggestedTags = useMemo(
+    () => parseSuggestedTagsInput(suggestedTagsInput),
+    [suggestedTagsInput],
+  );
+  const tagSlotsUsed = selectedTags.length + suggestedTags.length;
+  const searchTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - suggestedTags.length);
+  const suggestedTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - selectedTags.length);
+
   function setPresenceExclusive(next: Presence) {
     setPresence(next);
     if (next === "storefront" && locations.length === 0) {
@@ -209,11 +219,20 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       overview: overview.trim(),
       category_id: categoryId,
       search_tags: selectedTags,
+      suggested_tags: suggestedTags.slice(0, suggestedTagSlotsRemaining),
       search_keywords: searchKeywords,
       marketing_opt_in: fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? businessSlug ?? null,
     };
+
+    if (selectedTags.length + payload.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
+      setPending(false);
+      setErr(
+        `Choose at most ${FREE_ONBOARD_SEARCH_TAGS_MAX} tags total across search tags and suggested tags.`,
+      );
+      return;
+    }
 
     const res = await fetch("/api/listing-requests", {
       method: "POST",
@@ -585,7 +604,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <div>
-        <p className={labelClass}>Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX})</p>
+        <p className={labelClass}>
+          Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX} total with suggested tags)
+        </p>
         <p className={helpClass}>
           These tags help people discover your business in search. Use specific keywords like pizza,
           seafood, or waterfront instead of broad terms like restaurant. Do not tag location — town
@@ -595,9 +616,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           <FacetTypeaheadMultiSelect
             options={tagOptions}
             selectedSlugs={selectedTags}
-            maxSelected={FREE_ONBOARD_SEARCH_TAGS_MAX}
+            maxSelected={searchTagSlotsRemaining}
             onChange={(slugs) => {
-              if (slugs.length > FREE_ONBOARD_SEARCH_TAGS_MAX) return;
+              if (slugs.length > searchTagSlotsRemaining) return;
               setSelectedTags(slugs);
             }}
             placeholder="Search tags…"
@@ -605,7 +626,43 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           />
         </div>
         <p className={helpClass}>
-          {selectedTags.length}/{FREE_ONBOARD_SEARCH_TAGS_MAX} selected
+          {tagSlotsUsed}/{FREE_ONBOARD_SEARCH_TAGS_MAX} tags used (
+          {selectedTags.length} from vocabulary
+          {suggestedTags.length > 0 ? `, ${suggestedTags.length} suggested` : ""})
+        </p>
+      </div>
+
+      <div>
+        <label className={labelClass} htmlFor="suggested_tags">
+          Suggested tags
+        </label>
+        <p className={helpClass}>
+          Missing a tag that fits? Suggest new ones as a comma-separated list (for example marketing,
+          product development, engineering). Suggestions are reviewed by our team and share the same{" "}
+          {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag limit as the search tags above.
+        </p>
+        <input
+          id="suggested_tags"
+          name="suggested_tags"
+          value={suggestedTagsInput}
+          onChange={(e) => {
+            const next = e.target.value;
+            const parsed = parseSuggestedTagsInput(next);
+            if (parsed.length > suggestedTagSlotsRemaining) {
+              setSuggestedTagsInput(parsed.slice(0, suggestedTagSlotsRemaining).join(", "));
+              return;
+            }
+            setSuggestedTagsInput(next);
+          }}
+          disabled={suggestedTagSlotsRemaining === 0 && suggestedTags.length === 0}
+          className={`${inputClass} mt-1.5`}
+          placeholder="marketing, product development, engineering"
+          autoComplete="off"
+        />
+        <p className={helpClass}>
+          {suggestedTags.length} suggested ·{" "}
+          {Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - tagSlotsUsed)} of {FREE_ONBOARD_SEARCH_TAGS_MAX}{" "}
+          total slots left
         </p>
       </div>
 
