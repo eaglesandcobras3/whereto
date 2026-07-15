@@ -668,7 +668,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               }}
               disabled={suggestedTagSlotsRemaining === 0 && suggestedTags.length === 0}
               className={`${inputClass} mt-1.5`}
-              placeholder="Enter new tags here"
+              placeholder="Enter new tags"
               autoComplete="off"
             />
             <p className={helpClass}>
