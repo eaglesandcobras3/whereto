@@ -415,25 +415,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
       {showLocations ? (
         <div className="space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className={labelClass}>Locations</p>
-              <p className={helpClass}>Select town and provide address for each location</p>
-            </div>
-            {locations.length < FREE_ONBOARD_LOCATIONS_MAX ? (
-              <button
-                type="button"
-                className="mt-0.5 shrink-0 text-sm text-[var(--color-text-tertiary)] underline underline-offset-2 hover:text-[var(--color-primary)]"
-                onClick={() =>
-                  setLocations((prev) => [
-                    ...prev,
-                    { key: newLocationKey(), town_id: "", address: "" },
-                  ])
-                }
-              >
-                Add
-              </button>
-            ) : null}
+          <div>
+            <p className={labelClass}>Locations</p>
+            <p className={helpClass}>Select town and provide address for each location</p>
           </div>
 
           {locations.map((loc, index) => (
@@ -496,6 +480,23 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               </div>
             </div>
           ))}
+
+          {locations.length < FREE_ONBOARD_LOCATIONS_MAX ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="text-sm text-[var(--color-text-tertiary)] underline underline-offset-2 hover:text-[var(--color-primary)]"
+                onClick={() =>
+                  setLocations((prev) => [
+                    ...prev,
+                    { key: newLocationKey(), town_id: "", address: "" },
+                  ])
+                }
+              >
+                Add additional location
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
