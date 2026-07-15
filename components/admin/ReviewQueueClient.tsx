@@ -295,6 +295,12 @@ export function ReviewQueueClient() {
                             Locations — create one listing per location (pending until all are
                             handled)
                           </p>
+                          {locations.length === 0 ? (
+                            <p className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+                              Service business — no town/address rows. Approve all creates one
+                              listing without a storefront address.
+                            </p>
+                          ) : null}
                           {locations.map((loc) => (
                             <div
                               key={loc.id}

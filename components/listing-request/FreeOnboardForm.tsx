@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
 import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
+import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
+import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
+import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
 import {
   FREE_ONBOARD_EXCERPT_MAX,
   FREE_ONBOARD_LOCATIONS_MAX,
@@ -21,6 +23,7 @@ const helpClass = "mt-1 text-xs text-[var(--color-text-tertiary)]";
 
 type CategoryOption = { id: string; title: string; slug: string };
 type LocationRow = { key: string; town_id: string; address: string };
+type Presence = "storefront" | "service" | "";
 
 type PrefillBusiness = {
   id: string;
@@ -82,8 +85,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   ]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState("");
-  const [isStorefront, setIsStorefront] = useState(false);
-  const [isService, setIsService] = useState(false);
+  const [presence, setPresence] = useState<Presence>("");
+  const [searchKeywords, setSearchKeywords] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -129,8 +132,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         setOverview((b.overview ?? "").slice(0, FREE_ONBOARD_OVERVIEW_MAX));
         setCategoryId(b.category_id ?? "");
         setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
-        setIsStorefront(b.is_storefront);
-        setIsService(b.is_service_business);
+        // Prefer physical when both were historically true; exclusive choice in the UI.
+        if (b.is_storefront) setPresence("storefront");
+        else if (b.is_service_business) setPresence("service");
         setLocations([
           {
             key: newLocationKey(),
@@ -138,6 +142,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             address: b.address ?? "",
           },
         ]);
+        // Do not prefill existing SEO keywords on update.
+        setSearchKeywords("");
       } catch (e) {
         if (controller.signal.aborted) return;
         setErr(e instanceof Error ? e.message : "Could not load listing");
@@ -146,24 +152,46 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     return () => controller.abort();
   }, [businessSlug]);
 
-  const tagChoices = useMemo(() => {
+  const tagOptions: DiscoverSearchTagOption[] = useMemo(() => {
     const set = new Set(searchTagOptions);
     for (const t of selectedTags) set.add(t);
-    return Array.from(set).sort();
+    return Array.from(set)
+      .sort()
+      .map((slug) => ({ slug, label: formatSearchTagLabel(slug) }));
   }, [searchTagOptions, selectedTags]);
 
-  function toggleTag(tag: string) {
-    setSelectedTags((prev) => {
-      if (prev.includes(tag)) return prev.filter((t) => t !== tag);
-      if (prev.length >= FREE_ONBOARD_SEARCH_TAGS_MAX) return prev;
-      return [...prev, tag];
-    });
+  function setPresenceExclusive(next: Presence) {
+    setPresence(next);
+    if (next === "storefront" && locations.length === 0) {
+      setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+    }
   }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
     setErr(null);
+
+    if (!presence) {
+      setPending(false);
+      setErr("Select whether you have a physical location or operate as a service business.");
+      return;
+    }
+
+    const isStorefront = presence === "storefront";
+    const isService = presence === "service";
+    const locationPayload = isStorefront
+      ? locations.map((l) => ({
+          town_id: l.town_id,
+          address: l.address,
+        }))
+      : [];
+
+    if (isStorefront && locationPayload.some((l) => !l.town_id)) {
+      setPending(false);
+      setErr("Choose a town for each location.");
+      return;
+    }
 
     const fd = new FormData(e.currentTarget);
     const payload = {
@@ -173,17 +201,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       title: title.trim(),
       is_storefront: isStorefront,
       is_service_business: isService,
-      locations: locations.map((l) => ({
-        town_id: l.town_id,
-        address: l.address,
-      })),
+      locations: locationPayload,
       website: String(fd.get("website") ?? ""),
       phone: String(fd.get("phone") ?? ""),
       excerpt: excerpt.trim(),
       overview: overview.trim(),
       category_id: categoryId,
       search_tags: selectedTags,
-      search_keywords: String(fd.get("search_keywords") ?? ""),
+      search_keywords: searchKeywords,
       marketing_opt_in: fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? businessSlug ?? null,
@@ -280,7 +305,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
   if (done) {
     return (
-      <div className="mt-10 space-y-6">
+      <div className="not-prose mt-10 space-y-6">
         <div
           className="rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-sm"
           role="status"
@@ -302,16 +327,18 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   }
 
   if (optionsLoading) {
-    return <p className="mt-8 text-sm text-[var(--color-text-secondary)]">Loading form…</p>;
+    return <p className="not-prose mt-8 text-sm text-[var(--color-text-secondary)]">Loading form…</p>;
   }
 
+  const showLocations = presence === "storefront";
+
   return (
-    <form onSubmit={submit} className="mt-10 space-y-6">
-      <p className="-mt-2 text-sm text-[var(--color-text-secondary)]">
-        {isUpdate
-          ? "Suggest updates for this listing. Our team reviews every request before anything goes live."
-          : "Submit once for every location you operate. Each town/address becomes its own listing after review. Slug and SEO title/description are generated for you."}
-      </p>
+    <form onSubmit={submit} className="not-prose mt-10 space-y-6">
+      {isUpdate ? (
+        <p className="-mt-2 text-sm text-[var(--color-text-secondary)]">
+          Suggest updates for this listing. Our team reviews every request before anything goes live.
+        </p>
+      ) : null}
 
       <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden>
         <label htmlFor="_hp_company_website">Company website</label>
@@ -337,6 +364,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             autoComplete="email"
             className={`${inputClass} mt-1.5`}
           />
+          <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              name="marketing_opt_in"
+              className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
+            />
+            <span>Yes, send me marketing emails about WhereTo30A for business owners.</span>
+          </label>
         </div>
       </div>
 
@@ -357,36 +392,98 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
-        <legend className={`${labelClass} px-1`}>Physical location or service business</legend>
-        <p className="text-xs text-[var(--color-text-tertiary)]">Select all that apply.</p>
+        <legend className={`${labelClass} px-1`}>Where does your business happen?</legend>
+        <p className="text-xs text-[var(--color-text-tertiary)]">Choose one.</p>
         <label className="flex cursor-pointer items-start gap-3 text-sm">
           <input
-            type="checkbox"
-            checked={isStorefront}
-            onChange={(e) => setIsStorefront(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
+            type="radio"
+            name="presence"
+            checked={presence === "storefront"}
+            onChange={() => setPresenceExclusive("storefront")}
+            className="mt-1 h-4 w-4 border-[var(--color-border-strong)]"
           />
-          <span>Physical location / storefront customers visit</span>
+          <span>Yes — we have a physical location customers visit</span>
         </label>
         <label className="flex cursor-pointer items-start gap-3 text-sm">
           <input
-            type="checkbox"
-            checked={isService}
-            onChange={(e) => setIsService(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
+            type="radio"
+            name="presence"
+            checked={presence === "service"}
+            onChange={() => setPresenceExclusive("service")}
+            className="mt-1 h-4 w-4 border-[var(--color-border-strong)]"
           />
-          <span>Service business (mobile, appointment, or regional)</span>
+          <span>No — we&apos;re a service business (mobile, appointment, or regional)</span>
         </label>
       </fieldset>
 
-      <div className="space-y-4">
-        <div className="flex items-end justify-between gap-3">
+      {showLocations ? (
+        <div className="space-y-4">
           <div>
             <p className={labelClass}>Locations</p>
-            <p className={helpClass}>
-              Add each town and address. One form can create multiple listings after approval.
-            </p>
+            <p className={helpClass}>Select town and provide address for each location</p>
           </div>
+
+          {locations.map((loc, index) => (
+            <div
+              key={loc.key}
+              className="space-y-3 rounded-xl border border-[var(--color-border)] p-4"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Location {index + 1}
+                </p>
+                {locations.length > 1 ? (
+                  <button
+                    type="button"
+                    className="text-xs text-red-700 underline-offset-2 hover:underline"
+                    onClick={() => setLocations((prev) => prev.filter((l) => l.key !== loc.key))}
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              <div>
+                <label className={labelClass} htmlFor={`town-${loc.key}`}>
+                  Town
+                </label>
+                <select
+                  id={`town-${loc.key}`}
+                  required
+                  value={loc.town_id}
+                  onChange={(e) =>
+                    setLocations((prev) =>
+                      prev.map((l) => (l.key === loc.key ? { ...l, town_id: e.target.value } : l)),
+                    )
+                  }
+                  className={`${inputClass} mt-1.5`}
+                >
+                  <option value="">Choose a town</option>
+                  {towns.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass} htmlFor={`address-${loc.key}`}>
+                  Address
+                </label>
+                <input
+                  id={`address-${loc.key}`}
+                  value={loc.address}
+                  onChange={(e) =>
+                    setLocations((prev) =>
+                      prev.map((l) => (l.key === loc.key ? { ...l, address: e.target.value } : l)),
+                    )
+                  }
+                  className={`${inputClass} mt-1.5`}
+                  placeholder="Street, suite"
+                />
+              </div>
+            </div>
+          ))}
+
           {locations.length < FREE_ONBOARD_LOCATIONS_MAX ? (
             <button
               type="button"
@@ -398,72 +495,11 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
                 ])
               }
             >
-              Add location
+              Include additional location
             </button>
           ) : null}
         </div>
-
-        {locations.map((loc, index) => (
-          <div
-            key={loc.key}
-            className="space-y-3 rounded-xl border border-[var(--color-border)] p-4"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                Location {index + 1}
-              </p>
-              {locations.length > 1 ? (
-                <button
-                  type="button"
-                  className="text-xs text-red-700 underline-offset-2 hover:underline"
-                  onClick={() => setLocations((prev) => prev.filter((l) => l.key !== loc.key))}
-                >
-                  Remove
-                </button>
-              ) : null}
-            </div>
-            <div>
-              <label className={labelClass} htmlFor={`town-${loc.key}`}>
-                Town
-              </label>
-              <select
-                id={`town-${loc.key}`}
-                required
-                value={loc.town_id}
-                onChange={(e) =>
-                  setLocations((prev) =>
-                    prev.map((l) => (l.key === loc.key ? { ...l, town_id: e.target.value } : l)),
-                  )
-                }
-                className={`${inputClass} mt-1.5`}
-              >
-                <option value="">Choose a town</option>
-                {towns.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass} htmlFor={`address-${loc.key}`}>
-                Address
-              </label>
-              <input
-                id={`address-${loc.key}`}
-                value={loc.address}
-                onChange={(e) =>
-                  setLocations((prev) =>
-                    prev.map((l) => (l.key === loc.key ? { ...l, address: e.target.value } : l)),
-                  )
-                }
-                className={`${inputClass} mt-1.5`}
-                placeholder="Street, suite"
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      ) : null}
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
@@ -480,7 +516,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             placeholder="example.com"
             className={`${inputClass} mt-1.5`}
           />
-          <p className={helpClass}>http(s) optional — we add https when needed.</p>
         </div>
         <div>
           <label className={labelClass} htmlFor="phone">
@@ -498,7 +533,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
       <div>
         <label className={labelClass} htmlFor="excerpt">
-          Excerpt — headline / summary
+          Headline / summary
         </label>
         <textarea
           id="excerpt"
@@ -511,7 +546,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           placeholder="One short line that captures the business."
         />
         <CharCount value={excerpt} max={FREE_ONBOARD_EXCERPT_MAX} />
-        <p className={helpClass}>Used for the listing teaser and SEO description.</p>
       </div>
 
       <div>
@@ -554,62 +588,52 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       <div>
         <p className={labelClass}>Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX})</p>
         <p className={helpClass}>
-          These show on the listing and power Discover / site search filters — pick the best matches.
+          These tags help people discover your business in search. Use specific keywords like pizza,
+          seafood, or happy hour instead of broad terms like restaurant.
         </p>
-        <div className="mt-2 flex max-h-48 flex-wrap gap-2 overflow-y-auto rounded-xl border border-[var(--color-border)] p-3">
-          {tagChoices.map((tag) => {
-            const on = selectedTags.includes(tag);
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleTag(tag)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium ${
-                  on
-                    ? "bg-[var(--color-primary)] text-white"
-                    : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)]"
-                }`}
-              >
-                {tag}
-              </button>
-            );
-          })}
+        <div className="mt-2">
+          <FacetTypeaheadMultiSelect
+            options={tagOptions}
+            selectedSlugs={selectedTags}
+            onChange={(slugs) => {
+              if (slugs.length > FREE_ONBOARD_SEARCH_TAGS_MAX) return;
+              setSelectedTags(slugs);
+            }}
+            placeholder="Search tags…"
+            emptyMessage="No matching tags"
+          />
         </div>
-        <p className={helpClass}>{selectedTags.length}/{FREE_ONBOARD_SEARCH_TAGS_MAX} selected</p>
+        <p className={helpClass}>
+          {selectedTags.length}/{FREE_ONBOARD_SEARCH_TAGS_MAX} selected
+        </p>
       </div>
 
       <div>
         <label className={labelClass} htmlFor="search_keywords">
-          Search keywords
+          SEO keywords
         </label>
         <input
           id="search_keywords"
           name="search_keywords"
-          defaultValue={prefill?.search_keywords ?? ""}
+          value={searchKeywords}
+          onChange={(e) => setSearchKeywords(e.target.value)}
           className={`${inputClass} mt-1.5`}
           placeholder="Comma-separated phrases"
         />
         <p className={helpClass}>
-          For SEO and keyword matching (not the same as the filter tags above).
+          These keywords help search engines like Google understand your business. Enter
+          comma-separated search phrases, such as pizza restaurant in Rosemary Beach, best seafood on
+          30A, or gluten-free restaurant near Seaside.
         </p>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-3 text-sm">
-        <input
-          type="checkbox"
-          name="marketing_opt_in"
-          className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
-        />
-        <span>Yes, send me marketing emails about WhereTo30A for business owners.</span>
-      </label>
-
       <p className="text-sm text-[var(--color-text-secondary)]">
-        Have questions or need help?{" "}
+        Have questions or need help? Email{" "}
         <a
           className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
-          href="mailto:hello@whereto30a.com"
+          href="mailto:business@whereto30a.com"
         >
-          Email hello@whereto30a.com
+          business@whereto30a.com
         </a>
         .
       </p>
@@ -629,30 +653,20 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </button>
 
       {isUpdate ? (
-        <div className="border-t border-[var(--color-border)] pt-6">
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Need this listing taken down instead?
-          </p>
+        <p className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+          <span>Need this listing taken down instead?</span>
           <button
             type="button"
             onClick={() => {
               setRemovalErr(null);
               setRemovalOpen(true);
             }}
-            className="mt-2 text-sm font-medium text-red-700 underline-offset-2 hover:underline"
+            className="underline underline-offset-2 hover:text-[var(--color-primary)]"
           >
             Delete my listing
           </button>
-        </div>
-      ) : (
-        <p className="text-xs text-[var(--color-text-tertiary)]">
-          Already listed?{" "}
-          <Link href="/feedback" className="underline-offset-2 hover:underline">
-            Send feedback
-          </Link>{" "}
-          or open a listing and use Update this listing.
         </p>
-      )}
+      ) : null}
 
       {removalOpen ? (
         <div
@@ -666,21 +680,32 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="removal-dialog-title"
-            className="w-full max-w-md rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-6 shadow-lg"
+            className="relative w-full max-w-md rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-5 shadow-lg sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              type="button"
+              disabled={removalPending}
+              onClick={() => setRemovalOpen(false)}
+              className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-full text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] disabled:opacity-50"
+              aria-label="Close"
+            >
+              <span aria-hidden className="text-lg leading-none">
+                ×
+              </span>
+            </button>
             <h2
               id="removal-dialog-title"
-              className="font-headline text-lg font-semibold text-[var(--color-text-primary)]"
+              className="pr-10 font-headline text-lg font-semibold leading-snug text-[var(--color-text-primary)]"
             >
               Request listing removal
             </h2>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
               This sends a removal request to our team — your listing stays live until we approve
               it. We use your name and email to confirm you&apos;re authorized before taking it
               down.
             </p>
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-3">
               <div>
                 <label className={labelClass} htmlFor="removal_submitter_name">
                   Name
@@ -715,7 +740,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
                 <textarea
                   id="removal_reason"
                   value={removalReason}
-                  onChange={(e) => setRemovalReason(e.target.value.slice(0, FREE_ONBOARD_REMOVAL_REASON_MAX))}
+                  onChange={(e) =>
+                    setRemovalReason(e.target.value.slice(0, FREE_ONBOARD_REMOVAL_REASON_MAX))
+                  }
                   required
                   rows={3}
                   maxLength={FREE_ONBOARD_REMOVAL_REASON_MAX}
@@ -730,7 +757,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
                 {removalErr}
               </p>
             ) : null}
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={removalPending}
