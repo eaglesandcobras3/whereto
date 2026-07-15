@@ -66,8 +66,7 @@ export default async function ListYourBusinessPage({ searchParams }: PageProps) 
       </Suspense>
       <p className="not-prose mt-10 text-xs leading-relaxed text-[var(--color-text-tertiary)]">
         By submitting you represent you are authorized to request the listing and that operational
-        facts you supply are accurate to the best of your knowledge. See representation and
-        indemnity language in{" "}
+        facts you supply are accurate to the best of your knowledge.{" "}
         <Link
           href="/terms#directory-and-business-listings"
           className="underline underline-offset-2 hover:text-[var(--color-primary)]"
