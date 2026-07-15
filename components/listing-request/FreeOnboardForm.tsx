@@ -628,17 +628,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         </p>
       </div>
 
-      <p className="text-sm text-[var(--color-text-secondary)]">
-        Have questions or need help? Email{" "}
-        <a
-          className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
-          href="mailto:business@whereto30a.com"
-        >
-          business@whereto30a.com
-        </a>
-        .
-      </p>
-
       {err ? (
         <p className="text-sm text-red-700 dark:text-red-300" role="alert">
           {err}
@@ -652,6 +641,17 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       >
         {pending ? "Sending…" : isUpdate ? "Submit update request" : "Submit listing request"}
       </button>
+
+      <p className="text-sm text-[var(--color-text-secondary)]">
+        Have questions or need help? Email{" "}
+        <a
+          className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
+          href="mailto:business@whereto30a.com"
+        >
+          business@whereto30a.com
+        </a>
+        .
+      </p>
 
       {isUpdate ? (
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
