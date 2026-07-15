@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   approveAllFreeLocations,
@@ -208,7 +209,9 @@ async function approveNewListing(
 
   if (!item.submitted_by) throw new Error("Listing submitter missing");
 
+  // businesses.id has no DB default — must supply a UUID (same as CSV import paths).
   const insertRow: Record<string, unknown> = {
+    id: randomUUID(),
     title,
     slug,
     status: "published",

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildFreeOnboardSeoDescription,
@@ -194,7 +195,9 @@ export async function createFreeListingForLocation(
       ? payload.search_tags.slice(0, 6)
       : searchDoc.search_tags;
 
+  // businesses.id has no DB default — must supply a UUID (same as CSV import paths).
   const insertRow: Record<string, unknown> = {
+    id: randomUUID(),
     title: payload.title,
     slug,
     status: "published",
@@ -392,7 +395,9 @@ async function createFreeServiceListingWithoutTown(
       ? payload.search_tags.slice(0, 6)
       : searchDoc.search_tags;
 
+  // businesses.id has no DB default — must supply a UUID (same as CSV import paths).
   const insertRow: Record<string, unknown> = {
+    id: randomUUID(),
     title: payload.title,
     slug,
     status: "published",
