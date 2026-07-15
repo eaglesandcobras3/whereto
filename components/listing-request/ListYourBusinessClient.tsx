@@ -62,9 +62,9 @@ export function ListYourBusinessClient() {
         Town directory is temporarily unavailable. Please try again later or email{" "}
         <a
           className="font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
-          href="mailto:hello@whereto30a.com"
+          href="mailto:business@whereto30a.com"
         >
-          hello@whereto30a.com
+          business@whereto30a.com
         </a>
         .
       </p>
