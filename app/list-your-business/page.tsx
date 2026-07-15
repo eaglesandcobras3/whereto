@@ -53,8 +53,8 @@ export default async function ListYourBusinessPage({ searchParams }: PageProps) 
               flag
             </span>
             <span>
-              Looking to update an existing business? Go to your business page and update your
-              listing.
+              Looking to update an existing business? Go to your business listing and select update
+              your business.
             </span>
           </p>
         ) : null

@@ -10,6 +10,8 @@ type Props = {
   selectedSlugs: string[];
   onChange: (slugs: string[]) => void;
   disabled?: boolean;
+  /** When selected count reaches this, block further adds but still allow removals. */
+  maxSelected?: number;
   loading?: boolean;
   placeholder?: string;
   emptyMessage?: string;
@@ -21,6 +23,7 @@ export function FacetTypeaheadMultiSelect({
   selectedSlugs,
   onChange,
   disabled,
+  maxSelected,
   loading,
   placeholder = "Search tags…",
   emptyMessage = "No matches",
@@ -34,6 +37,9 @@ export function FacetTypeaheadMultiSelect({
   const [open, setOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
 
+  const atMax =
+    typeof maxSelected === "number" && maxSelected >= 0 && selectedSlugs.length >= maxSelected;
+
   const optionBySlug = useMemo(() => {
     const map = new Map<string, DiscoverSearchTagOption>();
     for (const option of options) {
@@ -43,6 +49,7 @@ export function FacetTypeaheadMultiSelect({
   }, [options]);
 
   const filteredOptions = useMemo(() => {
+    if (atMax) return [];
     const needle = query.trim().toLowerCase();
     if (!needle) return [];
     return options.filter((option) => {
@@ -52,10 +59,10 @@ export function FacetTypeaheadMultiSelect({
         option.slug.replace(/_/g, " ").includes(needle)
       );
     });
-  }, [options, query, selectedSlugs]);
+  }, [atMax, options, query, selectedSlugs]);
 
-  const showSuggestions = open && query.trim().length > 0;
-  const inputDisabled = disabled || loading || options.length === 0;
+  const showSuggestions = open && query.trim().length > 0 && !atMax;
+  const inputDisabled = disabled || loading || options.length === 0 || atMax;
 
   useEffect(() => {
     if (!open) return;
@@ -68,7 +75,7 @@ export function FacetTypeaheadMultiSelect({
   }, [open]);
 
   const addSlug = (slug: string) => {
-    if (selectedSlugs.includes(slug)) return;
+    if (atMax || selectedSlugs.includes(slug)) return;
     onChange([...selectedSlugs, slug]);
     setQuery("");
     setOpen(false);
@@ -91,11 +98,13 @@ export function FacetTypeaheadMultiSelect({
       <div
         className={cn(
           "flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-2 py-1.5",
-          inputDisabled
+          disabled || loading || options.length === 0
             ? selectedSlugs.length > 0
               ? "cursor-not-allowed"
               : "cursor-not-allowed opacity-60"
-            : "cursor-text",
+            : atMax
+              ? "cursor-default"
+              : "cursor-text",
           open && !inputDisabled ? "ring-2 ring-[var(--color-primary)]/20" : "",
         )}
         onMouseDown={(event) => {
@@ -137,9 +146,11 @@ export function FacetTypeaheadMultiSelect({
           placeholder={
             loading
               ? "Loading…"
-              : selectedSlugs.length === 0
-                ? placeholder
-                : "Add another…"
+              : atMax
+                ? "Limit reached"
+                : selectedSlugs.length === 0
+                  ? placeholder
+                  : "Add another…"
           }
           onChange={(event) => {
             setQuery(event.target.value);
