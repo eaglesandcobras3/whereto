@@ -8,6 +8,8 @@ export const FREE_ONBOARD_EXCERPT_MAX = 160;
 export const FREE_ONBOARD_OVERVIEW_MAX = 500;
 export const FREE_ONBOARD_LOCATIONS_MAX = 10;
 export const FREE_ONBOARD_SEARCH_TAGS_MAX = 6;
+/** Comma-separated SEO keyword phrases — keep within a practical SERP/meta budget. */
+export const FREE_ONBOARD_SEARCH_KEYWORDS_MAX = 255;
 
 export const FREE_ONBOARD_TYPES = {
   newListing: "free_new_listing",
@@ -93,7 +95,7 @@ export const freeOnboardBodySchema = z
       .default([]),
     search_keywords: z
       .string()
-      .max(500)
+      .max(FREE_ONBOARD_SEARCH_KEYWORDS_MAX)
       .optional()
       .transform((s) => (s ?? "").trim() || null),
     marketing_opt_in: z.boolean().optional().default(false),
