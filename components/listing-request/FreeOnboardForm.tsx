@@ -40,6 +40,7 @@ type PrefillBusiness = {
   is_storefront: boolean;
   is_service_business: boolean;
   category_id: string | null;
+  service_category_id: string | null;
   search_tags: string[];
   search_keywords: string | null;
 };
@@ -70,6 +71,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [doneRemoval, setDoneRemoval] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<CategoryOption[]>([]);
   const [searchTagOptions, setSearchTagOptions] = useState<string[]>([]);
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
   const [removalOpen, setRemovalOpen] = useState(false);
@@ -89,6 +91,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [suggestedTagsInput, setSuggestedTagsInput] = useState("");
   const [suggestedTagsOpen, setSuggestedTagsOpen] = useState(false);
   const [categoryId, setCategoryId] = useState("");
+  const [serviceCategoryId, setServiceCategoryId] = useState("");
   const [presence, setPresence] = useState<Presence>("");
   const [searchKeywords, setSearchKeywords] = useState("");
 
@@ -101,11 +104,13 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         });
         const j = (await res.json()) as {
           categories?: CategoryOption[];
+          serviceCategories?: CategoryOption[];
           searchTags?: string[];
           error?: string;
         };
         if (!res.ok) throw new Error(j.error ?? "Could not load form options");
         setCategories(j.categories ?? []);
+        setServiceCategories(j.serviceCategories ?? []);
         setSearchTagOptions(j.searchTags ?? []);
       } catch (e) {
         if (controller.signal.aborted) return;
@@ -135,6 +140,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         setExcerpt((b.excerpt ?? "").slice(0, FREE_ONBOARD_EXCERPT_MAX));
         setOverview((b.overview ?? "").slice(0, FREE_ONBOARD_OVERVIEW_MAX));
         setCategoryId(b.category_id ?? "");
+        setServiceCategoryId(b.service_category_id ?? "");
         setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
         // Prefer physical when both were historically true; exclusive choice in the UI.
         if (b.is_storefront) setPresence("storefront");
@@ -174,8 +180,13 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
   function setPresenceExclusive(next: Presence) {
     setPresence(next);
-    if (next === "storefront" && locations.length === 0) {
-      setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+    if (next === "storefront") {
+      setServiceCategoryId("");
+      if (locations.length === 0) {
+        setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+      }
+    } else if (next === "service") {
+      setCategoryId("");
     }
   }
 
@@ -192,6 +203,16 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
     const isStorefront = presence === "storefront";
     const isService = presence === "service";
+    if (isStorefront && !categoryId) {
+      setPending(false);
+      setErr("Choose a category.");
+      return;
+    }
+    if (isService && !serviceCategoryId) {
+      setPending(false);
+      setErr("Choose a service specialty.");
+      return;
+    }
     const locationPayload = isStorefront
       ? locations.map((l) => ({
           town_id: l.town_id,
@@ -218,7 +239,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       phone: String(fd.get("phone") ?? ""),
       excerpt: excerpt.trim(),
       overview: overview.trim(),
-      category_id: categoryId,
+      category_id: isStorefront ? categoryId : null,
+      service_category_id: isService ? serviceCategoryId : null,
       search_tags: selectedTags,
       suggested_tags: suggestedTags.slice(0, suggestedTagSlotsRemaining),
       search_keywords: searchKeywords,
@@ -585,23 +607,54 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <div>
-        <label className={labelClass} htmlFor="category_id">
-          Category
-        </label>
-        <select
-          id="category_id"
-          required
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className={`${inputClass} mt-1.5`}
-        >
-          <option value="">Choose a category</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
+        {presence === "service" ? (
+          <>
+            <label className={labelClass} htmlFor="service_category_id">
+              Service specialty
+            </label>
+            <p className={helpClass}>
+              Pick the closest specialty — this places the listing under Services browse groups
+              (footer and /services hub).
+            </p>
+            <select
+              id="service_category_id"
+              required={presence === "service"}
+              value={serviceCategoryId}
+              onChange={(e) => setServiceCategoryId(e.target.value)}
+              className={`${inputClass} mt-1.5`}
+            >
+              <option value="">Choose a specialty</option>
+              {serviceCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : (
+          <>
+            <label className={labelClass} htmlFor="category_id">
+              Category
+            </label>
+            <select
+              id="category_id"
+              required={presence === "storefront"}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className={`${inputClass} mt-1.5`}
+              disabled={!presence}
+            >
+              <option value="">
+                {presence ? "Choose a category" : "Select location type above first"}
+              </option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
       </div>
 
       <div>

@@ -95,13 +95,28 @@ export async function handleFreeOnboardListingRequest(
     }
   }
 
-  const { data: category } = await supabase
-    .from("business_categories")
-    .select("id, title")
-    .eq("id", d.category_id)
-    .maybeSingle();
-  if (!category) {
+  const { data: category } = d.category_id
+    ? await supabase
+        .from("business_categories")
+        .select("id, title")
+        .eq("id", d.category_id)
+        .maybeSingle()
+    : { data: null };
+  if (d.is_storefront && !category) {
     return NextResponse.json({ error: "Choose a valid category." }, { status: 400 });
+  }
+
+  const { data: serviceCategory } = d.service_category_id
+    ? await supabase
+        .from("service_categories")
+        .select("id, title")
+        .eq("id", d.service_category_id)
+        .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
+        .maybeSingle()
+    : { data: null };
+  if (d.is_service_business && !serviceCategory) {
+    return NextResponse.json({ error: "Choose a valid service specialty." }, { status: 400 });
   }
 
   const { data: vocabTags } = await supabase.from("search_tags_vocabulary").select("tag");
@@ -152,6 +167,9 @@ export async function handleFreeOnboardListingRequest(
     };
   });
 
+  const categoryTitle = category ? String(category.title ?? "") : null;
+  const serviceCategoryTitle = serviceCategory ? String(serviceCategory.title ?? "") : null;
+
   const payload: FreeOnboardPayload = {
     source: "free_onboard",
     submitter_name: d.submitter_name,
@@ -163,8 +181,10 @@ export async function handleFreeOnboardListingRequest(
     phone: d.phone,
     excerpt: d.excerpt,
     overview: d.overview,
-    category_id: d.category_id,
-    category_title: String(category.title ?? ""),
+    category_id: d.is_storefront ? d.category_id : null,
+    category_title: d.is_storefront ? categoryTitle : null,
+    service_category_id: d.is_service_business ? d.service_category_id : null,
+    service_category_title: d.is_service_business ? serviceCategoryTitle : null,
     search_tags: cappedSearchTags,
     suggested_tags: cappedSuggestedTags,
     search_keywords: d.search_keywords,
@@ -239,16 +259,20 @@ export async function handleFreeOnboardListingRequest(
       })
       .join("\n");
 
+    const categoryLine = d.is_service_business
+      ? `Specialty: ${serviceCategoryTitle ?? "(none)"}`
+      : `Category: ${categoryTitle ?? "(none)"}`;
+
     const textBody = [
       isUpdate ? "Free onboard UPDATE request" : "Free onboard NEW listing request",
       "",
       `Submitter: ${d.submitter_name} <${d.submitter_email}>`,
       `Business: ${d.title}`,
-      `Category: ${category.title}`,
+      categoryLine,
       `Marketing opt-in: ${d.marketing_opt_in ? "yes" : "no"}`,
       "",
       "Locations:",
-      locLines,
+      locLines || "(service — no fixed location)",
       "",
       `Excerpt: ${d.excerpt}`,
       "",
@@ -267,20 +291,29 @@ export async function handleFreeOnboardListingRequest(
       .filter((line) => line != null)
       .join("\n");
 
+    const htmlCategoryLabel = d.is_service_business ? "Specialty" : "Category";
+    const htmlCategoryValue = d.is_service_business
+      ? (serviceCategoryTitle ?? "(none)")
+      : (categoryTitle ?? "(none)");
+
     const htmlBody = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5">
 <h1 style="font-size:18px">${isUpdate ? "Free intake update" : "Free intake new listing"}</h1>
 <p>Submitted via <strong>/list-your-business</strong> (free_onboard).</p>
 <p><strong>Submitter:</strong> ${escapeHtml(d.submitter_name)} &lt;${escapeHtml(d.submitter_email)}&gt;</p>
 <p><strong>Business:</strong> ${escapeHtml(d.title)}<br/>
-<strong>Category:</strong> ${escapeHtml(String(category.title))}<br/>
+<strong>${htmlCategoryLabel}:</strong> ${escapeHtml(htmlCategoryValue)}<br/>
 <strong>Marketing opt-in:</strong> ${d.marketing_opt_in ? "yes" : "no"}</p>
 <h2>Locations</h2>
-<ol>${locations
-  .map((l) => {
-    const town = townById.get(l.town_id);
-    return `<li>${escapeHtml(town?.title ?? l.town_id)}${l.address ? ` — ${escapeHtml(l.address)}` : ""}</li>`;
-  })
-  .join("")}</ol>
+${
+  locations.length === 0
+    ? "<p>(service — no fixed location)</p>"
+    : `<ol>${locations
+        .map((l) => {
+          const town = townById.get(l.town_id);
+          return `<li>${escapeHtml(town?.title ?? l.town_id)}${l.address ? ` — ${escapeHtml(l.address)}` : ""}</li>`;
+        })
+        .join("")}</ol>`
+}
 <p><strong>Excerpt:</strong> ${escapeHtml(d.excerpt)}</p>
 <p><strong>Overview:</strong><br/>${escapeHtml(d.overview).replace(/\r?\n/g, "<br>")}</p>
 <p><strong>Search tags:</strong> ${escapeHtml(cappedSearchTags.join(", ") || "(none)")}<br/>
