@@ -21,7 +21,7 @@
     </mj-attributes>
   </mj-head>
   <mj-body background-color="#f7fafb" width="600px">
-    <mj-section background-color="#5DA6A8" padding="28px 32px">
+    <mj-section background-color="#f2f5f5" padding="28px 32px">
       <mj-column>
         <mj-image
           src="{{logoUrl}}"

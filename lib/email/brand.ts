@@ -1,7 +1,10 @@
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { getSiteUrl } from "@/lib/site-url";
 
-/** Brand chrome shared across transactional MJML templates (matches marketing emails). */
+/** Brand chrome shared across transactional MJML templates. */
+/** Matches site sticky nav (`--color-site-chrome`). */
+export const EMAIL_HEADER = "#f2f5f5";
+/** Teal footer / accents from marketing emails. */
 export const EMAIL_TEAL = "#5DA6A8";
 export const EMAIL_TEAL_BUTTON = "#57A0AF";
 export const EMAIL_TEXT = "#1c3257";
@@ -25,7 +28,7 @@ export function emailBrandAssetVars(): Record<string, string> {
 
   return {
     siteUrl: base,
-    logoUrl: emailAssetUrl("/email/logo-header.png"),
+    logoUrl: emailAssetUrl("/email/logo-header-dark.png"),
     waveUrl: emailAssetUrl("/email/wave-accent.png"),
     bannerUrl: emailAssetUrl("/email/beach-towns-banner.jpg"),
     iconInstagramUrl: emailAssetUrl("/email/icons/instagram.png"),
@@ -33,6 +36,7 @@ export function emailBrandAssetVars(): Record<string, string> {
     iconWebsiteUrl: emailAssetUrl("/email/icons/website.png"),
     instagramUrl: instagram,
     tiktokUrl: tiktok,
+    brandHeader: EMAIL_HEADER,
     brandTeal: EMAIL_TEAL,
     brandButton: EMAIL_TEAL_BUTTON,
   };

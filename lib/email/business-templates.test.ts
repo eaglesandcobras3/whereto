@@ -44,8 +44,9 @@ describe("business MJML templates", () => {
     expect(email.html).toContain("WhereTo30A");
     expect(email.html).toContain("Amavida Coffee");
     expect(email.html).toContain("Open Business Portal");
+    expect(email.html).toContain("#f2f5f5");
     expect(email.html).toContain("#5DA6A8");
-    expect(email.html).toContain("/email/logo-header.png");
+    expect(email.html).toContain("/email/logo-header-dark.png");
     expect(email.html).toContain("/email/beach-towns-banner.jpg");
     expect(email.html).toContain("instagram.com/whereto30a");
     expect(email.html).toContain("tiktok.com/@whereto30a");
