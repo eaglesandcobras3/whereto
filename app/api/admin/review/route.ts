@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reviewApiBlocked } from "@/lib/feature-flags";
+import { buildFreeOnboardSearchKeywords } from "@/lib/listing-requests/free-onboard-derived";
 import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TYPES,
@@ -69,6 +70,12 @@ export async function POST(request: NextRequest) {
     status: "pending",
   }));
 
+  const searchTags = d.search_tags.slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX);
+  const suggestedTags = d.suggested_tags.slice(
+    0,
+    Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - searchTags.length),
+  );
+
   const payload: FreeOnboardPayload = {
     source: "free_onboard",
     submitter_name: d.submitter_name,
@@ -81,12 +88,15 @@ export async function POST(request: NextRequest) {
     excerpt: d.excerpt,
     overview: d.overview,
     category_id: d.category_id,
-    search_tags: d.search_tags.slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX),
-    suggested_tags: d.suggested_tags.slice(
-      0,
-      Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - Math.min(d.search_tags.length, FREE_ONBOARD_SEARCH_TAGS_MAX)),
-    ),
-    search_keywords: d.search_keywords,
+    search_tags: searchTags,
+    suggested_tags: suggestedTags,
+    search_keywords: buildFreeOnboardSearchKeywords({
+      title: d.title,
+      isStorefront: d.is_storefront,
+      isServiceBusiness: d.is_service_business,
+      searchTags,
+      suggestedTags,
+    }),
     marketing_opt_in: d.marketing_opt_in,
     target_business_id: targetBusinessId,
     locations,

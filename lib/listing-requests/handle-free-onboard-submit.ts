@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
 import { normalizeSearchTagSlug } from "@/lib/discovery-filters/search-tag-label";
+import { buildFreeOnboardSearchKeywords } from "@/lib/listing-requests/free-onboard-derived";
 import { sendFreeOnboardSubmitterEmail } from "@/lib/listing-requests/free-onboard-notify";
 import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
@@ -170,6 +171,17 @@ export async function handleFreeOnboardListingRequest(
   const categoryTitle = category ? String(category.title ?? "") : null;
   const serviceCategoryTitle = serviceCategory ? String(serviceCategory.title ?? "") : null;
 
+  // search_keywords are derived server-side from name, type, category, and tags.
+  const searchKeywords = buildFreeOnboardSearchKeywords({
+    title: d.title,
+    isStorefront: d.is_storefront,
+    isServiceBusiness: d.is_service_business,
+    categoryTitle: d.is_storefront ? categoryTitle : null,
+    serviceCategoryTitle: d.is_service_business ? serviceCategoryTitle : null,
+    searchTags: cappedSearchTags,
+    suggestedTags: cappedSuggestedTags,
+  });
+
   const payload: FreeOnboardPayload = {
     source: "free_onboard",
     submitter_name: d.submitter_name,
@@ -187,7 +199,7 @@ export async function handleFreeOnboardListingRequest(
     service_category_title: d.is_service_business ? serviceCategoryTitle : null,
     search_tags: cappedSearchTags,
     suggested_tags: cappedSuggestedTags,
-    search_keywords: d.search_keywords,
+    search_keywords: searchKeywords,
     marketing_opt_in: d.marketing_opt_in,
     target_business_id: targetBusinessId,
     locations,
@@ -280,7 +292,7 @@ export async function handleFreeOnboardListingRequest(
       "",
       `Search tags: ${cappedSearchTags.join(", ") || "(none)"}`,
       `Suggested tags: ${cappedSuggestedTags.join(", ") || "(none)"}`,
-      `Search keywords: ${d.search_keywords ?? "(none)"}`,
+      `Search keywords (auto): ${searchKeywords ?? "(none)"}`,
       d.website ? `Website: ${d.website}` : null,
       d.phone ? `Phone: ${d.phone}` : null,
       targetBusinessId ? `Target business id: ${targetBusinessId}` : null,
@@ -318,7 +330,7 @@ ${
 <p><strong>Overview:</strong><br/>${escapeHtml(d.overview).replace(/\r?\n/g, "<br>")}</p>
 <p><strong>Search tags:</strong> ${escapeHtml(cappedSearchTags.join(", ") || "(none)")}<br/>
 <strong>Suggested tags:</strong> ${escapeHtml(cappedSuggestedTags.join(", ") || "(none)")}<br/>
-<strong>Search keywords:</strong> ${escapeHtml(d.search_keywords ?? "(none)")}</p>
+<strong>Search keywords (auto):</strong> ${escapeHtml(searchKeywords ?? "(none)")}</p>
 <p><a href="${escapeHtml(`${baseUrl}/admin/review`)}">Open review queue</a> · item ${escapeHtml(String(reviewItem.id))}</p>
 </body></html>`;
 
