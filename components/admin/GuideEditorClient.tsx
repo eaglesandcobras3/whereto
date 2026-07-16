@@ -8,6 +8,7 @@ import {
   parseSlugListInput,
   readGuideSeoContentFields,
 } from "@/lib/guides/seo-content-fields";
+import { GUIDE_TAG_ALL_TOWNS, guideTagLabel, normalizeGuideTag } from "@/lib/guides/guide-tags";
 
 type PickerOption = { id: string; label: string; sublabel?: string };
 
@@ -211,14 +212,25 @@ export function GuideEditorClient({ guideId }: Props) {
   );
 
   function addSearchTag(raw: string) {
-    const tag = raw
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
+    const tag = normalizeGuideTag(raw);
     if (!tag) return;
     setSearchTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
     setTagDraft("");
+    if (!tagVocabulary.includes(tag)) {
+      void fetch("/api/admin/guides/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag }),
+      })
+        .then(async (res) => {
+          const j = (await res.json()) as { tags?: string[]; error?: string };
+          if (!res.ok) throw new Error(j.error ?? "Failed to save tag");
+          if (j.tags) setTagVocabulary(j.tags);
+        })
+        .catch((e) => {
+          setError(e instanceof Error ? e.message : "Failed to save tag");
+        });
+    }
   }
 
   function removeSearchTag(tag: string) {
@@ -516,10 +528,12 @@ export function GuideEditorClient({ guideId }: Props) {
 
             <div className="mt-3">
               <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Search tags
+                Guide tags
               </span>
               <p className="mt-0.5 text-xs text-zinc-500">
-                Same vocabulary as business search tags. Makes guides findable and matchable to listings.
+                Separate from business search tags. Use{" "}
+                <code className="rounded bg-zinc-100 px-1">{GUIDE_TAG_ALL_TOWNS}</code> to show
+                this guide on every town and area page. New tags are saved to the guide vocabulary.
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {searchTags.map((tag) => (
@@ -530,13 +544,13 @@ export function GuideEditorClient({ guideId }: Props) {
                     className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 hover:bg-zinc-200"
                     title="Remove tag"
                   >
-                    {tag.replace(/_/g, " ")}
+                    {guideTagLabel(tag)}
                     <span aria-hidden>×</span>
                   </button>
                 ))}
               </div>
               <input
-                list="guide-search-tag-vocab"
+                list="guide-tag-vocab"
                 type="text"
                 value={tagDraft}
                 onChange={(e) => setTagDraft(e.target.value)}
@@ -549,14 +563,25 @@ export function GuideEditorClient({ guideId }: Props) {
                 onBlur={() => {
                   if (tagDraft.trim()) addSearchTag(tagDraft);
                 }}
-                placeholder="Add tag (Enter)"
+                placeholder="Add or create tag (Enter)"
                 className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
-              <datalist id="guide-search-tag-vocab">
+              <datalist id="guide-tag-vocab">
                 {tagVocabulary.map((tag) => (
-                  <option key={tag} value={tag} />
+                  <option key={tag} value={tag}>
+                    {guideTagLabel(tag)}
+                  </option>
                 ))}
               </datalist>
+              {!searchTags.includes(GUIDE_TAG_ALL_TOWNS) ? (
+                <button
+                  type="button"
+                  onClick={() => addSearchTag(GUIDE_TAG_ALL_TOWNS)}
+                  className="mt-2 text-xs font-medium text-[var(--color-primary)] hover:underline"
+                >
+                  + Add “All towns”
+                </button>
+              ) : null}
             </div>
 
             <div className="mt-3">

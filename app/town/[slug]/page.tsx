@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTownBySlug } from "@/lib/data/town-hub";
+import { getGuidesForTown, getTownBySlug } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
@@ -7,6 +7,7 @@ import { townPagePath } from "@/lib/routes/town-page-path";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
 import { AreaCard } from "@/components/discovery/AreaCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
+import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { townPageMetadataFromAudit } from "@/lib/seo/hub-metadata";
@@ -34,6 +35,7 @@ import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
+import type { TownGuideCard } from "@/lib/data/town-hub";
 
 type SidebarArea = {
   id: string;
@@ -297,8 +299,11 @@ export default async function TownDetailPage({ params }: Props) {
   const town = await getTownBySlug(slug);
   if (!town) notFound();
 
-  const pageData = await getTownPageData(town.id);
-  return <BasicTownPage town={town} pageData={pageData} />;
+  const [pageData, guides] = await Promise.all([
+    getTownPageData(town.id),
+    getGuidesForTown(town.id),
+  ]);
+  return <BasicTownPage town={town} pageData={pageData} guides={guides} />;
 }
 
 type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
@@ -311,9 +316,11 @@ type TownPageData = {
 function BasicTownPage({
   town,
   pageData,
+  guides,
 }: {
   town: TownRecord;
   pageData: TownPageData;
+  guides: TownGuideCard[];
 }) {
   const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
   const descriptor = getTownDescriptor(town.slug);
@@ -397,6 +404,13 @@ function BasicTownPage({
                 ))}
               </PlaceRelatedSection>
             ) : null}
+
+            <PlaceGuidesSection
+              title={`Guides for ${town.name}`}
+              description={`Local planning guides for ${town.name} and the corridor.`}
+              guides={guides}
+              analyticsCategory="town_guides"
+            />
 
             {planningProfile ? (
               <SeoImprovementsGate>
