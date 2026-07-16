@@ -12,7 +12,6 @@ import {
   FREE_ONBOARD_LOCATIONS_MAX,
   FREE_ONBOARD_OVERVIEW_MAX,
   FREE_ONBOARD_REMOVAL_REASON_MAX,
-  FREE_ONBOARD_SEARCH_KEYWORDS_MAX,
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TITLE_MAX,
   parseSuggestedTagsInput,
@@ -42,7 +41,6 @@ type PrefillBusiness = {
   category_id: string | null;
   service_category_id: string | null;
   search_tags: string[];
-  search_keywords: string | null;
 };
 
 type Props = {
@@ -93,7 +91,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [categoryId, setCategoryId] = useState("");
   const [serviceCategoryId, setServiceCategoryId] = useState("");
   const [presence, setPresence] = useState<Presence>("");
-  const [searchKeywords, setSearchKeywords] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -152,8 +149,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             address: b.address ?? "",
           },
         ]);
-        // Do not prefill existing SEO keywords on update.
-        setSearchKeywords("");
       } catch (e) {
         if (controller.signal.aborted) return;
         setErr(e instanceof Error ? e.message : "Could not load listing");
@@ -243,7 +238,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       service_category_id: isService ? serviceCategoryId : null,
       search_tags: selectedTags,
       suggested_tags: suggestedTags.slice(0, suggestedTagSlotsRemaining),
-      search_keywords: searchKeywords,
       marketing_opt_in: fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? businessSlug ?? null,
@@ -660,8 +654,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       <div>
         <p className={labelClass}>Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX})</p>
         <p className={helpClass}>
-          Pick from our list — these power on-site discovery. Use specific keywords like pizza,
-          seafood, or waterfront instead of broad terms like restaurant. Do not tag location — town
+          Pick from our list — these power on-site discovery. Prefer specific tags like pizza,
+          seafood, or waterfront instead of broad ones like restaurant. Do not tag location — town
           is selected separately above.
         </p>
         <div className="mt-2">
@@ -703,8 +697,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             <p className={helpClass}>
               Can&apos;t find the right tag above? Suggest new ones as a comma-separated list. Our
               team reviews suggestions before they go live. Suggestions share the same{" "}
-              {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag limit as the list above — they are not the same as
-              SEO keywords below.
+              {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag limit as the list above.
             </p>
             <input
               id="suggested_tags"
@@ -731,27 +724,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             </p>
           </div>
         ) : null}
-      </div>
-
-      <div>
-        <label className={labelClass} htmlFor="search_keywords">
-          SEO keywords
-        </label>
-        <p className={helpClass}>
-          These keywords help search engines like Google understand your business. Enter
-          comma-separated search phrases, such as pizza restaurant in Rosemary Beach, best seafood on
-          30A, or gluten-free restaurant near Seaside.
-        </p>
-        <input
-          id="search_keywords"
-          name="search_keywords"
-          value={searchKeywords}
-          maxLength={FREE_ONBOARD_SEARCH_KEYWORDS_MAX}
-          onChange={(e) => setSearchKeywords(e.target.value.slice(0, FREE_ONBOARD_SEARCH_KEYWORDS_MAX))}
-          className={`${inputClass} mt-1.5`}
-          placeholder="Comma-separated phrases"
-        />
-        <CharCount value={searchKeywords} max={FREE_ONBOARD_SEARCH_KEYWORDS_MAX} />
       </div>
 
       {err ? (
