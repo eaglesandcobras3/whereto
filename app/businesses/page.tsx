@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { CategoryHubSections } from "@/components/browse/CategoryHubSections";
-import { countCategoryHubBusinesses, getCategoryHubSections } from "@/lib/data/category-hub";
-import { hubBusinessesIntro } from "@/lib/seo/page-intro-copy";
+import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
+import { countCategoryHubBusinesses, getCategoryHubSections } from "@/lib/data/category-hub";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { hubBusinessesIntro } from "@/lib/seo/page-intro-copy";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 
 export const revalidate = 21600;
 
@@ -83,6 +84,8 @@ export default async function BusinessesPage() {
           }
         />
       </section>
+
+      <ListBusinessHomeCta />
     </div>
   );
 }
