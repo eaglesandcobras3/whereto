@@ -1,8 +1,9 @@
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
 
 /**
- * End-user browse groups for `/services` hub (Option A — six rolled-up sections).
+ * End-user browse groups for `/services` hub and footer.
  * Granular `service_categories.slug` values stay in the DB for search / `?specialty=`.
+ * Every specialty maps to exactly one named group (no catch-all bury).
  */
 export const SERVICE_CATEGORY_GROUP_SLUGS = [
   "home_trades",
@@ -10,7 +11,12 @@ export const SERVICE_CATEGORY_GROUP_SLUGS = [
   "professional",
   "health_wellness",
   "vacation_guest",
-  "marine_auto_more",
+  "creative_events",
+  "marine",
+  "auto_transport",
+  "tech_office",
+  "family_pets",
+  "other_services",
 ] as const;
 
 export type ServiceCategoryGroupSlug = (typeof SERVICE_CATEGORY_GROUP_SLUGS)[number];
@@ -21,7 +27,12 @@ export const SERVICE_CATEGORY_GROUP_LABELS: Record<ServiceCategoryGroupSlug, str
   professional: "Professional & financial",
   health_wellness: "Health & wellness",
   vacation_guest: "Vacation & guest services",
-  marine_auto_more: "Marine, auto & more",
+  creative_events: "Creative & events",
+  marine: "Marine",
+  auto_transport: "Auto & transport",
+  tech_office: "Tech & workspace",
+  family_pets: "Family, pets & education",
+  other_services: "Other services",
 };
 
 /** Material icon per browse group (CollapsibleBrowseSection). */
@@ -31,7 +42,12 @@ export const SERVICE_CATEGORY_GROUP_ICONS: Record<ServiceCategoryGroupSlug, stri
   professional: "account_balance",
   health_wellness: "spa",
   vacation_guest: "holiday_village",
-  marine_auto_more: "more_horiz",
+  creative_events: "palette",
+  marine: "sailing",
+  auto_transport: "directions_car",
+  tech_office: "computer",
+  family_pets: "pets",
+  other_services: "more_horiz",
 };
 
 /** Which specialty slug belongs to which hub section. */
@@ -79,25 +95,22 @@ export const SERVICE_CATEGORY_GROUP_MEMBERS: Record<
     "fitness_wellness",
   ],
   vacation_guest: ["vacation_rentals", "property_management", "home_staging"],
-  marine_auto_more: [
-    "marine_boat",
-    "towing_transport",
-    "auto_repair",
-    "car_rental",
+  creative_events: [
     "design_architecture",
     "photography",
     "events_wedding",
     "catering_events",
     "marketing_creative",
-    "it_computer",
-    "office_workspace",
-    "education_childcare",
-    "pet_services",
-    "storage",
-    "waste_septic",
-    "laundry_dry_clean",
   ],
+  marine: ["marine_boat"],
+  auto_transport: ["auto_repair", "towing_transport", "car_rental"],
+  tech_office: ["it_computer", "office_workspace"],
+  family_pets: ["education_childcare", "pet_services"],
+  other_services: ["storage", "waste_septic", "laundry_dry_clean"],
 };
+
+/** Retired Option A catch-all — kept for redirects / discover URL normalization. */
+export const LEGACY_SERVICE_CATEGORY_GROUP_SLUGS = ["marine_auto_more"] as const;
 
 const SLUG_TO_GROUP = new Map<ServiceCategorySlug, ServiceCategoryGroupSlug>();
 for (const groupSlug of SERVICE_CATEGORY_GROUP_SLUGS) {

@@ -31,6 +31,12 @@ describe("normalizeServiceCategoryGroupSlug", () => {
   it("maps specialty slugs to service groups", () => {
     expect(normalizeServiceCategoryGroupSlug("plumbing")).toBe("home_trades");
     expect(normalizeServiceCategoryGroupSlug("home_trades")).toBe("home_trades");
+    expect(normalizeServiceCategoryGroupSlug("marketing_creative")).toBe("creative_events");
+    expect(normalizeServiceCategoryGroupSlug("creative_events")).toBe("creative_events");
+  });
+
+  it("drops the retired marine_auto_more catch-all", () => {
+    expect(normalizeServiceCategoryGroupSlug("marine_auto_more")).toBeUndefined();
   });
 });
 

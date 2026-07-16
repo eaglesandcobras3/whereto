@@ -49,20 +49,25 @@ export const SERVICE_CATEGORY_SLUGS = [
   "veterinary",
   "salon_spa",
   "fitness_wellness",
-  // marine_auto_more
-  "marine_boat",
+  // creative_events
   "design_architecture",
   "photography",
   "events_wedding",
   "catering_events",
   "marketing_creative",
-  "it_computer",
-  "office_workspace",
+  // marine
+  "marine_boat",
+  // auto_transport
   "auto_repair",
   "towing_transport",
   "car_rental",
+  // tech_office
+  "it_computer",
+  "office_workspace",
+  // family_pets
   "education_childcare",
   "pet_services",
+  // other_services
   "storage",
   "waste_septic",
   "laundry_dry_clean",

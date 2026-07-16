@@ -53,18 +53,24 @@ The import script (`scripts/import-services-csv.ts`) rejects obvious storefronts
 
 ## Specialty groups (hub / search sections)
 
+Every specialty maps to exactly one browse group. Footer and `/services` show groups that
+currently have ≥1 published vendor.
+
 | Group slug | Label | Specialty slugs |
 |------------|-------|-----------------|
-| `outdoor_property` | Outdoor & property | `landscaping`, `lawn_care`, `pool_spa`, `irrigation`, `pest_control`, `property_management`, `vacation_rentals`, `home_staging` |
 | `home_trades` | Home trades | `plumbing`, `electrical`, `hvac`, `painting`, `handyman`, `roofing`, `cleaning`, `pressure_washing`, `junk_removal`, `moving`, `flooring`, `concrete_masonry`, `home_exterior`, `appliance_repair`, `solar_energy`, `restoration`, `contractors`, `home_improvement`, `home_inspection`, `security_systems` |
-| `marine` | Marine | `marine_boat` |
+| `outdoor_property` | Outdoor & property | `landscaping`, `lawn_care`, `pool_spa`, `irrigation`, `pest_control` |
 | `professional` | Professional & financial | `insurance`, `accounting`, `legal`, `real_estate`, `financial`, `staffing`, `engineering_survey` |
 | `health_wellness` | Health & wellness | `health_medical`, `counseling`, `veterinary`, `salon_spa`, `fitness_wellness` |
+| `vacation_guest` | Vacation & guest services | `vacation_rentals`, `property_management`, `home_staging` |
 | `creative_events` | Creative & events | `design_architecture`, `photography`, `events_wedding`, `catering_events`, `marketing_creative` |
-| `tech_office` | Tech & workspace | `it_computer`, `office_workspace` |
+| `marine` | Marine | `marine_boat` |
 | `auto_transport` | Auto & transport | `auto_repair`, `towing_transport`, `car_rental` |
+| `tech_office` | Tech & workspace | `it_computer`, `office_workspace` |
 | `family_pets` | Family, pets & education | `education_childcare`, `pet_services` |
 | `other_services` | Other services | `storage`, `waste_septic`, `laundry_dry_clean` |
+
+Code source: `lib/service-categories/groups.ts`. Legacy catch-all `marine_auto_more` redirects to `/services`.
 
 ## Complete specialty slug list (56)
 
@@ -79,6 +85,11 @@ Each slug is mutually exclusive per listing (pick the **best single fit**). Clas
 | `pool_spa` | Pool & spa | Pool clean/repair, spa service |
 | `irrigation` | Irrigation | Sprinkler install/repair |
 | `pest_control` | Pest control | Exterminators, termite |
+
+### Vacation & guest services
+
+| Slug | Label | Examples |
+|------|-------|----------|
 | `property_management` | Property management | HOA, long-term rental managers |
 | `vacation_rentals` | Vacation rentals | STR managers, rental agencies |
 | `home_staging` | Home staging | Staging for sale/rental |
