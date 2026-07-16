@@ -73,17 +73,14 @@
         <mj-text align="center" color="#ffffff" font-size="15px" font-style="italic" line-height="1.5" padding-bottom="6px">
           Your Local Guide to All Things 30A
         </mj-text>
-        <mj-text align="center" color="#ffffff" font-size="12px" letter-spacing="2px" font-weight="700" padding-bottom="18px">
-          <a href="{{siteUrl}}" style="color:#ffffff;text-decoration:none;">WHERETO30A.COM</a>
+        <mj-text align="center" color="#ffffff" font-size="14px" font-weight="600" padding-bottom="18px">
+          <a href="mailto:hello@whereto30a.com" style="color:#ffffff;text-decoration:underline;">hello@whereto30a.com</a>
         </mj-text>
         <mj-social font-size="0" icon-size="32px" mode="horizontal" align="center" padding="0 0 8px" inner-padding="0 8px">
           <mj-social-element href="{{instagramUrl}}" src="{{iconInstagramUrl}}" background-color="#5DA6A8" alt="Instagram" />
           <mj-social-element href="{{tiktokUrl}}" src="{{iconTiktokUrl}}" background-color="#5DA6A8" alt="TikTok" />
           <mj-social-element href="{{siteUrl}}" src="{{iconWebsiteUrl}}" background-color="#5DA6A8" alt="Website" />
         </mj-social>
-        <mj-text align="center" color="#e7f4f5" font-size="12px" padding-top="14px">
-          <a href="mailto:hello@whereto30a.com" style="color:#ffffff;text-decoration:underline;">hello@whereto30a.com</a>
-        </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>

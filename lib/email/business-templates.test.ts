@@ -52,6 +52,8 @@ describe("business MJML templates", () => {
     expect(email.html).toContain("/email/icons/instagram.png");
     expect(email.html).toContain("/email/icons/tiktok.png");
     expect(email.html).toContain("/email/icons/website.png");
+    expect(email.html).toContain("mailto:hello@whereto30a.com");
+    expect(email.html).not.toContain("WHERETO30A.COM");
     expect(email.html).not.toContain("{{businessTitle}}");
   });
 
