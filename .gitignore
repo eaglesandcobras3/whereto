@@ -27,6 +27,7 @@
 .DS_Store
 *.pem
 docs/seo-audit-report-*.md
+lib/email/.previews/
 
 # debug
 npm-debug.log*
