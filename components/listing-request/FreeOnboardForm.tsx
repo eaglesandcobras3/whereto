@@ -654,8 +654,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       <div>
         <p className={labelClass}>Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX})</p>
         <p className={helpClass}>
-          Pick from our list — these power on-site discovery. Use specific keywords like pizza,
-          seafood, or waterfront instead of broad terms like restaurant. Do not tag location — town
+          Pick from our list — these power on-site discovery. Prefer specific tags like pizza,
+          seafood, or waterfront instead of broad ones like restaurant. Do not tag location — town
           is selected separately above.
         </p>
         <div className="mt-2">

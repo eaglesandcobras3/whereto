@@ -171,7 +171,7 @@ export async function handleFreeOnboardListingRequest(
   const categoryTitle = category ? String(category.title ?? "") : null;
   const serviceCategoryTitle = serviceCategory ? String(serviceCategory.title ?? "") : null;
 
-  // SEO keywords are derived server-side — ignore any client-supplied value.
+  // search_keywords are derived server-side from name, type, category, and tags.
   const searchKeywords = buildFreeOnboardSearchKeywords({
     title: d.title,
     isStorefront: d.is_storefront,
@@ -292,7 +292,7 @@ export async function handleFreeOnboardListingRequest(
       "",
       `Search tags: ${cappedSearchTags.join(", ") || "(none)"}`,
       `Suggested tags: ${cappedSuggestedTags.join(", ") || "(none)"}`,
-      `Search keywords: ${d.search_keywords ?? "(none)"}`,
+      `Search keywords (auto): ${searchKeywords ?? "(none)"}`,
       d.website ? `Website: ${d.website}` : null,
       d.phone ? `Phone: ${d.phone}` : null,
       targetBusinessId ? `Target business id: ${targetBusinessId}` : null,
@@ -330,7 +330,7 @@ ${
 <p><strong>Overview:</strong><br/>${escapeHtml(d.overview).replace(/\r?\n/g, "<br>")}</p>
 <p><strong>Search tags:</strong> ${escapeHtml(cappedSearchTags.join(", ") || "(none)")}<br/>
 <strong>Suggested tags:</strong> ${escapeHtml(cappedSuggestedTags.join(", ") || "(none)")}<br/>
-<strong>Search keywords:</strong> ${escapeHtml(d.search_keywords ?? "(none)")}</p>
+<strong>Search keywords (auto):</strong> ${escapeHtml(searchKeywords ?? "(none)")}</p>
 <p><a href="${escapeHtml(`${baseUrl}/admin/review`)}">Open review queue</a> · item ${escapeHtml(String(reviewItem.id))}</p>
 </body></html>`;
 

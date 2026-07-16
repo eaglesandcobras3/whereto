@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("businesses_view")
     .select(
-      "id, title, slug, town_id, address, website, phone, excerpt, overview, content, is_storefront, is_service_business, primary_category_id, service_category_id, search_tags, search_keywords, towns ( title, slug )",
+      "id, title, slug, town_id, address, website, phone, excerpt, overview, content, is_storefront, is_service_business, primary_category_id, service_category_id, search_tags, towns ( title, slug )",
     )
     .eq("slug", slug)
     .is("archived_at", null)
@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
       search_tags: Array.isArray(data.search_tags)
         ? (data.search_tags as string[]).slice(0, 6)
         : [],
-      search_keywords: (data.search_keywords as string | null) ?? null,
     },
   });
 }

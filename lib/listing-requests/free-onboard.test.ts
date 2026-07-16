@@ -123,17 +123,6 @@ describe("free onboard schema limits", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("ignores client-supplied search keywords", () => {
-    const parsed = freeOnboardBodySchema.safeParse({
-      ...base,
-      search_keywords: "espresso, seaside coffee",
-    });
-    expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.search_keywords).toBeNull();
-    }
-  });
-
   it("accepts website without http scheme", () => {
     const parsed = freeOnboardBodySchema.safeParse({
       ...base,
@@ -237,15 +226,6 @@ describe("free onboard schema limits", () => {
       freeOnboardBodySchema.safeParse({
         ...base,
         submitter_email: "not-an-email",
-      }).success,
-    ).toBe(false);
-  });
-
-  it("rejects over-limit search keywords strings", () => {
-    expect(
-      freeOnboardBodySchema.safeParse({
-        ...base,
-        search_keywords: "k".repeat(FREE_ONBOARD_SEARCH_KEYWORDS_MAX + 1),
       }).success,
     ).toBe(false);
   });

@@ -364,7 +364,7 @@ describe("approveFreeUpdate search_keywords", () => {
     search_keywords: "espresso, seaside coffee",
   };
 
-  it("writes generated SEO keywords from name, type, category, and tags", async () => {
+  it("writes generated search_keywords from name, type, category, and tags", async () => {
     const { supabase, updates } = mockUpdateApproveSupabase({
       payload: basePayload(),
       existing,
@@ -379,7 +379,7 @@ describe("approveFreeUpdate search_keywords", () => {
     );
   });
 
-  it("keeps existing SEO keywords only when generation has nothing to write", async () => {
+  it("keeps existing search_keywords only when generation has nothing to write", async () => {
     const { supabase, updates } = mockUpdateApproveSupabase({
       payload: {
         ...basePayload(),

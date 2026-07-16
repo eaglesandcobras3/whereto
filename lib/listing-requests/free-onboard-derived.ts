@@ -40,7 +40,7 @@ export type FreeOnboardSearchKeywordsInput = {
 };
 
 /**
- * Build comma-separated SEO/search keywords from listing signals the submitter
+ * Build comma-separated search_keywords from listing signals the submitter
  * already provides (name, storefront/service type, category, tags). Not shown on the form.
  */
 export function buildFreeOnboardSearchKeywords(
