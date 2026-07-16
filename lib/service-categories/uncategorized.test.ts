@@ -12,7 +12,7 @@ describe("service uncategorized bucket", () => {
     expect(serviceUncategorizedHubPath()).toBe("/services/uncategorized");
     expect(SERVICE_UNCATEGORIZED_PUBLIC_SEGMENT).toBe("uncategorized");
     expect(SERVICE_UNCATEGORIZED_SECTION_ID).toBe("__uncategorized__");
-    expect(SERVICE_UNCATEGORIZED_TITLE).toBe("Other providers");
+    expect(SERVICE_UNCATEGORIZED_TITLE).toBe("Other");
   });
 
   it("recognizes hub section id and public segment", () => {

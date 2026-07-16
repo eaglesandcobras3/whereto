@@ -25,7 +25,7 @@ makes the listing appear under Services footer links and the `/services` Profess
 ### Uncategorized (UI-only — not a specialty slug)
 
 Service vendors with `is_service_business=true` and null `service_category_id` appear in an
-**Other providers** section on `/services` and at `/services/uncategorized` (also linked from the
+**Other** section on `/services` and at `/services/uncategorized` (also linked from the
 footer when the count is &gt; 0). This is a surfacing bucket only — **do not** add a catch-all
 `other` row to `service_categories`. Assign a real specialty when possible.
 

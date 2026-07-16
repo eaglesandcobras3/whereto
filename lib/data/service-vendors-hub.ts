@@ -218,7 +218,7 @@ export async function countServiceVendors(): Promise<number> {
   return count ?? 0;
 }
 
-/** Published service vendors with no specialty — UI-only “Other providers” bucket. */
+/** Published service vendors with no specialty — UI-only “Other” bucket. */
 export async function loadUncategorizedServiceVendors(
   query?: string | null,
 ): Promise<ServiceVendorRow[]> {

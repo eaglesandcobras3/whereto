@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   ),
   ...openGraphForPage({
     path: hubPath,
-    title: "Other service providers on 30A | WhereTo30A",
+    title: "Other on 30A | WhereTo30A",
     description:
       "Regional service providers on 30A awaiting a specialty classification.",
   }),
@@ -52,7 +52,7 @@ export default async function UncategorizedServiceVendorsPage() {
         url: `/business/${v.slug}`,
       })),
     ),
-    name: "Other service providers on 30A",
+    name: `${SERVICE_UNCATEGORIZED_TITLE} service providers on 30A`,
     description: "Regional service providers without a specialty classification",
     numberOfItems: vendors.length,
   };

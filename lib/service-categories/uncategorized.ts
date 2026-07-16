@@ -6,7 +6,7 @@ import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
  */
 export const SERVICE_UNCATEGORIZED_SECTION_ID = "__uncategorized__" as const;
 export const SERVICE_UNCATEGORIZED_PUBLIC_SEGMENT = "uncategorized" as const;
-export const SERVICE_UNCATEGORIZED_TITLE = "Other providers";
+export const SERVICE_UNCATEGORIZED_TITLE = "Other";
 export const SERVICE_UNCATEGORIZED_ICON = "more_horiz";
 
 export function serviceUncategorizedHubPath(): string {
