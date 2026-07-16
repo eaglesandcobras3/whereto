@@ -1,11 +1,12 @@
 stages:
   - check
+  - e2e
 
-# MR / main gate: lint, unit tests, production build, Playwright e2e.
-# Search quality eval (npm run eval:search) is a manual/local tool — not a deploy gate.
+# MR / main gate: lint, unit tests, production build (placeholder Supabase — no secrets).
+# Content e2e runs against Vercel (real data already baked in at Vercel build).
 check:
   stage: check
-  image: mcr.microsoft.com/playwright:v1.59.1-noble
+  image: node:20
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
@@ -14,9 +15,31 @@ check:
     - npm run lint
     - npm test
     - npm run build
-    - npm run test:e2e
   variables:
-    CI: "1"
     NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_not_real_00000000
     SUPABASE_SECRET_KEY: sb_secret_ci_placeholder_not_real_00000000
+
+# Playwright against a deployed Vercel URL. No Supabase secret required in GitLab.
+#
+# Set CI/CD variable PLAYWRIGHT_BASE_URL (e.g. https://whereto30a.com), or pass it
+# when triggering the pipeline after a Vercel preview deploy. Optional:
+# VERCEL_AUTOMATION_BYPASS_SECRET if Deployment Protection is enabled.
+e2e:vercel:
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.59.1-noble
+  needs: ["check"]
+  rules:
+    - if: '$PLAYWRIGHT_BASE_URL'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: on_success
+      variables:
+        PLAYWRIGHT_BASE_URL: https://whereto30a.com
+    - when: never
+  script:
+    - npm ci
+    - npm run test:e2e
+  variables:
+    CI: "1"
+    E2E_LIVE_DATA: "1"

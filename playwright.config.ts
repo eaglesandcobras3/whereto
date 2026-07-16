@@ -2,6 +2,18 @@ import { defineConfig, devices } from "@playwright/test";
 
 const isCi = !!process.env.CI;
 
+/**
+ * Remote target (Vercel preview / production). When set, Playwright does not
+ * start a local Next server and needs no Supabase secrets in CI.
+ */
+const remoteBaseURL =
+  process.env.PLAYWRIGHT_BASE_URL?.trim() ||
+  process.env.BASE_URL?.trim() ||
+  "";
+
+const baseURL = remoteBaseURL || "http://127.0.0.1:3000";
+const useRemoteTarget = Boolean(remoteBaseURL);
+
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://example.supabase.co";
 const supabasePublishableKey =
@@ -13,6 +25,8 @@ const supabaseSecretKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   "sb_secret_e2e_placeholder_not_real_00000000";
 
+const vercelBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
@@ -23,22 +37,33 @@ export default defineConfig({
   timeout: 60_000,
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: "http://127.0.0.1:3000",
+    baseURL,
     trace: "on-first-retry",
+    ...(vercelBypass
+      ? {
+          extraHTTPHeaders: {
+            "x-vercel-protection-bypass": vercelBypass,
+          },
+        }
+      : {}),
   },
-  webServer: {
-    // CI runs `npm run build` first — exercise the production server there.
-    command: isCi
-      ? "npm run start -- --hostname 127.0.0.1 --port 3000"
-      : "npm run dev -- --hostname 127.0.0.1 --port 3000",
-    url: "http://127.0.0.1:3000",
-    timeout: 180_000,
-    reuseExistingServer: !isCi,
-    env: {
-      ...process.env,
-      NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: supabasePublishableKey,
-      SUPABASE_SECRET_KEY: supabaseSecretKey,
-    },
-  },
+  // Local/dev only. Against Vercel, the deployment is already built with real env.
+  ...(useRemoteTarget
+    ? {}
+    : {
+        webServer: {
+          command: isCi
+            ? "npm run start -- --hostname 127.0.0.1 --port 3000"
+            : "npm run dev -- --hostname 127.0.0.1 --port 3000",
+          url: "http://127.0.0.1:3000",
+          timeout: 180_000,
+          reuseExistingServer: !isCi,
+          env: {
+            ...process.env,
+            NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: supabasePublishableKey,
+            SUPABASE_SECRET_KEY: supabaseSecretKey,
+          },
+        },
+      }),
 });

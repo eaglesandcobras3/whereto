@@ -6,12 +6,21 @@ export function isPlaceholderSupabaseUrl(url: string | undefined): boolean {
   return /example\.supabase\.co/i.test(url);
 }
 
+/** True when Playwright is aimed at a deployed site (Vercel preview/prod). */
+export function isRemoteTarget(): boolean {
+  return Boolean(
+    process.env.PLAYWRIGHT_BASE_URL?.trim() || process.env.BASE_URL?.trim(),
+  );
+}
+
 /**
  * True when the suite can expect seeded entity pages (town/business/guide detail).
- * Set `E2E_LIVE_DATA=1` or point `NEXT_PUBLIC_SUPABASE_URL` at a real project.
+ * Remote Vercel targets always count as live; otherwise set `E2E_LIVE_DATA=1`
+ * or a real `NEXT_PUBLIC_SUPABASE_URL`.
  */
 export function hasLiveData(): boolean {
   if (process.env.E2E_LIVE_DATA === "1") return true;
+  if (isRemoteTarget()) return true;
   return !isPlaceholderSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
 }
 

@@ -16,7 +16,6 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - run: npx playwright install chromium --with-deps
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -24,9 +23,25 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_not_real_00000000
           SUPABASE_SECRET_KEY: sb_secret_ci_placeholder_not_real_00000000
+
+  # Content e2e against production Vercel. No Supabase secret in GitHub.
+  # For preview URLs, set repository variable PLAYWRIGHT_BASE_URL or use a
+  # deployment_status workflow that passes the preview target_url.
+  e2e-vercel:
+    needs: check
+    if: github.ref == 'refs/heads/main' || vars.PLAYWRIGHT_BASE_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
       - run: npm run test:e2e
         env:
           CI: "1"
-          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_not_real_00000000
-          SUPABASE_SECRET_KEY: sb_secret_ci_placeholder_not_real_00000000
+          E2E_LIVE_DATA: "1"
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL != '' && vars.PLAYWRIGHT_BASE_URL || 'https://whereto30a.com' }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}

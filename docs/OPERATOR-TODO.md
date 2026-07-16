@@ -310,6 +310,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
+| 2026-07-16 | Playwright e2e against Vercel via `PLAYWRIGHT_BASE_URL` (no Supabase secret in GitLab). Set CI var for preview URLs; main defaults to https://whereto30a.com. Optional `VERCEL_AUTOMATION_BYPASS_SECRET` for Deployment Protection |
 | 2026-07-14 | Playwright e2e suite expanded for public pages + redirects; GitLab CI runs `npm run test:e2e` (Playwright image). Optional detail coverage: set `E2E_LIVE_DATA=1` with real Supabase secrets |
 | 2026-07-14 | PostHog `free_onboard`: no-account multi-location intake → `portal_review_items`; admin create/skip per location; submitter emailed when live/rejected; SQL [free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) |
 | 2026-07-14 | `seo_improvements`: removed related-guide modules from town/area pages, intent-cluster grouping on `/guides`, and towns-hub travel-style guide links |
