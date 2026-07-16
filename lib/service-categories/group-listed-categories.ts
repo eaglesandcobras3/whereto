@@ -38,14 +38,14 @@ export function groupListedServiceCategories(
   );
   const ungrouped = categories.filter((c) => c.vendor_count > 0 && !assigned.has(c.slug));
   if (ungrouped.length) {
-    const catchAll = grouped.find((g) => g.groupSlug === "marine_auto_more");
+    const catchAll = grouped.find((g) => g.groupSlug === "other_services");
     if (catchAll) {
       catchAll.categories.push(...ungrouped);
       catchAll.totalVendors += ungrouped.reduce((sum, c) => sum + c.vendor_count, 0);
     } else {
       grouped.push({
-        groupSlug: "marine_auto_more",
-        groupLabel: SERVICE_CATEGORY_GROUP_LABELS.marine_auto_more,
+        groupSlug: "other_services",
+        groupLabel: SERVICE_CATEGORY_GROUP_LABELS.other_services,
         totalVendors: ungrouped.reduce((sum, c) => sum + c.vendor_count, 0),
         categories: ungrouped,
       });

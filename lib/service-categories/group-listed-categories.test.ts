@@ -34,9 +34,11 @@ describe("groupListedServiceCategories", () => {
       cat("insurance", 1),
       cat("plumbing", 3),
       cat("vacation_rentals", 2),
+      cat("marketing_creative", 1),
     ]);
     expect(findGroupForSpecialtySlug(grouped, "insurance")).toBe("professional");
     expect(findGroupForSpecialtySlug(grouped, "plumbing")).toBe("home_trades");
     expect(findGroupForSpecialtySlug(grouped, "vacation_rentals")).toBe("vacation_guest");
+    expect(findGroupForSpecialtySlug(grouped, "marketing_creative")).toBe("creative_events");
   });
 });
