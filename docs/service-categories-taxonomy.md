@@ -9,7 +9,25 @@
 | **Storefront browse** | `business_categories` → `primary_category_id` | Places you visit: eat, shop, drink | `restaurants`, `shopping`, `bars`, `services` |
 | **Service specialty** | `service_categories` → `service_category_id` | Providers you hire, book, or call | `hvac`, `insurance`, `legal` |
 
-A listing can be `is_service_business=true` with storefront category `services` **and** a specialty slug. Restaurants and retail shops should stay `is_service_business=false` even if the CSV source file called them “services.”
+A listing can be `is_service_business=true` with a specialty on `service_category_id`.
+Do **not** use the storefront catch-all slug `services` for new service vendors — it is
+legacy/search-only and does not power footer or hub browse groups.
+
+### Free intake (`/list-your-business`)
+
+- **Physical location** → `is_storefront` + `primary_category_id` (`business_categories`)
+- **No fixed location / by appointment** → `is_service_business` + `service_category_id` (`service_categories`)
+
+Service intakes must collect a specialty (e.g. `legal`, `insurance`, `accounting`). That is what
+makes the listing appear under Services footer links and the `/services` Professional & financial
+(and other) dropdowns. A storefront category like `professional_services` alone does **not**.
+
+### Uncategorized (UI-only — not a specialty slug)
+
+Service vendors with `is_service_business=true` and null `service_category_id` appear in an
+**Other** section on `/services` and at `/services/uncategorized` (also linked from the
+footer when the count is &gt; 0). This is a surfacing bucket only — **do not** add a catch-all
+`other` row to `service_categories`. Assign a real specialty when possible.
 
 ## When `is_service_business` should be true
 

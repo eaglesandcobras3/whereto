@@ -82,6 +82,7 @@ export function ReviewQueueClient() {
         excerpt: "",
         overview: "",
         category_id: "",
+        service_category_id: "",
         search_tags: [],
         suggested_tags: [],
         search_keywords: "",
@@ -334,8 +335,16 @@ export function ReviewQueueClient() {
                           {String(item.payload.overview ?? "")}
                         </p>
                         <p>
-                          <span className="font-medium text-zinc-800">Category:</span>{" "}
-                          {String(item.payload.category_title ?? item.payload.category_id ?? "")}
+                          <span className="font-medium text-zinc-800">
+                            {item.payload.is_service_business ? "Specialty:" : "Category:"}
+                          </span>{" "}
+                          {item.payload.is_service_business
+                            ? String(
+                                item.payload.service_category_title ??
+                                  item.payload.service_category_id ??
+                                  "",
+                              )
+                            : String(item.payload.category_title ?? item.payload.category_id ?? "")}
                         </p>
                         <p>
                           <span className="font-medium text-zinc-800">Search tags:</span>{" "}

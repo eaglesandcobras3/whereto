@@ -135,14 +135,38 @@ describe("free onboard schema limits", () => {
     ).toBe(false);
   });
 
-  it("allows service-only intakes without locations", () => {
+  it("allows service-only intakes without locations when specialty is set", () => {
     const parsed = freeOnboardBodySchema.safeParse({
       ...base,
       is_storefront: false,
       is_service_business: true,
       locations: [],
+      category_id: null,
+      service_category_id: "33333333-3333-4333-8333-333333333333",
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it("requires a service specialty for service-only intakes", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        is_storefront: false,
+        is_service_business: true,
+        locations: [],
+        category_id: null,
+        service_category_id: null,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires a storefront category for physical locations", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        category_id: null,
+      }).success,
+    ).toBe(false);
   });
 
   it("requires locations for physical storefronts", () => {
