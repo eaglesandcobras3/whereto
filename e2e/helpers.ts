@@ -30,7 +30,8 @@ export const BROWSE_NAV_LABELS = ["Towns", "Areas", "Businesses", "Services", "G
 export const LIVE_SEED = {
   town: process.env.E2E_TOWN_SLUG?.trim() || "seaside",
   area: process.env.E2E_AREA_SLUG?.trim() || "seaside-town-center",
-  business: process.env.E2E_BUSINESS_SLUG?.trim() || "amavida-coffee-rosemary-beach",
+  // Prefer a slug known live on production sitemap (content/*.md may not be published).
+  business: process.env.E2E_BUSINESS_SLUG?.trim() || "disco-rosemary-beach",
   guide: process.env.E2E_GUIDE_SLUG?.trim() || "ultimate-30a-first-timers-guide",
   categoryGroup: "restaurants-and-bars",
   serviceGroup: "home-trades",
@@ -49,12 +50,13 @@ export async function expectPrimaryHeading(page: Page, name: string | RegExp) {
 }
 
 export async function expectBrowseNav(page: Page) {
-  const nav = page.getByRole("navigation").first();
-  await expect(nav).toBeVisible();
+  // Browse links live in the sticky header (not a <nav> landmark — see NavbarCategoryLinks).
+  const header = page.locator("header").first();
+  await expect(header).toBeVisible();
+  await expect(header.getByRole("img", { name: "WhereTo30A" })).toBeVisible();
   for (const label of BROWSE_NAV_LABELS) {
-    await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
+    await expect(header.getByRole("link", { name: label, exact: true })).toBeVisible();
   }
-  await expect(page.getByRole("img", { name: "WhereTo30A" }).first()).toBeVisible();
 }
 
 export function trackSupabaseBrowserApi(page: Page): string[] {

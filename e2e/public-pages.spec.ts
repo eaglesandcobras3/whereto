@@ -67,7 +67,7 @@ test.describe("Public pages (production shell)", () => {
 
   test("nav Towns link reaches towns hub", async ({ page }) => {
     await gotoOk(page, "/");
-    await page.getByRole("navigation").getByRole("link", { name: "Towns", exact: true }).click();
+    await page.locator("header").getByRole("link", { name: "Towns", exact: true }).click();
     await expect(page).toHaveURL(/\/towns(\?.*)?$/);
     await expectPrimaryHeading(page, /Beach towns along 30A/i);
   });
