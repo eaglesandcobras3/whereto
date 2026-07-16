@@ -85,7 +85,6 @@ export function ReviewQueueClient() {
         service_category_id: "",
         search_tags: [],
         suggested_tags: [],
-        search_keywords: "",
         marketing_opt_in: false,
         target_business_id: null,
       },
@@ -423,7 +422,7 @@ export function ReviewQueueClient() {
                           );
                         })()}
                         <p>
-                          <span className="font-medium text-zinc-800">Search keywords:</span>{" "}
+                          <span className="font-medium text-zinc-800">Search keywords (auto):</span>{" "}
                           {String(item.payload.search_keywords ?? "—")}
                         </p>
 

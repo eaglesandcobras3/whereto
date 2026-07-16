@@ -8,7 +8,7 @@ export const FREE_ONBOARD_EXCERPT_MAX = 160;
 export const FREE_ONBOARD_OVERVIEW_MAX = 500;
 export const FREE_ONBOARD_LOCATIONS_MAX = 10;
 export const FREE_ONBOARD_SEARCH_TAGS_MAX = 6;
-/** Comma-separated SEO keyword phrases — keep within a practical SERP/meta budget. */
+/** Cap for generated search_keywords strings written on approve/submit. */
 export const FREE_ONBOARD_SEARCH_KEYWORDS_MAX = 255;
 
 /**
@@ -129,11 +129,6 @@ export const freeOnboardBodySchema = z
       .array(z.string().trim().min(1).max(64))
       .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
       .default([]),
-    search_keywords: z
-      .string()
-      .max(FREE_ONBOARD_SEARCH_KEYWORDS_MAX)
-      .optional()
-      .transform((s) => (s ?? "").trim() || null),
     marketing_opt_in: z.boolean().optional().default(false),
     target_business_id: z.string().uuid().optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),
@@ -251,6 +246,7 @@ export type FreeOnboardPayload = {
   search_tags: string[];
   /** Submitter proposals for tags missing from vocabulary; not applied to businesses.search_tags. */
   suggested_tags?: string[];
+  /** Derived server-side from name, type, category, and tags — not collected on the form. */
   search_keywords: string | null;
   marketing_opt_in: boolean;
   target_business_id: string | null;
