@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   listAreaPickerOptions,
-  listSearchTagVocabulary,
+  listGuideTagVocabulary,
   listTownPickerOptions,
   searchBusinessPickerOptions,
 } from "@/lib/admin/guides";
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     businessQuery.trim()
       ? searchBusinessPickerOptions(supabase, businessQuery)
       : Promise.resolve([]),
-    listSearchTagVocabulary(supabase),
+    listGuideTagVocabulary(supabase),
   ]);
 
   return NextResponse.json({ towns, areas, businesses, tagVocabulary });

@@ -7,6 +7,7 @@ import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
+import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
@@ -22,6 +23,7 @@ import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyDiscoveryMessage";
+import { getGuidesForArea } from "@/lib/data/town-hub";
 
 export const revalidate = 21600;
 
@@ -81,7 +83,10 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) redirectToSectionHub("areas");
 
-  const categorySections = await getCategorySectionsForPublicPlace(area);
+  const [categorySections, guides] = await Promise.all([
+    getCategorySectionsForPublicPlace(area),
+    getGuidesForArea(area.id, area.town_id),
+  ]);
   const planningProfile = getAreaPlanningProfile(area.slug);
 
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
@@ -200,6 +205,17 @@ export default async function AreaPage({ params }: Props) {
                 <AreaPlanningSections areaName={area.title} profile={planningProfile} />
               </SeoImprovementsGate>
             ) : null}
+
+            <PlaceGuidesSection
+              title={`Guides for ${area.title}`}
+              description={
+                area.town_name
+                  ? `Planning guides for ${area.title} and ${area.town_name}.`
+                  : `Planning guides for ${area.title}.`
+              }
+              guides={guides}
+              analyticsCategory="area_guides"
+            />
 
             {!hasEditorialIntro && categorySections.length === 0 ? (
               <p className="prose-editorial text-zinc-500">

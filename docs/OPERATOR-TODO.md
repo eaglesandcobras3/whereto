@@ -262,15 +262,18 @@ In-app editor at `/admin/guides` for markdown guides stored in `public.guides`.
 - [ ] Ensure admin access (`ADMIN_USER_IDS`, `ADMIN_EMAILS`, or `profiles.is_admin`).
 - [ ] Set `OPENAI_API_KEY` (and optional `OPENAI_MODEL`, default `gpt-4o-mini`) for the **Enrich** action.
 - [x] Apply [scripts/migrations/guides-search-tags.sql](../scripts/migrations/guides-search-tags.sql) (`guides.search_tags`)
+- [ ] Apply [scripts/migrations/guide-tags-vocabulary.sql](../scripts/migrations/guide-tags-vocabulary.sql) (`guide_tags_vocabulary` + seed `all_towns`)
 
 ### Workflow
 
-1. **New guide** — write markdown, optionally link a town, place (area), and businesses; add **search tags**.
+1. **New guide** — write markdown, optionally link a town, place (area), and businesses; add **guide tags** (separate vocabulary from business search tags; create new ones from the editor).
 2. **Save draft** — content is validated as markdown only.
 3. **Enrich** — generates SEO title/description, OG fields, keywords, summary, intent tags, and `custom_fields.search_profile`.
 4. **Publish** — blocked until enriched; sets `status=published` and `published_at`.
 
 Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`. Business pages prefer guides linked via `guide_businesses`, then town guides.
+
+**Town / area pages:** show published guides linked to that town (or the area’s parent town / the area itself), plus any guide tagged `all_towns`. Cards match the guides hub.
 
 ---
 
@@ -316,6 +319,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 | 2026-07-16 | Free intake: service / no-location path now requires a **service specialty** (`service_category_id`) so listings show under Services footer + `/services` hub groups. Legacy storefront catch-all `services` removed from the form picker. Backfill any pre-fix approved service intakes missing a specialty. |
 | 2026-07-16 | Business transactional emails: MJML templates (teal header/logo, beach-towns banner, Instagram/TikTok/website footer) for request received / approved / listing-or-updates live. Assets in `public/email/`. Preview: `npm run email:preview`. Uses existing Resend + social URL env vars. |
 | 2026-07-15 | Free intake: submitters can propose **suggested tags** (shared 6-tag budget); admins promote selected ones into `search_tags_vocabulary` and onto the listing from `/admin/review` on approve |
+| 2026-07-14 | Guide tags: separate `guide_tags_vocabulary` (create from admin); town/area pages show hub-style guide cards from town/area links + `all_towns` |
 | 2026-07-14 | PostHog `free_onboard`: no-account multi-location intake → `portal_review_items`; admin create/skip per location; submitter emailed when live/rejected; SQL [free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) |
 | 2026-07-14 | `seo_improvements`: removed related-guide modules from town/area pages, intent-cluster grouping on `/guides`, and towns-hub travel-style guide links |
 | 2026-07-13 | Guides: fixed town/area pickers (`title`); added `guides.search_tags`; admin tag chips + list search; business pages prefer `guide_businesses` |

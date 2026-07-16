@@ -2885,6 +2885,24 @@ export type Database = {
           },
         ]
       }
+      guide_tags_vocabulary: {
+        Row: {
+          date_created: string
+          label: string | null
+          tag: string
+        }
+        Insert: {
+          date_created?: string
+          label?: string | null
+          tag: string
+        }
+        Update: {
+          date_created?: string
+          label?: string | null
+          tag?: string
+        }
+        Relationships: []
+      }
       guide_areas: {
         Row: {
           area_id: string
