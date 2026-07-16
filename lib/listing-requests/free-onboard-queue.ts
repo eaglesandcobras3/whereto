@@ -479,10 +479,15 @@ export async function approveFreeUpdate(
 
   const { data: existing } = await supabase
     .from("businesses")
-    .select("id, slug, title, town_id")
+    .select("id, slug, title, town_id, search_keywords")
     .eq("id", businessId)
     .maybeSingle();
   if (!existing) throw new Error("Business not found");
+
+  // Update form intentionally leaves SEO keywords blank; empty must not wipe existing.
+  const searchKeywords =
+    payload.search_keywords?.trim() ||
+    ((existing.search_keywords as string | null) ?? null);
 
   const primaryLoc = payload.locations[0];
   const townId = primaryLoc?.town_id ?? (existing.town_id as string);
@@ -493,7 +498,7 @@ export async function approveFreeUpdate(
     title: payload.title,
     excerpt: payload.excerpt,
     business_type: null,
-    search_keywords: payload.search_keywords,
+    search_keywords: searchKeywords,
   });
   const tags =
     payload.search_tags.length > 0
@@ -527,7 +532,7 @@ export async function approveFreeUpdate(
       ? (payload.service_category_id ?? null)
       : null,
     search_tags: tags,
-    search_keywords: payload.search_keywords,
+    search_keywords: searchKeywords,
     search_terms: searchDoc.search_terms,
     embedding_summary: searchDoc.embedding_summary,
     seo_title: seoTitle,

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   approveAllFreeLocations,
+  approveFreeUpdate,
   createFreeListingForLocation,
 } from "@/lib/listing-requests/free-onboard-queue";
 import { FREE_ONBOARD_TYPES } from "@/lib/listing-requests/free-onboard-schema";
@@ -14,6 +15,7 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type InsertCapture = { table: string; row: Record<string, unknown> };
+type UpdateCapture = { table: string; row: Record<string, unknown>; id?: string };
 
 function mockApproveSupabase(payload: Record<string, unknown>) {
   const inserts: InsertCapture[] = [];
@@ -123,6 +125,117 @@ function mockApproveSupabase(payload: Record<string, unknown>) {
   return { supabase: supabase as unknown as SupabaseClient, inserts };
 }
 
+function mockUpdateApproveSupabase(opts: {
+  payload: Record<string, unknown>;
+  existing: {
+    id: string;
+    slug: string;
+    title: string;
+    town_id: string;
+    search_keywords: string | null;
+  };
+}) {
+  const updates: UpdateCapture[] = [];
+  let reviewPayload = structuredClone(opts.payload);
+  let reviewStatus = "pending";
+  const businessId = opts.existing.id;
+
+  const item = {
+    id: "review-1",
+    type: FREE_ONBOARD_TYPES.update,
+    status: "pending",
+    business_id: businessId,
+    payload: reviewPayload,
+  };
+
+  const supabase = {
+    from(table: string) {
+      if (table === "portal_review_items") {
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  async maybeSingle() {
+                    return {
+                      data: {
+                        ...item,
+                        status: reviewStatus,
+                        payload: reviewPayload,
+                      },
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+          update(patch: Record<string, unknown>) {
+            if (patch.payload) reviewPayload = patch.payload as Record<string, unknown>;
+            if (typeof patch.status === "string") reviewStatus = patch.status;
+            return {
+              async eq() {
+                return { error: null };
+              },
+            };
+          },
+        };
+      }
+
+      if (table === "towns") {
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  async maybeSingle() {
+                    return {
+                      data: {
+                        id: opts.existing.town_id,
+                        title: "Seaside",
+                        slug: "seaside",
+                      },
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        };
+      }
+
+      if (table === "businesses") {
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  async maybeSingle() {
+                    return { data: { ...opts.existing }, error: null };
+                  },
+                };
+              },
+            };
+          },
+          update(row: Record<string, unknown>) {
+            return {
+              async eq(_col: string, id: string) {
+                updates.push({ table, row, id });
+                return { error: null };
+              },
+            };
+          },
+        };
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  return { supabase: supabase as unknown as SupabaseClient, updates };
+}
+
 describe("createFreeListingForLocation", () => {
   it("inserts businesses with a client-generated UUID id (no DB default)", async () => {
     const locationId = "loc-1";
@@ -206,5 +319,73 @@ describe("approveAllFreeLocations service-only", () => {
     expect(businessInsert!.row.town_id).toBeNull();
     expect(businessInsert!.row.primary_category_id).toBeNull();
     expect(businessInsert!.row.service_category_id).toBe(specialtyId);
+  });
+});
+
+describe("approveFreeUpdate search_keywords", () => {
+  const businessId = "33333333-3333-4333-8333-333333333333";
+  const townId = "11111111-1111-4111-8111-111111111111";
+
+  function basePayload(searchKeywords: string | null) {
+    return {
+      source: "free_onboard",
+      submitter_name: "Pat",
+      submitter_email: "pat@example.com",
+      title: "Amavida Coffee",
+      is_storefront: true,
+      is_service_business: false,
+      website: "https://example.com",
+      phone: "850-555-0100",
+      excerpt: "Coffee near the beach.",
+      overview: "A local coffee shop with great espresso.",
+      category_id: "22222222-2222-4222-8222-222222222222",
+      search_tags: ["coffee"],
+      suggested_tags: [],
+      search_keywords: searchKeywords,
+      marketing_opt_in: false,
+      target_business_id: businessId,
+      locations: [
+        {
+          id: "loc-1",
+          town_id: townId,
+          address: "1 Main St",
+          status: "pending",
+        },
+      ],
+    };
+  }
+
+  const existing = {
+    id: businessId,
+    slug: "amavida-coffee-seaside",
+    title: "Amavida Coffee",
+    town_id: townId,
+    search_keywords: "espresso, seaside coffee",
+  };
+
+  it("keeps existing SEO keywords when the update payload leaves them empty", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: basePayload(null),
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate).toBeDefined();
+    expect(businessUpdate!.row.search_keywords).toBe("espresso, seaside coffee");
+  });
+
+  it("applies new SEO keywords when the update payload provides them", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: basePayload("cold brew, local roast"),
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate).toBeDefined();
+    expect(businessUpdate!.row.search_keywords).toBe("cold brew, local roast");
   });
 });
