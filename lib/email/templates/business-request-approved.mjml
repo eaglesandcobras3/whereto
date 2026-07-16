@@ -7,15 +7,11 @@
   <mj-include path="./partials/body-open.mjml" />
   <mj-include path="./partials/content-open.mjml" />
   <mj-include path="./partials/content-headline.mjml" />
-  <mj-text align="center" padding-bottom="12px">
-    Good news! Your request for changes to <strong>{{businessTitle}}</strong> has been approved.
-  </mj-text>
-  <mj-text align="center" color="#5a6b6d" padding-bottom="8px" css-class="email-muted">
-    {{approvalDetail}}
-  </mj-text>
+  {{bodyBlocks}}
   {{adminNotesBlock}}
   {{linksBlock}}
   {{ctaBlock}}
+  <mj-include path="./partials/sign-off.mjml" />
   <mj-include path="./partials/content-close.mjml" />
   <mj-include path="./partials/body-close.mjml" />
 </mjml>

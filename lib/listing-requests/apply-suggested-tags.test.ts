@@ -99,4 +99,25 @@ describe("applySuggestedTagsToPayload", () => {
     expect(result.payload.search_tags).toContain("marketing");
     expect(result.payload.suggested_tags).toContain("engineering");
   });
+
+  it("supports promote rename, replace, and discard actions", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const supabase = {
+      from: vi.fn(() => ({ upsert })),
+    } as never;
+
+    const result = await applySuggestedTagsToPayload(supabase, basePayload(), [
+      { from: "marketing", action: "promote", to: "digital marketing" },
+      { from: "product development", action: "replace", to: "product_strategy" },
+      { from: "engineering", action: "discard" },
+    ]);
+
+    expect(result.promotedSlugs).toEqual(["digital_marketing", "product_strategy"]);
+    expect(result.payload.search_tags).toEqual([
+      "wifi",
+      "digital_marketing",
+      "product_strategy",
+    ]);
+    expect(result.payload.suggested_tags).toEqual([]);
+  });
 });

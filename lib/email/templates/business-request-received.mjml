@@ -7,13 +7,9 @@
   <mj-include path="./partials/body-open.mjml" />
   <mj-include path="./partials/content-open.mjml" />
   <mj-include path="./partials/content-headline.mjml" />
-  <mj-text align="center" padding-bottom="12px">
-    Thanks for submitting changes for <strong>{{businessTitle}}</strong> on WhereTo30A.
-  </mj-text>
-  <mj-text align="center" color="#5a6b6d" padding-bottom="8px" css-class="email-muted">
-    Our team will review your {{requestKind}} and email you when your listing or updates go live.
-  </mj-text>
+  {{bodyBlocks}}
   {{ctaBlock}}
+  <mj-include path="./partials/sign-off.mjml" />
   <mj-include path="./partials/content-close.mjml" />
   <mj-include path="./partials/body-close.mjml" />
 </mjml>

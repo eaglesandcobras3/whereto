@@ -10,7 +10,7 @@
   <mj-text align="left" padding-top="4px" padding-bottom="16px" font-size="14px" line-height="1.55" color="#1c3257">
     {{detailsHtml}}
   </mj-text>
-  <mj-text align="center" color="#5a6b6d" padding-bottom="8px" css-class="email-muted">
+  <mj-text align="left" color="#5a6b6d" padding-bottom="8px" css-class="email-muted">
     {{lead}}
   </mj-text>
   {{ctaBlock}}

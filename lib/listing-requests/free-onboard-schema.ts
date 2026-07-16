@@ -8,6 +8,8 @@ export const FREE_ONBOARD_EXCERPT_MAX = 160;
 export const FREE_ONBOARD_OVERVIEW_MAX = 500;
 export const FREE_ONBOARD_LOCATIONS_MAX = 10;
 export const FREE_ONBOARD_SEARCH_TAGS_MAX = 6;
+/** Cap for a single suggested category/specialty phrase. */
+export const FREE_ONBOARD_SUGGESTED_CATEGORY_MAX = 80;
 /** Cap for generated search_keywords strings written on approve/submit. */
 export const FREE_ONBOARD_SEARCH_KEYWORDS_MAX = 255;
 
@@ -129,6 +131,19 @@ export const freeOnboardBodySchema = z
       .array(z.string().trim().min(1).max(64))
       .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
       .default([]),
+    /**
+     * Freeform category/specialty proposal when the list is missing a fit.
+     * Satisfies the category requirement when the matching select id is empty.
+     */
+    suggested_category: z
+      .string()
+      .max(FREE_ONBOARD_SUGGESTED_CATEGORY_MAX)
+      .optional()
+      .nullable()
+      .transform((s) => {
+        const t = (s ?? "").trim().slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
+        return t || null;
+      }),
     marketing_opt_in: z.boolean().optional().default(false),
     target_business_id: z.string().uuid().optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),
@@ -162,17 +177,17 @@ export const freeOnboardBodySchema = z
         path: ["locations"],
       });
     }
-    if (data.is_storefront && !data.category_id) {
+    if (data.is_storefront && !data.category_id && !data.suggested_category) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Choose a category for your physical location.",
+        message: "Choose a category or suggest one that is missing from the list.",
         path: ["category_id"],
       });
     }
-    if (data.is_service_business && !data.service_category_id) {
+    if (data.is_service_business && !data.service_category_id && !data.suggested_category) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Choose a service specialty.",
+        message: "Choose a service specialty or suggest one that is missing from the list.",
         path: ["service_category_id"],
       });
     }
@@ -246,6 +261,11 @@ export type FreeOnboardPayload = {
   search_tags: string[];
   /** Submitter proposals for tags missing from vocabulary; not applied to businesses.search_tags. */
   suggested_tags?: string[];
+  /**
+   * Submitter proposal for a missing category/specialty.
+   * Not applied until an admin creates or maps it on approve.
+   */
+  suggested_category?: string | null;
   /** Derived server-side from name, type, category, and tags — not collected on the form. */
   search_keywords: string | null;
   marketing_opt_in: boolean;

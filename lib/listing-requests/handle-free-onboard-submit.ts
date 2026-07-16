@@ -103,8 +103,14 @@ export async function handleFreeOnboardListingRequest(
         .eq("id", d.category_id)
         .maybeSingle()
     : { data: null };
-  if (d.is_storefront && !category) {
+  if (d.is_storefront && d.category_id && !category) {
     return NextResponse.json({ error: "Choose a valid category." }, { status: 400 });
+  }
+  if (d.is_storefront && !d.category_id && !d.suggested_category) {
+    return NextResponse.json(
+      { error: "Choose a category or suggest one that is missing from the list." },
+      { status: 400 },
+    );
   }
 
   const { data: serviceCategory } = d.service_category_id
@@ -116,8 +122,14 @@ export async function handleFreeOnboardListingRequest(
         .eq("status", DIRECTUS_PUBLISHED_STATUS)
         .maybeSingle()
     : { data: null };
-  if (d.is_service_business && !serviceCategory) {
+  if (d.is_service_business && d.service_category_id && !serviceCategory) {
     return NextResponse.json({ error: "Choose a valid service specialty." }, { status: 400 });
+  }
+  if (d.is_service_business && !d.service_category_id && !d.suggested_category) {
+    return NextResponse.json(
+      { error: "Choose a service specialty or suggest one that is missing from the list." },
+      { status: 400 },
+    );
   }
 
   const { data: vocabTags } = await supabase.from("search_tags_vocabulary").select("tag");
@@ -176,8 +188,10 @@ export async function handleFreeOnboardListingRequest(
     title: d.title,
     isStorefront: d.is_storefront,
     isServiceBusiness: d.is_service_business,
-    categoryTitle: d.is_storefront ? categoryTitle : null,
-    serviceCategoryTitle: d.is_service_business ? serviceCategoryTitle : null,
+    categoryTitle: d.is_storefront ? (categoryTitle ?? d.suggested_category) : null,
+    serviceCategoryTitle: d.is_service_business
+      ? (serviceCategoryTitle ?? d.suggested_category)
+      : null,
     searchTags: cappedSearchTags,
     suggestedTags: cappedSuggestedTags,
   });
@@ -199,6 +213,7 @@ export async function handleFreeOnboardListingRequest(
     service_category_title: d.is_service_business ? serviceCategoryTitle : null,
     search_tags: cappedSearchTags,
     suggested_tags: cappedSuggestedTags,
+    suggested_category: d.suggested_category,
     search_keywords: searchKeywords,
     marketing_opt_in: d.marketing_opt_in,
     target_business_id: targetBusinessId,
@@ -267,8 +282,8 @@ export async function handleFreeOnboardListingRequest(
       .join("\n");
 
     const categoryLine = d.is_service_business
-      ? `Specialty: ${serviceCategoryTitle ?? "(none)"}`
-      : `Category: ${categoryTitle ?? "(none)"}`;
+      ? `Specialty: ${serviceCategoryTitle ?? d.suggested_category ?? "(none)"}`
+      : `Category: ${categoryTitle ?? d.suggested_category ?? "(none)"}`;
 
     const textBody = [
       isUpdate ? "Free onboard UPDATE request" : "Free onboard NEW listing request",
@@ -276,6 +291,11 @@ export async function handleFreeOnboardListingRequest(
       `Submitter: ${d.submitter_name} <${d.submitter_email}>`,
       `Business: ${d.title}`,
       categoryLine,
+      d.suggested_category && !categoryTitle && !serviceCategoryTitle
+        ? `Suggested category: ${d.suggested_category}`
+        : d.suggested_category
+          ? `Suggested category (also): ${d.suggested_category}`
+          : null,
       `Marketing opt-in: ${d.marketing_opt_in ? "yes" : "no"}`,
       "",
       "Locations:",
@@ -300,14 +320,19 @@ export async function handleFreeOnboardListingRequest(
 
     const htmlCategoryLabel = d.is_service_business ? "Specialty" : "Category";
     const htmlCategoryValue = d.is_service_business
-      ? (serviceCategoryTitle ?? "(none)")
-      : (categoryTitle ?? "(none)");
+      ? (serviceCategoryTitle ?? d.suggested_category ?? "(none)")
+      : (categoryTitle ?? d.suggested_category ?? "(none)");
 
     const detailsHtml = `
 <p>Submitted via <strong>/list-your-business</strong> (free_onboard).</p>
 <p><strong>Submitter:</strong> ${escapeHtml(d.submitter_name)} &lt;${escapeHtml(d.submitter_email)}&gt;</p>
 <p><strong>Business:</strong> ${escapeHtml(d.title)}<br/>
 <strong>${htmlCategoryLabel}:</strong> ${escapeHtml(htmlCategoryValue)}<br/>
+${
+  d.suggested_category
+    ? `<strong>Suggested category:</strong> ${escapeHtml(d.suggested_category)}<br/>`
+    : ""
+}
 <strong>Marketing opt-in:</strong> ${d.marketing_opt_in ? "yes" : "no"}</p>
 <h2 style="font-size:16px;margin:16px 0 8px;color:#1c3257">Locations</h2>
 ${

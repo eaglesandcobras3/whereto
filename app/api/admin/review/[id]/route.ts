@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reviewApiBlocked } from "@/lib/feature-flags";
-import { promoteSelectedSuggestedTags } from "@/lib/listing-requests/apply-suggested-tags";
+import {
+  parseCategoryResolution,
+  resolveSuggestedCategory,
+} from "@/lib/listing-requests/apply-suggested-category";
+import {
+  parseSuggestedTagActions,
+  promoteSelectedSuggestedTags,
+} from "@/lib/listing-requests/apply-suggested-tags";
 import {
   approveAllFreeLocations,
   createFreeListingForLocation,
@@ -12,15 +19,6 @@ import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-function parseApplySuggestedTags(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((t): t is string => typeof t === "string")
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .slice(0, 12);
-}
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const blocked = await reviewApiBlocked();
@@ -35,6 +33,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     admin_notes?: string;
     location_id?: string;
     apply_suggested_tags?: unknown;
+    category_resolution?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -45,13 +44,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const action = String(body.action ?? "").trim();
   const adminNotes = String(body.admin_notes ?? "").trim().slice(0, 2000) || null;
   const locationId = typeof body.location_id === "string" ? body.location_id.trim() : "";
-  const applySuggestedTags = parseApplySuggestedTags(body.apply_suggested_tags);
+  const tagActions = parseSuggestedTagActions(body.apply_suggested_tags);
+  const categoryResolution = parseCategoryResolution(body.category_resolution);
 
   const supabase = getServiceSupabase();
 
-  async function promoteIfRequested() {
-    if (applySuggestedTags.length === 0) return;
-    await promoteSelectedSuggestedTags(supabase, id, applySuggestedTags);
+  async function applySuggestionsIfRequested() {
+    if (categoryResolution) {
+      await resolveSuggestedCategory(supabase, id, categoryResolution);
+    }
+    if (tagActions.length > 0) {
+      await promoteSelectedSuggestedTags(supabase, id, tagActions);
+    }
   }
 
   try {
@@ -59,7 +63,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       if (!locationId) {
         return NextResponse.json({ error: "location_id required" }, { status: 400 });
       }
-      await promoteIfRequested();
+      await applySuggestionsIfRequested();
       const result = await createFreeListingForLocation(supabase, id, locationId, admin.userId);
       return NextResponse.json({ ok: true, ...result });
     }
@@ -71,12 +75,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ ok: true, ...result });
     }
     if (action === "approve_all_locations") {
-      await promoteIfRequested();
+      await applySuggestionsIfRequested();
       const result = await approveAllFreeLocations(supabase, id, admin.userId);
       return NextResponse.json({ ok: true, ...result });
     }
     if (action === "approve") {
-      await promoteIfRequested();
+      await applySuggestionsIfRequested();
       await approveReviewItem(supabase, id, admin.userId);
       return NextResponse.json({ ok: true, status: "approved" });
     }

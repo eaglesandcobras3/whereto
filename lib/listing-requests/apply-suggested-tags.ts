@@ -21,6 +21,11 @@ export function suggestionToVocabSlug(raw: string): string | null {
   return slug;
 }
 
+export type SuggestedTagAction =
+  | { from: string; action: "promote"; to?: string }
+  | { from: string; action: "replace"; to: string }
+  | { from: string; action: "discard" };
+
 export type ApplySuggestedTagsResult = {
   payload: FreeOnboardPayload;
   promotedSlugs: string[];
@@ -28,35 +33,102 @@ export type ApplySuggestedTagsResult = {
 };
 
 /**
- * Upsert selected suggestions into `search_tags_vocabulary`, merge onto
- * `payload.search_tags` (max 6), and leave unselected / unfit ones on `suggested_tags`.
+ * Parse API body: either a legacy string[] of selections to promote,
+ * or structured `{ from, action, to? }[]`.
+ */
+export function parseSuggestedTagActions(raw: unknown): SuggestedTagAction[] {
+  if (!Array.isArray(raw)) return [];
+  const out: SuggestedTagAction[] = [];
+
+  for (const item of raw.slice(0, 12)) {
+    if (typeof item === "string") {
+      const from = item.trim();
+      if (from) out.push({ from, action: "promote" });
+      continue;
+    }
+    if (!item || typeof item !== "object") continue;
+    const obj = item as Record<string, unknown>;
+    const from = typeof obj.from === "string" ? obj.from.trim() : "";
+    if (!from) continue;
+    const action = String(obj.action ?? "").trim();
+    const to = typeof obj.to === "string" ? obj.to.trim() : "";
+    if (action === "discard") {
+      out.push({ from, action: "discard" });
+    } else if (action === "replace") {
+      if (to) out.push({ from, action: "replace", to });
+      else out.push({ from, action: "discard" });
+    } else {
+      // promote (default)
+      out.push({ from, action: "promote", to: to || undefined });
+    }
+  }
+
+  return out;
+}
+
+function isLegacyStringArray(raw: unknown): raw is string[] {
+  return Array.isArray(raw) && raw.every((item) => typeof item === "string");
+}
+
+/**
+ * Upsert promoted/replaced phrases into `search_tags_vocabulary`, merge onto
+ * `payload.search_tags` (max 6), and leave remaining suggestions on `suggested_tags`.
+ *
+ * - Legacy `string[]`: listed phrases are promoted; others stay on suggested_tags.
+ * - Structured actions: promote / replace / discard per `from`; unmentioned stay.
  */
 export async function applySuggestedTagsToPayload(
   supabase: SupabaseClient,
   payload: FreeOnboardPayload,
-  selectedSuggestions: string[],
+  actionsOrLegacy: SuggestedTagAction[] | string[],
 ): Promise<ApplySuggestedTagsResult> {
-  const selectedKeys = new Set(
-    selectedSuggestions.map((s) => s.trim().toLowerCase()).filter(Boolean),
-  );
+  const legacy = isLegacyStringArray(actionsOrLegacy);
+  const actions = legacy
+    ? parseSuggestedTagActions(actionsOrLegacy)
+    : (actionsOrLegacy as SuggestedTagAction[]);
+
+  const byFrom = new Map<string, SuggestedTagAction>();
+  for (const a of actions) {
+    byFrom.set(a.from.trim().toLowerCase(), a);
+  }
+
   const remainingSuggested: string[] = [];
   const skippedInvalid: string[] = [];
   const slugsToPromote: string[] = [];
+  /** Original phrases that produced each slug (for overflow recovery). */
+  const originalsBySlug = new Map<string, string[]>();
 
   for (const raw of payload.suggested_tags ?? []) {
     const trimmed = raw.trim();
     if (!trimmed) continue;
-    if (!selectedKeys.has(trimmed.toLowerCase())) {
+    const key = trimmed.toLowerCase();
+    const action = byFrom.get(key);
+
+    if (!action) {
       remainingSuggested.push(trimmed);
       continue;
     }
-    const slug = suggestionToVocabSlug(trimmed);
+
+    if (action.action === "discard") {
+      continue;
+    }
+
+    const phrase =
+      action.action === "replace"
+        ? action.to
+        : action.to?.trim()
+          ? action.to.trim()
+          : trimmed;
+    const slug = suggestionToVocabSlug(phrase);
     if (!slug) {
-      skippedInvalid.push(trimmed);
+      skippedInvalid.push(phrase);
       remainingSuggested.push(trimmed);
       continue;
     }
     slugsToPromote.push(slug);
+    const list = originalsBySlug.get(slug) ?? [];
+    list.push(trimmed);
+    originalsBySlug.set(slug, list);
   }
 
   const uniquePromote = [...new Set(slugsToPromote)];
@@ -77,11 +149,7 @@ export async function applySuggestedTagsToPayload(
   for (const slug of uniquePromote) {
     if (seen.has(slug)) continue;
     if (merged.length >= FREE_ONBOARD_SEARCH_TAGS_MAX) {
-      // No room on the listing — keep the original phrases for a later pass.
-      const originals = (payload.suggested_tags ?? []).filter(
-        (raw) => suggestionToVocabSlug(raw) === slug && selectedKeys.has(raw.trim().toLowerCase()),
-      );
-      for (const original of originals.length > 0 ? originals : [slug]) {
+      for (const original of originalsBySlug.get(slug) ?? [slug]) {
         if (!remainingSuggested.some((r) => r.toLowerCase() === original.toLowerCase())) {
           remainingSuggested.push(original);
         }
@@ -105,14 +173,18 @@ export async function applySuggestedTagsToPayload(
 }
 
 /**
- * Load a free-intake review item, promote selected suggestions, and persist the payload.
+ * Load a free-intake review item, apply tag actions, and persist the payload.
  */
 export async function promoteSelectedSuggestedTags(
   supabase: SupabaseClient,
   itemId: string,
-  selectedSuggestions: string[],
+  actionsOrLegacy: SuggestedTagAction[] | string[],
 ): Promise<ApplySuggestedTagsResult | null> {
-  if (selectedSuggestions.length === 0) return null;
+  const actions = isLegacyStringArray(actionsOrLegacy)
+    ? parseSuggestedTagActions(actionsOrLegacy)
+    : (actionsOrLegacy as SuggestedTagAction[]);
+
+  if (actions.length === 0) return null;
 
   const { data: item, error } = await supabase
     .from("portal_review_items")
@@ -123,7 +195,7 @@ export async function promoteSelectedSuggestedTags(
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
 
   const payload = ((item.payload as Record<string, unknown>) ?? {}) as unknown as FreeOnboardPayload;
-  const result = await applySuggestedTagsToPayload(supabase, payload, selectedSuggestions);
+  const result = await applySuggestedTagsToPayload(supabase, payload, actions);
 
   const { error: saveErr } = await supabase
     .from("portal_review_items")

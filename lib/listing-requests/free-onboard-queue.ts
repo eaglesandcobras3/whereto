@@ -178,6 +178,22 @@ async function saveRemovalPayload(
   if (error) throw new Error(error.message);
 }
 
+function assertCategoryResolved(payload: FreeOnboardPayload): void {
+  if (payload.is_service_business) {
+    if (!payload.service_category_id) {
+      throw new Error(
+        "Resolve the service specialty before approving (create the suggestion or pick an existing one).",
+      );
+    }
+    return;
+  }
+  if (payload.is_storefront && !payload.category_id) {
+    throw new Error(
+      "Resolve the category before approving (create the suggestion or pick an existing one).",
+    );
+  }
+}
+
 export async function createFreeListingForLocation(
   supabase: SupabaseClient,
   itemId: string,
@@ -200,6 +216,7 @@ export async function createFreeListingForLocation(
   const loc = payload.locations.find((l) => l.id === locationId);
   if (!loc) throw new Error("Location not found");
   if (loc.status !== "pending") throw new Error("Location already handled");
+  assertCategoryResolved(payload);
 
   const town = await resolveTown(supabase, loc.town_id);
   if (!town) throw new Error("Town not found");
@@ -408,6 +425,7 @@ async function createFreeServiceListingWithoutTown(
   if (!payload.is_service_business || payload.locations.length > 0) {
     throw new Error("Not a zero-location service intake");
   }
+  assertCategoryResolved(payload);
 
   const taken = await loadTakenSlugs(supabase);
   const slug = buildFreeOnboardSlug(payload.title, null, taken);
@@ -503,6 +521,7 @@ export async function approveFreeUpdate(
   const payload = asPayload((item.payload as Record<string, unknown>) ?? {});
   const businessId = payload.target_business_id ?? (item.business_id as string | null);
   if (!businessId) throw new Error("Update missing target business");
+  assertCategoryResolved(payload);
 
   const { data: existing } = await supabase
     .from("businesses")

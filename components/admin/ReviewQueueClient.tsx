@@ -29,6 +29,21 @@ type FreeLocation = {
   resulting_business_slug?: string | null;
 };
 
+type CategoryOption = { id: string; title: string; slug: string };
+
+type CategoryDecision = {
+  mode: "create" | "existing";
+  title: string;
+  categoryId: string;
+};
+
+/** Per suggested-tag decision: promote (optional rename) or replace/discard when unchecked. */
+type TagDecision = {
+  promote: boolean;
+  /** Rename when promoting, or “use instead” when not promoting. */
+  to: string;
+};
+
 function isFreeType(type: string) {
   return isFreeOnboardReviewType(type);
 }
@@ -45,11 +60,48 @@ function payloadStringArray(payload: Record<string, unknown>, key: string): stri
   return raw.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
 }
 
-function previewMergedTags(searchTags: string[], selectedSuggestions: string[]): string[] {
+function payloadString(payload: Record<string, unknown>, key: string): string {
+  const raw = payload[key];
+  return typeof raw === "string" ? raw.trim() : "";
+}
+
+function needsCategoryResolution(payload: Record<string, unknown>): boolean {
+  const suggested = payloadString(payload, "suggested_category");
+  if (suggested) return true;
+  if (payload.is_service_business) {
+    return !payloadString(payload, "service_category_id");
+  }
+  if (payload.is_storefront) {
+    return !payloadString(payload, "category_id");
+  }
+  return false;
+}
+
+function defaultCategoryDecision(payload: Record<string, unknown>): CategoryDecision {
+  const suggested = payloadString(payload, "suggested_category");
+  const existingId = payload.is_service_business
+    ? payloadString(payload, "service_category_id")
+    : payloadString(payload, "category_id");
+  if (suggested) {
+    return { mode: "create", title: suggested, categoryId: existingId };
+  }
+  return { mode: "existing", title: "", categoryId: existingId };
+}
+
+function previewMergedTagsFromDecisions(
+  searchTags: string[],
+  suggested: string[],
+  decisions: Record<string, TagDecision>,
+): string[] {
   const merged = [...searchTags];
   const seen = new Set(merged.map((t) => t.toLowerCase()));
-  for (const suggestion of selectedSuggestions) {
-    const slug = suggestionToVocabSlug(suggestion);
+  for (const suggestion of suggested) {
+    const d = decisions[suggestion] ?? { promote: true, to: "" };
+    let phrase: string | null = null;
+    if (d.promote) phrase = d.to.trim() || suggestion;
+    else if (d.to.trim()) phrase = d.to.trim();
+    if (!phrase) continue;
+    const slug = suggestionToVocabSlug(phrase);
     if (!slug || seen.has(slug)) continue;
     if (merged.length >= FREE_ONBOARD_SEARCH_TAGS_MAX) break;
     merged.push(slug);
@@ -58,14 +110,34 @@ function previewMergedTags(searchTags: string[], selectedSuggestions: string[]):
   return merged;
 }
 
+function buildTagActions(
+  suggested: string[],
+  decisions: Record<string, TagDecision>,
+): Array<{ from: string; action: "promote" | "replace" | "discard"; to?: string }> {
+  return suggested.map((from) => {
+    const d = decisions[from] ?? { promote: true, to: "" };
+    if (d.promote) {
+      return d.to.trim()
+        ? { from, action: "promote" as const, to: d.to.trim() }
+        : { from, action: "promote" as const };
+    }
+    if (d.to.trim()) return { from, action: "replace" as const, to: d.to.trim() };
+    return { from, action: "discard" as const };
+  });
+}
+
 export function ReviewQueueClient() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  /** Suggested tag phrases selected for promote+apply, keyed by review item id. */
-  const [promoteByItem, setPromoteByItem] = useState<Record<string, string[]>>({});
+  const [tagDecisionsByItem, setTagDecisionsByItem] = useState<
+    Record<string, Record<string, TagDecision>>
+  >({});
+  const [categoryByItem, setCategoryByItem] = useState<Record<string, CategoryDecision>>({});
+  const [storefrontCategories, setStorefrontCategories] = useState<CategoryOption[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<CategoryOption[]>([]);
   const [view, setView] = useState<"pending" | "completed">("pending");
   const [showManual, setShowManual] = useState(false);
   const [manualJson, setManualJson] = useState(
@@ -83,6 +155,7 @@ export function ReviewQueueClient() {
         overview: "",
         category_id: "",
         service_category_id: "",
+        suggested_category: null,
         search_tags: [],
         suggested_tags: [],
         marketing_opt_in: false,
@@ -101,11 +174,26 @@ export function ReviewQueueClient() {
         if (!res.ok) throw new Error(j.error ?? "Failed to load queue");
         const nextItems = j.items ?? [];
         setItems(nextItems);
-        setPromoteByItem((prev) => {
+        setTagDecisionsByItem((prev) => {
           const next = { ...prev };
           for (const item of nextItems) {
             if (next[item.id] !== undefined) continue;
-            next[item.id] = payloadStringArray(item.payload, "suggested_tags");
+            const suggested = payloadStringArray(item.payload, "suggested_tags");
+            const decisions: Record<string, TagDecision> = {};
+            for (const s of suggested) {
+              decisions[s] = { promote: true, to: "" };
+            }
+            next[item.id] = decisions;
+          }
+          return next;
+        });
+        setCategoryByItem((prev) => {
+          const next = { ...prev };
+          for (const item of nextItems) {
+            if (next[item.id] !== undefined) continue;
+            if (!isFreeType(item.type)) continue;
+            if (!needsCategoryResolution(item.payload)) continue;
+            next[item.id] = defaultCategoryDecision(item.payload);
           }
           return next;
         });
@@ -118,20 +206,50 @@ export function ReviewQueueClient() {
     queueMicrotask(() => load());
   }, [load]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const res = await fetch("/api/listing-requests/form-options", {
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const j = (await res.json()) as {
+          categories?: CategoryOption[];
+          serviceCategories?: CategoryOption[];
+        };
+        setStorefrontCategories(j.categories ?? []);
+        setServiceCategories(j.serviceCategories ?? []);
+      } catch {
+        /* options are best-effort for the existing-category dropdown */
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
   const visible = useMemo(() => {
     if (view === "pending") return items.filter((i) => i.status === "pending");
     return items.filter((i) => i.status === "approved" || i.status === "rejected");
   }, [items, view]);
 
-  function togglePromote(itemId: string, suggestion: string, checked: boolean) {
-    setPromoteByItem((prev) => {
-      const current = prev[itemId] ?? [];
-      const key = suggestion.toLowerCase();
-      const without = current.filter((s) => s.toLowerCase() !== key);
+  function setTagDecision(itemId: string, suggestion: string, patch: Partial<TagDecision>) {
+    setTagDecisionsByItem((prev) => {
+      const current = prev[itemId] ?? {};
+      const existing = current[suggestion] ?? { promote: true, to: "" };
       return {
         ...prev,
-        [itemId]: checked ? [...without, suggestion] : without,
+        [itemId]: {
+          ...current,
+          [suggestion]: { ...existing, ...patch },
+        },
       };
+    });
+  }
+
+  function setCategoryDecision(itemId: string, patch: Partial<CategoryDecision>) {
+    setCategoryByItem((prev) => {
+      const existing = prev[itemId] ?? { mode: "create", title: "", categoryId: "" };
+      return { ...prev, [itemId]: { ...existing, ...patch } };
     });
   }
 
@@ -142,17 +260,49 @@ export function ReviewQueueClient() {
   ) {
     setActing(id);
     setError(null);
-    const shouldApplyTags =
+    const shouldApply =
       action === "approve" ||
       action === "approve_all_locations" ||
       action === "create_location";
+
+    const item = items.find((i) => i.id === id);
+    let category_resolution:
+      | { mode: "create"; title: string }
+      | { mode: "existing"; categoryId: string }
+      | undefined;
+    if (shouldApply && item && isFreeType(item.type) && needsCategoryResolution(item.payload)) {
+      const decision = categoryByItem[id] ?? defaultCategoryDecision(item.payload);
+      if (decision.mode === "create") {
+        if (!decision.title.trim()) {
+          setActing(null);
+          setError("Enter a category title to create, or switch to an existing category.");
+          return;
+        }
+        category_resolution = { mode: "create", title: decision.title.trim() };
+      } else {
+        if (!decision.categoryId.trim()) {
+          setActing(null);
+          setError("Pick an existing category, or create one from the suggestion.");
+          return;
+        }
+        category_resolution = { mode: "existing", categoryId: decision.categoryId.trim() };
+      }
+    }
+
+    const suggested = item ? payloadStringArray(item.payload, "suggested_tags") : [];
+    const tagActions =
+      shouldApply && suggested.length > 0
+        ? buildTagActions(suggested, tagDecisionsByItem[id] ?? {})
+        : undefined;
+
     const res = await fetch(`/api/admin/review/${encodeURIComponent(id)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action,
         admin_notes: notes[id] ?? "",
-        ...(shouldApplyTags ? { apply_suggested_tags: promoteByItem[id] ?? [] } : {}),
+        ...(tagActions ? { apply_suggested_tags: tagActions } : {}),
+        ...(category_resolution ? { category_resolution } : {}),
         ...extra,
       }),
     });
@@ -162,7 +312,12 @@ export function ReviewQueueClient() {
       setError(j.error ?? "Action failed");
       return;
     }
-    setPromoteByItem((prev) => {
+    setTagDecisionsByItem((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setCategoryByItem((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
@@ -409,9 +564,99 @@ export function ReviewQueueClient() {
                                 item.payload.service_category_title ??
                                   item.payload.service_category_id ??
                                   "",
-                              )
-                            : String(item.payload.category_title ?? item.payload.category_id ?? "")}
+                              ) || "—"
+                            : String(item.payload.category_title ?? item.payload.category_id ?? "") ||
+                              "—"}
                         </p>
+                        {(() => {
+                          if (!needsCategoryResolution(item.payload)) return null;
+                          const decision =
+                            categoryByItem[item.id] ?? defaultCategoryDecision(item.payload);
+                          const suggested = payloadString(item.payload, "suggested_category");
+                          const options = item.payload.is_service_business
+                            ? serviceCategories
+                            : storefrontCategories;
+                          const createSlug = suggestionToVocabSlug(decision.title);
+                          return (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+                              <p className="font-medium text-zinc-800">
+                                Suggested {item.payload.is_service_business ? "specialty" : "category"}
+                              </p>
+                              <p className="mt-1 text-xs text-amber-900">
+                                {suggested
+                                  ? `Submitter suggested “${suggested}”. Create it or map to an existing one before approve.`
+                                  : "No category on this intake — create one or pick an existing category before approve."}
+                              </p>
+                              <div className="mt-2 space-y-2 text-sm">
+                                <label className="flex cursor-pointer items-start gap-2">
+                                  <input
+                                    type="radio"
+                                    className="mt-0.5"
+                                    name={`cat-mode-${item.id}`}
+                                    checked={decision.mode === "create"}
+                                    onChange={() =>
+                                      setCategoryDecision(item.id, {
+                                        mode: "create",
+                                        title: decision.title || suggested,
+                                      })
+                                    }
+                                  />
+                                  <span className="flex-1">
+                                    <span className="font-medium">Create new</span>
+                                    {decision.mode === "create" ? (
+                                      <span className="mt-1 block">
+                                        <input
+                                          type="text"
+                                          className="mt-1 w-full rounded border border-amber-300 bg-white px-2 py-1 text-sm text-zinc-900"
+                                          value={decision.title}
+                                          onChange={(e) =>
+                                            setCategoryDecision(item.id, { title: e.target.value })
+                                          }
+                                          placeholder="Category title"
+                                        />
+                                        <span className="mt-0.5 block text-xs text-zinc-600">
+                                          Slug: {createSlug ?? "(invalid)"}
+                                        </span>
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </label>
+                                <label className="flex cursor-pointer items-start gap-2">
+                                  <input
+                                    type="radio"
+                                    className="mt-0.5"
+                                    name={`cat-mode-${item.id}`}
+                                    checked={decision.mode === "existing"}
+                                    onChange={() =>
+                                      setCategoryDecision(item.id, { mode: "existing" })
+                                    }
+                                  />
+                                  <span className="flex-1">
+                                    <span className="font-medium">Use existing</span>
+                                    {decision.mode === "existing" ? (
+                                      <select
+                                        className="mt-1 w-full rounded border border-amber-300 bg-white px-2 py-1 text-sm text-zinc-900"
+                                        value={decision.categoryId}
+                                        onChange={(e) =>
+                                          setCategoryDecision(item.id, {
+                                            categoryId: e.target.value,
+                                          })
+                                        }
+                                      >
+                                        <option value="">Choose…</option>
+                                        {options.map((c) => (
+                                          <option key={c.id} value={c.id}>
+                                            {c.title}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : null}
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+                          );
+                        })()}
                         <p>
                           <span className="font-medium text-zinc-800">Search tags:</span>{" "}
                           {payloadStringArray(item.payload, "search_tags").join(", ") || "—"}
@@ -419,8 +664,12 @@ export function ReviewQueueClient() {
                         {(() => {
                           const suggested = payloadStringArray(item.payload, "suggested_tags");
                           const searchTags = payloadStringArray(item.payload, "search_tags");
-                          const selected = promoteByItem[item.id] ?? suggested;
-                          const preview = previewMergedTags(searchTags, selected);
+                          const decisions = tagDecisionsByItem[item.id] ?? {};
+                          const preview = previewMergedTagsFromDecisions(
+                            searchTags,
+                            suggested,
+                            decisions,
+                          );
                           if (suggested.length === 0) {
                             return (
                               <p>
@@ -432,37 +681,61 @@ export function ReviewQueueClient() {
                             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
                               <p className="font-medium text-zinc-800">Suggested tags</p>
                               <p className="mt-1 text-xs text-amber-900">
-                                Check tags to add to the vocabulary and apply on the listing when you
-                                approve (max {FREE_ONBOARD_SEARCH_TAGS_MAX} total with search tags).
-                                Unchecked stay unused.
+                                Check to promote (optional rename). Uncheck to discard, or enter a
+                                replacement tag to use instead. Applied on approve (max{" "}
+                                {FREE_ONBOARD_SEARCH_TAGS_MAX} total with search tags).
                               </p>
-                              <ul className="mt-2 space-y-1.5">
+                              <ul className="mt-2 space-y-2">
                                 {suggested.map((suggestion) => {
-                                  const slug = suggestionToVocabSlug(suggestion);
-                                  const checked = selected.some(
-                                    (s) => s.toLowerCase() === suggestion.toLowerCase(),
+                                  const d = decisions[suggestion] ?? { promote: true, to: "" };
+                                  const previewSlug = suggestionToVocabSlug(
+                                    d.promote ? d.to.trim() || suggestion : d.to.trim() || suggestion,
                                   );
                                   return (
-                                    <li key={suggestion}>
-                                      <label className="flex cursor-pointer items-start gap-2 text-sm">
+                                    <li key={suggestion} className="text-sm">
+                                      <label className="flex cursor-pointer items-start gap-2">
                                         <input
                                           type="checkbox"
                                           className="mt-0.5"
-                                          checked={checked}
+                                          checked={d.promote}
                                           onChange={(e) =>
-                                            togglePromote(item.id, suggestion, e.target.checked)
+                                            setTagDecision(item.id, suggestion, {
+                                              promote: e.target.checked,
+                                              to: e.target.checked ? "" : d.to,
+                                            })
                                           }
                                         />
-                                        <span>
+                                        <span className="flex-1">
                                           <span className="font-medium">{suggestion}</span>
-                                          {slug ? (
+                                          {d.promote && previewSlug ? (
                                             <span className="ml-1 text-xs text-zinc-600">
-                                              → {slug}
+                                              → {previewSlug}
                                             </span>
+                                          ) : null}
+                                          {d.promote ? (
+                                            <input
+                                              type="text"
+                                              className="mt-1 w-full rounded border border-amber-300 bg-white px-2 py-1 text-xs text-zinc-900"
+                                              value={d.to}
+                                              onChange={(e) =>
+                                                setTagDecision(item.id, suggestion, {
+                                                  to: e.target.value,
+                                                })
+                                              }
+                                              placeholder="Optional rename before promote"
+                                            />
                                           ) : (
-                                            <span className="ml-1 text-xs text-red-700">
-                                              (invalid — cannot promote)
-                                            </span>
+                                            <input
+                                              type="text"
+                                              className="mt-1 w-full rounded border border-amber-300 bg-white px-2 py-1 text-xs text-zinc-900"
+                                              value={d.to}
+                                              onChange={(e) =>
+                                                setTagDecision(item.id, suggestion, {
+                                                  to: e.target.value,
+                                                })
+                                              }
+                                              placeholder="Use instead (leave empty to discard)"
+                                            />
                                           )}
                                         </span>
                                       </label>

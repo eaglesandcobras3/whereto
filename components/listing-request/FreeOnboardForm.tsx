@@ -13,6 +13,7 @@ import {
   FREE_ONBOARD_OVERVIEW_MAX,
   FREE_ONBOARD_REMOVAL_REASON_MAX,
   FREE_ONBOARD_SEARCH_TAGS_MAX,
+  FREE_ONBOARD_SUGGESTED_CATEGORY_MAX,
   FREE_ONBOARD_TITLE_MAX,
   parseSuggestedTagsInput,
 } from "@/lib/listing-requests/free-onboard-schema";
@@ -90,6 +91,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [suggestedTagsOpen, setSuggestedTagsOpen] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [serviceCategoryId, setServiceCategoryId] = useState("");
+  const [suggestedCategory, setSuggestedCategory] = useState("");
+  const [suggestedCategoryOpen, setSuggestedCategoryOpen] = useState(false);
   const [presence, setPresence] = useState<Presence>("");
 
   useEffect(() => {
@@ -175,6 +178,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
   function setPresenceExclusive(next: Presence) {
     setPresence(next);
+    setSuggestedCategory("");
+    setSuggestedCategoryOpen(false);
     if (next === "storefront") {
       setServiceCategoryId("");
       if (locations.length === 0) {
@@ -198,14 +203,15 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
     const isStorefront = presence === "storefront";
     const isService = presence === "service";
-    if (isStorefront && !categoryId) {
+    const suggestedCategoryTrimmed = suggestedCategory.trim().slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
+    if (isStorefront && !categoryId && !suggestedCategoryTrimmed) {
       setPending(false);
-      setErr("Choose a category.");
+      setErr("Choose a category or suggest one that is missing from the list.");
       return;
     }
-    if (isService && !serviceCategoryId) {
+    if (isService && !serviceCategoryId && !suggestedCategoryTrimmed) {
       setPending(false);
-      setErr("Choose a service specialty.");
+      setErr("Choose a service specialty or suggest one that is missing from the list.");
       return;
     }
     const locationPayload = isStorefront
@@ -234,8 +240,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       phone: String(fd.get("phone") ?? ""),
       excerpt: excerpt.trim(),
       overview: overview.trim(),
-      category_id: isStorefront ? categoryId : null,
-      service_category_id: isService ? serviceCategoryId : null,
+      category_id: isStorefront ? categoryId || null : null,
+      service_category_id: isService ? serviceCategoryId || null : null,
+      suggested_category: suggestedCategoryTrimmed || null,
       search_tags: selectedTags,
       suggested_tags: suggestedTags.slice(0, suggestedTagSlotsRemaining),
       marketing_opt_in: fd.get("marketing_opt_in") === "on",
@@ -612,9 +619,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             </p>
             <select
               id="service_category_id"
-              required={presence === "service"}
               value={serviceCategoryId}
-              onChange={(e) => setServiceCategoryId(e.target.value)}
+              onChange={(e) => {
+                setServiceCategoryId(e.target.value);
+                if (e.target.value) {
+                  setSuggestedCategory("");
+                  setSuggestedCategoryOpen(false);
+                }
+              }}
               className={`${inputClass} mt-1.5`}
             >
               <option value="">Choose a specialty</option>
@@ -632,9 +644,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             </label>
             <select
               id="category_id"
-              required={presence === "storefront"}
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => {
+                setCategoryId(e.target.value);
+                if (e.target.value) {
+                  setSuggestedCategory("");
+                  setSuggestedCategoryOpen(false);
+                }
+              }}
               className={`${inputClass} mt-1.5`}
               disabled={!presence}
             >
@@ -649,6 +666,49 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             </select>
           </>
         )}
+        {presence ? (
+          <div className="mt-1.5 flex items-center justify-end">
+            {!suggestedCategoryOpen ? (
+              <button
+                type="button"
+                onClick={() => setSuggestedCategoryOpen(true)}
+                className="shrink-0 text-xs font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
+              >
+                Can&apos;t find yours? Suggest one
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        {suggestedCategoryOpen && presence ? (
+          <div className="mt-3">
+            <label className={labelClass} htmlFor="suggested_category">
+              Suggested {presence === "service" ? "specialty" : "category"}
+            </label>
+            <p className={helpClass}>
+              Our team reviews suggestions before they go live. You can leave the list above empty
+              if none of the options fit.
+            </p>
+            <input
+              id="suggested_category"
+              name="suggested_category"
+              value={suggestedCategory}
+              onChange={(e) => {
+                const next = e.target.value.slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
+                setSuggestedCategory(next);
+                if (next.trim()) {
+                  if (presence === "storefront") setCategoryId("");
+                  if (presence === "service") setServiceCategoryId("");
+                }
+              }}
+              className={`${inputClass} mt-1.5`}
+              placeholder={
+                presence === "service" ? "e.g. Yacht detailing" : "e.g. Kayak rentals"
+              }
+              maxLength={FREE_ONBOARD_SUGGESTED_CATEGORY_MAX}
+              autoComplete="off"
+            />
+          </div>
+        ) : null}
       </div>
 
       <div>

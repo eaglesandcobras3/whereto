@@ -201,13 +201,34 @@ describe("free onboard schema limits", () => {
     ).toBe(false);
   });
 
-  it("requires a storefront category for physical locations", () => {
+  it("requires a storefront category or suggested category for physical locations", () => {
     expect(
       freeOnboardBodySchema.safeParse({
         ...base,
         category_id: null,
       }).success,
     ).toBe(false);
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        category_id: null,
+        suggested_category: "Kayak rentals",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("allows service specialty suggestion without selecting an existing specialty", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        is_storefront: false,
+        is_service_business: true,
+        locations: [],
+        category_id: null,
+        service_category_id: null,
+        suggested_category: "Yacht detailing",
+      }).success,
+    ).toBe(true);
   });
 
   it("requires locations for physical storefronts", () => {

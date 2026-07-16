@@ -18,8 +18,15 @@ const RAW_KEYS = new Set([
   "ctaBlock",
   "adminNotesBlock",
   "linksBlock",
+  "bodyBlocks",
   "detailsHtml",
 ]);
+
+const SIGN_OFF_LINES = [
+  `Warmly,`,
+  `The WhereTo30A Team`,
+  `Your Local Guide to All Things 30A Florida`,
+] as const;
 
 function ctaBlockMjml(cta?: Cta | null): string {
   if (!cta?.url) return "";
@@ -29,7 +36,7 @@ function ctaBlockMjml(cta?: Cta | null): string {
 function adminNotesBlockMjml(adminNotes?: string | null): string {
   const notes = adminNotes?.trim();
   if (!notes) return "";
-  return `<mj-text align="center" color="#5a6b6d" padding-top="8px" padding-bottom="4px" css-class="email-muted"><strong>Note from our team:</strong> ${escapeHtml(notes)}</mj-text>`;
+  return `<mj-text align="left" color="#5a6b6d" padding-top="8px" padding-bottom="4px" css-class="email-muted"><strong>Note from our team:</strong> ${escapeHtml(notes)}</mj-text>`;
 }
 
 function linksBlockMjml(links: string[]): string {
@@ -37,12 +44,22 @@ function linksBlockMjml(links: string[]): string {
   const items = links
     .map(
       (url) =>
-        `<mj-text align="center" padding-bottom="6px"><a href="${escapeHtml(url)}" style="color:#57A0AF;text-decoration:underline;">${escapeHtml(url)}</a></mj-text>`,
+        `<mj-text align="left" padding-bottom="6px"><a href="${escapeHtml(url)}" style="color:#57A0AF;text-decoration:underline;">${escapeHtml(url)}</a></mj-text>`,
     )
     .join("\n");
   const label =
     links.length === 1 ? "View your listing:" : "View your listings:";
-  return `<mj-text align="center" font-weight="700" padding-top="8px" padding-bottom="8px">${label}</mj-text>\n${items}`;
+  return `<mj-text align="left" font-weight="700" padding-top="8px" padding-bottom="8px">${label}</mj-text>\n${items}`;
+}
+
+function bodyBlocksMjml(paragraphs: string[]): string {
+  return paragraphs
+    .map((paragraph, index) => {
+      const color = index === 0 ? undefined : ' color="#5a6b6d"';
+      const cssClass = index === 0 ? "" : ' css-class="email-muted"';
+      return `<mj-text align="left"${color ?? ""} padding-bottom="12px"${cssClass}>${escapeHtml(paragraph)}</mj-text>`;
+    })
+    .join("\n");
 }
 
 function footerTextLines(cta?: Cta | null): string[] {
@@ -52,12 +69,18 @@ function footerTextLines(cta?: Cta | null): string[] {
   }
   lines.push(
     ``,
+    ...SIGN_OFF_LINES,
+    ``,
     `Questions? Email hello@whereto30a.com`,
     `Instagram: https://www.instagram.com/whereto30a/`,
     `TikTok: https://www.tiktok.com/@whereto30a`,
     emailSiteBase(),
   );
   return lines;
+}
+
+function joinEmailText(parts: string[]): string {
+  return parts.join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
 /** Public form for listing / update / claim requests (portal not public yet). */
@@ -131,23 +154,50 @@ export async function buildBusinessRequestReceivedEmail(opts: {
 }): Promise<RenderedBusinessEmail> {
   const title = opts.businessTitle.trim() || "your business";
   const kind = opts.requestKind.trim() || "request";
+  const isListingOrUpdate =
+    kind === "listing" ||
+    kind === "update" ||
+    kind.startsWith("listing") ||
+    kind.startsWith("update");
+
+  if (isListingOrUpdate) {
+    const subject = "Thanks for submitting your business to WhereTo30A!";
+    const preview =
+      "We've received your listing and our team will review it before it's published.";
+    const paragraphs = [
+      "We've received your listing and our team will review it to make sure everything looks great before it's published. If we need any additional information, we'll reach out using the email address you provided.",
+      "Once approved, your business will be live and discoverable by locals and visitors exploring everything 30A has to offer.",
+      "Thank you for being part of the WhereTo30A community. We're excited to help more people discover your business.",
+    ];
+    const text = joinEmailText([
+      "Thanks for submitting your business to WhereTo30A!",
+      ``,
+      ...paragraphs,
+      ...footerTextLines(opts.cta),
+    ]);
+
+    return finalize("business-request-received", subject, text, {
+      subject,
+      preview,
+      headline: "Thanks for submitting!",
+      bodyBlocks: bodyBlocksMjml(paragraphs),
+      ctaBlock: ctaBlockMjml(opts.cta),
+    });
+  }
+
   const subject = `We received your ${kind} for ${title}`;
   const preview = `Our team will review ${title} and email you when it goes live.`;
-  const text = [
+  const paragraphs = [
     `Thanks for submitting ${title} on WhereTo30A.`,
-    ``,
     `Our team will review your ${kind} and email you when your listing or updates go live.`,
-    ...footerTextLines(opts.cta),
-  ]
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n");
+  ];
+  const text = joinEmailText([...paragraphs, ...footerTextLines(opts.cta)]);
 
   return finalize("business-request-received", subject, text, {
     subject,
     preview,
     headline: "We received your request",
-    businessTitle: title,
-    requestKind: kind,
+    bodyBlocks: bodyBlocksMjml(paragraphs),
     ctaBlock: ctaBlockMjml(opts.cta),
   });
 }
@@ -170,27 +220,41 @@ export async function buildBusinessRequestApprovedEmail(opts: {
     opts.cta ??
     (listingUrl ? null : opts.kind === "listing" ? null : submitChangesCta());
 
-  const subject =
-    opts.kind === "claim"
-      ? `You're now managing ${title} on WhereTo30A`
-      : `${title} was approved on WhereTo30A`;
-  const preview =
-    opts.kind === "claim"
-      ? `Your claim for ${title} was approved.`
-      : `${title} has been approved and is ready on WhereTo30A.`;
-  const approvalDetail =
-    opts.kind === "claim"
-      ? "You can submit listing changes anytime on WhereTo30A."
-      : listingUrl
-        ? "Your listing is approved and live on WhereTo30A."
-        : "Your listing is approved. Visitors can find it on WhereTo30A. Submit changes anytime on the website if something needs updating.";
-  const headline = opts.kind === "claim" ? "You're all set!" : "You're approved!";
+  if (opts.kind === "listing") {
+    const subject = `${title} was approved on WhereTo30A`;
+    const preview = `${title} has been reviewed, approved, and is now live on WhereTo30A.`;
+    const paragraphs = [
+      "Your business listing has been reviewed, approved, and is now live on WhereTo30A.",
+      "Visitors can now discover your business while exploring everything 30A has to offer.",
+      "Thank you for being part of the WhereTo30A community. We're excited to help more people discover your business.",
+    ];
+    const textParts = [...paragraphs];
+    if (opts.adminNotes?.trim()) {
+      textParts.push(``, `Note from our team: ${opts.adminNotes.trim()}`);
+    }
+    if (links.length) {
+      textParts.push(``, "View your listing:", ...links);
+    }
+    textParts.push(...footerTextLines(cta));
 
-  const textParts = [
-    opts.kind === "claim"
-      ? `Your claim for ${title} was approved. You can submit listing changes anytime on WhereTo30A.`
-      : `Good news. ${title} has been approved on WhereTo30A.${listingUrl ? "" : " Submit changes anytime on the website if something needs updating."}`,
+    return finalize("business-request-approved", subject, joinEmailText(textParts), {
+      subject,
+      preview,
+      headline: "Great news!",
+      bodyBlocks: bodyBlocksMjml(paragraphs),
+      adminNotesBlock: adminNotesBlockMjml(opts.adminNotes),
+      linksBlock: linksBlockMjml(links),
+      ctaBlock: ctaBlockMjml(cta),
+    });
+  }
+
+  const subject = `You're now managing ${title} on WhereTo30A`;
+  const preview = `Your claim for ${title} was approved.`;
+  const paragraphs = [
+    `Your claim for ${title} was approved.`,
+    "You can submit listing changes anytime on WhereTo30A.",
   ];
+  const textParts = [...paragraphs];
   if (opts.adminNotes?.trim()) {
     textParts.push(``, `Note from our team: ${opts.adminNotes.trim()}`);
   }
@@ -199,12 +263,11 @@ export async function buildBusinessRequestApprovedEmail(opts: {
   }
   textParts.push(...footerTextLines(cta));
 
-  return finalize("business-request-approved", subject, textParts.join("\n"), {
+  return finalize("business-request-approved", subject, joinEmailText(textParts), {
     subject,
     preview,
-    headline,
-    businessTitle: title,
-    approvalDetail,
+    headline: "You're all set!",
+    bodyBlocks: bodyBlocksMjml(paragraphs),
     adminNotesBlock: adminNotesBlockMjml(opts.adminNotes),
     linksBlock: linksBlockMjml(links),
     ctaBlock: ctaBlockMjml(cta),
@@ -224,34 +287,33 @@ export async function buildListingLiveEmail(opts: {
 
   let subject: string;
   let headline: string;
-  let lead: string;
-  let liveDetail: string;
   let preview: string;
+  let paragraphs: string[];
 
-  if (opts.variant === "update") {
-    subject = `Your updates for ${title} are live on WhereTo30A`;
-    headline = "Your updates are live!";
-    lead = `The changes you submitted for ${title} are now on WhereTo30A.`;
-    liveDetail = "Thanks for keeping your listing current for visitors planning a trip to 30A.";
-    preview = `Your updates for ${title} are live.`;
-  } else if (opts.variant === "photo") {
+  if (opts.variant === "photo") {
     subject = `Your photo for ${title} is live on WhereTo30A`;
     headline = "Your photo is live!";
-    lead = `Your photo for ${title} was approved and is now on your listing.`;
-    liveDetail = "Visitors will see it the next time they open your page.";
     preview = `Your photo for ${title} is on your listing.`;
+    paragraphs = [
+      `Your photo for ${title} was approved and is now on your listing.`,
+      "Visitors will see it the next time they open your page.",
+    ];
   } else {
-    subject = `${title} is now live on WhereTo30A`;
-    headline = "You're all set!";
-    lead = `${title} is now live on WhereTo30A.`;
-    liveDetail =
-      links.length > 1
-        ? `This confirmation covers your whole submission (${links.length} locations).`
-        : "Share your page anytime. Submit any additional changes on the website.";
-    preview = `${title} is live on WhereTo30A.`;
+    subject =
+      opts.variant === "update"
+        ? `Your updates for ${title} are live on WhereTo30A`
+        : `${title} is now live on WhereTo30A`;
+    headline = "Great news!";
+    preview =
+      "Your business listing has been reviewed, approved, and is now live on WhereTo30A.";
+    paragraphs = [
+      "Your business listing has been reviewed, approved, and is now live on WhereTo30A.",
+      "Visitors can now discover your business while exploring everything 30A has to offer.",
+      "Thank you for being part of the WhereTo30A community. We're excited to help more people discover your business.",
+    ];
   }
 
-  const textParts = [lead, ``, liveDetail];
+  const textParts = [...paragraphs];
   if (links.length) {
     textParts.push(
       ``,
@@ -261,12 +323,11 @@ export async function buildListingLiveEmail(opts: {
   }
   textParts.push(...footerTextLines(opts.cta));
 
-  return finalize("listing-live", subject, textParts.join("\n"), {
+  return finalize("listing-live", subject, joinEmailText(textParts), {
     subject,
     preview,
     headline,
-    lead,
-    liveDetail,
+    bodyBlocks: bodyBlocksMjml(paragraphs),
     linksBlock: linksBlockMjml(links),
     ctaBlock: ctaBlockMjml(opts.cta),
   });
@@ -280,23 +341,25 @@ export async function buildListingRemovedEmail(opts: {
   const title = opts.businessTitle.trim() || "your business";
   const subject = `${title} has been removed from WhereTo30A`;
   const headline = "Listing removed";
-  const lead = `We've removed ${title} from WhereTo30A as requested.`;
-  const removalDetail =
-    "It will no longer appear in search or on the site. No further action is needed from you.";
-  const preview = `We've removed ${title} from WhereTo30A as requested.`;
+  const preview = "This email confirms that your business listing has been removed from WhereTo30A.";
+  const paragraphs = [
+    "This email confirms that your business listing has been removed from WhereTo30A.",
+    "Your listing is no longer visible on our website and will no longer appear in search results or directory pages.",
+    "If this was done by mistake, or you'd like to add your business back in the future, you're always welcome to submit a new listing.",
+    "Thank you for being part of the WhereTo30A community, and we wish you all the best.",
+  ];
 
-  const textParts = [lead, ``, removalDetail];
+  const textParts = [...paragraphs];
   if (opts.adminNotes?.trim()) {
     textParts.push(``, `Note from our team: ${opts.adminNotes.trim()}`);
   }
   textParts.push(...footerTextLines());
 
-  return finalize("listing-removed", subject, textParts.join("\n"), {
+  return finalize("listing-removed", subject, joinEmailText(textParts), {
     subject,
     preview,
     headline,
-    lead,
-    removalDetail,
+    bodyBlocks: bodyBlocksMjml(paragraphs),
     adminNotesBlock: adminNotesBlockMjml(opts.adminNotes),
   });
 }

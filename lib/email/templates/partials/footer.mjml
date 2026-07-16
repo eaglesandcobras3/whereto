@@ -2,7 +2,7 @@
 <mj-section background-color="#5DA6A8" padding="28px 28px 12px" css-class="email-footer">
   <mj-column>
     <mj-text align="center" color="#ffffff" font-size="15px" font-style="italic" line-height="1.5" padding-bottom="6px" css-class="email-footer-text">
-      Your Local Guide to All Things 30A
+      Your Local Guide to All Things 30A Florida
     </mj-text>
     <mj-text align="center" color="#ffffff" font-size="14px" font-weight="600" padding-bottom="18px" css-class="email-footer-text">
       <a href="mailto:hello@whereto30a.com" style="color:#ffffff;text-decoration:underline;">hello@whereto30a.com</a>

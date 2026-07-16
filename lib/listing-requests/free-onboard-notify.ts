@@ -60,8 +60,22 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
       await sendTransactionalEmail({
         from: listingFromAddress(),
         to: opts.to,
-        subject: `We received your ${opts.isUpdate ? "update" : "listing"} for ${title}`,
-        text: `Thanks for submitting ${title} on WhereTo30A.\n\nOur team will review your request and email you when your listing or updates go live.\n\nQuestions? Email hello@whereto30a.com`,
+        subject: "Thanks for submitting your business to WhereTo30A!",
+        text: [
+          "Thanks for submitting your business to WhereTo30A!",
+          "",
+          "We've received your listing and our team will review it to make sure everything looks great before it's published. If we need any additional information, we'll reach out using the email address you provided.",
+          "",
+          "Once approved, your business will be live and discoverable by locals and visitors exploring everything 30A has to offer.",
+          "",
+          "Thank you for being part of the WhereTo30A community. We're excited to help more people discover your business.",
+          "",
+          "Warmly,",
+          "The WhereTo30A Team",
+          "Your Local Guide to All Things 30A Florida",
+          "",
+          "Questions? Email hello@whereto30a.com",
+        ].join("\n"),
         logLabel: "free-onboard-notify:received",
       });
       return;
@@ -90,7 +104,21 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
           from: listingFromAddress(),
           to: opts.to,
           subject: `${title} has been removed from WhereTo30A`,
-          text: `We've removed ${title} from WhereTo30A as requested.\n\nQuestions? Email hello@whereto30a.com`,
+          text: [
+            "This email confirms that your business listing has been removed from WhereTo30A.",
+            "",
+            "Your listing is no longer visible on our website and will no longer appear in search results or directory pages.",
+            "",
+            "If this was done by mistake, or you'd like to add your business back in the future, you're always welcome to submit a new listing.",
+            "",
+            "Thank you for being part of the WhereTo30A community, and we wish you all the best.",
+            "",
+            "Warmly,",
+            "The WhereTo30A Team",
+            "Your Local Guide to All Things 30A Florida",
+            "",
+            "Questions? Email hello@whereto30a.com",
+          ].join("\n"),
           logLabel: "free-onboard-notify:approved",
         });
         return;
@@ -153,15 +181,28 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
     }
 
     const subject = opts.isUpdate
-      ? `Your update for ${title} is live on WhereTo30A`
+      ? `Your updates for ${title} are live on WhereTo30A`
       : `${title} is now live on WhereTo30A`;
     const linkBlock =
       links.length > 0
         ? `\n\nView ${links.length === 1 ? "your listing" : "your listings"}:\n${links.join("\n")}`
         : "";
-    const text = opts.isUpdate
-      ? `Good news: your requested updates for ${title} are live on WhereTo30A.${linkBlock}\n\nQuestions? Email hello@whereto30a.com`
-      : `Good news: ${title} is now live on WhereTo30A.${linkBlock}\n\nThis is one confirmation for your whole submission${links.length > 1 ? ` (${links.length} locations)` : ""}.\n\nQuestions? Email hello@whereto30a.com`;
+    const text = [
+      "Your business listing has been reviewed, approved, and is now live on WhereTo30A.",
+      "",
+      "Visitors can now discover your business while exploring everything 30A has to offer.",
+      "",
+      "Thank you for being part of the WhereTo30A community. We're excited to help more people discover your business.",
+      linkBlock,
+      "",
+      "Warmly,",
+      "The WhereTo30A Team",
+      "Your Local Guide to All Things 30A Florida",
+      "",
+      "Questions? Email hello@whereto30a.com",
+    ]
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n");
 
     await sendTransactionalEmail({
       from: listingFromAddress(),

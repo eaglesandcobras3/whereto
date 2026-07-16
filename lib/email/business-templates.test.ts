@@ -68,11 +68,15 @@ describe("business MJML templates", () => {
     });
 
     expect(email.templateId).toBe("business-request-received");
-    expect(email.subject).toContain("Amavida Coffee");
-    expect(email.text).toMatch(/review/i);
-    expect(email.text).toMatch(/go live/i);
+    expect(email.subject).toMatch(/Thanks for submitting/i);
+    expect(email.text).toMatch(/review it to make sure everything looks great/i);
+    expect(email.text).toMatch(/Once approved/i);
+    expect(email.text).toMatch(/Warmly,/);
+    expect(email.text).toMatch(/Your Local Guide to All Things 30A Florida/);
     expect(email.html).toContain("WhereTo30A");
-    expect(email.html).toContain("Amavida Coffee");
+    expect(email.html).toContain("Thanks for submitting!");
+    expect(email.html).toContain("Warmly,");
+    expect(email.html).toContain("The WhereTo30A Team");
     expect(email.html).not.toContain("Business Portal");
     expect(email.html).not.toContain("Open Business Portal");
     expect(email.html).not.toContain("No action is needed");
@@ -103,14 +107,13 @@ describe("business MJML templates", () => {
 
     expect(email.templateId).toBe("business-request-approved");
     expect(email.subject).toMatch(/approved/i);
-    expect(email.html).toContain("You're approved!");
-    expect(email.html).toContain("The Red Bar");
+    expect(email.html).toContain("Great news!");
+    expect(email.html).toContain("reviewed, approved, and is now live");
+    expect(email.html).toContain("Warmly,");
     expect(email.html).toContain("#5DA6A8");
     expect(email.html).not.toContain("Business Portal");
     expect(email.html).toContain("View your listing");
     expect(email.html).toContain("/business/the-red-bar");
-    expect(email.html).toContain("Your listing is approved and live on WhereTo30A.");
-    expect(email.html).not.toContain("Share it anytime");
     expect(email.html).toContain('style="color:#57A0AF;text-decoration:underline');
     expect(email.html).not.toMatch(/class="[^"]*email-cta/);
     expect(email.html).not.toContain("No action is needed");
@@ -125,8 +128,11 @@ describe("business MJML templates", () => {
 
     expect(email.templateId).toBe("listing-live");
     expect(email.subject).toMatch(/live/i);
-    expect(email.html).toContain("Your updates are live");
+    expect(email.html).toContain("Great news!");
+    expect(email.html).toContain("reviewed, approved, and is now live");
     expect(email.html).toContain("https://whereto30a.com/business/goatfeathers");
+    expect(email.html).toContain("View your listing");
+    expect(email.html).toContain("Warmly,");
   });
 
   it("renders listing removed confirmation", async () => {
@@ -137,7 +143,11 @@ describe("business MJML templates", () => {
     expect(email.templateId).toBe("listing-removed");
     expect(email.subject).toMatch(/removed/i);
     expect(email.html).toContain("Listing removed");
-    expect(email.html).toContain("We've removed Old Beach Spot from WhereTo30A as requested.");
+    expect(email.html).toContain(
+      "This email confirms that your business listing has been removed from WhereTo30A.",
+    );
+    expect(email.html).toContain("no longer appear in search results");
+    expect(email.html).toContain("Warmly,");
     expect(email.html).toContain("#5DA6A8");
     expect(email.html).toContain("/email/logo-header-dark.png");
   });

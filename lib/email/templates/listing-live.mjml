@@ -7,14 +7,10 @@
   <mj-include path="./partials/body-open.mjml" />
   <mj-include path="./partials/content-open.mjml" />
   <mj-include path="./partials/content-headline.mjml" />
-  <mj-text align="center" padding-bottom="12px">
-    {{lead}}
-  </mj-text>
-  <mj-text align="center" color="#5a6b6d" padding-bottom="8px" css-class="email-muted">
-    {{liveDetail}}
-  </mj-text>
+  {{bodyBlocks}}
   {{linksBlock}}
   {{ctaBlock}}
+  <mj-include path="./partials/sign-off.mjml" />
   <mj-include path="./partials/content-close.mjml" />
   <mj-include path="./partials/body-close.mjml" />
 </mjml>
