@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect } from "react";
+
 type Props = {
   className?: string;
   /** Thank-you copy for listing removal requests. */
@@ -5,6 +9,10 @@ type Props = {
 };
 
 export function SubmissionThankYou({ className, variant = "default" }: Props) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   if (variant === "removal") {
     return (
       <div className={className}>
