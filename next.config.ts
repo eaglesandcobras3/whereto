@@ -22,6 +22,8 @@ const phAssetsHost = phIngestHost
   : undefined;
 
 const nextConfig: NextConfig = {
+  // mjml pulls Node-only tooling; keep it external for server bundles.
+  serverExternalPackages: ["mjml"],
   images: {
     unoptimized: true,
     remotePatterns: [

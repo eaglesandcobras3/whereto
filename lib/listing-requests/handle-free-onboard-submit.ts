@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
 import { normalizeSearchTagSlug } from "@/lib/discovery-filters/search-tag-label";
+import { sendFreeOnboardSubmitterEmail } from "@/lib/listing-requests/free-onboard-notify";
 import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TYPES,
@@ -196,6 +197,14 @@ export async function handleFreeOnboardListingRequest(
       { status: 500 },
     );
   }
+
+  // Confirm receipt to the submitter (decision email comes later when live/rejected).
+  await sendFreeOnboardSubmitterEmail({
+    to: d.submitter_email,
+    event: "received",
+    businessTitle: d.title,
+    isUpdate,
+  });
 
   let similarCount = 0;
   try {

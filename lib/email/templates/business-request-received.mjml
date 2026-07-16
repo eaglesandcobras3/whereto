@@ -1,0 +1,87 @@
+<mjml>
+  <mj-head>
+    <mj-title>{{subject}}</mj-title>
+    <mj-preview>{{preview}}</mj-preview>
+    <mj-font name="Manrope" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="Manrope, Helvetica, Arial, sans-serif" />
+      <mj-text color="#1c3257" font-size="15px" line-height="1.65" padding="0" />
+      <mj-button
+        background-color="#57A0AF"
+        color="#ffffff"
+        border-radius="8px"
+        font-size="15px"
+        font-weight="700"
+        inner-padding="14px 32px"
+        padding="20px 0 8px"
+      />
+      <mj-section padding="0" />
+      <mj-column padding="0" />
+      <mj-image padding="0" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f7fafb" width="600px">
+    <!-- Light header (matches site nav chrome) + dark logo -->
+    <mj-section background-color="#f2f5f5" padding="28px 32px">
+      <mj-column>
+        <mj-image
+          src="{{logoUrl}}"
+          alt="WhereTo30A"
+          width="200px"
+          align="center"
+          href="{{siteUrl}}"
+        />
+      </mj-column>
+    </mj-section>
+
+    <!-- Content -->
+    <mj-section background-color="#ffffff" padding="40px 40px 28px">
+      <mj-column>
+        <mj-text align="center" font-size="28px" font-weight="700" line-height="1.25" color="#1c3257" padding-bottom="10px">
+          {{headline}}
+        </mj-text>
+        <mj-image src="{{waveUrl}}" alt="" width="88px" align="center" padding-bottom="22px" />
+        <mj-text align="center" padding-bottom="12px">
+          Thanks for submitting <strong>{{businessTitle}}</strong> on WhereTo30A.
+        </mj-text>
+        <mj-text align="center" color="#5a6b6d" padding-bottom="8px">
+          Our team will review your {{requestKind}} and email you when your listing or updates go live.
+        </mj-text>
+        <mj-text align="center" color="#5a6b6d">
+          No action is needed from you right now.
+        </mj-text>
+        {{ctaBlock}}
+      </mj-column>
+    </mj-section>
+
+    <!-- Beach towns illustration -->
+    <mj-section background-color="#ffffff" padding="8px 0 0">
+      <mj-column>
+        <mj-image
+          src="{{bannerUrl}}"
+          alt="30A beach towns — Seaside, Alys Beach, Rosemary Beach, WaterColor, Grayton Beach, Inlet Beach"
+          width="600px"
+          fluid-on-mobile="true"
+          href="{{siteUrl}}"
+        />
+      </mj-column>
+    </mj-section>
+
+    <!-- Teal footer + socials -->
+    <mj-section background-color="#5DA6A8" padding="28px 28px 12px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="15px" font-style="italic" line-height="1.5" padding-bottom="6px">
+          Your Local Guide to All Things 30A
+        </mj-text>
+        <mj-text align="center" color="#ffffff" font-size="14px" font-weight="600" padding-bottom="18px">
+          <a href="mailto:hello@whereto30a.com" style="color:#ffffff;text-decoration:underline;">hello@whereto30a.com</a>
+        </mj-text>
+        <mj-social font-size="0" icon-size="32px" mode="horizontal" align="center" padding="0 0 8px" inner-padding="0 8px">
+          <mj-social-element href="{{instagramUrl}}" src="{{iconInstagramUrl}}" background-color="#5DA6A8" alt="Instagram" />
+          <mj-social-element href="{{tiktokUrl}}" src="{{iconTiktokUrl}}" background-color="#5DA6A8" alt="TikTok" />
+          <mj-social-element href="{{siteUrl}}" src="{{iconWebsiteUrl}}" background-color="#5DA6A8" alt="Website" />
+        </mj-social>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
