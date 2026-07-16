@@ -607,8 +607,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               Service specialty
             </label>
             <p className={helpClass}>
-              Pick the closest specialty — this places the listing under Services browse groups
-              (footer and /services hub).
+              Pick the closest specialty — this places the listing under a Services browse group
+              (footer and /services hub), such as Creative & events for Marketing & creative.
             </p>
             <select
               id="service_category_id"
