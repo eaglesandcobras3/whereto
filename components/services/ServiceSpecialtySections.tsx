@@ -11,6 +11,11 @@ import {
   SERVICE_CATEGORY_GROUP_ICONS,
   type ServiceCategoryGroupSlug,
 } from "@/lib/service-categories/groups";
+import {
+  isServiceUncategorizedSection,
+  SERVICE_UNCATEGORIZED_ICON,
+  serviceUncategorizedHubPath,
+} from "@/lib/service-categories/uncategorized";
 import type { ServiceSpecialtySection } from "@/lib/data/service-vendors-hub";
 import Link from "next/link";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
@@ -62,9 +67,14 @@ export function ServiceSpecialtySections({
       </div>
 
       {sections.map((section) => {
-        const icon =
-          SERVICE_CATEGORY_GROUP_ICONS[section.slug as ServiceCategoryGroupSlug] ??
-          "home_repair_service";
+        const uncategorized = isServiceUncategorizedSection(section.slug);
+        const icon = uncategorized
+          ? SERVICE_UNCATEGORIZED_ICON
+          : (SERVICE_CATEGORY_GROUP_ICONS[section.slug as ServiceCategoryGroupSlug] ??
+            "home_repair_service");
+        const viewAllHref = uncategorized
+          ? serviceUncategorizedHubPath()
+          : serviceBrowseGroupHubPath(section.slug as ServiceCategoryGroupSlug);
         const isOpen = expandedIds.has(section.id);
 
         return (
@@ -74,7 +84,7 @@ export function ServiceSpecialtySections({
             subtitle={`${section.totalCount} ${section.totalCount === 1 ? "provider" : "providers"}`}
             action={
               <Link
-                href={serviceBrowseGroupHubPath(section.slug as ServiceCategoryGroupSlug)}
+                href={viewAllHref}
                 className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
               >
                 View all

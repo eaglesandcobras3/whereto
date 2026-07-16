@@ -106,7 +106,20 @@ export const freeOnboardBodySchema = z
     phone: optionalPhone,
     excerpt: z.string().trim().min(10).max(FREE_ONBOARD_EXCERPT_MAX),
     overview: z.string().trim().min(15).max(FREE_ONBOARD_OVERVIEW_MAX),
-    category_id: z.string().uuid(),
+    /** Storefront browse category (`business_categories`) — required when `is_storefront`. */
+    category_id: z
+      .string()
+      .uuid()
+      .optional()
+      .nullable()
+      .transform((s) => s || null),
+    /** Service specialty (`service_categories`) — required when `is_service_business`. */
+    service_category_id: z
+      .string()
+      .uuid()
+      .optional()
+      .nullable()
+      .transform((s) => s || null),
     search_tags: z
       .array(z.string().trim().min(1).max(64))
       .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
@@ -152,6 +165,20 @@ export const freeOnboardBodySchema = z
         code: z.ZodIssueCode.custom,
         message: "Locations are only allowed when you have a physical location.",
         path: ["locations"],
+      });
+    }
+    if (data.is_storefront && !data.category_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose a category for your physical location.",
+        path: ["category_id"],
+      });
+    }
+    if (data.is_service_business && !data.service_category_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose a service specialty.",
+        path: ["service_category_id"],
       });
     }
     if (data.search_tags.length + data.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
@@ -215,8 +242,12 @@ export type FreeOnboardPayload = {
   phone: string | null;
   excerpt: string;
   overview: string;
-  category_id: string;
+  /** Storefront `business_categories` id — null for service-only intakes. */
+  category_id: string | null;
   category_title?: string | null;
+  /** Service specialty `service_categories` id — null for storefront intakes. */
+  service_category_id?: string | null;
+  service_category_title?: string | null;
   search_tags: string[];
   /** Submitter proposals for tags missing from vocabulary; not applied to businesses.search_tags. */
   suggested_tags?: string[];

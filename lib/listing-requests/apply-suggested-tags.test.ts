@@ -18,6 +18,7 @@ function basePayload(overrides: Partial<FreeOnboardPayload> = {}): FreeOnboardPa
     excerpt: "A short excerpt for the listing.",
     overview: "A slightly longer overview for visitors.",
     category_id: "22222222-2222-4222-8222-222222222222",
+    service_category_id: null,
     search_tags: ["wifi"],
     suggested_tags: ["marketing", "product development", "engineering"],
     search_keywords: null,
