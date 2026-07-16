@@ -86,6 +86,12 @@ const nextConfig: NextConfig = {
         destination: "/towns",
         permanent: true,
       },
+      {
+        // Retired Option A catch-all; specialties now live in named groups.
+        source: "/services/marine-auto-more",
+        destination: "/services",
+        permanent: true,
+      },
     ];
   },
   async headers() {

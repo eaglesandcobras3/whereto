@@ -4,6 +4,7 @@ import {
   type BusinessCategoryGroupSlug,
 } from "@/lib/business-categories/groups";
 import {
+  LEGACY_SERVICE_CATEGORY_GROUP_SLUGS,
   SERVICE_CATEGORY_GROUP_SLUGS,
   serviceCategoryGroupForSlug,
 } from "@/lib/service-categories/groups";
@@ -35,6 +36,10 @@ export function normalizeServiceCategoryGroupSlug(
 ): (typeof SERVICE_CATEGORY_GROUP_SLUGS)[number] | undefined {
   if (!slug?.trim()) return undefined;
   const key = normalizeSlugKey(slug);
+  if ((LEGACY_SERVICE_CATEGORY_GROUP_SLUGS as readonly string[]).includes(key)) {
+    // Retired catch-all — drop rather than invent a single successor group.
+    return undefined;
+  }
   if ((SERVICE_CATEGORY_GROUP_SLUGS as readonly string[]).includes(key)) {
     return key as (typeof SERVICE_CATEGORY_GROUP_SLUGS)[number];
   }
