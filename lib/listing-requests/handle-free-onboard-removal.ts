@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
+import { sendFreeOnboardSubmitterEmail } from "@/lib/listing-requests/free-onboard-notify";
 import {
   FREE_ONBOARD_TYPES,
   freeOnboardRemovalBodySchema,
@@ -94,6 +95,13 @@ export async function handleFreeOnboardRemovalRequest(
       { status: 500 },
     );
   }
+
+  await sendFreeOnboardSubmitterEmail({
+    to: d.submitter_email,
+    event: "received",
+    businessTitle: title,
+    isRemoval: true,
+  });
 
   const resendKey = process.env.RESEND_API_KEY?.trim();
   const fromEmail =
