@@ -1,0 +1,12 @@
+<!-- Beach towns illustration -->
+<mj-section background-color="#ffffff" padding="0 0 0" css-class="email-light">
+  <mj-column>
+    <mj-image
+      src="{{bannerUrl}}"
+      alt="30A beach towns: Seaside, Alys Beach, Rosemary Beach, WaterColor, Grayton Beach, Inlet Beach"
+      width="600px"
+      fluid-on-mobile="true"
+      href="{{siteUrl}}"
+    />
+  </mj-column>
+</mj-section>

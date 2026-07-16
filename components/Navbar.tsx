@@ -174,15 +174,15 @@ export function Navbar({
             className="flex min-w-0 items-center gap-2"
           >
             <img
-              src="/whereto30a.svg"
+              src="/whereto30a.png"
               alt="WhereTo30A"
               className={
                 compact
                   ? "h-7 w-auto shrink-0 md:h-8"
                   : "h-7 w-auto shrink-0 md:h-9"
               }
-              width={737}
-              height={182}
+              width={320}
+              height={79}
               decoding="async"
             />
             {!compact && (

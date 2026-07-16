@@ -314,11 +314,11 @@ export async function SiteFooter() {
           <div className="shrink-0 space-y-4 lg:w-48 xl:w-52">
             <div className="flex items-center gap-2">
               <img
-                src="/whereto30a.svg"
+                src="/whereto30a.png"
                 alt="WhereTo30A"
                 className="h-7 w-auto md:h-8"
-                width={737}
-                height={182}
+                width={320}
+                height={79}
                 decoding="async"
               />
             </div>

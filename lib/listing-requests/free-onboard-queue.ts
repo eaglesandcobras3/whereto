@@ -79,6 +79,10 @@ async function notifySubmitterOnce(
     adminNotes: opts.adminNotes,
     isUpdate: opts.isUpdate,
     isRemoval: opts.isRemoval === true,
+    businessSlug:
+      "target_business_slug" in payload && typeof payload.target_business_slug === "string"
+        ? payload.target_business_slug.trim() || null
+        : null,
   });
 
   payload.submitter_notified = true;

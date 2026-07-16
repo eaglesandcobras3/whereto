@@ -1,0 +1,2 @@
+<mj-body background-color="#f7fafb" width="600px" css-class="email-body-bg">
+  <mj-include path="./header.mjml" />

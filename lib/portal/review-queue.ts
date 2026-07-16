@@ -12,8 +12,15 @@ import { sendPortalOwnerEmail } from "@/lib/portal/notifications";
 import { uniqueSlug } from "@/lib/portal/slug";
 import { inferStorefrontCategoryId, inferBusinessType } from "@/lib/portal/infer-category";
 import { buildSearchDocumentFields } from "@/lib/search/derive-search-document";
+import { getSiteUrl } from "@/lib/site-url";
 
-export type ReviewItemRow = {
+function publicListingUrl(slug: string | null | undefined): string | null {
+  const s = typeof slug === "string" ? slug.trim() : "";
+  if (!s) return null;
+  return `${getSiteUrl().replace(/\/$/, "")}/business/${encodeURIComponent(s)}`;
+}
+
+type ReviewItemRow = {
   id: string;
   type: string;
   status: string;
@@ -37,18 +44,34 @@ async function submitterEmail(
   return data.user?.email ?? null;
 }
 
+/** Resolve listing slug for submit-changes deep links (claim/edit/photo/update). */
+async function resolveBusinessSlug(
+  supabase: SupabaseClient,
+  businessId: string | null,
+  payload: Record<string, unknown>,
+): Promise<string | null> {
+  const fromPayload = [payload.target_business_slug, payload.business_slug, payload.slug]
+    .find((v) => typeof v === "string" && v.trim());
+  if (typeof fromPayload === "string" && fromPayload.trim()) return fromPayload.trim();
+
+  if (!businessId) return null;
+  const { data } = await supabase.from("businesses").select("slug").eq("id", businessId).maybeSingle();
+  const slug = typeof data?.slug === "string" ? data.slug.trim() : "";
+  return slug || null;
+}
+
 async function approveClaim(
   supabase: SupabaseClient,
   item: ReviewItemRow,
   reviewerId: string,
-): Promise<{ businessId: string; businessTitle: string }> {
+): Promise<{ businessId: string; businessTitle: string; listingUrl: string | null }> {
   const businessId = item.business_id;
   if (!businessId) throw new Error("Claim missing business_id");
   if (!item.submitted_by) throw new Error("Claim missing submitter");
 
   const { data: biz } = await supabase
     .from("businesses")
-    .select("id, title, claim_status")
+    .select("id, title, slug, claim_status")
     .eq("id", businessId)
     .maybeSingle();
   if (!biz) throw new Error("Business not found");
@@ -82,14 +105,19 @@ async function approveClaim(
   await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
   await ensureBusinessSubscription(supabase, businessId);
 
-  return { businessId, businessTitle: (biz.title as string) ?? "your business" };
+  const slug = typeof biz.slug === "string" ? biz.slug.trim() : "";
+  return {
+    businessId,
+    businessTitle: (biz.title as string) ?? "your business",
+    listingUrl: publicListingUrl(slug),
+  };
 }
 
 async function approveEdit(
   supabase: SupabaseClient,
   item: ReviewItemRow,
   reviewerId: string,
-): Promise<{ businessId: string; businessTitle: string }> {
+): Promise<{ businessId: string; businessTitle: string; listingUrl: string | null }> {
   const businessId = item.business_id;
   if (!businessId) throw new Error("Edit missing business_id");
 
@@ -110,7 +138,7 @@ async function approveEdit(
 
   const { data: biz } = await supabase
     .from("businesses")
-    .select("id, title")
+    .select("id, title, slug")
     .eq("id", businessId)
     .maybeSingle();
   if (!biz) throw new Error("Business not found");
@@ -125,14 +153,18 @@ async function approveEdit(
 
   await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
 
-  return { businessId, businessTitle: (biz.title as string) ?? "your business" };
+  return {
+    businessId,
+    businessTitle: (biz.title as string) ?? "your business",
+    listingUrl: publicListingUrl(biz.slug as string | null),
+  };
 }
 
 async function approvePhoto(
   supabase: SupabaseClient,
   item: ReviewItemRow,
   reviewerId: string,
-): Promise<{ businessId: string; businessTitle: string }> {
+): Promise<{ businessId: string; businessTitle: string; listingUrl: string | null }> {
   const businessId = item.business_id;
   if (!businessId) throw new Error("Photo missing business_id");
 
@@ -149,7 +181,7 @@ async function approvePhoto(
 
   const { data: biz } = await supabase
     .from("businesses")
-    .select("id, title, hero_image_url, main_image_url")
+    .select("id, title, slug, hero_image_url, main_image_url")
     .eq("id", businessId)
     .maybeSingle();
   if (!biz) throw new Error("Business not found");
@@ -166,14 +198,18 @@ async function approvePhoto(
 
   await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
 
-  return { businessId, businessTitle: (biz.title as string) ?? "your business" };
+  return {
+    businessId,
+    businessTitle: (biz.title as string) ?? "your business",
+    listingUrl: publicListingUrl(biz.slug as string | null),
+  };
 }
 
 async function approveNewListing(
   supabase: SupabaseClient,
   item: ReviewItemRow,
   reviewerId: string,
-): Promise<{ businessId: string; businessTitle: string }> {
+): Promise<{ businessId: string; businessTitle: string; listingUrl: string | null }> {
   const listingRequestId =
     typeof item.payload.listing_request_id === "string" ? item.payload.listing_request_id : null;
   if (!listingRequestId) throw new Error("Listing request id missing");
@@ -265,7 +301,11 @@ async function approveNewListing(
   await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
   await ensureBusinessSubscription(supabase, businessId);
 
-  return { businessId, businessTitle: (created.title as string) ?? title };
+  return {
+    businessId,
+    businessTitle: (created.title as string) ?? title,
+    listingUrl: publicListingUrl(slug),
+  };
 }
 
 async function finalizeReviewItem(
@@ -301,7 +341,7 @@ export async function approveReviewItem(
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
 
   const row = item as ReviewItemRow;
-  let result: { businessId: string; businessTitle: string };
+  let result: { businessId: string; businessTitle: string; listingUrl?: string | null };
 
   if (row.type === "claim") {
     result = await approveClaim(supabase, row, reviewerId);
@@ -311,6 +351,7 @@ export async function approveReviewItem(
         to: email,
         event: "claim_approved",
         businessTitle: result.businessTitle,
+        listingUrl: result.listingUrl,
       });
     }
     return;
@@ -324,6 +365,7 @@ export async function approveReviewItem(
         to: email,
         event: "listing_approved",
         businessTitle: result.businessTitle,
+        listingUrl: result.listingUrl,
       });
     }
     return;
@@ -337,6 +379,7 @@ export async function approveReviewItem(
         to: email,
         event: "edit_approved",
         businessTitle: result.businessTitle,
+        listingUrl: result.listingUrl,
       });
     }
     return;
@@ -350,6 +393,7 @@ export async function approveReviewItem(
         to: email,
         event: "photo_approved",
         businessTitle: result.businessTitle,
+        listingUrl: result.listingUrl,
       });
     }
     return;
@@ -449,6 +493,7 @@ export async function needsChangesReviewItem(
       event: "review_needs_changes",
       businessTitle,
       adminNotes,
+      businessSlug: await resolveBusinessSlug(supabase, row.business_id, row.payload),
     });
   }
 }
@@ -549,6 +594,7 @@ export async function rejectReviewItem(
         event,
         businessTitle,
         adminNotes,
+        businessSlug: await resolveBusinessSlug(supabase, row.business_id, row.payload),
       });
     }
   }

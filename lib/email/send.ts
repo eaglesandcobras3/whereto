@@ -2,15 +2,9 @@ import "server-only";
 
 import { Resend } from "resend";
 
-import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
+import { formatFromAddress } from "@/lib/email/outbound-defaults";
 
-export function formatFromAddress(
-  raw: string | undefined | null,
-  displayName = "WhereTo30A",
-): string {
-  const address = raw?.trim() || OUTBOUND_CONTACT_FROM_DEFAULT;
-  return address.includes("<") ? address : `${displayName} <${address}>`;
-}
+export { formatFromAddress } from "@/lib/email/outbound-defaults";
 
 export function portalFromAddress(): string {
   return formatFromAddress(
@@ -34,11 +28,11 @@ export async function sendTransactionalEmail(opts: {
   html?: string;
   replyTo?: string;
   logLabel: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const resendKey = process.env.RESEND_API_KEY?.trim();
   if (!resendKey) {
     console.error(`[${opts.logLabel}] Missing RESEND_API_KEY`);
-    return;
+    return false;
   }
 
   const resend = new Resend(resendKey);
@@ -53,5 +47,7 @@ export async function sendTransactionalEmail(opts: {
 
   if (error) {
     console.error(`[${opts.logLabel}]`, error);
+    return false;
   }
+  return true;
 }

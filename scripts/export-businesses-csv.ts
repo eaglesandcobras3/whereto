@@ -1,17 +1,19 @@
 /**
- * Export storefronts and/or service vendors with location, categories, tags,
- * and search document fields to CSV for auditing.
+ * Export storefronts and/or service vendors for manual audit.
+ *
+ * Columns: title, slug, town, area, category, search_tags, excerpt, overview,
+ * seo_title, seo_description, search_keywords, location, phone, website.
+ *
+ * Files are already split by listing kind (storefront vs service). Within each
+ * file rows are sorted by category, then town, then title.
  *
  * Usage:
  *   npx tsx scripts/export-businesses-csv.ts                 # both CSVs under docs/
  *   npx tsx scripts/export-businesses-csv.ts --storefronts
  *   npx tsx scripts/export-businesses-csv.ts --services
- *   npx tsx scripts/export-businesses-csv.ts --all-statuses    # include draft/unpublished
+ *   npx tsx scripts/export-businesses-csv.ts --all-statuses
  *   npx tsx scripts/export-businesses-csv.ts --include-archived
  *   npx tsx scripts/export-businesses-csv.ts --services --file path.csv
- *
- * Round-trip: edit the CSV, then apply with import-businesses-audit-csv.ts
- * (matches by id when present, otherwise slug).
  */
 
 import { writeFileSync } from "fs";
@@ -63,71 +65,52 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 type Rel<T> = T | T[] | null;
 
 type ExportRow = {
-  id: string;
-  slug: string;
   title: string;
-  status: string | null;
-  published_at: string | null;
-  archived_at: string | null;
-  featured: boolean | null;
-  business_type: string | null;
-  is_storefront: boolean | null;
-  is_service_business: boolean | null;
-  is_hidden_from_search: boolean | null;
+  slug: string;
   address: string | null;
-  map_lat: number | null;
-  map_lng: number | null;
   phone: string | null;
   website: string | null;
-  service_area: string | null;
   excerpt: string | null;
+  overview: string | null;
   seo_title: string | null;
   seo_description: string | null;
   search_keywords: string | null;
-  search_terms: string | null;
-  embedding_summary: string | null;
-  search_profile: string | null;
-  qa_document: string | null;
-  price_level: string | null;
-  item_tags: string[] | null;
-  dietary_tags: string[] | null;
-  meal_period_tags: string[] | null;
-  atmosphere_tags: string[] | null;
-  occasion_tags: string[] | null;
   search_tags: string[] | null;
-  towns: Rel<{ title: string; slug: string }>;
-  areas: Rel<{ title: string; slug: string }>;
-  business_categories: Rel<{ slug: string; title: string }>;
-  service_categories: Rel<{ slug: string; title: string }>;
-  intent_tags: string[] | null;
+  towns: Rel<{ title: string }>;
+  areas: Rel<{ title: string }>;
+  business_categories: Rel<{ title: string; slug: string }>;
+  service_categories: Rel<{ title: string; slug: string }>;
 };
 
 const SELECT = `
-  id, slug, title, status, published_at, archived_at, featured,
-  business_type, is_storefront, is_service_business, is_hidden_from_search,
-  address, map_lat, map_lng, phone, website, service_area,
-  excerpt, seo_title, seo_description, search_keywords, search_terms, embedding_summary,
-  search_profile, qa_document, price_level,
-  item_tags, dietary_tags, meal_period_tags, atmosphere_tags, occasion_tags, search_tags,
-  towns ( title, slug ),
-  areas ( title, slug ),
-  business_categories ( slug, title ),
-  service_categories ( slug, title ),
-  intent_tags
+  title, slug, address, phone, website,
+  excerpt, overview, seo_title, seo_description, search_keywords, search_tags,
+  towns ( title ),
+  areas ( title ),
+  business_categories ( title, slug ),
+  service_categories ( title, slug )
 `;
+
+const HEADERS = [
+  "title",
+  "slug",
+  "town",
+  "area",
+  "category",
+  "search_tags",
+  "excerpt",
+  "overview",
+  "seo_title",
+  "seo_description",
+  "search_keywords",
+  "location",
+  "phone",
+  "website",
+] as const;
 
 function relOne<T>(rel: Rel<T>): T | null {
   if (!rel) return null;
   return Array.isArray(rel) ? (rel[0] ?? null) : rel;
-}
-
-function intentTagSlugs(row: ExportRow): string[] {
-  const tags = row.intent_tags ?? [];
-  return [...new Set(tags.filter((t) => typeof t === "string" && t.trim()))].sort();
-}
-
-function jsonField(value: string[] | null | undefined): string {
-  return JSON.stringify(value ?? []);
 }
 
 function escapeCsvField(value: string): string {
@@ -137,12 +120,57 @@ function escapeCsvField(value: string): string {
   return value;
 }
 
-function stringifyCsv(headers: string[], rows: Record<string, string>[]): string {
+function stringifyCsv(headers: readonly string[], rows: Record<string, string>[]): string {
   const lines = [headers.join(",")];
   for (const row of rows) {
     lines.push(headers.map((h) => escapeCsvField(row[h] ?? "")).join(","));
   }
   return `${lines.join("\n")}\n`;
+}
+
+function formatSearchTags(tags: string[] | null | undefined): string {
+  if (!tags?.length) return "";
+  return [...new Set(tags.filter((t) => typeof t === "string" && t.trim()))]
+    .sort()
+    .join(" | ");
+}
+
+function categoryLabel(row: ExportRow, kind: "storefront" | "service"): string {
+  if (kind === "service") {
+    const specialty = relOne(row.service_categories);
+    if (specialty?.title?.trim()) return specialty.title.trim();
+  }
+  const category = relOne(row.business_categories);
+  return category?.title?.trim() || "";
+}
+
+function mapRow(row: ExportRow, kind: "storefront" | "service"): Record<string, string> {
+  const town = relOne(row.towns);
+  const area = relOne(row.areas);
+  return {
+    title: row.title ?? "",
+    slug: row.slug ?? "",
+    town: town?.title?.trim() ?? "",
+    area: area?.title?.trim() ?? "",
+    category: categoryLabel(row, kind),
+    search_tags: formatSearchTags(row.search_tags),
+    excerpt: row.excerpt ?? "",
+    overview: row.overview ?? "",
+    seo_title: row.seo_title ?? "",
+    seo_description: row.seo_description ?? "",
+    search_keywords: row.search_keywords ?? "",
+    location: row.address ?? "",
+    phone: row.phone ?? "",
+    website: row.website ?? "",
+  };
+}
+
+function sortKey(row: Record<string, string>): string {
+  return [
+    row.category.toLowerCase() || "\uffff",
+    row.town.toLowerCase() || "\uffff",
+    row.title.toLowerCase(),
+  ].join("\0");
 }
 
 async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRow[]> {
@@ -181,214 +209,19 @@ async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRo
   return all;
 }
 
-function textField(value: string | number | null | undefined): string {
-  if (value == null) return "";
-  return String(value);
+async function exportKind(kind: "storefront" | "service", path: string): Promise<void> {
+  const rows = await fetchBusinesses(kind);
+  const mapped = rows.map((r) => mapRow(r, kind)).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+  writeFileSync(path, stringifyCsv(HEADERS, mapped), "utf8");
+  console.log(`Wrote ${mapped.length} ${kind === "storefront" ? "storefronts" : "services"} → ${path}`);
 }
-
-function boolField(value: boolean | null | undefined): string {
-  if (value == null) return "";
-  return value ? "true" : "false";
-}
-
-function listingKind(row: ExportRow): string {
-  const storefront = row.is_storefront === true;
-  const service = row.is_service_business === true;
-  if (storefront && !service) return "storefront";
-  if (service && !storefront) return "service";
-  if (storefront && service) return "both";
-  return "unset";
-}
-
-function mapListingMetaFields(row: ExportRow): Record<string, string> {
-  return {
-    listing_kind: listingKind(row),
-    is_storefront: boolField(row.is_storefront),
-    is_service_business: boolField(row.is_service_business),
-    status: row.status ?? "",
-    published_at: row.published_at ?? "",
-    archived_at: row.archived_at ?? "",
-    featured: boolField(row.featured),
-  };
-}
-
-function mapSearchAndLocationFields(row: ExportRow): Record<string, string> {
-  const town = relOne(row.towns);
-  const area = relOne(row.areas);
-
-  return {
-    town_or_area: town?.title ?? "",
-    town_slug: town?.slug ?? "",
-    shopping_area: area?.title ?? "",
-    shopping_area_slug: area?.slug ?? "",
-    service_area: row.service_area ?? "",
-    address: row.address ?? "",
-    map_lat: textField(row.map_lat),
-    map_lng: textField(row.map_lng),
-    phone: row.phone ?? "",
-    website: row.website ?? "",
-    excerpt: row.excerpt ?? "",
-    seo_title: row.seo_title ?? "",
-    seo_description: row.seo_description ?? "",
-    search_keywords: row.search_keywords ?? "",
-    search_terms: row.search_terms ?? "",
-    embedding_summary: row.embedding_summary ?? "",
-    search_profile: row.search_profile ?? "",
-    qa_document: row.qa_document ?? "",
-    price_level: row.price_level ?? "",
-    is_hidden_from_search: row.is_hidden_from_search ? "true" : "false",
-  };
-}
-
-function mapTagFields(row: ExportRow): Record<string, string> {
-  return {
-    item_tags: jsonField(row.item_tags),
-    dietary_tags: jsonField(row.dietary_tags),
-    meal_period_tags: jsonField(row.meal_period_tags),
-    atmosphere_tags: jsonField(row.atmosphere_tags),
-    occasion_tags: jsonField(row.occasion_tags),
-    search_tags: jsonField(row.search_tags),
-    intent_tags: jsonField(intentTagSlugs(row)),
-  };
-}
-
-function mapIdentityFields(row: ExportRow): Record<string, string> {
-  return {
-    title: row.title ?? "",
-    slug: row.slug ?? "",
-    id: row.id ?? "",
-  };
-}
-
-function mapStorefrontRow(row: ExportRow): Record<string, string> {
-  const category = relOne(row.business_categories);
-
-  return {
-    ...mapIdentityFields(row),
-    ...mapListingMetaFields(row),
-    ...mapSearchAndLocationFields(row),
-    primary_category: category?.slug ?? "",
-    primary_category_title: category?.title ?? "",
-    business_type: row.business_type ?? "",
-    ...mapTagFields(row),
-  };
-}
-
-function mapServiceRow(row: ExportRow): Record<string, string> {
-  const category = relOne(row.business_categories);
-  const specialty = relOne(row.service_categories);
-
-  return {
-    ...mapIdentityFields(row),
-    ...mapListingMetaFields(row),
-    ...mapSearchAndLocationFields(row),
-    primary_category: category?.slug ?? "",
-    primary_category_title: category?.title ?? "",
-    service_category: specialty?.slug ?? "",
-    service_category_title: specialty?.title ?? "",
-    business_type: row.business_type ?? "",
-    ...mapTagFields(row),
-  };
-}
-
-const STOREFRONT_HEADERS = [
-  "title",
-  "slug",
-  "id",
-  "listing_kind",
-  "is_storefront",
-  "is_service_business",
-  "status",
-  "published_at",
-  "archived_at",
-  "featured",
-  "town_or_area",
-  "town_slug",
-  "shopping_area",
-  "shopping_area_slug",
-  "address",
-  "map_lat",
-  "map_lng",
-  "phone",
-  "website",
-  "excerpt",
-  "seo_title",
-  "seo_description",
-  "search_keywords",
-  "search_terms",
-  "embedding_summary",
-  "search_profile",
-  "qa_document",
-  "price_level",
-  "is_hidden_from_search",
-  "primary_category",
-  "primary_category_title",
-  "business_type",
-  "item_tags",
-  "dietary_tags",
-  "meal_period_tags",
-  "atmosphere_tags",
-  "occasion_tags",
-  "search_tags",
-  "intent_tags",
-];
-
-const SERVICE_HEADERS = [
-  "title",
-  "slug",
-  "id",
-  "listing_kind",
-  "is_storefront",
-  "is_service_business",
-  "status",
-  "published_at",
-  "archived_at",
-  "featured",
-  "town_or_area",
-  "town_slug",
-  "service_area",
-  "address",
-  "map_lat",
-  "map_lng",
-  "phone",
-  "website",
-  "excerpt",
-  "seo_title",
-  "seo_description",
-  "search_keywords",
-  "search_terms",
-  "embedding_summary",
-  "search_profile",
-  "qa_document",
-  "price_level",
-  "is_hidden_from_search",
-  "primary_category",
-  "primary_category_title",
-  "service_category",
-  "service_category_title",
-  "business_type",
-  "item_tags",
-  "dietary_tags",
-  "meal_period_tags",
-  "atmosphere_tags",
-  "occasion_tags",
-  "search_tags",
-  "intent_tags",
-];
 
 async function main() {
   if (EXPORT_STOREFRONTS) {
-    const rows = await fetchBusinesses("storefront");
-    const csv = stringifyCsv(STOREFRONT_HEADERS, rows.map(mapStorefrontRow));
-    writeFileSync(STOREFRONTS_PATH, csv, "utf8");
-    console.log(`Wrote ${rows.length} storefronts → ${STOREFRONTS_PATH}`);
+    await exportKind("storefront", STOREFRONTS_PATH);
   }
-
   if (EXPORT_SERVICES) {
-    const rows = await fetchBusinesses("service");
-    const csv = stringifyCsv(SERVICE_HEADERS, rows.map(mapServiceRow));
-    writeFileSync(SERVICES_PATH, csv, "utf8");
-    console.log(`Wrote ${rows.length} service vendors → ${SERVICES_PATH}`);
+    await exportKind("service", SERVICES_PATH);
   }
 }
 

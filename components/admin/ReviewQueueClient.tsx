@@ -167,6 +167,11 @@ export function ReviewQueueClient() {
       delete next[id];
       return next;
     });
+    const scrollToTop =
+      action === "approve" || action === "approve_all_locations";
+    if (scrollToTop) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
     load();
   }
 
@@ -263,6 +268,68 @@ export function ReviewQueueClient() {
         <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-600">
           {view === "pending" ? "No pending items." : "No completed items in the latest 100."}
         </p>
+      ) : view === "completed" ? (
+        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+          <ul className="divide-y divide-zinc-100">
+            {visible.map((item) => {
+              const title =
+                item.businesses?.title ??
+                (typeof item.payload.title === "string" ? item.payload.title : null) ??
+                (typeof item.payload.business_title === "string"
+                  ? item.payload.business_title
+                  : null) ??
+                item.id;
+              const submitterEmail =
+                typeof item.payload.submitter_email === "string"
+                  ? item.payload.submitter_email
+                  : null;
+              const isApproved = item.status === "approved";
+
+              return (
+                <li
+                  key={item.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm hover:bg-zinc-50"
+                >
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${
+                      isApproved
+                        ? "bg-emerald-50 text-emerald-800"
+                        : "bg-zinc-100 text-zinc-600"
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                  <span className="min-w-0 flex-1 font-medium text-zinc-900">{title}</span>
+                  <span className="shrink-0 text-xs text-zinc-500">{item.type}</span>
+                  {submitterEmail ? (
+                    <span className="shrink-0 text-xs text-zinc-500">{submitterEmail}</span>
+                  ) : null}
+                  <span className="shrink-0 text-xs text-zinc-400">
+                    {new Date(item.created_at).toLocaleString()}
+                  </span>
+                  {item.businesses?.slug ? (
+                    <a
+                      href={`/business/${encodeURIComponent(item.businesses.slug)}`}
+                      className="shrink-0 text-xs text-[var(--color-primary)] hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View listing
+                    </a>
+                  ) : null}
+                  {item.admin_notes ? (
+                    <span
+                      className="w-full text-xs text-zinc-500"
+                      title={item.admin_notes}
+                    >
+                      Note: {item.admin_notes}
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       ) : (
         <ul className="space-y-4">
           {visible.map((item) => {
@@ -361,14 +428,6 @@ export function ReviewQueueClient() {
                               </p>
                             );
                           }
-                          if (item.status !== "pending") {
-                            return (
-                              <p>
-                                <span className="font-medium text-zinc-800">Suggested tags:</span>{" "}
-                                {suggested.join(", ")}
-                              </p>
-                            );
-                          }
                           return (
                             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
                               <p className="font-medium text-zinc-800">Suggested tags</p>
@@ -459,7 +518,7 @@ export function ReviewQueueClient() {
                                   </a>
                                 ) : null}
                               </div>
-                              {item.status === "pending" && loc.status === "pending" ? (
+                              {loc.status === "pending" ? (
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
@@ -532,83 +591,77 @@ export function ReviewQueueClient() {
                   </dl>
                 )}
 
-                {item.status === "pending" ? (
-                  <>
-                    <textarea
-                      value={notes[item.id] ?? ""}
-                      onChange={(e) =>
-                        setNotes((prev) => ({ ...prev, [item.id]: e.target.value }))
-                      }
-                      placeholder="Optional note (especially on reject)"
-                      rows={2}
-                      className="mt-4 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                    />
+                <textarea
+                  value={notes[item.id] ?? ""}
+                  onChange={(e) =>
+                    setNotes((prev) => ({ ...prev, [item.id]: e.target.value }))
+                  }
+                  placeholder="Optional note (especially on reject)"
+                  rows={2}
+                  className="mt-4 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                />
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {free ? (
-                        <>
-                          <button
-                            type="button"
-                            disabled={acting === item.id}
-                            onClick={() =>
-                              void act(
-                                item.id,
-                                item.type === FREE_ONBOARD_TYPES.update ||
-                                  item.type === FREE_ONBOARD_TYPES.removal
-                                  ? "approve"
-                                  : "approve_all_locations",
-                              )
-                            }
-                            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-                          >
-                            {item.type === FREE_ONBOARD_TYPES.removal
-                              ? "Approve removal (archive)"
-                              : item.type === FREE_ONBOARD_TYPES.update
-                                ? "Approve update (+ extra locations)"
-                                : "Approve all locations"}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={acting === item.id}
-                            onClick={() => void act(item.id, "reject")}
-                            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-                          >
-                            Not approve / reject
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            disabled={acting === item.id}
-                            onClick={() => void act(item.id, "approve")}
-                            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            disabled={acting === item.id}
-                            onClick={() => void act(item.id, "needs_changes")}
-                            className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
-                          >
-                            Request changes
-                          </button>
-                          <button
-                            type="button"
-                            disabled={acting === item.id}
-                            onClick={() => void act(item.id, "reject")}
-                            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </>
-                ) : item.admin_notes ? (
-                  <p className="mt-3 text-sm text-zinc-500">Note: {item.admin_notes}</p>
-                ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {free ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={acting === item.id}
+                        onClick={() =>
+                          void act(
+                            item.id,
+                            item.type === FREE_ONBOARD_TYPES.update ||
+                              item.type === FREE_ONBOARD_TYPES.removal
+                              ? "approve"
+                              : "approve_all_locations",
+                          )
+                        }
+                        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                      >
+                        {item.type === FREE_ONBOARD_TYPES.removal
+                          ? "Approve removal (archive)"
+                          : item.type === FREE_ONBOARD_TYPES.update
+                            ? "Approve update (+ extra locations)"
+                            : "Approve all locations"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={acting === item.id}
+                        onClick={() => void act(item.id, "reject")}
+                        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                      >
+                        Not approve / reject
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        disabled={acting === item.id}
+                        onClick={() => void act(item.id, "approve")}
+                        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={acting === item.id}
+                        onClick={() => void act(item.id, "needs_changes")}
+                        className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                      >
+                        Request changes
+                      </button>
+                      <button
+                        type="button"
+                        disabled={acting === item.id}
+                        onClick={() => void act(item.id, "reject")}
+                        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                </div>
               </li>
             );
           })}

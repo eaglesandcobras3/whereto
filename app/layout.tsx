@@ -126,7 +126,7 @@ export default function RootLayout({
     url: siteUrl,
     logo: {
       "@type": "ImageObject",
-      url: `${siteUrl}/whereto30a.svg`,
+      url: `${siteUrl}/whereto30a.png`,
     },
     sameAs: [
       "https://www.instagram.com/whereto30a",

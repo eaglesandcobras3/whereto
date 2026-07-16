@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
-import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
+import { buildAdminAlertEmail } from "@/lib/email/business-templates";
+import { listingFromAddress, sendTransactionalEmail } from "@/lib/email/send";
 import { normalizeSearchTagSlug } from "@/lib/discovery-filters/search-tag-label";
 import { buildFreeOnboardSearchKeywords } from "@/lib/listing-requests/free-onboard-derived";
 import { sendFreeOnboardSubmitterEmail } from "@/lib/listing-requests/free-onboard-notify";
@@ -254,20 +254,15 @@ export async function handleFreeOnboardListingRequest(
     console.error("findSimilarBusinessesForListingRequest", e);
   }
 
-  const resendKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail =
-    process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    OUTBOUND_CONTACT_FROM_DEFAULT;
   const toEmail =
     process.env.LISTING_NOTIFICATION_TO_EMAIL?.trim() || LISTING_NOTIFICATION_TO_EMAIL_DEFAULT;
 
-  if (resendKey) {
+  {
     const baseUrl = getSiteUrl().replace(/\/$/, "");
     const locLines = locations
       .map((l, i) => {
         const town = townById.get(l.town_id);
-        return `${i + 1}. ${town?.title ?? l.town_id}${l.address ? ` — ${l.address}` : ""}`;
+        return `${i + 1}. ${town?.title ?? l.town_id}${l.address ? ` - ${l.address}` : ""}`;
       })
       .join("\n");
 
@@ -284,7 +279,7 @@ export async function handleFreeOnboardListingRequest(
       `Marketing opt-in: ${d.marketing_opt_in ? "yes" : "no"}`,
       "",
       "Locations:",
-      locLines || "(service — no fixed location)",
+      locLines || "(service, no fixed location)",
       "",
       `Excerpt: ${d.excerpt}`,
       "",
@@ -308,21 +303,20 @@ export async function handleFreeOnboardListingRequest(
       ? (serviceCategoryTitle ?? "(none)")
       : (categoryTitle ?? "(none)");
 
-    const htmlBody = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5">
-<h1 style="font-size:18px">${isUpdate ? "Free intake update" : "Free intake new listing"}</h1>
+    const detailsHtml = `
 <p>Submitted via <strong>/list-your-business</strong> (free_onboard).</p>
 <p><strong>Submitter:</strong> ${escapeHtml(d.submitter_name)} &lt;${escapeHtml(d.submitter_email)}&gt;</p>
 <p><strong>Business:</strong> ${escapeHtml(d.title)}<br/>
 <strong>${htmlCategoryLabel}:</strong> ${escapeHtml(htmlCategoryValue)}<br/>
 <strong>Marketing opt-in:</strong> ${d.marketing_opt_in ? "yes" : "no"}</p>
-<h2>Locations</h2>
+<h2 style="font-size:16px;margin:16px 0 8px;color:#1c3257">Locations</h2>
 ${
   locations.length === 0
-    ? "<p>(service — no fixed location)</p>"
+    ? "<p>(service, no fixed location)</p>"
     : `<ol>${locations
         .map((l) => {
           const town = townById.get(l.town_id);
-          return `<li>${escapeHtml(town?.title ?? l.town_id)}${l.address ? ` — ${escapeHtml(l.address)}` : ""}</li>`;
+          return `<li>${escapeHtml(town?.title ?? l.town_id)}${l.address ? ` - ${escapeHtml(l.address)}` : ""}</li>`;
         })
         .join("")}</ol>`
 }
@@ -331,24 +325,30 @@ ${
 <p><strong>Search tags:</strong> ${escapeHtml(cappedSearchTags.join(", ") || "(none)")}<br/>
 <strong>Suggested tags:</strong> ${escapeHtml(cappedSuggestedTags.join(", ") || "(none)")}<br/>
 <strong>Search keywords (auto):</strong> ${escapeHtml(searchKeywords ?? "(none)")}</p>
-<p><a href="${escapeHtml(`${baseUrl}/admin/review`)}">Open review queue</a> · item ${escapeHtml(String(reviewItem.id))}</p>
-</body></html>`;
+<p style="margin-top:12px;font-size:13px;color:#5a6b6d">Review item ${escapeHtml(String(reviewItem.id))}</p>`;
 
-    const resend = new Resend(resendKey);
-    const { error: emailErr } = await resend.emails.send({
-      from: fromEmail.includes("<") ? fromEmail : `WhereTo30A <${fromEmail}>`,
-      to: [toEmail],
-      replyTo: d.submitter_email,
-      subject: `[WhereTo30A] ${isUpdate ? "Update" : "Listing"} request: ${d.title}`,
-      text: textBody,
-      html: htmlBody,
-    });
-    if (emailErr) {
+    try {
+      const rendered = await buildAdminAlertEmail({
+        subject: `[WhereTo30A] ${isUpdate ? "Update" : "Listing"} request: ${d.title}`,
+        headline: isUpdate ? "Free intake update" : "Free intake new listing",
+        lead: "A free onboard request is waiting in the review queue.",
+        detailsHtml,
+        text: textBody,
+        cta: { url: `${baseUrl}/admin/review`, label: "Open review queue" },
+      });
+      await sendTransactionalEmail({
+        from: listingFromAddress(),
+        to: toEmail,
+        replyTo: d.submitter_email,
+        subject: rendered.subject,
+        text: rendered.text,
+        html: rendered.html,
+        logLabel: "free-onboard-admin",
+      });
+    } catch (emailErr) {
       console.error("resend.emails.send free onboard", emailErr);
       // Queue row already saved — still succeed for the submitter
     }
-  } else {
-    console.error("[free-onboard] Missing RESEND_API_KEY — queue saved without email");
   }
 
   const ph = getPostHogServerClient();

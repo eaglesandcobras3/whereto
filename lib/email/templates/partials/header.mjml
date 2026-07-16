@@ -1,0 +1,12 @@
+<!-- Light header (matches site nav chrome) + dark logo -->
+<mj-section background-color="#f2f5f5" padding="16px 32px" css-class="email-header">
+  <mj-column>
+    <mj-image
+      src="{{logoUrl}}"
+      alt="WhereTo30A"
+      width="150px"
+      align="center"
+      href="{{siteUrl}}"
+    />
+  </mj-column>
+</mj-section>

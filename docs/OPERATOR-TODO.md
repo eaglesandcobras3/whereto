@@ -311,10 +311,41 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 ---
 
+## Branded transactional emails
+
+Resend (app-sent) templates use MJML under `lib/email/templates/` with shared partials. Preview locally:
+
+```bash
+npm run email:preview
+# open lib/email/.previews/*.html
+```
+
+### Supabase Auth email templates (Dashboard paste)
+
+Auth mail is **not** sent via Resend. Paste HTML from [`lib/email/templates/supabase/`](../lib/email/templates/supabase/) into **Supabase → Authentication → Email Templates**:
+
+| File | Dashboard template | Suggested subject |
+|------|--------------------|-------------------|
+| `confirm-signup.html` | Confirm signup | Confirm your WhereTo30A account |
+| `reset-password.html` | Reset password | Reset your WhereTo30A password |
+| `magic-link.html` | Magic Link | Your WhereTo30A login link |
+| `invite-user.html` | Invite user | You're invited to WhereTo30A |
+| `change-email.html` | Change email address | Confirm your new WhereTo30A email |
+
+- [ ] Paste each template (keep `{{ .ConfirmationURL }}` / `{{ .Email }}` Go vars intact)
+- [ ] Set subjects as above
+- [ ] Confirm Site URL + redirect allow list include `/auth/callback`
+- [ ] Send a test signup confirm + password reset to a real inbox
+
+See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supabase/README.md).
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-07-16 | Branded all outbound email: MJML for portal invite/rejects/payments + admin-alert ops mail; Supabase Auth HTML paste templates in `lib/email/templates/supabase/`. |
 | 2026-07-16 | Services hub: UI-only **Other** bucket (`/services/uncategorized`) surfaces `is_service_business` listings with null specialty — hub section + footer when count &gt; 0. Not a DB `other` slug. |
 | 2026-07-16 | Free intake: service / no-location path now requires a **service specialty** (`service_category_id`) so listings show under Services footer + `/services` hub groups. Legacy storefront catch-all `services` removed from the form picker. Backfill any pre-fix approved service intakes missing a specialty. |
 | 2026-07-16 | Business transactional emails: MJML templates (teal header/logo, beach-towns banner, Instagram/TikTok/website footer) for request received / approved / listing-or-updates live. Assets in `public/email/`. Preview: `npm run email:preview`. Uses existing Resend + social URL env vars. |

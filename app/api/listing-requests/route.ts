@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { z } from "zod";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
+import { buildAdminAlertEmail } from "@/lib/email/business-templates";
+import { listingFromAddress, sendTransactionalEmail } from "@/lib/email/send";
 import { getAllFeatureFlags, isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags";
 
 import { findSimilarBusinessesForListingRequest } from "@/lib/listing-requests/find-similar-businesses";
@@ -12,7 +13,6 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { getSiteUrl } from "@/lib/site-url";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { escapeHtml } from "@/lib/string/escape-html";
-import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
 
 const LISTING_NOTIFICATION_TO_EMAIL_DEFAULT = "add@whereto30a.com";
 
@@ -126,10 +126,6 @@ export async function POST(request: NextRequest) {
   }
 
   const resendKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail =
-    process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    OUTBOUND_CONTACT_FROM_DEFAULT;
   const toRaw = process.env.LISTING_NOTIFICATION_TO_EMAIL?.trim();
   const toEmail = toRaw || LISTING_NOTIFICATION_TO_EMAIL_DEFAULT;
 
@@ -280,26 +276,35 @@ export async function POST(request: NextRequest) {
     )
     .join("");
 
-  const htmlBody = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5">
-<h1 style="font-size:18px">New listing request</h1>
-<p style="color:#444">Submitted via <strong>/list-your-business</strong>.</p>
-<table style="border-collapse:collapse">${detailsRows}</table>
-<p style="margin-top:16px;color:#444;font-size:13px"><strong>Technical</strong><br/>
+  const detailsHtml = `
+<p style="color:#5a6b6d">Submitted via <strong>/list-your-business</strong>.</p>
+<table style="border-collapse:collapse;width:100%">${detailsRows}</table>
+<p style="margin-top:16px;color:#5a6b6d;font-size:13px"><strong>Technical</strong><br/>
 Approx. client IP: ${escapeHtml(approxClient)}<br/>
 ${request.headers.get("user-agent") ? `User-Agent: ${escapeHtml(request.headers.get("user-agent")!.slice(0, 500))}` : ""}</p>
-${similarHtml}</body></html>`;
+${similarHtml}`;
 
-  const resend = new Resend(resendKey);
-  const { error } = await resend.emails.send({
-    from: fromEmail.includes("<") ? fromEmail : `WhereTo30A <${fromEmail}>`,
-    to: [toEmail],
-    replyTo: d.submitter_email,
-    subject: `[WhereTo30A] Listing request: ${d.title} (${townTitle})`,
-    text: textBody,
-    html: htmlBody,
-  });
-
-  if (error) {
+  try {
+    const rendered = await buildAdminAlertEmail({
+      subject: `[WhereTo30A] Listing request: ${d.title} (${townTitle})`,
+      headline: "New listing request",
+      lead: "Someone submitted a listing request from the public form.",
+      detailsHtml,
+      text: textBody,
+    });
+    const sent = await sendTransactionalEmail({
+      from: listingFromAddress(),
+      to: toEmail,
+      replyTo: d.submitter_email,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+      logLabel: "listing-request",
+    });
+    if (!sent) {
+      return NextResponse.json({ error: "Could not send request." }, { status: 502 });
+    }
+  } catch (error) {
     console.error("resend.emails.send listing request", error);
     return NextResponse.json({ error: "Could not send request." }, { status: 502 });
   }

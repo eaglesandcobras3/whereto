@@ -1,0 +1,94 @@
+<mj-font name="Manrope" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&display=swap" />
+<!-- Keep light chrome in dark-mode clients (dark logo + banner need light grounds) -->
+<mj-raw>
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light only" />
+</mj-raw>
+<mj-style>
+  :root {
+    color-scheme: light only;
+    supported-color-schemes: light only;
+  }
+  @media (prefers-color-scheme: dark) {
+    .email-body-bg,
+    .email-body-bg > div {
+      background-color: #f7fafb !important;
+    }
+    .email-header {
+      background-color: #f2f5f5 !important;
+    }
+    .email-light {
+      background-color: #ffffff !important;
+    }
+    .email-footer {
+      background-color: #5DA6A8 !important;
+    }
+    .email-light div {
+      color: #1c3257 !important;
+    }
+    .email-muted div {
+      color: #5a6b6d !important;
+    }
+    .email-cta td,
+    .email-cta a {
+      background-color: #57A0AF !important;
+      color: #ffffff !important;
+    }
+    .email-footer-text div,
+    .email-footer-text a {
+      color: #ffffff !important;
+    }
+  }
+  [data-ogsc] .email-header,
+  [data-ogsb] .email-header {
+    background-color: #f2f5f5 !important;
+  }
+  [data-ogsc] .email-light,
+  [data-ogsb] .email-light {
+    background-color: #ffffff !important;
+  }
+  [data-ogsc] .email-footer,
+  [data-ogsb] .email-footer {
+    background-color: #5DA6A8 !important;
+  }
+  [data-ogsc] .email-light div,
+  [data-ogsb] .email-light div {
+    color: #1c3257 !important;
+  }
+  [data-ogsc] .email-muted div,
+  [data-ogsb] .email-muted div {
+    color: #5a6b6d !important;
+  }
+  [data-ogsc] .email-cta td,
+  [data-ogsc] .email-cta a,
+  [data-ogsb] .email-cta td,
+  [data-ogsb] .email-cta a {
+    background-color: #57A0AF !important;
+    color: #ffffff !important;
+  }
+  [data-ogsc] .email-footer-text div,
+  [data-ogsc] .email-footer-text a,
+  [data-ogsb] .email-footer-text div,
+  [data-ogsb] .email-footer-text a {
+    color: #ffffff !important;
+  }
+</mj-style>
+<mj-attributes>
+  <mj-all font-family="Manrope, Helvetica, Arial, sans-serif" />
+  <mj-text color="#1c3257" font-size="15px" line-height="1.65" padding="0" />
+  <mj-button
+    background-color="#57A0AF"
+    color="#ffffff"
+    border-radius="8px"
+    font-size="15px"
+    font-weight="700"
+    inner-padding="14px 32px"
+    padding="20px 0 8px"
+    css-class="email-cta"
+  />
+  <!-- Single place to change white content-area padding -->
+  <mj-class name="content" background-color="#ffffff" padding="24px 40px 0" css-class="email-light" />
+  <mj-section padding="0" />
+  <mj-column padding="0" />
+  <mj-image padding="0" />
+</mj-attributes>

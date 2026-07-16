@@ -222,18 +222,24 @@ export async function getGuidesForTown(townId: string): Promise<TownGuideCard[]>
       .or(BROWSE_VISIBLE_NOT_HIDDEN),
   ]);
 
-  const linkedIds = [
-    ...new Set([
-      ...(linksRes.data ?? [])
+  const townSpecificIds = [
+    ...new Set(
+      (linksRes.data ?? [])
         .map((r) => String((r as { guide_id: string }).guide_id))
         .filter(Boolean),
-      ...(allTownsRes.data ?? [])
+    ),
+  ];
+  const allTownsIds = [
+    ...new Set(
+      (allTownsRes.data ?? [])
         .map((r) => String((r as { id: string }).id))
         .filter(Boolean),
-    ]),
+    ),
   ];
 
-  return loadPublishedGuideCards(linkedIds);
+  return loadPublishedGuideCards([...new Set([...townSpecificIds, ...allTownsIds])], {
+    preferIds: townSpecificIds,
+  });
 }
 
 /**
@@ -260,7 +266,7 @@ export async function getGuidesForArea(
       .or(BROWSE_VISIBLE_NOT_HIDDEN),
   ]);
 
-  const linkedIds = [
+  const placeSpecificIds = [
     ...new Set([
       ...(areaLinksRes.data ?? [])
         .map((r) => String((r as { guide_id: string }).guide_id))
@@ -268,16 +274,25 @@ export async function getGuidesForArea(
       ...(townLinksRes.data ?? [])
         .map((r) => String((r as { guide_id: string }).guide_id))
         .filter(Boolean),
-      ...(allTownsRes.data ?? [])
-        .map((r) => String((r as { id: string }).id))
-        .filter(Boolean),
     ]),
   ];
+  const allTownsIds = [
+    ...new Set(
+      (allTownsRes.data ?? [])
+        .map((r) => String((r as { id: string }).id))
+        .filter(Boolean),
+    ),
+  ];
 
-  return loadPublishedGuideCards(linkedIds);
+  return loadPublishedGuideCards([...new Set([...placeSpecificIds, ...allTownsIds])], {
+    preferIds: placeSpecificIds,
+  });
 }
 
-async function loadPublishedGuideCards(guideIds: string[]): Promise<TownGuideCard[]> {
+async function loadPublishedGuideCards(
+  guideIds: string[],
+  opts?: { preferIds?: string[] },
+): Promise<TownGuideCard[]> {
   if (guideIds.length === 0) return [];
 
   const supabase = getServiceSupabase();
@@ -295,7 +310,13 @@ async function loadPublishedGuideCards(guideIds: string[]): Promise<TownGuideCar
     guideById.set(g.id, g);
   }
 
-  return [...guideById.values()].sort((a, b) => a.title.localeCompare(b.title));
+  const prefer = new Set(opts?.preferIds ?? []);
+  return [...guideById.values()].sort((a, b) => {
+    const aRank = prefer.has(a.id) ? 0 : 1;
+    const bRank = prefer.has(b.id) ? 0 : 1;
+    if (aRank !== bRank) return aRank - bRank;
+    return a.title.localeCompare(b.title);
+  });
 }
 
 export async function getFeaturedGuidesForTown(townId: string): Promise<TownFeaturedGuide[]> {

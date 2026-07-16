@@ -2,14 +2,18 @@
  * Apply edits from an audit CSV (from export-businesses-csv.ts) back to Supabase.
  * Matches each row by `id` when present, otherwise by `slug`. Updates only changed columns.
  *
+ * Supports the slim audit export columns:
+ *   title, slug, town, area, category, search_tags, excerpt, overview,
+ *   seo_title, seo_description, search_keywords, location, phone, website
+ *
+ * Also accepts the older wide export (town_slug, primary_category, item_tags, …).
+ *
  * Usage:
  *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/storefronts-audit.csv
  *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/services-audit.csv --apply
  *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/storefronts-audit.csv --apply --reembed
  *
  * Dry-run by default. Does not create new listings — only updates existing rows.
- * Read-only export columns (listing_kind, *_title, intent_tags, derived search_* when
- * enrichment inputs change) are ignored or re-derived automatically.
  */
 
 import { readFileSync, writeFileSync } from "fs";
@@ -69,6 +73,7 @@ type ExistingRow = {
   website: string | null;
   service_area: string | null;
   excerpt: string | null;
+  overview: string | null;
   seo_title: string | null;
   seo_description: string | null;
   search_keywords: string | null;
@@ -91,7 +96,7 @@ const EXISTING_SELECT = `
   is_storefront, is_service_business, is_hidden_from_search,
   town_id, area_id, primary_category_id, service_category_id,
   address, map_lat, map_lng, phone, website, service_area,
-  excerpt, seo_title, seo_description, search_keywords, search_terms, embedding_summary,
+  excerpt, overview, seo_title, seo_description, search_keywords, search_terms, embedding_summary,
   search_profile, qa_document, price_level, business_type,
   item_tags, dietary_tags, meal_period_tags, atmosphere_tags, occasion_tags, search_tags
 `;
@@ -168,12 +173,46 @@ function parseJsonArray(raw: string, field: string, key: string): string[] {
   }
 }
 
-function arraysEqual(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
-  return JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+/** Accept JSON arrays or slim export `tag1 | tag2` / comma-separated lists. */
+function parseTagList(raw: string, field: string, key: string): string[] {
+  const trimmed = raw?.trim();
+  if (!trimmed || trimmed === "[]") return [];
+  if (trimmed.startsWith("[")) {
+    return parseJsonArray(trimmed, field, key)
+      .map((t) =>
+        t
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, ""),
+      )
+      .filter(Boolean);
+  }
+  const parts = trimmed.split(/\s*\|\s*|\s*,\s*/);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const part of parts) {
+    const tag = part
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!tag || seen.has(tag)) continue;
+    seen.add(tag);
+    out.push(tag);
+  }
+  return out;
 }
 
-function nullableText(raw: string): string | null {
-  const v = raw?.trim();
+function arraysEqual(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+  const aa = [...(a ?? [])].map(String).sort();
+  const bb = [...(b ?? [])].map(String).sort();
+  return JSON.stringify(aa) === JSON.stringify(bb);
+}
+
+function nullableText(raw: string | undefined): string | null {
+  if (raw === undefined) return null;
+  const v = raw.trim();
   return v ? v : null;
 }
 
@@ -190,12 +229,16 @@ function nullableNumber(raw: string): number | null {
   return n;
 }
 
+function hasColumn(row: CsvRow, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(row, key);
+}
+
 async function loadLookupMaps() {
   const [{ data: towns }, { data: areas }, { data: cats }, { data: svcCats }] = await Promise.all([
     supabase.from("towns").select("id, title, slug"),
     supabase.from("areas").select("id, title, slug, town_id"),
-    supabase.from("business_categories").select("id, slug"),
-    supabase.from("service_categories").select("id, slug"),
+    supabase.from("business_categories").select("id, slug, title"),
+    supabase.from("service_categories").select("id, slug, title"),
   ]);
 
   const townBySlug = new Map((towns ?? []).map((t) => [t.slug, t.id]));
@@ -203,9 +246,20 @@ async function loadLookupMaps() {
   const areaBySlug = new Map((areas ?? []).map((a) => [a.slug, a.id]));
   const areaByTitle = new Map((areas ?? []).map((a) => [norm(a.title), a.id]));
   const catBySlug = new Map((cats ?? []).map((c) => [c.slug, c.id]));
+  const catByTitle = new Map((cats ?? []).map((c) => [norm(c.title), c.id]));
   const svcBySlug = new Map((svcCats ?? []).map((c) => [c.slug, c.id]));
+  const svcByTitle = new Map((svcCats ?? []).map((c) => [norm(c.title), c.id]));
 
-  return { townBySlug, townByTitle, areaBySlug, areaByTitle, catBySlug, svcBySlug };
+  return {
+    townBySlug,
+    townByTitle,
+    areaBySlug,
+    areaByTitle,
+    catBySlug,
+    catByTitle,
+    svcBySlug,
+    svcByTitle,
+  };
 }
 
 async function loadExistingIndex(): Promise<{ byId: Map<string, ExistingRow>; bySlug: Map<string, ExistingRow> }> {
@@ -238,9 +292,20 @@ function resolveTownId(
 ): string | null | undefined {
   const slug = row.town_slug?.trim();
   if (slug) return maps.townBySlug.get(slug) ?? null;
-  const title = row.town_or_area?.trim();
-  if (title) return maps.townByTitle.get(norm(title)) ?? null;
-  if (row.town_slug === "" && row.town_or_area === "") return null;
+
+  const title = (row.town ?? row.town_or_area)?.trim();
+  if (title) {
+    const id = maps.townByTitle.get(norm(title));
+    if (!id) throw new Error(`Unknown town: ${title}`);
+    return id;
+  }
+
+  if (
+    (hasColumn(row, "town") && row.town === "") ||
+    (hasColumn(row, "town_or_area") && row.town_or_area === "" && row.town_slug === "")
+  ) {
+    return null;
+  }
   return undefined;
 }
 
@@ -250,10 +315,68 @@ function resolveAreaId(
 ): string | null | undefined {
   const slug = row.shopping_area_slug?.trim();
   if (slug) return maps.areaBySlug.get(slug) ?? null;
-  const title = row.shopping_area?.trim();
-  if (title) return maps.areaByTitle.get(norm(title)) ?? null;
-  if (row.shopping_area_slug === "" && row.shopping_area === "") return null;
+
+  const title = (row.area ?? row.shopping_area)?.trim();
+  if (title) {
+    const id = maps.areaByTitle.get(norm(title));
+    if (!id) throw new Error(`Unknown area: ${title}`);
+    return id;
+  }
+
+  if (
+    (hasColumn(row, "area") && row.area === "") ||
+    (hasColumn(row, "shopping_area") && row.shopping_area === "" && row.shopping_area_slug === "")
+  ) {
+    return null;
+  }
   return undefined;
+}
+
+function resolveCategoryIds(
+  row: CsvRow,
+  existing: ExistingRow,
+  maps: Awaited<ReturnType<typeof loadLookupMaps>>,
+): { primary?: string | null; service?: string | null } {
+  const out: { primary?: string | null; service?: string | null } = {};
+
+  if (hasColumn(row, "primary_category")) {
+    const slug = row.primary_category.trim();
+    out.primary = slug ? (maps.catBySlug.get(slug) ?? null) : null;
+    if (slug && out.primary == null) throw new Error(`Unknown primary_category: ${slug}`);
+  }
+
+  if (hasColumn(row, "service_category")) {
+    const slug = row.service_category.trim();
+    out.service = slug ? (maps.svcBySlug.get(slug) ?? null) : null;
+    if (slug && out.service == null) throw new Error(`Unknown service_category: ${slug}`);
+  }
+
+  if (hasColumn(row, "category") && !hasColumn(row, "primary_category") && !hasColumn(row, "service_category")) {
+    const title = row.category.trim();
+    if (!title) {
+      if (existing.is_service_business && !existing.is_storefront) {
+        out.service = null;
+      } else {
+        out.primary = null;
+      }
+    } else {
+      const svcId = maps.svcByTitle.get(norm(title));
+      const catId = maps.catByTitle.get(norm(title));
+      if (!svcId && !catId) throw new Error(`Unknown category: ${title}`);
+
+      // Match export: services prefer specialty title; storefronts use business category only.
+      if (existing.is_service_business && !existing.is_storefront) {
+        if (svcId) out.service = svcId;
+        else out.primary = catId ?? null;
+      } else if (catId) {
+        out.primary = catId;
+      } else {
+        throw new Error(`Unknown storefront category: ${title}`);
+      }
+    }
+  }
+
+  return out;
 }
 
 function matchExisting(
@@ -290,9 +413,16 @@ function buildPatch(
 
   setIfChanged("title", nullableText(row.title), existing.title);
   setIfChanged("slug", nullableText(row.slug), existing.slug);
-  setIfChanged("status", nullableText(row.status), existing.status);
-  setIfChanged("published_at", nullableIso(row.published_at), existing.published_at);
-  setIfChanged("archived_at", nullableIso(row.archived_at), existing.archived_at);
+
+  if (hasColumn(row, "status")) {
+    setIfChanged("status", nullableText(row.status), existing.status);
+  }
+  if (hasColumn(row, "published_at")) {
+    setIfChanged("published_at", nullableIso(row.published_at), existing.published_at);
+  }
+  if (hasColumn(row, "archived_at")) {
+    setIfChanged("archived_at", nullableIso(row.archived_at), existing.archived_at);
+  }
 
   if (row.featured?.trim()) {
     setIfChanged("featured", parseBool(row.featured), existing.featured);
@@ -308,39 +438,60 @@ function buildPatch(
   }
 
   const townId = resolveTownId(row, maps);
-  if (townId !== undefined) setIfChanged("town_id", townId, existing.town_id);
+  if (townId !== undefined) setIfChanged("town_id", townId, existing.town_id, "town");
 
   const areaId = resolveAreaId(row, maps);
-  if (areaId !== undefined) setIfChanged("area_id", areaId, existing.area_id);
+  if (areaId !== undefined) setIfChanged("area_id", areaId, existing.area_id, "area");
 
-  if (row.primary_category?.trim()) {
-    const catId = maps.catBySlug.get(row.primary_category.trim()) ?? null;
-    setIfChanged("primary_category_id", catId, existing.primary_category_id, "primary_category");
-  } else if (row.primary_category === "") {
-    setIfChanged("primary_category_id", null, existing.primary_category_id, "primary_category");
+  const cats = resolveCategoryIds(row, existing, maps);
+  if (cats.primary !== undefined) {
+    setIfChanged("primary_category_id", cats.primary, existing.primary_category_id, "category");
+  }
+  if (cats.service !== undefined) {
+    setIfChanged("service_category_id", cats.service, existing.service_category_id, "service_category");
   }
 
-  if (row.service_category !== undefined) {
-    const slug = row.service_category?.trim();
-    const svcId = slug ? (maps.svcBySlug.get(slug) ?? null) : null;
-    setIfChanged("service_category_id", svcId, existing.service_category_id, "service_category");
+  const addressRaw = hasColumn(row, "location")
+    ? row.location
+    : hasColumn(row, "address")
+      ? row.address
+      : undefined;
+  if (addressRaw !== undefined) {
+    setIfChanged("address", nullableText(addressRaw), existing.address, "location");
   }
 
-  setIfChanged("address", nullableText(row.address), existing.address);
-  setIfChanged("map_lat", nullableNumber(row.map_lat), existing.map_lat);
-  setIfChanged("map_lng", nullableNumber(row.map_lng), existing.map_lng);
-  setIfChanged("phone", nullableText(row.phone), existing.phone);
-  setIfChanged("website", nullableText(row.website), existing.website);
-  setIfChanged("service_area", nullableText(row.service_area), existing.service_area);
-  setIfChanged("excerpt", nullableText(row.excerpt), existing.excerpt);
-  setIfChanged("seo_title", nullableText(row.seo_title), existing.seo_title);
-  setIfChanged("seo_description", nullableText(row.seo_description), existing.seo_description);
-  setIfChanged("search_keywords", nullableText(row.search_keywords), existing.search_keywords);
-  setIfChanged("search_profile", nullableText(row.search_profile), existing.search_profile);
-  setIfChanged("qa_document", nullableText(row.qa_document), existing.qa_document);
-  setIfChanged("business_type", nullableText(row.business_type), existing.business_type);
+  if (hasColumn(row, "map_lat")) {
+    setIfChanged("map_lat", nullableNumber(row.map_lat), existing.map_lat);
+  }
+  if (hasColumn(row, "map_lng")) {
+    setIfChanged("map_lng", nullableNumber(row.map_lng), existing.map_lng);
+  }
 
-  if (row.price_level !== undefined) {
+  if (hasColumn(row, "phone")) setIfChanged("phone", nullableText(row.phone), existing.phone);
+  if (hasColumn(row, "website")) setIfChanged("website", nullableText(row.website), existing.website);
+  if (hasColumn(row, "service_area")) {
+    setIfChanged("service_area", nullableText(row.service_area), existing.service_area);
+  }
+  if (hasColumn(row, "excerpt")) setIfChanged("excerpt", nullableText(row.excerpt), existing.excerpt);
+  if (hasColumn(row, "overview")) setIfChanged("overview", nullableText(row.overview), existing.overview);
+  if (hasColumn(row, "seo_title")) setIfChanged("seo_title", nullableText(row.seo_title), existing.seo_title);
+  if (hasColumn(row, "seo_description")) {
+    setIfChanged("seo_description", nullableText(row.seo_description), existing.seo_description);
+  }
+  if (hasColumn(row, "search_keywords")) {
+    setIfChanged("search_keywords", nullableText(row.search_keywords), existing.search_keywords);
+  }
+  if (hasColumn(row, "search_profile")) {
+    setIfChanged("search_profile", nullableText(row.search_profile), existing.search_profile);
+  }
+  if (hasColumn(row, "qa_document")) {
+    setIfChanged("qa_document", nullableText(row.qa_document), existing.qa_document);
+  }
+  if (hasColumn(row, "business_type")) {
+    setIfChanged("business_type", nullableText(row.business_type), existing.business_type);
+  }
+
+  if (hasColumn(row, "price_level")) {
     const pl = row.price_level?.trim();
     setIfChanged("price_level", pl && /^[1-4]$/.test(pl) ? pl : null, existing.price_level);
   }
@@ -353,7 +504,7 @@ function buildPatch(
     "occasion_tags",
   ] as const;
   for (const field of tagFields) {
-    if (row[field] !== undefined) {
+    if (hasColumn(row, field)) {
       const next = parseJsonArray(row[field] ?? "", field, matchKey);
       setIfChanged(field, next, existing[field]);
     }
@@ -363,21 +514,46 @@ function buildPatch(
   if (patch.search_profile !== undefined) patch.search_profile_updated_at = now;
 
   const merged = { ...existing, ...patch };
-  const derived = buildSearchDocumentFields({
-    title: merged.title,
-    excerpt: merged.excerpt,
-    business_type: merged.business_type,
-    search_keywords: merged.search_keywords,
-    item_tags: merged.item_tags,
-    dietary_tags: merged.dietary_tags,
-    atmosphere_tags: merged.atmosphere_tags,
-    occasion_tags: merged.occasion_tags,
-    meal_period_tags: merged.meal_period_tags,
-  });
+  const slimSearchTags = hasColumn(row, "search_tags");
 
-  setIfChanged("search_tags", derived.search_tags, existing.search_tags);
-  setIfChanged("search_terms", derived.search_terms, existing.search_terms);
-  setIfChanged("embedding_summary", derived.embedding_summary, existing.embedding_summary);
+  if (slimSearchTags) {
+    const nextTags = parseTagList(row.search_tags ?? "", "search_tags", matchKey).sort();
+    setIfChanged("search_tags", nextTags, existing.search_tags);
+  }
+
+  const tagFieldsChanged = tagFields.some((f) => patch[f] !== undefined);
+  const derivedInputsChanged =
+    patch.title !== undefined ||
+    patch.excerpt !== undefined ||
+    patch.search_keywords !== undefined ||
+    patch.business_type !== undefined ||
+    patch.search_tags !== undefined ||
+    tagFieldsChanged;
+
+  // Wide CSV without an explicit search_tags column: always re-derive tags from enrichment columns.
+  const shouldRefreshDerived = derivedInputsChanged || (!slimSearchTags && tagFields.some((f) => hasColumn(row, f)));
+
+  if (shouldRefreshDerived) {
+    const derived = buildSearchDocumentFields({
+      title: (patch.title as string | null | undefined) ?? merged.title,
+      excerpt: (patch.excerpt as string | null | undefined) ?? merged.excerpt,
+      business_type: (patch.business_type as string | null | undefined) ?? merged.business_type,
+      search_keywords:
+        (patch.search_keywords as string | null | undefined) ?? merged.search_keywords,
+      item_tags: (patch.item_tags as string[] | null | undefined) ?? merged.item_tags,
+      dietary_tags: (patch.dietary_tags as string[] | null | undefined) ?? merged.dietary_tags,
+      atmosphere_tags:
+        (patch.atmosphere_tags as string[] | null | undefined) ?? merged.atmosphere_tags,
+      occasion_tags: (patch.occasion_tags as string[] | null | undefined) ?? merged.occasion_tags,
+      meal_period_tags:
+        (patch.meal_period_tags as string[] | null | undefined) ?? merged.meal_period_tags,
+    });
+    if (!slimSearchTags) {
+      setIfChanged("search_tags", derived.search_tags, existing.search_tags);
+    }
+    setIfChanged("search_terms", derived.search_terms, existing.search_terms);
+    setIfChanged("embedding_summary", derived.embedding_summary, existing.embedding_summary);
+  }
 
   return { patch, changes, matchKey };
 }

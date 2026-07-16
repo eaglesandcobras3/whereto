@@ -1,0 +1,16 @@
+<!-- Teal footer + socials -->
+<mj-section background-color="#5DA6A8" padding="28px 28px 12px" css-class="email-footer">
+  <mj-column>
+    <mj-text align="center" color="#ffffff" font-size="15px" font-style="italic" line-height="1.5" padding-bottom="6px" css-class="email-footer-text">
+      Your Local Guide to All Things 30A
+    </mj-text>
+    <mj-text align="center" color="#ffffff" font-size="14px" font-weight="600" padding-bottom="18px" css-class="email-footer-text">
+      <a href="mailto:hello@whereto30a.com" style="color:#ffffff;text-decoration:underline;">hello@whereto30a.com</a>
+    </mj-text>
+    <mj-social font-size="0" icon-size="32px" mode="horizontal" align="center" padding="0 0 8px" inner-padding="0 8px">
+      <mj-social-element href="{{instagramUrl}}" src="{{iconInstagramUrl}}" background-color="#5DA6A8" alt="Instagram" />
+      <mj-social-element href="{{tiktokUrl}}" src="{{iconTiktokUrl}}" background-color="#5DA6A8" alt="TikTok" />
+      <mj-social-element href="{{siteUrl}}" src="{{iconWebsiteUrl}}" background-color="#5DA6A8" alt="Website" />
+    </mj-social>
+  </mj-column>
+</mj-section>

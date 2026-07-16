@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { z } from "zod";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 
+import { buildAdminAlertEmail } from "@/lib/email/business-templates";
+import { formatFromAddress, sendTransactionalEmail } from "@/lib/email/send";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteUrl } from "@/lib/site-url";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { escapeHtml } from "@/lib/string/escape-html";
-import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
 
 const CLAIM_NOTIFICATION_TO_EMAIL_DEFAULT = "claim@whereto30a.com";
 
@@ -58,11 +58,6 @@ export async function POST(request: NextRequest) {
   }
 
   const resendKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail =
-    process.env.CLAIM_NOTIFICATION_FROM_EMAIL?.trim() ||
-    process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    OUTBOUND_CONTACT_FROM_DEFAULT;
   const toRaw = process.env.CLAIM_NOTIFICATION_TO_EMAIL?.trim();
   const toEmail = toRaw || CLAIM_NOTIFICATION_TO_EMAIL_DEFAULT;
 
@@ -164,27 +159,39 @@ export async function POST(request: NextRequest) {
     )
     .join("");
 
-  const htmlBody = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5">
-<h1 style="font-size:18px">Business claim / listing update request</h1>
-<p style="color:#444">Someone used the form on your public listing page.</p>
-<p><a href="${escapeHtml(listingUrl)}">${escapeHtml(listingUrl)}</a></p>
-<table style="border-collapse:collapse">${detailsRows}</table>
-<p style="margin-top:16px;color:#444;font-size:13px"><strong>Technical</strong><br/>
+  const detailsHtml = `
+<p style="color:#5a6b6d">Someone used the form on your public listing page.</p>
+<p><a href="${escapeHtml(listingUrl)}" style="color:#57A0AF">${escapeHtml(listingUrl)}</a></p>
+<table style="border-collapse:collapse;width:100%">${detailsRows}</table>
+<p style="margin-top:16px;color:#5a6b6d;font-size:13px"><strong>Technical</strong><br/>
 Approx. client IP: ${escapeHtml(approxClient)}<br/>
-${ua ? `User-Agent: ${escapeHtml(ua.slice(0, 500))}` : ""}</p>
-</body></html>`;
+${ua ? `User-Agent: ${escapeHtml(ua.slice(0, 500))}` : ""}</p>`;
 
-  const resend = new Resend(resendKey);
-  const { error } = await resend.emails.send({
-    from: fromEmail.includes("<") ? fromEmail : `WhereTo30A <${fromEmail}>`,
-    to: [toEmail],
-    replyTo: d.submitter_email,
-    subject: `[WhereTo30A] Claim / update: ${bizTitle}`,
-    text: textBody,
-    html: htmlBody,
-  });
-
-  if (error) {
+  try {
+    const rendered = await buildAdminAlertEmail({
+      subject: `[WhereTo30A] Claim / update: ${bizTitle}`,
+      headline: "Claim / listing update request",
+      lead: "Someone submitted a claim or update request from a public listing.",
+      detailsHtml,
+      text: textBody,
+    });
+    const sent = await sendTransactionalEmail({
+      from: formatFromAddress(
+        process.env.CLAIM_NOTIFICATION_FROM_EMAIL ||
+          process.env.LISTING_NOTIFICATION_FROM_EMAIL ||
+          process.env.RESEND_FROM_EMAIL,
+      ),
+      to: toEmail,
+      replyTo: d.submitter_email,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+      logLabel: "business-claim-email",
+    });
+    if (!sent) {
+      return NextResponse.json({ error: "Could not send request." }, { status: 502 });
+    }
+  } catch (error) {
     console.error("resend.emails.send business claim email", error);
     return NextResponse.json({ error: "Could not send request." }, { status: 502 });
   }

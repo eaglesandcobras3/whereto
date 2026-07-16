@@ -1,6 +1,8 @@
 import {
   buildBusinessRequestReceivedEmail,
   buildListingLiveEmail,
+  buildListingRemovedEmail,
+  buildRequestRejectedEmail,
 } from "@/lib/email/business-templates";
 import { listingFromAddress, sendTransactionalEmail } from "@/lib/email/send";
 import { getSiteUrl } from "@/lib/site-url";
@@ -32,6 +34,8 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
   adminNotes?: string | null;
   isUpdate?: boolean;
   isRemoval?: boolean;
+  /** Prefills submit-changes CTA for update/claim/removal rejects. */
+  businessSlug?: string | null;
 }): Promise<void> {
   const title = opts.businessTitle.trim() || "your business";
   const links = absoluteListingUrls(opts.listingPaths);
@@ -66,27 +70,65 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
 
   if (opts.isRemoval) {
     if (opts.event === "approved") {
-      await sendTransactionalEmail({
-        from: listingFromAddress(),
-        to: opts.to,
-        subject: `${title} has been removed from WhereTo30A`,
-        text: `We've removed ${title} from WhereTo30A as requested.\n\nQuestions? Email hello@whereto30a.com`,
-        logLabel: "free-onboard-notify:approved",
-      });
-    } else {
-      let text = `We could not remove ${title} from WhereTo30A at this time.`;
-      if (opts.adminNotes) {
-        text += `\n\nNote from our team: ${opts.adminNotes}`;
+      try {
+        const rendered = await buildListingRemovedEmail({
+          businessTitle: title,
+          adminNotes: opts.adminNotes,
+        });
+        await sendTransactionalEmail({
+          from: listingFromAddress(),
+          to: opts.to,
+          subject: rendered.subject,
+          text: rendered.text,
+          html: rendered.html,
+          logLabel: "free-onboard-notify:approved",
+        });
+        return;
+      } catch (err) {
+        console.error("[free-onboard-notify] MJML removal render failed", err);
+        await sendTransactionalEmail({
+          from: listingFromAddress(),
+          to: opts.to,
+          subject: `${title} has been removed from WhereTo30A`,
+          text: `We've removed ${title} from WhereTo30A as requested.\n\nQuestions? Email hello@whereto30a.com`,
+          logLabel: "free-onboard-notify:approved",
+        });
+        return;
       }
-      text += `\n\nQuestions? Email hello@whereto30a.com`;
+    }
+
+    try {
+      const rendered = await buildRequestRejectedEmail({
+        businessTitle: title,
+        kind: "removal",
+        adminNotes: opts.adminNotes,
+        businessSlug: opts.businessSlug,
+      });
       await sendTransactionalEmail({
         from: listingFromAddress(),
         to: opts.to,
-        subject: `Update on your removal request for ${title}`,
-        text,
+        subject: rendered.subject,
+        text: rendered.text,
+        html: rendered.html,
         logLabel: "free-onboard-notify:rejected",
       });
+      return;
+    } catch (err) {
+      console.error("[free-onboard-notify] MJML removal reject render failed", err);
     }
+
+    let text = `We could not remove ${title} from WhereTo30A at this time.`;
+    if (opts.adminNotes) {
+      text += `\n\nNote from our team: ${opts.adminNotes}`;
+    }
+    text += `\n\nQuestions? Email hello@whereto30a.com`;
+    await sendTransactionalEmail({
+      from: listingFromAddress(),
+      to: opts.to,
+      subject: `Update on your removal request for ${title}`,
+      text,
+      logLabel: "free-onboard-notify:rejected",
+    });
     return;
   }
 
@@ -118,8 +160,8 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
         ? `\n\nView ${links.length === 1 ? "your listing" : "your listings"}:\n${links.join("\n")}`
         : "";
     const text = opts.isUpdate
-      ? `Good news — your requested updates for ${title} are live on WhereTo30A.${linkBlock}\n\nQuestions? Email hello@whereto30a.com`
-      : `Good news — ${title} is now live on WhereTo30A.${linkBlock}\n\nThis is one confirmation for your whole submission${links.length > 1 ? ` (${links.length} locations)` : ""}.\n\nQuestions? Email hello@whereto30a.com`;
+      ? `Good news: your requested updates for ${title} are live on WhereTo30A.${linkBlock}\n\nQuestions? Email hello@whereto30a.com`
+      : `Good news: ${title} is now live on WhereTo30A.${linkBlock}\n\nThis is one confirmation for your whole submission${links.length > 1 ? ` (${links.length} locations)` : ""}.\n\nQuestions? Email hello@whereto30a.com`;
 
     await sendTransactionalEmail({
       from: listingFromAddress(),
@@ -129,6 +171,26 @@ export async function sendFreeOnboardSubmitterEmail(opts: {
       logLabel: "free-onboard-notify:approved",
     });
     return;
+  }
+
+  try {
+    const rendered = await buildRequestRejectedEmail({
+      businessTitle: title,
+      kind: opts.isUpdate ? "update" : "listing",
+      adminNotes: opts.adminNotes,
+      businessSlug: opts.businessSlug,
+    });
+    await sendTransactionalEmail({
+      from: listingFromAddress(),
+      to: opts.to,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+      logLabel: "free-onboard-notify:rejected",
+    });
+    return;
+  } catch (err) {
+    console.error("[free-onboard-notify] MJML reject render failed", err);
   }
 
   const subject = opts.isUpdate

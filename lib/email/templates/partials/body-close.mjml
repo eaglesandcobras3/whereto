@@ -1,0 +1,3 @@
+  <mj-include path="./banner.mjml" />
+  <mj-include path="./footer.mjml" />
+</mj-body>

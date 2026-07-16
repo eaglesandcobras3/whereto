@@ -2,9 +2,17 @@ import {
   buildBusinessRequestApprovedEmail,
   buildBusinessRequestReceivedEmail,
   buildListingLiveEmail,
+  buildPaymentFailedEmail,
+  buildPaymentSuccessEmail,
+  buildPortalInviteEmail,
+  buildRequestRejectedEmail,
+  buildReviewNeedsChangesEmail,
+  buildSubscriptionUpgradedEmail,
+  portalCta,
+  submitChangesCta,
+  viewListingCta,
 } from "@/lib/email/business-templates";
 import { portalFromAddress, sendTransactionalEmail } from "@/lib/email/send";
-import { getSiteUrl } from "@/lib/site-url";
 
 export type PortalNotificationEvent =
   | "claim_submitted"
@@ -50,13 +58,13 @@ const BODIES: Record<
   claim_submitted: ({ businessTitle }) =>
     `Thanks for claiming ${businessTitle} on WhereTo30A. Our team will review your request and email you when it's approved.`,
   claim_approved: ({ businessTitle }) =>
-    `Your claim for ${businessTitle} was approved. Sign in to your Business Portal to manage your listing.`,
+    `Your claim for ${businessTitle} was approved. You can submit listing changes anytime on WhereTo30A.`,
   claim_rejected: ({ businessTitle, adminNotes }) =>
     `We could not approve your claim for ${businessTitle} at this time.${adminNotes ? `\n\nNote from our team: ${adminNotes}` : ""}`,
   listing_submitted: ({ businessTitle }) =>
     `We received your listing request for ${businessTitle}. We'll review it and email you when it's live.`,
   listing_approved: ({ businessTitle }) =>
-    `Good news. ${businessTitle} has been approved on WhereTo30A. Visit your Business Portal to keep your listing up to date.`,
+    `Good news. ${businessTitle} has been approved on WhereTo30A. Submit changes anytime on the website if something needs updating.`,
   listing_rejected: ({ businessTitle, adminNotes }) =>
     `We couldn't publish ${businessTitle} as submitted.${adminNotes ? `\n\nNote from our team: ${adminNotes}` : ""}`,
   edit_submitted: ({ businessTitle }) =>
@@ -78,89 +86,120 @@ const BODIES: Record<
   subscription_upgraded: ({ businessTitle }) =>
     `Your plan for ${businessTitle} was upgraded. Sign in to your Business Portal to use your new features.`,
   review_needs_changes: ({ businessTitle, adminNotes }) =>
-    `Our team requested changes to your submission for ${businessTitle}.${adminNotes ? `\n\nNote from our team: ${adminNotes}` : ""}\n\nSign in to your Business Portal to update and resubmit.`,
+    `Our team requested changes to your submission for ${businessTitle}.${adminNotes ? `\n\nNote from our team: ${adminNotes}` : ""}\n\nSubmit your updates on WhereTo30A when you are ready.`,
 };
-
-const MJML_EVENTS = new Set<PortalNotificationEvent>([
-  "listing_submitted",
-  "listing_approved",
-  "edit_submitted",
-  "edit_approved",
-  "claim_submitted",
-  "claim_approved",
-  "photo_submitted",
-  "photo_approved",
-]);
-
-function portalCta() {
-  return {
-    url: `${getSiteUrl().replace(/\/$/, "")}/portal`,
-    label: "Open Business Portal",
-  };
-}
 
 async function renderPortalMjmlEmail(opts: {
   event: PortalNotificationEvent;
   businessTitle: string;
   adminNotes?: string | null;
-}): Promise<{ subject: string; text: string; html: string } | null> {
-  if (!MJML_EVENTS.has(opts.event)) return null;
-
-  const cta = portalCta();
+  listingUrl?: string | null;
+  businessSlug?: string | null;
+}): Promise<{ subject: string; text: string; html: string }> {
+  const changesCta = submitChangesCta(opts.businessSlug);
 
   switch (opts.event) {
     case "listing_submitted":
       return buildBusinessRequestReceivedEmail({
         businessTitle: opts.businessTitle,
         requestKind: "listing",
-        cta,
       });
     case "edit_submitted":
       return buildBusinessRequestReceivedEmail({
         businessTitle: opts.businessTitle,
         requestKind: "update",
-        cta,
       });
     case "claim_submitted":
       return buildBusinessRequestReceivedEmail({
         businessTitle: opts.businessTitle,
         requestKind: "claim",
-        cta,
       });
     case "photo_submitted":
       return buildBusinessRequestReceivedEmail({
         businessTitle: opts.businessTitle,
         requestKind: "photo",
-        cta,
       });
     case "listing_approved":
       return buildBusinessRequestApprovedEmail({
         businessTitle: opts.businessTitle,
         kind: "listing",
         adminNotes: opts.adminNotes,
-        cta,
+        listingUrl: opts.listingUrl,
       });
     case "claim_approved":
       return buildBusinessRequestApprovedEmail({
         businessTitle: opts.businessTitle,
         kind: "claim",
         adminNotes: opts.adminNotes,
-        cta,
+        listingUrl: opts.listingUrl,
       });
     case "edit_approved":
       return buildListingLiveEmail({
         businessTitle: opts.businessTitle,
         variant: "update",
-        cta,
+        listingUrls: opts.listingUrl ? [opts.listingUrl] : undefined,
+        cta: opts.listingUrl ? viewListingCta(opts.listingUrl) : null,
       });
     case "photo_approved":
       return buildListingLiveEmail({
         businessTitle: opts.businessTitle,
         variant: "photo",
-        cta,
+        listingUrls: opts.listingUrl ? [opts.listingUrl] : undefined,
+        cta: opts.listingUrl ? viewListingCta(opts.listingUrl) : null,
       });
-    default:
-      return null;
+    case "claim_rejected":
+      return buildRequestRejectedEmail({
+        businessTitle: opts.businessTitle,
+        kind: "claim",
+        adminNotes: opts.adminNotes,
+        cta: changesCta,
+      });
+    case "listing_rejected":
+      return buildRequestRejectedEmail({
+        businessTitle: opts.businessTitle,
+        kind: "listing",
+        adminNotes: opts.adminNotes,
+        cta: changesCta,
+      });
+    case "edit_rejected":
+      return buildRequestRejectedEmail({
+        businessTitle: opts.businessTitle,
+        kind: "edit",
+        adminNotes: opts.adminNotes,
+        cta: changesCta,
+      });
+    case "photo_rejected":
+      return buildRequestRejectedEmail({
+        businessTitle: opts.businessTitle,
+        kind: "photo",
+        adminNotes: opts.adminNotes,
+        cta: changesCta,
+      });
+    case "review_needs_changes":
+      return buildReviewNeedsChangesEmail({
+        businessTitle: opts.businessTitle,
+        adminNotes: opts.adminNotes,
+        cta: changesCta,
+      });
+    case "payment_success":
+      return buildPaymentSuccessEmail({
+        businessTitle: opts.businessTitle,
+        cta: portalCta(),
+      });
+    case "payment_failed":
+      return buildPaymentFailedEmail({
+        businessTitle: opts.businessTitle,
+        cta: portalCta(),
+      });
+    case "subscription_upgraded":
+      return buildSubscriptionUpgradedEmail({
+        businessTitle: opts.businessTitle,
+        cta: portalCta(),
+      });
+    default: {
+      const _exhaustive: never = opts.event;
+      throw new Error(`Unhandled portal notification event: ${_exhaustive}`);
+    }
   }
 }
 
@@ -170,6 +209,25 @@ export async function sendPortalInviteEmail(opts: {
   acceptUrl: string;
   inviterEmail?: string | null;
 }): Promise<void> {
+  try {
+    const rendered = await buildPortalInviteEmail({
+      businessTitle: opts.businessTitle,
+      acceptUrl: opts.acceptUrl,
+      inviterEmail: opts.inviterEmail,
+    });
+    await sendTransactionalEmail({
+      from: portalFromAddress(),
+      to: opts.to,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+      logLabel: "portal-invite",
+    });
+    return;
+  } catch (err) {
+    console.error("[portal-invite] MJML render failed; falling back to text", err);
+  }
+
   const subject = `You're invited to manage ${opts.businessTitle} on WhereTo30A`;
   const inviter = opts.inviterEmail ? `\n\nInvited by: ${opts.inviterEmail}` : "";
   const text = `You've been invited to help manage ${opts.businessTitle} on WhereTo30A.${inviter}\n\nAccept the invite:\n${opts.acceptUrl}\n\nThis link expires in 7 days.`;
@@ -188,20 +246,22 @@ export async function sendPortalOwnerEmail(opts: {
   event: PortalNotificationEvent;
   businessTitle: string;
   adminNotes?: string | null;
+  /** Absolute public listing URL when the listing is live. */
+  listingUrl?: string | null;
+  /** Prefills submit-changes CTA when the listing already exists. */
+  businessSlug?: string | null;
 }): Promise<void> {
   try {
     const rendered = await renderPortalMjmlEmail(opts);
-    if (rendered) {
-      await sendTransactionalEmail({
-        from: portalFromAddress(),
-        to: opts.to,
-        subject: rendered.subject,
-        text: rendered.text,
-        html: rendered.html,
-        logLabel: `portal-notification:${opts.event}`,
-      });
-      return;
-    }
+    await sendTransactionalEmail({
+      from: portalFromAddress(),
+      to: opts.to,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+      logLabel: `portal-notification:${opts.event}`,
+    });
+    return;
   } catch (err) {
     console.error("[portal-notification] MJML render failed; falling back to text", opts.event, err);
   }

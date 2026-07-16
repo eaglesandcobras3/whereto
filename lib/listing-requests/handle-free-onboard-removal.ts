@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
-import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
+import { buildAdminAlertEmail } from "@/lib/email/business-templates";
+import { listingFromAddress, sendTransactionalEmail } from "@/lib/email/send";
 import { sendFreeOnboardSubmitterEmail } from "@/lib/listing-requests/free-onboard-notify";
 import {
   FREE_ONBOARD_TYPES,
@@ -103,15 +103,10 @@ export async function handleFreeOnboardRemovalRequest(
     isRemoval: true,
   });
 
-  const resendKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail =
-    process.env.LISTING_NOTIFICATION_FROM_EMAIL?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    OUTBOUND_CONTACT_FROM_DEFAULT;
   const toEmail =
     process.env.LISTING_NOTIFICATION_TO_EMAIL?.trim() || LISTING_NOTIFICATION_TO_EMAIL_DEFAULT;
 
-  if (resendKey) {
+  {
     const baseUrl = getSiteUrl().replace(/\/$/, "");
     const textBody = [
       "Free onboard REMOVAL request",
@@ -127,29 +122,34 @@ export async function handleFreeOnboardRemovalRequest(
       `Review item: ${reviewItem.id}`,
     ].join("\n");
 
-    const htmlBody = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5">
-<h1 style="font-size:18px">Free intake removal request</h1>
+    const detailsHtml = `
 <p>Submitted via <strong>/list-your-business</strong> (free_onboard).</p>
 <p><strong>Submitter:</strong> ${escapeHtml(d.submitter_name)} &lt;${escapeHtml(d.submitter_email)}&gt;</p>
 <p><strong>Business:</strong> ${escapeHtml(title)} (<code>${escapeHtml(slug)}</code>)</p>
 <p><strong>Reason:</strong><br/>${escapeHtml(d.reason).replace(/\r?\n/g, "<br>")}</p>
-<p><a href="${escapeHtml(`${baseUrl}/admin/review`)}">Open review queue</a> · item ${escapeHtml(String(reviewItem.id))}</p>
-</body></html>`;
+<p style="margin-top:12px;font-size:13px;color:#5a6b6d">Review item ${escapeHtml(String(reviewItem.id))}</p>`;
 
-    const resend = new Resend(resendKey);
-    const { error: emailErr } = await resend.emails.send({
-      from: fromEmail.includes("<") ? fromEmail : `WhereTo30A <${fromEmail}>`,
-      to: [toEmail],
-      replyTo: d.submitter_email,
-      subject: `[WhereTo30A] Removal request: ${title}`,
-      text: textBody,
-      html: htmlBody,
-    });
-    if (emailErr) {
+    try {
+      const rendered = await buildAdminAlertEmail({
+        subject: `[WhereTo30A] Removal request: ${title}`,
+        headline: "Free intake removal request",
+        lead: "A removal request is waiting in the review queue.",
+        detailsHtml,
+        text: textBody,
+        cta: { url: `${baseUrl}/admin/review`, label: "Open review queue" },
+      });
+      await sendTransactionalEmail({
+        from: listingFromAddress(),
+        to: toEmail,
+        replyTo: d.submitter_email,
+        subject: rendered.subject,
+        text: rendered.text,
+        html: rendered.html,
+        logLabel: "free-onboard-removal-admin",
+      });
+    } catch (emailErr) {
       console.error("resend.emails.send free onboard removal", emailErr);
     }
-  } else {
-    console.error("[free-onboard-removal] Missing RESEND_API_KEY — queue saved without email");
   }
 
   const ph = getPostHogServerClient();
