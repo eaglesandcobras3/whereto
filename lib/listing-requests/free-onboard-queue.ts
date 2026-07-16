@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  buildFreeOnboardSearchKeywords,
   buildFreeOnboardSeoDescription,
   buildFreeOnboardSeoTitle,
   buildFreeOnboardSlug,
@@ -20,6 +21,26 @@ function asPayload(raw: Record<string, unknown>): FreeOnboardPayload {
 
 function asRemovalPayload(raw: Record<string, unknown>): FreeOnboardRemovalPayload {
   return raw as unknown as FreeOnboardRemovalPayload;
+}
+
+/** Prefer generated keywords from listing signals; fall back to an existing value. */
+function resolveSearchKeywords(
+  payload: FreeOnboardPayload,
+  existing?: string | null,
+): string | null {
+  return (
+    buildFreeOnboardSearchKeywords({
+      title: payload.title,
+      isStorefront: payload.is_storefront,
+      isServiceBusiness: payload.is_service_business,
+      categoryTitle: payload.category_title,
+      serviceCategoryTitle: payload.service_category_title,
+      searchTags: payload.search_tags,
+      suggestedTags: payload.suggested_tags,
+    }) ||
+    existing ||
+    null
+  );
 }
 
 function createdListingSlugs(payload: FreeOnboardPayload): string[] {
@@ -183,11 +204,12 @@ export async function createFreeListingForLocation(
   const slug = buildFreeOnboardSlug(payload.title, town.slug, taken);
   const seoTitle = buildFreeOnboardSeoTitle(payload.title, town.title);
   const seoDescription = buildFreeOnboardSeoDescription(payload.excerpt);
+  const searchKeywords = resolveSearchKeywords(payload);
   const searchDoc = buildSearchDocumentFields({
     title: payload.title,
     excerpt: payload.excerpt,
     business_type: null,
-    search_keywords: payload.search_keywords,
+    search_keywords: searchKeywords,
   });
 
   const tags =
@@ -218,7 +240,7 @@ export async function createFreeListingForLocation(
       ? (payload.service_category_id ?? null)
       : null,
     search_tags: tags,
-    search_keywords: payload.search_keywords,
+    search_keywords: searchKeywords,
     search_terms: searchDoc.search_terms,
     embedding_summary: searchDoc.embedding_summary,
     seo_title: seoTitle,
@@ -387,11 +409,12 @@ async function createFreeServiceListingWithoutTown(
   const slug = buildFreeOnboardSlug(payload.title, null, taken);
   const seoTitle = buildFreeOnboardSeoTitle(payload.title, undefined);
   const seoDescription = buildFreeOnboardSeoDescription(payload.excerpt);
+  const searchKeywords = resolveSearchKeywords(payload);
   const searchDoc = buildSearchDocumentFields({
     title: payload.title,
     excerpt: payload.excerpt,
     business_type: null,
-    search_keywords: payload.search_keywords,
+    search_keywords: searchKeywords,
   });
   const tags =
     payload.search_tags.length > 0
@@ -419,7 +442,7 @@ async function createFreeServiceListingWithoutTown(
     primary_category_id: null,
     service_category_id: payload.service_category_id ?? null,
     search_tags: tags,
-    search_keywords: payload.search_keywords,
+    search_keywords: searchKeywords,
     search_terms: searchDoc.search_terms,
     embedding_summary: searchDoc.embedding_summary,
     seo_title: seoTitle,
@@ -484,10 +507,11 @@ export async function approveFreeUpdate(
     .maybeSingle();
   if (!existing) throw new Error("Business not found");
 
-  // Update form intentionally leaves SEO keywords blank; empty must not wipe existing.
-  const searchKeywords =
-    payload.search_keywords?.trim() ||
-    ((existing.search_keywords as string | null) ?? null);
+  // Keywords are generated from name/type/category/tags — not collected on the form.
+  const searchKeywords = resolveSearchKeywords(
+    payload,
+    (existing.search_keywords as string | null) ?? null,
+  );
 
   const primaryLoc = payload.locations[0];
   const townId = primaryLoc?.town_id ?? (existing.town_id as string);

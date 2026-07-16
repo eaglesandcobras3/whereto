@@ -8,7 +8,7 @@ export const FREE_ONBOARD_EXCERPT_MAX = 160;
 export const FREE_ONBOARD_OVERVIEW_MAX = 500;
 export const FREE_ONBOARD_LOCATIONS_MAX = 10;
 export const FREE_ONBOARD_SEARCH_TAGS_MAX = 6;
-/** Comma-separated SEO keyword phrases — keep within a practical SERP/meta budget. */
+/** Cap for generated (and legacy client-supplied) SEO keyword strings. */
 export const FREE_ONBOARD_SEARCH_KEYWORDS_MAX = 255;
 
 /**
@@ -129,11 +129,12 @@ export const freeOnboardBodySchema = z
       .array(z.string().trim().min(1).max(64))
       .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
       .default([]),
+    /** Ignored — keywords are generated server-side from name, type, category, and tags. */
     search_keywords: z
       .string()
       .max(FREE_ONBOARD_SEARCH_KEYWORDS_MAX)
       .optional()
-      .transform((s) => (s ?? "").trim() || null),
+      .transform(() => null),
     marketing_opt_in: z.boolean().optional().default(false),
     target_business_id: z.string().uuid().optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),

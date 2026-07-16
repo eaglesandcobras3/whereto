@@ -326,7 +326,7 @@ describe("approveFreeUpdate search_keywords", () => {
   const businessId = "33333333-3333-4333-8333-333333333333";
   const townId = "11111111-1111-4111-8111-111111111111";
 
-  function basePayload(searchKeywords: string | null) {
+  function basePayload() {
     return {
       source: "free_onboard",
       submitter_name: "Pat",
@@ -339,9 +339,10 @@ describe("approveFreeUpdate search_keywords", () => {
       excerpt: "Coffee near the beach.",
       overview: "A local coffee shop with great espresso.",
       category_id: "22222222-2222-4222-8222-222222222222",
+      category_title: "Coffee shops",
       search_tags: ["coffee"],
       suggested_tags: [],
-      search_keywords: searchKeywords,
+      search_keywords: null,
       marketing_opt_in: false,
       target_business_id: businessId,
       locations: [
@@ -363,9 +364,31 @@ describe("approveFreeUpdate search_keywords", () => {
     search_keywords: "espresso, seaside coffee",
   };
 
-  it("keeps existing SEO keywords when the update payload leaves them empty", async () => {
+  it("writes generated SEO keywords from name, type, category, and tags", async () => {
     const { supabase, updates } = mockUpdateApproveSupabase({
-      payload: basePayload(null),
+      payload: basePayload(),
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate).toBeDefined();
+    expect(businessUpdate!.row.search_keywords).toBe(
+      "Amavida Coffee, local business, Coffee shops, Coffee shops on 30A, Coffee",
+    );
+  });
+
+  it("keeps existing SEO keywords only when generation has nothing to write", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: {
+        ...basePayload(),
+        title: "",
+        is_storefront: false,
+        is_service_business: false,
+        category_title: null,
+        search_tags: [],
+      },
       existing,
     });
 
@@ -374,18 +397,5 @@ describe("approveFreeUpdate search_keywords", () => {
     const businessUpdate = updates.find((u) => u.table === "businesses");
     expect(businessUpdate).toBeDefined();
     expect(businessUpdate!.row.search_keywords).toBe("espresso, seaside coffee");
-  });
-
-  it("applies new SEO keywords when the update payload provides them", async () => {
-    const { supabase, updates } = mockUpdateApproveSupabase({
-      payload: basePayload("cold brew, local roast"),
-      existing,
-    });
-
-    await approveFreeUpdate(supabase, "review-1", "admin-1");
-
-    const businessUpdate = updates.find((u) => u.table === "businesses");
-    expect(businessUpdate).toBeDefined();
-    expect(businessUpdate!.row.search_keywords).toBe("cold brew, local roast");
   });
 });

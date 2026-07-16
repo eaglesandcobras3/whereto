@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildFreeOnboardSearchKeywords,
   buildFreeOnboardSeoDescription,
   buildFreeOnboardSeoTitle,
   buildFreeOnboardSlug,
@@ -57,6 +58,47 @@ describe("free onboard derived fields", () => {
     const taken = new Set<string>(["amavida-seaside"]);
     expect(buildFreeOnboardSlug("Amavida", "seaside", taken)).toBe("amavida-seaside-2");
   });
+
+  it("builds search keywords from name, type, category, and tags", () => {
+    expect(
+      buildFreeOnboardSearchKeywords({
+        title: "Amavida Coffee",
+        isStorefront: true,
+        isServiceBusiness: false,
+        categoryTitle: "Coffee shops",
+        searchTags: ["coffee", "wifi"],
+        suggestedTags: ["local_roast"],
+      }),
+    ).toBe(
+      "Amavida Coffee, local business, Coffee shops, Coffee shops on 30A, Coffee, Wifi, Local Roast",
+    );
+  });
+
+  it("uses service specialty wording for service businesses", () => {
+    expect(
+      buildFreeOnboardSearchKeywords({
+        title: "Coastal CPA",
+        isStorefront: false,
+        isServiceBusiness: true,
+        serviceCategoryTitle: "Accounting & tax",
+        searchTags: ["accounting"],
+      }),
+    ).toBe(
+      "Coastal CPA, service provider, Accounting & tax, Accounting & tax on 30A, Accounting",
+    );
+  });
+
+  it("caps generated search keywords to the max length", () => {
+    const keywords = buildFreeOnboardSearchKeywords({
+      title: "A".repeat(80),
+      isStorefront: true,
+      isServiceBusiness: false,
+      categoryTitle: "B".repeat(80),
+      searchTags: Array.from({ length: 6 }, (_, i) => `tag_${i}_${"x".repeat(40)}`),
+    });
+    expect(keywords).toBeTruthy();
+    expect(keywords!.length).toBeLessThanOrEqual(FREE_ONBOARD_SEARCH_KEYWORDS_MAX);
+  });
 });
 
 describe("free onboard schema limits", () => {
@@ -73,13 +115,23 @@ describe("free onboard schema limits", () => {
     overview: "A slightly longer overview paragraph for visitors.",
     category_id: "22222222-2222-4222-8222-222222222222",
     search_tags: ["coffee"],
-    search_keywords: "espresso",
     marketing_opt_in: true,
   };
 
   it("accepts valid payload", () => {
     const parsed = freeOnboardBodySchema.safeParse(base);
     expect(parsed.success).toBe(true);
+  });
+
+  it("ignores client-supplied search keywords", () => {
+    const parsed = freeOnboardBodySchema.safeParse({
+      ...base,
+      search_keywords: "espresso, seaside coffee",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.search_keywords).toBeNull();
+    }
   });
 
   it("accepts website without http scheme", () => {
@@ -189,7 +241,7 @@ describe("free onboard schema limits", () => {
     ).toBe(false);
   });
 
-  it("rejects over-limit search keywords", () => {
+  it("rejects over-limit search keywords strings", () => {
     expect(
       freeOnboardBodySchema.safeParse({
         ...base,

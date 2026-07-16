@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
 import { OUTBOUND_CONTACT_FROM_DEFAULT } from "@/lib/email/outbound-defaults";
 import { normalizeSearchTagSlug } from "@/lib/discovery-filters/search-tag-label";
+import { buildFreeOnboardSearchKeywords } from "@/lib/listing-requests/free-onboard-derived";
 import { sendFreeOnboardSubmitterEmail } from "@/lib/listing-requests/free-onboard-notify";
 import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
@@ -170,6 +171,17 @@ export async function handleFreeOnboardListingRequest(
   const categoryTitle = category ? String(category.title ?? "") : null;
   const serviceCategoryTitle = serviceCategory ? String(serviceCategory.title ?? "") : null;
 
+  // SEO keywords are derived server-side — ignore any client-supplied value.
+  const searchKeywords = buildFreeOnboardSearchKeywords({
+    title: d.title,
+    isStorefront: d.is_storefront,
+    isServiceBusiness: d.is_service_business,
+    categoryTitle: d.is_storefront ? categoryTitle : null,
+    serviceCategoryTitle: d.is_service_business ? serviceCategoryTitle : null,
+    searchTags: cappedSearchTags,
+    suggestedTags: cappedSuggestedTags,
+  });
+
   const payload: FreeOnboardPayload = {
     source: "free_onboard",
     submitter_name: d.submitter_name,
@@ -187,7 +199,7 @@ export async function handleFreeOnboardListingRequest(
     service_category_title: d.is_service_business ? serviceCategoryTitle : null,
     search_tags: cappedSearchTags,
     suggested_tags: cappedSuggestedTags,
-    search_keywords: d.search_keywords,
+    search_keywords: searchKeywords,
     marketing_opt_in: d.marketing_opt_in,
     target_business_id: targetBusinessId,
     locations,
