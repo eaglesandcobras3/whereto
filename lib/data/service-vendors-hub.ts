@@ -10,6 +10,10 @@ import {
 } from "@/lib/service-categories/groups";
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import {
+  SERVICE_UNCATEGORIZED_SECTION_ID,
+  SERVICE_UNCATEGORIZED_TITLE,
+} from "@/lib/service-categories/uncategorized";
 
 export const SERVICE_VENDORS_PAGE_SIZE = 24;
 const HUB_VENDOR_POOL_LIMIT = 2000;
@@ -214,16 +218,12 @@ export async function countServiceVendors(): Promise<number> {
   return count ?? 0;
 }
 
-export async function getServiceSpecialtySections(
+/** Published service vendors with no specialty — UI-only “Other providers” bucket. */
+export async function loadUncategorizedServiceVendors(
   query?: string | null,
-): Promise<ServiceSpecialtySection[]> {
-  const categories = (await listServiceCategories()).filter((c) => c.vendor_count > 0);
-  if (categories.length === 0) return [];
-
-  const categoryIds = categories.map((c) => c.id);
+): Promise<ServiceVendorRow[]> {
   const trimmedQ = query?.trim() ?? "";
-
-  let q = vendorBaseQuery().in("service_category_id", categoryIds);
+  let q = vendorBaseQuery().is("service_category_id", null);
 
   if (trimmedQ) {
     const safe = trimmedQ.replace(/[%_,\\]/g, " ").trim();
@@ -238,40 +238,98 @@ export async function getServiceSpecialtySections(
     .limit(HUB_VENDOR_POOL_LIMIT);
 
   if (error) {
-    console.error("service specialty sections", error);
+    console.error("uncategorized service vendors", error);
     return [];
   }
 
-  const byCategory = new Map<string, ServiceVendorRow[]>();
-  for (const row of data ?? []) {
-    const r = row as Record<string, unknown>;
-    const categoryId = r.service_category_id as string | null;
-    if (!categoryId) continue;
-    const list = byCategory.get(categoryId) ?? [];
-    list.push(mapVendorRow(r));
-    byCategory.set(categoryId, list);
-  }
+  return (data ?? []).map((row) => mapVendorRow(row as Record<string, unknown>));
+}
 
-  const grouped = groupListedServiceCategories(categories);
+export async function countUncategorizedServiceVendors(): Promise<number> {
+  const { count, error } = await getServiceSupabase()
+    .from("businesses_view")
+    .select("id", { count: "exact", head: true })
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_service_business", true)
+    .is("service_category_id", null)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN);
+  if (error) {
+    console.error("uncategorized service vendors: count", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+export async function getServiceSpecialtySections(
+  query?: string | null,
+): Promise<ServiceSpecialtySection[]> {
+  const categories = (await listServiceCategories()).filter((c) => c.vendor_count > 0);
+  const trimmedQ = query?.trim() ?? "";
   const sections: ServiceSpecialtySection[] = [];
 
-  for (const group of grouped) {
-    const vendors: ServiceVendorRow[] = [];
-    const seen = new Set<string>();
-    for (const cat of group.categories) {
-      for (const vendor of byCategory.get(cat.id) ?? []) {
-        if (seen.has(vendor.id)) continue;
-        seen.add(vendor.id);
-        vendors.push(vendor);
+  if (categories.length > 0) {
+    const categoryIds = categories.map((c) => c.id);
+
+    let q = vendorBaseQuery().in("service_category_id", categoryIds);
+
+    if (trimmedQ) {
+      const safe = trimmedQ.replace(/[%_,\\]/g, " ").trim();
+      if (safe) {
+        q = q.or(`title.ilike.%${safe}%,excerpt.ilike.%${safe}%,search_keywords.ilike.%${safe}%`);
       }
     }
-    if (vendors.length === 0) continue;
+
+    const { data, error } = await q
+      .order("featured", { ascending: false })
+      .order("title", { ascending: true })
+      .limit(HUB_VENDOR_POOL_LIMIT);
+
+    if (error) {
+      console.error("service specialty sections", error);
+    } else {
+      const byCategory = new Map<string, ServiceVendorRow[]>();
+      for (const row of data ?? []) {
+        const r = row as Record<string, unknown>;
+        const categoryId = r.service_category_id as string | null;
+        if (!categoryId) continue;
+        const list = byCategory.get(categoryId) ?? [];
+        list.push(mapVendorRow(r));
+        byCategory.set(categoryId, list);
+      }
+
+      const grouped = groupListedServiceCategories(categories);
+
+      for (const group of grouped) {
+        const vendors: ServiceVendorRow[] = [];
+        const seen = new Set<string>();
+        for (const cat of group.categories) {
+          for (const vendor of byCategory.get(cat.id) ?? []) {
+            if (seen.has(vendor.id)) continue;
+            seen.add(vendor.id);
+            vendors.push(vendor);
+          }
+        }
+        if (vendors.length === 0) continue;
+        sections.push({
+          id: group.groupSlug,
+          title: group.groupLabel,
+          slug: group.groupSlug,
+          vendors,
+          totalCount: vendors.length,
+        });
+      }
+    }
+  }
+
+  const uncategorized = await loadUncategorizedServiceVendors(trimmedQ);
+  if (uncategorized.length > 0) {
     sections.push({
-      id: group.groupSlug,
-      title: group.groupLabel,
-      slug: group.groupSlug,
-      vendors,
-      totalCount: vendors.length,
+      id: SERVICE_UNCATEGORIZED_SECTION_ID,
+      title: SERVICE_UNCATEGORIZED_TITLE,
+      slug: SERVICE_UNCATEGORIZED_SECTION_ID,
+      vendors: uncategorized,
+      totalCount: uncategorized.length,
     });
   }
 

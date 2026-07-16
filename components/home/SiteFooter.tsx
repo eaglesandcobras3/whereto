@@ -4,7 +4,13 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups";
+import { countUncategorizedServiceVendors } from "@/lib/data/service-vendors-hub";
 import { getListedServiceBrowseGroups } from "@/lib/data/service-browse-groups";
+import {
+  SERVICE_UNCATEGORIZED_PUBLIC_SEGMENT,
+  SERVICE_UNCATEGORIZED_TITLE,
+  serviceUncategorizedHubPath,
+} from "@/lib/service-categories/uncategorized";
 import { FooterCompanyLinks } from "@/components/home/FooterCompanyLinks";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPagePath } from "@/lib/routes/town-page-path";
@@ -110,12 +116,23 @@ async function getFooterBusinessBrowseGroups(): Promise<FooterBrowseLink[]> {
 }
 
 async function getFooterServiceBrowseGroups(): Promise<FooterBrowseLink[]> {
-  const groups = await getListedServiceBrowseGroups();
-  return groups.map((g) => ({
+  const [groups, uncategorizedCount] = await Promise.all([
+    getListedServiceBrowseGroups(),
+    countUncategorizedServiceVendors(),
+  ]);
+  const links: FooterBrowseLink[] = groups.map((g) => ({
     name: g.title,
     slug: g.slug,
     href: g.href,
   }));
+  if (uncategorizedCount > 0) {
+    links.push({
+      name: SERVICE_UNCATEGORIZED_TITLE,
+      slug: SERVICE_UNCATEGORIZED_PUBLIC_SEGMENT,
+      href: serviceUncategorizedHubPath(),
+    });
+  }
+  return links;
 }
 
 const footerLinkClass =

@@ -312,6 +312,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
+| 2026-07-16 | Services hub: UI-only **Other providers** bucket (`/services/uncategorized`) surfaces `is_service_business` listings with null specialty — hub section + footer when count &gt; 0. Not a DB `other` slug. |
 | 2026-07-16 | Free intake: service / no-location path now requires a **service specialty** (`service_category_id`) so listings show under Services footer + `/services` hub groups. Legacy storefront catch-all `services` removed from the form picker. Backfill any pre-fix approved service intakes missing a specialty. |
 | 2026-07-16 | Business transactional emails: MJML templates (teal header/logo, beach-towns banner, Instagram/TikTok/website footer) for request received / approved / listing-or-updates live. Assets in `public/email/`. Preview: `npm run email:preview`. Uses existing Resend + social URL env vars. |
 | 2026-07-15 | Free intake: submitters can propose **suggested tags** (shared 6-tag budget); admins promote selected ones into `search_tags_vocabulary` and onto the listing from `/admin/review` on approve |
