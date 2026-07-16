@@ -44,6 +44,14 @@ describe("business MJML templates", () => {
     expect(email.html).toContain("WhereTo30A");
     expect(email.html).toContain("Amavida Coffee");
     expect(email.html).toContain("Open Business Portal");
+    expect(email.html).toContain("#5DA6A8");
+    expect(email.html).toContain("/email/logo-header.png");
+    expect(email.html).toContain("/email/beach-towns-banner.jpg");
+    expect(email.html).toContain("instagram.com/whereto30a");
+    expect(email.html).toContain("tiktok.com/@whereto30a");
+    expect(email.html).toContain("/email/icons/instagram.png");
+    expect(email.html).toContain("/email/icons/tiktok.png");
+    expect(email.html).toContain("/email/icons/website.png");
     expect(email.html).not.toContain("{{businessTitle}}");
   });
 
@@ -56,8 +64,9 @@ describe("business MJML templates", () => {
 
     expect(email.templateId).toBe("business-request-approved");
     expect(email.subject).toMatch(/approved/i);
-    expect(email.html).toContain("Your request was approved");
+    expect(email.html).toContain("You're approved!");
     expect(email.html).toContain("The Red Bar");
+    expect(email.html).toContain("#5DA6A8");
   });
 
   it("renders listing / updates live with optional links", async () => {

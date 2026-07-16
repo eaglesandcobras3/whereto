@@ -15,6 +15,9 @@ import {
 } from "../lib/email/business-templates";
 
 async function main() {
+  // Absolute asset URLs in the HTML should match production for visual QA.
+  process.env.NEXT_PUBLIC_SITE_URL ||= "https://whereto30a.com";
+
   const dir = join(process.cwd(), "lib/email/.previews");
   mkdirSync(dir, { recursive: true });
 
@@ -48,8 +51,13 @@ async function main() {
   ];
 
   for (const [name, html] of files) {
+    // Point images at local /public so previews work before deploy.
+    const localHtml = html.replaceAll(
+      "https://whereto30a.com/email/",
+      "../../../public/email/",
+    );
     const path = join(dir, name);
-    writeFileSync(path, html);
+    writeFileSync(path, localHtml);
     console.log("wrote", path);
   }
 }

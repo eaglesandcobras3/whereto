@@ -311,7 +311,7 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 | Date | Change |
 |------|--------|
-| 2026-07-16 | Business transactional emails: MJML templates for request received / approved / listing-or-updates live (portal + free intake). Preview with `npm run email:preview`. Still uses existing Resend env vars — no new secrets. |
+| 2026-07-16 | Business transactional emails: MJML templates (teal header/logo, beach-towns banner, Instagram/TikTok/website footer) for request received / approved / listing-or-updates live. Assets in `public/email/`. Preview: `npm run email:preview`. Uses existing Resend + social URL env vars. |
 | 2026-07-15 | Free intake: submitters can propose **suggested tags** (shared 6-tag budget); admins promote selected ones into `search_tags_vocabulary` and onto the listing from `/admin/review` on approve |
 | 2026-07-14 | PostHog `free_onboard`: no-account multi-location intake → `portal_review_items`; admin create/skip per location; submitter emailed when live/rejected; SQL [free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) |
 | 2026-07-14 | `seo_improvements`: removed related-guide modules from town/area pages, intent-cluster grouping on `/guides`, and towns-hub travel-style guide links |

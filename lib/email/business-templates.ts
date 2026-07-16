@@ -1,9 +1,9 @@
+import { emailBrandAssetVars, emailSiteBase } from "@/lib/email/brand";
 import {
   type BusinessEmailTemplateId,
   renderMjmlFile,
 } from "@/lib/email/render-mjml";
 import { escapeHtml } from "@/lib/email/escape";
-import { getSiteUrl } from "@/lib/site-url";
 
 export type RenderedBusinessEmail = {
   templateId: BusinessEmailTemplateId;
@@ -16,19 +16,15 @@ type Cta = { url: string; label: string };
 
 const RAW_KEYS = new Set(["ctaBlock", "adminNotesBlock", "linksBlock"]);
 
-function siteBase(): string {
-  return getSiteUrl().replace(/\/$/, "");
-}
-
 function ctaBlockMjml(cta?: Cta | null): string {
   if (!cta?.url) return "";
-  return `<mj-button href="${escapeHtml(cta.url)}">${escapeHtml(cta.label)}</mj-button>`;
+  return `<mj-button href="${escapeHtml(cta.url)}" align="center">${escapeHtml(cta.label)}</mj-button>`;
 }
 
 function adminNotesBlockMjml(adminNotes?: string | null): string {
   const notes = adminNotes?.trim();
   if (!notes) return "";
-  return `<mj-text color="#5a6b6d" padding-top="4px" padding-bottom="14px"><strong>Note from our team:</strong> ${escapeHtml(notes)}</mj-text>`;
+  return `<mj-text align="center" color="#5a6b6d" padding-top="8px" padding-bottom="4px"><strong>Note from our team:</strong> ${escapeHtml(notes)}</mj-text>`;
 }
 
 function linksBlockMjml(links: string[]): string {
@@ -36,12 +32,12 @@ function linksBlockMjml(links: string[]): string {
   const items = links
     .map(
       (url) =>
-        `<mj-text padding-bottom="6px"><a href="${escapeHtml(url)}" style="color:#003239;text-decoration:underline;">${escapeHtml(url)}</a></mj-text>`,
+        `<mj-text align="center" padding-bottom="6px"><a href="${escapeHtml(url)}" style="color:#57A0AF;text-decoration:underline;">${escapeHtml(url)}</a></mj-text>`,
     )
     .join("\n");
   const label =
     links.length === 1 ? "View your listing:" : "View your listings:";
-  return `<mj-text font-weight="700" padding-bottom="8px">${label}</mj-text>\n${items}`;
+  return `<mj-text align="center" font-weight="700" padding-top="8px" padding-bottom="8px">${label}</mj-text>\n${items}`;
 }
 
 async function finalize(
@@ -50,7 +46,11 @@ async function finalize(
   text: string,
   vars: Record<string, string>,
 ): Promise<RenderedBusinessEmail> {
-  const html = await renderMjmlFile(templateId, vars, { rawKeys: RAW_KEYS });
+  const html = await renderMjmlFile(
+    templateId,
+    { ...emailBrandAssetVars(), ...vars },
+    { rawKeys: RAW_KEYS },
+  );
   return { templateId, subject, text, html };
 }
 
@@ -74,6 +74,9 @@ export async function buildBusinessRequestReceivedEmail(opts: {
     opts.cta ? `\n${opts.cta.label}:\n${opts.cta.url}` : "",
     ``,
     `Questions? Email hello@whereto30a.com`,
+    `Instagram: https://www.instagram.com/whereto30a/`,
+    `TikTok: https://www.tiktok.com/@whereto30a`,
+    emailSiteBase(),
   ]
     .filter((line) => line !== undefined)
     .join("\n")
@@ -82,9 +85,9 @@ export async function buildBusinessRequestReceivedEmail(opts: {
   return finalize("business-request-received", subject, text, {
     subject,
     preview,
+    headline: "We received your request",
     businessTitle: title,
     requestKind: kind,
-    siteUrl: siteBase(),
     ctaBlock: ctaBlockMjml(opts.cta),
   });
 }
@@ -110,6 +113,7 @@ export async function buildBusinessRequestApprovedEmail(opts: {
     opts.kind === "claim"
       ? "You can sign in to the Business Portal to manage your listing."
       : "Your listing is approved. Visitors can find it on WhereTo30A — keep details current from your Business Portal.";
+  const headline = opts.kind === "claim" ? "You're all set!" : "You're approved!";
 
   const textParts = [
     opts.kind === "claim"
@@ -122,14 +126,20 @@ export async function buildBusinessRequestApprovedEmail(opts: {
   if (opts.cta) {
     textParts.push(``, `${opts.cta.label}:`, opts.cta.url);
   }
-  textParts.push(``, `Questions? Email hello@whereto30a.com`);
+  textParts.push(
+    ``,
+    `Questions? Email hello@whereto30a.com`,
+    `Instagram: https://www.instagram.com/whereto30a/`,
+    `TikTok: https://www.tiktok.com/@whereto30a`,
+    emailSiteBase(),
+  );
 
   return finalize("business-request-approved", subject, textParts.join("\n"), {
     subject,
     preview,
+    headline,
     businessTitle: title,
     approvalDetail,
-    siteUrl: siteBase(),
     adminNotesBlock: adminNotesBlockMjml(opts.adminNotes),
     ctaBlock: ctaBlockMjml(opts.cta),
   });
@@ -154,19 +164,19 @@ export async function buildListingLiveEmail(opts: {
 
   if (opts.variant === "update") {
     subject = `Your updates for ${title} are live on WhereTo30A`;
-    headline = "Your updates are live";
+    headline = "Your updates are live!";
     lead = `The changes you submitted for ${title} are now on WhereTo30A.`;
     liveDetail = "Thanks for keeping your listing current for visitors planning a trip to 30A.";
     preview = `Your updates for ${title} are live.`;
   } else if (opts.variant === "photo") {
     subject = `Your photo for ${title} is live on WhereTo30A`;
-    headline = "Your photo is live";
+    headline = "Your photo is live!";
     lead = `Your photo for ${title} was approved and is now on your listing.`;
     liveDetail = "Visitors will see it the next time they open your page.";
     preview = `Your photo for ${title} is on your listing.`;
   } else {
     subject = `${title} is now live on WhereTo30A`;
-    headline = "Your listing is live";
+    headline = "You're all set!";
     lead = `${title} is now live on WhereTo30A.`;
     liveDetail =
       links.length > 1
@@ -186,7 +196,13 @@ export async function buildListingLiveEmail(opts: {
   if (opts.cta) {
     textParts.push(``, `${opts.cta.label}:`, opts.cta.url);
   }
-  textParts.push(``, `Questions? Email hello@whereto30a.com`);
+  textParts.push(
+    ``,
+    `Questions? Email hello@whereto30a.com`,
+    `Instagram: https://www.instagram.com/whereto30a/`,
+    `TikTok: https://www.tiktok.com/@whereto30a`,
+    emailSiteBase(),
+  );
 
   return finalize("listing-live", subject, textParts.join("\n"), {
     subject,
@@ -194,7 +210,6 @@ export async function buildListingLiveEmail(opts: {
     headline,
     lead,
     liveDetail,
-    siteUrl: siteBase(),
     linksBlock: linksBlockMjml(links),
     ctaBlock: ctaBlockMjml(opts.cta),
   });
