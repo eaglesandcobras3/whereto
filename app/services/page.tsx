@@ -1,18 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
-import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
-import { hubServicesIntro } from "@/lib/seo/page-intro-copy";
-import { seoTitleSegmentForLayout } from "@/lib/seo/metadata-snippets";
+import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
+import { ServiceSpecialtySections } from "@/components/services/ServiceSpecialtySections";
 import {
   countServiceVendors,
   getServiceSpecialtySections,
   listServiceCategories,
 } from "@/lib/data/service-vendors-hub";
-import { ServiceSpecialtySections } from "@/components/services/ServiceSpecialtySections";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
+import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
+import { seoTitleSegmentForLayout } from "@/lib/seo/metadata-snippets";
+import { hubServicesIntro } from "@/lib/seo/page-intro-copy";
+import { openGraphForPage } from "@/lib/seo/social-metadata";
 
 export const revalidate = 21600;
 
@@ -92,6 +93,8 @@ export default async function ServiceVendorsHubPage() {
             }
           />
         </section>
+
+        <ListBusinessHomeCta />
       </main>
     </div>
   );
