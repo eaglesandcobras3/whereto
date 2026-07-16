@@ -12,6 +12,7 @@ import {
   estimateReadingTimeMinutes,
   validateGuideMarkdown,
 } from "@/lib/guides/validate-markdown";
+import { normalizeGuideTags } from "@/lib/guides/guide-tags";
 
 export const GUIDE_STATUSES = ["draft", "published", "archived"] as const;
 export type GuideStatus = (typeof GUIDE_STATUSES)[number];
@@ -81,21 +82,25 @@ function parseIntentTags(raw: unknown): string[] | null {
 }
 
 function normalizeSearchTags(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const item of raw) {
-    if (typeof item !== "string") continue;
-    const tag = item
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
-    if (!tag || seen.has(tag)) continue;
-    seen.add(tag);
-    out.push(tag);
-  }
-  return out;
+  return normalizeGuideTags(raw);
+}
+
+/** Upsert guide tags into guide_tags_vocabulary so new chips can be reused. */
+export async function ensureGuideTagsInVocabulary(
+  supabase: SupabaseClient,
+  tags: string[],
+): Promise<void> {
+  const normalized = normalizeGuideTags(tags);
+  if (normalized.length === 0) return;
+  const rows = normalized.map((tag) => ({
+    tag,
+    label: tag === "all_towns" ? "All towns" : tag.replace(/_/g, " "),
+  }));
+  const { error } = await supabase.from("guide_tags_vocabulary").upsert(rows, {
+    onConflict: "tag",
+    ignoreDuplicates: true,
+  });
+  if (error) throw new Error(error.message);
 }
 
 /** Persist admin-uploaded main image URL; clears legacy Directus UUID on `main_image`. */
@@ -396,6 +401,9 @@ export async function createAdminGuide(
   const { error } = await supabase.from("guides").insert(insertPayload);
   if (error) throw new Error(error.message);
 
+  if (input.search_tags !== undefined) {
+    await ensureGuideTagsInVocabulary(supabase, normalizeSearchTags(input.search_tags));
+  }
   await syncGuideTowns(supabase, id, input.town_id ?? null);
   await syncGuideAreas(supabase, id, input.area_id ?? null);
   await syncGuideBusinesses(supabase, id, input.business_ids ?? []);
@@ -453,6 +461,9 @@ export async function updateAdminGuide(
   const { error } = await supabase.from("guides").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
 
+  if (input.search_tags !== undefined) {
+    await ensureGuideTagsInVocabulary(supabase, normalizeSearchTags(input.search_tags));
+  }
   await syncGuideTowns(supabase, id, input.town_id ?? null);
   await syncGuideAreas(supabase, id, input.area_id ?? null);
   await syncGuideBusinesses(supabase, id, input.business_ids ?? []);
@@ -492,16 +503,36 @@ export async function listAreaPickerOptions(
   }));
 }
 
-export async function listSearchTagVocabulary(
+/** Guide tag vocabulary (not business search_tags_vocabulary). */
+export async function listGuideTagVocabulary(
   supabase: SupabaseClient,
 ): Promise<string[]> {
   const { data } = await supabase
-    .from("search_tags_vocabulary")
+    .from("guide_tags_vocabulary")
     .select("tag")
     .order("tag", { ascending: true });
   return (data ?? [])
     .map((r) => String((r as { tag: string }).tag ?? "").trim())
     .filter(Boolean);
+}
+
+/** @deprecated Use listGuideTagVocabulary — guides no longer share business search tags. */
+export async function listSearchTagVocabulary(
+  supabase: SupabaseClient,
+): Promise<string[]> {
+  return listGuideTagVocabulary(supabase);
+}
+
+/** Create (or reuse) a single guide tag in the guide vocabulary. */
+export async function createGuideTag(
+  supabase: SupabaseClient,
+  raw: string,
+): Promise<string> {
+  const tags = normalizeGuideTags([raw]);
+  if (tags.length === 0) throw new Error("Tag is required.");
+  const tag = tags[0]!;
+  await ensureGuideTagsInVocabulary(supabase, [tag]);
+  return tag;
 }
 
 export async function searchBusinessPickerOptions(

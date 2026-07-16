@@ -1,11 +1,12 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import type { EnrichedRecommendationPayload } from "@/lib/search/recommendation-set";
+import { GUIDE_TAG_ALL_TOWNS } from "@/lib/guides/guide-tags";
 
 /** Town hub: browse row for an `areas` table record (links to `/area/[slug]`). */
 export type TownAreaBrowseRow = {
@@ -206,26 +207,84 @@ function mapTownGuideRow(row: Record<string, unknown>): TownGuideCard {
   };
 }
 
-/** Guides linked via `guide_towns` for this town. */
+/** Guides linked via `guide_towns` for this town, plus guides tagged `all_towns`. */
 export async function getGuidesForTown(townId: string): Promise<TownGuideCard[]> {
   const supabase = getServiceSupabase();
 
-  const linksRes = await supabase.from("guide_towns").select("guide_id").eq("town_id", townId);
+  const [linksRes, allTownsRes] = await Promise.all([
+    supabase.from("guide_towns").select("guide_id").eq("town_id", townId),
+    supabase
+      .from("guides")
+      .select("id")
+      .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN),
+  ]);
 
   const linkedIds = [
-    ...new Set(
-      (linksRes.data ?? [])
+    ...new Set([
+      ...(linksRes.data ?? [])
         .map((r) => String((r as { guide_id: string }).guide_id))
         .filter(Boolean),
-    ),
+      ...(allTownsRes.data ?? [])
+        .map((r) => String((r as { id: string }).id))
+        .filter(Boolean),
+    ]),
   ];
 
-  if (linkedIds.length === 0) return [];
+  return loadPublishedGuideCards(linkedIds);
+}
 
+/**
+ * Guides for an area page: linked via `guide_areas`, linked to the parent town via
+ * `guide_towns`, and tagged `all_towns`.
+ */
+export async function getGuidesForArea(
+  areaId: string,
+  townId?: string | null,
+): Promise<TownGuideCard[]> {
+  const supabase = getServiceSupabase();
+
+  const [areaLinksRes, townLinksRes, allTownsRes] = await Promise.all([
+    supabase.from("guide_areas").select("guide_id").eq("area_id", areaId),
+    townId
+      ? supabase.from("guide_towns").select("guide_id").eq("town_id", townId)
+      : Promise.resolve({ data: [] as { guide_id: string }[] | null }),
+    supabase
+      .from("guides")
+      .select("id")
+      .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN),
+  ]);
+
+  const linkedIds = [
+    ...new Set([
+      ...(areaLinksRes.data ?? [])
+        .map((r) => String((r as { guide_id: string }).guide_id))
+        .filter(Boolean),
+      ...(townLinksRes.data ?? [])
+        .map((r) => String((r as { guide_id: string }).guide_id))
+        .filter(Boolean),
+      ...(allTownsRes.data ?? [])
+        .map((r) => String((r as { id: string }).id))
+        .filter(Boolean),
+    ]),
+  ];
+
+  return loadPublishedGuideCards(linkedIds);
+}
+
+async function loadPublishedGuideCards(guideIds: string[]): Promise<TownGuideCard[]> {
+  if (guideIds.length === 0) return [];
+
+  const supabase = getServiceSupabase();
   const { data: linked } = await supabase
     .from("guides")
     .select(GUIDE_VIEW_SELECT)
-    .in("id", linkedIds)
+    .in("id", guideIds)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
