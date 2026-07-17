@@ -59,8 +59,9 @@ export function CategoryHubTownSections({
   ];
   const { expandedIds, toggle } = usePersistedExpandedSectionIds({
     sectionIds,
-    defaultExpandedCount: 1,
-    desktopOnlyDefaults: false,
+    // Desktop: open every town/regional section. Mobile: start collapsed.
+    defaultExpandedCount: sectionIds.length,
+    desktopOnlyDefaults: true,
   });
 
   if (townGroups.length === 0 && regional.length === 0) {
@@ -76,7 +77,7 @@ export function CategoryHubTownSections({
               By town
             </h2>
             <p className="mt-1.5 text-left text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-              Places with a location along 30A. Tap a town to expand.
+              Places with a location along 30A. On mobile, tap a town to expand.
             </p>
           </div>
 
