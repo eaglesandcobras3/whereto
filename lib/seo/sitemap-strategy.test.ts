@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
-import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
   PRIMARY_EDITORIAL_GUIDE_SLUG,
@@ -36,7 +35,7 @@ describe("sitemap strategy", () => {
     pointsOfInterest: [{ slug: "rosemary-beach-town-center" }],
   });
 
-  it("excludes business and utility paths", () => {
+  it("excludes business detail and utility paths", () => {
     const allPaths = paths(sample);
     expect(allPaths.some((p) => p.startsWith("/business/"))).toBe(false);
     expect(allPaths).not.toContain("/feedback");
@@ -44,7 +43,7 @@ describe("sitemap strategy", () => {
     expect(allPaths).not.toContain("/terms");
     expect(allPaths).not.toContain("/privacy");
     expect(allPaths).not.toContain("/about");
-    expect(allPaths).not.toContain("/businesses");
+    expect(allPaths).not.toContain("/services");
   });
 
   it("includes hub pages and not standalone /guide", () => {
@@ -53,19 +52,18 @@ describe("sitemap strategy", () => {
     expect(allPaths).toContain("/towns");
     expect(allPaths).toContain("/areas");
     expect(allPaths).toContain("/categories");
+    expect(allPaths).toContain("/businesses");
     expect(allPaths).toContain("/guides");
-    expect(allPaths).toContain("/services");
     expect(allPaths).not.toContain("/guide");
     expect(allPaths).toContain(PRIMARY_EDITORIAL_GUIDE_PATH);
     expect(allPaths).toContain("/guide/best-coffee-30a");
   });
 
-  it("includes rollup storefront and service browse groups", () => {
+  it("includes rollup browse groups (unified + legacy)", () => {
     const allPaths = paths(sample);
+    expect(allPaths).toContain("/categories/food-and-drink");
     expect(allPaths).toContain("/categories/restaurants-and-bars");
-    expect(allPaths).toContain("/categories/coffee-and-treats");
-    expect(allPaths).toContain("/services/home-trades");
-    expect(allPaths).toContain("/services/health-wellness");
+    expect(allPaths).not.toContain("/services/home-trades");
   });
 
   it("includes towns, areas, categories, and non-duplicate guides", () => {
@@ -78,7 +76,7 @@ describe("sitemap strategy", () => {
     expect(allPaths).not.toContain("/guide/rosemary-beach");
   });
 
-  it("maps storefront services category and vendor hub to distinct canonical paths", () => {
+  it("maps storefront services category slug away from /services hub", () => {
     const vendorAndStorefront = buildSitemapEntries({
       base: BASE,
       now: new Date("2026-06-01"),
@@ -89,9 +87,9 @@ describe("sitemap strategy", () => {
     });
     const allPaths = paths(vendorAndStorefront);
     expect(categoryHubPath("services")).toBe("/service-businesses");
-    expect(allPaths).toContain(SERVICE_VENDORS_HUB_PATH);
+    expect(allPaths).toContain("/businesses");
     expect(allPaths).toContain("/service-businesses");
-    expect(allPaths.filter((p) => p === "/services")).toHaveLength(1);
+    expect(allPaths).not.toContain("/services");
     expect(allPaths).not.toContain("/categories/services");
     expect(allPaths).not.toContain("/services-on-30a");
     expect(allPaths).not.toContain("/search");

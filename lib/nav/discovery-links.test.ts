@@ -31,14 +31,14 @@ describe("applyDiscoveryBrowseNav", () => {
   it("rewrites /search links to /ask but does not append an Ask nav item", () => {
     const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, askOn);
     expect(items.some((i) => i.label === "Ask")).toBe(false);
-    const services = items.find((i) => i.label === "Services");
-    expect(services?.href).toBe("/services");
+    const businesses = items.find((i) => i.label === "Businesses");
+    expect(businesses?.href).toBe("/businesses");
   });
 
-  it("keeps Services activePaths for the vendor hub when Ask is on", () => {
+  it("keeps Businesses active for former /services paths when Ask is on", () => {
     const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, askOn);
-    const services = items.find((i) => i.label === "Services");
-    expect(services?.activePaths).toContain("/services");
+    const businesses = items.find((i) => i.label === "Businesses");
+    expect(businesses?.activePaths).toContain("/services");
   });
 });
 
@@ -68,7 +68,7 @@ describe("discoveryLinkRel", () => {
   it("marks robots-disallowed discovery URLs as nofollow", () => {
     expect(discoveryLinkRel("/ask?q=foo")).toBe("nofollow");
     expect(discoveryLinkRel("/discover?q=coffee")).toBe("nofollow");
-    expect(discoveryLinkRel("/services")).toBeUndefined();
+    expect(discoveryLinkRel("/businesses")).toBeUndefined();
   });
 });
 

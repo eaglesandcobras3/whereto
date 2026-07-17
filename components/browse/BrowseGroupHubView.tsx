@@ -7,7 +7,7 @@ import {
   unifiedRollupHubPath,
 } from "@/lib/categories/unified-browse";
 import type { BrowseGroupHubPage } from "@/lib/data/browse-group-hub";
-import { groupCategoryBusinessesByTown } from "@/lib/data/category-hub";
+import { partitionCategoryBusinessesByTown } from "@/lib/data/category-hub";
 import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
 
 type Props = {
@@ -21,10 +21,8 @@ function hubPathFor(slug: string): string {
 
 export function BrowseGroupHubView({ hub }: Props) {
   const hubPath = hubPathFor(hub.slug);
-  const places = hub.businesses.filter((b) => b.is_storefront);
-  const services = hub.businesses.filter((b) => b.is_service_business && !b.is_storefront);
-  const splitSections = places.length > 0 && services.length > 0;
-  const townCount = hub.townGroups.filter((g) => g.slug).length;
+  const { townGroups, regional } = partitionCategoryBusinessesByTown(hub.businesses);
+  const townCount = townGroups.length;
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -44,6 +42,16 @@ export function BrowseGroupHubView({ hub }: Props) {
     numberOfItems: hub.businesses.length,
   };
 
+  const metaParts: string[] = [
+    `${hub.businesses.length} ${hub.businesses.length === 1 ? "listing" : "listings"}`,
+  ];
+  if (townCount > 0) {
+    metaParts.push(`${townCount} ${townCount === 1 ? "town" : "towns"}`);
+  }
+  if (regional.length > 0) {
+    metaParts.push(`${regional.length} regional`);
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <script
@@ -58,50 +66,26 @@ export function BrowseGroupHubView({ hub }: Props) {
       <main className="flex-1">
         <BrowseHubHero
           title={`${hub.title} on 30A`}
-          description={`Local ${hub.title.toLowerCase()} across ${townCount} ${townCount === 1 ? "town" : "towns"} along Scenic Highway 30A in South Walton, Florida.`}
-          collapsibleDescription={`Browse listings in ${hub.title.toLowerCase()} by town — places you can visit and service providers together. Confirm hours and availability with each business.`}
-          meta={
-            <>
-              {hub.businesses.length}{" "}
-              {hub.businesses.length === 1 ? "listing" : "listings"} across {townCount}{" "}
-              {townCount === 1 ? "town" : "towns"}
-            </>
+          description={
+            townCount > 0
+              ? `Local ${hub.title.toLowerCase()} along Scenic Highway 30A — by town and regional providers.`
+              : `Local ${hub.title.toLowerCase()} serving Scenic Highway 30A and South Walton.`
           }
+          collapsibleDescription={`Browse ${hub.title.toLowerCase()} by town when there is a storefront, or under Regional for mobile and appointment-based providers. Confirm hours and availability with each business.`}
+          meta={<>{metaParts.join(" · ")}</>}
         />
 
-        <div className="mx-auto max-w-6xl px-4 py-12 md:px-10 space-y-10">
-          {splitSections ? (
-            <>
-              <div className="space-y-4">
-                <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
-                  Places
-                </h2>
-                <CategoryHubTownSections
-                  townGroups={groupCategoryBusinessesByTown(places)}
-                  categorySlug={hub.slug}
-                />
-              </div>
-              <div className="space-y-4">
-                <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
-                  Services
-                </h2>
-                <CategoryHubTownSections
-                  townGroups={groupCategoryBusinessesByTown(services)}
-                  categorySlug={hub.slug}
-                />
-              </div>
-            </>
-          ) : (
-            <CategoryHubTownSections
-              townGroups={hub.townGroups}
-              categorySlug={hub.slug}
-              emptyMessage={
-                <p className="text-[var(--color-text-secondary)]">
-                  No listings found for this category yet.
-                </p>
-              }
-            />
-          )}
+        <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
+          <CategoryHubTownSections
+            townGroups={townGroups}
+            regional={regional}
+            categorySlug={hub.slug}
+            emptyMessage={
+              <p className="text-[var(--color-text-secondary)]">
+                No listings found for this category yet.
+              </p>
+            }
+          />
         </div>
       </main>
     </div>

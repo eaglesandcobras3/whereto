@@ -348,7 +348,8 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
-| 2026-07-17 | Unified categories: `business_categories` becomes rollup+leaf taxonomy from `docs/categories.csv`; deprecate `service_category_id`; add `is_explorable` for town/area; free intake allows storefront+service; hubs: `/categories` (all), `/businesses` (stores), `/services` (services). Run SQL + `npx tsx scripts/migrate-unified-categories.ts`. |
+| 2026-07-17 | Combined Businesses + Services hubs: `/businesses` shows all listings; `/services` permanently redirects to `/businesses`. Nav/footer drop separate Services. |
+| 2026-07-17 | Unified categories: `business_categories` becomes rollup+leaf taxonomy from `docs/categories.csv`; deprecate `service_category_id`; add `is_explorable` for town/area; free intake allows storefront+service; hubs: `/categories` (all), `/businesses` (combined directory). Run SQL + `npx tsx scripts/migrate-unified-categories.ts`. |
 | 2026-07-16 | Free intake: submitters can **suggest a missing category/specialty** (stands in for the select); `/admin/review` can create it or map to existing on approve. Suggested tags now support promote/rename, replace, or discard. New categories still need a browse-group slug mapping for hubs. |
 | 2026-07-16 | Branded all outbound email: MJML for portal invite/rejects/payments + admin-alert ops mail; Supabase Auth HTML paste templates in `lib/email/templates/supabase/`. |
 | 2026-07-16 | Services hub: UI-only **Other** bucket (`/services/uncategorized`) surfaces `is_service_business` listings with null specialty — hub section + footer when count &gt; 0. Not a DB `other` slug. |

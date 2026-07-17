@@ -4,17 +4,13 @@ import {
 } from "@/lib/business-categories/browse-group-nav";
 import { BUSINESS_CATEGORY_GROUP_SLUGS } from "@/lib/business-categories/groups";
 import {
-  serviceBrowseGroupHubPath,
-} from "@/lib/service-categories/browse-group-nav";
-import { SERVICE_CATEGORY_GROUP_SLUGS } from "@/lib/service-categories/groups";
-import {
   categoryHubPath,
   isCategoryHubPublicPath,
 } from "@/lib/routes/category-hub-path";
-import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_DB_SLUG } from "@/lib/routes/primary-region";
 import { townPagePath } from "@/lib/routes/town-page-path";
+import { unifiedRollupHubPath, listUnifiedRollupOrder } from "@/lib/categories/unified-browse";
 
 /** Featured first-timer guide — canonical path (not `/guide` hub). */
 export const PRIMARY_EDITORIAL_GUIDE_SLUG = "ultimate-30a-first-timers-guide" as const;
@@ -38,12 +34,14 @@ export const SITEMAP_BROWSE_GROUP_ENTRY = {
 
 /** Canonical rollup browse group paths for the hub sitemap. */
 export function listSitemapBrowseGroupPaths(): string[] {
-  return BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => businessBrowseGroupHubPath(slug));
+  const legacy = BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => businessBrowseGroupHubPath(slug));
+  const unified = listUnifiedRollupOrder().map((slug) => unifiedRollupHubPath(slug));
+  return [...new Set([...unified, ...legacy])];
 }
 
-/** Canonical rollup service group paths for the hub sitemap. */
+/** @deprecated Services hub redirects to /businesses — no separate sitemap entries. */
 export function listSitemapServiceGroupPaths(): string[] {
-  return SERVICE_CATEGORY_GROUP_SLUGS.map((slug) => serviceBrowseGroupHubPath(slug));
+  return [];
 }
 
 export const SITEMAP_EXCLUDED_EXACT_PATHS = new Set([
@@ -53,14 +51,14 @@ export const SITEMAP_EXCLUDED_EXACT_PATHS = new Set([
   "/terms",
   "/privacy",
   "/guide",
-  "/businesses",
+  "/services",
 ]);
 
 export const SITEMAP_HUB_PAGES = [
   { path: "/towns", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/areas", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/categories", priority: 0.9, changeFreq: "weekly" as const },
-  { path: SERVICE_VENDORS_HUB_PATH, priority: 0.85, changeFreq: "weekly" as const },
+  { path: "/businesses", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/guides", priority: 0.9, changeFreq: "weekly" as const },
 ] as const;
 

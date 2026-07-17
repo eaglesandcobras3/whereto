@@ -66,17 +66,16 @@ function payloadString(payload: Record<string, unknown>, key: string): string {
   return typeof raw === "string" ? raw.trim() : "";
 }
 
+/** True when approve needs admin to set `category_id` (create/update only). */
 function needsCategoryResolution(payload: Record<string, unknown>): boolean {
-  const suggested = payloadString(payload, "suggested_category");
-  if (suggested) return true;
   return !payloadString(payload, "category_id");
 }
 
 function defaultCategoryDecision(payload: Record<string, unknown>): CategoryDecision {
   const suggested = payloadString(payload, "suggested_category");
   const existingId = payloadString(payload, "category_id");
-  if (suggested) {
-    return { mode: "create", title: suggested, categoryId: existingId, parentCategoryId: "" };
+  if (suggested && !existingId) {
+    return { mode: "create", title: suggested, categoryId: "", parentCategoryId: "" };
   }
   return { mode: "existing", title: "", categoryId: existingId, parentCategoryId: "" };
 }
@@ -286,7 +285,13 @@ export function ReviewQueueClient() {
       | { mode: "create"; title: string; parentCategoryId: string }
       | { mode: "existing"; categoryId: string }
       | undefined;
-    if (shouldApply && item && isFreeType(item.type) && needsCategoryResolution(item.payload)) {
+    if (
+      shouldApply &&
+      item &&
+      isFreeType(item.type) &&
+      item.type !== FREE_ONBOARD_TYPES.removal &&
+      needsCategoryResolution(item.payload)
+    ) {
       const decision = categoryByItem[id] ?? defaultCategoryDecision(item.payload);
       if (decision.mode === "create") {
         if (!decision.title.trim() || !decision.parentCategoryId.trim()) {

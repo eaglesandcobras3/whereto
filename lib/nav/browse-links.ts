@@ -14,13 +14,7 @@ export const BROWSE_NAV_ITEMS: BrowseNavItem[] = [
   {
     label: "Businesses",
     href: "/businesses",
-    activePaths: ["/businesses", "/business"],
-  },
-  {
-    label: "Services",
-    href: "/services",
-    activePaths: ["/services"],
-    activeTypes: ["services"],
+    activePaths: ["/businesses", "/business", "/services"],
   },
   { label: "Guides", href: "/guides", activePaths: ["/guides", "/guide"] },
 ];

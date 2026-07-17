@@ -10,22 +10,22 @@ export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/businesses"),
-  title: "Businesses on 30A | Shops, Restaurants & Places to Visit",
+  title: "Businesses on 30A | Shops, Restaurants, Services & More",
   description:
-    "Browse storefront businesses along Scenic 30A — restaurants, shops, coffee, lodging, and more. For mobile and appointment-based providers, see Services.",
+    "Browse local businesses along Scenic 30A — restaurants, shops, lodging, trades, and appointment-based providers — by category.",
   ...openGraphForPage({
     path: "/businesses",
     title: "Businesses on 30A | WhereTo30A",
     description:
-      "Storefront places and shops along 30A — restaurants, coffee, shopping, lodging, and more.",
+      "Local businesses along 30A: places to visit and providers to hire, browsed by category.",
   }),
 };
 
-/** Stores-only hub (`is_storefront`). Categories hub shows storefronts and services together. */
+/** Combined hub: storefronts and service providers together. */
 export default async function BusinessesHubPage() {
   const [sections, totalCount] = await Promise.all([
-    getCategoryHubSections("storefront"),
-    countCategoryHubBusinesses("storefront"),
+    getCategoryHubSections("all"),
+    countCategoryHubBusinesses("all"),
   ]);
 
   return (
@@ -33,11 +33,11 @@ export default async function BusinessesHubPage() {
       <main className="flex-1">
         <BrowseHubHero
           title="Businesses"
-          description="Places you can visit along Scenic 30A — restaurants, shops, coffee, lodging, and more."
-          collapsibleDescription="Storefront listings only. Browse all categories (including service providers) on Categories, or mobile and appointment-based vendors on Services."
+          description="Local businesses along Scenic 30A — restaurants, shops, lodging, trades, and providers you book by appointment."
+          collapsibleDescription="One directory for places you can visit and businesses that come to you. Expand a group to browse listings, or open Categories for the full taxonomy."
           meta={
             <>
-              {totalCount} {totalCount === 1 ? "place" : "places"} & shops
+              {totalCount} {totalCount === 1 ? "listing" : "listings"}
               {sections.length > 0
                 ? ` in ${sections.length} browse ${sections.length === 1 ? "group" : "groups"}`
                 : ""}
@@ -49,7 +49,7 @@ export default async function BusinessesHubPage() {
           <CategoryHubSections
             sections={sections}
             analyticsCategoryPrefix="businesses_hub"
-            subheading="Tap a group to expand and browse storefront listings."
+            subheading="Tap a group to expand and browse listings."
             emptyMessage={
               <p className="text-[var(--color-text-secondary)]">
                 No listings yet.{" "}
@@ -65,25 +65,17 @@ export default async function BusinessesHubPage() {
         <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14">
           <div className="mx-auto max-w-3xl px-6 text-center">
             <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
-              Looking for services or every category?
+              Prefer browsing by category name?
             </h2>
             <p className="mt-3 text-[var(--color-text-secondary)]">
-              Appointment and mobile providers are on Services. Or browse every listing by category.
+              The categories hub lists every rollup and leaf the same way.
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href="/services"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-7 py-3.5 text-sm font-bold text-white transition-all hover:opacity-90"
-              >
-                Services
-              </Link>
-              <Link
-                href="/categories"
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-7 py-3.5 text-sm font-bold text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-surface-secondary)]"
-              >
-                All categories
-              </Link>
-            </div>
+            <Link
+              href="/categories"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-7 py-3.5 text-sm font-bold text-white transition-all hover:opacity-90"
+            >
+              All categories
+            </Link>
           </div>
         </section>
       </main>

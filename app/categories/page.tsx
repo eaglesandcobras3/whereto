@@ -42,8 +42,8 @@ export default async function CategoriesPage() {
       <main className="flex-1">
         <BrowseHubHero
           title="Browse by category"
-          description="Every category of local business along Scenic 30A — storefronts and service providers together."
-          collapsibleDescription="Expand a group to browse listings. Prefer shops and restaurants only? See Businesses. Prefer trades and appointment-based vendors? See Services."
+          description="Every category of local business along Scenic 30A — places to visit and providers to hire."
+          collapsibleDescription="Expand a group to browse listings. The Businesses hub shows the same directory from the main nav."
           meta={
             <>
               {totalCount} {totalCount === 1 ? "listing" : "listings"}

@@ -15,7 +15,6 @@ import {
   categoryHubPath,
 } from "@/lib/routes/category-hub-path";
 import { businessBrowseGroupFromPublicSegment } from "@/lib/business-categories/browse-group-nav";
-import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 import { isPortalProtectedPath, portalLoginNextPath } from "@/lib/portal/portal-paths";
 
@@ -94,7 +93,7 @@ function maybeRedirectSearch(request: NextRequest): NextResponse | null {
     if (type === "businesses") return NextResponse.redirect(new URL("/businesses", request.url));
     if (type === "guides") return NextResponse.redirect(new URL("/guides", request.url));
     if (type === "services") {
-      return NextResponse.redirect(new URL(SERVICE_VENDORS_HUB_PATH, request.url));
+      return NextResponse.redirect(new URL("/businesses", request.url));
     }
   }
 

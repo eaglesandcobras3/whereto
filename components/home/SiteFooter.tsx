@@ -4,13 +4,6 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getSiteInstagramUrl, getSiteTikTokUrl } from "@/lib/site-social";
 import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups";
-import { countUncategorizedServiceVendors } from "@/lib/data/service-vendors-hub";
-import { getListedServiceBrowseGroups } from "@/lib/data/service-browse-groups";
-import {
-  SERVICE_UNCATEGORIZED_PUBLIC_SEGMENT,
-  SERVICE_UNCATEGORIZED_TITLE,
-  serviceUncategorizedHubPath,
-} from "@/lib/service-categories/uncategorized";
 import { FooterCompanyLinks } from "@/components/home/FooterCompanyLinks";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPagePath } from "@/lib/routes/town-page-path";
@@ -108,31 +101,14 @@ async function getFooterAreas(): Promise<FooterBrowseLink[]> {
 
 async function getFooterBusinessBrowseGroups(): Promise<FooterBrowseLink[]> {
   const groups = await getListedBusinessBrowseGroups();
-  return groups.map((g) => ({
-    name: g.title,
-    slug: g.slug,
-    href: g.href,
-  }));
-}
-
-async function getFooterServiceBrowseGroups(): Promise<FooterBrowseLink[]> {
-  const [groups, uncategorizedCount] = await Promise.all([
-    getListedServiceBrowseGroups(),
-    countUncategorizedServiceVendors(),
-  ]);
-  const links: FooterBrowseLink[] = groups.map((g) => ({
-    name: g.title,
-    slug: g.slug,
-    href: g.href,
-  }));
-  if (uncategorizedCount > 0) {
-    links.push({
-      name: SERVICE_UNCATEGORIZED_TITLE,
-      slug: SERVICE_UNCATEGORIZED_PUBLIC_SEGMENT,
-      href: serviceUncategorizedHubPath(),
-    });
-  }
-  return links;
+  return [
+    { name: "All businesses", slug: "all", href: "/businesses" },
+    ...groups.map((g) => ({
+      name: g.title,
+      slug: g.slug,
+      href: g.href,
+    })),
+  ];
 }
 
 const footerLinkClass =
@@ -199,9 +175,9 @@ function FooterSocialIcons({
   );
 }
 
-/** Narrow link columns: 1×4 stack → 2×2 → 4 across (brand stays left on lg+). */
+/** Narrow link columns: Towns / Areas / Businesses / Company. */
 const footerColumnsGridClass =
-  "grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-x-8 xl:grid-cols-3 2xl:grid-cols-5 2xl:gap-x-8";
+  "grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-x-8 xl:grid-cols-4 xl:gap-x-8";
 
 const footerColumnClass = "min-w-0 w-full max-w-[10.5rem] sm:max-w-none xl:max-w-[9.5rem]";
 
@@ -242,21 +218,19 @@ function FooterBrowseColumn({
 
 const getCachedFooterBrowseData = unstable_cache(
   async () => {
-    const [townLinks, areaLinks, businessGroupLinks, serviceGroupLinks] =
-      await Promise.all([
-        getFooterTowns(),
-        getFooterAreas(),
-        getFooterBusinessBrowseGroups(),
-        getFooterServiceBrowseGroups(),
-      ]);
-    return { townLinks, areaLinks, businessGroupLinks, serviceGroupLinks };
+    const [townLinks, areaLinks, businessGroupLinks] = await Promise.all([
+      getFooterTowns(),
+      getFooterAreas(),
+      getFooterBusinessBrowseGroups(),
+    ]);
+    return { townLinks, areaLinks, businessGroupLinks };
   },
-  ["site-footer-browse-data"],
+  ["site-footer-browse-data-v3"],
   { revalidate: 3600 },
 );
 
 export async function SiteFooter() {
-  const [{ townLinks, areaLinks, businessGroupLinks, serviceGroupLinks }, instagramUrl, tiktokUrl] =
+  const [{ townLinks, areaLinks, businessGroupLinks }, instagramUrl, tiktokUrl] =
     await Promise.all([
     getCachedFooterBrowseData(),
     Promise.resolve(getSiteInstagramUrl()),
@@ -284,14 +258,6 @@ export async function SiteFooter() {
           title: "Businesses",
           links: businessGroupLinks,
           analyticsCategory: "footer_business_categories",
-          compact: true,
-        }
-      : null,
-    serviceGroupLinks.length > 0
-      ? {
-          title: "Services",
-          links: serviceGroupLinks,
-          analyticsCategory: "footer_service_categories",
           compact: true,
         }
       : null,
@@ -336,7 +302,7 @@ export async function SiteFooter() {
 
             <div className={`${footerColumnClass} flex flex-col gap-8`}>
               <div>
-                <h3 className="text-eyebrow mb-3">Company</h3>
+                <h3 className="text-eyebrow mb-2">Company</h3>
                 <FooterCompanyLinks />
               </div>
             </div>

@@ -166,18 +166,32 @@ export async function loadBusinessesForCategory(
   });
 }
 
+export type CategoryTownPartition = {
+  townGroups: CategoryTownGroup[];
+  /** Listings with no town (typical for mobile / appointment-only providers). */
+  regional: CategoryBusinessRow[];
+};
+
+/** Town-grouped listings only — no catch-all “Other” bucket. */
 export function groupCategoryBusinessesByTown(
   businesses: CategoryBusinessRow[],
 ): CategoryTownGroup[] {
+  return partitionCategoryBusinessesByTown(businesses).townGroups;
+}
+
+/** Split listings that have a town from corridor-wide / no-town providers. */
+export function partitionCategoryBusinessesByTown(
+  businesses: CategoryBusinessRow[],
+): CategoryTownPartition {
   const map = new Map<
     string,
     { name: string; slug: string; townId: string | null; pool: CategoryBusinessRow[] }
   >();
-  const noTown: CategoryBusinessRow[] = [];
+  const regional: CategoryBusinessRow[] = [];
 
   for (const b of businesses) {
     if (!b.town_slug || !b.town_name) {
-      noTown.push(b);
+      regional.push(b);
       continue;
     }
     if (!map.has(b.town_slug)) {
@@ -191,7 +205,7 @@ export function groupCategoryBusinessesByTown(
     map.get(b.town_slug)!.pool.push(b);
   }
 
-  const groups: CategoryTownGroup[] = [...map.values()]
+  const townGroups: CategoryTownGroup[] = [...map.values()]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((g) => {
       const sorted = sortBrowseBusinesses(g.pool);
@@ -204,17 +218,7 @@ export function groupCategoryBusinessesByTown(
       };
     });
 
-  if (noTown.length > 0) {
-    const sorted = sortBrowseBusinesses(noTown);
-    groups.push({
-      name: "Other",
-      slug: "",
-      townId: null,
-      businesses: sorted,
-      totalCount: sorted.length,
-    });
-  }
-  return groups;
+  return { townGroups, regional: sortBrowseBusinesses(regional) };
 }
 
 function mapCategoryHubBusinessRow(row: Record<string, unknown>) {

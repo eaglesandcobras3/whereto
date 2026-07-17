@@ -85,9 +85,20 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // Combined directory: former services hub redirects to businesses.
+        source: "/services",
+        destination: "/businesses",
+        permanent: true,
+      },
+      {
+        source: "/services/:path*",
+        destination: "/businesses",
+        permanent: true,
+      },
+      {
         // Retired Option A catch-all; specialties now live in named groups.
         source: "/services/marine-auto-more",
-        destination: "/services",
+        destination: "/businesses",
         permanent: true,
       },
     ];

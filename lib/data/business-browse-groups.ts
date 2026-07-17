@@ -9,28 +9,23 @@ import {
   browseSectionForCategorySlug,
   browseSectionIcon,
   listUnifiedRollupOrder,
-  unifiedRollupHubPath,
 } from "@/lib/categories/unified-browse";
 import {
   BUSINESS_CATEGORY_GROUP_SLUGS,
   type BusinessCategoryGroupSlug,
 } from "@/lib/business-categories/groups";
-import {
-  businessBrowseGroupHubPath,
-  type BusinessBrowseGroupNavItem,
-} from "@/lib/business-categories/browse-group-nav";
-import { isUnifiedRollupSlug } from "@/lib/categories/unified-browse";
+import type { BusinessBrowseGroupNavItem } from "@/lib/business-categories/browse-group-nav";
 
 export type ListedBusinessBrowseGroup = BusinessBrowseGroupNavItem & {
   listingCount: number;
 };
 
 function hrefForSection(id: string): string {
-  if (isUnifiedRollupSlug(id)) return unifiedRollupHubPath(id);
-  return businessBrowseGroupHubPath(id as BusinessCategoryGroupSlug);
+  // Combined directory hub — hash expands the matching rollup section.
+  return `/businesses#${id}`;
 }
 
-/** Storefront browse groups that have at least one listing (hub / footer / businesses page). */
+/** Browse groups that have at least one listing (hub / footer). Storefront + service. */
 export async function getListedBusinessBrowseGroups(): Promise<ListedBusinessBrowseGroup[]> {
   const supabase = getServiceSupabase();
 
@@ -39,7 +34,6 @@ export async function getListedBusinessBrowseGroups(): Promise<ListedBusinessBro
     .select("id, business_categories ( slug )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(5000);
 

@@ -1,7 +1,6 @@
 import { isCategoryHubPublicPath } from "@/lib/routes/category-hub-path";
 import { businessBrowseGroupFromPublicSegment } from "@/lib/business-categories/browse-group-nav";
-import { serviceBrowseGroupFromPublicSegment } from "@/lib/service-categories/browse-group-nav";
-import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
+import { unifiedRollupFromPublicSegment } from "@/lib/categories/unified-browse";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
@@ -31,13 +30,16 @@ export function parseSitemapLocs(xml: string): string[] {
 export function isSitemapBrowseGroupPath(pathname: string): boolean {
   if (!pathname.startsWith("/categories/")) return false;
   const segment = pathname.split("/")[2] ?? "";
-  return businessBrowseGroupFromPublicSegment(segment) !== null;
+  return (
+    businessBrowseGroupFromPublicSegment(segment) !== null ||
+    unifiedRollupFromPublicSegment(segment) !== null
+  );
 }
 
 export function isSitemapServiceGroupPath(pathname: string): boolean {
-  if (!pathname.startsWith(`${SERVICE_VENDORS_HUB_PATH}/`)) return false;
-  const segment = pathname.split("/")[2] ?? "";
-  return serviceBrowseGroupFromPublicSegment(segment) !== null;
+  // Former /services/* hub redirects to /businesses — no sitemap entries.
+  void pathname;
+  return false;
 }
 
 /** Structural rules for hub-focused sitemap (no HTTP). */
@@ -85,7 +87,7 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
     }
   }
 
-  const requiredHubs = ["/towns", "/areas", "/categories", SERVICE_VENDORS_HUB_PATH];
+  const requiredHubs = ["/towns", "/areas", "/categories", "/businesses"];
   for (const hub of requiredHubs) {
     if (!pathSet.has(hub)) {
       violations.push({ rule: "hub-pages", detail: `Missing hub ${hub}` });
@@ -137,14 +139,12 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
   }
 
   for (const path of paths) {
-    if (!path.startsWith(`${SERVICE_VENDORS_HUB_PATH}/`)) continue;
-    if (!isSitemapServiceGroupPath(path)) {
-      violations.push({
-        rule: "no-invalid-service-group-urls",
-        url: `${base}${path}`,
-        detail: `Only rollup service group URLs are allowed under ${SERVICE_VENDORS_HUB_PATH}/: ${path}`,
-      });
-    }
+    if (!path.startsWith("/services/") || path === "/services") continue;
+    violations.push({
+      rule: "no-services-hub-urls",
+      url: `${base}${path}`,
+      detail: `Services hub redirects to /businesses; do not list ${path} in sitemap`,
+    });
   }
 
   for (const requiredPath of listSitemapBrowseGroupPaths()) {

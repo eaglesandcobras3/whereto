@@ -6,7 +6,7 @@ import { isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags-core
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const footerLinkClass =
-  "text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]";
+  "text-[0.6875rem] leading-[1.35] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]";
 
 export function FooterCompanyLinks() {
   const flags = useAppFeatureFlags();
@@ -32,16 +32,6 @@ export function FooterCompanyLinks() {
       ...gaClickProps({ event: "nav_click", category: "footer_company", label: "businesses" }),
     },
     {
-      name: "All categories",
-      href: "/categories",
-      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "all_categories" }),
-    },
-    {
-      name: "Services",
-      href: "/services",
-      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "services" }),
-    },
-    {
       name: "List your business",
       href: listBusinessHref,
       ...gaClickProps({ event: "cta_click", category: "footer_company", label: "list_your_business" }),
@@ -59,7 +49,7 @@ export function FooterCompanyLinks() {
   ];
 
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className="flex flex-col gap-0.5">
       {companyLinks.map((link) => {
         const { name, href, ...analytics } = link;
         return (
