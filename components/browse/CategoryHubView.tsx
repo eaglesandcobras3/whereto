@@ -1,6 +1,7 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
 import { CategoryHubEditorial } from "@/components/browse/CategoryHubEditorial";
+import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import {
   generateBreadcrumbSchema,
   generateCollectionPageSchema,
@@ -38,7 +39,7 @@ export function CategoryHubView({ cat, townGroups: _townGroups, businesses }: Pr
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
-    { name: "Categories", url: "/categories" },
+    { name: "Businesses", url: "/businesses" },
     { name: cat.title, url: hubPath },
   ]);
 
@@ -111,6 +112,8 @@ export function CategoryHubView({ cat, townGroups: _townGroups, businesses }: Pr
             />
           </div>
         </div>
+
+        <ListBusinessHomeCta />
 
         <SeoImprovementsGate>
           <CategoryHubEditorial categorySlug={cat.slug} />

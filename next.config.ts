@@ -96,6 +96,12 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // Taxonomy index merged into businesses hub; rollup pages stay at /categories/[slug].
+        source: "/categories",
+        destination: "/businesses",
+        permanent: true,
+      },
+      {
         // Retired Option A catch-all; specialties now live in named groups.
         source: "/services/marine-auto-more",
         destination: "/businesses",

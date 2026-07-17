@@ -7,7 +7,6 @@ import type { PageKind } from "./types";
 const HUB_PATHS = new Set([
   "/towns",
   "/areas",
-  "/categories",
   "/guides",
   "/businesses",
   SERVICE_VENDORS_HUB_PATH,

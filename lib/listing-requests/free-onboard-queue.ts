@@ -65,6 +65,15 @@ async function notifySubmitterOnce(
   },
 ): Promise<void> {
   if (payload.submitter_notified) return;
+  if ("submitted_by_admin" in payload && payload.submitted_by_admin) {
+    payload.submitter_notified = true;
+    if ("locations" in payload) {
+      await savePayload(supabase, itemId, payload);
+    } else {
+      await saveRemovalPayload(supabase, itemId, payload);
+    }
+    return;
+  }
   const to = payload.submitter_email?.trim();
   if (!to) return;
 
@@ -258,6 +267,10 @@ export async function createFreeListingForLocation(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
+  if (payload.main_image_url) {
+    insertRow.main_image_url = payload.main_image_url;
+    insertRow.hero_image_url = payload.main_image_url;
+  }
 
   const { data: created, error: createErr } = await supabase
     .from("businesses")
@@ -462,6 +475,10 @@ async function createFreeServiceListingWithoutTown(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
+  if (payload.main_image_url) {
+    insertRow.main_image_url = payload.main_image_url;
+    insertRow.hero_image_url = payload.main_image_url;
+  }
 
   const { data: createdBiz, error: createErr } = await supabase
     .from("businesses")
@@ -576,6 +593,10 @@ export async function approveFreeUpdate(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
+  if (payload.main_image_url) {
+    updates.main_image_url = payload.main_image_url;
+    updates.hero_image_url = payload.main_image_url;
+  }
 
   const { error: updateErr } = await supabase.from("businesses").update(updates).eq("id", businessId);
   if (updateErr) throw new Error(updateErr.message);

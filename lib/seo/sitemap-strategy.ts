@@ -52,12 +52,12 @@ export const SITEMAP_EXCLUDED_EXACT_PATHS = new Set([
   "/privacy",
   "/guide",
   "/services",
+  "/categories",
 ]);
 
 export const SITEMAP_HUB_PAGES = [
   { path: "/towns", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/areas", priority: 0.9, changeFreq: "weekly" as const },
-  { path: "/categories", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/businesses", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/guides", priority: 0.9, changeFreq: "weekly" as const },
 ] as const;

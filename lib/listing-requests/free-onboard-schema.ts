@@ -98,8 +98,20 @@ export const freeOnboardLocationSchema = z.object({
 export const freeOnboardBodySchema = z
   .object({
     _hp_company_website: z.string().max(200).optional(),
-    submitter_name: z.string().trim().min(1).max(120),
-    submitter_email: z.string().trim().email().max(320),
+    submitter_name: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .default("")
+      .transform((s) => s.trim()),
+    submitter_email: z
+      .string()
+      .trim()
+      .max(320)
+      .optional()
+      .default("")
+      .transform((s) => s.trim()),
     title: z.string().trim().min(2).max(FREE_ONBOARD_TITLE_MAX),
     is_storefront: z.boolean().optional().default(false),
     is_service_business: z.boolean().optional().default(false),
@@ -148,11 +160,31 @@ export const freeOnboardBodySchema = z
       }),
     /** Admin-only on approve; submitters always get false. */
     is_explorable: z.boolean().optional().default(false),
+    /**
+     * Admin-only listing image URL (from /api/admin/media/upload).
+     * Ignored for non-admin submissions.
+     */
+    main_image_url: z
+      .string()
+      .url()
+      .max(2000)
+      .optional()
+      .nullable()
+      .transform((s) => s || null),
     marketing_opt_in: z.boolean().optional().default(false),
     target_business_id: z.string().uuid().optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),
   })
   .superRefine((data, ctx) => {
+    if (data.submitter_email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.submitter_email)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Enter a valid email.",
+          path: ["submitter_email"],
+        });
+      }
+    }
     if (!data.is_storefront && !data.is_service_business) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -263,6 +295,10 @@ export type FreeOnboardPayload = {
   marketing_opt_in: boolean;
   target_business_id: string | null;
   locations: FreeOnboardLocationPayload[];
+  /** Admin-only hero/main image public URL. */
+  main_image_url?: string | null;
+  /** True when an admin submitted without typing name/email (filled from session). */
+  submitted_by_admin?: boolean;
   /** Set after the single submitter decision email is sent for this intake. */
   submitter_notified?: boolean;
 };

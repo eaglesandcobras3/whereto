@@ -1,5 +1,6 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
+import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { generateBreadcrumbSchema, generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
 import { businessBrowseGroupHubPath } from "@/lib/business-categories/browse-group-nav";
 import {
@@ -26,7 +27,7 @@ export function BrowseGroupHubView({ hub }: Props) {
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
-    { name: "Categories", url: "/categories" },
+    { name: "Businesses", url: "/businesses" },
     { name: hub.title, url: hubPath },
   ]);
 
@@ -87,6 +88,8 @@ export function BrowseGroupHubView({ hub }: Props) {
             }
           />
         </div>
+
+        <ListBusinessHomeCta />
       </main>
     </div>
   );

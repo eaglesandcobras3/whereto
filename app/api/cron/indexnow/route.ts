@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     base,
     `${base}${PRIMARY_EDITORIAL_GUIDE_PATH}`,
     `${base}/guides`,
-    `${base}/categories`,
+    `${base}/businesses`,
     `${base}/towns`,
     `${base}/sitemap.xml`,
   ]);

@@ -53,6 +53,7 @@ type PrefillBusiness = {
   category_id: string | null;
   service_category_id: string | null;
   search_tags: string[];
+  main_image_url?: string | null;
 };
 
 type Props = {
@@ -105,6 +106,12 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [suggestedCategoryOpen, setSuggestedCategoryOpen] = useState(false);
   const [isStorefront, setIsStorefront] = useState(false);
   const [isService, setIsService] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminName, setAdminName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageErr, setImageErr] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -117,12 +124,18 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           categories?: CategoryOption[];
           categoryGroups?: CategoryGroup[];
           searchTags?: string[];
+          isAdmin?: boolean;
+          adminName?: string | null;
+          adminEmail?: string | null;
           error?: string;
         };
         if (!res.ok) throw new Error(j.error ?? "Could not load form options");
         setCategories(j.categories ?? []);
         setCategoryGroups(j.categoryGroups ?? []);
         setSearchTagOptions(j.searchTags ?? []);
+        setIsAdmin(Boolean(j.isAdmin));
+        setAdminName((j.adminName ?? "").trim());
+        setAdminEmail((j.adminEmail ?? "").trim());
       } catch (e) {
         if (controller.signal.aborted) return;
         setErr(e instanceof Error ? e.message : "Could not load form options");
@@ -154,6 +167,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
         setIsStorefront(Boolean(b.is_storefront));
         setIsService(Boolean(b.is_service_business));
+        setMainImageUrl(b.main_image_url ?? null);
         setLocations([
           {
             key: newLocationKey(),
@@ -229,8 +243,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     const fd = new FormData(e.currentTarget);
     const payload = {
       _hp_company_website: String(fd.get("_hp_company_website") ?? ""),
-      submitter_name: String(fd.get("submitter_name") ?? ""),
-      submitter_email: String(fd.get("submitter_email") ?? ""),
+      submitter_name: isAdmin ? adminName : String(fd.get("submitter_name") ?? ""),
+      submitter_email: isAdmin ? adminEmail : String(fd.get("submitter_email") ?? ""),
       title: title.trim(),
       is_storefront: isStorefront,
       is_service_business: isService,
@@ -245,9 +259,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       search_tags: selectedTags,
       suggested_tags: suggestedTags.slice(0, suggestedTagSlotsRemaining),
       is_explorable: false,
-      marketing_opt_in: fd.get("marketing_opt_in") === "on",
+      marketing_opt_in: isAdmin ? false : fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? businessSlug ?? null,
+      ...(isAdmin && mainImageUrl ? { main_image_url: mainImageUrl } : {}),
     };
 
     if (selectedTags.length + payload.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
@@ -384,36 +399,55 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="submitter_name">
-            Name
-          </label>
-          <input id="submitter_name" name="submitter_name" required className={`${inputClass} mt-1.5`} />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="submitter_email">
-            Email
-          </label>
-          <input
-            id="submitter_email"
-            name="submitter_email"
-            type="email"
-            required
-            autoComplete="email"
-            className={`${inputClass} mt-1.5`}
-          />
-        </div>
+        {isAdmin ? (
+          <div className="sm:col-span-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/50 px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+            Signed in as admin
+            {adminEmail ? (
+              <>
+                {" "}
+                (<span className="font-medium text-[var(--color-text-primary)]">{adminEmail}</span>
+                ). Name and email are filled for you; confirmation emails are skipped for admin submissions.
+              </>
+            ) : (
+              <> — name and email are filled from your account.</>
+            )}
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className={labelClass} htmlFor="submitter_name">
+                Name
+              </label>
+              <input id="submitter_name" name="submitter_name" required className={`${inputClass} mt-1.5`} />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="submitter_email">
+                Email
+              </label>
+              <input
+                id="submitter_email"
+                name="submitter_email"
+                type="email"
+                required
+                autoComplete="email"
+                className={`${inputClass} mt-1.5`}
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <label className="flex w-full cursor-pointer items-start gap-3 text-sm">
-        <input
-          type="checkbox"
-          name="marketing_opt_in"
-          defaultChecked
-          className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)]"
-        />
-        <span>Yes, send me marketing emails about WhereTo30A for business owners.</span>
-      </label>
+      {!isAdmin ? (
+        <label className="flex w-full cursor-pointer items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            name="marketing_opt_in"
+            defaultChecked
+            className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)]"
+          />
+          <span>Yes, send me marketing emails about WhereTo30A for business owners.</span>
+        </label>
+      ) : null}
 
       <div>
         <label className={labelClass} htmlFor="title">
@@ -430,6 +464,71 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         />
         <CharCount value={title} max={FREE_ONBOARD_TITLE_MAX} />
       </div>
+
+      {isAdmin ? (
+        <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
+          <div>
+            <p className={labelClass}>Listing image (admin)</p>
+            <p className={helpClass}>
+              Upload a hero photo for this listing. Applied when the request is approved.
+            </p>
+          </div>
+          {mainImageUrl ? (
+            <div className="flex flex-wrap items-start gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={mainImageUrl}
+                alt="Listing preview"
+                className="h-28 w-40 rounded-lg object-cover"
+              />
+              <button
+                type="button"
+                className="text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
+                onClick={() => setMainImageUrl(null)}
+              >
+                Remove image
+              </button>
+            </div>
+          ) : null}
+          <input
+            type="file"
+            accept="image/*"
+            disabled={imageUploading}
+            className="block w-full text-sm text-[var(--color-text-secondary)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              void (async () => {
+                setImageErr(null);
+                setImageUploading(true);
+                try {
+                  const body = new FormData();
+                  body.set("file", file);
+                  body.set("folder", "free-onboard");
+                  const res = await fetch("/api/admin/media/upload", {
+                    method: "POST",
+                    body,
+                  });
+                  const j = (await res.json()) as { ok?: boolean; url?: string; error?: string };
+                  if (!res.ok || !j.url) {
+                    throw new Error(j.error ?? "Upload failed");
+                  }
+                  setMainImageUrl(j.url);
+                } catch (err) {
+                  setImageErr(err instanceof Error ? err.message : "Upload failed");
+                } finally {
+                  setImageUploading(false);
+                }
+              })();
+            }}
+          />
+          {imageUploading ? (
+            <p className={helpClass}>Uploading…</p>
+          ) : null}
+          {imageErr ? <p className="text-sm text-red-600">{imageErr}</p> : null}
+        </div>
+      ) : null}
 
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
         <legend className={`${labelClass} px-1`}>How do customers work with you?</legend>

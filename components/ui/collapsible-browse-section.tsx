@@ -15,7 +15,7 @@ type Props = {
   /** Shown below the trigger when expanded (e.g. “View all”). */
   action?: ReactNode;
   children: ReactNode;
-  /** Stable DOM id for in-page / cross-page anchors (e.g. `/categories#restaurants_and_bars`). */
+  /** Stable DOM id for in-page / cross-page anchors (e.g. `/businesses#food_and_drink`). */
   sectionId?: string;
   className?: string;
   /** Smaller trigger type — matches nested rows on town profiles. */

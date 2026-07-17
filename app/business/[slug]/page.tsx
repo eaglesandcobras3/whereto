@@ -354,7 +354,7 @@ export default async function BusinessPage({ params }: Props) {
             name: breadcrumbCategoryLabel,
             url: category?.slug
               ? categoryHubPath(category.slug)
-              : "/categories",
+              : "/businesses",
           },
         ]
       : []),

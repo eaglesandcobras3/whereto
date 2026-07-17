@@ -51,8 +51,8 @@ describe("sitemap strategy", () => {
     expect(allPaths).toContain("/");
     expect(allPaths).toContain("/towns");
     expect(allPaths).toContain("/areas");
-    expect(allPaths).toContain("/categories");
     expect(allPaths).toContain("/businesses");
+    expect(allPaths).not.toContain("/categories");
     expect(allPaths).toContain("/guides");
     expect(allPaths).not.toContain("/guide");
     expect(allPaths).toContain(PRIMARY_EDITORIAL_GUIDE_PATH);

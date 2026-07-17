@@ -87,7 +87,7 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
     }
   }
 
-  const requiredHubs = ["/towns", "/areas", "/categories", "/businesses"];
+  const requiredHubs = ["/towns", "/areas", "/businesses"];
   for (const hub of requiredHubs) {
     if (!pathSet.has(hub)) {
       violations.push({ rule: "hub-pages", detail: `Missing hub ${hub}` });

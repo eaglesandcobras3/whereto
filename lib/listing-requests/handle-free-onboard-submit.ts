@@ -22,6 +22,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { escapeHtml } from "@/lib/string/escape-html";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { requireAdminUser } from "@/lib/security/requireAdmin";
 
 const LISTING_NOTIFICATION_TO_EMAIL_DEFAULT = "add@whereto30a.com";
 
@@ -46,6 +47,43 @@ export async function handleFreeOnboardListingRequest(
   const d = parsed.data;
   if ((d._hp_company_website ?? "").trim()) {
     return NextResponse.json({ ok: true });
+  }
+
+  const admin = await requireAdminUser();
+  let submitterName = d.submitter_name.trim();
+  let submitterEmail = d.submitter_email.trim();
+  let submittedByAdmin = false;
+  let mainImageUrl: string | null = null;
+
+  if (admin) {
+    submittedByAdmin = true;
+    if (!submitterName) submitterName = admin.name?.trim() || "WhereTo30A Admin";
+    if (!submitterEmail) {
+      if (!admin.email) {
+        return NextResponse.json(
+          { error: "Admin account needs an email to receive listing notifications." },
+          { status: 400 },
+        );
+      }
+      submitterEmail = admin.email;
+    }
+    mainImageUrl = d.main_image_url ?? null;
+  } else {
+    if (!submitterName || submitterName.length < 1) {
+      return NextResponse.json(
+        { error: "Name is required.", fieldErrors: { submitter_name: ["Name is required."] } },
+        { status: 400 },
+      );
+    }
+    if (!submitterEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submitterEmail)) {
+      return NextResponse.json(
+        {
+          error: "Email is required.",
+          fieldErrors: { submitter_email: ["Enter a valid email."] },
+        },
+        { status: 400 },
+      );
+    }
   }
 
   if (isListingRequestRateLimited(`listing-req:${rateLimitKeyFromRequest(request)}`)) {
@@ -183,8 +221,8 @@ export async function handleFreeOnboardListingRequest(
 
   const payload: FreeOnboardPayload = {
     source: "free_onboard",
-    submitter_name: d.submitter_name,
-    submitter_email: d.submitter_email,
+    submitter_name: submitterName,
+    submitter_email: submitterEmail,
     title: d.title,
     is_storefront: d.is_storefront,
     is_service_business: d.is_service_business,
@@ -201,9 +239,11 @@ export async function handleFreeOnboardListingRequest(
     suggested_category: d.suggested_category,
     is_explorable: false,
     search_keywords: searchKeywords,
-    marketing_opt_in: d.marketing_opt_in,
+    marketing_opt_in: submittedByAdmin ? false : d.marketing_opt_in,
     target_business_id: targetBusinessId,
     locations,
+    main_image_url: mainImageUrl,
+    submitted_by_admin: submittedByAdmin,
   };
 
   const reviewType = isUpdate ? FREE_ONBOARD_TYPES.update : FREE_ONBOARD_TYPES.newListing;
@@ -232,12 +272,15 @@ export async function handleFreeOnboardListingRequest(
   }
 
   // Confirm receipt to the submitter (decision email comes later when live/rejected).
-  await sendFreeOnboardSubmitterEmail({
-    to: d.submitter_email,
-    event: "received",
-    businessTitle: d.title,
-    isUpdate,
-  });
+  // Admin intakes skip submitter mail — operator already knows they filed it.
+  if (!submittedByAdmin) {
+    await sendFreeOnboardSubmitterEmail({
+      to: submitterEmail,
+      event: "received",
+      businessTitle: d.title,
+      isUpdate,
+    });
+  }
 
   let similarCount = 0;
   try {
@@ -258,7 +301,8 @@ export async function handleFreeOnboardListingRequest(
   const toEmail =
     process.env.LISTING_NOTIFICATION_TO_EMAIL?.trim() || LISTING_NOTIFICATION_TO_EMAIL_DEFAULT;
 
-  {
+  // Skip ops alert when an admin filed the intake (they already have the queue).
+  if (!submittedByAdmin) {
     const baseUrl = getSiteUrl().replace(/\/$/, "");
     const locLines = locations
       .map((l, i) => {
@@ -272,7 +316,7 @@ export async function handleFreeOnboardListingRequest(
     const textBody = [
       isUpdate ? "Free onboard UPDATE request" : "Free onboard NEW listing request",
       "",
-      `Submitter: ${d.submitter_name} <${d.submitter_email}>`,
+      `Submitter: ${submitterName} <${submitterEmail}>`,
       `Business: ${d.title}`,
       `Storefront: ${d.is_storefront ? "yes" : "no"}`,
       `Service: ${d.is_service_business ? "yes" : "no"}`,
@@ -308,7 +352,7 @@ export async function handleFreeOnboardListingRequest(
 
     const detailsHtml = `
 <p>Submitted via <strong>/list-your-business</strong> (free_onboard).</p>
-<p><strong>Submitter:</strong> ${escapeHtml(d.submitter_name)} &lt;${escapeHtml(d.submitter_email)}&gt;</p>
+<p><strong>Submitter:</strong> ${escapeHtml(submitterName)} &lt;${escapeHtml(submitterEmail)}&gt;</p>
 <p><strong>Business:</strong> ${escapeHtml(d.title)}<br/>
 <strong>Storefront:</strong> ${d.is_storefront ? "yes" : "no"} · <strong>Service:</strong> ${d.is_service_business ? "yes" : "no"}<br/>
 <strong>Category:</strong> ${escapeHtml(htmlCategoryValue)}<br/>
@@ -348,7 +392,7 @@ ${
       await sendTransactionalEmail({
         from: listingFromAddress(),
         to: toEmail,
-        replyTo: d.submitter_email,
+        replyTo: submitterEmail,
         subject: rendered.subject,
         text: rendered.text,
         html: rendered.html,
@@ -363,7 +407,7 @@ ${
   const ph = getPostHogServerClient();
   if (ph) {
     ph.capture({
-      distinctId: d.submitter_email,
+      distinctId: submitterEmail,
       event: "listing_request_received",
       properties: {
         business_title: d.title,
