@@ -4,11 +4,14 @@ import Link from "next/link";
 import { type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { browseGroupIcon } from "@/lib/business-categories/group-browse-sections";
-import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
 import {
   businessBrowseGroupHubPath,
   isBusinessBrowseGroupSlug,
 } from "@/lib/business-categories/browse-group-nav";
+import {
+  isUnifiedRollupSlug,
+  unifiedRollupHubPath,
+} from "@/lib/categories/unified-browse";
 import type { CategoryHubSection } from "@/lib/data/category-hub";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
@@ -22,6 +25,16 @@ type Props = {
   defaultExpandedCount?: number;
 };
 
+function sectionHubPath(slug: string): string {
+  if (isUnifiedRollupSlug(slug)) return unifiedRollupHubPath(slug);
+  if (isBusinessBrowseGroupSlug(slug)) return businessBrowseGroupHubPath(slug);
+  return `/categories/${slug.replace(/_/g, "-")}`;
+}
+
+function isValidSectionHash(value: string): boolean {
+  return isUnifiedRollupSlug(value) || isBusinessBrowseGroupSlug(value);
+}
+
 export function CategoryHubSections({
   sections,
   analyticsCategoryPrefix,
@@ -33,7 +46,7 @@ export function CategoryHubSections({
   const { expandedIds, toggle } = usePersistedExpandedSectionIds({
     sectionIds: sections.map((section) => section.id),
     defaultExpandedCount,
-    isValidHash: isBusinessBrowseGroupSlug,
+    isValidHash: isValidSectionHash,
     onHashApplied: (sectionId) => {
       requestAnimationFrame(() => {
         document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -57,7 +70,7 @@ export function CategoryHubSections({
       </div>
 
       {sections.map((section) => {
-        const iconSlug = browseGroupIcon(section.slug as BusinessCategoryGroupSlug);
+        const iconSlug = browseGroupIcon(section.slug);
         const isOpen = expandedIds.has(section.id);
 
         return (
@@ -68,7 +81,7 @@ export function CategoryHubSections({
             subtitle={`${section.totalCount} ${section.totalCount === 1 ? "listing" : "listings"}`}
             action={
               <Link
-                href={businessBrowseGroupHubPath(section.slug as BusinessCategoryGroupSlug)}
+                href={sectionHubPath(section.slug)}
                 className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
               >
                 View by town

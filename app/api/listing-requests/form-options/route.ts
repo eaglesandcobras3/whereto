@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
+import { loadUnifiedCategoryOptions } from "@/lib/categories/load-unified-categories";
 import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
-import { STOREFRONT_SERVICES_CATEGORY_SLUG } from "@/lib/routes/storefront-category-labels";
-import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
-/** Categories + search tag vocabulary for the free intake form. */
+/** Unified categories + search tag vocabulary for the free intake form. */
 export async function GET() {
   const flags = await getAllFeatureFlags();
   if (!isFreeOnboardEnabled(flags)) {
@@ -16,51 +15,31 @@ export async function GET() {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   }
 
-  const [
-    { data: categories, error: catErr },
-    { data: serviceCategories, error: svcErr },
-    { data: tags, error: tagErr },
-  ] = await Promise.all([
-    supabase
-      .from("business_categories")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .order("title", { ascending: true }),
-    supabase
-      .from("service_categories")
-      .select("id, title, slug")
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .order("title", { ascending: true }),
+  const [{ data: tags, error: tagErr }, categoryGroups] = await Promise.all([
     supabase.from("search_tags_vocabulary").select("tag").order("tag", { ascending: true }),
+    loadUnifiedCategoryOptions(),
   ]);
 
-  if (catErr) {
-    return NextResponse.json({ error: catErr.message }, { status: 500 });
-  }
-  if (svcErr) {
-    return NextResponse.json({ error: svcErr.message }, { status: 500 });
-  }
   if (tagErr) {
     return NextResponse.json({ error: tagErr.message }, { status: 500 });
   }
 
-  // Omit legacy catch-all `services` — it is search-only and confuses submitters with /services.
-  const storefrontCategories = (categories ?? []).filter(
-    (c) => String(c.slug ?? "").toLowerCase() !== STOREFRONT_SERVICES_CATEGORY_SLUG,
+  const leaves = categoryGroups.flatMap((g) =>
+    g.leaves.map((l) => ({
+      id: l.id,
+      title: l.title,
+      slug: l.slug,
+      rollupTitle: g.title,
+      rollupSlug: g.slug,
+    })),
   );
 
   return NextResponse.json({
-    categories: storefrontCategories.map((c) => ({
-      id: String(c.id),
-      title: String(c.title ?? ""),
-      slug: String(c.slug ?? ""),
-    })),
-    serviceCategories: (serviceCategories ?? []).map((c) => ({
-      id: String(c.id),
-      title: String(c.title ?? ""),
-      slug: String(c.slug ?? ""),
-    })),
+    /** @deprecated Prefer categoryGroups; flat leaves for simple selects. */
+    categories: leaves,
+    categoryGroups,
+    /** @deprecated Unified taxonomy — empty for backward-compatible clients. */
+    serviceCategories: [],
     searchTags: (tags ?? [])
       .map((t) => String((t as { tag: string }).tag ?? "").trim())
       .filter(Boolean),

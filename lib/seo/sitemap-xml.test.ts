@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sitemapEntriesToXml, sitemapIndexToXml } from "@/lib/seo/sitemap-xml";
+import { sitemapEntriesToXml } from "@/lib/seo/sitemap-xml";
 
 describe("sitemapEntriesToXml", () => {
   it("emits valid urlset with escaped loc", () => {
@@ -15,20 +15,7 @@ describe("sitemapEntriesToXml", () => {
     expect(xml).toContain("<loc>https://example.com/a&amp;b</loc>");
     expect(xml).toContain("<changefreq>weekly</changefreq>");
     expect(xml).toContain("<priority>0.8</priority>");
-  });
-});
-
-describe("sitemapIndexToXml", () => {
-  it("emits sitemapindex with child locs", () => {
-    const xml = sitemapIndexToXml([
-      {
-        url: "https://example.com/sitemap-hubs.xml",
-        lastModified: new Date("2026-06-01T12:00:00.000Z"),
-      },
-      { url: "https://example.com/sitemap-businesses.xml" },
-    ]);
-    expect(xml).toContain("<sitemapindex");
-    expect(xml).toContain("<loc>https://example.com/sitemap-hubs.xml</loc>");
-    expect(xml).toContain("<loc>https://example.com/sitemap-businesses.xml</loc>");
+    expect(xml).toContain("<urlset");
+    expect(xml).not.toContain("<sitemapindex");
   });
 });

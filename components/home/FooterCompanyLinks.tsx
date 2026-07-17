@@ -27,9 +27,19 @@ export function FooterCompanyLinks() {
       ...gaClickProps({ event: "nav_click", category: "footer_company", label: "travel_guides" }),
     },
     {
+      name: "Businesses",
+      href: "/businesses",
+      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "businesses" }),
+    },
+    {
       name: "All categories",
       href: "/categories",
       ...gaClickProps({ event: "nav_click", category: "footer_company", label: "all_categories" }),
+    },
+    {
+      name: "Services",
+      href: "/services",
+      ...gaClickProps({ event: "nav_click", category: "footer_company", label: "services" }),
     },
     {
       name: "List your business",

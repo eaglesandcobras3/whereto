@@ -248,10 +248,11 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Create PostHog boolean flag `free_onboard` (default off).
 - [ ] Apply [scripts/migrations/free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) so `portal_review_items.submitted_by` can be NULL for anonymous intake.
 - [ ] Confirm `/admin/review` is reachable for admins when `free_onboard` is on (even if `onboard` is off).
-- [ ] On `/admin/review`, resolve **suggested categories** (create new or map to existing) before approve when the submitter left the picker empty.
-- [ ] On `/admin/review`, for **suggested tags**: check to promote (optional rename), or uncheck and enter a replacement / leave empty to discard. Applied on approve (shared 6-tag cap).
-- [ ] After approving a **newly created** category/specialty, add its slug to the matching browse group in [`lib/business-categories/groups.ts`](../lib/business-categories/groups.ts) or [`lib/service-categories/groups.ts`](../lib/service-categories/groups.ts) if it should appear on hubs/footer (DB assignment alone does not place it in a group).
-- [ ] **Service specialty backfill:** any already-approved “no location” free-intake listings that only have a storefront `primary_category_id` (and null `service_category_id`) will not appear in Services footer/hub groups. Assign a specialty via admin edit or `npx tsx scripts/classify-service-categories.ts --dry-run` then `--apply`.
+- [ ] **Unified categories:** apply [scripts/migrations/unified-categories-explorable.sql](../scripts/migrations/unified-categories-explorable.sql), recreate [businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql), then dry-run / apply `npx tsx scripts/migrate-unified-categories.ts` and triage [docs/uncategorized-businesses.csv](uncategorized-businesses.csv).
+- [ ] On `/admin/review`, resolve **suggested categories** (create under a rollup or map to existing leaf) before approve when missing.
+- [ ] On `/admin/review`, for storefront intakes optionally check **Show on town/area pages** (`is_explorable`).
+- [ ] On `/admin/review`, for **suggested tags**: check to promote (optional rename), or uncheck and enter a replacement / leave empty to discard.
+- [ ] **Service specialty backfill:** legacy rows may still have only `service_category_id` until the unified migration runs.
 
 ---
 
@@ -347,6 +348,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-07-17 | Unified categories: `business_categories` becomes rollup+leaf taxonomy from `docs/categories.csv`; deprecate `service_category_id`; add `is_explorable` for town/area; free intake allows storefront+service; hubs: `/categories` (all), `/businesses` (stores), `/services` (services). Run SQL + `npx tsx scripts/migrate-unified-categories.ts`. |
 | 2026-07-16 | Free intake: submitters can **suggest a missing category/specialty** (stands in for the select); `/admin/review` can create it or map to existing on approve. Suggested tags now support promote/rename, replace, or discard. New categories still need a browse-group slug mapping for hubs. |
 | 2026-07-16 | Branded all outbound email: MJML for portal invite/rejects/payments + admin-alert ops mail; Supabase Auth HTML paste templates in `lib/email/templates/supabase/`. |
 | 2026-07-16 | Services hub: UI-only **Other** bucket (`/services/uncategorized`) surfaces `is_service_business` listings with null specialty — hub section + footer when count &gt; 0. Not a DB `other` slug. |

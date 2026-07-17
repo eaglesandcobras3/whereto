@@ -179,15 +179,7 @@ async function saveRemovalPayload(
 }
 
 function assertCategoryResolved(payload: FreeOnboardPayload): void {
-  if (payload.is_service_business) {
-    if (!payload.service_category_id) {
-      throw new Error(
-        "Resolve the service specialty before approving (create the suggestion or pick an existing one).",
-      );
-    }
-    return;
-  }
-  if (payload.is_storefront && !payload.category_id) {
+  if (!payload.category_id) {
     throw new Error(
       "Resolve the category before approving (create the suggestion or pick an existing one).",
     );
@@ -256,10 +248,9 @@ export async function createFreeListingForLocation(
     is_service_business: payload.is_service_business,
     claim_status: "unclaimed",
     published_at: new Date().toISOString(),
-    primary_category_id: payload.is_service_business ? null : payload.category_id,
-    service_category_id: payload.is_service_business
-      ? (payload.service_category_id ?? null)
-      : null,
+    primary_category_id: payload.category_id,
+    service_category_id: null,
+    is_explorable: Boolean(payload.is_explorable) && Boolean(payload.is_storefront),
     search_tags: tags,
     search_keywords: searchKeywords,
     search_terms: searchDoc.search_terms,
@@ -461,8 +452,9 @@ async function createFreeServiceListingWithoutTown(
     is_service_business: true,
     claim_status: "unclaimed",
     published_at: new Date().toISOString(),
-    primary_category_id: null,
-    service_category_id: payload.service_category_id ?? null,
+    primary_category_id: payload.category_id,
+    service_category_id: null,
+    is_explorable: false,
     search_tags: tags,
     search_keywords: searchKeywords,
     search_terms: searchDoc.search_terms,
@@ -574,10 +566,9 @@ export async function approveFreeUpdate(
     content: payload.overview,
     is_storefront: payload.is_storefront,
     is_service_business: payload.is_service_business,
-    primary_category_id: payload.is_service_business ? null : payload.category_id,
-    service_category_id: payload.is_service_business
-      ? (payload.service_category_id ?? null)
-      : null,
+    primary_category_id: payload.category_id,
+    service_category_id: null,
+    is_explorable: Boolean(payload.is_explorable) && Boolean(payload.is_storefront),
     search_tags: tags,
     search_keywords: searchKeywords,
     search_terms: searchDoc.search_terms,

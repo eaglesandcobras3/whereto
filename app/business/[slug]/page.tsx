@@ -3,7 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
-import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { BusinessProfileCollapsibleSections } from "@/components/business/BusinessProfileCollapsibleSections";
@@ -14,6 +14,7 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
+import { getGuidesForBusiness } from "@/lib/data/town-hub";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
@@ -298,16 +299,8 @@ export default async function BusinessPage({ params }: Props) {
     permanentRedirect(`/business/${encodeURIComponent(dbSlug)}`);
   }
 
-  const supabase = getServiceSupabase();
   const townId = b.town_id as string | null;
   const businessId = b.id as string;
-
-  type GuideCardRow = {
-    slug: string;
-    title: string;
-    excerpt: string | null;
-    og_image_url: string | null;
-  };
 
   const relatedBusinesses = await getSimilarBusinesses({
     businessId,
@@ -316,80 +309,7 @@ export default async function BusinessPage({ params }: Props) {
     limit: 6,
   });
 
-  let townGuides: GuideCardRow[] = [];
-
-  const { data: bizGuideLinks } = await supabase
-    .from("guide_businesses")
-    .select("guide_id")
-    .eq("business_id", businessId)
-    .limit(20);
-  const linkedGuideIds = (bizGuideLinks ?? [])
-    .map((l) => (l as { guide_id: string }).guide_id)
-    .filter(Boolean);
-
-  if (linkedGuideIds.length > 0) {
-    const { data: gRows } = await supabase
-      .from("guides")
-      .select("slug, title, excerpt, main_image, hero_image")
-      .in("id", linkedGuideIds)
-      .is("archived_at", null)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN);
-    townGuides =
-      (gRows ?? []).map((g) => ({
-        slug: g.slug,
-        title: (g as { title: string }).title,
-        excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
-        og_image_url:
-          getPublicImageUrl((g as { main_image?: string | null }).main_image) ??
-          getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
-      })) ?? [];
-  }
-
-  if (townGuides.length === 0 && townId != null) {
-    const { data: links } = await supabase
-      .from("guide_towns")
-      .select("guide_id")
-      .eq("town_id", townId)
-      .limit(20);
-    const gids = (links ?? [])
-      .map((l) => (l as { guide_id: string }).guide_id)
-      .filter(Boolean);
-    if (gids.length > 0) {
-      const { data: gRows } = await supabase
-        .from("guides")
-        .select("slug, title, excerpt, main_image, hero_image")
-        .in("id", gids)
-        .is("archived_at", null)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN);
-      townGuides =
-        (gRows ?? []).map((g) => ({
-          slug: g.slug,
-          title: (g as { title: string }).title,
-          excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
-          og_image_url:
-            getPublicImageUrl((g as { main_image?: string | null }).main_image) ??
-            getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
-        })) ?? [];
-    }
-  }
-  if (townGuides.length === 0) {
-    const { data: g2 } = await supabase
-      .from("guides")
-      .select("slug, title, excerpt, main_image, hero_image")
-      .is("archived_at", null)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
-      .order("date_updated", { ascending: false, nullsFirst: false })
-      .limit(5);
-    townGuides =
-      (g2 ?? []).map((g) => ({
-        slug: g.slug,
-        title: (g as { title: string }).title,
-        excerpt: (g as { excerpt?: string | null }).excerpt ?? null,
-        og_image_url:
-          getPublicImageUrl((g as { main_image?: string | null }).main_image) ??
-          getPublicImageUrl((g as { hero_image?: string | null }).hero_image),
-      })) ?? [];
-  }
+  const townGuides = await getGuidesForBusiness(businessId, townId);
 
   const town = b.towns as { name?: string; slug?: string } | null;
   const primaryArea = b.primary_area as { name: string; slug: string } | null;
@@ -484,7 +404,7 @@ export default async function BusinessPage({ params }: Props) {
     slug: g.slug,
     title: g.title,
     href: g.slug === town?.slug ? townPagePath(g.slug) : `/guide/${g.slug}`,
-    reason: g.excerpt?.trim() || undefined,
+    reason: g.subtitle?.trim() || undefined,
   }));
 
   const gaBiz = String(b.slug);

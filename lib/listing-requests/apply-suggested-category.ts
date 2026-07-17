@@ -1,4 +1,4 @@
-/** Resolve free-intake suggested categories onto the review payload. */
+/** Resolve free-intake suggested categories onto the review payload (unified taxonomy). */
 
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -10,7 +10,7 @@ import {
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export type CategoryResolution =
-  | { mode: "create"; title: string }
+  | { mode: "create"; title: string; parentCategoryId: string }
   | { mode: "existing"; categoryId: string };
 
 export type ApplySuggestedCategoryResult = {
@@ -24,50 +24,49 @@ function titleFromSuggestion(raw: string): string {
   return raw.trim().slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
 }
 
-async function findCategoryBySlug(
+async function findLeafBySlug(
   supabase: SupabaseClient,
-  table: "business_categories" | "service_categories",
   slug: string,
 ): Promise<{ id: string; title: string } | null> {
   const { data } = await supabase
-    .from(table)
-    .select("id, title")
+    .from("business_categories")
+    .select("id, title, parent_category_id")
     .eq("slug", slug)
     .is("archived_at", null)
     .maybeSingle();
-  if (!data?.id) return null;
+  if (!data?.id || !data.parent_category_id) return null;
   return { id: String(data.id), title: String(data.title ?? slug) };
 }
 
-async function findCategoryById(
+async function findLeafById(
   supabase: SupabaseClient,
-  table: "business_categories" | "service_categories",
   id: string,
 ): Promise<{ id: string; title: string } | null> {
   const { data } = await supabase
-    .from(table)
-    .select("id, title")
+    .from("business_categories")
+    .select("id, title, parent_category_id")
     .eq("id", id)
     .is("archived_at", null)
     .maybeSingle();
-  if (!data?.id) return null;
+  if (!data?.id || !data.parent_category_id) return null;
   return { id: String(data.id), title: String(data.title ?? "") };
 }
 
-async function createCategory(
+async function createLeaf(
   supabase: SupabaseClient,
-  table: "business_categories" | "service_categories",
   title: string,
   slug: string,
+  parentCategoryId: string,
 ): Promise<{ id: string; title: string }> {
   const id = randomUUID();
   const { data, error } = await supabase
-    .from(table)
+    .from("business_categories")
     .insert({
       id,
       status: DIRECTUS_PUBLISHED_STATUS,
       title,
       slug,
+      parent_category_id: parentCategoryId,
       is_hidden_from_search: false,
     })
     .select("id, title")
@@ -79,7 +78,7 @@ async function createCategory(
 }
 
 /**
- * Create or map a category/specialty onto the free-intake payload.
+ * Create or map a unified leaf category onto the free-intake payload.
  * Clears `suggested_category` once resolved.
  */
 export async function applySuggestedCategoryToPayload(
@@ -87,30 +86,35 @@ export async function applySuggestedCategoryToPayload(
   payload: FreeOnboardPayload,
   resolution: CategoryResolution,
 ): Promise<ApplySuggestedCategoryResult> {
-  const isService = Boolean(payload.is_service_business);
-  const table = isService ? "service_categories" : "business_categories";
-
   let categoryId: string;
   let categoryTitle: string;
   let created = false;
 
   if (resolution.mode === "existing") {
-    const found = await findCategoryById(supabase, table, resolution.categoryId);
-    if (!found) throw new Error("Choose a valid existing category.");
+    const found = await findLeafById(supabase, resolution.categoryId);
+    if (!found) throw new Error("Choose a valid existing category (not a top-level group).");
     categoryId = found.id;
     categoryTitle = found.title;
   } else {
     const title = titleFromSuggestion(resolution.title);
     if (!title) throw new Error("Enter a category title to create.");
+    if (!resolution.parentCategoryId.trim()) {
+      throw new Error("Choose a rollup group for the new category.");
+    }
     const slug = suggestionToVocabSlug(title);
     if (!slug) throw new Error("Could not build a category slug from that title.");
 
-    const existing = await findCategoryBySlug(supabase, table, slug);
+    const existing = await findLeafBySlug(supabase, slug);
     if (existing) {
       categoryId = existing.id;
       categoryTitle = existing.title;
     } else {
-      const createdRow = await createCategory(supabase, table, title, slug);
+      const createdRow = await createLeaf(
+        supabase,
+        title,
+        slug,
+        resolution.parentCategoryId.trim(),
+      );
       categoryId = createdRow.id;
       categoryTitle = createdRow.title;
       created = true;
@@ -120,19 +124,11 @@ export async function applySuggestedCategoryToPayload(
   const next: FreeOnboardPayload = {
     ...payload,
     suggested_category: null,
+    category_id: categoryId,
+    category_title: categoryTitle,
+    service_category_id: null,
+    service_category_title: null,
   };
-
-  if (isService) {
-    next.service_category_id = categoryId;
-    next.service_category_title = categoryTitle;
-    next.category_id = null;
-    next.category_title = null;
-  } else {
-    next.category_id = categoryId;
-    next.category_title = categoryTitle;
-    next.service_category_id = null;
-    next.service_category_title = null;
-  }
 
   return { payload: next, categoryId, categoryTitle, created };
 }
@@ -171,8 +167,10 @@ export function parseCategoryResolution(raw: unknown): CategoryResolution | null
   const mode = String(obj.mode ?? "").trim();
   if (mode === "create") {
     const title = typeof obj.title === "string" ? obj.title.trim() : "";
-    if (!title) return null;
-    return { mode: "create", title };
+    const parentCategoryId =
+      typeof obj.parentCategoryId === "string" ? obj.parentCategoryId.trim() : "";
+    if (!title || !parentCategoryId) return null;
+    return { mode: "create", title, parentCategoryId };
   }
   if (mode === "existing") {
     const categoryId = typeof obj.categoryId === "string" ? obj.categoryId.trim() : "";

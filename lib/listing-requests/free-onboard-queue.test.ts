@@ -285,8 +285,8 @@ describe("createFreeListingForLocation", () => {
 });
 
 describe("approveAllFreeLocations service-only", () => {
-  it("creates a town-less listing with service_category_id for browse discovery", async () => {
-    const specialtyId = "44444444-4444-4444-8444-444444444444";
+  it("creates a town-less listing with primary_category_id for browse discovery", async () => {
+    const categoryId = "44444444-4444-4444-8444-444444444444";
     const payload = {
       source: "free_onboard",
       submitter_name: "Pat",
@@ -298,9 +298,8 @@ describe("approveAllFreeLocations service-only", () => {
       phone: "850-555-0199",
       excerpt: "Tax and bookkeeping for local businesses.",
       overview: "Regional accounting by appointment.",
-      category_id: null,
-      service_category_id: specialtyId,
-      service_category_title: "Accounting & tax",
+      category_id: categoryId,
+      category_title: "Financial Services",
       search_tags: ["accounting"],
       suggested_tags: [],
       search_keywords: "cpa",
@@ -317,8 +316,8 @@ describe("approveAllFreeLocations service-only", () => {
     expect(businessInsert!.row.is_service_business).toBe(true);
     expect(businessInsert!.row.is_storefront).toBe(false);
     expect(businessInsert!.row.town_id).toBeNull();
-    expect(businessInsert!.row.primary_category_id).toBeNull();
-    expect(businessInsert!.row.service_category_id).toBe(specialtyId);
+    expect(businessInsert!.row.primary_category_id).toBe(categoryId);
+    expect(businessInsert!.row.service_category_id).toBeNull();
   });
 });
 

@@ -46,10 +46,8 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   async rewrites() {
     const rules: { source: string; destination: string }[] = [
-      // Avoid `app/[townSlug]` capturing sitemap routes (production 404).
+      // Avoid `app/[townSlug]` capturing `/sitemap.xml` (production 404).
       { source: "/sitemap.xml", destination: "/api/sitemap-xml" },
-      { source: "/sitemap-hubs.xml", destination: "/api/sitemap-hubs-xml" },
-      { source: "/sitemap-businesses.xml", destination: "/api/sitemap-businesses-xml" },
       { source: "/llms.txt", destination: "/api/llms-txt" },
       // PostHog reverse proxy — routes ingest through Next.js to avoid ad blockers.
       ...(phAssetsHost ? [

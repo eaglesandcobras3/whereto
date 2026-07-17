@@ -1,91 +1,92 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { CategoryHubSections } from "@/components/browse/CategoryHubSections";
-import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
-import { CollapsibleText } from "@/components/ui/collapsible-text";
-import { countCategoryHubBusinesses, getCategoryHubSections } from "@/lib/data/category-hub";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
-import { hubBusinessesIntro } from "@/lib/seo/page-intro-copy";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
+import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
+import { CategoryHubSections } from "@/components/browse/CategoryHubSections";
+import { countCategoryHubBusinesses, getCategoryHubSections } from "@/lib/data/category-hub";
 
 export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/businesses"),
-  title: "Local Businesses on 30A, Florida | Restaurants, Shops & More",
+  title: "Businesses on 30A | Shops, Restaurants & Places to Visit",
   description:
-    "Browse local businesses along Scenic 30A in South Walton, Florida: restaurants, coffee shops, bars, activities, shopping boutiques, and services across Rosemary Beach, Seaside, WaterColor, Alys Beach, and Inlet Beach.",
-  keywords: [
-    "30A local businesses",
-    "30A restaurants",
-    "30A shops",
-    "South Walton businesses",
-    "Emerald Coast local",
-    "30A Florida directory",
-    "things to do 30A",
-    "where to eat 30A",
-  ],
+    "Browse storefront businesses along Scenic 30A — restaurants, shops, coffee, lodging, and more. For mobile and appointment-based providers, see Services.",
   ...openGraphForPage({
     path: "/businesses",
-    title: "Local Businesses on 30A, Florida | WhereTo30A",
+    title: "Businesses on 30A | WhereTo30A",
     description:
-      "The local business directory for Scenic 30A: restaurants, coffee, bars, activities, shopping, and services curated town by town.",
+      "Storefront places and shops along 30A — restaurants, coffee, shopping, lodging, and more.",
   }),
 };
 
-export default async function BusinessesPage() {
+/** Stores-only hub (`is_storefront`). Categories hub shows storefronts and services together. */
+export default async function BusinessesHubPage() {
   const [sections, totalCount] = await Promise.all([
-    getCategoryHubSections(),
-    countCategoryHubBusinesses(),
+    getCategoryHubSections("storefront"),
+    countCategoryHubBusinesses("storefront"),
   ]);
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
-      <div className="coastal-hero border-b border-[var(--color-border)]">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
-          <header className="max-w-3xl space-y-3">
-            <p className="text-eyebrow">30A · South Walton, Florida</p>
-            <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
-              Local businesses on 30A
-            </h1>
-            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-              Restaurants, coffee shops, bars, boutiques, and more across every community along
-              Scenic 30A. Browse by category below.
-            </p>
-            {totalCount > 0 ? (
-              <p className="text-sm text-[var(--color-text-tertiary)]">
-                {totalCount} {totalCount === 1 ? "listing" : "listings"}
-                {sections.length > 0
-                  ? ` across ${sections.length} browse ${sections.length === 1 ? "group" : "groups"}`
-                  : ""}
-              </p>
-            ) : null}
-            <CollapsibleText
-              text={hubBusinessesIntro()}
-              className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]"
-            />
-          </header>
-        </div>
-      </div>
-
-      <section className="mx-auto max-w-6xl px-4 py-12 md:px-10">
-        <CategoryHubSections
-          sections={sections}
-          analyticsCategoryPrefix="businesses_hub"
-          subheading="Tap a group to expand and browse listings."
-          emptyMessage={
-            <p className="text-[var(--color-text-secondary)]">
-              No listings yet.{" "}
-              <Link href="/list-your-business" className="text-[var(--color-primary)] hover:underline">
-                List your business
-              </Link>
-              .
-            </p>
+    <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      <main className="flex-1">
+        <BrowseHubHero
+          title="Businesses"
+          description="Places you can visit along Scenic 30A — restaurants, shops, coffee, lodging, and more."
+          collapsibleDescription="Storefront listings only. Browse all categories (including service providers) on Categories, or mobile and appointment-based vendors on Services."
+          meta={
+            <>
+              {totalCount} {totalCount === 1 ? "place" : "places"} & shops
+              {sections.length > 0
+                ? ` in ${sections.length} browse ${sections.length === 1 ? "group" : "groups"}`
+                : ""}
+            </>
           }
         />
-      </section>
 
-      <ListBusinessHomeCta />
+        <section className="mx-auto max-w-6xl px-4 py-12 md:px-10">
+          <CategoryHubSections
+            sections={sections}
+            analyticsCategoryPrefix="businesses_hub"
+            subheading="Tap a group to expand and browse storefront listings."
+            emptyMessage={
+              <p className="text-[var(--color-text-secondary)]">
+                No listings yet.{" "}
+                <Link href="/list-your-business" className="text-[var(--color-primary)] hover:underline">
+                  List your business
+                </Link>
+                .
+              </p>
+            }
+          />
+        </section>
+
+        <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-14">
+          <div className="mx-auto max-w-3xl px-6 text-center">
+            <h2 className="font-headline text-2xl font-bold text-[var(--color-text-primary)]">
+              Looking for services or every category?
+            </h2>
+            <p className="mt-3 text-[var(--color-text-secondary)]">
+              Appointment and mobile providers are on Services. Or browse every listing by category.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/services"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-7 py-3.5 text-sm font-bold text-white transition-all hover:opacity-90"
+              >
+                Services
+              </Link>
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-7 py-3.5 text-sm font-bold text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-surface-secondary)]"
+              >
+                All categories
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

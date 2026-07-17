@@ -35,6 +35,7 @@ type CategoryDecision = {
   mode: "create" | "existing";
   title: string;
   categoryId: string;
+  parentCategoryId: string;
 };
 
 /** Per suggested-tag decision: promote (optional rename) or replace/discard when unchecked. */
@@ -68,24 +69,16 @@ function payloadString(payload: Record<string, unknown>, key: string): string {
 function needsCategoryResolution(payload: Record<string, unknown>): boolean {
   const suggested = payloadString(payload, "suggested_category");
   if (suggested) return true;
-  if (payload.is_service_business) {
-    return !payloadString(payload, "service_category_id");
-  }
-  if (payload.is_storefront) {
-    return !payloadString(payload, "category_id");
-  }
-  return false;
+  return !payloadString(payload, "category_id");
 }
 
 function defaultCategoryDecision(payload: Record<string, unknown>): CategoryDecision {
   const suggested = payloadString(payload, "suggested_category");
-  const existingId = payload.is_service_business
-    ? payloadString(payload, "service_category_id")
-    : payloadString(payload, "category_id");
+  const existingId = payloadString(payload, "category_id");
   if (suggested) {
-    return { mode: "create", title: suggested, categoryId: existingId };
+    return { mode: "create", title: suggested, categoryId: existingId, parentCategoryId: "" };
   }
-  return { mode: "existing", title: "", categoryId: existingId };
+  return { mode: "existing", title: "", categoryId: existingId, parentCategoryId: "" };
 }
 
 function previewMergedTagsFromDecisions(
@@ -136,8 +129,11 @@ export function ReviewQueueClient() {
     Record<string, Record<string, TagDecision>>
   >({});
   const [categoryByItem, setCategoryByItem] = useState<Record<string, CategoryDecision>>({});
+  const [explorableByItem, setExplorableByItem] = useState<Record<string, boolean>>({});
   const [storefrontCategories, setStorefrontCategories] = useState<CategoryOption[]>([]);
-  const [serviceCategories, setServiceCategories] = useState<CategoryOption[]>([]);
+  const [categoryGroups, setCategoryGroups] = useState<
+    Array<{ id: string; title: string; slug: string; leaves: CategoryOption[] }>
+  >([]);
   const [view, setView] = useState<"pending" | "completed">("pending");
   const [showManual, setShowManual] = useState(false);
   const [manualJson, setManualJson] = useState(
@@ -197,6 +193,15 @@ export function ReviewQueueClient() {
           }
           return next;
         });
+        setExplorableByItem((prev) => {
+          const next = { ...prev };
+          for (const item of nextItems) {
+            if (next[item.id] !== undefined) continue;
+            if (!isFreeType(item.type)) continue;
+            next[item.id] = Boolean(item.payload.is_explorable);
+          }
+          return next;
+        });
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
@@ -216,10 +221,15 @@ export function ReviewQueueClient() {
         if (!res.ok) return;
         const j = (await res.json()) as {
           categories?: CategoryOption[];
-          serviceCategories?: CategoryOption[];
+          categoryGroups?: Array<{
+            id: string;
+            title: string;
+            slug: string;
+            leaves: CategoryOption[];
+          }>;
         };
         setStorefrontCategories(j.categories ?? []);
-        setServiceCategories(j.serviceCategories ?? []);
+        setCategoryGroups(j.categoryGroups ?? []);
       } catch {
         /* options are best-effort for the existing-category dropdown */
       }
@@ -248,7 +258,13 @@ export function ReviewQueueClient() {
 
   function setCategoryDecision(itemId: string, patch: Partial<CategoryDecision>) {
     setCategoryByItem((prev) => {
-      const existing = prev[itemId] ?? { mode: "create", title: "", categoryId: "" };
+      const existing =
+        prev[itemId] ?? {
+          mode: "create",
+          title: "",
+          categoryId: "",
+          parentCategoryId: "",
+        };
       return { ...prev, [itemId]: { ...existing, ...patch } };
     });
   }
@@ -267,18 +283,22 @@ export function ReviewQueueClient() {
 
     const item = items.find((i) => i.id === id);
     let category_resolution:
-      | { mode: "create"; title: string }
+      | { mode: "create"; title: string; parentCategoryId: string }
       | { mode: "existing"; categoryId: string }
       | undefined;
     if (shouldApply && item && isFreeType(item.type) && needsCategoryResolution(item.payload)) {
       const decision = categoryByItem[id] ?? defaultCategoryDecision(item.payload);
       if (decision.mode === "create") {
-        if (!decision.title.trim()) {
+        if (!decision.title.trim() || !decision.parentCategoryId.trim()) {
           setActing(null);
-          setError("Enter a category title to create, or switch to an existing category.");
+          setError("Enter a category title and choose a rollup group, or pick an existing category.");
           return;
         }
-        category_resolution = { mode: "create", title: decision.title.trim() };
+        category_resolution = {
+          mode: "create",
+          title: decision.title.trim(),
+          parentCategoryId: decision.parentCategoryId.trim(),
+        };
       } else {
         if (!decision.categoryId.trim()) {
           setActing(null);
@@ -303,6 +323,9 @@ export function ReviewQueueClient() {
         admin_notes: notes[id] ?? "",
         ...(tagActions ? { apply_suggested_tags: tagActions } : {}),
         ...(category_resolution ? { category_resolution } : {}),
+        ...(shouldApply && item?.payload.is_storefront
+          ? { is_explorable: Boolean(explorableByItem[id]) }
+          : {}),
         ...extra,
       }),
     });
@@ -318,6 +341,11 @@ export function ReviewQueueClient() {
       return next;
     });
     setCategoryByItem((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setExplorableByItem((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
@@ -556,35 +584,51 @@ export function ReviewQueueClient() {
                           {String(item.payload.overview ?? "")}
                         </p>
                         <p>
-                          <span className="font-medium text-zinc-800">
-                            {item.payload.is_service_business ? "Specialty:" : "Category:"}
-                          </span>{" "}
-                          {item.payload.is_service_business
-                            ? String(
-                                item.payload.service_category_title ??
-                                  item.payload.service_category_id ??
-                                  "",
-                              ) || "—"
-                            : String(item.payload.category_title ?? item.payload.category_id ?? "") ||
-                              "—"}
+                          <span className="font-medium text-zinc-800">Category:</span>{" "}
+                          {String(item.payload.category_title ?? item.payload.category_id ?? "") ||
+                            "—"}
                         </p>
+                        <p>
+                          <span className="font-medium text-zinc-800">Presence:</span>{" "}
+                          {[
+                            item.payload.is_storefront ? "storefront" : null,
+                            item.payload.is_service_business ? "service" : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" + ") || "—"}
+                        </p>
+                        {item.payload.is_storefront ? (
+                          <label className="flex cursor-pointer items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(explorableByItem[item.id])}
+                              onChange={(e) =>
+                                setExplorableByItem((prev) => ({
+                                  ...prev,
+                                  [item.id]: e.target.checked,
+                                }))
+                              }
+                            />
+                            <span>
+                              <span className="font-medium text-zinc-800">Show on town/area pages</span>
+                              <span className="ml-1 text-xs text-zinc-600">
+                                (`is_explorable` — off by default for new intake)
+                              </span>
+                            </span>
+                          </label>
+                        ) : null}
                         {(() => {
                           if (!needsCategoryResolution(item.payload)) return null;
                           const decision =
                             categoryByItem[item.id] ?? defaultCategoryDecision(item.payload);
                           const suggested = payloadString(item.payload, "suggested_category");
-                          const options = item.payload.is_service_business
-                            ? serviceCategories
-                            : storefrontCategories;
                           const createSlug = suggestionToVocabSlug(decision.title);
                           return (
                             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
-                              <p className="font-medium text-zinc-800">
-                                Suggested {item.payload.is_service_business ? "specialty" : "category"}
-                              </p>
+                              <p className="font-medium text-zinc-800">Suggested category</p>
                               <p className="mt-1 text-xs text-amber-900">
                                 {suggested
-                                  ? `Submitter suggested “${suggested}”. Create it or map to an existing one before approve.`
+                                  ? `Submitter suggested “${suggested}”. Create it under a rollup or map to an existing leaf before approve.`
                                   : "No category on this intake — create one or pick an existing category before approve."}
                               </p>
                               <div className="mt-2 space-y-2 text-sm">
@@ -604,17 +648,33 @@ export function ReviewQueueClient() {
                                   <span className="flex-1">
                                     <span className="font-medium">Create new</span>
                                     {decision.mode === "create" ? (
-                                      <span className="mt-1 block">
+                                      <span className="mt-1 block space-y-1">
+                                        <select
+                                          className="w-full rounded border border-amber-300 bg-white px-2 py-1 text-sm text-zinc-900"
+                                          value={decision.parentCategoryId}
+                                          onChange={(e) =>
+                                            setCategoryDecision(item.id, {
+                                              parentCategoryId: e.target.value,
+                                            })
+                                          }
+                                        >
+                                          <option value="">Rollup group…</option>
+                                          {categoryGroups.map((g) => (
+                                            <option key={g.id} value={g.id}>
+                                              {g.title}
+                                            </option>
+                                          ))}
+                                        </select>
                                         <input
                                           type="text"
-                                          className="mt-1 w-full rounded border border-amber-300 bg-white px-2 py-1 text-sm text-zinc-900"
+                                          className="w-full rounded border border-amber-300 bg-white px-2 py-1 text-sm text-zinc-900"
                                           value={decision.title}
                                           onChange={(e) =>
                                             setCategoryDecision(item.id, { title: e.target.value })
                                           }
                                           placeholder="Category title"
                                         />
-                                        <span className="mt-0.5 block text-xs text-zinc-600">
+                                        <span className="block text-xs text-zinc-600">
                                           Slug: {createSlug ?? "(invalid)"}
                                         </span>
                                       </span>
@@ -644,11 +704,21 @@ export function ReviewQueueClient() {
                                         }
                                       >
                                         <option value="">Choose…</option>
-                                        {options.map((c) => (
-                                          <option key={c.id} value={c.id}>
-                                            {c.title}
-                                          </option>
-                                        ))}
+                                        {categoryGroups.length > 0
+                                          ? categoryGroups.map((g) => (
+                                              <optgroup key={g.id} label={g.title}>
+                                                {g.leaves.map((c) => (
+                                                  <option key={c.id} value={c.id}>
+                                                    {c.title}
+                                                  </option>
+                                                ))}
+                                              </optgroup>
+                                            ))
+                                          : storefrontCategories.map((c) => (
+                                              <option key={c.id} value={c.id}>
+                                                {c.title}
+                                              </option>
+                                            ))}
                                       </select>
                                     ) : null}
                                   </span>

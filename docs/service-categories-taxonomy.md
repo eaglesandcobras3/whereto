@@ -1,13 +1,16 @@
 # Service vendor taxonomy (Specialties)
 
-**Status:** Living document — expand as new vendor types appear. Code source of truth: `lib/service-categories/constants.ts` + Supabase `service_categories`.
+> **Superseded for new work:** use the [unified categories taxonomy](categories-taxonomy.md) (`docs/categories.csv`, `primary_category_id`, optional `is_storefront` + `is_service_business`). This doc remains for historical specialty seed / remap context until `service_category_id` is fully retired.
 
-## Two different “category” systems
+**Status (legacy):** Living document — expand as new vendor types appear. Code source of truth was `lib/service-categories/constants.ts` + Supabase `service_categories`.
+
+## Two different “category” systems (pre-unification)
 
 | System | Table / field | Used for | Example slugs |
 |--------|----------------|----------|----------------|
 | **Storefront browse** | `business_categories` → `primary_category_id` | Places you visit: eat, shop, drink | `restaurants`, `shopping`, `bars`, `services` |
 | **Service specialty** | `service_categories` → `service_category_id` | Providers you hire, book, or call | `hvac`, `insurance`, `legal` |
+
 
 A listing can be `is_service_business=true` with a specialty on `service_category_id`.
 Do **not** use the storefront catch-all slug `services` for new service vendors — it is

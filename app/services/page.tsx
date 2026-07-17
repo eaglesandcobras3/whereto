@@ -1,14 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
+import { CategoryHubSections } from "@/components/browse/CategoryHubSections";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
-import { ServiceSpecialtySections } from "@/components/services/ServiceSpecialtySections";
 import {
-  countServiceVendors,
-  getServiceSpecialtySections,
-  listServiceCategories,
-} from "@/lib/data/service-vendors-hub";
+  countCategoryHubBusinesses,
+  getCategoryHubSections,
+} from "@/lib/data/category-hub";
+import { countUncategorizedServiceVendors } from "@/lib/data/service-vendors-hub";
 import { SERVICE_VENDORS_HUB_PATH } from "@/lib/routes/service-vendors-hub";
+import { serviceUncategorizedHubPath } from "@/lib/service-categories/uncategorized";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { seoTitleSegmentForLayout } from "@/lib/seo/metadata-snippets";
@@ -39,13 +40,12 @@ export const metadata: Metadata = {
 };
 
 export default async function ServiceVendorsHubPage() {
-  const [sections, categories, totalCount] = await Promise.all([
-    getServiceSpecialtySections(""),
-    listServiceCategories(),
-    countServiceVendors(),
+  const [sections, totalCount, uncategorizedCount] = await Promise.all([
+    getCategoryHubSections("service"),
+    countCategoryHubBusinesses("service"),
+    countUncategorizedServiceVendors(),
   ]);
 
-  const listedSpecialties = categories.filter((c) => c.vendor_count > 0);
   const listedGroups = sections.length;
 
   const breadcrumbSchema = generateBreadcrumbSchema([
@@ -70,18 +70,17 @@ export default async function ServiceVendorsHubPage() {
               {totalCount} {totalCount === 1 ? "provider" : "providers"}
               {listedGroups > 0
                 ? ` across ${listedGroups} ${listedGroups === 1 ? "category" : "categories"}`
-                : listedSpecialties.length > 0
-                  ? ` across ${listedSpecialties.length} ${listedSpecialties.length === 1 ? "specialty" : "specialties"}`
-                  : ""}
+                : ""}
             </>
           }
         />
 
         <section className="mx-auto max-w-6xl px-4 py-12 md:px-10">
-          <ServiceSpecialtySections
+          <CategoryHubSections
             sections={sections}
-            analyticsCategoryPrefix="services_hub_specialty"
-            subheading="Tap a group to expand and browse providers."
+            analyticsCategoryPrefix="services_hub"
+            heading="Browse by category"
+            subheading="Service and appointment-based providers. Tap a group to expand."
             emptyMessage={
               <p className="text-[var(--color-text-secondary)]">
                 No service providers found.{" "}
@@ -92,6 +91,19 @@ export default async function ServiceVendorsHubPage() {
               </p>
             }
           />
+          {uncategorizedCount > 0 ? (
+            <p className="mt-8 text-sm text-[var(--color-text-secondary)]">
+              {uncategorizedCount} provider{uncategorizedCount === 1 ? "" : "s"} still need a
+              category.{" "}
+              <Link
+                href={serviceUncategorizedHubPath()}
+                className="font-semibold text-[var(--color-primary)] hover:underline"
+              >
+                View uncategorized
+              </Link>
+              .
+            </p>
+          ) : null}
         </section>
 
         <ListBusinessHomeCta />

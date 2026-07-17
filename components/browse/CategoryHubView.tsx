@@ -12,6 +12,7 @@ import type {
   CategoryRow,
   CategoryTownGroup,
 } from "@/lib/data/category-hub";
+import { groupCategoryBusinessesByTown } from "@/lib/data/category-hub";
 import { categoryHubIntro } from "@/lib/seo/page-intro-copy";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 
@@ -21,8 +22,40 @@ type Props = {
   businesses: CategoryBusinessRow[];
 };
 
+function PresenceTownSections({
+  title,
+  businesses,
+  categorySlug,
+}: {
+  title: string;
+  businesses: CategoryBusinessRow[];
+  categorySlug: string;
+}) {
+  if (businesses.length === 0) return null;
+  const townGroups = groupCategoryBusinessesByTown(businesses);
+  return (
+    <div className="space-y-4">
+      <h2 className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
+        {title}
+      </h2>
+      <CategoryHubTownSections
+        townGroups={townGroups}
+        categorySlug={categorySlug}
+        emptyMessage={null}
+      />
+    </div>
+  );
+}
+
 export function CategoryHubView({ cat, townGroups, businesses }: Props) {
   const hubPath = categoryHubPath(cat.slug);
+  const places = businesses.filter((b) => b.is_storefront);
+  const services = businesses.filter((b) => b.is_service_business && !b.is_storefront);
+  const bothFlags = businesses.filter((b) => b.is_storefront && b.is_service_business);
+  // Storefront+service listings appear under Places; services-only under Services.
+  const placeList = places;
+  const serviceList = services;
+  const splitSections = placeList.length > 0 && serviceList.length > 0;
   const townCount = townGroups.filter((g) => g.slug).length;
   const intro =
     cat.excerpt?.trim() ||
@@ -76,23 +109,41 @@ export function CategoryHubView({ cat, townGroups, businesses }: Props) {
           collapsibleDescription={intro}
           meta={
             <>
-              {businesses.length} {businesses.length === 1 ? "listing" : "listings"} across{" "}
-              {townCount} {townCount === 1 ? "town" : "towns"}
+              {businesses.length} {businesses.length === 1 ? "listing" : "listings"}
+              {bothFlags.length > 0 ? ` · ${bothFlags.length} also offer services` : ""}
+              {townCount > 0
+                ? ` across ${townCount} ${townCount === 1 ? "town" : "towns"}`
+                : ""}
             </>
           }
         />
 
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
           <div className="min-w-0 space-y-8 sm:space-y-10">
-            <CategoryHubTownSections
-              townGroups={townGroups}
-              categorySlug={cat.slug}
-              emptyMessage={
-                <p className="text-[var(--color-text-secondary)]">
-                  No listings found for this category yet.
-                </p>
-              }
-            />
+            {splitSections ? (
+              <>
+                <PresenceTownSections
+                  title="Places"
+                  businesses={placeList}
+                  categorySlug={cat.slug}
+                />
+                <PresenceTownSections
+                  title="Services"
+                  businesses={serviceList}
+                  categorySlug={cat.slug}
+                />
+              </>
+            ) : (
+              <CategoryHubTownSections
+                townGroups={townGroups}
+                categorySlug={cat.slug}
+                emptyMessage={
+                  <p className="text-[var(--color-text-secondary)]">
+                    No listings found for this category yet.
+                  </p>
+                }
+              />
+            )}
           </div>
         </div>
 

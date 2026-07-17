@@ -23,9 +23,20 @@ const inputClass =
 const labelClass = "block text-sm font-medium text-[var(--color-text-secondary)]";
 const helpClass = "mt-1 text-xs text-[var(--color-text-tertiary)]";
 
-type CategoryOption = { id: string; title: string; slug: string };
+type CategoryOption = {
+  id: string;
+  title: string;
+  slug: string;
+  rollupTitle?: string;
+  rollupSlug?: string;
+};
+type CategoryGroup = {
+  id: string;
+  title: string;
+  slug: string;
+  leaves: Array<{ id: string; title: string; slug: string }>;
+};
 type LocationRow = { key: string; town_id: string; address: string };
-type Presence = "storefront" | "service" | "";
 
 type PrefillBusiness = {
   id: string;
@@ -70,7 +81,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [doneRemoval, setDoneRemoval] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const [serviceCategories, setServiceCategories] = useState<CategoryOption[]>([]);
+  const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [searchTagOptions, setSearchTagOptions] = useState<string[]>([]);
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
   const [removalOpen, setRemovalOpen] = useState(false);
@@ -90,10 +101,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [suggestedTagsInput, setSuggestedTagsInput] = useState("");
   const [suggestedTagsOpen, setSuggestedTagsOpen] = useState(false);
   const [categoryId, setCategoryId] = useState("");
-  const [serviceCategoryId, setServiceCategoryId] = useState("");
   const [suggestedCategory, setSuggestedCategory] = useState("");
   const [suggestedCategoryOpen, setSuggestedCategoryOpen] = useState(false);
-  const [presence, setPresence] = useState<Presence>("");
+  const [isStorefront, setIsStorefront] = useState(false);
+  const [isService, setIsService] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -104,13 +115,13 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         });
         const j = (await res.json()) as {
           categories?: CategoryOption[];
-          serviceCategories?: CategoryOption[];
+          categoryGroups?: CategoryGroup[];
           searchTags?: string[];
           error?: string;
         };
         if (!res.ok) throw new Error(j.error ?? "Could not load form options");
         setCategories(j.categories ?? []);
-        setServiceCategories(j.serviceCategories ?? []);
+        setCategoryGroups(j.categoryGroups ?? []);
         setSearchTagOptions(j.searchTags ?? []);
       } catch (e) {
         if (controller.signal.aborted) return;
@@ -139,12 +150,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         setTitle(b.title);
         setExcerpt((b.excerpt ?? "").slice(0, FREE_ONBOARD_EXCERPT_MAX));
         setOverview((b.overview ?? "").slice(0, FREE_ONBOARD_OVERVIEW_MAX));
-        setCategoryId(b.category_id ?? "");
-        setServiceCategoryId(b.service_category_id ?? "");
+        setCategoryId(b.category_id ?? b.service_category_id ?? "");
         setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
-        // Prefer physical when both were historically true; exclusive choice in the UI.
-        if (b.is_storefront) setPresence("storefront");
-        else if (b.is_service_business) setPresence("service");
+        setIsStorefront(Boolean(b.is_storefront));
+        setIsService(Boolean(b.is_service_business));
         setLocations([
           {
             key: newLocationKey(),
@@ -176,18 +185,15 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const searchTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - suggestedTags.length);
   const suggestedTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - selectedTags.length);
 
-  function setPresenceExclusive(next: Presence) {
-    setPresence(next);
-    setSuggestedCategory("");
-    setSuggestedCategoryOpen(false);
-    if (next === "storefront") {
-      setServiceCategoryId("");
-      if (locations.length === 0) {
-        setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
-      }
-    } else if (next === "service") {
-      setCategoryId("");
+  function setStorefrontChecked(checked: boolean) {
+    setIsStorefront(checked);
+    if (checked && locations.length === 0) {
+      setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
     }
+  }
+
+  function setServiceChecked(checked: boolean) {
+    setIsService(checked);
   }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -195,23 +201,16 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     setPending(true);
     setErr(null);
 
-    if (!presence) {
+    if (!isStorefront && !isService) {
       setPending(false);
-      setErr("Select whether you have a physical location or operate as a service business.");
+      setErr("Select whether you have a physical location, operate as a service business, or both.");
       return;
     }
 
-    const isStorefront = presence === "storefront";
-    const isService = presence === "service";
     const suggestedCategoryTrimmed = suggestedCategory.trim().slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
-    if (isStorefront && !categoryId && !suggestedCategoryTrimmed) {
+    if (!categoryId && !suggestedCategoryTrimmed) {
       setPending(false);
       setErr("Choose a category or suggest one that is missing from the list.");
-      return;
-    }
-    if (isService && !serviceCategoryId && !suggestedCategoryTrimmed) {
-      setPending(false);
-      setErr("Choose a service specialty or suggest one that is missing from the list.");
       return;
     }
     const locationPayload = isStorefront
@@ -240,11 +239,12 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       phone: String(fd.get("phone") ?? ""),
       excerpt: excerpt.trim(),
       overview: overview.trim(),
-      category_id: isStorefront ? categoryId || null : null,
-      service_category_id: isService ? serviceCategoryId || null : null,
+      category_id: categoryId || null,
+      service_category_id: null,
       suggested_category: suggestedCategoryTrimmed || null,
       search_tags: selectedTags,
       suggested_tags: suggestedTags.slice(0, suggestedTagSlotsRemaining),
+      is_explorable: false,
       marketing_opt_in: fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? businessSlug ?? null,
@@ -374,7 +374,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     return <p className="not-prose mt-8 text-sm text-[var(--color-text-secondary)]">Loading form…</p>;
   }
 
-  const showLocations = presence === "storefront";
+  const showLocations = isStorefront;
 
   return (
     <form onSubmit={submit} className="not-prose mt-10 space-y-6">
@@ -432,27 +432,27 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
-        <legend className={`${labelClass} px-1`}>Do customers visit your business location?</legend>
-        <p className="text-xs text-[var(--color-text-tertiary)]">Choose one.</p>
+        <legend className={`${labelClass} px-1`}>How do customers work with you?</legend>
+        <p className="text-xs text-[var(--color-text-tertiary)]">
+          Select all that apply — some businesses are both a storefront and a service provider.
+        </p>
         <label className="flex cursor-pointer items-start gap-3 text-sm">
           <input
-            type="radio"
-            name="presence"
-            checked={presence === "storefront"}
-            onChange={() => setPresenceExclusive("storefront")}
-            className="mt-1 h-4 w-4 border-[var(--color-border-strong)]"
+            type="checkbox"
+            checked={isStorefront}
+            onChange={(e) => setStorefrontChecked(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
           />
-          <span>Yes, customers visit our physical location</span>
+          <span>Customers visit our physical location (storefront)</span>
         </label>
         <label className="flex cursor-pointer items-start gap-3 text-sm">
           <input
-            type="radio"
-            name="presence"
-            checked={presence === "service"}
-            onChange={() => setPresenceExclusive("service")}
-            className="mt-1 h-4 w-4 border-[var(--color-border-strong)]"
+            type="checkbox"
+            checked={isService}
+            onChange={(e) => setServiceChecked(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
           />
-          <span>No, we provide services at customers&apos; locations or by appointment</span>
+          <span>We provide services at customers&apos; locations or by appointment</span>
         </label>
       </fieldset>
 
@@ -608,65 +608,47 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       </div>
 
       <div>
-        {presence === "service" ? (
-          <>
-            <label className={labelClass} htmlFor="service_category_id">
-              Service specialty
-            </label>
-            <p className={helpClass}>
-              Pick the closest specialty — this places the listing under a Services browse group
-              (footer and /services hub), such as Creative & events for Marketing & creative.
-            </p>
-            <select
-              id="service_category_id"
-              value={serviceCategoryId}
-              onChange={(e) => {
-                setServiceCategoryId(e.target.value);
-                if (e.target.value) {
-                  setSuggestedCategory("");
-                  setSuggestedCategoryOpen(false);
-                }
-              }}
-              className={`${inputClass} mt-1.5`}
-            >
-              <option value="">Choose a specialty</option>
-              {serviceCategories.map((c) => (
+        <label className={labelClass} htmlFor="category_id">
+          Category
+        </label>
+        <p className={helpClass}>
+          Pick the closest fit — used on Categories, Businesses, and Services browse hubs.
+        </p>
+        <select
+          id="category_id"
+          value={categoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            if (e.target.value) {
+              setSuggestedCategory("");
+              setSuggestedCategoryOpen(false);
+            }
+          }}
+          className={`${inputClass} mt-1.5`}
+          disabled={!isStorefront && !isService}
+        >
+          <option value="">
+            {isStorefront || isService
+              ? "Choose a category"
+              : "Select how customers work with you first"}
+          </option>
+          {categoryGroups.length > 0
+            ? categoryGroups.map((g) => (
+                <optgroup key={g.id} label={g.title}>
+                  {g.leaves.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            : categories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.title}
+                  {c.rollupTitle ? `${c.rollupTitle} — ${c.title}` : c.title}
                 </option>
               ))}
-            </select>
-          </>
-        ) : (
-          <>
-            <label className={labelClass} htmlFor="category_id">
-              Category
-            </label>
-            <select
-              id="category_id"
-              value={categoryId}
-              onChange={(e) => {
-                setCategoryId(e.target.value);
-                if (e.target.value) {
-                  setSuggestedCategory("");
-                  setSuggestedCategoryOpen(false);
-                }
-              }}
-              className={`${inputClass} mt-1.5`}
-              disabled={!presence}
-            >
-              <option value="">
-                {presence ? "Choose a category" : "Select location type above first"}
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-        {presence ? (
+        </select>
+        {isStorefront || isService ? (
           <div className="mt-1.5 flex items-center justify-end">
             {!suggestedCategoryOpen ? (
               <button
@@ -679,10 +661,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             ) : null}
           </div>
         ) : null}
-        {suggestedCategoryOpen && presence ? (
+        {suggestedCategoryOpen && (isStorefront || isService) ? (
           <div className="mt-3">
             <label className={labelClass} htmlFor="suggested_category">
-              Suggested {presence === "service" ? "specialty" : "category"}
+              Suggested category
             </label>
             <p className={helpClass}>
               Our team reviews suggestions before they go live. You can leave the list above empty
@@ -695,15 +677,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
               onChange={(e) => {
                 const next = e.target.value.slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
                 setSuggestedCategory(next);
-                if (next.trim()) {
-                  if (presence === "storefront") setCategoryId("");
-                  if (presence === "service") setServiceCategoryId("");
-                }
+                if (next.trim()) setCategoryId("");
               }}
               className={`${inputClass} mt-1.5`}
-              placeholder={
-                presence === "service" ? "e.g. Yacht detailing" : "e.g. Kayak rentals"
-              }
+              placeholder="e.g. Kayak rentals"
               maxLength={FREE_ONBOARD_SUGGESTED_CATEGORY_MAX}
               autoComplete="off"
             />

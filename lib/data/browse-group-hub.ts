@@ -11,24 +11,31 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
-  businessCategoryGroupForSlug,
   BUSINESS_CATEGORY_GROUP_LABELS,
+  businessCategoryGroupForSlug,
   type BusinessCategoryGroupSlug,
 } from "@/lib/business-categories/groups";
 import { businessBrowseGroupHubPath } from "@/lib/business-categories/browse-group-nav";
 import {
+  browseSectionForCategorySlug,
+  isUnifiedRollupSlug,
+  unifiedRollupHubPath,
+} from "@/lib/categories/unified-browse";
+import { getUnifiedRollups } from "@/lib/categories/unified-taxonomy";
+import {
   groupCategoryBusinessesByTown,
   type CategoryBusinessRow,
   type CategoryTownGroup,
+  type HubPresenceFilter,
 } from "@/lib/data/category-hub";
 
 const BROWSE_GROUP_BUSINESS_POOL_LIMIT = 2000;
 
 const BROWSE_GROUP_BUSINESS_SELECT =
-  "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, featured, price_level, towns ( id, title, slug ), business_categories ( slug )";
+  "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, featured, price_level, is_storefront, is_service_business, towns ( id, title, slug ), business_categories ( slug )";
 
 export type BrowseGroupHubPage = {
-  slug: BusinessCategoryGroupSlug;
+  slug: string;
   title: string;
   businesses: CategoryBusinessRow[];
   townGroups: CategoryTownGroup[];
@@ -53,23 +60,44 @@ function mapBrowseGroupBusinessRow(row: Record<string, unknown>): CategoryBusine
     town_id: town?.id ?? null,
     town_name: town?.title ?? null,
     town_slug: town?.slug ?? null,
+    is_storefront: Boolean(row.is_storefront),
+    is_service_business: Boolean(row.is_service_business),
   };
 }
 
+function sectionTitle(sectionId: string): string {
+  if (isUnifiedRollupSlug(sectionId)) {
+    return getUnifiedRollups().find((r) => r.slug === sectionId)?.title ?? sectionId;
+  }
+  return (
+    BUSINESS_CATEGORY_GROUP_LABELS[sectionId as BusinessCategoryGroupSlug] ?? sectionId
+  );
+}
+
+function sectionPath(sectionId: string): string {
+  if (isUnifiedRollupSlug(sectionId)) return unifiedRollupHubPath(sectionId);
+  return businessBrowseGroupHubPath(sectionId as BusinessCategoryGroupSlug);
+}
+
 export async function loadBrowseGroupHubPage(
-  groupSlug: BusinessCategoryGroupSlug,
+  groupSlug: string,
+  presence: HubPresenceFilter = "all",
 ): Promise<BrowseGroupHubPage | null> {
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
+  let query = supabase
     .from("businesses_view")
     .select(BROWSE_GROUP_BUSINESS_SELECT)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(BROWSE_GROUP_BUSINESS_POOL_LIMIT);
+
+  if (presence === "storefront") query = query.eq("is_storefront", true);
+  if (presence === "service") query = query.eq("is_service_business", true);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("browse group hub: businesses query", error);
@@ -80,7 +108,10 @@ export async function loadBrowseGroupHubPage(
   for (const row of data ?? []) {
     const r = row as Record<string, unknown>;
     const cat = r.business_categories as { slug?: string } | null;
-    if (businessCategoryGroupForSlug(cat?.slug ?? null) !== groupSlug) continue;
+    const slug = cat?.slug ?? null;
+    const section = browseSectionForCategorySlug(slug);
+    const legacy = businessCategoryGroupForSlug(slug);
+    if (section?.id !== groupSlug && legacy !== groupSlug) continue;
     businesses.push(mapBrowseGroupBusinessRow(r));
   }
 
@@ -88,27 +119,23 @@ export async function loadBrowseGroupHubPage(
 
   return {
     slug: groupSlug,
-    title: BUSINESS_CATEGORY_GROUP_LABELS[groupSlug],
+    title: sectionTitle(groupSlug),
     businesses,
     townGroups: groupCategoryBusinessesByTown(businesses),
   };
 }
 
 export async function buildBrowseGroupHubMetadata(
-  groupSlug: BusinessCategoryGroupSlug,
+  groupSlug: string,
 ): Promise<Metadata> {
-  const title = BUSINESS_CATEGORY_GROUP_LABELS[groupSlug];
-  const path = businessBrowseGroupHubPath(groupSlug);
-  const seoTitle = seoTitleSegmentForLayout(`${title} on 30A, Florida`);
-  const description = metaDescriptionSnippet(
-    null,
-    `Browse ${title.toLowerCase()} along Scenic 30A in South Walton, Florida — local listings grouped by town across Rosemary Beach, Seaside, WaterColor, Alys Beach, and more.`,
-  );
+  const title = sectionTitle(groupSlug);
+  const path = sectionPath(groupSlug);
+  const description = `Browse ${title.toLowerCase()} along Scenic 30A in South Walton, Florida — storefronts and service providers by town.`;
 
   return {
     ...canonicalAlternates(path),
-    title: seoTitle,
-    description,
+    title: seoTitleSegmentForLayout(`${title} on 30A`),
+    description: metaDescriptionSnippet(description, description),
     ...openGraphForPage({
       path,
       title: `${title} on 30A | WhereTo30A`,

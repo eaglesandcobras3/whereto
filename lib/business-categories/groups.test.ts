@@ -12,7 +12,7 @@ describe("businessCategoryGroupForSlug", () => {
 });
 
 describe("groupBusinessesIntoBrowseSections", () => {
-  it("merges listings into browse groups", () => {
+  it("merges listings into unified rollups (legacy storefront slugs remap)", () => {
     const sections = groupBusinessesIntoBrowseSections([
       {
         id: "1",
@@ -39,12 +39,13 @@ describe("groupBusinessesIntoBrowseSections", () => {
         hero_image_url: null,
         ai_one_liner: null,
         ai_summary: null,
-        categorySlug: "hvac_plumbing",
+        categorySlug: "unknown_specialty_xyz",
       },
     ]);
 
     expect(sections).toHaveLength(1);
-    expect(sections[0]?.slug).toBe("restaurants_and_bars");
+    expect(sections[0]?.slug).toBe("food_and_drink");
+    expect(sections[0]?.title).toBe("Food & Drink");
     expect(sections[0]?.totalCount).toBe(2);
   });
 });

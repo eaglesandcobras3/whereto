@@ -166,29 +166,39 @@ describe("free onboard schema limits", () => {
     ).toBe(true);
   });
 
-  it("rejects selecting both storefront and service", () => {
+  it("rejects selecting neither storefront nor service", () => {
+    expect(
+      freeOnboardBodySchema.safeParse({
+        ...base,
+        is_storefront: false,
+        is_service_business: false,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("allows both storefront and service", () => {
     expect(
       freeOnboardBodySchema.safeParse({
         ...base,
         is_storefront: true,
         is_service_business: true,
       }).success,
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it("allows service-only intakes without locations when specialty is set", () => {
+  it("allows service-only intakes without locations when category is set", () => {
     const parsed = freeOnboardBodySchema.safeParse({
       ...base,
       is_storefront: false,
       is_service_business: true,
       locations: [],
-      category_id: null,
-      service_category_id: "33333333-3333-4333-8333-333333333333",
+      category_id: "22222222-2222-4222-8222-222222222222",
+      service_category_id: null,
     });
     expect(parsed.success).toBe(true);
   });
 
-  it("requires a service specialty for service-only intakes", () => {
+  it("requires a category or suggested category", () => {
     expect(
       freeOnboardBodySchema.safeParse({
         ...base,
@@ -217,7 +227,7 @@ describe("free onboard schema limits", () => {
     ).toBe(true);
   });
 
-  it("allows service specialty suggestion without selecting an existing specialty", () => {
+  it("allows service specialty suggestion without selecting an existing category", () => {
     expect(
       freeOnboardBodySchema.safeParse({
         ...base,

@@ -53,15 +53,15 @@ export async function handleFreeOnboardListingRequest(
   }
 
   if (d.is_storefront && d.is_service_business) {
-    return NextResponse.json(
-      { error: "Choose either a physical location or a service business — not both." },
-      { status: 400 },
-    );
+    // Both allowed — no error.
   }
 
   if (!d.is_storefront && !d.is_service_business) {
     return NextResponse.json(
-      { error: "Select whether you have a physical location or operate as a service business." },
+      {
+        error:
+          "Select whether you have a physical location, operate as a service business, or both.",
+      },
       { status: 400 },
     );
   }
@@ -99,35 +99,23 @@ export async function handleFreeOnboardListingRequest(
   const { data: category } = d.category_id
     ? await supabase
         .from("business_categories")
-        .select("id, title")
+        .select("id, title, parent_category_id")
         .eq("id", d.category_id)
+        .is("archived_at", null)
         .maybeSingle()
     : { data: null };
-  if (d.is_storefront && d.category_id && !category) {
+  if (d.category_id && !category) {
     return NextResponse.json({ error: "Choose a valid category." }, { status: 400 });
   }
-  if (d.is_storefront && !d.category_id && !d.suggested_category) {
+  if (category && !category.parent_category_id) {
     return NextResponse.json(
-      { error: "Choose a category or suggest one that is missing from the list." },
+      { error: "Choose a specific category (not a top-level group)." },
       { status: 400 },
     );
   }
-
-  const { data: serviceCategory } = d.service_category_id
-    ? await supabase
-        .from("service_categories")
-        .select("id, title")
-        .eq("id", d.service_category_id)
-        .is("archived_at", null)
-        .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .maybeSingle()
-    : { data: null };
-  if (d.is_service_business && d.service_category_id && !serviceCategory) {
-    return NextResponse.json({ error: "Choose a valid service specialty." }, { status: 400 });
-  }
-  if (d.is_service_business && !d.service_category_id && !d.suggested_category) {
+  if (!d.category_id && !d.suggested_category) {
     return NextResponse.json(
-      { error: "Choose a service specialty or suggest one that is missing from the list." },
+      { error: "Choose a category or suggest one that is missing from the list." },
       { status: 400 },
     );
   }
@@ -181,17 +169,14 @@ export async function handleFreeOnboardListingRequest(
   });
 
   const categoryTitle = category ? String(category.title ?? "") : null;
-  const serviceCategoryTitle = serviceCategory ? String(serviceCategory.title ?? "") : null;
 
   // search_keywords are derived server-side from name, type, category, and tags.
   const searchKeywords = buildFreeOnboardSearchKeywords({
     title: d.title,
     isStorefront: d.is_storefront,
     isServiceBusiness: d.is_service_business,
-    categoryTitle: d.is_storefront ? (categoryTitle ?? d.suggested_category) : null,
-    serviceCategoryTitle: d.is_service_business
-      ? (serviceCategoryTitle ?? d.suggested_category)
-      : null,
+    categoryTitle: categoryTitle ?? d.suggested_category,
+    serviceCategoryTitle: null,
     searchTags: cappedSearchTags,
     suggestedTags: cappedSuggestedTags,
   });
@@ -207,13 +192,14 @@ export async function handleFreeOnboardListingRequest(
     phone: d.phone,
     excerpt: d.excerpt,
     overview: d.overview,
-    category_id: d.is_storefront ? d.category_id : null,
-    category_title: d.is_storefront ? categoryTitle : null,
-    service_category_id: d.is_service_business ? d.service_category_id : null,
-    service_category_title: d.is_service_business ? serviceCategoryTitle : null,
+    category_id: d.category_id,
+    category_title: categoryTitle,
+    service_category_id: null,
+    service_category_title: null,
     search_tags: cappedSearchTags,
     suggested_tags: cappedSuggestedTags,
     suggested_category: d.suggested_category,
+    is_explorable: false,
     search_keywords: searchKeywords,
     marketing_opt_in: d.marketing_opt_in,
     target_business_id: targetBusinessId,
@@ -281,17 +267,17 @@ export async function handleFreeOnboardListingRequest(
       })
       .join("\n");
 
-    const categoryLine = d.is_service_business
-      ? `Specialty: ${serviceCategoryTitle ?? d.suggested_category ?? "(none)"}`
-      : `Category: ${categoryTitle ?? d.suggested_category ?? "(none)"}`;
+    const categoryLine = `Category: ${categoryTitle ?? d.suggested_category ?? "(none)"}`;
 
     const textBody = [
       isUpdate ? "Free onboard UPDATE request" : "Free onboard NEW listing request",
       "",
       `Submitter: ${d.submitter_name} <${d.submitter_email}>`,
       `Business: ${d.title}`,
+      `Storefront: ${d.is_storefront ? "yes" : "no"}`,
+      `Service: ${d.is_service_business ? "yes" : "no"}`,
       categoryLine,
-      d.suggested_category && !categoryTitle && !serviceCategoryTitle
+      d.suggested_category && !categoryTitle
         ? `Suggested category: ${d.suggested_category}`
         : d.suggested_category
           ? `Suggested category (also): ${d.suggested_category}`
@@ -318,16 +304,14 @@ export async function handleFreeOnboardListingRequest(
       .filter((line) => line != null)
       .join("\n");
 
-    const htmlCategoryLabel = d.is_service_business ? "Specialty" : "Category";
-    const htmlCategoryValue = d.is_service_business
-      ? (serviceCategoryTitle ?? d.suggested_category ?? "(none)")
-      : (categoryTitle ?? d.suggested_category ?? "(none)");
+    const htmlCategoryValue = categoryTitle ?? d.suggested_category ?? "(none)";
 
     const detailsHtml = `
 <p>Submitted via <strong>/list-your-business</strong> (free_onboard).</p>
 <p><strong>Submitter:</strong> ${escapeHtml(d.submitter_name)} &lt;${escapeHtml(d.submitter_email)}&gt;</p>
 <p><strong>Business:</strong> ${escapeHtml(d.title)}<br/>
-<strong>${htmlCategoryLabel}:</strong> ${escapeHtml(htmlCategoryValue)}<br/>
+<strong>Storefront:</strong> ${d.is_storefront ? "yes" : "no"} · <strong>Service:</strong> ${d.is_service_business ? "yes" : "no"}<br/>
+<strong>Category:</strong> ${escapeHtml(htmlCategoryValue)}<br/>
 ${
   d.suggested_category
     ? `<strong>Suggested category:</strong> ${escapeHtml(d.suggested_category)}<br/>`

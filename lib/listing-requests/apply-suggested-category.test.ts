@@ -21,6 +21,7 @@ function basePayload(overrides: Partial<FreeOnboardPayload> = {}): FreeOnboardPa
     search_tags: [],
     suggested_tags: [],
     suggested_category: "Kayak rentals",
+    is_explorable: false,
     search_keywords: null,
     marketing_opt_in: false,
     target_business_id: null,
@@ -30,48 +31,35 @@ function basePayload(overrides: Partial<FreeOnboardPayload> = {}): FreeOnboardPa
 }
 
 function mockCategoryClient(opts: {
-  bySlug?: { id: string; title: string } | null;
-  byId?: { id: string; title: string } | null;
+  bySlug?: { id: string; title: string; parent_category_id: string | null } | null;
+  byId?: { id: string; title: string; parent_category_id: string | null } | null;
   created?: { id: string; title: string };
 }) {
-  const maybeSingle = vi.fn();
-  // First call: find by slug (create path) or by id (existing path)
-  maybeSingle.mockResolvedValueOnce({
+  const maybeSingle = vi.fn().mockResolvedValue({
     data: opts.bySlug !== undefined ? opts.bySlug : opts.byId ?? null,
   });
-  if (opts.bySlug === null && opts.created) {
-    // insert path uses .insert().select().single()
-  }
-
   const single = vi.fn().mockResolvedValue({
     data: opts.created ?? null,
     error: opts.created ? null : { message: "insert failed" },
   });
-
   const selectChain = {
     eq: vi.fn(() => selectChain),
     is: vi.fn(() => selectChain),
     maybeSingle,
   };
-
   const insertChain = {
-    select: vi.fn(() => ({
-      single,
-    })),
+    select: vi.fn(() => ({ single })),
   };
-
   return {
     from: vi.fn(() => ({
       select: vi.fn(() => selectChain),
       insert: vi.fn(() => insertChain),
     })),
-    _maybeSingle: maybeSingle,
-    _single: single,
   };
 }
 
 describe("applySuggestedCategoryToPayload", () => {
-  it("creates a storefront category and clears the suggestion", async () => {
+  it("creates a leaf under a rollup and clears the suggestion", async () => {
     const supabase = mockCategoryClient({
       bySlug: null,
       created: { id: "cat-1", title: "Kayak rentals" },
@@ -80,33 +68,33 @@ describe("applySuggestedCategoryToPayload", () => {
     const result = await applySuggestedCategoryToPayload(supabase as never, basePayload(), {
       mode: "create",
       title: "Kayak rentals",
+      parentCategoryId: "rollup-1",
     });
 
     expect(result.created).toBe(true);
     expect(result.categoryId).toBe("cat-1");
     expect(result.payload.category_id).toBe("cat-1");
-    expect(result.payload.category_title).toBe("Kayak rentals");
     expect(result.payload.suggested_category).toBeNull();
   });
 
-  it("reuses an existing slug instead of inserting", async () => {
+  it("reuses an existing leaf slug instead of inserting", async () => {
     const supabase = mockCategoryClient({
-      bySlug: { id: "existing", title: "Kayak rentals" },
+      bySlug: { id: "existing", title: "Kayak rentals", parent_category_id: "rollup-1" },
     });
 
     const result = await applySuggestedCategoryToPayload(supabase as never, basePayload(), {
       mode: "create",
       title: "Kayak rentals",
+      parentCategoryId: "rollup-1",
     });
 
     expect(result.created).toBe(false);
     expect(result.categoryId).toBe("existing");
-    expect(result.payload.category_id).toBe("existing");
   });
 
-  it("maps to an existing category id", async () => {
+  it("maps to an existing leaf id", async () => {
     const supabase = mockCategoryClient({
-      byId: { id: "picked", title: "Things to do" },
+      byId: { id: "picked", title: "Restaurants", parent_category_id: "rollup-1" },
     });
 
     const result = await applySuggestedCategoryToPayload(supabase as never, basePayload(), {
@@ -114,30 +102,20 @@ describe("applySuggestedCategoryToPayload", () => {
       categoryId: "picked",
     });
 
-    expect(result.created).toBe(false);
     expect(result.payload.category_id).toBe("picked");
-    expect(result.payload.category_title).toBe("Things to do");
     expect(result.payload.suggested_category).toBeNull();
   });
 
-  it("writes service specialty fields for service intakes", async () => {
+  it("rejects rollup-only ids as existing category", async () => {
     const supabase = mockCategoryClient({
-      bySlug: null,
-      created: { id: "svc-1", title: "Yacht detailing" },
+      byId: { id: "rollup", title: "Food & Drink", parent_category_id: null },
     });
 
-    const result = await applySuggestedCategoryToPayload(
-      supabase as never,
-      basePayload({
-        is_storefront: false,
-        is_service_business: true,
-        suggested_category: "Yacht detailing",
+    await expect(
+      applySuggestedCategoryToPayload(supabase as never, basePayload(), {
+        mode: "existing",
+        categoryId: "rollup",
       }),
-      { mode: "create", title: "Yacht detailing" },
-    );
-
-    expect(result.payload.service_category_id).toBe("svc-1");
-    expect(result.payload.service_category_title).toBe("Yacht detailing");
-    expect(result.payload.category_id).toBeNull();
+    ).rejects.toThrow(/valid existing category/i);
   });
 });

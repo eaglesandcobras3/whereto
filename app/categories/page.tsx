@@ -33,8 +33,8 @@ export const metadata: Metadata = {
 
 export default async function CategoriesPage() {
   const [sections, totalCount] = await Promise.all([
-    getCategoryHubSections(),
-    countCategoryHubBusinesses(),
+    getCategoryHubSections("all"),
+    countCategoryHubBusinesses("all"),
   ]);
 
   return (
@@ -42,11 +42,11 @@ export default async function CategoriesPage() {
       <main className="flex-1">
         <BrowseHubHero
           title="Browse by category"
-          description="Restaurants, coffee, bars, shopping, things to do, and more along Scenic 30A — grouped for easy browsing. Regional service providers live on the Services hub."
-          collapsibleDescription="Expand a group to browse storefront listings. For mobile vendors and trades, see Service providers."
+          description="Every category of local business along Scenic 30A — storefronts and service providers together."
+          collapsibleDescription="Expand a group to browse listings. Prefer shops and restaurants only? See Businesses. Prefer trades and appointment-based vendors? See Services."
           meta={
             <>
-              {totalCount} {totalCount === 1 ? "place" : "places"} & shops
+              {totalCount} {totalCount === 1 ? "listing" : "listings"}
               {sections.length > 0
                 ? ` in ${sections.length} browse ${sections.length === 1 ? "group" : "groups"}`
                 : ""}

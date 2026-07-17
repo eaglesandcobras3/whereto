@@ -34,6 +34,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     location_id?: string;
     apply_suggested_tags?: unknown;
     category_resolution?: unknown;
+    is_explorable?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -46,10 +47,30 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const locationId = typeof body.location_id === "string" ? body.location_id.trim() : "";
   const tagActions = parseSuggestedTagActions(body.apply_suggested_tags);
   const categoryResolution = parseCategoryResolution(body.category_resolution);
+  const isExplorable =
+    typeof body.is_explorable === "boolean" ? body.is_explorable : undefined;
 
   const supabase = getServiceSupabase();
 
   async function applySuggestionsIfRequested() {
+    if (typeof isExplorable === "boolean") {
+      const { data: item } = await supabase
+        .from("portal_review_items")
+        .select("payload, status")
+        .eq("id", id)
+        .maybeSingle();
+      if (item && (item.status as string) === "pending") {
+        const payload = {
+          ...((item.payload as Record<string, unknown>) ?? {}),
+          is_explorable: isExplorable,
+        };
+        const { error } = await supabase
+          .from("portal_review_items")
+          .update({ payload })
+          .eq("id", id);
+        if (error) throw new Error(error.message);
+      }
+    }
     if (categoryResolution) {
       await resolveSuggestedCategory(supabase, id, categoryResolution);
     }

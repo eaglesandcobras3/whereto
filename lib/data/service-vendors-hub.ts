@@ -223,7 +223,8 @@ export async function loadUncategorizedServiceVendors(
   query?: string | null,
 ): Promise<ServiceVendorRow[]> {
   const trimmedQ = query?.trim() ?? "";
-  let q = vendorBaseQuery().is("service_category_id", null);
+  // Post-migration: no primary category. Pre-migration: no service specialty.
+  let q = vendorBaseQuery().is("primary_category_id", null).is("service_category_id", null);
 
   if (trimmedQ) {
     const safe = trimmedQ.replace(/[%_,\\]/g, " ").trim();
@@ -252,6 +253,7 @@ export async function countUncategorizedServiceVendors(): Promise<number> {
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_service_business", true)
+    .is("primary_category_id", null)
     .is("service_category_id", null)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
   if (error) {

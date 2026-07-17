@@ -19,9 +19,11 @@ import {
 
 const CATEGORY_HUB_BUSINESS_POOL_LIMIT = 2000;
 
-/** Batch load for `/categories` hub — storefront listings with category slug for grouping. */
+export type HubPresenceFilter = "all" | "storefront" | "service";
+
+/** Batch load for hubs — category slug for grouping. */
 const CATEGORY_HUB_BUSINESS_SELECT =
-  "id, slug, title, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( slug )";
+  "id, slug, title, excerpt, primary_category_id, is_storefront, is_service_business, main_image, hero_image, main_image_url, hero_image_url, business_categories ( slug )";
 
 export type CategoryRow = {
   id: string;
@@ -41,6 +43,8 @@ export type CategoryBusinessRow = {
   town_id: string | null;
   town_name: string | null;
   town_slug: string | null;
+  is_storefront: boolean;
+  is_service_business: boolean;
 };
 
 export type CategoryTownGroup = {
@@ -62,16 +66,26 @@ export type CategoryHubBusinessPreview = {
 
 export type CategoryHubSection = BrowseGroupSection;
 
+function applyPresenceFilter<T extends { eq: (col: string, val: boolean) => T }>(
+  query: T,
+  presence: HubPresenceFilter,
+): T {
+  if (presence === "storefront") return query.eq("is_storefront", true);
+  if (presence === "service") return query.eq("is_service_business", true);
+  return query;
+}
+
 export async function listPublishedCategorySlugs(): Promise<string[]> {
   try {
     const supabase = getServiceSupabase();
     const { data } = await supabase
       .from("business_categories")
-      .select("slug")
+      .select("slug, parent_category_id")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .or(BROWSE_VISIBLE_NOT_HIDDEN);
     return (data ?? [])
+      .filter((r) => (r as { parent_category_id?: string | null }).parent_category_id)
       .map((r) => String((r as { slug: string }).slug))
       .filter(Boolean);
   } catch {
@@ -107,21 +121,24 @@ export async function resolveCategorySlugFromPublicPath(
 
 export async function loadBusinessesForCategory(
   categoryId: string,
+  presence: HubPresenceFilter = "all",
 ): Promise<CategoryBusinessRow[]> {
   const supabase = getServiceSupabase();
-  const { data } = await supabase
+  let query = supabase
     .from("businesses_view")
     .select(
-      "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, featured, price_level, towns ( id, title, slug )",
+      "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, featured, price_level, is_storefront, is_service_business, towns ( id, title, slug )",
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .eq("primary_category_id", categoryId)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(500);
+  query = applyPresenceFilter(query, presence);
+
+  const { data } = await query;
 
   return (data ?? []).map((row) => {
     const r = row as Record<string, unknown>;
@@ -143,6 +160,8 @@ export async function loadBusinessesForCategory(
       town_id: town?.id ?? null,
       town_name: town?.title ?? null,
       town_slug: town?.slug ?? null,
+      is_storefront: Boolean(r.is_storefront),
+      is_service_business: Boolean(r.is_service_business),
     };
   });
 }
@@ -216,14 +235,18 @@ function mapCategoryHubBusinessRow(row: Record<string, unknown>) {
   };
 }
 
-export async function countCategoryHubBusinesses(): Promise<number> {
-  const { count, error } = await getServiceSupabase()
+export async function countCategoryHubBusinesses(
+  presence: HubPresenceFilter = "all",
+): Promise<number> {
+  let query = getServiceSupabase()
     .from("businesses_view")
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
+  query = applyPresenceFilter(query, presence);
+
+  const { count, error } = await query;
 
   if (error) {
     console.error("categories hub: count query", error);
@@ -232,19 +255,23 @@ export async function countCategoryHubBusinesses(): Promise<number> {
   return count ?? 0;
 }
 
-export async function getCategoryHubSections(): Promise<CategoryHubSection[]> {
+export async function getCategoryHubSections(
+  presence: HubPresenceFilter = "all",
+): Promise<CategoryHubSection[]> {
   const supabase = getServiceSupabase();
 
-  const { data: businessRows, error: bizErr } = await supabase
+  let query = supabase
     .from("businesses_view")
     .select(CATEGORY_HUB_BUSINESS_SELECT)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("is_storefront", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(CATEGORY_HUB_BUSINESS_POOL_LIMIT);
+  query = applyPresenceFilter(query, presence);
+
+  const { data: businessRows, error: bizErr } = await query;
 
   if (bizErr) {
     console.error("categories hub: businesses query", bizErr);
@@ -267,7 +294,7 @@ export async function loadCategoryHubPage(slug: string) {
   const cat = await loadCategory(slug);
   if (!cat) return null;
 
-  const businesses = await loadBusinessesForCategory(cat.id);
+  const businesses = await loadBusinessesForCategory(cat.id, "all");
 
   return {
     cat,

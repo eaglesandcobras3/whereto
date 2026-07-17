@@ -289,6 +289,53 @@ export async function getGuidesForArea(
   });
 }
 
+/**
+ * Guides for a business page: linked via `guide_businesses`, linked to the business town
+ * via `guide_towns`, and tagged `all_towns`. No site-wide “any guide” fallback.
+ */
+export async function getGuidesForBusiness(
+  businessId: string,
+  townId?: string | null,
+): Promise<TownGuideCard[]> {
+  const supabase = getServiceSupabase();
+
+  const [bizLinksRes, townLinksRes, allTownsRes] = await Promise.all([
+    supabase.from("guide_businesses").select("guide_id").eq("business_id", businessId),
+    townId
+      ? supabase.from("guide_towns").select("guide_id").eq("town_id", townId)
+      : Promise.resolve({ data: [] as { guide_id: string }[] | null }),
+    supabase
+      .from("guides")
+      .select("id")
+      .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN),
+  ]);
+
+  const placeSpecificIds = [
+    ...new Set([
+      ...(bizLinksRes.data ?? [])
+        .map((r) => String((r as { guide_id: string }).guide_id))
+        .filter(Boolean),
+      ...(townLinksRes.data ?? [])
+        .map((r) => String((r as { guide_id: string }).guide_id))
+        .filter(Boolean),
+    ]),
+  ];
+  const allTownsIds = [
+    ...new Set(
+      (allTownsRes.data ?? [])
+        .map((r) => String((r as { id: string }).id))
+        .filter(Boolean),
+    ),
+  ];
+
+  return loadPublishedGuideCards([...new Set([...placeSpecificIds, ...allTownsIds])], {
+    preferIds: placeSpecificIds,
+  });
+}
+
 async function loadPublishedGuideCards(
   guideIds: string[],
   opts?: { preferIds?: string[] },

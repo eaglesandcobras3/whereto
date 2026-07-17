@@ -6,15 +6,11 @@ import { townPagePath } from "@/lib/routes/town-page-path";
 import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
   PRIMARY_EDITORIAL_GUIDE_SLUG,
-  SITEMAP_BUSINESSES_PATH,
-  SITEMAP_EXCLUDED_EXACT_PATHS,
-  SITEMAP_HUBS_PATH,
   listSitemapBrowseGroupPaths,
   listSitemapServiceGroupPaths,
   isExcludedSitemapPath,
   pathnameFromSitemapUrl,
 } from "@/lib/seo/sitemap-strategy";
-import { isSitemapIndexXml } from "@/lib/seo/sitemap-xml";
 
 export type SitemapRuleViolation = {
   rule: string;
@@ -44,7 +40,7 @@ export function isSitemapServiceGroupPath(pathname: string): boolean {
   return serviceBrowseGroupFromPublicSegment(segment) !== null;
 }
 
-/** Structural rules for hub-focused child sitemap (no HTTP). */
+/** Structural rules for hub-focused sitemap (no HTTP). */
 export function validateSitemapStructure(base: string, urls: string[]): SitemapRuleViolation[] {
   const violations: SitemapRuleViolation[] = [];
   const paths = urls.map((u) => pathnameFromSitemapUrl(base, u));
@@ -179,96 +175,7 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
   return violations;
 }
 
-/** Structural rules for index-ready business child sitemap (no HTTP). */
-export function validateBusinessSitemapStructure(
-  base: string,
-  urls: string[],
-): SitemapRuleViolation[] {
-  const violations: SitemapRuleViolation[] = [];
-
-  for (const url of urls) {
-    const path = pathnameFromSitemapUrl(base, url);
-    if (!path.startsWith("/business/")) {
-      violations.push({
-        rule: "business-sitemap-only-business-urls",
-        url,
-        detail: `Business sitemap must only contain /business/ URLs: ${path}`,
-      });
-    }
-    if (SITEMAP_EXCLUDED_EXACT_PATHS.has(path)) {
-      violations.push({
-        rule: "no-excluded-paths",
-        url,
-        detail: `Excluded path must not appear in business sitemap: ${path}`,
-      });
-    }
-  }
-
-  return violations;
-}
-
-/** Rules for `/sitemap.xml` sitemap index document. */
-export function validateSitemapIndexStructure(
-  base: string,
-  childSitemapUrls: string[],
-): SitemapRuleViolation[] {
-  const violations: SitemapRuleViolation[] = [];
-  const paths = childSitemapUrls.map((u) => pathnameFromSitemapUrl(base, u));
-  const pathSet = new Set(paths);
-
-  if (!pathSet.has(SITEMAP_HUBS_PATH)) {
-    violations.push({
-      rule: "sitemap-index-hubs",
-      detail: `Missing child sitemap ${SITEMAP_HUBS_PATH}`,
-    });
-  }
-  if (!pathSet.has(SITEMAP_BUSINESSES_PATH)) {
-    violations.push({
-      rule: "sitemap-index-businesses",
-      detail: `Missing child sitemap ${SITEMAP_BUSINESSES_PATH}`,
-    });
-  }
-
-  for (const url of childSitemapUrls) {
-    const path = pathnameFromSitemapUrl(base, url);
-    if (path.startsWith("/business/")) {
-      violations.push({
-        rule: "sitemap-index-no-page-urls",
-        url,
-        detail: "Sitemap index must reference child sitemaps, not page URLs",
-      });
-    }
-  }
-
-  return violations;
-}
-
-export function partitionSitemapPageUrls(
-  base: string,
-  urls: string[],
-): { hubUrls: string[]; businessUrls: string[] } {
-  const hubUrls: string[] = [];
-  const businessUrls: string[] = [];
-  for (const url of urls) {
-    const path = pathnameFromSitemapUrl(base, url);
-    if (path.startsWith("/business/")) businessUrls.push(url);
-    else hubUrls.push(url);
-  }
-  return { hubUrls, businessUrls };
-}
-
-export function validateAllSitemapPageUrls(
-  base: string,
-  urls: string[],
-): SitemapRuleViolation[] {
-  const { hubUrls, businessUrls } = partitionSitemapPageUrls(base, urls);
-  return [
-    ...validateSitemapStructure(base, hubUrls),
-    ...validateBusinessSitemapStructure(base, businessUrls),
-  ];
-}
-
-/** Fetch a sitemap or sitemap index and return all page URLs (resolves child sitemaps). */
+/** Fetch sitemap.xml and return page URLs. */
 export async function collectSitemapPageUrls(
   sitemapUrl: string,
   fetchFn: typeof fetch = fetch,
@@ -276,13 +183,7 @@ export async function collectSitemapPageUrls(
   const res = await fetchFn(sitemapUrl, { cache: "no-store" });
   if (!res.ok) return [];
   const xml = await res.text();
-  const locs = parseSitemapLocs(xml);
-  if (!isSitemapIndexXml(xml)) return locs;
-
-  const nested = await Promise.all(
-    locs.map((loc) => collectSitemapPageUrls(loc, fetchFn)),
-  );
-  return nested.flat();
+  return parseSitemapLocs(xml);
 }
 
 export type LiveUrlCheckResult = {

@@ -108,14 +108,16 @@ export const freeOnboardBodySchema = z
     phone: optionalPhone,
     excerpt: z.string().trim().min(10).max(FREE_ONBOARD_EXCERPT_MAX),
     overview: z.string().trim().min(15).max(FREE_ONBOARD_OVERVIEW_MAX),
-    /** Storefront browse category (`business_categories`) — required when `is_storefront`. */
+    /** Unified leaf category (`business_categories` with parent rollup). */
     category_id: z
       .string()
       .uuid()
       .optional()
       .nullable()
       .transform((s) => s || null),
-    /** Service specialty (`service_categories`) — required when `is_service_business`. */
+    /**
+     * @deprecated Use category_id (unified taxonomy). Kept for older payloads.
+     */
     service_category_id: z
       .string()
       .uuid()
@@ -132,8 +134,8 @@ export const freeOnboardBodySchema = z
       .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
       .default([]),
     /**
-     * Freeform category/specialty proposal when the list is missing a fit.
-     * Satisfies the category requirement when the matching select id is empty.
+     * Freeform category proposal when the list is missing a fit.
+     * Satisfies the category requirement when category_id is empty.
      */
     suggested_category: z
       .string()
@@ -144,22 +146,17 @@ export const freeOnboardBodySchema = z
         const t = (s ?? "").trim().slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
         return t || null;
       }),
+    /** Admin-only on approve; submitters always get false. */
+    is_explorable: z.boolean().optional().default(false),
     marketing_opt_in: z.boolean().optional().default(false),
     target_business_id: z.string().uuid().optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),
   })
   .superRefine((data, ctx) => {
-    if (data.is_storefront && data.is_service_business) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Choose either a physical location or a service business — not both.",
-        path: ["is_storefront"],
-      });
-    }
     if (!data.is_storefront && !data.is_service_business) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Select whether you have a physical location or operate as a service business.",
+        message: "Select whether you have a physical location, operate as a service business, or both.",
         path: ["is_storefront"],
       });
     }
@@ -177,18 +174,11 @@ export const freeOnboardBodySchema = z
         path: ["locations"],
       });
     }
-    if (data.is_storefront && !data.category_id && !data.suggested_category) {
+    if (!data.category_id && !data.suggested_category) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Choose a category or suggest one that is missing from the list.",
         path: ["category_id"],
-      });
-    }
-    if (data.is_service_business && !data.service_category_id && !data.suggested_category) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Choose a service specialty or suggest one that is missing from the list.",
-        path: ["service_category_id"],
       });
     }
     if (data.search_tags.length + data.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
@@ -252,20 +242,22 @@ export type FreeOnboardPayload = {
   phone: string | null;
   excerpt: string;
   overview: string;
-  /** Storefront `business_categories` id — null for service-only intakes. */
+  /** Unified leaf category id. */
   category_id: string | null;
   category_title?: string | null;
-  /** Service specialty `service_categories` id — null for storefront intakes. */
+  /** @deprecated Cleared on approve after unified migration. */
   service_category_id?: string | null;
   service_category_title?: string | null;
   search_tags: string[];
   /** Submitter proposals for tags missing from vocabulary; not applied to businesses.search_tags. */
   suggested_tags?: string[];
   /**
-   * Submitter proposal for a missing category/specialty.
+   * Submitter proposal for a missing category.
    * Not applied until an admin creates or maps it on approve.
    */
   suggested_category?: string | null;
+  /** Town/area visibility; default false on intake; admin may enable. */
+  is_explorable?: boolean;
   /** Derived server-side from name, type, category, and tags — not collected on the form. */
   search_keywords: string | null;
   marketing_opt_in: boolean;

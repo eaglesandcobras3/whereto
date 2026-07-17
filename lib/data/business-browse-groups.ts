@@ -5,19 +5,30 @@ import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
-import { businessCategoryGroupForSlug } from "@/lib/business-categories/groups";
 import {
-  BUSINESS_CATEGORY_GROUP_ICONS,
-  BUSINESS_CATEGORY_GROUP_LABELS,
+  browseSectionForCategorySlug,
+  browseSectionIcon,
+  listUnifiedRollupOrder,
+  unifiedRollupHubPath,
+} from "@/lib/categories/unified-browse";
+import {
   BUSINESS_CATEGORY_GROUP_SLUGS,
   type BusinessCategoryGroupSlug,
 } from "@/lib/business-categories/groups";
-import type { BusinessBrowseGroupNavItem } from "@/lib/business-categories/browse-group-nav";
-import { businessBrowseGroupHubPath } from "@/lib/business-categories/browse-group-nav";
+import {
+  businessBrowseGroupHubPath,
+  type BusinessBrowseGroupNavItem,
+} from "@/lib/business-categories/browse-group-nav";
+import { isUnifiedRollupSlug } from "@/lib/categories/unified-browse";
 
 export type ListedBusinessBrowseGroup = BusinessBrowseGroupNavItem & {
   listingCount: number;
 };
+
+function hrefForSection(id: string): string {
+  if (isUnifiedRollupSlug(id)) return unifiedRollupHubPath(id);
+  return businessBrowseGroupHubPath(id as BusinessCategoryGroupSlug);
+}
 
 /** Storefront browse groups that have at least one listing (hub / footer / businesses page). */
 export async function getListedBusinessBrowseGroups(): Promise<ListedBusinessBrowseGroup[]> {
@@ -37,28 +48,43 @@ export async function getListedBusinessBrowseGroups(): Promise<ListedBusinessBro
     return [];
   }
 
-  const counts = new Map<BusinessCategoryGroupSlug, number>();
-  for (const groupSlug of BUSINESS_CATEGORY_GROUP_SLUGS) {
-    counts.set(groupSlug, 0);
-  }
+  const counts = new Map<string, { title: string; count: number }>();
 
   for (const row of data ?? []) {
     const cat = (row as { business_categories: { slug?: string } | null }).business_categories;
-    const groupSlug = businessCategoryGroupForSlug(cat?.slug ?? null);
-    if (!groupSlug) continue;
-    counts.set(groupSlug, (counts.get(groupSlug) ?? 0) + 1);
+    const section = browseSectionForCategorySlug(cat?.slug ?? null);
+    if (!section) continue;
+    const prev = counts.get(section.id);
+    if (prev) prev.count += 1;
+    else counts.set(section.id, { title: section.title, count: 1 });
   }
 
+  const preferredOrder = [...listUnifiedRollupOrder(), ...BUSINESS_CATEGORY_GROUP_SLUGS];
+  const seen = new Set<string>();
   const groups: ListedBusinessBrowseGroup[] = [];
-  for (const slug of BUSINESS_CATEGORY_GROUP_SLUGS) {
-    const listingCount = counts.get(slug) ?? 0;
-    if (listingCount === 0) continue;
+
+  for (const id of preferredOrder) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const entry = counts.get(id);
+    if (!entry || entry.count === 0) continue;
     groups.push({
-      slug,
-      title: BUSINESS_CATEGORY_GROUP_LABELS[slug],
-      icon: BUSINESS_CATEGORY_GROUP_ICONS[slug],
-      href: businessBrowseGroupHubPath(slug),
-      listingCount,
+      slug: id as BusinessCategoryGroupSlug,
+      title: entry.title,
+      icon: browseSectionIcon(id),
+      href: hrefForSection(id),
+      listingCount: entry.count,
+    });
+  }
+
+  for (const [id, entry] of counts) {
+    if (seen.has(id) || entry.count === 0) continue;
+    groups.push({
+      slug: id as BusinessCategoryGroupSlug,
+      title: entry.title,
+      icon: browseSectionIcon(id),
+      href: hrefForSection(id),
+      listingCount: entry.count,
     });
   }
 

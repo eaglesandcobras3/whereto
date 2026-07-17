@@ -140,6 +140,7 @@ export async function getCategorySectionsForPublicPlace(
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .eq("is_storefront", true)
+      .eq("is_explorable", true)
       .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (place.source === "area") {

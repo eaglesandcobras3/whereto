@@ -108,6 +108,7 @@ async function getTownPageData(townId: string) {
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_storefront", true)
+    .eq("is_explorable", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(500);
 
@@ -120,6 +121,7 @@ async function getTownPageData(townId: string) {
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .eq("is_storefront", true)
+          .eq("is_explorable", true)
           .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .limit(500)
       : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
@@ -132,6 +134,7 @@ async function getTownPageData(townId: string) {
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_storefront", true)
+    .eq("is_explorable", true)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const directAreaBizInAreasQuery =
