@@ -2,7 +2,7 @@
 
 **Supplements** [PRD.md](./PRD.md) (conversational MVP). This document is the product source of truth for **programmatic SEO**, **town hubs**, and **shared recommendation sets** across AI, web, and share.
 
-**Related:** [TDD-SEO-TOWNS.md](./TDD-SEO-TOWNS.md) (engineering), [UX-BRIEF-TOWNS-SEO.md](./UX-BRIEF-TOWNS-SEO.md) (design).
+**Related:** [TDD-SEO-TOWNS.md](./TDD-SEO-TOWNS.md) (engineering), [UX-BRIEF-TOWNS-SEO.md](./UX-BRIEF-TOWNS-SEO.md) (design), [PRD-IRSE.md](./PRD-IRSE.md) (index readiness scoring).
 
 ---
 
