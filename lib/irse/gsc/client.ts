@@ -1,8 +1,14 @@
+import { JWT } from "google-auth-library";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GSC_INSPECTION_TTL_MS } from "../weights";
 import type { GscStatus } from "../types";
 import { getGscConfig } from "./config";
 import { mapCoverageToIndexed } from "./map-coverage";
+
+const URL_INSPECTION_ENDPOINT =
+  "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect";
+
+const GSC_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
 
 export type InspectOptions = {
   /** Force a live Google API call even if cache is fresh. */
@@ -22,6 +28,9 @@ type CachedRow = {
 /**
  * Inspect a fully-qualified URL via Search Console URL Inspection API,
  * with DB cache (default 7 days).
+ *
+ * Uses google-auth-library + REST (not the full googleapis SDK) to keep
+ * Next.js TypeScript builds from OOM’ing on CI.
  */
 export async function inspectUrl(
   supabase: SupabaseClient,
@@ -101,6 +110,7 @@ type InspectionApiResponse = {
       verdict?: string;
     };
   };
+  error?: { message?: string; status?: string; code?: number };
 };
 
 async function callUrlInspectionApi(
@@ -109,19 +119,33 @@ async function callUrlInspectionApi(
   clientEmail: string,
   privateKey: string,
 ): Promise<InspectionApiResponse> {
-  // Dynamic import keeps unit tests light when googleapis is unused.
-  const { google } = await import("googleapis");
-  const auth = new google.auth.JWT({
+  const auth = new JWT({
     email: clientEmail,
     key: privateKey,
-    scopes: ["https://www.googleapis.com/auth/webmasters.readonly"],
+    scopes: [GSC_SCOPE],
   });
-  const searchconsole = google.searchconsole({ version: "v1", auth });
-  const res = await searchconsole.urlInspection.index.inspect({
-    requestBody: {
+  const accessToken = await auth.getAccessToken();
+  const token = typeof accessToken === "string" ? accessToken : accessToken?.token;
+  if (!token) {
+    throw new Error("Failed to obtain GSC access token from service account.");
+  }
+
+  const res = await fetch(URL_INSPECTION_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
       inspectionUrl,
       siteUrl,
-    },
+    }),
   });
-  return (res.data ?? {}) as InspectionApiResponse;
+
+  const data = (await res.json()) as InspectionApiResponse;
+  if (!res.ok) {
+    const detail = data.error?.message ?? res.statusText;
+    throw new Error(`GSC URL Inspection failed (${res.status}): ${detail}`);
+  }
+  return data;
 }
