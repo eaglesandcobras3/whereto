@@ -344,10 +344,42 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 ---
 
+## Index Readiness Scoring Engine (IRSE)
+
+Internal quality score predicting whether a page is likely to be indexed. Product source of truth: [PRD-IRSE.md](PRD-IRSE.md).
+
+Admin UI: `/admin/irse`. Score API: `GET /api/admin/irse/score?kind=&slug=` (optional `&inspect=1`).
+
+### Setup
+
+- [ ] Apply SQL: [scripts/migrations/irse-tables.sql](../scripts/migrations/irse-tables.sql) (`irse_score_snapshots`, `gsc_url_inspections`)
+- [ ] GCP: create a service account; enable **Search Console API**
+- [ ] Search Console: add the service account email as a user on the property (Full or Restricted)
+- [ ] Add env vars (local `.env.local` and Vercel):
+  - `GSC_SITE_URL` — e.g. `sc-domain:whereto30a.com` or `https://whereto30a.com/`
+  - `GSC_SERVICE_ACCOUNT_EMAIL`
+  - `GSC_SERVICE_ACCOUNT_PRIVATE_KEY` — PEM with `\n` for newlines
+- [ ] Smoke-test: open `/admin/irse`, score a business slug with **Inspect GSC** checked
+- [ ] Run calibration (quota: ~2000 URL inspections/day; results cached 7 days):
+
+```bash
+npm run calibrate:irse
+npm run calibrate:irse -- --sample-size=100 --force-inspect
+```
+
+### Notes
+
+- IRSE does **not** replace the boolean listing gate in `lib/seo/business-index-readiness.ts`.
+- `indexReady` in IRSE means `overallScore >= 80`.
+- Do not blast-inspect the whole site; use on-demand inspect + calibration sampling only.
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-07-18 | IRSE MVP: score business/guide/town/area/category; admin `/admin/irse`; GSC URL Inspection + calibration (`npm run calibrate:irse`); SQL [irse-tables.sql](../scripts/migrations/irse-tables.sql) |
 | 2026-07-17 | Combined Businesses + Services hubs: `/businesses` shows all listings; `/services` permanently redirects to `/businesses`. Nav/footer drop separate Services. |
 | 2026-07-17 | Unified categories: `business_categories` becomes rollup+leaf taxonomy from `docs/categories.csv`; deprecate `service_category_id`; add `is_explorable` for town/area; free intake allows storefront+service; hubs: `/categories` (all), `/businesses` (combined directory). Run SQL + `npx tsx scripts/migrate-unified-categories.ts`. |
 | 2026-07-16 | Free intake: submitters can **suggest a missing category/specialty** (stands in for the select); `/admin/review` can create it or map to existing on approve. Suggested tags now support promote/rename, replace, or discard. New categories still need a browse-group slug mapping for hubs. |

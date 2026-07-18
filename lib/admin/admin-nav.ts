@@ -22,6 +22,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description: "Optional stored reports; run npm run audit:seo -- --live for full markdown.",
   },
   {
+    href: "/admin/irse",
+    title: "Index readiness",
+    description: "Score pages for Google index readiness; optional GSC inspection + calibration.",
+  },
+  {
     href: "/admin/review",
     title: "Review queue",
     description: "Approve or reject free intake, claims, edits, and photos.",
