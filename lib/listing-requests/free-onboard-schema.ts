@@ -161,8 +161,8 @@ export const freeOnboardBodySchema = z
     /** Admin-only on approve; submitters always get false. */
     is_explorable: z.boolean().optional().default(false),
     /**
-     * Admin-only listing image URL (from /api/admin/media/upload).
-     * Ignored for non-admin submissions.
+     * Admin listing image URL — temporarily ignored on submit/approve
+     * (`businesses.main_image_url` / `hero_image_url` are view aliases only).
      */
     main_image_url: z
       .string()

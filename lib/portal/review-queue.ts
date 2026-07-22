@@ -161,48 +161,15 @@ async function approveEdit(
 }
 
 async function approvePhoto(
-  supabase: SupabaseClient,
-  item: ReviewItemRow,
-  reviewerId: string,
+  _supabase: SupabaseClient,
+  _item: ReviewItemRow,
+  _reviewerId: string,
 ): Promise<{ businessId: string; businessTitle: string; listingUrl: string | null }> {
-  const businessId = item.business_id;
-  if (!businessId) throw new Error("Photo missing business_id");
-
-  const photoId = typeof item.payload.photo_id === "string" ? item.payload.photo_id : null;
-  if (!photoId) throw new Error("Photo id missing");
-
-  const { data: photo } = await supabase
-    .from("business_photos")
-    .select("id, public_url, is_hero, status")
-    .eq("id", photoId)
-    .maybeSingle();
-  if (!photo) throw new Error("Photo not found");
-  if ((photo.status as string) !== "pending") throw new Error("Photo already processed");
-
-  const { data: biz } = await supabase
-    .from("businesses")
-    .select("id, title, slug, hero_image_url, main_image_url")
-    .eq("id", businessId)
-    .maybeSingle();
-  if (!biz) throw new Error("Business not found");
-
-  await supabase.from("business_photos").update({ status: "approved" }).eq("id", photoId);
-
-  const setHero = Boolean(photo.is_hero) || !biz.hero_image_url;
-  if (setHero && photo.public_url) {
-    await supabase
-      .from("businesses")
-      .update({ hero_image_url: photo.public_url, main_image_url: photo.public_url })
-      .eq("id", businessId);
-  }
-
-  await finalizeReviewItem(supabase, item.id, reviewerId, "approved", null);
-
-  return {
-    businessId,
-    businessTitle: (biz.title as string) ?? "your business",
-    listingUrl: publicListingUrl(biz.slug as string | null),
-  };
+  // Temporarily disabled: writing hero_image_url / main_image_url fails because those
+  // are businesses_view aliases, not table columns.
+  throw new Error(
+    "Photo approval is temporarily disabled. Reject or leave pending until image columns are fixed.",
+  );
 }
 
 async function approveNewListing(
