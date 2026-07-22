@@ -141,6 +141,28 @@ Discover should load without `column businesses_view.search_tags does not exist`
 
 ---
 
+## Businesses: external listing image URLs
+
+Admin free-intake / portal photos write public Storage URLs to `businesses.main_image_url` and `businesses.hero_image_url`. Those columns must exist on the table (not only as `businesses_view` resolve aliases).
+
+### Apply (Supabase SQL editor)
+
+- [ ] Run [scripts/migrations/businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql)
+  - Adds `main_image_url` / `hero_image_url`
+  - Backfills from `resolve_directus_file_url(main_image|hero_image)`
+  - Recreates `businesses_view` so `b.*` exposes the new columns (no duplicate resolve aliases)
+
+### Verify
+
+```sql
+SELECT main_image_url, hero_image_url FROM public.businesses LIMIT 1;
+SELECT main_image_url, hero_image_url FROM public.businesses_view LIMIT 1;
+```
+
+Approving an admin listing image should no longer error with `Could not find the 'hero_image_url' column of 'businesses'`.
+
+---
+
 ## Backfill: business search enrichment
 
 Published businesses need **category**, **search profile** (tags + `search_profile` + `qa_document`), **derived search document** (`search_tags`, `search_terms`, `embedding_summary`), and an **embedding** vector to show on town pages and rank in search.
@@ -379,6 +401,7 @@ npm run calibrate:irse -- --sample-size=100 --force-inspect
 
 | Date | Change |
 |------|--------|
+| 2026-07-22 | Businesses listing images: add `main_image_url` / `hero_image_url` columns + view recreate ([businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql)). Admin intake only writes image when changed; update approve updates location in place (no accidental new listing). |
 | 2026-07-18 | IRSE MVP: score business/guide/town/area/category; admin `/admin/irse`; GSC URL Inspection + calibration (`npm run calibrate:irse`); SQL [irse-tables.sql](../scripts/migrations/irse-tables.sql) |
 | 2026-07-17 | Combined Businesses + Services hubs: `/businesses` shows all listings; `/services` permanently redirects to `/businesses`. Nav/footer drop separate Services. |
 | 2026-07-17 | Unified categories: `business_categories` becomes rollup+leaf taxonomy from `docs/categories.csv`; deprecate `service_category_id`; add `is_explorable` for town/area; free intake allows storefront+service; hubs: `/categories` (all), `/businesses` (combined directory). Run SQL + `npx tsx scripts/migrate-unified-categories.ts`. |

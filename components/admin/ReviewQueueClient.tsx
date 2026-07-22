@@ -835,16 +835,18 @@ export function ReviewQueueClient() {
 
                         <div className="space-y-2">
                           <p className="font-medium text-zinc-800">
-                            Locations — create one listing per location (pending until all are
-                            handled)
+                            {item.type === FREE_ONBOARD_TYPES.update
+                              ? "Location — approving updates the existing listing (does not create a new one)"
+                              : "Locations — create one listing per location (pending until all are handled)"}
                           </p>
                           {locations.length === 0 ? (
                             <p className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-                              Service business — no town/address rows. Approve all creates one
-                              listing without a storefront address.
+                              {item.type === FREE_ONBOARD_TYPES.update
+                                ? "No town/address on this update — approve applies other field changes to the existing listing."
+                                : "Service business — no town/address rows. Approve all creates one listing without a storefront address."}
                             </p>
                           ) : null}
-                          {locations.map((loc) => (
+                          {locations.map((loc, locIndex) => (
                             <div
                               key={loc.id}
                               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
@@ -853,6 +855,11 @@ export function ReviewQueueClient() {
                                 <p className="font-medium text-zinc-900">
                                   {loc.town_title ?? loc.town_id}
                                   {loc.address ? ` — ${loc.address}` : ""}
+                                  {item.type === FREE_ONBOARD_TYPES.update && locIndex === 0
+                                    ? " (updates existing)"
+                                    : item.type === FREE_ONBOARD_TYPES.update
+                                      ? " (new sibling listing)"
+                                      : ""}
                                 </p>
                                 <p className="text-xs text-zinc-500">status: {loc.status}</p>
                                 {loc.resulting_business_slug ? (
@@ -862,11 +869,12 @@ export function ReviewQueueClient() {
                                     target="_blank"
                                     rel="noreferrer"
                                   >
-                                    Open created listing
+                                    Open listing
                                   </a>
                                 ) : null}
                               </div>
-                              {loc.status === "pending" ? (
+                              {item.type === FREE_ONBOARD_TYPES.newListing &&
+                              loc.status === "pending" ? (
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
@@ -969,7 +977,7 @@ export function ReviewQueueClient() {
                         {item.type === FREE_ONBOARD_TYPES.removal
                           ? "Approve removal (archive)"
                           : item.type === FREE_ONBOARD_TYPES.update
-                            ? "Approve update (+ extra locations)"
+                            ? "Approve update"
                             : "Approve all locations"}
                       </button>
                       <button
