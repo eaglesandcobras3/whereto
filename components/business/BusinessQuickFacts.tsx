@@ -4,8 +4,6 @@ import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   address?: string | null;
-  /** Business contact email — show only when curated in CMS. */
-  email?: string | null;
   phone?: string | null;
   website?: string | null;
   menuUrl?: string | null;
@@ -48,7 +46,6 @@ function MsIcon({
 
 export function BusinessQuickFacts({
   address,
-  email,
   phone,
   website,
   menuUrl,
@@ -60,7 +57,6 @@ export function BusinessQuickFacts({
 }: Props) {
   const addr = typeof address === "string" ? address.trim() : "";
   const phon = typeof phone === "string" ? phone.trim() : "";
-  const mail = typeof email === "string" ? email.trim() : "";
   const svc = typeof serviceArea === "string" ? serviceArea.trim() : "";
   const menu = typeof menuUrl === "string" ? menuUrl.trim() : "";
   const booking = typeof bookingUrl === "string" ? bookingUrl.trim() : "";
@@ -80,7 +76,7 @@ export function BusinessQuickFacts({
   const primaryLocationLine = addr || svc;
   const hasLocationFacts = Boolean(primaryLocationLine || mapsHref);
   const hasAny =
-    hasLocationFacts || phon || mail || hoursText || site || menu || booking;
+    hasLocationFacts || phon || hoursText || site || menu || booking;
   if (!hasAny) return null;
 
   return (
@@ -194,28 +190,6 @@ export function BusinessQuickFacts({
                   className="text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
                 >
                   {hostnameLabel(site)}
-                </a>
-              </p>
-            </div>
-          </div>
-        ) : null}
-
-        {mail ? (
-          <div className="flex gap-3">
-            <MsIcon name="mail" className="!text-[22px]" />
-            <div className="min-w-0 flex-1">
-              <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">Email</h3>
-              <p className="mt-1 break-all">
-                <a
-                  href={`mailto:${encodeURIComponent(mail)}`}
-                  {...gaClickProps({
-                    event: "contact_click",
-                    category: "business_essentials",
-                    label: "email",
-                  })}
-                  className="text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
-                >
-                  {mail}
                 </a>
               </p>
             </div>
