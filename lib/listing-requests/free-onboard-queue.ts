@@ -23,6 +23,20 @@ function asRemovalPayload(raw: Record<string, unknown>): FreeOnboardRemovalPaylo
   return raw as unknown as FreeOnboardRemovalPayload;
 }
 
+/**
+ * Apply admin listing image fields only when the intake payload explicitly includes them.
+ * Omitted = leave existing image alone; null = clear; string = set main + hero URLs.
+ */
+function applyListingImageFields(
+  row: Record<string, unknown>,
+  payload: FreeOnboardPayload,
+): void {
+  if (!Object.prototype.hasOwnProperty.call(payload, "main_image_url")) return;
+  const url = payload.main_image_url ?? null;
+  row.main_image_url = url;
+  row.hero_image_url = url;
+}
+
 /** Prefer generated keywords from listing signals; fall back to an existing value. */
 function resolveSearchKeywords(
   payload: FreeOnboardPayload,
@@ -200,7 +214,7 @@ export async function createFreeListingForLocation(
   itemId: string,
   locationId: string,
   reviewerId: string,
-  opts?: { deferNotify?: boolean },
+  opts?: { deferNotify?: boolean; /** Internal: extra locations on an approved update */ allowUpdateSibling?: boolean },
 ): Promise<{ businessId: string; businessSlug: string; reviewStatus: "pending" | "approved" }> {
   const { data: item, error } = await supabase
     .from("portal_review_items")
@@ -211,6 +225,11 @@ export async function createFreeListingForLocation(
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
   if (item.type !== FREE_ONBOARD_TYPES.newListing && item.type !== FREE_ONBOARD_TYPES.update) {
     throw new Error("Not a free intake item");
+  }
+  if (item.type === FREE_ONBOARD_TYPES.update && !opts?.allowUpdateSibling) {
+    throw new Error(
+      "Per-location create is only for new listings. Approve an update to change the existing listing in place.",
+    );
   }
 
   const payload = asPayload((item.payload as Record<string, unknown>) ?? {});
@@ -267,10 +286,7 @@ export async function createFreeListingForLocation(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
-  if (payload.main_image_url) {
-    insertRow.main_image_url = payload.main_image_url;
-    insertRow.hero_image_url = payload.main_image_url;
-  }
+  applyListingImageFields(insertRow, payload);
 
   const { data: created, error: createErr } = await supabase
     .from("businesses")
@@ -367,6 +383,15 @@ export async function approveAllFreeLocations(
   if (error || !item) throw new Error("Review item not found");
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
 
+  // Updates must change the target listing in place — never fan out into creates.
+  if (item.type === FREE_ONBOARD_TYPES.update) {
+    await approveFreeUpdate(supabase, itemId, reviewerId);
+    return { created: 0 };
+  }
+  if (item.type !== FREE_ONBOARD_TYPES.newListing) {
+    throw new Error("Approve-all locations is only for new free intakes");
+  }
+
   const starting = asPayload((item.payload as Record<string, unknown>) ?? {});
   let created = 0;
 
@@ -396,11 +421,11 @@ export async function approveAllFreeLocations(
   if ((refreshed?.status as string) === "approved") {
     await notifySubmitterOnce(supabase, itemId, payload, {
       event: "approved",
-      isUpdate: refreshed?.type === FREE_ONBOARD_TYPES.update,
+      isUpdate: false,
     });
   } else if ((refreshed?.status as string) === "pending") {
     await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
-      isUpdate: item.type === FREE_ONBOARD_TYPES.update,
+      isUpdate: false,
       notify: true,
     });
   }
@@ -475,10 +500,7 @@ async function createFreeServiceListingWithoutTown(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
-  if (payload.main_image_url) {
-    insertRow.main_image_url = payload.main_image_url;
-    insertRow.hero_image_url = payload.main_image_url;
-  }
+  applyListingImageFields(insertRow, payload);
 
   const { data: createdBiz, error: createErr } = await supabase
     .from("businesses")
@@ -593,10 +615,8 @@ export async function approveFreeUpdate(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
-  if (payload.main_image_url) {
-    updates.main_image_url = payload.main_image_url;
-    updates.hero_image_url = payload.main_image_url;
-  }
+  // Only touch image columns when the intake explicitly included a change.
+  applyListingImageFields(updates, payload);
 
   const { error: updateErr } = await supabase.from("businesses").update(updates).eq("id", businessId);
   if (updateErr) throw new Error(updateErr.message);
@@ -613,6 +633,7 @@ export async function approveFreeUpdate(
     if (loc.status === "pending") {
       await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId, {
         deferNotify: true,
+        allowUpdateSibling: true,
       });
     }
   }

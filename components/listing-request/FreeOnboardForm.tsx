@@ -110,6 +110,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  /** Prefill baseline — only send main_image_url when the admin changes the image. */
+  const [initialMainImageUrl, setInitialMainImageUrl] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [imageErr, setImageErr] = useState<string | null>(null);
 
@@ -168,6 +170,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         setIsStorefront(Boolean(b.is_storefront));
         setIsService(Boolean(b.is_service_business));
         setMainImageUrl(b.main_image_url ?? null);
+        setInitialMainImageUrl(b.main_image_url ?? null);
         setLocations([
           {
             key: newLocationKey(),
@@ -262,7 +265,9 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       marketing_opt_in: isAdmin ? false : fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? businessSlug ?? null,
-      ...(isAdmin && mainImageUrl ? { main_image_url: mainImageUrl } : {}),
+      ...(isAdmin && mainImageUrl !== initialMainImageUrl
+        ? { main_image_url: mainImageUrl }
+        : {}),
     };
 
     if (selectedTags.length + payload.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
@@ -470,7 +475,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           <div>
             <p className={labelClass}>Listing image (admin)</p>
             <p className={helpClass}>
-              Upload a hero photo for this listing. Applied when the request is approved.
+              Upload a hero photo for this listing. Only sent when you change or remove the image;
+              applied when the request is approved.
             </p>
           </div>
           {mainImageUrl ? (
