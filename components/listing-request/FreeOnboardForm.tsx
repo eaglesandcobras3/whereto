@@ -109,9 +109,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
-  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [imageErr, setImageErr] = useState<string | null>(null);
+  // Listing photo upload temporarily disabled — approve cannot write image URL columns yet.
 
   useEffect(() => {
     const controller = new AbortController();
@@ -167,7 +165,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
         setIsStorefront(Boolean(b.is_storefront));
         setIsService(Boolean(b.is_service_business));
-        setMainImageUrl(b.main_image_url ?? null);
         setLocations([
           {
             key: newLocationKey(),
@@ -262,7 +259,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       marketing_opt_in: isAdmin ? false : fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? businessSlug ?? null,
-      ...(isAdmin && mainImageUrl ? { main_image_url: mainImageUrl } : {}),
     };
 
     if (selectedTags.length + payload.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
@@ -464,71 +460,6 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         />
         <CharCount value={title} max={FREE_ONBOARD_TITLE_MAX} />
       </div>
-
-      {isAdmin ? (
-        <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
-          <div>
-            <p className={labelClass}>Listing image (admin)</p>
-            <p className={helpClass}>
-              Upload a hero photo for this listing. Applied when the request is approved.
-            </p>
-          </div>
-          {mainImageUrl ? (
-            <div className="flex flex-wrap items-start gap-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={mainImageUrl}
-                alt="Listing preview"
-                className="h-28 w-40 rounded-lg object-cover"
-              />
-              <button
-                type="button"
-                className="text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
-                onClick={() => setMainImageUrl(null)}
-              >
-                Remove image
-              </button>
-            </div>
-          ) : null}
-          <input
-            type="file"
-            accept="image/*"
-            disabled={imageUploading}
-            className="block w-full text-sm text-[var(--color-text-secondary)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              void (async () => {
-                setImageErr(null);
-                setImageUploading(true);
-                try {
-                  const body = new FormData();
-                  body.set("file", file);
-                  body.set("folder", "free-onboard");
-                  const res = await fetch("/api/admin/media/upload", {
-                    method: "POST",
-                    body,
-                  });
-                  const j = (await res.json()) as { ok?: boolean; url?: string; error?: string };
-                  if (!res.ok || !j.url) {
-                    throw new Error(j.error ?? "Upload failed");
-                  }
-                  setMainImageUrl(j.url);
-                } catch (err) {
-                  setImageErr(err instanceof Error ? err.message : "Upload failed");
-                } finally {
-                  setImageUploading(false);
-                }
-              })();
-            }}
-          />
-          {imageUploading ? (
-            <p className={helpClass}>Uploading…</p>
-          ) : null}
-          {imageErr ? <p className="text-sm text-red-600">{imageErr}</p> : null}
-        </div>
-      ) : null}
 
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
         <legend className={`${labelClass} px-1`}>How do customers work with you?</legend>

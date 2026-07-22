@@ -397,4 +397,123 @@ describe("approveFreeUpdate search_keywords", () => {
     expect(businessUpdate).toBeDefined();
     expect(businessUpdate!.row.search_keywords).toBe("espresso, seaside coffee");
   });
+
+  it("does not write image URL columns even when main_image_url is in the payload", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: {
+        ...basePayload(),
+        main_image_url: "https://cdn.example.com/hero.webp",
+      },
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate).toBeDefined();
+    expect(businessUpdate!.row).not.toHaveProperty("main_image_url");
+    expect(businessUpdate!.row).not.toHaveProperty("hero_image_url");
+  });
+
+  it("updates address on the target business without inserting a new listing", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: {
+        ...basePayload(),
+        locations: [
+          {
+            id: "loc-1",
+            town_id: townId,
+            address: "99 New Ave",
+            status: "pending",
+          },
+        ],
+      },
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate).toBeDefined();
+    expect(businessUpdate!.id).toBe(businessId);
+    expect(businessUpdate!.row.town_id).toBe(townId);
+    expect(businessUpdate!.row.address).toBe("99 New Ave");
+    expect(updates.filter((u) => u.table === "businesses")).toHaveLength(1);
+  });
+
+  it("skips extra locations instead of creating sibling listings", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: {
+        ...basePayload(),
+        locations: [
+          {
+            id: "loc-1",
+            town_id: townId,
+            address: "1 Main St",
+            status: "pending",
+          },
+          {
+            id: "loc-2",
+            town_id: townId,
+            address: "2 Side St",
+            status: "pending",
+          },
+        ],
+      },
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    expect(updates.filter((u) => u.table === "businesses")).toHaveLength(1);
+    expect(updates.find((u) => u.table === "businesses")!.row.address).toBe("1 Main St");
+  });
+});
+
+describe("createFreeListingForLocation on update", () => {
+  it("rejects per-location create so updates cannot spawn duplicate listings", async () => {
+    const locationId = "loc-1";
+    const businessId = "33333333-3333-4333-8333-333333333333";
+    const payload = {
+      source: "free_onboard",
+      submitter_name: "Pat",
+      submitter_email: "pat@example.com",
+      title: "Amavida Coffee",
+      is_storefront: true,
+      is_service_business: false,
+      website: "https://example.com",
+      phone: "850-555-0100",
+      excerpt: "Coffee near the beach.",
+      overview: "A local coffee shop with great espresso.",
+      category_id: "22222222-2222-4222-8222-222222222222",
+      search_tags: ["coffee"],
+      suggested_tags: [],
+      search_keywords: "espresso",
+      marketing_opt_in: false,
+      target_business_id: businessId,
+      locations: [
+        {
+          id: locationId,
+          town_id: "11111111-1111-4111-8111-111111111111",
+          address: "1 Main St",
+          status: "pending",
+        },
+      ],
+    };
+
+    const { supabase } = mockUpdateApproveSupabase({
+      payload,
+      existing: {
+        id: businessId,
+        slug: "amavida-coffee-seaside",
+        title: "Amavida Coffee",
+        town_id: "11111111-1111-4111-8111-111111111111",
+        search_keywords: null,
+      },
+    });
+
+    await expect(
+      createFreeListingForLocation(supabase, "review-1", locationId, "admin-1"),
+    ).rejects.toThrow(/Approve an update to change the existing listing/);
+  });
 });

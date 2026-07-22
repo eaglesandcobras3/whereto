@@ -212,6 +212,11 @@ export async function createFreeListingForLocation(
   if (item.type !== FREE_ONBOARD_TYPES.newListing && item.type !== FREE_ONBOARD_TYPES.update) {
     throw new Error("Not a free intake item");
   }
+  if (item.type === FREE_ONBOARD_TYPES.update) {
+    throw new Error(
+      "Per-location create is only for new listings. Approve an update to change the existing listing in place.",
+    );
+  }
 
   const payload = asPayload((item.payload as Record<string, unknown>) ?? {});
   const loc = payload.locations.find((l) => l.id === locationId);
@@ -267,10 +272,8 @@ export async function createFreeListingForLocation(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
-  if (payload.main_image_url) {
-    insertRow.main_image_url = payload.main_image_url;
-    insertRow.hero_image_url = payload.main_image_url;
-  }
+  // Listing photos temporarily disabled — businesses.main_image_url / hero_image_url
+  // are view aliases only; writing them breaks approve.
 
   const { data: created, error: createErr } = await supabase
     .from("businesses")
@@ -367,6 +370,15 @@ export async function approveAllFreeLocations(
   if (error || !item) throw new Error("Review item not found");
   if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
 
+  // Updates must change the target listing in place — never fan out into creates.
+  if (item.type === FREE_ONBOARD_TYPES.update) {
+    await approveFreeUpdate(supabase, itemId, reviewerId);
+    return { created: 0 };
+  }
+  if (item.type !== FREE_ONBOARD_TYPES.newListing) {
+    throw new Error("Approve-all locations is only for new free intakes");
+  }
+
   const starting = asPayload((item.payload as Record<string, unknown>) ?? {});
   let created = 0;
 
@@ -396,11 +408,11 @@ export async function approveAllFreeLocations(
   if ((refreshed?.status as string) === "approved") {
     await notifySubmitterOnce(supabase, itemId, payload, {
       event: "approved",
-      isUpdate: refreshed?.type === FREE_ONBOARD_TYPES.update,
+      isUpdate: false,
     });
   } else if ((refreshed?.status as string) === "pending") {
     await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
-      isUpdate: item.type === FREE_ONBOARD_TYPES.update,
+      isUpdate: false,
       notify: true,
     });
   }
@@ -475,10 +487,7 @@ async function createFreeServiceListingWithoutTown(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
-  if (payload.main_image_url) {
-    insertRow.main_image_url = payload.main_image_url;
-    insertRow.hero_image_url = payload.main_image_url;
-  }
+  // Listing photos temporarily disabled — see createFreeListingForLocation.
 
   const { data: createdBiz, error: createErr } = await supabase
     .from("businesses")
@@ -593,50 +602,26 @@ export async function approveFreeUpdate(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
-  if (payload.main_image_url) {
-    updates.main_image_url = payload.main_image_url;
-    updates.hero_image_url = payload.main_image_url;
-  }
+  // Listing photos temporarily disabled — do not write main_image_url / hero_image_url.
 
   const { error: updateErr } = await supabase.from("businesses").update(updates).eq("id", businessId);
   if (updateErr) throw new Error(updateErr.message);
 
+  // First location updates the existing listing; any extra rows are skipped (no new listings).
   if (primaryLoc) {
     primaryLoc.status = "created";
     primaryLoc.resulting_business_id = businessId;
     primaryLoc.resulting_business_slug = slug;
   }
+  for (const loc of payload.locations.slice(1)) {
+    if (loc.status === "pending") loc.status = "skipped";
+  }
   await savePayload(supabase, itemId, payload, businessId);
 
-  // Extra locations beyond the first become new sibling listings (no per-location emails).
-  for (const loc of payload.locations.slice(1)) {
-    if (loc.status === "pending") {
-      await createFreeListingForLocation(supabase, itemId, loc.id, reviewerId, {
-        deferNotify: true,
-      });
-    }
-  }
-
-  const { data: refreshed } = await supabase
-    .from("portal_review_items")
-    .select("payload, status")
-    .eq("id", itemId)
-    .maybeSingle();
-  const latest = asPayload((refreshed?.payload as Record<string, unknown>) ?? payload);
-  if ((refreshed?.status as string) === "pending") {
-    for (const loc of latest.locations) {
-      if (loc.status === "pending") loc.status = "skipped";
-    }
-    await finalizeIfComplete(supabase, itemId, reviewerId, latest, {
-      isUpdate: true,
-      notify: true,
-    });
-  } else if ((refreshed?.status as string) === "approved") {
-    await notifySubmitterOnce(supabase, itemId, latest, {
-      event: "approved",
-      isUpdate: true,
-    });
-  }
+  await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
+    isUpdate: true,
+    notify: true,
+  });
 
   return { businessId };
 }
