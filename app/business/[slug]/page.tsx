@@ -82,7 +82,7 @@ async function loadBusiness(slug: string) {
     const isUuid = UUID_RE.test(slug);
     const sel = `
         id, slug, title, address, town_id, area_id, primary_category_id, map_lat, map_lng, phone, website,
-        email, menu_url, booking_url, service_area, hours,
+        menu_url, booking_url, service_area, hours,
         excerpt, content, overview, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
         claim_status, search_tags, status, published_at, price_level,
@@ -535,7 +535,6 @@ export default async function BusinessPage({ params }: Props) {
 
               <BusinessQuickFacts
                 address={b.address as string | null}
-                email={(b.email as string | null) ?? null}
                 phone={b.phone as string | null}
                 website={b.website as string | null}
                 menuUrl={(b.menu_url as string | null) ?? null}
