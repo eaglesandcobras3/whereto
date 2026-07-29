@@ -28,11 +28,39 @@ export async function signInWithPasswordAction(
   };
 }
 
-export async function signUpAction(email: string, password: string): Promise<AuthActionResult> {
+export async function signUpAction(
+  email: string,
+  password: string,
+  attributionCity?: string,
+): Promise<AuthActionResult> {
+  const city = attributionCity?.trim() ?? "";
+  if (!city) {
+    return { ok: false, error: "City is required (shown as “Someone from …” on tips)." };
+  }
+  if (city.length > 80) {
+    return { ok: false, error: "City must be 80 characters or fewer." };
+  }
+
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { attribution_city: city },
+    },
+  });
 
   if (error) return { ok: false, error: error.message };
+
+  if (data.user) {
+    const { error: profileError } = await supabase.from("profiles").upsert(
+      { id: data.user.id, attribution_city: city },
+      { onConflict: "id" },
+    );
+    if (profileError) {
+      console.error("signUpAction profiles upsert", profileError);
+    }
+  }
 
   revalidatePath("/", "layout");
 
