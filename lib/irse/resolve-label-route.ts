@@ -146,7 +146,7 @@ export function resolveLabelRoute(
   raw: string,
   lookup: LabelRouteLookup,
 ): { route: ParsedLabelRoute; via?: string } | null {
-  let pathname = normalizeLabelPathname(raw);
+  const pathname = normalizeLabelPathname(raw);
   if (!pathname) return null;
 
   // Config-style redirects
