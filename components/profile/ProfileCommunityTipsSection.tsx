@@ -50,7 +50,9 @@ export function ProfileCommunityTipsSection() {
 
   useEffect(() => {
     if (!enabled) return;
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [enabled, load]);
 
   if (!enabled) return null;

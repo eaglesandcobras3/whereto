@@ -39,7 +39,9 @@ export function CommunityTipsAdminClient() {
   }, [status]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   async function act(id: string, action: "publish" | "reject" | "hide" | "delete") {
