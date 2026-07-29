@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const rating = d.kind === "review" ? d.rating ?? null : null;
+  const rating = d.rating ?? null;
 
   const { data, error } = await supabase
     .from("community_tips")
@@ -127,7 +127,6 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         entity_type: d.entity_type,
         entity_id: d.entity_id,
-        kind: d.kind,
         body: d.body,
         rating,
         attribution_city: attributionCity,
@@ -140,7 +139,7 @@ export async function POST(request: NextRequest) {
       { onConflict: "user_id,entity_type,entity_id" },
     )
     .select(
-      "id, entity_type, entity_id, kind, body, rating, attribution_city, status, created_at, updated_at",
+      "id, entity_type, entity_id, body, rating, attribution_city, status, created_at, updated_at",
     )
     .single();
 
@@ -187,7 +186,7 @@ export async function PATCH(request: NextRequest) {
   const d = parsed.data;
   const { data: existing, error: loadErr } = await supabase
     .from("community_tips")
-    .select("id, kind, rating, attribution_city")
+    .select("id, rating, attribution_city")
     .eq("id", d.id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -196,18 +195,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Tip not found." }, { status: 404 });
   }
 
-  const kind = d.kind ?? (existing.kind as "tip" | "review");
-  let rating: number | null;
-  if (kind === "tip") {
-    rating = null;
-  } else if (d.rating !== undefined) {
-    rating = d.rating;
-  } else {
-    rating = existing.rating as number | null;
-  }
-  if (kind === "review" && (rating == null || rating < 1)) {
-    return NextResponse.json({ error: "Reviews need a star rating (1–5)." }, { status: 400 });
-  }
+  const rating =
+    d.rating !== undefined ? d.rating : (existing.rating as number | null);
 
   let attributionCity =
     d.attribution_city !== undefined
@@ -234,7 +223,6 @@ export async function PATCH(request: NextRequest) {
     updated_at: new Date().toISOString(),
     reviewed_by: null,
     reviewed_at: null,
-    kind,
     rating,
     attribution_city: attributionCity.trim(),
   };
@@ -246,7 +234,7 @@ export async function PATCH(request: NextRequest) {
     .eq("id", d.id)
     .eq("user_id", user.id)
     .select(
-      "id, entity_type, entity_id, kind, body, rating, attribution_city, status, created_at, updated_at",
+      "id, entity_type, entity_id, body, rating, attribution_city, status, created_at, updated_at",
     )
     .single();
 

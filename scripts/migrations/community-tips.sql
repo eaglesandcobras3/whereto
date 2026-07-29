@@ -1,9 +1,9 @@
 /**
- * Community tips & reviews (PostHog `community_tips`).
+ * Community tips (PostHog `community_tips`).
  * Apply in Supabase SQL editor before enabling the flag.
  *
- * - Optional attribution city on profiles (no age; semi-anonymous public display)
- * - Polymorphic tips on businesses, towns, areas, and guides
+ * - Attribution city on profiles (no age; semi-anonymous public display)
+ * - Text tips on businesses, towns, areas, and guides; optional 1–5 stars
  * - One tip per user per entity; pending until admin publishes
  */
 
@@ -12,7 +12,7 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS attribution_city text;
 
 COMMENT ON COLUMN public.profiles.attribution_city IS
-  'Optional home or visiting-from city for semi-anonymous tip attribution. Never shown as a username.';
+  'Home or visiting-from city for semi-anonymous tip attribution. Never shown as a username.';
 
 CREATE TABLE IF NOT EXISTS public.community_tips (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,10 +20,9 @@ CREATE TABLE IF NOT EXISTS public.community_tips (
   entity_type text NOT NULL
     CHECK (entity_type IN ('business', 'town', 'area', 'guide')),
   entity_id uuid NOT NULL,
-  kind text NOT NULL DEFAULT 'tip'
-    CHECK (kind IN ('tip', 'review')),
   body text NOT NULL
     CHECK (char_length(trim(body)) >= 15 AND char_length(body) <= 2000),
+  -- Optional star rating; text tip is always required.
   rating smallint
     CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5)),
   -- Snapshot at submit time so profile city edits do not rewrite published copy.
@@ -35,10 +34,6 @@ CREATE TABLE IF NOT EXISTS public.community_tips (
   reviewed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT community_tips_review_rating_chk CHECK (
-    (kind = 'tip' AND rating IS NULL)
-    OR (kind = 'review' AND rating IS NOT NULL)
-  ),
   CONSTRAINT community_tips_user_entity_unique UNIQUE (user_id, entity_type, entity_id)
 );
 
@@ -53,7 +48,7 @@ CREATE INDEX IF NOT EXISTS community_tips_user_idx
   ON public.community_tips (user_id, updated_at DESC);
 
 COMMENT ON TABLE public.community_tips IS
-  'User tips/reviews for businesses, towns, areas, guides. Public pages show published rows only; attribution is city-based, not username.';
+  'User text tips for businesses, towns, areas, guides (optional star rating). Public pages show published rows only; attribution is city-based, not username.';
 
 ALTER TABLE public.community_tips ENABLE ROW LEVEL SECURITY;
 
@@ -87,8 +82,7 @@ CREATE POLICY community_tips_delete_own
   TO authenticated
   USING (auth.uid() = user_id);
 
--- Profiles: users can read/update their own attribution_city (existing policies may already cover updates).
--- If profiles has no update policy for self, add one for attribution_city only via a dedicated policy:
+-- Profiles: users can update their own attribution_city.
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -106,7 +100,7 @@ BEGIN
   END IF;
 EXCEPTION
   WHEN undefined_table THEN
-    NULL; -- profiles may be managed elsewhere
+    NULL;
   WHEN duplicate_object THEN
     NULL;
 END $$;

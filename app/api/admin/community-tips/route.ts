@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("community_tips")
     .select(
-      "id, user_id, entity_type, entity_id, kind, body, rating, attribution_city, status, admin_notes, created_at, updated_at, reviewed_at",
+      "id, user_id, entity_type, entity_id, body, rating, attribution_city, status, admin_notes, created_at, updated_at, reviewed_at",
     )
     .eq("status", status)
     .order("created_at", { ascending: true })

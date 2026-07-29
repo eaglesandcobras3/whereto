@@ -49,22 +49,33 @@ describe("tip attribution", () => {
 describe("community tip schema", () => {
   const entityId = "a1b2c3d4-e5f6-4789-a012-3456789abcde";
 
-  it("accepts a tip without rating", () => {
+  it("accepts a text tip without rating", () => {
     const parsed = communityTipUpsertSchema.safeParse({
       entity_type: "business",
       entity_id: entityId,
-      kind: "tip",
       body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
     });
     expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.rating).toBeUndefined();
   });
 
-  it("requires rating for reviews", () => {
+  it("accepts optional stars on a tip", () => {
     const parsed = communityTipUpsertSchema.safeParse({
       entity_type: "town",
       entity_id: entityId,
-      kind: "review",
       body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
+      rating: 4,
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.rating).toBe(4);
+  });
+
+  it("rejects invalid ratings", () => {
+    const parsed = communityTipUpsertSchema.safeParse({
+      entity_type: "town",
+      entity_id: entityId,
+      body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
+      rating: 6,
     });
     expect(parsed.success).toBe(false);
   });

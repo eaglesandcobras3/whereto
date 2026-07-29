@@ -21,8 +21,8 @@ export default async function AdminCommunityTipsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <AdminPageHeader
-        title="Community tips & reviews"
-        description="Approve tips before they appear publicly. Publish, reject, hide, or delete."
+        title="Community tips"
+        description="Approve text tips before they appear publicly. Stars are optional. Publish, reject, hide, or delete."
       />
       <div className="mt-8">
         <CommunityTipsAdminClient />

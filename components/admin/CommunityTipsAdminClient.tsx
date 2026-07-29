@@ -8,7 +8,6 @@ type AdminTip = {
   id: string;
   entity_type: string;
   entity_id: string;
-  kind: string;
   body: string;
   rating: number | null;
   attribution_city: string | null;
@@ -87,7 +86,7 @@ export function CommunityTipsAdminClient() {
           {items.map((item) => (
             <li key={item.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-                {item.kind} · {tipAttributionSaid(item.attribution_city)}
+                Tip · {tipAttributionSaid(item.attribution_city)}
                 {item.rating != null ? ` · ${item.rating}★` : ""}
               </p>
               {item.entity_href && item.entity_title ? (

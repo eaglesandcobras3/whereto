@@ -37,7 +37,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     href: "/admin/community-tips",
     title: "Community tips",
-    description: "Approve, hide, or delete visitor tips and reviews.",
+    description: "Approve, hide, or delete visitor tips.",
     requiresCommunityTips: true,
   },
   {

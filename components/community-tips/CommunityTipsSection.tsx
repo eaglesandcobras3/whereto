@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { tipAttributionSaid } from "@/lib/community-tips/attribution";
 import type {
   CommunityTipEntityType,
-  CommunityTipKind,
   PublicCommunityTip,
 } from "@/lib/community-tips/schema";
 import { CommunityTipsGate } from "@/components/feature-flags/CommunityTipsGate";
@@ -36,9 +35,9 @@ function CommunityTipsSectionInner({
   const [tips, setTips] = useState<PublicCommunityTip[]>(initialTips);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [attributionCity, setAttributionCity] = useState("");
-  const [kind, setKind] = useState<CommunityTipKind>("tip");
   const [body, setBody] = useState("");
-  const [rating, setRating] = useState(5);
+  /** Empty string = no stars; otherwise 1–5. */
+  const [rating, setRating] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -76,15 +75,15 @@ function CommunityTipsSectionInner({
     e.preventDefault();
     setStatus("loading");
     setMessage("");
+    const stars = rating === "" ? null : Number(rating);
     const res = await fetch("/api/community-tips", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         entity_type: entityType,
         entity_id: entityId,
-        kind,
         body,
-        rating: kind === "review" ? rating : null,
+        rating: stars,
         attribution_city: attributionCity || null,
       }),
     });
@@ -100,6 +99,7 @@ function CommunityTipsSectionInner({
     setStatus("ok");
     setMessage("Thanks — your tip is waiting for review before it appears publicly.");
     setBody("");
+    setRating("");
     setShowForm(false);
     void refreshPublished();
   }
@@ -124,7 +124,7 @@ function CommunityTipsSectionInner({
             <li key={tip.id} className="border-b border-zinc-100 pb-5 last:border-0">
               <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                 {tipAttributionSaid(tip.attribution_city)}
-                {tip.kind === "review" && tip.rating != null ? (
+                {tip.rating != null ? (
                   <>
                     {" · "}
                     <TipStars rating={tip.rating} />
@@ -148,47 +148,39 @@ function CommunityTipsSectionInner({
             >
               Sign in
             </Link>{" "}
-            to leave a tip or review.
+            to leave a tip.
           </p>
         ) : signedIn === true ? (
           showForm ? (
             <form onSubmit={submit} className="max-w-xl space-y-3">
-              <div className="flex gap-3 text-sm">
-                <label className="inline-flex items-center gap-1.5">
-                  <input
-                    type="radio"
-                    name="kind"
-                    checked={kind === "tip"}
-                    onChange={() => setKind("tip")}
-                  />
-                  Tip
-                </label>
-                <label className="inline-flex items-center gap-1.5">
-                  <input
-                    type="radio"
-                    name="kind"
-                    checked={kind === "review"}
-                    onChange={() => setKind("review")}
-                  />
-                  Review
-                </label>
-              </div>
-              {kind === "review" ? (
-                <label className="block text-sm text-zinc-600">
-                  Rating
-                  <select
-                    value={rating}
-                    onChange={(e) => setRating(Number(e.target.value))}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
-                  >
-                    {[5, 4, 3, 2, 1].map((n) => (
-                      <option key={n} value={n}>
-                        {n} star{n === 1 ? "" : "s"}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
+              <label className="block text-sm text-zinc-600">
+                Your tip
+                <textarea
+                  required
+                  minLength={15}
+                  maxLength={2000}
+                  rows={4}
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="What should visitors know?"
+                  className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
+                />
+              </label>
+              <label className="block text-sm text-zinc-600">
+                Stars <span className="font-normal text-zinc-400">(optional)</span>
+                <select
+                  value={rating}
+                  onChange={(e) => setRating(e.target.value)}
+                  className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
+                >
+                  <option value="">No rating</option>
+                  {[5, 4, 3, 2, 1].map((n) => (
+                    <option key={n} value={n}>
+                      {n} star{n === 1 ? "" : "s"}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label className="block text-sm text-zinc-600">
                 City you’re from
                 <input
@@ -201,19 +193,6 @@ function CommunityTipsSectionInner({
                 <span className="mt-1 block text-xs text-zinc-500">
                   Shown as “Someone from …” — never your name.
                 </span>
-              </label>
-              <label className="block text-sm text-zinc-600">
-                Your {kind}
-                <textarea
-                  required
-                  minLength={15}
-                  maxLength={2000}
-                  rows={4}
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder="What should visitors know?"
-                  className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
-                />
               </label>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -243,7 +222,7 @@ function CommunityTipsSectionInner({
               onClick={() => setShowForm(true)}
               className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
             >
-              Leave a tip or review
+              Leave a tip
             </button>
           )
         ) : null}

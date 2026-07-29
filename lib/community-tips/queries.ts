@@ -12,7 +12,6 @@ type TipRow = {
   user_id?: string;
   entity_type: CommunityTipEntityType;
   entity_id: string;
-  kind: "tip" | "review";
   body: string;
   rating: number | null;
   attribution_city: string | null;
@@ -26,7 +25,6 @@ type TipRow = {
 function toPublic(row: TipRow): PublicCommunityTip {
   return {
     id: row.id,
-    kind: row.kind,
     body: row.body,
     rating: row.rating,
     attribution_city: row.attribution_city,
@@ -42,7 +40,7 @@ export async function listPublishedTipsForEntity(
 ): Promise<PublicCommunityTip[]> {
   const { data, error } = await supabase
     .from("community_tips")
-    .select("id, kind, body, rating, attribution_city, created_at, entity_type, entity_id, status, updated_at")
+    .select("id, body, rating, attribution_city, created_at, entity_type, entity_id, status, updated_at")
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
     .eq("status", "published")
@@ -62,7 +60,7 @@ export async function listOwnTips(
   const { data, error } = await supabase
     .from("community_tips")
     .select(
-      "id, entity_type, entity_id, kind, body, rating, attribution_city, status, created_at, updated_at",
+      "id, entity_type, entity_id, body, rating, attribution_city, status, created_at, updated_at",
     )
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
@@ -138,7 +136,6 @@ async function enrichEntityMeta(
       id: row.id,
       entity_type: row.entity_type,
       entity_id: row.entity_id,
-      kind: row.kind,
       body: row.body,
       rating: row.rating,
       attribution_city: row.attribution_city,

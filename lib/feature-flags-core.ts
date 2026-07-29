@@ -102,7 +102,7 @@ export function isSeoImprovementsEnabled(flags: FeatureFlags): boolean {
   return flags.seo_improvements === true;
 }
 
-/** Community reviews/tips on businesses, towns, areas, and guides (moderated). */
+/** Community text tips on businesses, towns, areas, and guides (optional stars; moderated). */
 export function isCommunityTipsEnabled(flags: FeatureFlags): boolean {
   return flags.community_tips === true;
 }

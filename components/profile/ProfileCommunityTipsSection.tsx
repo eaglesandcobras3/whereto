@@ -104,7 +104,7 @@ export function ProfileCommunityTipsSection() {
   return (
     <section>
       <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
-        Your tips &amp; reviews
+        Your tips
       </h2>
       <p className="mt-2 text-sm text-zinc-500">
         Public pages show “{tipAttributionSaid(city || "…")}” — never your name or email.
