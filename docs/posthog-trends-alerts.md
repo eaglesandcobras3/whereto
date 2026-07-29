@@ -159,7 +159,7 @@ Monitors **not** created by `npm run posthog:setup-trends-alerts`. Set these up 
 | **Engagement funnel** | PostHog → [Signup funnel](https://us.posthog.com/project/455090/insights/N2XFeT5x) | Review weekly; alert only if you care about signup→save conversion | Low |
 | **Search volume** (if `search` flag on) | PostHog → New trend | Event `search`; alert on zero volume or investigate filter patterns | Low |
 | **Discover gaps inbox** | App → `/admin/discover-gaps` | Review open rows when `discover_tag_unresolved` fires; not a PostHog alert | High |
-| **IRSE calibration** | GitHub Actions on push to `main` | `npm run calibrate:irse` — score snapshots for admin badges; not a PostHog alert | Medium |
+| **IRSE calibration / scoring** | Local CLI (`npm run calibrate:irse`) | `--score-all` for badge snapshots; CSV/GSC modes for indexed vs not-indexed calibration — not a PostHog alert | Medium |
 | **Search data preflight** | CLI | `npm run eval:search:preflight` before enabling `search` in production | Medium |
 | **Portal claim server event** | Code (future) | `/api/claims` has no server PostHog capture — `claim_submit_success` is client-only today | Medium |
 | **Vercel Analytics** | Vercel dashboard | Separate from PostHog; basic traffic only | Low |
@@ -205,7 +205,7 @@ Monitors **not** created by `npm run posthog:setup-trends-alerts`. Set these up 
 | Trends + alerts (script) | 12 trends, 13 alerts | `npm run posthog:setup-trends-alerts` |
 | Wizard insights | 5 on dashboard 1673843 | Already in PostHog |
 | Manual PostHog monitors | 10+ | See **Manual setup required** table above |
-| Non-PostHog monitors | 3 | `/admin/discover-gaps`, IRSE calibration (main), search preflight |
+| Non-PostHog monitors | 3 | `/admin/discover-gaps`, IRSE CLI scoring/calibration, search preflight |
 
 ## Subscriptions (weekly digests)
 

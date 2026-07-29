@@ -27,15 +27,20 @@ export default async function AdminIrsePage() {
         <p className="font-medium text-zinc-900">Calibration</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
-            CLI: <code className="rounded bg-white px-1">npm run calibrate:irse</code>
+            Fill badge snapshots (all published pages):{" "}
+            <code className="rounded bg-white px-1">npm run calibrate:irse -- --score-all</code>
+          </li>
+          <li>
+            Calibrate vs labels:{" "}
+            <code className="rounded bg-white px-1">npm run calibrate:irse</code>
             {" "}
-            or CSV labels{" "}
+            (GSC sample) or CSV{" "}
             <code className="rounded bg-white px-1">
               --indexed=… --not-indexed=… --tune-weights
             </code>
           </li>
           <li>
-            Runs automatically on <strong>push to main</strong> (GitHub Actions) — not on PR builds
+            CLI-only — not run in CI. See OPERATOR-TODO.
           </li>
           <li>
             GSC:{" "}

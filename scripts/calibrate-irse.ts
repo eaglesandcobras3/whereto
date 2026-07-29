@@ -1,5 +1,9 @@
 /**
- * Calibrate IRSE against labeled pages.
+ * Calibrate IRSE against labeled pages, or score all published pages for badge snapshots.
+ *
+ * Score every published page (no GSC; fills irse_score_snapshots for admin badges):
+ *   npm run calibrate:irse -- --score-all
+ *   npm run calibrate:irse -- --score-all --kinds=business,guide,town,area
  *
  * GSC sample mode (default):
  *   npm run calibrate:irse
@@ -18,7 +22,11 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { calibrateIrse, calibrateIrseFromLabels } from "../lib/irse/calibrate";
+import {
+  calibrateIrse,
+  calibrateIrseFromLabels,
+  scoreAllPublishedPages,
+} from "../lib/irse/calibrate";
 import { loadAndResolveLabeledRoutesFromCsv } from "../lib/irse/parse-label-csv";
 import { buildLabelRouteLookup } from "../lib/irse/resolve-label-route";
 import {
@@ -44,6 +52,7 @@ function parseArgs(argv: string[]) {
   let applyWeights = false;
   let persist = true;
   let tuneIncludeCategories = false;
+  let scoreAll = false;
 
   for (const arg of argv) {
     if (arg.startsWith("--sample-size=")) {
@@ -68,6 +77,8 @@ function parseArgs(argv: string[]) {
       tuneIncludeCategories = true;
     } else if (arg === "--no-persist") {
       persist = false;
+    } else if (arg === "--score-all") {
+      scoreAll = true;
     }
   }
 
@@ -82,6 +93,7 @@ function parseArgs(argv: string[]) {
     applyWeights,
     persist,
     tuneIncludeCategories,
+    scoreAll,
   };
 }
 
@@ -164,8 +176,49 @@ async function main() {
   const supabase = createScriptSupabase();
   const csvMode = Boolean(opts.indexedCsv || opts.notIndexedCsv);
 
+  if (opts.scoreAll && csvMode) {
+    throw new Error("Use either --score-all or CSV labels, not both.");
+  }
   if (csvMode && (!opts.indexedCsv || !opts.notIndexedCsv)) {
     throw new Error("CSV mode requires both --indexed=… and --not-indexed=…");
+  }
+
+  if (opts.scoreAll) {
+    console.log("IRSE score-all starting…", {
+      kinds: opts.kinds ?? [...PAGE_KINDS],
+      persist: opts.persist,
+    });
+    const report = await scoreAllPublishedPages(supabase, {
+      kinds: opts.kinds,
+      persist: opts.persist,
+      onProgress: (done, total, path) => {
+        if (done === 1 || done === total || done % 25 === 0) {
+          console.log(`  [${done}/${total}] ${path}`);
+        }
+      },
+    });
+    console.log("\n=== IRSE Score-All Report ===");
+    console.log(`Total candidates: ${report.total}`);
+    console.log(`Scored: ${report.scored}`);
+    console.log(`Failed: ${report.failed}`);
+    for (const kind of PAGE_KINDS) {
+      const row = report.byKind[kind];
+      if (!row.total) continue;
+      console.log(
+        `  ${kind}: scored=${row.scored} failed=${row.failed} (of ${row.total})`,
+      );
+    }
+    if (report.warnings.length) {
+      console.log("\nWarnings:");
+      for (const w of report.warnings.slice(0, 40)) console.log(`  - ${w}`);
+      if (report.warnings.length > 40) {
+        console.log(`  … and ${report.warnings.length - 40} more`);
+      }
+    }
+    if (report.failed > 0 && report.scored === 0) {
+      process.exit(1);
+    }
+    return;
   }
 
   console.log("IRSE calibration starting…", csvMode ? "CSV labels" : opts);

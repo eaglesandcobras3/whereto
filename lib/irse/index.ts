@@ -10,11 +10,18 @@ export type {
 export { isPageKind, PAGE_KINDS } from "./types";
 export { scoreFromInput } from "./score-from-input";
 export { scorePage } from "./score-page";
-export { calibrateIrse, calibrateIrseFromLabels, collectCandidates } from "./calibrate";
+export {
+  calibrateIrse,
+  calibrateIrseFromLabels,
+  collectCandidates,
+  scoreAllPublishedPages,
+} from "./calibrate";
 export type {
   CalibrationReport,
   CalibrateOptions,
   CalibrateFromLabelsOptions,
+  ScoreAllOptions,
+  ScoreAllReport,
 } from "./calibrate";
 export { loadLatestIrseScore } from "./storage";
 export { bandForScore, clampScore } from "./aggregate";

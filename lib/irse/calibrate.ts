@@ -229,10 +229,76 @@ function buildReportFromRows(
   };
 }
 
+export type ScoreAllOptions = {
+  kinds?: PageKind[];
+  /** Persist score snapshots. Default true. */
+  persist?: boolean;
+  /** Progress logger (e.g. console.log). */
+  onProgress?: (done: number, total: number, path: string) => void;
+};
+
+export type ScoreAllReport = {
+  total: number;
+  scored: number;
+  failed: number;
+  byKind: Record<PageKind, { total: number; scored: number; failed: number }>;
+  warnings: string[];
+};
+
+/**
+ * Score every published IRSE page and persist snapshots (no GSC / no labels).
+ * Use for admin badge coverage; use CSV or GSC calibrate modes for indexed vs not-indexed metrics.
+ */
+export async function scoreAllPublishedPages(
+  supabase: SupabaseClient,
+  options: ScoreAllOptions = {},
+): Promise<ScoreAllReport> {
+  const kinds = options.kinds?.length ? options.kinds : [...KINDS];
+  const persist = options.persist !== false;
+  const warnings: string[] = [];
+  const byKind = Object.fromEntries(
+    KINDS.map((k) => [k, { total: 0, scored: 0, failed: 0 }]),
+  ) as ScoreAllReport["byKind"];
+
+  const candidates = await collectCandidates(supabase, kinds, null);
+  for (const kind of kinds) {
+    byKind[kind].total = candidates.filter((c) => c.kind === kind).length;
+  }
+
+  let scored = 0;
+  let failed = 0;
+  let done = 0;
+  for (const c of candidates) {
+    const result = await scorePage(supabase, c.kind, c.slug, {
+      inspect: false,
+      persist,
+    });
+    done += 1;
+    options.onProgress?.(done, candidates.length, c.path);
+    if (!result) {
+      failed += 1;
+      byKind[c.kind].failed += 1;
+      warnings.push(`Could not score ${c.kind}/${c.slug} (${c.path})`);
+      continue;
+    }
+    scored += 1;
+    byKind[c.kind].scored += 1;
+  }
+
+  return {
+    total: candidates.length,
+    scored,
+    failed,
+    byKind,
+    warnings,
+  };
+}
+
 export async function collectCandidates(
   supabase: SupabaseClient,
   kinds: PageKind[],
-  limitPerKind: number,
+  /** Per-kind cap; `null` = fetch all published slugs. */
+  limitPerKind: number | null,
 ): Promise<CalibrationCandidate[]> {
   const out: CalibrationCandidate[] = [];
   for (const kind of kinds) {
@@ -245,10 +311,36 @@ export async function collectCandidates(
   return interleave(out);
 }
 
+const SLUG_PAGE_SIZE = 1000;
+
 async function listSlugs(
   supabase: SupabaseClient,
   kind: PageKind,
-  limit: number,
+  limit: number | null,
+): Promise<string[]> {
+  const out: string[] = [];
+  let from = 0;
+  const hardCap = limit ?? Number.POSITIVE_INFINITY;
+
+  while (out.length < hardCap) {
+    const pageSize = Math.min(SLUG_PAGE_SIZE, hardCap - out.length);
+    if (pageSize <= 0) break;
+    const to = from + pageSize - 1;
+    const page = await fetchSlugPage(supabase, kind, from, to);
+    if (!page.length) break;
+    out.push(...page);
+    if (page.length < pageSize) break;
+    from += page.length;
+  }
+
+  return out;
+}
+
+async function fetchSlugPage(
+  supabase: SupabaseClient,
+  kind: PageKind,
+  from: number,
+  to: number,
 ): Promise<string[]> {
   switch (kind) {
     case "business": {
@@ -260,7 +352,7 @@ async function listSlugs(
         .is("archived_at", null)
         .not("slug", "is", null)
         .order("id", { ascending: true })
-        .limit(limit);
+        .range(from, to);
       return (data ?? []).map((r) => String((r as { slug: string }).slug));
     }
     case "guide": {
@@ -270,7 +362,7 @@ async function listSlugs(
         .eq("status", DIRECTUS_PUBLISHED_STATUS)
         .not("slug", "is", null)
         .order("id", { ascending: true })
-        .limit(limit);
+        .range(from, to);
       return (data ?? []).map((r) => String((r as { slug: string }).slug));
     }
     case "town": {
@@ -279,7 +371,7 @@ async function listSlugs(
         .select("slug")
         .not("slug", "is", null)
         .order("id", { ascending: true })
-        .limit(limit);
+        .range(from, to);
       return (data ?? []).map((r) => String((r as { slug: string }).slug));
     }
     case "area": {
@@ -291,7 +383,7 @@ async function listSlugs(
         .is("archived_at", null)
         .not("slug", "is", null)
         .order("id", { ascending: true })
-        .limit(limit);
+        .range(from, to);
       return (data ?? []).map((r) => String((r as { slug: string }).slug));
     }
     case "category": {
@@ -304,7 +396,7 @@ async function listSlugs(
         .not("parent_category_id", "is", null)
         .not("slug", "is", null)
         .order("id", { ascending: true })
-        .limit(limit);
+        .range(from, to);
       return (data ?? []).map((r) => String((r as { slug: string }).slug));
     }
   }

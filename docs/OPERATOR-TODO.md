@@ -64,15 +64,21 @@ On business / guide / town / area pages, signed-in admins see a fixed **IRSE bad
   - `GSC_SITE_URL` — e.g. `sc-domain:whereto30a.com` or `https://whereto30a.com/`
   - `GSC_SERVICE_ACCOUNT_EMAIL`
   - `GSC_SERVICE_ACCOUNT_PRIVATE_KEY` — PEM with `\n` for newlines
-- [ ] GitHub Actions secrets (for **main-only** calibration job):
-  - `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL`
-  - `GSC_SITE_URL`, `GSC_SERVICE_ACCOUNT_EMAIL`, `GSC_SERVICE_ACCOUNT_PRIVATE_KEY`
+- [ ] Local CLI also needs `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL` (same as app)
 - [ ] Smoke-test: open `/admin/irse`, score a business slug with **Inspect GSC** checked; confirm badge on `/business/[slug]` while signed in as admin
 - [ ] Optional: drop leftover SEO audit tables — [drop-seo-audit-tables.sql](../scripts/migrations/drop-seo-audit-tables.sql)
 
-### Calibration
+### Calibration & scoring (CLI only)
 
-Runs on **push to `main` only** (`.github/workflows/ci.yml` → `calibrate-irse`). Does **not** run on PR/branch builds.
+Not run in CI. Use local CLI against production (or staging) Supabase.
+
+**Score every published page** (fills `irse_score_snapshots` for admin badges — no GSC, not limited to CSVs):
+
+```bash
+npm run calibrate:irse -- --score-all
+# optional: --kinds=business,guide,town,area
+# optional: --no-persist  (dry run)
+```
 
 **CSV labels (local, no GSC):** put routes in two files, then:
 
@@ -85,7 +91,7 @@ npm run calibrate:irse -- \
 
 Each CSV is a list of paths (`/business/…`, `/guide/…`, …) or a `path`/`url` column. Root aliases like `/grayton-beach` or `/apparel` are resolved the same way the site does (town / category / area). Directory hubs (`/businesses`, `/about`, …) are skipped. IRSE scores every resolved row, compares indexed vs not-indexed averages, and with `--tune-weights` searches a better category mix **on business/guide/town/area only** (excludes thin category hubs), with per-weight caps and baseline regularization. Add `--tune-include-categories` to include category hubs in the tune set. Add `--apply-weights` only when the tuner sets `recommend apply` (writes `lib/irse/weights.ts`).
 
-**GSC sample mode:**
+**GSC sample mode** (calibration metrics only — samples ~100 labeled URLs, not the whole site):
 
 ```bash
 npm run calibrate:irse
@@ -96,7 +102,7 @@ npm run calibrate:irse -- --sample-size=100 --force-inspect
 
 - IRSE does **not** replace the boolean listing gate in `lib/seo/business-index-readiness.ts`.
 - `indexReady` in IRSE means `overallScore >= 80`.
-- Do not blast-inspect the whole site; use on-demand inspect + calibration sampling only.
+- Do not blast-inspect the whole site with GSC; use on-demand inspect + calibration sampling only. Full-site **scoring** (no GSC) is fine via `--score-all`.
 - The old SEO site audit (CLI / `/admin/seo-audit` / cron) was removed — use IRSE instead.
 
 ---
@@ -384,8 +390,9 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-07-29 | IRSE: removed GitHub `calibrate-irse` job — CLI only. Use `npm run calibrate:irse -- --score-all` to snapshot every published page for admin badges. |
 | 2026-07-29 | IRSE CSV calibration: `--indexed` / `--not-indexed` route lists, `--tune-weights` / `--apply-weights` for category mix search |
-| 2026-07-29 | Removed SEO site audit (CLI, admin, cron). IRSE admin badge on business/guide/town/area pages from snapshots; `calibrate:irse` runs on push to main only. Optional [drop-seo-audit-tables.sql](../scripts/migrations/drop-seo-audit-tables.sql) |
+| 2026-07-29 | Removed SEO site audit (CLI, admin, cron). IRSE admin badge on business/guide/town/area pages from snapshots. Optional [drop-seo-audit-tables.sql](../scripts/migrations/drop-seo-audit-tables.sql) |
 | 2026-07-29 | Drop unused `search_tags_vocabulary.aliases` and `parent_class` — cleanup metadata; runtime only uses canonical `tag`. SQL [drop-search-tags-vocabulary-aliases.sql](../scripts/migrations/drop-search-tags-vocabulary-aliases.sql) |
 | 2026-07-29 | PostHog `community_tips`: moderated visitor text tips (optional stars) on business/town/area/guide pages; city required at signup for semi-anonymous attribution; admin `/admin/community-tips`; SQL [community-tips.sql](../scripts/migrations/community-tips.sql) |
 | 2026-07-18 | IRSE MVP: score business/guide/town/area/category; admin `/admin/irse`; GSC URL Inspection + calibration (`npm run calibrate:irse`); SQL [irse-tables.sql](../scripts/migrations/irse-tables.sql) |

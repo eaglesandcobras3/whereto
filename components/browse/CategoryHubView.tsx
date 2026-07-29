@@ -2,6 +2,7 @@ import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
 import { CategoryHubEditorial } from "@/components/browse/CategoryHubEditorial";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
+import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import {
   generateBreadcrumbSchema,
   generateCollectionPageSchema,
@@ -71,6 +72,7 @@ export function CategoryHubView({ cat, townGroups: _townGroups, businesses }: Pr
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      <IrseAdminBadge kind="category" slug={cat.slug} />
       <SeoImprovementsGate>
         <script
           type="application/ld+json"

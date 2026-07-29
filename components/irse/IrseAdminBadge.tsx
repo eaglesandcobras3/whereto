@@ -33,7 +33,10 @@ async function IrseAdminBadgeInner({ kind, slug }: Props) {
         data-admin-only="irse"
       >
         <p className="font-semibold">IRSE · no snapshot</p>
-        <p className="mt-0.5 text-amber-900/80">Score this page from admin or wait for main calibration.</p>
+        <p className="mt-0.5 text-amber-900/80">
+          Score this page from admin or run{" "}
+          <code className="rounded bg-amber-100/80 px-0.5">npm run calibrate:irse -- --score-all</code>.
+        </p>
         <Link href={scorerHref} className="mt-1 inline-block font-medium underline hover:no-underline">
           Open scorer
         </Link>

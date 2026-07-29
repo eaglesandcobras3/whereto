@@ -215,7 +215,7 @@ npm run calibrate:irse -- \
 
 Target separation: indexed mean − non-indexed mean ≥ **15** points.
 
-CLI: `npm run calibrate:irse`
+CLI: `npm run calibrate:irse` (calibration) or `npm run calibrate:irse -- --score-all` (persist snapshots for every published page; no GSC).
 
 ---
 
