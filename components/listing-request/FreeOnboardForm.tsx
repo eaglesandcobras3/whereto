@@ -83,7 +83,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
-  const [searchTagOptions, setSearchTagOptions] = useState<string[]>([]);
+  const [searchTagOptions, setSearchTagOptions] = useState<DiscoverSearchTagOption[]>([]);
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
   const [removalOpen, setRemovalOpen] = useState(false);
   const [removalName, setRemovalName] = useState("");
@@ -122,6 +122,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           categories?: CategoryOption[];
           categoryGroups?: CategoryGroup[];
           searchTags?: string[];
+          searchTagOptions?: DiscoverSearchTagOption[];
           isAdmin?: boolean;
           adminName?: string | null;
           adminEmail?: string | null;
@@ -130,7 +131,14 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         if (!res.ok) throw new Error(j.error ?? "Could not load form options");
         setCategories(j.categories ?? []);
         setCategoryGroups(j.categoryGroups ?? []);
-        setSearchTagOptions(j.searchTags ?? []);
+        setSearchTagOptions(
+          j.searchTagOptions?.length
+            ? j.searchTagOptions
+            : (j.searchTags ?? []).map((slug) => ({
+                slug,
+                label: formatSearchTagLabel(slug),
+              })),
+        );
         setIsAdmin(Boolean(j.isAdmin));
         setAdminName((j.adminName ?? "").trim());
         setAdminEmail((j.adminEmail ?? "").trim());
@@ -181,11 +189,11 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   }, [businessSlug]);
 
   const tagOptions: DiscoverSearchTagOption[] = useMemo(() => {
-    const set = new Set(searchTagOptions);
-    for (const t of selectedTags) set.add(t);
-    return Array.from(set)
-      .sort()
-      .map((slug) => ({ slug, label: formatSearchTagLabel(slug) }));
+    const bySlug = new Map(searchTagOptions.map((t) => [t.slug, t]));
+    for (const t of selectedTags) {
+      if (!bySlug.has(t)) bySlug.set(t, { slug: t, label: formatSearchTagLabel(t) });
+    }
+    return Array.from(bySlug.values()).sort((a, b) => a.slug.localeCompare(b.slug));
   }, [searchTagOptions, selectedTags]);
 
   const suggestedTags = useMemo(

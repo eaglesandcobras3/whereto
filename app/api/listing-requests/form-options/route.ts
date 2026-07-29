@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadUnifiedCategoryOptions } from "@/lib/categories/load-unified-categories";
+import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
 import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
@@ -18,7 +19,10 @@ export async function GET() {
 
   const [admin, tagsResult, categoryGroups] = await Promise.all([
     requireAdminUser(),
-    supabase.from("search_tags_vocabulary").select("tag").order("tag", { ascending: true }),
+    supabase
+      .from("search_tags_vocabulary")
+      .select("tag, description")
+      .order("tag", { ascending: true }),
     loadUnifiedCategoryOptions(),
   ]);
 
@@ -36,15 +40,24 @@ export async function GET() {
     })),
   );
 
+  const searchTagOptions = (tagsResult.data ?? [])
+    .map((t) => {
+      const row = t as { tag?: string; description?: string | null };
+      const slug = String(row.tag ?? "").trim();
+      if (!slug) return null;
+      return { slug, label: labelForSearchTag(slug, row.description) };
+    })
+    .filter((t): t is { slug: string; label: string } => Boolean(t));
+
   return NextResponse.json({
     /** @deprecated Prefer categoryGroups; flat leaves for simple selects. */
     categories: leaves,
     categoryGroups,
     /** @deprecated Unified taxonomy — empty for backward-compatible clients. */
     serviceCategories: [],
-    searchTags: (tagsResult.data ?? [])
-      .map((t) => String((t as { tag: string }).tag ?? "").trim())
-      .filter(Boolean),
+    /** @deprecated Prefer searchTagOptions (slug + label). */
+    searchTags: searchTagOptions.map((t) => t.slug),
+    searchTagOptions,
     isAdmin: Boolean(admin),
     adminName: admin?.name ?? null,
     adminEmail: admin?.email ?? null,

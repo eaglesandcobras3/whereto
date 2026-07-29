@@ -130,6 +130,7 @@ Requires `OPENAI_API_KEY` for LLM fallback (deterministic-only without it).
 ### Apply (Supabase SQL editor)
 
 - [ ] Run [scripts/migrations/businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql)
+- [ ] Run [scripts/migrations/drop-search-tags-vocabulary-aliases.sql](../scripts/migrations/drop-search-tags-vocabulary-aliases.sql) — drops unused `search_tags_vocabulary.aliases` and `parent_class` (canonical tags already cleaned; runtime only uses `tag`)
 
 ### Verify
 
@@ -390,6 +391,7 @@ npm run calibrate:irse -- --sample-size=100 --force-inspect
 
 | Date | Change |
 |------|--------|
+| 2026-07-29 | Drop unused `search_tags_vocabulary.aliases` and `parent_class` — cleanup metadata; runtime only uses canonical `tag`. SQL [drop-search-tags-vocabulary-aliases.sql](../scripts/migrations/drop-search-tags-vocabulary-aliases.sql) |
 | 2026-07-29 | PostHog `community_tips`: moderated visitor text tips (optional stars) on business/town/area/guide pages; city required at signup for semi-anonymous attribution; admin `/admin/community-tips`; SQL [community-tips.sql](../scripts/migrations/community-tips.sql) |
 | 2026-07-18 | IRSE MVP: score business/guide/town/area/category; admin `/admin/irse`; GSC URL Inspection + calibration (`npm run calibrate:irse`); SQL [irse-tables.sql](../scripts/migrations/irse-tables.sql) |
 | 2026-07-17 | Combined Businesses + Services hubs: `/businesses` shows all listings; `/services` permanently redirects to `/businesses`. Nav/footer drop separate Services. |

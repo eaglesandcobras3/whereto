@@ -10,7 +10,7 @@ import {
   SERVICE_CATEGORY_GROUP_LABELS,
   SERVICE_CATEGORY_GROUP_SLUGS,
 } from "@/lib/service-categories/groups";
-import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
+import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
 
 export type DiscoverTownOption = {
   id: string;
@@ -52,7 +52,7 @@ export async function loadDiscoverFilterOptions(): Promise<{
 
   const vocabRes = await supabase
     .from("search_tags_vocabulary")
-    .select("tag")
+    .select("tag, description")
     .order("tag", { ascending: true });
 
   return {
@@ -69,8 +69,9 @@ export async function loadDiscoverFilterOptions(): Promise<{
       title: SERVICE_CATEGORY_GROUP_LABELS[slug],
     })),
     searchTags: (vocabRes.data ?? []).map((row) => {
-      const slug = String((row as { tag: string }).tag);
-      return { slug, label: formatSearchTagLabel(slug) };
+      const r = row as { tag: string; description?: string | null };
+      const slug = String(r.tag);
+      return { slug, label: labelForSearchTag(slug, r.description) };
     }),
   };
 }

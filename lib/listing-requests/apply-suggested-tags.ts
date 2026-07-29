@@ -1,6 +1,7 @@
 /** Promote free-intake suggested tags into vocabulary and onto the payload. */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   type FreeOnboardPayload,
@@ -19,6 +20,26 @@ export function suggestionToVocabSlug(raw: string): string | null {
     .slice(0, 64);
   if (!slug || !/^[a-z0-9_]+$/.test(slug)) return null;
   return slug;
+}
+
+/**
+ * Readable vocabulary description from a freeform suggestion.
+ * Preserves short all-caps tokens (BBQ, HVAC); otherwise Title Cases words.
+ */
+export function suggestionToVocabDescription(raw: string): string {
+  const cleaned = raw.trim().replace(/\s+/g, " ").slice(0, 120);
+  if (!cleaned) return "";
+  if (!/\s/.test(cleaned) && cleaned.includes("_")) {
+    return formatSearchTagLabel(cleaned);
+  }
+  return cleaned
+    .split(" ")
+    .map((word) => {
+      if (word.length <= 5 && /^[A-Z0-9]+$/.test(word)) return word;
+      if (/^[a-z0-9]+(?:_[a-z0-9]+)+$/i.test(word)) return formatSearchTagLabel(word);
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
 }
 
 export type SuggestedTagAction =
@@ -71,8 +92,9 @@ function isLegacyStringArray(raw: unknown): raw is string[] {
 }
 
 /**
- * Upsert promoted/replaced phrases into `search_tags_vocabulary`, merge onto
- * `payload.search_tags` (max 6), and leave remaining suggestions on `suggested_tags`.
+ * Upsert promoted/replaced phrases into `search_tags_vocabulary` as
+ * `{ tag: snake_case, description: readable }`, merge onto `payload.search_tags`
+ * (max 6), and leave remaining suggestions on `suggested_tags`.
  *
  * - Legacy `string[]`: listed phrases are promoted; others stay on suggested_tags.
  * - Structured actions: promote / replace / discard per `from`; unmentioned stay.
@@ -94,7 +116,8 @@ export async function applySuggestedTagsToPayload(
 
   const remainingSuggested: string[] = [];
   const skippedInvalid: string[] = [];
-  const slugsToPromote: string[] = [];
+  /** First-seen slug → readable description for vocabulary insert. */
+  const promoteBySlug = new Map<string, string>();
   /** Original phrases that produced each slug (for overflow recovery). */
   const originalsBySlug = new Map<string, string[]>();
 
@@ -125,16 +148,23 @@ export async function applySuggestedTagsToPayload(
       remainingSuggested.push(trimmed);
       continue;
     }
-    slugsToPromote.push(slug);
+    if (!promoteBySlug.has(slug)) {
+      const description =
+        suggestionToVocabDescription(phrase) || formatSearchTagLabel(slug);
+      promoteBySlug.set(slug, description);
+    }
     const list = originalsBySlug.get(slug) ?? [];
     list.push(trimmed);
     originalsBySlug.set(slug, list);
   }
 
-  const uniquePromote = [...new Set(slugsToPromote)];
+  const uniquePromote = [...promoteBySlug.keys()];
   if (uniquePromote.length > 0) {
     const { error } = await supabase.from("search_tags_vocabulary").upsert(
-      uniquePromote.map((tag) => ({ tag })),
+      uniquePromote.map((tag) => ({
+        tag,
+        description: promoteBySlug.get(tag) ?? formatSearchTagLabel(tag),
+      })),
       { onConflict: "tag", ignoreDuplicates: true },
     );
     if (error) {

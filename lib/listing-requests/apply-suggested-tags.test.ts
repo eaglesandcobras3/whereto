@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   applySuggestedTagsToPayload,
+  suggestionToVocabDescription,
   suggestionToVocabSlug,
 } from "@/lib/listing-requests/apply-suggested-tags";
 import type { FreeOnboardPayload } from "@/lib/listing-requests/free-onboard-schema";
@@ -40,8 +41,24 @@ describe("suggestionToVocabSlug", () => {
   });
 });
 
+describe("suggestionToVocabDescription", () => {
+  it("title-cases readable phrases", () => {
+    expect(suggestionToVocabDescription("product development")).toBe("Product Development");
+    expect(suggestionToVocabDescription("  marketing  ")).toBe("Marketing");
+  });
+
+  it("preserves short all-caps tokens", () => {
+    expect(suggestionToVocabDescription("BBQ")).toBe("BBQ");
+    expect(suggestionToVocabDescription("HVAC repair")).toBe("HVAC Repair");
+  });
+
+  it("formats snake_case input as a label", () => {
+    expect(suggestionToVocabDescription("product_strategy")).toBe("Product Strategy");
+  });
+});
+
 describe("applySuggestedTagsToPayload", () => {
-  it("upserts selected tags and merges onto search_tags", async () => {
+  it("upserts selected tags with description and merges onto search_tags", async () => {
     const upsert = vi.fn().mockResolvedValue({ error: null });
     const supabase = {
       from: vi.fn(() => ({ upsert })),
@@ -53,7 +70,10 @@ describe("applySuggestedTagsToPayload", () => {
     ]);
 
     expect(upsert).toHaveBeenCalledWith(
-      [{ tag: "marketing" }, { tag: "product_development" }],
+      [
+        { tag: "marketing", description: "Marketing" },
+        { tag: "product_development", description: "Product Development" },
+      ],
       { onConflict: "tag", ignoreDuplicates: true },
     );
     expect(result.promotedSlugs).toEqual(["marketing", "product_development"]);
@@ -112,6 +132,13 @@ describe("applySuggestedTagsToPayload", () => {
       { from: "engineering", action: "discard" },
     ]);
 
+    expect(upsert).toHaveBeenCalledWith(
+      [
+        { tag: "digital_marketing", description: "Digital Marketing" },
+        { tag: "product_strategy", description: "Product Strategy" },
+      ],
+      { onConflict: "tag", ignoreDuplicates: true },
+    );
     expect(result.promotedSlugs).toEqual(["digital_marketing", "product_strategy"]);
     expect(result.payload.search_tags).toEqual([
       "wifi",

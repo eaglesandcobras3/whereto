@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { suggestionToVocabSlug } from "@/lib/listing-requests/apply-suggested-tags";
+import {
+  suggestionToVocabDescription,
+  suggestionToVocabSlug,
+} from "@/lib/listing-requests/apply-suggested-tags";
 import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TYPES,
@@ -763,9 +766,14 @@ export function ReviewQueueClient() {
                               <ul className="mt-2 space-y-2">
                                 {suggested.map((suggestion) => {
                                   const d = decisions[suggestion] ?? { promote: true, to: "" };
-                                  const previewSlug = suggestionToVocabSlug(
-                                    d.promote ? d.to.trim() || suggestion : d.to.trim() || suggestion,
-                                  );
+                                  const previewPhrase = d.promote
+                                    ? d.to.trim() || suggestion
+                                    : d.to.trim() || suggestion;
+                                  const previewSlug = suggestionToVocabSlug(previewPhrase);
+                                  const previewLabel = previewSlug
+                                    ? suggestionToVocabDescription(previewPhrase) ||
+                                      suggestionToVocabDescription(previewSlug)
+                                    : null;
                                   return (
                                     <li key={suggestion} className="text-sm">
                                       <label className="flex cursor-pointer items-start gap-2">
@@ -782,9 +790,10 @@ export function ReviewQueueClient() {
                                         />
                                         <span className="flex-1">
                                           <span className="font-medium">{suggestion}</span>
-                                          {d.promote && previewSlug ? (
+                                          {d.promote && previewSlug && previewLabel ? (
                                             <span className="ml-1 text-xs text-zinc-600">
-                                              → {previewSlug}
+                                              → {previewLabel}{" "}
+                                              <span className="font-mono">({previewSlug})</span>
                                             </span>
                                           ) : null}
                                           {d.promote ? (
