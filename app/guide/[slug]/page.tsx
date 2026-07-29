@@ -23,6 +23,7 @@ import { relatedGuidesForSlug } from "@/lib/seo/guide-related-links";
 import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 
 export const revalidate = 21600;
 
@@ -182,6 +183,7 @@ export default async function GuidePage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      <IrseAdminBadge kind="guide" slug={slug} />
       <main className="flex-1">
         {!hasHeroImage ? (
           <div className="coastal-hero border-b border-[var(--color-border)]">

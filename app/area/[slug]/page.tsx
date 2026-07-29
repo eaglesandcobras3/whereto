@@ -25,6 +25,7 @@ import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsG
 import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getGuidesForArea } from "@/lib/data/town-hub";
+import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 
 export const revalidate = 21600;
 
@@ -126,6 +127,7 @@ export default async function AreaPage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      <IrseAdminBadge kind="area" slug={area.slug} />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 md:px-10 md:py-12">
           <script

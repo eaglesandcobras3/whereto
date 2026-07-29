@@ -10,8 +10,13 @@ export type {
 export { isPageKind, PAGE_KINDS } from "./types";
 export { scoreFromInput } from "./score-from-input";
 export { scorePage } from "./score-page";
-export { calibrateIrse, collectCandidates } from "./calibrate";
-export type { CalibrationReport, CalibrateOptions } from "./calibrate";
+export { calibrateIrse, calibrateIrseFromLabels, collectCandidates } from "./calibrate";
+export type {
+  CalibrationReport,
+  CalibrateOptions,
+  CalibrateFromLabelsOptions,
+} from "./calibrate";
+export { loadLatestIrseScore } from "./storage";
 export { bandForScore, clampScore } from "./aggregate";
 export {
   CATEGORY_WEIGHTS,
@@ -21,3 +26,19 @@ export {
 export { mapCoverageToIndexed } from "./gsc/map-coverage";
 export { isGscConfigured } from "./gsc/config";
 export { pathForKind } from "./paths";
+export { parseLabelRoute } from "./parse-label-route";
+export {
+  buildLabelRouteLookup,
+  resolveLabelRoute,
+  NON_SCORABLE_ROOT_PATHS,
+} from "./resolve-label-route";
+export { loadAndResolveLabeledRoutesFromCsv } from "./parse-label-csv";
+export {
+  overallWithWeights,
+  tuneCategoryWeights,
+  formatWeightsTsBlock,
+  constrainWeights,
+  DEFAULT_TUNE_KINDS,
+  TUNE_WEIGHT_MIN,
+  TUNE_WEIGHT_MAX,
+} from "./tune-weights";

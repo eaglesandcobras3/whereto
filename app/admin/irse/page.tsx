@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { isGscConfigured } from "@/lib/irse/gsc/config";
@@ -27,6 +28,14 @@ export default async function AdminIrsePage() {
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
             CLI: <code className="rounded bg-white px-1">npm run calibrate:irse</code>
+            {" "}
+            or CSV labels{" "}
+            <code className="rounded bg-white px-1">
+              --indexed=… --not-indexed=… --tune-weights
+            </code>
+          </li>
+          <li>
+            Runs automatically on <strong>push to main</strong> (GitHub Actions) — not on PR builds
           </li>
           <li>
             GSC:{" "}
@@ -41,7 +50,9 @@ export default async function AdminIrsePage() {
         </ul>
       </div>
 
-      <IrseScorerClient />
+      <Suspense fallback={<p className="mt-8 text-sm text-zinc-500">Loading scorer…</p>}>
+        <IrseScorerClient />
+      </Suspense>
     </div>
   );
 }

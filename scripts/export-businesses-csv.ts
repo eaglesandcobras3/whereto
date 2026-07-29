@@ -1,19 +1,17 @@
 /**
- * Export storefronts and/or service vendors for manual audit.
+ * Export businesses for manual audit (storefronts + services in one file).
  *
- * Columns: title, slug, town, area, category, search_tags, excerpt, overview,
- * seo_title, seo_description, search_keywords, location, phone, website.
+ * Columns: title, slug, is_storefront, is_service_business, town, area, category,
+ * search_tags, excerpt, overview, seo_title, seo_description, search_keywords,
+ * location, phone, website.
  *
- * Files are already split by listing kind (storefront vs service). Within each
- * file rows are sorted by category, then town, then title.
+ * Rows are sorted by category, then town, then title.
  *
  * Usage:
- *   npx tsx scripts/export-businesses-csv.ts                 # both CSVs under docs/
- *   npx tsx scripts/export-businesses-csv.ts --storefronts
- *   npx tsx scripts/export-businesses-csv.ts --services
+ *   npx tsx scripts/export-businesses-csv.ts
  *   npx tsx scripts/export-businesses-csv.ts --all-statuses
  *   npx tsx scripts/export-businesses-csv.ts --include-archived
- *   npx tsx scripts/export-businesses-csv.ts --services --file path.csv
+ *   npx tsx scripts/export-businesses-csv.ts --file path.csv
  */
 
 import { writeFileSync } from "fs";
@@ -22,35 +20,18 @@ import * as dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
-const ONLY_STOREFRONTS =
-  process.argv.includes("--storefronts") && !process.argv.includes("--services");
-const ONLY_SERVICES =
-  process.argv.includes("--services") && !process.argv.includes("--storefronts");
-const EXPORT_STOREFRONTS = ONLY_STOREFRONTS || (!ONLY_STOREFRONTS && !ONLY_SERVICES);
-const EXPORT_SERVICES = ONLY_SERVICES || (!ONLY_STOREFRONTS && !ONLY_SERVICES);
 const ALL_STATUSES = process.argv.includes("--all-statuses");
 const INCLUDE_ARCHIVED = process.argv.includes("--include-archived");
 
-function resolveOutputPath(kind: "storefront" | "service", defaultPath: string): string {
+function resolveOutputPath(): string {
   const fileIdx = process.argv.indexOf("--file");
-  if (fileIdx === -1) return defaultPath;
-
+  if (fileIdx === -1) return "docs/businesses-audit.csv";
   const p = process.argv[fileIdx + 1];
   if (!p) throw new Error("--file requires a path");
-  if (EXPORT_STOREFRONTS && EXPORT_SERVICES) {
-    throw new Error("--file requires exactly one of --storefronts or --services");
-  }
-  if (kind === "storefront" && !EXPORT_STOREFRONTS) {
-    throw new Error("Internal: storefront path requested but storefront export disabled");
-  }
-  if (kind === "service" && !EXPORT_SERVICES) {
-    throw new Error("Internal: service path requested but service export disabled");
-  }
   return p;
 }
 
-const STOREFRONTS_PATH = resolveOutputPath("storefront", "docs/storefronts-audit.csv");
-const SERVICES_PATH = resolveOutputPath("service", "docs/services-audit.csv");
+const OUTPUT_PATH = resolveOutputPath();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -67,6 +48,8 @@ type Rel<T> = T | T[] | null;
 type ExportRow = {
   title: string;
   slug: string;
+  is_storefront: boolean | null;
+  is_service_business: boolean | null;
   address: string | null;
   phone: string | null;
   website: string | null;
@@ -83,7 +66,7 @@ type ExportRow = {
 };
 
 const SELECT = `
-  title, slug, address, phone, website,
+  title, slug, is_storefront, is_service_business, address, phone, website,
   excerpt, overview, seo_title, seo_description, search_keywords, search_tags,
   towns ( title ),
   areas ( title ),
@@ -94,6 +77,8 @@ const SELECT = `
 const HEADERS = [
   "title",
   "slug",
+  "is_storefront",
+  "is_service_business",
   "town",
   "area",
   "category",
@@ -135,24 +120,29 @@ function formatSearchTags(tags: string[] | null | undefined): string {
     .join(" | ");
 }
 
-function categoryLabel(row: ExportRow, kind: "storefront" | "service"): string {
-  if (kind === "service") {
-    const specialty = relOne(row.service_categories);
-    if (specialty?.title?.trim()) return specialty.title.trim();
-  }
-  const category = relOne(row.business_categories);
-  return category?.title?.trim() || "";
+function formatBool(value: boolean | null | undefined): string {
+  return value ? "true" : "false";
 }
 
-function mapRow(row: ExportRow, kind: "storefront" | "service"): Record<string, string> {
+/** Prefer unified business category; fall back to legacy service specialty title. */
+function categoryLabel(row: ExportRow): string {
+  const category = relOne(row.business_categories);
+  if (category?.title?.trim()) return category.title.trim();
+  const specialty = relOne(row.service_categories);
+  return specialty?.title?.trim() || "";
+}
+
+function mapRow(row: ExportRow): Record<string, string> {
   const town = relOne(row.towns);
   const area = relOne(row.areas);
   return {
     title: row.title ?? "",
     slug: row.slug ?? "",
+    is_storefront: formatBool(row.is_storefront),
+    is_service_business: formatBool(row.is_service_business),
     town: town?.title?.trim() ?? "",
     area: area?.title?.trim() ?? "",
-    category: categoryLabel(row, kind),
+    category: categoryLabel(row),
     search_tags: formatSearchTags(row.search_tags),
     excerpt: row.excerpt ?? "",
     overview: row.overview ?? "",
@@ -173,7 +163,7 @@ function sortKey(row: Record<string, string>): string {
   ].join("\0");
 }
 
-async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRow[]> {
+async function fetchBusinesses(): Promise<ExportRow[]> {
   const pageSize = 500;
   const all: ExportRow[] = [];
   let from = 0;
@@ -182,6 +172,7 @@ async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRo
     let query = supabase
       .from("businesses")
       .select(SELECT)
+      .or("is_storefront.eq.true,is_service_business.eq.true")
       .order("title", { ascending: true })
       .range(from, from + pageSize - 1);
 
@@ -190,11 +181,6 @@ async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRo
     }
     if (!ALL_STATUSES) {
       query = query.eq("status", "published");
-    }
-    if (kind === "storefront") {
-      query = query.eq("is_storefront", true).eq("is_service_business", false);
-    } else {
-      query = query.eq("is_service_business", true).eq("is_storefront", false);
     }
 
     const { data, error } = await query;
@@ -209,20 +195,18 @@ async function fetchBusinesses(kind: "storefront" | "service"): Promise<ExportRo
   return all;
 }
 
-async function exportKind(kind: "storefront" | "service", path: string): Promise<void> {
-  const rows = await fetchBusinesses(kind);
-  const mapped = rows.map((r) => mapRow(r, kind)).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
-  writeFileSync(path, stringifyCsv(HEADERS, mapped), "utf8");
-  console.log(`Wrote ${mapped.length} ${kind === "storefront" ? "storefronts" : "services"} → ${path}`);
-}
-
 async function main() {
-  if (EXPORT_STOREFRONTS) {
-    await exportKind("storefront", STOREFRONTS_PATH);
-  }
-  if (EXPORT_SERVICES) {
-    await exportKind("service", SERVICES_PATH);
-  }
+  const rows = await fetchBusinesses();
+  const mapped = rows.map(mapRow).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+  writeFileSync(OUTPUT_PATH, stringifyCsv(HEADERS, mapped), "utf8");
+
+  const storefronts = mapped.filter((r) => r.is_storefront === "true").length;
+  const services = mapped.filter((r) => r.is_service_business === "true").length;
+  const both = mapped.filter(
+    (r) => r.is_storefront === "true" && r.is_service_business === "true",
+  ).length;
+  console.log(`Wrote ${mapped.length} businesses → ${OUTPUT_PATH}`);
+  console.log(`  is_storefront=${storefronts}, is_service_business=${services}, both=${both}`);
 }
 
 main().catch((err) => {

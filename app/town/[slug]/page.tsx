@@ -37,6 +37,7 @@ import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsG
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
+import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 
 type SidebarArea = {
   id: string;
@@ -353,6 +354,7 @@ function BasicTownPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      <IrseAdminBadge kind="town" slug={town.slug} />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 md:px-10 md:py-12">
           <script

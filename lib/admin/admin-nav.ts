@@ -19,11 +19,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description: "Create, edit, enrich, and publish editorial guides (markdown).",
   },
   {
-    href: "/admin/seo-audit",
-    title: "SEO audit",
-    description: "Optional stored reports; run npm run audit:seo -- --live for full markdown.",
-  },
-  {
     href: "/admin/irse",
     title: "Index readiness",
     description: "Score pages for Google index readiness; optional GSC inspection + calibration.",

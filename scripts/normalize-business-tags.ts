@@ -11,8 +11,8 @@
  * leftover cruft from earlier enrichment); nothing else is rewritten.
  *
  * Usage:
- *   npx tsx scripts/normalize-business-tags.ts                 # both files
- *   npx tsx scripts/normalize-business-tags.ts --file docs/storefronts-audit.csv
+ *   npx tsx scripts/normalize-business-tags.ts                 # docs/businesses-audit.csv
+ *   npx tsx scripts/normalize-business-tags.ts --file docs/businesses-audit.csv
  *
  * Overwrites the input CSV in place. A `<file>.pre-cleanup.csv` backup of the
  * original is written first (only if one doesn't already exist), and a
@@ -64,7 +64,7 @@ const TAG_FIELDS = [
   "occasion_tags",
 ] as const;
 
-const DEFAULT_FILES = ["docs/storefronts-audit.csv", "docs/services-audit.csv"];
+const DEFAULT_FILES = ["docs/businesses-audit.csv"];
 
 type CsvRow = Record<string, string>;
 

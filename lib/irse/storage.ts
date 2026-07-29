@@ -26,6 +26,59 @@ export async function saveScoreSnapshot(
   }
 }
 
+export async function loadLatestIrseScore(
+  supabase: SupabaseClient,
+  kind: PageKind,
+  slug: string,
+): Promise<{
+  overallScore: number;
+  indexReady: boolean;
+  band: string | null;
+  confidence: number | null;
+  scoredAt: string;
+  flags: unknown;
+  recommendations: unknown;
+  scores: CategoryScores | null;
+} | null> {
+  const { data, error } = await supabase
+    .from("irse_score_snapshots")
+    .select(
+      "overall_score, index_ready, band, confidence, scored_at, flags, recommendations, scores",
+    )
+    .eq("kind", kind)
+    .eq("slug", slug)
+    .order("scored_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    if (error) console.warn("irse loadLatestIrseScore:", error.message);
+    return null;
+  }
+
+  const row = data as {
+    overall_score: number | string;
+    index_ready: boolean | null;
+    band: string | null;
+    confidence: number | string | null;
+    scored_at: string;
+    flags: unknown;
+    recommendations: unknown;
+    scores: CategoryScores | null;
+  };
+
+  return {
+    overallScore: Number(row.overall_score),
+    indexReady: Boolean(row.index_ready),
+    band: row.band,
+    confidence: row.confidence == null ? null : Number(row.confidence),
+    scoredAt: row.scored_at,
+    flags: row.flags,
+    recommendations: row.recommendations,
+    scores: row.scores,
+  };
+}
+
 export async function loadIndexedPeerCentroid(
   supabase: SupabaseClient,
   kind: PageKind,

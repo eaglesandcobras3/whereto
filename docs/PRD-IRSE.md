@@ -187,7 +187,26 @@ Blend of:
 
 ### Calibration
 
-Ground truth: Google Search Console URL Inspection API.
+Ground truth: Google Search Console URL Inspection API **or** CSV route lists.
+
+**CSV mode (preferred for local tuning):**
+
+1. Provide `indexed.csv` and `notindexed.csv` of site paths
+2. Score every listed page with IRSE
+3. Measure indexed mean − not-indexed mean
+4. Optionally search category weight mixes to widen that gap (`--tune-weights`)
+   - Default: tune on business/guide/town/area only (exclude thin category hubs)
+   - Per-weight caps + regularization toward current weights
+   - Validates full-set separation before recommending `--apply-weights`
+
+```bash
+npm run calibrate:irse -- \
+  --indexed=docs/irse-indexed.csv \
+  --not-indexed=docs/irse-notindexed.csv \
+  --tune-weights
+```
+
+**GSC sample mode:**
 
 1. Sample published URLs across kinds
 2. Inspect (cached 7 days) until ~50 indexed + ~50 not-indexed

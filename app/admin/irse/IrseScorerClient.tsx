@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { PageKind, ScoreResult } from "@/lib/irse";
+import { useSearchParams } from "next/navigation";
+import type { PageKind, ScoreResult } from "@/lib/irse/types";
+import { isPageKind } from "@/lib/irse/types";
 
 const KINDS: { value: PageKind; label: string }[] = [
   { value: "business", label: "Business" },
@@ -12,8 +14,13 @@ const KINDS: { value: PageKind; label: string }[] = [
 ];
 
 export function IrseScorerClient() {
-  const [kind, setKind] = useState<PageKind>("business");
-  const [slug, setSlug] = useState("");
+  const searchParams = useSearchParams();
+  const initialKindRaw = searchParams.get("kind") ?? "";
+  const initialKind = isPageKind(initialKindRaw) ? initialKindRaw : "business";
+  const initialSlug = (searchParams.get("slug") ?? "").trim();
+
+  const [kind, setKind] = useState<PageKind>(initialKind);
+  const [slug, setSlug] = useState(initialSlug);
   const [inspect, setInspect] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

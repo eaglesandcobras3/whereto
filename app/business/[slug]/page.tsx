@@ -36,6 +36,7 @@ import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
+import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 
 export const revalidate = 21600;
 
@@ -412,6 +413,7 @@ export default async function BusinessPage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
+      <IrseAdminBadge kind="business" slug={gaBiz} />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
           <script

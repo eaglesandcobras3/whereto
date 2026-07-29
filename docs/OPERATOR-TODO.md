@@ -31,7 +31,7 @@ npm run sync:rankscore                # full sync
 
 ### Scheduled sync (Vercel)
 
-**Removed:** the weekly Vercel cron for `/api/cron/rankscore-guides` was replaced by the SEO site audit cron. RankScore sync remains available **manually**:
+**Removed:** the weekly Vercel cron for `/api/cron/rankscore-guides` was removed from `vercel.json`. RankScore sync remains available **manually**:
 
 ```bash
 npm run sync:rankscore -- --limit 5
@@ -47,32 +47,57 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/ra
 
 ---
 
-## SEO site audit (CLI)
+## Index Readiness Scoring Engine (IRSE)
 
-Automated crawl: indexability, titles/meta, H1s, canonicals, JSON-LD, OG/Twitter, broken links, sitemap drift, **business listing data quality** (Phase A), robots.txt, and `llms.txt`.
+Internal quality score predicting whether a page is likely to be indexed. Product source of truth: [PRD-IRSE.md](PRD-IRSE.md).
 
-### Run locally
+Admin UI: `/admin/irse`. Score API: `GET /api/admin/irse/score?kind=&slug=` (optional `&inspect=1`).
+
+On business / guide / town / area pages, signed-in admins see a fixed **IRSE badge** that reads the latest `irse_score_snapshots` row (no scoring API on pageview).
+
+### Setup
+
+- [x] Apply SQL: [scripts/migrations/irse-tables.sql](../scripts/migrations/irse-tables.sql) (`irse_score_snapshots`, `gsc_url_inspections`)
+- [ ] GCP: create a service account; enable **Search Console API**
+- [ ] Search Console: add the service account email as a user on the property (Full or Restricted)
+- [ ] Add env vars (local `.env.local` and Vercel):
+  - `GSC_SITE_URL` — e.g. `sc-domain:whereto30a.com` or `https://whereto30a.com/`
+  - `GSC_SERVICE_ACCOUNT_EMAIL`
+  - `GSC_SERVICE_ACCOUNT_PRIVATE_KEY` — PEM with `\n` for newlines
+- [ ] GitHub Actions secrets (for **main-only** calibration job):
+  - `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL`
+  - `GSC_SITE_URL`, `GSC_SERVICE_ACCOUNT_EMAIL`, `GSC_SERVICE_ACCOUNT_PRIVATE_KEY`
+- [ ] Smoke-test: open `/admin/irse`, score a business slug with **Inspect GSC** checked; confirm badge on `/business/[slug]` while signed in as admin
+- [ ] Optional: drop leftover SEO audit tables — [drop-seo-audit-tables.sql](../scripts/migrations/drop-seo-audit-tables.sql)
+
+### Calibration
+
+Runs on **push to `main` only** (`.github/workflows/ci.yml` → `calibrate-irse`). Does **not** run on PR/branch builds.
+
+**CSV labels (local, no GSC):** put routes in two files, then:
 
 ```bash
-npm run audit:seo -- --live
+npm run calibrate:irse -- \
+  --indexed=docs/irse-indexed.csv \
+  --not-indexed=docs/irse-notindexed.csv \
+  --tune-weights
 ```
 
-Writes `docs/seo-audit-report-YYYY-MM-DD.md`. No cron, no database required.
+Each CSV is a list of paths (`/business/…`, `/guide/…`, …) or a `path`/`url` column. Root aliases like `/grayton-beach` or `/apparel` are resolved the same way the site does (town / category / area). Directory hubs (`/businesses`, `/about`, …) are skipped. IRSE scores every resolved row, compares indexed vs not-indexed averages, and with `--tune-weights` searches a better category mix **on business/guide/town/area only** (excludes thin category hubs), with per-weight caps and baseline regularization. Add `--tune-include-categories` to include category hubs in the tune set. Add `--apply-weights` only when the tuner sets `recommend apply` (writes `lib/irse/weights.ts`).
 
-Optional: `?maxUrls=100` is not CLI — use `npm run audit:seo -- --live --max-urls=100`.
-
-### Optional: manual API run or admin history
-
-The route `GET /api/cron/seo-audit` still exists for on-demand runs (requires `CRON_SECRET`). It is **not** scheduled in `vercel.json`.
-
-To store markdown in `/admin/seo-audit`:
-
-- [ ] Apply [scripts/migrations/seo-audit-tables.sql](../scripts/migrations/seo-audit-tables.sql)
-- [ ] Set `SEO_AUDIT_STORE_REPORTS=1` on Vercel
+**GSC sample mode:**
 
 ```bash
-curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/seo-audit"
+npm run calibrate:irse
+npm run calibrate:irse -- --sample-size=100 --force-inspect
 ```
+
+### Notes
+
+- IRSE does **not** replace the boolean listing gate in `lib/seo/business-index-readiness.ts`.
+- `indexReady` in IRSE means `overallScore >= 80`.
+- Do not blast-inspect the whole site; use on-demand inspect + calibration sampling only.
+- The old SEO site audit (CLI / `/admin/seo-audit` / cron) was removed — use IRSE instead.
 
 ---
 
@@ -85,7 +110,6 @@ These endpoints remain available for manual/on-demand maintenance only:
 - [ ] `/api/cron/cache-prune` — prune expired `query_cache`
 - [ ] `/api/cron/search-stats` — refresh search cluster business stats
 - [ ] `/api/cron/indexnow` — submit core hub URLs to IndexNow
-- [ ] `/api/cron/seo-audit` — run SEO audit manually
 - [ ] `/api/cron/rankscore-guides` — manual RankScore guide sync
 
 If a future job really needs a schedule, re-add it deliberately and mirror it in both deployment config and this checklist.
@@ -356,41 +380,12 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 ---
 
-## Index Readiness Scoring Engine (IRSE)
-
-Internal quality score predicting whether a page is likely to be indexed. Product source of truth: [PRD-IRSE.md](PRD-IRSE.md).
-
-Admin UI: `/admin/irse`. Score API: `GET /api/admin/irse/score?kind=&slug=` (optional `&inspect=1`).
-
-### Setup
-
-- [ ] Apply SQL: [scripts/migrations/irse-tables.sql](../scripts/migrations/irse-tables.sql) (`irse_score_snapshots`, `gsc_url_inspections`)
-- [ ] GCP: create a service account; enable **Search Console API**
-- [ ] Search Console: add the service account email as a user on the property (Full or Restricted)
-- [ ] Add env vars (local `.env.local` and Vercel):
-  - `GSC_SITE_URL` — e.g. `sc-domain:whereto30a.com` or `https://whereto30a.com/`
-  - `GSC_SERVICE_ACCOUNT_EMAIL`
-  - `GSC_SERVICE_ACCOUNT_PRIVATE_KEY` — PEM with `\n` for newlines
-- [ ] Smoke-test: open `/admin/irse`, score a business slug with **Inspect GSC** checked
-- [ ] Run calibration (quota: ~2000 URL inspections/day; results cached 7 days):
-
-```bash
-npm run calibrate:irse
-npm run calibrate:irse -- --sample-size=100 --force-inspect
-```
-
-### Notes
-
-- IRSE does **not** replace the boolean listing gate in `lib/seo/business-index-readiness.ts`.
-- `indexReady` in IRSE means `overallScore >= 80`.
-- Do not blast-inspect the whole site; use on-demand inspect + calibration sampling only.
-
----
-
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-07-29 | IRSE CSV calibration: `--indexed` / `--not-indexed` route lists, `--tune-weights` / `--apply-weights` for category mix search |
+| 2026-07-29 | Removed SEO site audit (CLI, admin, cron). IRSE admin badge on business/guide/town/area pages from snapshots; `calibrate:irse` runs on push to main only. Optional [drop-seo-audit-tables.sql](../scripts/migrations/drop-seo-audit-tables.sql) |
 | 2026-07-29 | Drop unused `search_tags_vocabulary.aliases` and `parent_class` — cleanup metadata; runtime only uses canonical `tag`. SQL [drop-search-tags-vocabulary-aliases.sql](../scripts/migrations/drop-search-tags-vocabulary-aliases.sql) |
 | 2026-07-29 | PostHog `community_tips`: moderated visitor text tips (optional stars) on business/town/area/guide pages; city required at signup for semi-anonymous attribution; admin `/admin/community-tips`; SQL [community-tips.sql](../scripts/migrations/community-tips.sql) |
 | 2026-07-18 | IRSE MVP: score business/guide/town/area/category; admin `/admin/irse`; GSC URL Inspection + calibration (`npm run calibrate:irse`); SQL [irse-tables.sql](../scripts/migrations/irse-tables.sql) |

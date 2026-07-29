@@ -23,4 +23,4 @@ AI-assisted local discovery for Florida’s 30A corridor.
 
 Cron-style routes under `/api/cron/*` expect `Authorization: Bearer $CRON_SECRET` in production; in `NODE_ENV=development` the secret check is skipped for easier local runs.
 
-There are currently **no scheduled Vercel crons**. Remaining cron-style routes (for example `/api/cron/cache-prune`, `/api/cron/search-stats`, `/api/cron/indexnow`, `/api/cron/seo-audit`, and `/api/cron/rankscore-guides`) are manual/on-demand maintenance endpoints only.
+There are currently **no scheduled Vercel crons**. Remaining cron-style routes (for example `/api/cron/cache-prune`, `/api/cron/search-stats`, `/api/cron/indexnow`, and `/api/cron/rankscore-guides`) are manual/on-demand maintenance endpoints only.

@@ -4,6 +4,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { inspectUrl } from "./gsc/client";
 import { isGscConfigured } from "./gsc/config";
 import { absoluteUrlForPath, pathForKind } from "./paths";
+import type { LabeledRoute } from "./parse-label-csv";
 import { scorePage } from "./score-page";
 import { PAGE_KINDS, type PageKind, type ScoreResult } from "./types";
 import { CALIBRATION_SEPARATION_FLOOR } from "./weights";
@@ -50,6 +51,12 @@ export type CalibrateOptions = {
   forceInspect?: boolean;
   /** Max live inspections this run (quota safety). */
   maxInspections?: number;
+};
+
+export type CalibrateFromLabelsOptions = {
+  routes: LabeledRoute[];
+  /** Persist score snapshots. Default true. */
+  persist?: boolean;
 };
 
 export async function calibrateIrse(
@@ -131,11 +138,82 @@ export async function calibrateIrse(
   const indexedMean = mean(indexedScores);
   const notIndexedMean = mean(notIndexedScores);
   const separation =
-    indexedMean != null && notIndexedMean != null ? indexedMean - notIndexedMean : null;
+    indexedMean != null && notIndexedMean != null
+      ? round1(indexedMean - notIndexedMean)
+      : null;
   const meetsFloor = separation != null && separation >= CALIBRATION_SEPARATION_FLOOR;
 
   return {
     gscConfigured,
+    labeled: labeled.length,
+    indexedCount,
+    notIndexedCount,
+    indexedMean,
+    notIndexedMean,
+    separation,
+    separationFloor: CALIBRATION_SEPARATION_FLOOR,
+    meetsFloor,
+    histogram: buildHistogram(labeled),
+    topFlagsAmongNotIndexed: topFlags(labeled.filter((r) => !r.indexed)),
+    rows: labeled,
+    warnings,
+  };
+}
+
+/**
+ * Calibrate from explicit indexed / not-indexed route lists (e.g. CSV).
+ * Scores each page with IRSE; does not call GSC.
+ */
+export async function calibrateIrseFromLabels(
+  supabase: SupabaseClient,
+  options: CalibrateFromLabelsOptions,
+): Promise<CalibrationReport> {
+  const warnings: string[] = [];
+  const labeled: CalibrationRow[] = [];
+  const persist = options.persist !== false;
+
+  for (const route of options.routes) {
+    const result = await scorePage(supabase, route.kind, route.slug, {
+      inspect: false,
+      persist,
+    });
+    if (!result) {
+      warnings.push(`Could not score ${route.kind}/${route.slug} (${route.path})`);
+      continue;
+    }
+    labeled.push({
+      kind: result.kind,
+      slug: result.slug,
+      path: result.path,
+      overallScore: result.overallScore,
+      indexed: route.indexed,
+      scores: result.scores,
+      flags: result.flags,
+    });
+  }
+
+  return buildReportFromRows(labeled, warnings, { gscConfigured: false });
+}
+
+function buildReportFromRows(
+  labeled: CalibrationRow[],
+  warnings: string[],
+  meta: { gscConfigured: boolean },
+): CalibrationReport {
+  const indexedScores = labeled.filter((r) => r.indexed).map((r) => r.overallScore);
+  const notIndexedScores = labeled.filter((r) => !r.indexed).map((r) => r.overallScore);
+  const indexedMean = mean(indexedScores);
+  const notIndexedMean = mean(notIndexedScores);
+  const separation =
+    indexedMean != null && notIndexedMean != null
+      ? round1(indexedMean - notIndexedMean)
+      : null;
+  const meetsFloor = separation != null && separation >= CALIBRATION_SEPARATION_FLOOR;
+  const indexedCount = labeled.filter((r) => r.indexed).length;
+  const notIndexedCount = labeled.filter((r) => !r.indexed).length;
+
+  return {
+    gscConfigured: meta.gscConfigured,
     labeled: labeled.length,
     indexedCount,
     notIndexedCount,
@@ -235,6 +313,10 @@ async function listSlugs(
 function mean(nums: number[]): number | null {
   if (!nums.length) return null;
   return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10;
+}
+
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
 }
 
 function buildHistogram(rows: CalibrationRow[]) {

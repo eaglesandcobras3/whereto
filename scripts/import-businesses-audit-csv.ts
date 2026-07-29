@@ -3,15 +3,17 @@
  * Matches each row by `id` when present, otherwise by `slug`. Updates only changed columns.
  *
  * Supports the slim audit export columns:
- *   title, slug, town, area, category, search_tags, excerpt, overview,
- *   seo_title, seo_description, search_keywords, location, phone, website
+ *   title, slug, is_storefront, is_service_business, town, area, category,
+ *   search_tags, excerpt, overview, seo_title, seo_description, search_keywords,
+ *   location, phone, website
  *
- * Also accepts the older wide export (town_slug, primary_category, item_tags, …).
+ * Also accepts the older wide export (town_slug, primary_category, item_tags, …)
+ * and the previous split files (docs/storefronts-audit.csv / docs/services-audit.csv).
  *
  * Usage:
- *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/storefronts-audit.csv
- *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/services-audit.csv --apply
- *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/storefronts-audit.csv --apply --reembed
+ *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit.csv
+ *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit.csv --apply
+ *   npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit.csv --apply --reembed
  *
  * Dry-run by default. Does not create new listings — only updates existing rows.
  */
