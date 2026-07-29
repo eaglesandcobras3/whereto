@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
+import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { guideHeroGradient } from "@/lib/guides/hero-gradient";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
@@ -372,6 +373,14 @@ export default async function GuidePage({ params }: Props) {
           <SeoImprovementsGate>
             <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
           </SeoImprovementsGate>
+
+          {"id" in page && typeof page.id === "string" ? (
+            <CommunityTipsSection
+              entityType="guide"
+              entityId={page.id}
+              entityTitle={page.title}
+            />
+          ) : null}
         </article>
       </main>
     </div>

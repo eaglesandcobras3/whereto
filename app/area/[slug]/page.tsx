@@ -23,6 +23,7 @@ import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyDiscoveryMessage";
+import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getGuidesForArea } from "@/lib/data/town-hub";
 
 export const revalidate = 21600;
@@ -223,6 +224,12 @@ export default async function AreaPage({ params }: Props) {
                 meantime.
               </p>
             ) : null}
+
+            <CommunityTipsSection
+              entityType="area"
+              entityId={area.id}
+              entityTitle={area.title}
+            />
           </div>
         </div>
       </main>

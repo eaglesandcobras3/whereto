@@ -13,6 +13,7 @@ export const FEATURE_FLAG_KEYS = [
   "onboard",
   "free_onboard",
   "seo_improvements",
+  "community_tips",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -28,6 +29,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   onboard: false,
   free_onboard: false,
   seo_improvements: false,
+  community_tips: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -98,4 +100,9 @@ export function isReviewQueueEnabled(flags: FeatureFlags): boolean {
 /** SEO sprint UI: trip planning blocks, town/area planning sections, hub breadcrumbs/schema, category editorial. */
 export function isSeoImprovementsEnabled(flags: FeatureFlags): boolean {
   return flags.seo_improvements === true;
+}
+
+/** Community text tips on businesses, towns, areas, and guides (optional stars; moderated). */
+export function isCommunityTipsEnabled(flags: FeatureFlags): boolean {
+  return flags.community_tips === true;
 }
