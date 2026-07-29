@@ -34,6 +34,7 @@ import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
+import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
 
 export const revalidate = 21600;
@@ -762,6 +763,12 @@ export default async function BusinessPage({ params }: Props) {
               ) : null}
             </div>
           ) : null}
+
+          <CommunityTipsSection
+            entityType="business"
+            entityId={businessId}
+            entityTitle={String(b.name ?? "this place")}
+          />
         </div>
       </main>
     </div>

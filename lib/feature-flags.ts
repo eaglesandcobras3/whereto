@@ -10,6 +10,7 @@ import {
   isOnboardEnabled,
   isReviewQueueEnabled,
   isSeoImprovementsEnabled,
+  isCommunityTipsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -26,6 +27,7 @@ export {
   isFreeOnboardEnabled,
   isReviewQueueEnabled,
   isSeoImprovementsEnabled,
+  isCommunityTipsEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -85,6 +87,15 @@ export function isSeoImprovementsFeatureEnabled(flags: FeatureFlags): boolean {
   return isSeoImprovementsEnabled(flags) || seoImprovementsDevBypassEnabled();
 }
 
+/** Local dev escape hatch — PostHog `community_tips` flag still required in production. */
+export function communityTipsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.COMMUNITY_TIPS_ENABLED === "1";
+}
+
+export function isCommunityTipsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isCommunityTipsEnabled(flags) || communityTipsDevBypassEnabled();
+}
+
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {
   return isDiscoverEnabled(flags) || discoverDevBypassEnabled();
 }
@@ -132,6 +143,14 @@ export async function onboardApiBlocked(): Promise<NextResponse | null> {
 /** For route handlers: returns a 404 when neither portal nor free intake review is enabled. */
 export async function reviewApiBlocked(): Promise<NextResponse | null> {
   if (!isReviewQueueEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when community tips/reviews are off. */
+export async function communityTipsApiBlocked(): Promise<NextResponse | null> {
+  if (!isCommunityTipsFeatureEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;

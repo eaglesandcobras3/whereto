@@ -22,6 +22,7 @@ export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [attributionCity, setAttributionCity] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
   const resolvedNextPath = resolveNextPath(
@@ -46,8 +47,14 @@ export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
       return;
     }
 
+    if (!attributionCity.trim()) {
+      setStatus("error");
+      setMessage("Enter the city you’re from");
+      return;
+    }
+
     try {
-      const result = await signUpAction(email, password);
+      const result = await signUpAction(email, password, attributionCity);
       if (!result.ok) throw new Error(result.error);
       if (result.user) {
         await identifyPostHogUserAndWaitForFlags(result.user);
@@ -75,6 +82,19 @@ export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
           placeholder="you@example.com"
           className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
         />
+        <input
+          type="text"
+          required
+          value={attributionCity}
+          onChange={(e) => setAttributionCity(e.target.value)}
+          placeholder="City you’re from (e.g. Birmingham)"
+          maxLength={80}
+          autoComplete="address-level2"
+          className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
+        />
+        <p className="-mt-1 text-xs text-zinc-500">
+          Used for semi-anonymous tips like “Someone from Birmingham said…” — not shown as your name.
+        </p>
         <input
           type="password"
           required
