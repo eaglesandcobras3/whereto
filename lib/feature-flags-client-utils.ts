@@ -1,7 +1,11 @@
 "use client";
 
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { isSeoImprovementsEnabled, type FeatureFlags } from "@/lib/feature-flags-core";
+import {
+  isCommunityTipsEnabled,
+  isSeoImprovementsEnabled,
+  type FeatureFlags,
+} from "@/lib/feature-flags-core";
 
 function seoImprovementsDevBypassEnabled(): boolean {
   return (
@@ -17,4 +21,20 @@ export function isSeoImprovementsFeatureEnabledClient(flags: FeatureFlags): bool
 export function useSeoImprovementsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isSeoImprovementsFeatureEnabledClient(flags);
+}
+
+function communityTipsDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_COMMUNITY_TIPS_ENABLED === "1"
+  );
+}
+
+export function isCommunityTipsFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isCommunityTipsEnabled(flags) || communityTipsDevBypassEnabled();
+}
+
+export function useCommunityTipsFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isCommunityTipsFeatureEnabledClient(flags);
 }

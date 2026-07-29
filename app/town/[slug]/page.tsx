@@ -35,6 +35,7 @@ import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
+import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
 
 type SidebarArea = {
@@ -430,6 +431,12 @@ function BasicTownPage({
                 A full local guide for this town is coming soon.
               </p>
             ) : null}
+
+            <CommunityTipsSection
+              entityType="town"
+              entityId={town.id}
+              entityTitle={town.name}
+            />
           </div>
         </div>
       </main>

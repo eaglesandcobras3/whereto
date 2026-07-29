@@ -8,6 +8,8 @@ export type AdminNavItem = {
   requiresOnboard?: boolean;
   /** Hidden when the `search_inspector` feature flag is off */
   requiresSearchInspector?: boolean;
+  /** Hidden when the `community_tips` feature flag is off */
+  requiresCommunityTips?: boolean;
 };
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
@@ -33,6 +35,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     requiresReviewQueue: true,
   },
   {
+    href: "/admin/community-tips",
+    title: "Community tips",
+    description: "Approve, hide, or delete visitor tips.",
+    requiresCommunityTips: true,
+  },
+  {
     href: "/admin/subscriptions",
     title: "Subscriptions",
     description: "Comp Local Partner plans or downgrade without Stripe.",
@@ -55,12 +63,14 @@ export function adminNavItemsForSession(flags: {
   onboardEnabled: boolean;
   freeOnboardEnabled?: boolean;
   searchInspectorEnabled: boolean;
+  communityTipsEnabled?: boolean;
 }): AdminNavItem[] {
   const reviewEnabled = flags.onboardEnabled || flags.freeOnboardEnabled === true;
   return ADMIN_NAV_ITEMS.filter((item) => {
     if (item.requiresReviewQueue && !reviewEnabled) return false;
     if (item.requiresOnboard && !flags.onboardEnabled) return false;
     if (item.requiresSearchInspector && !flags.searchInspectorEnabled) return false;
+    if (item.requiresCommunityTips && flags.communityTipsEnabled !== true) return false;
     return true;
   });
 }
