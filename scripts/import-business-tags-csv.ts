@@ -12,7 +12,7 @@
  *   npx tsx scripts/import-business-tags-csv.ts --skip-business-prune
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import { readFileSync } from "fs";
 
@@ -22,6 +22,7 @@ const DEFAULT_FILE = "docs/tags-final.csv";
 const PAGE = 1000;
 
 type VocabRow = { tag: string; description: string };
+type BusinessTagRow = { id: string; search_tags: string[] | null };
 
 function parseArgs(argv: string[]) {
   let file = DEFAULT_FILE;
@@ -104,7 +105,7 @@ function parseTagCsv(text: string): VocabRow[] {
 }
 
 async function fetchAllVocab(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   let from = 0;
@@ -115,7 +116,7 @@ async function fetchAllVocab(
       .order("tag", { ascending: true })
       .range(from, from + PAGE - 1);
     if (error) throw new Error(`fetch vocabulary: ${error.message}`);
-    const batch = data ?? [];
+    const batch = (data ?? []) as VocabRow[];
     for (const r of batch) {
       map.set(String(r.tag), (r.description ?? "").trim());
     }
@@ -125,10 +126,7 @@ async function fetchAllVocab(
   return map;
 }
 
-async function upsertBatch(
-  supabase: ReturnType<typeof createClient>,
-  rows: VocabRow[],
-) {
+async function upsertBatch(supabase: SupabaseClient, rows: VocabRow[]) {
   for (let i = 0; i < rows.length; i += PAGE) {
     const chunk = rows.slice(i, i + PAGE);
     const { error } = await supabase.from("search_tags_vocabulary").upsert(
@@ -139,10 +137,7 @@ async function upsertBatch(
   }
 }
 
-async function deleteTags(
-  supabase: ReturnType<typeof createClient>,
-  tags: string[],
-) {
+async function deleteTags(supabase: SupabaseClient, tags: string[]) {
   for (let i = 0; i < tags.length; i += PAGE) {
     const chunk = tags.slice(i, i + PAGE);
     const { error } = await supabase
@@ -154,7 +149,7 @@ async function deleteTags(
 }
 
 async function pruneBusinessSearchTags(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   deleted: Set<string>,
 ) {
   if (deleted.size === 0) return { businessesUpdated: 0, tagsRemoved: 0 };
@@ -170,9 +165,9 @@ async function pruneBusinessSearchTags(
       .order("id", { ascending: true })
       .range(from, from + PAGE - 1);
     if (error) throw new Error(`fetch businesses: ${error.message}`);
-    const batch = data ?? [];
+    const batch = (data ?? []) as BusinessTagRow[];
     for (const b of batch) {
-      const tags = Array.isArray(b.search_tags) ? (b.search_tags as string[]) : [];
+      const tags = Array.isArray(b.search_tags) ? b.search_tags : [];
       if (tags.length === 0) continue;
       const next = tags.filter((t) => !deleted.has(t));
       if (next.length === tags.length) continue;
