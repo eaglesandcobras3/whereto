@@ -761,7 +761,9 @@ export function ReviewQueueClient() {
                               <p className="mt-1 text-xs text-amber-900">
                                 Check to promote (optional rename). Uncheck to discard, or enter a
                                 replacement tag to use instead. Applied on approve (max{" "}
-                                {FREE_ONBOARD_SEARCH_TAGS_MAX} total with search tags).
+                                {FREE_ONBOARD_SEARCH_TAGS_MAX} total with search tags). Promoted
+                                tags are also linked to this listing&apos;s subcategory for future
+                                suggestions.
                               </p>
                               <ul className="mt-2 space-y-2">
                                 {suggested.map((suggestion) => {

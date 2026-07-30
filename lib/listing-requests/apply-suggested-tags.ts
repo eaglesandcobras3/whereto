@@ -170,6 +170,20 @@ export async function applySuggestedTagsToPayload(
     if (error) {
       throw new Error(`Could not add tags to vocabulary: ${error.message}`);
     }
+
+    // Link promoted tags to the listing subcategory so they appear under
+    // "Suggested for this category" on the next free-intake form.
+    const categoryId =
+      typeof payload.category_id === "string" ? payload.category_id.trim() : "";
+    if (categoryId) {
+      const { error: linkErr } = await supabase.from("search_tag_categories").upsert(
+        uniquePromote.map((tag) => ({ tag, category_id: categoryId })),
+        { onConflict: "tag,category_id", ignoreDuplicates: true },
+      );
+      if (linkErr) {
+        throw new Error(`Could not link tags to category: ${linkErr.message}`);
+      }
+    }
   }
 
   const merged = [...(payload.search_tags ?? [])];

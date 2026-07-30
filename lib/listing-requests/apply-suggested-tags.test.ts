@@ -30,6 +30,12 @@ function basePayload(overrides: Partial<FreeOnboardPayload> = {}): FreeOnboardPa
   };
 }
 
+function mockSupabase() {
+  const upsert = vi.fn().mockResolvedValue({ error: null });
+  const from = vi.fn(() => ({ upsert }));
+  return { supabase: { from } as never, from, upsert };
+}
+
 describe("suggestionToVocabSlug", () => {
   it("normalizes phrases to snake_case", () => {
     expect(suggestionToVocabSlug("Product Development")).toBe("product_development");
@@ -58,34 +64,59 @@ describe("suggestionToVocabDescription", () => {
 });
 
 describe("applySuggestedTagsToPayload", () => {
-  it("upserts selected tags with description and merges onto search_tags", async () => {
-    const upsert = vi.fn().mockResolvedValue({ error: null });
-    const supabase = {
-      from: vi.fn(() => ({ upsert })),
-    } as never;
+  it("upserts selected tags with description, merges onto search_tags, and links category", async () => {
+    const { supabase, from, upsert } = mockSupabase();
 
     const result = await applySuggestedTagsToPayload(supabase, basePayload(), [
       "marketing",
       "product development",
     ]);
 
-    expect(upsert).toHaveBeenCalledWith(
+    expect(from).toHaveBeenCalledWith("search_tags_vocabulary");
+    expect(from).toHaveBeenCalledWith("search_tag_categories");
+    expect(upsert).toHaveBeenNthCalledWith(
+      1,
       [
         { tag: "marketing", description: "Marketing" },
         { tag: "product_development", description: "Product Development" },
       ],
       { onConflict: "tag", ignoreDuplicates: true },
     );
+    expect(upsert).toHaveBeenNthCalledWith(
+      2,
+      [
+        {
+          tag: "marketing",
+          category_id: "22222222-2222-4222-8222-222222222222",
+        },
+        {
+          tag: "product_development",
+          category_id: "22222222-2222-4222-8222-222222222222",
+        },
+      ],
+      { onConflict: "tag,category_id", ignoreDuplicates: true },
+    );
     expect(result.promotedSlugs).toEqual(["marketing", "product_development"]);
     expect(result.payload.search_tags).toEqual(["wifi", "marketing", "product_development"]);
     expect(result.payload.suggested_tags).toEqual(["engineering"]);
   });
 
+  it("skips category linking when category_id is missing", async () => {
+    const { supabase, from, upsert } = mockSupabase();
+
+    await applySuggestedTagsToPayload(
+      supabase,
+      basePayload({ category_id: null }),
+      ["marketing"],
+    );
+
+    expect(from).toHaveBeenCalledWith("search_tags_vocabulary");
+    expect(from).not.toHaveBeenCalledWith("search_tag_categories");
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves unselected suggestions alone and skips invalid ones", async () => {
-    const upsert = vi.fn().mockResolvedValue({ error: null });
-    const supabase = {
-      from: vi.fn(() => ({ upsert })),
-    } as never;
+    const { supabase } = mockSupabase();
 
     const result = await applySuggestedTagsToPayload(
       supabase,
@@ -101,10 +132,7 @@ describe("applySuggestedTagsToPayload", () => {
   });
 
   it("respects the six-tag cap", async () => {
-    const upsert = vi.fn().mockResolvedValue({ error: null });
-    const supabase = {
-      from: vi.fn(() => ({ upsert })),
-    } as never;
+    const { supabase } = mockSupabase();
 
     const result = await applySuggestedTagsToPayload(
       supabase,
@@ -121,10 +149,7 @@ describe("applySuggestedTagsToPayload", () => {
   });
 
   it("supports promote rename, replace, and discard actions", async () => {
-    const upsert = vi.fn().mockResolvedValue({ error: null });
-    const supabase = {
-      from: vi.fn(() => ({ upsert })),
-    } as never;
+    const { supabase, upsert } = mockSupabase();
 
     const result = await applySuggestedTagsToPayload(supabase, basePayload(), [
       { from: "marketing", action: "promote", to: "digital marketing" },
@@ -132,7 +157,8 @@ describe("applySuggestedTagsToPayload", () => {
       { from: "engineering", action: "discard" },
     ]);
 
-    expect(upsert).toHaveBeenCalledWith(
+    expect(upsert).toHaveBeenNthCalledWith(
+      1,
       [
         { tag: "digital_marketing", description: "Digital Marketing" },
         { tag: "product_strategy", description: "Product Strategy" },

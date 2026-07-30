@@ -15,7 +15,6 @@ import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_SUGGESTED_CATEGORY_MAX,
   FREE_ONBOARD_TITLE_MAX,
-  parseSuggestedTagsInput,
 } from "@/lib/listing-requests/free-onboard-schema";
 
 const inputClass =
@@ -100,8 +99,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     { key: newLocationKey(), town_id: "", address: "" },
   ]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [suggestedTagsInput, setSuggestedTagsInput] = useState("");
-  const [suggestedTagsOpen, setSuggestedTagsOpen] = useState(false);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [suggestedCategory, setSuggestedCategory] = useState("");
   const [suggestedCategoryOpen, setSuggestedCategoryOpen] = useState(false);
@@ -208,13 +206,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [categoryId, tagsByCategoryId, searchTagOptions]);
 
-  const suggestedTags = useMemo(
-    () => parseSuggestedTagsInput(suggestedTagsInput),
-    [suggestedTagsInput],
-  );
   const tagSlotsUsed = selectedTags.length + suggestedTags.length;
-  const searchTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - suggestedTags.length);
-  const suggestedTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - selectedTags.length);
   const atTagCap = tagSlotsUsed >= FREE_ONBOARD_SEARCH_TAGS_MAX;
 
   function toggleCategorySuggestedTag(slug: string) {
@@ -222,7 +214,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       setSelectedTags(selectedTags.filter((t) => t !== slug));
       return;
     }
-    if (selectedTags.length >= searchTagSlotsRemaining) return;
+    if (atTagCap) return;
     setSelectedTags([...selectedTags, slug]);
   }
 
@@ -284,7 +276,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       service_category_id: null,
       suggested_category: suggestedCategoryTrimmed || null,
       search_tags: selectedTags,
-      suggested_tags: suggestedTags.slice(0, suggestedTagSlotsRemaining),
+      suggested_tags: suggestedTags.slice(
+        0,
+        Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - selectedTags.length),
+      ),
       is_explorable: false,
       marketing_opt_in: isAdmin ? false : fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
@@ -802,68 +797,30 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           <FacetTypeaheadMultiSelect
             options={tagOptions}
             selectedSlugs={selectedTags}
-            maxSelected={searchTagSlotsRemaining}
+            suggestedLabels={suggestedTags}
+            maxSelected={FREE_ONBOARD_SEARCH_TAGS_MAX}
             onChange={(slugs) => {
-              if (slugs.length > searchTagSlotsRemaining) return;
+              if (slugs.length + suggestedTags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) return;
               setSelectedTags(slugs);
+            }}
+            onSuggestedChange={(labels) => {
+              if (selectedTags.length + labels.length > FREE_ONBOARD_SEARCH_TAGS_MAX) return;
+              setSuggestedTags(labels);
             }}
             placeholder="Search tags…"
             emptyMessage="No matching tags"
           />
         </div>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <p className="text-xs text-[var(--color-text-tertiary)]">
-            {tagSlotsUsed}/{FREE_ONBOARD_SEARCH_TAGS_MAX} tags used
-            {suggestedTags.length > 0
-              ? ` (${selectedTags.length} from list, ${suggestedTags.length} suggested)`
-              : null}
-          </p>
-          {!suggestedTagsOpen ? (
-            <button
-              type="button"
-              onClick={() => setSuggestedTagsOpen(true)}
-              className="shrink-0 text-xs font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
-            >
-              Add new tags
-            </button>
-          ) : null}
-        </div>
-
-        {suggestedTagsOpen ? (
-          <div className="mt-3">
-            <label className={labelClass} htmlFor="suggested_tags">
-              Suggested tags
-            </label>
-            <p className={helpClass}>
-              Can&apos;t find the right tag above? Suggest new ones as a comma-separated list. Our
-              team reviews suggestions before they go live. Suggestions share the same{" "}
-              {FREE_ONBOARD_SEARCH_TAGS_MAX}-tag limit as the list above.
-            </p>
-            <input
-              id="suggested_tags"
-              name="suggested_tags"
-              value={suggestedTagsInput}
-              onChange={(e) => {
-                const next = e.target.value;
-                const parsed = parseSuggestedTagsInput(next);
-                if (parsed.length > suggestedTagSlotsRemaining) {
-                  setSuggestedTagsInput(parsed.slice(0, suggestedTagSlotsRemaining).join(", "));
-                  return;
-                }
-                setSuggestedTagsInput(next);
-              }}
-              disabled={suggestedTagSlotsRemaining === 0 && suggestedTags.length === 0}
-              className={`${inputClass} mt-1.5`}
-              placeholder="Enter new tags"
-              autoComplete="off"
-            />
-            <p className={helpClass}>
-              {suggestedTags.length} suggested ·{" "}
-              {Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - tagSlotsUsed)} of{" "}
-              {FREE_ONBOARD_SEARCH_TAGS_MAX} total slots left
-            </p>
-          </div>
-        ) : null}
+        <p className={`${helpClass} mt-1`}>
+          Can&apos;t find a tag? Type it and choose Suggest — our team reviews new tags before they
+          go live.
+        </p>
+        <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+          {tagSlotsUsed}/{FREE_ONBOARD_SEARCH_TAGS_MAX} tags used
+          {suggestedTags.length > 0
+            ? ` (${selectedTags.length} from list, ${suggestedTags.length} suggested)`
+            : null}
+        </p>
       </div>
 
       {err ? (

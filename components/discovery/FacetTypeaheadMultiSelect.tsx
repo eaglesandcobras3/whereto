@@ -10,12 +10,21 @@ type Props = {
   selectedSlugs: string[];
   onChange: (slugs: string[]) => void;
   disabled?: boolean;
-  /** When selected count reaches this, block further adds but still allow removals. */
+  /** When total chip count reaches this, block further adds but still allow removals. */
   maxSelected?: number;
   loading?: boolean;
   placeholder?: string;
   emptyMessage?: string;
+  /** Free-text suggested tags shown as distinct chips in the same control. */
+  suggestedLabels?: string[];
+  onSuggestedChange?: (labels: string[]) => void;
+  /** Label for the empty-state suggest action. Defaults to Suggest “{query}”. */
+  suggestEmptyLabel?: (query: string) => string;
 };
+
+function normalizeSuggestedLabel(raw: string): string {
+  return raw.trim().slice(0, 64);
+}
 
 export function FacetTypeaheadMultiSelect({
   id,
@@ -27,6 +36,9 @@ export function FacetTypeaheadMultiSelect({
   loading,
   placeholder = "Search tags…",
   emptyMessage = "No matches",
+  suggestedLabels = [],
+  onSuggestedChange,
+  suggestEmptyLabel,
 }: Props) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
@@ -37,8 +49,10 @@ export function FacetTypeaheadMultiSelect({
   const [open, setOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
 
+  const suggestEnabled = typeof onSuggestedChange === "function";
+  const totalSelected = selectedSlugs.length + suggestedLabels.length;
   const atMax =
-    typeof maxSelected === "number" && maxSelected >= 0 && selectedSlugs.length >= maxSelected;
+    typeof maxSelected === "number" && maxSelected >= 0 && totalSelected >= maxSelected;
 
   const optionBySlug = useMemo(() => {
     const map = new Map<string, DiscoverSearchTagOption>();
@@ -61,7 +75,16 @@ export function FacetTypeaheadMultiSelect({
     });
   }, [atMax, options, query, selectedSlugs]);
 
-  const showSuggestions = open && query.trim().length > 0 && !atMax;
+  const trimmedQuery = query.trim();
+  const normalizedSuggest = normalizeSuggestedLabel(trimmedQuery);
+  const suggestAlreadyAdded =
+    normalizedSuggest.length > 0 &&
+    suggestedLabels.some((label) => label.toLowerCase() === normalizedSuggest.toLowerCase());
+  const canSuggest =
+    suggestEnabled && !atMax && normalizedSuggest.length > 0 && !suggestAlreadyAdded;
+
+  const showSuggestions = open && trimmedQuery.length > 0 && !atMax;
+  const hasChips = selectedSlugs.length > 0 || suggestedLabels.length > 0;
   const inputDisabled = disabled || loading || options.length === 0 || atMax;
 
   useEffect(() => {
@@ -82,8 +105,22 @@ export function FacetTypeaheadMultiSelect({
     inputRef.current?.focus();
   };
 
+  const addSuggested = () => {
+    if (!onSuggestedChange || !canSuggest) return;
+    onSuggestedChange([...suggestedLabels, normalizedSuggest]);
+    setQuery("");
+    setOpen(false);
+    inputRef.current?.focus();
+  };
+
   const removeSlug = (slug: string) => {
     onChange(selectedSlugs.filter((s) => s !== slug));
+    inputRef.current?.focus();
+  };
+
+  const removeSuggested = (label: string) => {
+    if (!onSuggestedChange) return;
+    onSuggestedChange(suggestedLabels.filter((l) => l !== label));
     inputRef.current?.focus();
   };
 
@@ -93,13 +130,16 @@ export function FacetTypeaheadMultiSelect({
     setOpen(true);
   };
 
+  const emptyActionLabel =
+    suggestEmptyLabel?.(normalizedSuggest) ?? `Suggest “${normalizedSuggest}”`;
+
   return (
     <div ref={containerRef} className="relative" aria-busy={loading || undefined}>
       <div
         className={cn(
           "flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-2 py-1.5",
           disabled || loading || options.length === 0
-            ? selectedSlugs.length > 0
+            ? hasChips
               ? "cursor-not-allowed"
               : "cursor-not-allowed opacity-60"
             : atMax
@@ -119,7 +159,7 @@ export function FacetTypeaheadMultiSelect({
           const label = option?.label ?? slug.replace(/_/g, " ");
           return (
             <span
-              key={slug}
+              key={`vocab-${slug}`}
               className="inline-flex max-w-full items-center gap-1 rounded-full bg-[var(--color-primary)]/10 py-0.5 pl-2.5 pr-1 text-xs font-medium text-[var(--color-primary)]"
             >
               <span className="truncate">{label}</span>
@@ -137,6 +177,27 @@ export function FacetTypeaheadMultiSelect({
           );
         })}
 
+        {suggestedLabels.map((label) => (
+          <span
+            key={`suggest-${label.toLowerCase()}`}
+            className="inline-flex max-w-full items-center gap-1 rounded-full border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface-muted)] py-0.5 pl-2.5 pr-1 text-xs font-medium text-[var(--color-text-secondary)]"
+            title="Suggested — reviewed before going live"
+          >
+            <span className="truncate">{label}</span>
+            <span className="sr-only">(suggested)</span>
+            <button
+              type="button"
+              data-chip-remove
+              disabled={disabled}
+              onClick={() => removeSuggested(label)}
+              className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-[var(--color-border)]/40 disabled:cursor-not-allowed"
+              aria-label={`Remove suggested tag ${label}`}
+            >
+              <span aria-hidden>×</span>
+            </button>
+          </span>
+        ))}
+
         <input
           ref={inputRef}
           id={inputId}
@@ -148,7 +209,7 @@ export function FacetTypeaheadMultiSelect({
               ? "Loading…"
               : atMax
                 ? "Limit reached"
-                : selectedSlugs.length === 0
+                : !hasChips
                   ? placeholder
                   : "Add another…"
           }
@@ -188,16 +249,24 @@ export function FacetTypeaheadMultiSelect({
             }
 
             if (event.key === "Enter") {
+              event.preventDefault();
               const option = filteredOptions[highlightIndex];
               if (option) {
-                event.preventDefault();
                 addSlug(option.slug);
+                return;
+              }
+              if (filteredOptions.length === 0 && canSuggest) {
+                addSuggested();
               }
               return;
             }
 
-            if (event.key === "Backspace" && !query && selectedSlugs.length > 0) {
-              onChange(selectedSlugs.slice(0, -1));
+            if (event.key === "Backspace" && !query) {
+              if (suggestedLabels.length > 0 && onSuggestedChange) {
+                onSuggestedChange(suggestedLabels.slice(0, -1));
+              } else if (selectedSlugs.length > 0) {
+                onChange(selectedSlugs.slice(0, -1));
+              }
             }
           }}
           className="min-w-[6rem] flex-1 border-0 bg-transparent px-1 py-1 text-base outline-none placeholder:text-[var(--color-text-tertiary)]"
@@ -246,6 +315,24 @@ export function FacetTypeaheadMultiSelect({
               </li>
             ))}
           </ul>
+        ) : suggestEnabled ? (
+          <div className="absolute z-20 mt-1 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm shadow-lg">
+            <p className="text-[var(--color-text-tertiary)]">{emptyMessage}</p>
+            {canSuggest ? (
+              <button
+                type="button"
+                className="mt-1.5 text-left font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={addSuggested}
+              >
+                {emptyActionLabel}
+              </button>
+            ) : suggestAlreadyAdded ? (
+              <p className="mt-1.5 text-[var(--color-text-tertiary)]">
+                Already suggested
+              </p>
+            ) : null}
+          </div>
         ) : (
           <p className="absolute z-20 mt-1 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-tertiary)] shadow-lg">
             {emptyMessage}
