@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getTownPlanningProfile } from "@/lib/data/town-planning";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import {
+  isTemplatedTownSeoTitle,
+  jaccardOverlap,
+  overlapTokens,
+} from "../content-overlap";
 import type { TownIrseInput } from "../inputs";
 
 export async function loadTownIrseInput(
@@ -36,9 +41,11 @@ export async function loadTownIrseInput(
   };
 
   const planning = getTownPlanningProfile(key);
-  const [listing_count, guide_count] = await Promise.all([
+  const [listing_count, guide_count, area_count, content_overlap_max] = await Promise.all([
     countTownListings(supabase, row.id),
     countTownGuides(supabase, row.id),
+    countTownAreas(supabase, row.id),
+    maxContentOverlap(supabase, key, row.excerpt, row.content),
   ]);
 
   return {
@@ -56,6 +63,9 @@ export async function loadTownIrseInput(
     status: row.status,
     listing_count,
     guide_count,
+    area_count,
+    content_overlap_max,
+    seo_title_templated: isTemplatedTownSeoTitle(row.seo_title),
     has_planning_profile: planning != null,
     planning_faq_count: planning?.faqs?.length ?? 0,
     planning_nearby_count: planning?.nearbyTowns?.length ?? planning?.nearbyLinks?.length ?? 0,
@@ -79,4 +89,42 @@ async function countTownGuides(supabase: SupabaseClient, townId: string): Promis
     .select("guide_id", { count: "exact", head: true })
     .eq("town_id", townId);
   return count ?? 0;
+}
+
+async function countTownAreas(supabase: SupabaseClient, townId: string): Promise<number> {
+  const { count } = await supabase
+    .from("areas_view")
+    .select("id", { count: "exact", head: true })
+    .eq("town_id", townId)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .is("archived_at", null);
+  return count ?? 0;
+}
+
+async function maxContentOverlap(
+  supabase: SupabaseClient,
+  slug: string,
+  excerpt: string | null,
+  content: string | null,
+): Promise<number> {
+  const self = overlapTokens([excerpt, content].filter(Boolean).join("\n"));
+  if (self.size === 0) return 0;
+
+  const { data } = await supabase
+    .from("towns_view")
+    .select("slug, excerpt, content")
+    .neq("slug", slug)
+    .limit(50);
+
+  let max = 0;
+  for (const row of data ?? []) {
+    const other = row as { excerpt: string | null; content: string | null };
+    const j = jaccardOverlap(
+      self,
+      overlapTokens([other.excerpt, other.content].filter(Boolean).join("\n")),
+    );
+    if (j > max) max = j;
+  }
+  return Math.round(max * 1000) / 1000;
 }

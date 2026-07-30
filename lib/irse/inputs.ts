@@ -82,6 +82,15 @@ export type TownIrseInput = {
   status: string | null;
   listing_count: number;
   guide_count: number;
+  /** Published areas/POIs linked to this town. */
+  area_count: number;
+  /**
+   * Max Jaccard token overlap vs other published towns (0–1).
+   * High values ≈ templated / near-duplicate hub copy.
+   */
+  content_overlap_max: number;
+  /** SEO title matches shared “Where to Stay, Eat…” pattern across towns. */
+  seo_title_templated: boolean;
   has_planning_profile: boolean;
   planning_faq_count: number;
   planning_nearby_count: number;

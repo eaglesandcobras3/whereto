@@ -103,6 +103,7 @@ npm run calibrate:irse -- --sample-size=100 --force-inspect
 - IRSE does **not** replace the boolean listing gate in `lib/seo/business-index-readiness.ts`.
 - `indexReady` in IRSE means `overallScore >= 80`.
 - Do not blast-inspect the whole site with GSC; use on-demand inspect + calibration sampling only. Full-site **scoring** (no GSC) is fine via `--score-all`.
+- Town hubs: shared Stay/Eat/Explore SEO titles + high cross-town copy overlap will keep scores below Index Ready until pages are differentiated (and ideally linked from guides).
 - The old SEO site audit (CLI / `/admin/seo-audit` / cron) was removed — use IRSE instead.
 
 ---
@@ -169,6 +170,25 @@ SELECT search_tags FROM public.businesses_view LIMIT 1;
 ```
 
 Discover should load without `column businesses_view.search_tags does not exist`.
+
+---
+
+## Search tags ↔ subcategory links
+
+Free intake suggests tags when a leaf category is picked. Mapping lives in `search_tag_categories`, seeded from [tags-cats.csv](tags-cats.csv).
+
+### Apply (Supabase SQL editor)
+
+- [x] Run [scripts/migrations/search-tag-categories.sql](../scripts/migrations/search-tag-categories.sql)
+- [x] Seed / resync: `npx tsx scripts/import-tag-categories-csv.ts` (optional `--dry-run`)
+
+### Verify
+
+```sql
+SELECT count(*) FROM public.search_tag_categories;
+```
+
+Expect ~1855 rows after import. Free onboard form shows “Suggested for this category” chips after picking a subcategory.
 
 ---
 
@@ -390,6 +410,8 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-07-30 | Tag↔subcategory links: `search_tag_categories` + import from [tags-cats.csv](tags-cats.csv); free intake suggests mapped tags (+/check) toward the 6-tag cap. SQL [search-tag-categories.sql](../scripts/migrations/search-tag-categories.sql) |
+| 2026-07-29 | IRSE town calibration: penalize templated Stay/Eat/Explore SEO titles and near-duplicate hub copy; require guides/areas for discovery; removed free template points. `/town/watersound` no longer labeled indexed via root `/watersound` alias. |
 | 2026-07-29 | IRSE: removed GitHub `calibrate-irse` job — CLI only. Use `npm run calibrate:irse -- --score-all` to snapshot every published page for admin badges. |
 | 2026-07-29 | IRSE CSV calibration: `--indexed` / `--not-indexed` route lists, `--tune-weights` / `--apply-weights` for category mix search |
 | 2026-07-29 | Removed SEO site audit (CLI, admin, cron). IRSE admin badge on business/guide/town/area pages from snapshots. Optional [drop-seo-audit-tables.sql](../scripts/migrations/drop-seo-audit-tables.sql) |

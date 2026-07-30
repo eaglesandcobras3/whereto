@@ -84,6 +84,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [searchTagOptions, setSearchTagOptions] = useState<DiscoverSearchTagOption[]>([]);
+  const [tagsByCategoryId, setTagsByCategoryId] = useState<Record<string, string[]>>({});
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
   const [removalOpen, setRemovalOpen] = useState(false);
   const [removalName, setRemovalName] = useState("");
@@ -123,6 +124,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           categoryGroups?: CategoryGroup[];
           searchTags?: string[];
           searchTagOptions?: DiscoverSearchTagOption[];
+          tagsByCategoryId?: Record<string, string[]>;
           isAdmin?: boolean;
           adminName?: string | null;
           adminEmail?: string | null;
@@ -139,6 +141,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
                 label: formatSearchTagLabel(slug),
               })),
         );
+        setTagsByCategoryId(j.tagsByCategoryId ?? {});
         setIsAdmin(Boolean(j.isAdmin));
         setAdminName((j.adminName ?? "").trim());
         setAdminEmail((j.adminEmail ?? "").trim());
@@ -196,6 +199,15 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     return Array.from(bySlug.values()).sort((a, b) => a.slug.localeCompare(b.slug));
   }, [searchTagOptions, selectedTags]);
 
+  const categorySuggestedTags = useMemo(() => {
+    if (!categoryId) return [];
+    const slugs = tagsByCategoryId[categoryId] ?? [];
+    const bySlug = new Map(searchTagOptions.map((t) => [t.slug, t]));
+    return slugs
+      .map((slug) => bySlug.get(slug) ?? { slug, label: formatSearchTagLabel(slug) })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [categoryId, tagsByCategoryId, searchTagOptions]);
+
   const suggestedTags = useMemo(
     () => parseSuggestedTagsInput(suggestedTagsInput),
     [suggestedTagsInput],
@@ -203,6 +215,16 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const tagSlotsUsed = selectedTags.length + suggestedTags.length;
   const searchTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - suggestedTags.length);
   const suggestedTagSlotsRemaining = Math.max(0, FREE_ONBOARD_SEARCH_TAGS_MAX - selectedTags.length);
+  const atTagCap = tagSlotsUsed >= FREE_ONBOARD_SEARCH_TAGS_MAX;
+
+  function toggleCategorySuggestedTag(slug: string) {
+    if (selectedTags.includes(slug)) {
+      setSelectedTags(selectedTags.filter((t) => t !== slug));
+      return;
+    }
+    if (selectedTags.length >= searchTagSlotsRemaining) return;
+    setSelectedTags([...selectedTags, slug]);
+  }
 
   function setStorefrontChecked(checked: boolean) {
     setIsStorefront(checked);
@@ -733,6 +755,49 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
           seafood, or waterfront instead of broad ones like restaurant. Do not tag location — town
           is selected separately above.
         </p>
+        {categorySuggestedTags.length > 0 ? (
+          <div className="mt-3">
+            <p className="text-xs font-medium text-[var(--color-text-secondary)]">
+              Suggested for this category
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {categorySuggestedTags.map((tag) => {
+                const selected = selectedTags.includes(tag.slug);
+                const addDisabled = !selected && atTagCap;
+                return (
+                  <li key={tag.slug}>
+                    <button
+                      type="button"
+                      disabled={addDisabled}
+                      onClick={() => toggleCategorySuggestedTag(tag.slug)}
+                      aria-pressed={selected}
+                      title={
+                        selected
+                          ? `Remove ${tag.label}`
+                          : addDisabled
+                            ? `Tag limit reached (${FREE_ONBOARD_SEARCH_TAGS_MAX})`
+                            : `Add ${tag.label}`
+                      }
+                      className={
+                        selected
+                          ? "inline-flex items-center gap-1 rounded-full bg-[var(--color-primary)]/10 py-1 pl-2.5 pr-2 text-xs font-medium text-[var(--color-primary)]"
+                          : "inline-flex items-center gap-1 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] py-1 pl-2.5 pr-2 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]/40 hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                      }
+                    >
+                      <span>{tag.label}</span>
+                      <span aria-hidden className="text-[0.7rem] leading-none">
+                        {selected ? "✓" : "+"}
+                      </span>
+                      <span className="sr-only">
+                        {selected ? "Selected — click to remove" : "Add tag"}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
         <div className="mt-2">
           <FacetTypeaheadMultiSelect
             options={tagOptions}

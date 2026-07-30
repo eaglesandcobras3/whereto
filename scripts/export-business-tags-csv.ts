@@ -14,23 +14,34 @@ function csvEscape(v: string): string {
   return v;
 }
 
+const PAGE = 1000;
+
 async function main() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!,
   );
 
-  const { data, error } = await supabase
-    .from("search_tags_vocabulary")
-    .select("tag, description")
-    .order("tag", { ascending: true });
+  const data: { tag: string; description: string | null }[] = [];
+  let from = 0;
+  for (;;) {
+    const { data: batch, error } = await supabase
+      .from("search_tags_vocabulary")
+      .select("tag, description")
+      .order("tag", { ascending: true })
+      .range(from, from + PAGE - 1);
 
-  if (error) {
-    console.error(error.message);
-    process.exit(1);
+    if (error) {
+      console.error(error.message);
+      process.exit(1);
+    }
+    const rows = batch ?? [];
+    data.push(...rows);
+    if (rows.length < PAGE) break;
+    from += PAGE;
   }
 
-  const rows = (data ?? []).map((r) =>
+  const rows = data.map((r) =>
     [r.tag, r.description ?? ""]
       .map((x) => csvEscape(String(x)))
       .join(","),

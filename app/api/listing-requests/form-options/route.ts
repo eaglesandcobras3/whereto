@@ -1,9 +1,35 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadUnifiedCategoryOptions } from "@/lib/categories/load-unified-categories";
 import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
 import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+
+const PAGE = 1000;
+
+async function fetchAllRows<T extends Record<string, unknown>>(
+  supabase: SupabaseClient,
+  table: string,
+  select: string,
+  orderBy?: { column: string; ascending?: boolean },
+): Promise<{ data: T[]; error: string | null }> {
+  const out: T[] = [];
+  let from = 0;
+  for (;;) {
+    let q = supabase.from(table).select(select).range(from, from + PAGE - 1);
+    if (orderBy) {
+      q = q.order(orderBy.column, { ascending: orderBy.ascending ?? true });
+    }
+    const { data, error } = await q;
+    if (error) return { data: [], error: error.message };
+    const batch = (data ?? []) as unknown as T[];
+    out.push(...batch);
+    if (batch.length < PAGE) break;
+    from += PAGE;
+  }
+  return { data: out, error: null };
+}
 
 /** Unified categories + search tag vocabulary for the free intake form. */
 export async function GET() {
@@ -17,17 +43,27 @@ export async function GET() {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   }
 
-  const [admin, tagsResult, categoryGroups] = await Promise.all([
+  const [admin, tagsResult, linksResult, categoryGroups] = await Promise.all([
     requireAdminUser(),
-    supabase
-      .from("search_tags_vocabulary")
-      .select("tag, description")
-      .order("tag", { ascending: true }),
+    fetchAllRows<{ tag: string; description: string | null }>(
+      supabase,
+      "search_tags_vocabulary",
+      "tag, description",
+      { column: "tag" },
+    ),
+    fetchAllRows<{ tag: string; category_id: string }>(
+      supabase,
+      "search_tag_categories",
+      "tag, category_id",
+    ),
     loadUnifiedCategoryOptions(),
   ]);
 
   if (tagsResult.error) {
-    return NextResponse.json({ error: tagsResult.error.message }, { status: 500 });
+    return NextResponse.json({ error: tagsResult.error }, { status: 500 });
+  }
+  if (linksResult.error) {
+    return NextResponse.json({ error: linksResult.error }, { status: 500 });
   }
 
   const leaves = categoryGroups.flatMap((g) =>
@@ -40,14 +76,25 @@ export async function GET() {
     })),
   );
 
-  const searchTagOptions = (tagsResult.data ?? [])
+  const searchTagOptions = tagsResult.data
     .map((t) => {
-      const row = t as { tag?: string; description?: string | null };
-      const slug = String(row.tag ?? "").trim();
+      const slug = String(t.tag ?? "").trim();
       if (!slug) return null;
-      return { slug, label: labelForSearchTag(slug, row.description) };
+      return { slug, label: labelForSearchTag(slug, t.description) };
     })
     .filter((t): t is { slug: string; label: string } => Boolean(t));
+
+  const tagsByCategoryId: Record<string, string[]> = {};
+  for (const link of linksResult.data) {
+    const categoryId = String(link.category_id ?? "").trim();
+    const tag = String(link.tag ?? "").trim();
+    if (!categoryId || !tag) continue;
+    const list = tagsByCategoryId[categoryId] ?? (tagsByCategoryId[categoryId] = []);
+    list.push(tag);
+  }
+  for (const id of Object.keys(tagsByCategoryId)) {
+    tagsByCategoryId[id].sort((a, b) => a.localeCompare(b));
+  }
 
   return NextResponse.json({
     /** @deprecated Prefer categoryGroups; flat leaves for simple selects. */
@@ -58,6 +105,8 @@ export async function GET() {
     /** @deprecated Prefer searchTagOptions (slug + label). */
     searchTags: searchTagOptions.map((t) => t.slug),
     searchTagOptions,
+    /** Leaf category UUID → suggested search tag slugs. */
+    tagsByCategoryId,
     isAdmin: Boolean(admin),
     adminName: admin?.name ?? null,
     adminEmail: admin?.email ?? null,

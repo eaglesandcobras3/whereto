@@ -67,12 +67,14 @@ export function partial(
   flag?: IrseFlag,
   recommendation?: string,
 ): CheckContribution {
+  const earned = Math.max(0, Math.min(max, points));
+  const under = earned < max;
   return {
-    points: Math.max(0, Math.min(max, points)),
+    points: earned,
     max,
     applicable: true,
-    flag,
-    recommendation,
+    flag: under ? flag : undefined,
+    recommendation: under ? recommendation : undefined,
   };
 }
 
