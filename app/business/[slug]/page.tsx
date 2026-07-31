@@ -29,6 +29,7 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
+import { BusinessUpdateListingCta } from "@/components/business/BusinessUpdateListingCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
@@ -771,6 +772,14 @@ export default async function BusinessPage({ params }: Props) {
             entityId={businessId}
             entityTitle={String(b.name ?? "this place")}
           />
+
+          {freeOnboardEnabled ? (
+            <BusinessUpdateListingCta
+              className="mt-10 sm:mt-12"
+              updateListingHref={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}
+              analyticsLabel={`${gaBiz}_update_listing`}
+            />
+          ) : null}
         </div>
       </main>
     </div>
