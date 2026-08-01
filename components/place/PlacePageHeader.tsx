@@ -9,6 +9,8 @@ type Props = {
   portraitAlt: string;
   fallbackIcon?: string;
   meta?: ReactNode;
+  /** Primary actions near the title (e.g. Share). */
+  actions?: ReactNode;
 };
 
 export function PlacePageHeader({
@@ -19,6 +21,7 @@ export function PlacePageHeader({
   portraitAlt,
   fallbackIcon = "location_city",
   meta,
+  actions,
 }: Props) {
   return (
     <header className="mb-6 sm:mb-10">
@@ -40,9 +43,12 @@ export function PlacePageHeader({
           <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[var(--color-primary)] sm:text-xs">
             {eyebrow}
           </p>
-          <h1 className="text-editorial-headline mt-1 text-2xl text-zinc-900 sm:mt-2 sm:text-3xl md:text-4xl">
-            {title}
-          </h1>
+          <div className="mt-1 flex flex-wrap items-start justify-between gap-3 sm:mt-2">
+            <h1 className="text-editorial-headline min-w-0 flex-1 text-2xl text-zinc-900 sm:text-3xl md:text-4xl">
+              {title}
+            </h1>
+            {actions ? <div className="shrink-0 pt-0.5 sm:pt-1">{actions}</div> : null}
+          </div>
           {meta}
           <PlacePageIntro text={intro} className="mt-2 sm:mt-3" />
         </div>
