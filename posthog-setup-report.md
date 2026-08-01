@@ -41,6 +41,9 @@ The wizard has completed a deep integration of PostHog analytics into WhereTo30A
 | `business_feedback_submitted` | User submitted feedback about a listing | `components/feedback/BusinessFeedbackForm.tsx` |
 | `business_claim_submitted` | User submitted a business claim/update request | `components/business/ClaimBusinessEmailForm.tsx` |
 | `ask_results_shared` | User shared Ask results (native share, copy link, or copy summary) | `components/ask/ShareArtifactButton.tsx` |
+| `share_button_clicked` | User clicked Share on a town/area/business/guide page | `components/share/PageShareButton.tsx` |
+| `share_completed` | Native share succeeded, link copied, or email share opened | `components/share/PageShareButton.tsx` |
+| `share_cancelled` | Native share sheet dismissed without sharing | `components/share/PageShareButton.tsx` |
 | `business_save_completed` | Server confirmed business save (critical conversion, server-side) | `app/api/saves/route.ts` |
 | `listing_request_received` | Server confirmed listing request email sent | `app/api/listing-requests/route.ts` |
 | `business_claim_received` | Server confirmed business claim email sent | `app/api/business-claim-email/route.ts` |

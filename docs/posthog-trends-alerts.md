@@ -189,7 +189,10 @@ Monitors **not** created by `npm run posthog:setup-trends-alerts`. Set these up 
 | `business_claim_submitted` | `ClaimBusinessEmailForm` | Client |
 | `business_claim_received` | `/api/business-claim-email` | Server |
 | `business_feedback_submitted` | `BusinessFeedbackForm` | Listing feedback |
-| `ask_results_shared` | `ShareArtifactButton` | Share actions |
+| `ask_results_shared` | `ShareArtifactButton` | Ask artifact share actions |
+| `share_button_clicked` | `PageShareButton` | Share open intent (no `share_method`) |
+| `share_completed` | `PageShareButton` | Native / copy_link / email completed |
+| `share_cancelled` | `PageShareButton` | Native share sheet dismissed |
 | `discover_nl_parsed` | `track-discover-nl-parse.ts` | NL resolver telemetry |
 | `discover_tag_unresolved` | `record-discover-search-gaps.ts` | Vocabulary gaps |
 | `discover_low_results` | `track-discover-low-results.ts` | Thin results: ≤3 (one town) or ≤5 (all / 2+ towns) |
@@ -198,11 +201,39 @@ Monitors **not** created by `npm run posthog:setup-trends-alerts`. Set these up 
 | `$ai_generation` | `instrumentation.ts` + Ask engine | LLM observability |
 | `$exception` | `instrumentation-client.ts` (`capture_exceptions`) | Client JS errors |
 
+## Page sharing
+
+Reusable Share on town, area, business, and guide pages. Track **open intent** separately from the **chosen method**:
+
+| Event | When | Key properties |
+|-------|------|----------------|
+| `share_button_clicked` | User clicks Share | `page_type`, `page_id`, `page_title`, `page_slug`, `page_url`, `device_type`, `referrer`, `user_id` (when available). No `share_method`. |
+| `share_completed` | Native share resolves, link copied, or email link opened | Same as above + `share_method`: `native` \| `copy_link` \| `email` |
+| `share_cancelled` | Native share sheet dismissed | `page_type`, `page_id`, `page_title`, `page_url` |
+
+### Provision the dashboard
+
+```bash
+npm run posthog:setup-page-sharing -- --dry-run
+npm run posthog:setup-page-sharing
+```
+
+Creates a **Page sharing** dashboard with:
+
+- Total share button clicks
+- Completed shares
+- Share completion rate (completed / clicks)
+- Shares by page type
+- Shares by individual page (`page_slug`)
+- Shares by sharing method
+- Most-shared businesses, guides, towns, and areas
+
 ## Provisioned vs manual (quick reference)
 
 | Category | Count | Setup |
 |----------|-------|--------|
 | Trends + alerts (script) | 12 trends, 13 alerts | `npm run posthog:setup-trends-alerts` |
+| Page sharing dashboard | 10 insights | `npm run posthog:setup-page-sharing` |
 | Wizard insights | 5 on dashboard 1673843 | Already in PostHog |
 | Manual PostHog monitors | 10+ | See **Manual setup required** table above |
 | Non-PostHog monitors | 3 | `/admin/discover-gaps`, IRSE CLI scoring/calibration, search preflight |

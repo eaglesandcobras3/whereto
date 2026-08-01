@@ -28,6 +28,7 @@
     "export:businesses": "npx tsx scripts/export-businesses-csv.ts",
     "import:businesses-audit": "npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit.csv",
     "posthog:setup-trends-alerts": "npx tsx scripts/posthog-setup-trends-alerts.ts",
+    "posthog:setup-page-sharing": "npx tsx scripts/posthog-setup-page-sharing.ts",
     "email:preview": "npx tsx scripts/preview-email-templates.ts"
   },
   "dependencies": {
