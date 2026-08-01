@@ -24,6 +24,7 @@ import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
+import { PageShareButton } from "@/components/share/PageShareButton";
 
 export const revalidate = 21600;
 
@@ -165,11 +166,24 @@ export default async function GuidePage({ params }: Props) {
     "linked_businesses" in page && Array.isArray(page.linked_businesses)
       ? (page.linked_businesses as { slug: string; title: string }[])
       : [];
+  const guideSeg = normalizeUrlSegment(slug);
+  const guidePath = `/guide/${guideSeg}`;
+  const guidePageId =
+    "id" in page && typeof page.id === "string" ? page.id : null;
+  const shareButton = (
+    <PageShareButton
+      pageType="guide"
+      pageName={page.title}
+      pageSlug={guideSeg}
+      pageId={guidePageId}
+      path={guidePath}
+    />
+  );
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Guides", url: "/guides" },
-    { name: page.title, url: `/guide/${slug}` },
+    { name: page.title, url: guidePath },
   ]);
 
   const guideSchema = generateGuideSchema({
@@ -226,9 +240,12 @@ export default async function GuidePage({ params }: Props) {
 
               <header>
                 <p className="text-eyebrow mb-3">Guide</p>
-                <h1 className="text-editorial-headline text-3xl text-[var(--color-text-primary)] sm:text-4xl lg:text-[2.75rem]">
-                  {page.title}
-                </h1>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <h1 className="text-editorial-headline min-w-0 flex-1 text-3xl text-[var(--color-text-primary)] sm:text-4xl lg:text-[2.75rem]">
+                    {page.title}
+                  </h1>
+                  <div className="shrink-0 pt-1">{shareButton}</div>
+                </div>
                 {lead ? (
                   <p className="prose-editorial mt-6 max-w-2xl text-lg text-[var(--color-text-secondary)]">
                     {lead}
@@ -314,9 +331,14 @@ export default async function GuidePage({ params }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
                   <p className="text-eyebrow mb-2 text-white/85">Guide</p>
-                  <h1 className="text-editorial-headline text-2xl text-white sm:text-3xl lg:text-4xl">
-                    {page.title}
-                  </h1>
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <h1 className="text-editorial-headline min-w-0 flex-1 text-2xl text-white sm:text-3xl lg:text-4xl">
+                      {page.title}
+                    </h1>
+                    <div className="shrink-0 [&_button]:border-white/35 [&_button]:bg-black/30 [&_button]:text-white [&_button]:hover:bg-black/45 [&_[role=menu]]:text-[var(--color-text-primary)]">
+                      {shareButton}
+                    </div>
+                  </div>
                 </div>
               </div>
 

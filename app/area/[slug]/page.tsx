@@ -7,6 +7,7 @@ import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
+import { PageShareButton } from "@/components/share/PageShareButton";
 import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import type { Metadata } from "next";
@@ -174,6 +175,15 @@ export default async function AreaPage({ params }: Props) {
             portraitUrl={portraitUrl}
             portraitAlt={area.title}
             fallbackIcon="explore"
+            actions={
+              <PageShareButton
+                pageType="area"
+                pageName={area.title}
+                pageSlug={area.slug}
+                pageId={area.id}
+                path={areaPath}
+              />
+            }
             meta={
               area.town_name && area.town_slug ? (
                 <div className="mt-2 text-sm text-zinc-500 sm:mt-3">
