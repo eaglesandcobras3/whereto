@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { PlacePageHeader } from "@/components/place/PlacePageHeader";
+import { PageShareButton } from "@/components/share/PageShareButton";
 import { AreaCard } from "@/components/discovery/AreaCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
@@ -378,6 +379,15 @@ function BasicTownPage({
             portraitUrl={portraitUrl}
             portraitAlt={town.name}
             fallbackIcon="location_city"
+            actions={
+              <PageShareButton
+                pageType="town"
+                pageName={town.name}
+                pageSlug={town.slug}
+                pageId={town.id}
+                path={townPath}
+              />
+            }
           />
 
           <div className="min-w-0 space-y-8 sm:space-y-10">

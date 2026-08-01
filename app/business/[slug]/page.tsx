@@ -38,6 +38,7 @@ import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
+import { PageShareButton } from "@/components/share/PageShareButton";
 
 export const revalidate = 21600;
 
@@ -493,9 +494,19 @@ export default async function BusinessPage({ params }: Props) {
 
             {/* Title and meta */}
             <div className="flex-1">
-              <h1 className="text-editorial-headline text-3xl text-zinc-900 sm:text-4xl">
-                {b.name as string}
-              </h1>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <h1 className="text-editorial-headline min-w-0 flex-1 text-3xl text-zinc-900 sm:text-4xl">
+                  {b.name as string}
+                </h1>
+                <PageShareButton
+                  pageType="business"
+                  pageName={b.name as string}
+                  pageSlug={canonicalSegment}
+                  pageId={bizId || null}
+                  path={canonicalPath}
+                  className="shrink-0 pt-1"
+                />
+              </div>
 
               {/* Quick meta row */}
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-zinc-500">

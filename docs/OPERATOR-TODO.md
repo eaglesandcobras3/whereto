@@ -254,6 +254,15 @@ Product analytics project: **455090** on `us.posthog.com`. Full catalog: [postho
 
 - [x] Dashboard [1673843](https://us.posthog.com/project/455090/dashboard/1673843) — signups, Ask volume, saves, funnel, operator leads
 
+### Page sharing dashboard
+
+Events: `share_button_clicked` (open intent), `share_completed` (method chosen), `share_cancelled` (native dismiss). Catalog: [posthog-trends-alerts.md](posthog-trends-alerts.md#page-sharing).
+
+- [ ] Preview: `npm run posthog:setup-page-sharing -- --dry-run`
+- [ ] Provision: `npm run posthog:setup-page-sharing` (creates **Page sharing** dashboard + insights)
+- [ ] Confirm insights: clicks, completions, completion rate, by page type / page / method, most-shared businesses/guides/towns/areas
+- [ ] Optional: weekly subscription on the Page sharing dashboard
+
 ### Alerts to verify (script-provisioned)
 
 - [ ] `discover_tag_unresolved` — any new unresolved NL search term (daily)
@@ -410,6 +419,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-01 | Page sharing: Share button on town/area/business/guide pages (Web Share API + Copy Link / Email fallback); PostHog `share_button_clicked` / `share_completed` / `share_cancelled`; provision with `npm run posthog:setup-page-sharing` |
 | 2026-07-30 | Tag↔subcategory links: `search_tag_categories` + import from [tags-cats.csv](tags-cats.csv); free intake suggests mapped tags (+/check) toward the 6-tag cap. SQL [search-tag-categories.sql](../scripts/migrations/search-tag-categories.sql) |
 | 2026-07-29 | IRSE town calibration: penalize templated Stay/Eat/Explore SEO titles and near-duplicate hub copy; require guides/areas for discovery; removed free template points. `/town/watersound` no longer labeled indexed via root `/watersound` alias. |
 | 2026-07-29 | IRSE: removed GitHub `calibrate-irse` job — CLI only. Use `npm run calibrate:irse -- --score-all` to snapshot every published page for admin badges. |
