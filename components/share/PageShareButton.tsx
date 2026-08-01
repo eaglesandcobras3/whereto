@@ -7,6 +7,7 @@ import {
   buildPageSharePayload,
   buildShareEmailHref,
   canUseNativeShare,
+  type PageSharePayload,
   type PageShareType,
 } from "@/lib/share/page-share";
 import {
@@ -38,6 +39,22 @@ function isAbortError(err: unknown): boolean {
   );
 }
 
+/** Prefer public site URL; fall back to the live page origin (never localhost from SSR). */
+function resolveShareOrigin(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "https://whereto30a.com";
+}
+
+function safeTrack(fn: () => void): void {
+  try {
+    fn();
+  } catch {
+    // Analytics must never block sharing.
+  }
+}
+
 export function PageShareButton({
   pageType,
   pageName,
@@ -51,15 +68,11 @@ export function PageShareButton({
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pending, setPending] = useState(false);
+  const [nativeAvailable, setNativeAvailable] = useState(false);
 
-  const payload = buildPageSharePayload({ pageName, path });
-  const analyticsCtx: PageShareAnalyticsContext = {
-    pageType,
-    pageId,
-    pageTitle: pageName,
-    pageSlug,
-    pageUrl: payload.url,
-  };
+  useEffect(() => {
+    setNativeAvailable(canUseNativeShare());
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -88,7 +101,26 @@ export function PageShareButton({
     return () => window.clearTimeout(timer);
   }, [copied]);
 
-  async function shareNative() {
+  function shareContext(payload: PageSharePayload): PageShareAnalyticsContext {
+    return {
+      pageType,
+      pageId,
+      pageTitle: pageName,
+      pageSlug,
+      pageUrl: payload.url,
+    };
+  }
+
+  function currentPayload(): PageSharePayload {
+    return buildPageSharePayload({
+      pageName,
+      path,
+      origin: resolveShareOrigin(),
+    });
+  }
+
+  async function shareNative(payload: PageSharePayload) {
+    const ctx = shareContext(payload);
     setPending(true);
     try {
       await navigator.share({
@@ -96,10 +128,10 @@ export function PageShareButton({
         text: payload.text,
         url: payload.url,
       });
-      trackShareCompleted(analyticsCtx, "native");
+      safeTrack(() => trackShareCompleted(ctx, "native"));
     } catch (err) {
       if (isAbortError(err)) {
-        trackShareCancelled(analyticsCtx);
+        safeTrack(() => trackShareCancelled(ctx));
         return;
       }
       // Native share failed — fall back to menu without throwing.
@@ -110,21 +142,30 @@ export function PageShareButton({
   }
 
   async function onShareClick() {
-    trackShareButtonClicked(analyticsCtx);
-
-    if (canUseNativeShare()) {
-      await shareNative();
+    if (!nativeAvailable && menuOpen) {
+      setMenuOpen(false);
       return;
     }
 
-    setMenuOpen((open) => !open);
+    const payload = currentPayload();
+    const ctx = shareContext(payload);
+    safeTrack(() => trackShareButtonClicked(ctx));
+
+    if (canUseNativeShare()) {
+      await shareNative(payload);
+      return;
+    }
+
+    setMenuOpen(true);
   }
 
   async function onCopyLink() {
+    const payload = currentPayload();
+    const ctx = shareContext(payload);
     try {
       await navigator.clipboard.writeText(payload.url);
       setCopied(true);
-      trackShareCompleted(analyticsCtx, "copy_link");
+      safeTrack(() => trackShareCompleted(ctx, "copy_link"));
       setMenuOpen(false);
     } catch {
       // Clipboard denied — keep menu open; do not surface a page error.
@@ -132,7 +173,8 @@ export function PageShareButton({
   }
 
   function onEmailShare() {
-    trackShareCompleted(analyticsCtx, "email");
+    const payload = currentPayload();
+    safeTrack(() => trackShareCompleted(shareContext(payload), "email"));
     setMenuOpen(false);
     window.location.href = buildShareEmailHref(payload);
   }
@@ -145,9 +187,9 @@ export function PageShareButton({
         size="sm"
         disabled={pending}
         onClick={() => void onShareClick()}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        aria-controls={menuOpen ? menuId : undefined}
+        aria-haspopup={nativeAvailable ? undefined : "menu"}
+        aria-expanded={nativeAvailable ? undefined : menuOpen}
+        aria-controls={!nativeAvailable && menuOpen ? menuId : undefined}
         aria-label={`Share ${pageName}`}
       >
         {copied ? (
@@ -163,7 +205,7 @@ export function PageShareButton({
           id={menuId}
           role="menu"
           aria-label="Share options"
-          className="absolute left-0 top-full z-40 mt-1 min-w-[10.5rem] rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] py-1 shadow-sm"
+          className="absolute right-0 top-full z-40 mt-1 min-w-[10.5rem] rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] py-1 shadow-sm"
         >
           <button
             type="button"

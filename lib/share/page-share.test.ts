@@ -37,6 +37,12 @@ describe("canonicalPageUrl", () => {
       "https://whereto30a.com/business/starbucks",
     );
   });
+
+  it("respects an explicit origin override", () => {
+    expect(canonicalPageUrl("/town/seaside", "https://preview.example")).toBe(
+      "https://preview.example/town/seaside",
+    );
+  });
 });
 
 describe("stripUrlQueryAndHash", () => {

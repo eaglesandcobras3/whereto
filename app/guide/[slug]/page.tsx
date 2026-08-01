@@ -331,13 +331,16 @@ export default async function GuidePage({ params }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
                   <p className="text-eyebrow mb-2 text-white/85">Guide</p>
-                  <h1 className="text-editorial-headline text-2xl text-white sm:text-3xl lg:text-4xl">
-                    {page.title}
-                  </h1>
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <h1 className="text-editorial-headline min-w-0 flex-1 text-2xl text-white sm:text-3xl lg:text-4xl">
+                      {page.title}
+                    </h1>
+                    <div className="shrink-0 [&_button]:border-white/35 [&_button]:bg-black/30 [&_button]:text-white [&_button]:hover:bg-black/45 [&_[role=menu]]:text-[var(--color-text-primary)]">
+                      {shareButton}
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="mb-6 flex justify-end sm:mb-8">{shareButton}</div>
 
               {lead ? (
                 <p className="prose-editorial mb-10 text-lg text-[var(--color-text-secondary)]">
