@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   className?: string;
-  /** Prefill update flow for this listing (e.g. `/list-your-business?business=slug`). */
-  updateListingHref?: string;
   /** Start a brand-new listing. */
   listBusinessHref?: string;
 };
@@ -18,7 +16,6 @@ type Props = {
  */
 export function VerifiedBadge({
   className,
-  updateListingHref,
   listBusinessHref = "/list-your-business",
 }: Props) {
   const linkCn =
@@ -71,28 +68,12 @@ export function VerifiedBadge({
             </Popover.Title>
             <div className="mt-1.5 text-sm leading-relaxed text-zinc-600">
               <p className="m-0">
-                This profile has been verified by the business owner. Own a business on 30A?{" "}
-                {updateListingHref ? (
-                  <>
-                    Visit your business profile to{" "}
-                    <Link href={updateListingHref} className={linkCn}>
-                      submit an update
-                    </Link>
-                    , or use the{" "}
-                    <Link href={listBusinessHref} className={linkCn}>
-                      List Your Business
-                    </Link>{" "}
-                    form to add your business to earn this badge.
-                  </>
-                ) : (
-                  <>
-                    Use the{" "}
-                    <Link href={listBusinessHref} className={linkCn}>
-                      List Your Business
-                    </Link>{" "}
-                    form to add your business to earn this badge.
-                  </>
-                )}
+                This profile has been verified by the business owner. Own a business on 30A?
+                Visit your business profile to submit an update, or use the{" "}
+                <Link href={listBusinessHref} className={linkCn}>
+                  List Your Business
+                </Link>{" "}
+                form to add your business to earn this badge.
               </p>
             </div>
           </Popover.Popup>
