@@ -14,6 +14,7 @@ export const FEATURE_FLAG_KEYS = [
   "free_onboard",
   "seo_improvements",
   "community_tips",
+  "town_facts",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -30,6 +31,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   free_onboard: false,
   seo_improvements: false,
   community_tips: false,
+  town_facts: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -105,4 +107,9 @@ export function isSeoImprovementsEnabled(flags: FeatureFlags): boolean {
 /** Community text tips on businesses, towns, areas, and guides (optional stars; moderated). */
 export function isCommunityTipsEnabled(flags: FeatureFlags): boolean {
   return flags.community_tips === true;
+}
+
+/** Town profile “at a glance” section (DB-backed facts below the hero). */
+export function isTownFactsEnabled(flags: FeatureFlags): boolean {
+  return flags.town_facts === true;
 }
