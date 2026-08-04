@@ -7,14 +7,7 @@ import posthog from "posthog-js";
 import { signUpAction } from "@/lib/auth/actions";
 import { identifyPostHogUserAndWaitForFlags } from "@/lib/analytics/posthog-auth";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
-
-function resolveNextPath(raw: string | null | undefined, fallback: string): string {
-  const candidate = raw?.trim();
-  if (candidate && candidate.startsWith("/") && !candidate.startsWith("//")) {
-    return candidate;
-  }
-  return fallback;
-}
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 
 export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
   const router = useRouter();
@@ -25,7 +18,7 @@ export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
   const [attributionCity, setAttributionCity] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
-  const resolvedNextPath = resolveNextPath(
+  const resolvedNextPath = safeNextPath(
     searchParams.get("next"),
     nextPath,
   );
@@ -60,7 +53,7 @@ export function SignupForm({ nextPath = "/profile" }: { nextPath?: string }) {
         await identifyPostHogUserAndWaitForFlags(result.user);
       }
       posthog.capture("user_signed_up", { method: "email" });
-      const next = resolveNextPath(resolvedNextPath, "/profile");
+      const next = safeNextPath(resolvedNextPath, "/profile");
       router.push(next);
       router.refresh();
     } catch (err) {

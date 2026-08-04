@@ -2,6 +2,8 @@ import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
 import { searchInspectorApiBlocked } from "@/lib/feature-flags";
+import { requireAdminUser } from "@/lib/security/requireAdmin";
+import { isSearchRateLimited, rateLimitKeyFromRequest } from "@/lib/security/rateLimit";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getAmbientContext } from "@/lib/ask/ambient-context";
 import { buildClarifyingQuestionsWithReasoning } from "@/lib/ask/clarifying-questions";
@@ -32,8 +34,19 @@ import { buildZeroResultHints, type InspectReportStrategyRun } from "@/lib/ask/i
 
 export const maxDuration = 60;
 
-async function guardInspector(): Promise<NextResponse | null> {
-  return searchInspectorApiBlocked();
+async function guardInspector(request: NextRequest): Promise<NextResponse | null> {
+  const blocked = await searchInspectorApiBlocked();
+  if (blocked) return blocked;
+
+  const admin = await requireAdminUser();
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const ipKey = rateLimitKeyFromRequest(request);
+  if (isSearchRateLimited(`ask-inspect:${ipKey}`)) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
+
+  return null;
 }
 
 function resolveTownIdFn(supabase: ReturnType<typeof getServiceSupabase>) {
@@ -660,7 +673,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ stage: string }> },
 ): Promise<NextResponse> {
-  const guard = await guardInspector();
+  const guard = await guardInspector(request);
   if (guard) return guard;
 
   const { stage } = await params;
