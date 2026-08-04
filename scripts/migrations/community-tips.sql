@@ -8,11 +8,25 @@
  */
 
 -- Home / visiting-from city for “Someone from Birmingham said…” attribution.
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS attribution_city text;
+-- Some environments may not have the profiles table yet (fresh DBs / staggered migrations).
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+  ) THEN
+    ALTER TABLE public.profiles
+      ADD COLUMN IF NOT EXISTS attribution_city text;
 
-COMMENT ON COLUMN public.profiles.attribution_city IS
-  'Home or visiting-from city for semi-anonymous tip attribution. Never shown as a username.';
+    COMMENT ON COLUMN public.profiles.attribution_city IS
+      'Home or visiting-from city for semi-anonymous tip attribution. Never shown as a username.';
+  END IF;
+EXCEPTION
+  WHEN undefined_table THEN
+    NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.community_tips (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
