@@ -1,6 +1,6 @@
 /**
  * Feature-flag resolution (no `next/headers`) — safe for client components and Edge middleware.
- * Flags are PostHog-only; code defaults are all off when PostHog is unavailable.
+ * Flags are PostHog-only; missing remote values fall back to DEFAULT_FLAGS.
  */
 
 /** PostHog flag keys. */
@@ -28,7 +28,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   ask: false,
   search_inspector: false,
   onboard: false,
-  free_onboard: false,
+  free_onboard: true,
   seo_improvements: false,
   community_tips: false,
   town_facts: false,
@@ -54,7 +54,7 @@ function pickKnownFlags(
   return picked;
 }
 
-/** Merge PostHog evaluation into code defaults (all off). */
+/** Merge PostHog evaluation into code defaults. */
 export function resolveFeatureFlags(
   posthogFlags: Partial<Record<string, boolean>> | null | undefined,
 ): FeatureFlags {

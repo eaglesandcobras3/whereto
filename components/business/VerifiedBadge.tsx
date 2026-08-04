@@ -1,49 +1,53 @@
 "use client";
 
+import Link from "next/link";
 import { Popover } from "@base-ui/react/popover";
 import { cn } from "@/lib/utils";
 
-export const VERIFIED_BADGE_TOOLTIP =
-  "The owner has verified the information in this profile and if you have a business you can do the same by going to the profile or adding a new one.";
-
 type Props = {
   className?: string;
+  /** Prefill update flow for this listing (e.g. `/list-your-business?business=slug`). */
+  updateListingHref?: string;
+  /** Start a brand-new listing. */
+  listBusinessHref?: string;
 };
 
 /**
  * Owner-verified listing mark shown inline with the business title.
  * Uses a popover (hover + tap) so the explanation works on mobile as well as desktop.
  */
-export function VerifiedBadge({ className }: Props) {
+export function VerifiedBadge({
+  className,
+  updateListingHref,
+  listBusinessHref = "/list-your-business",
+}: Props) {
+  const linkCn =
+    "font-medium text-emerald-800 underline underline-offset-2 hover:text-emerald-950";
+
   return (
     <Popover.Root modal={false}>
       <Popover.Trigger
         openOnHover
-        delay={200}
-        closeDelay={100}
-        aria-label={VERIFIED_BADGE_TOOLTIP}
+        delay={150}
+        closeDelay={200}
+        aria-label="Owner verified"
         className={cn(
-          "verified-badge relative inline-flex shrink-0 items-center justify-center",
-          "h-[0.85em] w-[0.85em] rounded-full bg-[#1a73e8] text-white",
-          "align-middle outline-none transition-opacity hover:opacity-90",
-          "focus-visible:ring-2 focus-visible:ring-[#1a73e8]/40 focus-visible:ring-offset-2",
+          "verified-badge inline-flex shrink-0 items-center gap-1 self-center",
+          "rounded-full border border-emerald-200 bg-emerald-50",
+          "px-2.5 py-1 text-xs font-semibold tracking-tight text-emerald-800",
+          "align-middle outline-none transition-colors hover:bg-emerald-100/80",
+          "focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2",
           className,
         )}
       >
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className="h-[62%] w-[62%]"
-          fill="none"
+        <span
+          className="material-symbols-outlined !text-base text-emerald-600"
+          style={{ fontVariationSettings: "'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20" }}
+          aria-hidden
         >
-          <path
-            d="M6.5 12.5 10 16l7.5-8"
-            stroke="currentColor"
-            strokeWidth="3.25"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+          check_circle
+        </span>
+        Owner verified
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner
@@ -55,16 +59,42 @@ export function VerifiedBadge({ className }: Props) {
         >
           <Popover.Popup
             className={cn(
-              "max-w-[min(18.5rem,calc(100vw-1.5rem))] rounded-lg border border-zinc-200",
-              "bg-white px-3 py-2.5 text-left text-sm leading-snug text-zinc-700 shadow-lg",
+              "max-w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-zinc-200",
+              "bg-white px-3.5 py-3 text-left shadow-lg",
               "origin-[var(--transform-origin)] transition-[transform,opacity] duration-150",
               "data-starting-style:scale-95 data-starting-style:opacity-0",
               "data-ending-style:scale-95 data-ending-style:opacity-0",
             )}
           >
-            <Popover.Description className="m-0 text-sm leading-snug text-zinc-700">
-              {VERIFIED_BADGE_TOOLTIP}
-            </Popover.Description>
+            <Popover.Title className="m-0 text-sm font-semibold text-zinc-900">
+              Owner verified
+            </Popover.Title>
+            <div className="mt-1.5 text-sm leading-relaxed text-zinc-600">
+              <p className="m-0">
+                This profile has been verified by the business owner. Own a business on 30A?{" "}
+                {updateListingHref ? (
+                  <>
+                    Visit your business profile to{" "}
+                    <Link href={updateListingHref} className={linkCn}>
+                      submit an update
+                    </Link>
+                    , or use the{" "}
+                    <Link href={listBusinessHref} className={linkCn}>
+                      List Your Business
+                    </Link>{" "}
+                    form to add your business to earn this badge.
+                  </>
+                ) : (
+                  <>
+                    Use the{" "}
+                    <Link href={listBusinessHref} className={linkCn}>
+                      List Your Business
+                    </Link>{" "}
+                    form to add your business to earn this badge.
+                  </>
+                )}
+              </p>
+            </div>
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>

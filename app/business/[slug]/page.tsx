@@ -499,7 +499,16 @@ export default async function BusinessPage({ params }: Props) {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h1 className="text-editorial-headline flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-3xl text-zinc-900 sm:text-4xl">
                   <span className="min-w-0">{b.name as string}</span>
-                  {isVerified ? <VerifiedBadge /> : null}
+                  {isVerified ? (
+                    <VerifiedBadge
+                      updateListingHref={
+                        freeOnboardEnabled
+                          ? `/list-your-business?business=${encodeURIComponent(String(b.slug))}`
+                          : undefined
+                      }
+                      listBusinessHref="/list-your-business"
+                    />
+                  ) : null}
                 </h1>
                 <PageShareButton
                   pageType="business"
