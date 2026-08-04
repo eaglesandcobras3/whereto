@@ -395,6 +395,24 @@ Optional: if Discover (or anything else) needs `overview` on `businesses_view`, 
 
 ---
 
+## Business `is_verified` (community-verified listings)
+
+When a **non-admin** free-onboard add/update (or portal new listing / edit) is approved, `businesses.is_verified` is set to `true`. Verified listings show a badge next to the name and hide the large bottom “Own or manage this business?” CTA; the small update/flag line under the description stays.
+
+### Apply
+
+- [ ] Run [scripts/migrations/businesses-is-verified.sql](../scripts/migrations/businesses-is-verified.sql) in Supabase SQL editor (adds `is_verified` + recreates `businesses_view`)
+
+### Verify
+
+```sql
+SELECT is_verified FROM public.businesses_view LIMIT 1;
+```
+
+Business detail should load without `column businesses_view.is_verified does not exist`. Existing rows default to `false` until a user-submitted add/update is approved.
+
+---
+
 ## Branded transactional emails
 
 Resend (app-sent) templates use MJML under `lib/email/templates/` with shared partials. Preview locally:
@@ -429,6 +447,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-04 | Business `is_verified`: set on approved non-admin free-onboard add/update (and portal new listing/edit); verified badge on detail page; hide bottom owner CTA. SQL [businesses-is-verified.sql](../scripts/migrations/businesses-is-verified.sql) |
 | 2026-08-04 | Security hardening: `/api/ask/inspect/*` now requires env-based admin identity + rate limiting; `/api/ask/share` now requires authenticated, server-bound artifact sessions; `community-tips.sql` now blocks `profiles.is_admin` client escalation and enforces pending-only user writes |
 | 2026-08-04 | PostHog `town_facts`: town “at a glance” section below hero (metrics, highlights, detail cards); SQL [town-facts.sql](../scripts/migrations/town-facts.sql) + [town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) |
 | 2026-08-01 | Page sharing: Share button on town/area/business/guide pages (Web Share API + Copy Link / Email fallback); PostHog `share_button_clicked` / `share_completed` / `share_cancelled`; provision with `npm run posthog:setup-page-sharing` |

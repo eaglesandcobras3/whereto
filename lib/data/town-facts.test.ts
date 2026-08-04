@@ -58,14 +58,19 @@ describe("parseTownFacts", () => {
     const facts = parseTownFacts(completeRow);
     expect(facts).not.toBeNull();
     expect(facts?.description).toContain("walkable town center");
-    expect(facts?.metrics).toHaveLength(4);
+    expect(facts?.metrics).toHaveLength(3);
     expect(facts?.metrics[0]).toMatchObject({
       label: "Walkability",
       value: "Excellent",
       subtext: "Everything is close by",
       icon: "directions_walk",
     });
-    expect(facts?.metrics[1]?.label).toBe("Beach Type");
+    expect(facts?.metrics[1]).toMatchObject({
+      label: "Beach Access",
+      value: "Private",
+      icon: "beach_access",
+    });
+    expect(facts?.metrics[2]?.label).toBe("Getting Around");
     expect(facts?.highlights).toEqual(["Boutique Shopping", "Walkable", "Events"]);
     expect(facts?.details).toHaveLength(4);
     expect(facts?.details.map((d) => d.title)).toEqual([

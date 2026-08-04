@@ -143,7 +143,10 @@ async function approveEdit(
     .maybeSingle();
   if (!biz) throw new Error("Business not found");
 
-  const { error: updateErr } = await supabase.from("businesses").update(changes).eq("id", businessId);
+  const { error: updateErr } = await supabase
+    .from("businesses")
+    .update({ ...changes, is_verified: true })
+    .eq("id", businessId);
   if (updateErr) throw new Error(updateErr.message);
 
   await supabase
@@ -237,6 +240,7 @@ async function approveNewListing(
     search_tags: searchDoc.search_tags,
     search_terms: searchDoc.search_terms,
     embedding_summary: searchDoc.embedding_summary,
+    is_verified: true,
   };
   if (categoryId) insertRow.primary_category_id = categoryId;
 

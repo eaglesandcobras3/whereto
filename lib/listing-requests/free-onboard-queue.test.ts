@@ -279,8 +279,47 @@ describe("createFreeListingForLocation", () => {
     expect(businessInsert!.row.id).toEqual(expect.stringMatching(UUID_RE));
     expect(businessInsert!.row.primary_category_id).toBe(payload.category_id);
     expect(businessInsert!.row.service_category_id).toBeNull();
+    expect(businessInsert!.row.is_verified).toBe(true);
     expect(result.businessId).toBe(businessInsert!.row.id);
     expect(result.businessSlug).toMatch(/^amavida-coffee/);
+  });
+
+  it("does not mark verified when the intake was submitted by an admin", async () => {
+    const locationId = "loc-1";
+    const payload = {
+      source: "free_onboard",
+      submitter_name: "Admin",
+      submitter_email: "admin@whereto30a.com",
+      submitted_by_admin: true,
+      title: "Admin Seed Cafe",
+      is_storefront: true,
+      is_service_business: false,
+      website: "https://example.com",
+      phone: "850-555-0100",
+      excerpt: "Seeded listing.",
+      overview: "Admin-created copy.",
+      category_id: "22222222-2222-4222-8222-222222222222",
+      search_tags: ["coffee"],
+      suggested_tags: [],
+      search_keywords: "espresso",
+      marketing_opt_in: false,
+      locations: [
+        {
+          id: locationId,
+          town_id: "11111111-1111-4111-8111-111111111111",
+          address: "1 Main St",
+          status: "pending",
+        },
+      ],
+    };
+
+    const { supabase, inserts } = mockApproveSupabase(payload);
+    await createFreeListingForLocation(supabase, "review-1", locationId, "admin-1", {
+      deferNotify: true,
+    });
+
+    const businessInsert = inserts.find((i) => i.table === "businesses");
+    expect(businessInsert!.row.is_verified).toBe(false);
   });
 });
 
@@ -438,7 +477,32 @@ describe("approveFreeUpdate search_keywords", () => {
     expect(businessUpdate!.id).toBe(businessId);
     expect(businessUpdate!.row.town_id).toBe(townId);
     expect(businessUpdate!.row.address).toBe("99 New Ave");
+    expect(businessUpdate!.row.is_verified).toBe(true);
     expect(updates.filter((u) => u.table === "businesses")).toHaveLength(1);
+  });
+
+  it("does not set is_verified when the update was submitted by an admin", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: {
+        ...basePayload(),
+        submitted_by_admin: true,
+        locations: [
+          {
+            id: "loc-1",
+            town_id: townId,
+            address: "99 New Ave",
+            status: "pending",
+          },
+        ],
+      },
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate).toBeDefined();
+    expect(businessUpdate!.row).not.toHaveProperty("is_verified");
   });
 
   it("skips extra locations instead of creating sibling listings", async () => {

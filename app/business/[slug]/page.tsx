@@ -89,7 +89,7 @@ async function loadBusiness(slug: string) {
         menu_url, booking_url, service_area, hours,
         excerpt, content, overview, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
-        claim_status, search_tags, status, published_at, price_level,
+        claim_status, search_tags, status, published_at, price_level, is_verified,
         towns ( title, slug ),
         areas ( title, slug ),
         business_categories ( title, slug )
@@ -348,6 +348,7 @@ export default async function BusinessPage({ params }: Props) {
   const bizId = row.id != null ? String(row.id) : "";
   const canonicalSegment = dbSlug || bizId;
   const canonicalPath = `/business/${encodeURIComponent(canonicalSegment)}`;
+  const isVerified = Boolean(b.is_verified);
 
   const breadcrumbItems = [
     { name: "Home", url: "/" },
@@ -495,8 +496,17 @@ export default async function BusinessPage({ params }: Props) {
             {/* Title and meta */}
             <div className="flex-1">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <h1 className="text-editorial-headline min-w-0 flex-1 text-3xl text-zinc-900 sm:text-4xl">
-                  {b.name as string}
+                <h1 className="text-editorial-headline flex min-w-0 flex-1 flex-wrap items-center gap-2 text-3xl text-zinc-900 sm:text-4xl">
+                  <span>{b.name as string}</span>
+                  {isVerified ? (
+                    <span
+                      className="material-symbols-outlined !text-[1.75rem] text-[var(--color-logo-teal)] sm:!text-[2rem]"
+                      title="Verified listing"
+                      aria-label="Verified listing"
+                    >
+                      verified
+                    </span>
+                  ) : null}
                 </h1>
                 <PageShareButton
                   pageType="business"
@@ -784,7 +794,7 @@ export default async function BusinessPage({ params }: Props) {
             entityTitle={String(b.name ?? "this place")}
           />
 
-          {freeOnboardEnabled ? (
+          {freeOnboardEnabled && !isVerified ? (
             <BusinessUpdateListingCta
               className="mt-10 sm:mt-12"
               updateListingHref={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}

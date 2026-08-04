@@ -75,7 +75,6 @@ export function parseTownFacts(row: TownFactsRow | null | undefined): TownFacts 
   const description = nonEmpty(row.at_a_glance_description);
   const walkability = nonEmpty(row.walkability_rating);
   const beachType = nonEmpty(row.beach_type);
-  const dining = nonEmpty(row.dining_rating);
   const gettingAround = nonEmpty(row.getting_around_summary);
   const beachAccess = nonEmpty(row.beach_access_details);
   const gettingAroundDetails = nonEmpty(row.getting_around_details);
@@ -86,7 +85,6 @@ export function parseTownFacts(row: TownFactsRow | null | undefined): TownFacts 
     !description ||
     !walkability ||
     !beachType ||
-    !dining ||
     !gettingAround ||
     !beachAccess ||
     !gettingAroundDetails ||
@@ -106,16 +104,10 @@ export function parseTownFacts(row: TownFactsRow | null | undefined): TownFacts 
         icon: "directions_walk",
       },
       {
-        label: "Beach Type",
+        label: "Beach Access",
         value: beachType,
         subtext: nonEmpty(row.beach_type_subtext) ?? "",
-        icon: "lock",
-      },
-      {
-        label: "Dining",
-        value: dining,
-        subtext: nonEmpty(row.dining_subtext) ?? "",
-        icon: "restaurant",
+        icon: "beach_access",
       },
       {
         label: "Getting Around",

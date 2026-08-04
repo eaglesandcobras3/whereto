@@ -129,6 +129,11 @@ function allLocationsResolved(locations: FreeOnboardLocationPayload[]): boolean 
   return locations.every((l) => l.status === "created" || l.status === "skipped");
 }
 
+/** Community verification: only non-admin free-onboard submissions earn the badge. */
+function shouldMarkVerifiedOnApprove(payload: FreeOnboardPayload): boolean {
+  return payload.submitted_by_admin !== true;
+}
+
 async function finalizeIfComplete(
   supabase: SupabaseClient,
   itemId: string,
@@ -271,6 +276,7 @@ export async function createFreeListingForLocation(
     embedding_summary: searchDoc.embedding_summary,
     seo_title: seoTitle,
     seo_description: seoDescription,
+    is_verified: shouldMarkVerifiedOnApprove(payload),
   };
   // Listing photos temporarily disabled — businesses.main_image_url / hero_image_url
   // are view aliases only; writing them breaks approve.
@@ -486,6 +492,7 @@ async function createFreeServiceListingWithoutTown(
     embedding_summary: searchDoc.embedding_summary,
     seo_title: seoTitle,
     seo_description: seoDescription,
+    is_verified: shouldMarkVerifiedOnApprove(payload),
   };
   // Listing photos temporarily disabled — see createFreeListingForLocation.
 
@@ -602,6 +609,9 @@ export async function approveFreeUpdate(
     seo_title: seoTitle,
     seo_description: seoDescription,
   };
+  if (shouldMarkVerifiedOnApprove(payload)) {
+    updates.is_verified = true;
+  }
   // Listing photos temporarily disabled — do not write main_image_url / hero_image_url.
 
   const { error: updateErr } = await supabase.from("businesses").update(updates).eq("id", businessId);

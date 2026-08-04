@@ -1,257 +1,208 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-import { highlightIcon, type TownFacts } from "@/lib/data/town-facts";
+import type { TownFacts } from "@/lib/data/town-facts";
 
 type Props = {
   townName: string;
   facts: TownFacts;
 };
 
-type Tone = {
-  iconBg: string;
-  iconColor: string;
-  chipBg: string;
-  chipBorder: string;
-  chipText: string;
-};
+type IconTone = "lavender" | "blue" | "green" | "peach" | "gold";
 
 const GLANCE_VARS = {
-  "--town-glance-primary": "#061637",
-  "--town-glance-title": "#131b2e",
-  "--town-glance-copy": "#45464e",
-  "--town-glance-muted": "#636a80",
-  "--town-glance-border": "#d7def5",
-  "--town-glance-surface": "#faf8ff",
-  "--town-glance-card": "#ffffff",
-  "--town-glance-panel": "#f2f3ff",
-  "--town-glance-panel-strong": "#eaedff",
-  "--town-glance-star-bg": "#fff2d9",
-  "--town-glance-star-fg": "#9b6200",
+  "--tg-navy": "#0d234f",
+  "--tg-body": "#263b63",
+  "--tg-border": "#dce4f3",
+  "--tg-soft": "#fbfcff",
+  "--tg-lavender": "#eeeafd",
+  "--tg-blue": "#e2f0ff",
+  "--tg-green": "#e5f4e8",
+  "--tg-peach": "#ffe5d7",
+  "--tg-gold": "#fff0ce",
+  "--tg-gold-fg": "#ca8400",
+  "--tg-tag-border": "#efd8a5",
 } as CSSProperties;
 
-const METRIC_TONES: Tone[] = [
-  {
-    iconBg: "#f0e9ff",
-    iconColor: "#6451b3",
-    chipBg: "#f6f0ff",
-    chipBorder: "#d8c8ff",
-    chipText: "#52419f",
-  },
-  {
-    iconBg: "#e9f2ff",
-    iconColor: "#3560ad",
-    chipBg: "#eff5ff",
-    chipBorder: "#c4d7ff",
-    chipText: "#2d5598",
-  },
-  {
-    iconBg: "#e8f8ef",
-    iconColor: "#2d7a58",
-    chipBg: "#edf9f2",
-    chipBorder: "#bfe7d0",
-    chipText: "#2f6f53",
-  },
-  {
-    iconBg: "#fff1e8",
-    iconColor: "#a35a37",
-    chipBg: "#fff5ef",
-    chipBorder: "#ffd8c2",
-    chipText: "#945333",
-  },
-];
+const METRIC_TONES: IconTone[] = ["lavender", "blue", "peach"];
 
-const DETAIL_TONES: Record<string, Tone> = {
-  "beach access": {
-    iconBg: "#e8f1ff",
-    iconColor: "#2f5fa8",
-    chipBg: "#edf4ff",
-    chipBorder: "#c4d7ff",
-    chipText: "#2f5fa8",
-  },
-  "getting around": {
-    iconBg: "#e8f8ef",
-    iconColor: "#2c7c58",
-    chipBg: "#edf9f2",
-    chipBorder: "#bfe7d0",
-    chipText: "#2c7c58",
-  },
-  "dining & town center": {
-    iconBg: "#fff1e8",
-    iconColor: "#a35a37",
-    chipBg: "#fff5ef",
-    chipBorder: "#ffd8c2",
-    chipText: "#a35a37",
-  },
-  parking: {
-    iconBg: "#f1ebff",
-    iconColor: "#6b50af",
-    chipBg: "#f6f0ff",
-    chipBorder: "#d8c8ff",
-    chipText: "#6b50af",
-  },
+const DETAIL_TONES: Record<string, IconTone> = {
+  "beach access": "blue",
+  "private beach": "blue",
+  "public beach": "blue",
+  "getting around": "green",
+  "dining & town center": "peach",
+  parking: "lavender",
 };
 
-function toneByIndex(index: number): Tone {
-  return METRIC_TONES[index % METRIC_TONES.length];
-}
-
-function toneForDetail(title: string, index: number): Tone {
-  return DETAIL_TONES[title.trim().toLowerCase()] ?? toneByIndex(index);
-}
-
-function toneForHighlight(label: string, index: number): Tone {
-  const lower = label.trim().toLowerCase();
-  if (lower.includes("coffee") || lower.includes("dining")) return METRIC_TONES[2];
-  if (lower.includes("bike") || lower.includes("walk")) return METRIC_TONES[1];
-  if (lower.includes("event")) return METRIC_TONES[3];
-  return toneByIndex(index);
-}
+const TONE_BG: Record<IconTone, string> = {
+  lavender: "bg-[var(--tg-lavender)]",
+  blue: "bg-[var(--tg-blue)]",
+  green: "bg-[var(--tg-green)]",
+  peach: "bg-[var(--tg-peach)]",
+  gold: "bg-[var(--tg-gold)] text-[var(--tg-gold-fg)]",
+};
 
 function MsIcon({
   name,
   className,
-  style,
 }: {
   name: string;
   className?: string;
-  style?: CSSProperties;
 }) {
   return (
-    <span
-      className={`material-symbols-outlined ${className ?? ""}`}
-      aria-hidden
-      style={style}
-    >
+    <span className={`material-symbols-outlined ${className ?? ""}`} aria-hidden>
       {name}
     </span>
   );
 }
 
-/** Town profile “at a glance” — metrics, highlights, and detail cards. */
+function IconCircle({
+  tone,
+  size = "lg",
+  children,
+}: {
+  tone: IconTone;
+  size?: "lg" | "sm";
+  children: ReactNode;
+}) {
+  const sizeClass =
+    size === "sm"
+      ? "h-11 w-11 sm:h-12 sm:w-12 [&_.material-symbols-outlined]:!text-[1.35rem] sm:[&_.material-symbols-outlined]:!text-[1.55rem]"
+      : "h-[62px] w-[62px] sm:h-[84px] sm:w-[84px] [&_.material-symbols-outlined]:!text-[2rem] sm:[&_.material-symbols-outlined]:!text-[2.625rem]";
+
+  return (
+    <div
+      className={`grid shrink-0 place-items-center rounded-full text-[var(--tg-navy)] ${TONE_BG[tone]} ${sizeClass}`}
+      aria-hidden
+    >
+      {children}
+    </div>
+  );
+}
+
+function toneForDetail(title: string, index: number): IconTone {
+  return DETAIL_TONES[title.trim().toLowerCase()] ?? METRIC_TONES[index % METRIC_TONES.length];
+}
+
+/** Town profile “at a glance” — metrics, highlights, detail cards, and disclaimer. */
 export function TownAtAGlanceSection({ townName, facts }: Props) {
+  const titleId = "town-at-a-glance-heading";
+  const highlightsId = "town-at-a-glance-highlights";
+
   return (
     <section
-      className="space-y-6 rounded-3xl bg-[var(--town-glance-surface)] p-4 sm:space-y-8 sm:p-6"
-      aria-labelledby="town-at-a-glance-heading"
+      className="text-[var(--tg-body)]"
+      aria-labelledby={titleId}
       style={GLANCE_VARS}
     >
-      <header className="max-w-3xl">
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--town-glance-muted)]">
-          Town profile
+      <header className="mb-7">
+        <p className="mb-2.5 text-[0.78rem] font-extrabold uppercase tracking-[0.12em] text-[var(--tg-navy)]">
+          Town Profile
         </p>
         <h2
-          id="town-at-a-glance-heading"
-          className="font-headline text-4xl font-bold tracking-[-0.02em] text-[var(--town-glance-title)] sm:text-5xl"
+          id={titleId}
+          className="font-headline m-0 text-[clamp(2.4rem,5vw,3.75rem)] font-medium leading-[1.05] tracking-[-0.035em] text-[var(--tg-navy)]"
         >
           {townName} at a glance
         </h2>
-        <p className="mt-3 text-base leading-relaxed text-[var(--town-glance-copy)] sm:text-[1.4rem] sm:leading-9">
+        <p className="mt-4 max-w-[820px] text-[clamp(1rem,1.7vw,1.35rem)] leading-[1.55]">
           {facts.description}
         </p>
       </header>
 
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-[22px] lg:grid-cols-3">
         {facts.metrics.map((metric, metricIndex) => {
-          const tone = toneByIndex(metricIndex);
+          const tone = METRIC_TONES[metricIndex % METRIC_TONES.length];
           return (
-          <div
-            key={metric.label}
-            className="rounded-2xl border border-[var(--town-glance-border)] bg-[var(--town-glance-card)] px-4 py-4 shadow-[0_2px_14px_rgba(6,22,55,0.04)] sm:px-5 sm:py-5"
-          >
-            <dt className="flex items-center gap-3">
-              <span
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full"
-                style={{ backgroundColor: tone.iconBg, color: tone.iconColor }}
-              >
-                <MsIcon name={metric.icon} className="!text-[1.35rem]" />
-              </span>
-              <div>
-                <p className="text-sm font-medium text-[var(--town-glance-copy)]">{metric.label}</p>
-                <p className="font-headline text-[1.75rem] leading-8 font-bold tracking-[-0.02em] text-[var(--town-glance-title)]">
-                  {metric.value}
-                </p>
-              </div>
-            </dt>
-            <dd className="mt-2 pl-14">
-              {metric.subtext ? (
-                <p className="text-sm leading-snug text-[var(--town-glance-copy)]">
-                  {metric.subtext}
-                </p>
-              ) : null}
-            </dd>
-          </div>
-          );
-        })}
-      </dl>
-
-      {facts.highlights.length > 0 ? (
-        <div className="rounded-2xl border border-[var(--town-glance-border)] bg-[var(--town-glance-card)] px-4 py-4 shadow-[0_2px_14px_rgba(6,22,55,0.04)] sm:px-6 sm:py-5">
-          <h3 className="flex items-center gap-2 font-headline text-xl font-semibold text-[var(--town-glance-title)]">
-            <span
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full"
-              style={{
-                backgroundColor: "var(--town-glance-star-bg)",
-                color: "var(--town-glance-star-fg)",
-              }}
+            <article
+              key={metric.label}
+              className="grid min-h-0 grid-cols-[64px_1fr] items-center gap-4 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-[18px] py-[22px] sm:min-h-[220px] sm:grid-cols-[92px_1fr] sm:gap-[22px] sm:p-[30px] lg:min-h-[220px]"
             >
-              <MsIcon name="star" className="!text-lg" />
-            </span>
-            Highlights
-          </h3>
-          <ul className="mt-3 flex flex-wrap gap-2 sm:mt-4 sm:gap-2.5">
-            {facts.highlights.map((label, highlightIndex) => {
-              const tone = toneForHighlight(label, highlightIndex);
-              return (
-                <li
-                  key={label}
-                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium sm:text-sm"
-                  style={{
-                    backgroundColor: tone.chipBg,
-                    borderColor: tone.chipBorder,
-                    color: tone.chipText,
-                  }}
-                >
-                  <MsIcon
-                    name={highlightIcon(label)}
-                    className="!text-sm"
-                    style={{ color: tone.iconColor }}
-                  />
-                  {label}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-        {facts.details.map((detail, detailIndex) => {
-          const tone = toneForDetail(detail.title, detailIndex);
-          return (
-          <article
-            key={detail.title}
-            className="rounded-2xl border border-[var(--town-glance-border)] bg-[var(--town-glance-card)] px-4 py-4 shadow-[0_2px_14px_rgba(6,22,55,0.04)] sm:px-5 sm:py-5"
-          >
-            <h3 className="flex items-center gap-2 font-headline text-base font-semibold text-[var(--town-glance-title)]">
-              <span
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: tone.iconBg, color: tone.iconColor }}
-              >
-                <MsIcon name={detail.icon} className="!text-lg" />
-              </span>
-              {detail.title}
-            </h3>
-            <div
-              className="my-3 h-px w-full bg-[var(--town-glance-border)]"
-              aria-hidden
-            />
-            <p className="text-sm leading-relaxed text-[var(--town-glance-copy)]">
-              {detail.body}
-            </p>
-          </article>
+              <IconCircle tone={tone}>
+                <MsIcon name={metric.icon} />
+              </IconCircle>
+              <div className="min-w-0">
+                <p className="m-0 mb-2 text-base text-[var(--tg-navy)]">{metric.label}</p>
+                <h3 className="font-headline m-0 text-[clamp(1.55rem,2vw,2rem)] leading-[1.2] font-semibold text-[var(--tg-navy)]">
+                  {metric.value}
+                </h3>
+                {metric.subtext ? (
+                  <p className="mt-3 text-base leading-[1.55]">{metric.subtext}</p>
+                ) : null}
+              </div>
+            </article>
           );
         })}
       </div>
+
+      {facts.highlights.length > 0 ? (
+        <section
+          className="mt-[22px] rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-[18px] py-5 sm:px-7 sm:pb-[26px] sm:pt-[22px]"
+          aria-labelledby={highlightsId}
+        >
+          <div className="flex items-center gap-3.5">
+            <IconCircle tone="gold" size="sm">
+              <MsIcon name="star" />
+            </IconCircle>
+            <h3
+              id={highlightsId}
+              className="font-headline m-0 text-xl font-semibold text-[var(--tg-navy)]"
+            >
+              Highlights
+            </h3>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3 sm:pl-[62px]">
+            {facts.highlights.map((label) => (
+              <span
+                key={label}
+                className="inline-flex min-h-[38px] items-center rounded-full border border-[var(--tg-tag-border)] bg-[#fffdfa] px-[18px] py-2 text-[0.92rem] text-[var(--tg-navy)]"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <div className="mt-[22px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {facts.details.map((detail, detailIndex) => {
+          const tone = toneForDetail(detail.title, detailIndex);
+          return (
+            <article
+              key={detail.title}
+              className="min-h-0 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] p-[22px] lg:min-h-[300px]"
+            >
+              <div className="flex items-center gap-3.5 border-b border-[var(--tg-border)] pb-4">
+                <IconCircle tone={tone} size="sm">
+                  <MsIcon name={detail.icon} />
+                </IconCircle>
+                <h3 className="font-headline m-0 text-xl font-semibold text-[var(--tg-navy)]">
+                  {detail.title}
+                </h3>
+              </div>
+              <p className="mt-5 text-base leading-[1.65]">{detail.body}</p>
+            </article>
+          );
+        })}
+      </div>
+
+      <aside
+        className="mt-[18px] flex items-start gap-4 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-5 py-4"
+        aria-label="Information disclaimer"
+      >
+        <div
+          className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border-2 border-[var(--tg-navy)] text-[var(--tg-navy)]"
+          aria-hidden
+        >
+          <MsIcon name="info" className="!text-lg" />
+        </div>
+        <p className="m-0 text-[0.92rem] leading-[1.55]">
+          <strong className="text-[var(--tg-navy)]">Disclaimer:</strong> Information
+          provided is for general guidance only and may change. Always verify details
+          directly with your rental property, local city, government, property
+          association, or other official sources before making plans.
+        </p>
+      </aside>
     </section>
   );
 }
