@@ -39,13 +39,5 @@ export async function requireAdminUser(): Promise<AdminUser | null> {
   if (user.email && adminEmails.includes(user.email.toLowerCase())) {
     return asAdmin();
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profile?.is_admin) return asAdmin();
   return null;
 }

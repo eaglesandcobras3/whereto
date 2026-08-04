@@ -65,7 +65,13 @@ CREATE POLICY community_tips_insert_own
   ON public.community_tips
   FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    AND status = 'pending'
+    AND reviewed_by IS NULL
+    AND reviewed_at IS NULL
+    AND admin_notes IS NULL
+  );
 
 DROP POLICY IF EXISTS community_tips_update_own ON public.community_tips;
 CREATE POLICY community_tips_update_own
@@ -73,7 +79,13 @@ CREATE POLICY community_tips_update_own
   FOR UPDATE
   TO authenticated
   USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    AND status = 'pending'
+    AND reviewed_by IS NULL
+    AND reviewed_at IS NULL
+    AND admin_notes IS NULL
+  );
 
 DROP POLICY IF EXISTS community_tips_delete_own ON public.community_tips;
 CREATE POLICY community_tips_delete_own
@@ -102,5 +114,43 @@ EXCEPTION
   WHEN undefined_table THEN
     NULL;
   WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+-- Prevent authenticated clients from updating admin privilege flags through PostgREST.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+      AND column_name = 'is_admin'
+  ) THEN
+    REVOKE UPDATE ON public.profiles FROM authenticated;
+    REVOKE UPDATE ON public.profiles FROM anon;
+    GRANT UPDATE (id, attribution_city) ON public.profiles TO authenticated;
+
+    CREATE OR REPLACE FUNCTION public.block_profile_admin_escalation()
+    RETURNS trigger
+    LANGUAGE plpgsql
+    AS $fn$
+    BEGIN
+      IF NEW.is_admin IS DISTINCT FROM OLD.is_admin
+         AND current_user IN ('anon', 'authenticated') THEN
+        RAISE EXCEPTION 'profiles.is_admin is server-managed';
+      END IF;
+      RETURN NEW;
+    END;
+    $fn$;
+
+    DROP TRIGGER IF EXISTS profiles_block_is_admin_update ON public.profiles;
+    CREATE TRIGGER profiles_block_is_admin_update
+      BEFORE UPDATE OF is_admin ON public.profiles
+      FOR EACH ROW
+      EXECUTE FUNCTION public.block_profile_admin_escalation();
+  END IF;
+EXCEPTION
+  WHEN undefined_table THEN
     NULL;
 END $$;
