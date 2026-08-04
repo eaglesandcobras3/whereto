@@ -31,9 +31,9 @@ export function scoreTownEntity(input: TownIrseInput): CategoryCheckResult {
       {
         severity: "warning",
         code: "entity_no_planning_profile",
-        message: "No town planning profile (vibe/FAQs/nearby) in code.",
+        message: "No town at-a-glance facts in the database.",
       },
-      "Add a PlacePlanningProfile entry for this town.",
+      "Add town_facts columns for this town (metrics, highlights, detail cards).",
     ),
     // Distinctive entity signal — templated hubs fail this even when published.
     pass(
@@ -121,14 +121,14 @@ export function scoreTownContent(input: TownIrseInput): CategoryCheckResult {
       {
         severity: "warning",
         code: "content_no_faqs",
-        message: "Few or no planning FAQs for this town.",
+        message: "Few or no at-a-glance detail cards for this town.",
       },
-      "Add FAQs to the town planning profile.",
+      "Fill beach/getting-around/dining/parking detail fields on the town.",
     ),
     partial(10, Math.min(10, input.planning_nearby_count * 4), {
       severity: "info",
       code: "content_no_nearby_towns",
-      message: "Nearby town recommendations missing from planning profile.",
+      message: "Highlights missing from town at-a-glance facts.",
     }),
     pass(
       10,
@@ -227,11 +227,12 @@ export function scoreTownDiscovery(input: TownIrseInput): CategoryCheckResult {
     ),
     pass(
       15,
-      input.has_planning_profile && input.planning_nearby_count > 0,
+      input.has_planning_profile &&
+        (input.planning_nearby_count > 0 || input.area_count > 0),
       {
         severity: "info",
         code: "discovery_planning_links",
-        message: "Planning profile lacks nearby-town links.",
+        message: "Town facts lack highlights and no area hubs are linked.",
       },
     ),
   ]);
@@ -249,7 +250,7 @@ export function scoreTownTrust(input: TownIrseInput): CategoryCheckResult {
       {
         severity: "warning",
         code: "trust_no_editorial_profile",
-        message: "No editorial planning profile for trust signals.",
+        message: "No at-a-glance town facts for trust signals.",
       },
     ),
     pass(

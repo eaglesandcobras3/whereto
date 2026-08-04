@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getTownPlanningProfile } from "@/lib/data/town-planning";
+import {
+  parseTownFacts,
+  TOWN_FACTS_SELECT,
+  type TownFactsRow,
+} from "@/lib/data/town-facts";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import {
   isTemplatedTownSeoTitle,
@@ -40,13 +44,14 @@ export async function loadTownIrseInput(
     status: string | null;
   };
 
-  const planning = getTownPlanningProfile(key);
-  const [listing_count, guide_count, area_count, content_overlap_max] = await Promise.all([
-    countTownListings(supabase, row.id),
-    countTownGuides(supabase, row.id),
-    countTownAreas(supabase, row.id),
-    maxContentOverlap(supabase, key, row.excerpt, row.content),
-  ]);
+  const [listing_count, guide_count, area_count, content_overlap_max, townFacts] =
+    await Promise.all([
+      countTownListings(supabase, row.id),
+      countTownGuides(supabase, row.id),
+      countTownAreas(supabase, row.id),
+      maxContentOverlap(supabase, key, row.excerpt, row.content),
+      loadTownFacts(supabase, key),
+    ]);
 
   return {
     kind: "town",
@@ -66,10 +71,22 @@ export async function loadTownIrseInput(
     area_count,
     content_overlap_max,
     seo_title_templated: isTemplatedTownSeoTitle(row.seo_title),
-    has_planning_profile: planning != null,
-    planning_faq_count: planning?.faqs?.length ?? 0,
-    planning_nearby_count: planning?.nearbyTowns?.length ?? planning?.nearbyLinks?.length ?? 0,
+    // Reuses planning_* IRSE fields for DB-backed town_facts (at a glance).
+    has_planning_profile: townFacts != null,
+    planning_faq_count: townFacts?.details.length ?? 0,
+    planning_nearby_count: townFacts?.highlights.length ?? 0,
   };
+}
+
+async function loadTownFacts(supabase: SupabaseClient, slug: string) {
+  const { data, error } = await supabase
+    .from("towns")
+    .select(TOWN_FACTS_SELECT)
+    .eq("slug", slug)
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return parseTownFacts(data as TownFactsRow);
 }
 
 async function countTownListings(supabase: SupabaseClient, townId: string): Promise<number> {

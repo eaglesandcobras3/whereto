@@ -31,7 +31,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   free_onboard: true,
   seo_improvements: false,
   community_tips: false,
-  town_facts: false,
+  town_facts: true,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;

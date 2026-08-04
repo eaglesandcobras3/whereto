@@ -299,19 +299,19 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `onboard` | Business portal (`/portal`, admin subscriptions) |
 | `free_onboard` | Free no-account intake form (`/list-your-business`), multi-location review queue (`/admin/review`) |
 | `search_inspector` | Admin search debug tools |
-| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, town/area planning blocks, category editorial blocks (not guide modules or hub guide clustering) |
+| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, area planning blocks, category editorial blocks (town at-a-glance is `town_facts`) |
 | `community_tips` | Visitor text tips on business, town, area, and guide detail pages (optional stars); account management; admin moderation at `/admin/community-tips` |
-| `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards) |
+| `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**) |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
 
 ### Town facts setup
 
-- [ ] Create PostHog boolean flag `town_facts` (default off).
+- [ ] Create PostHog boolean flag `town_facts` (code default **on** when PostHog omits the key; set PostHog to off to disable).
 - [ ] Apply [scripts/migrations/town-facts.sql](../scripts/migrations/town-facts.sql) (new columns on `public.towns`).
 - [ ] Apply [scripts/migrations/town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) (initial copy for major corridor towns).
-- [ ] Local dev: `TOWN_FACTS_ENABLED=1` and `NEXT_PUBLIC_TOWN_FACTS_ENABLED=1`.
-- [ ] Confirm `/town/rosemary-beach` shows the at-a-glance block below the hero when the flag is on and seed data is present.
+- [ ] Local dev (optional override): `TOWN_FACTS_ENABLED=1` and `NEXT_PUBLIC_TOWN_FACTS_ENABLED=1`.
+- [ ] Confirm `/town/rosemary-beach` shows the at-a-glance block below the hero when seed data is present.
 
 ### Community tips setup
 
@@ -447,6 +447,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-04 | Town at-a-glance: `town_facts` wins — removed hardcoded `seo_improvements` town planning fallback (`TownPlanningSections` / `town-planning.ts`); `town_facts` code default **on**; IRSE town scoring uses DB facts |
 | 2026-08-04 | `free_onboard` code default is now **on** (PostHog can still force off); owner-verified tooltip copy updated |
 | 2026-08-04 | Business `is_verified`: set on approved non-admin free-onboard add/update (and portal new listing/edit); verified badge on detail page; hide bottom owner CTA. SQL [businesses-is-verified.sql](../scripts/migrations/businesses-is-verified.sql) |
 | 2026-08-04 | Security hardening: `/api/ask/inspect/*` now requires env-based admin identity + rate limiting; `/api/ask/share` now requires authenticated, server-bound artifact sessions; `community-tips.sql` now blocks `profiles.is_admin` client escalation and enforces pending-only user writes |

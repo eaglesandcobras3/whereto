@@ -28,8 +28,12 @@ const completeRow: TownFactsRow = {
 };
 
 describe("town_facts flag", () => {
-  it("defaults off", () => {
-    expect(isTownFactsEnabled(resolveFeatureFlags({}))).toBe(false);
+  it("defaults town_facts on", () => {
+    expect(isTownFactsEnabled(resolveFeatureFlags({}))).toBe(true);
+  });
+
+  it("allows PostHog to turn town_facts off", () => {
+    expect(isTownFactsEnabled(resolveFeatureFlags({ town_facts: false }))).toBe(false);
   });
 
   it("enables when PostHog flag is true", () => {

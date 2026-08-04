@@ -13,10 +13,8 @@ import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { townPageMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
-import { getTownPlanningProfile } from "@/lib/data/town-planning";
 import { getTownFactsBySlug } from "@/lib/data/town-facts-queries";
 import type { TownFacts } from "@/lib/data/town-facts";
-import { TownPlanningSections } from "@/components/town/TownPlanningSections";
 import { TownAtAGlanceSection } from "@/components/town/TownAtAGlanceSection";
 import { generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
@@ -37,9 +35,7 @@ import {
 } from "@/lib/business-categories/group-browse-sections";
 import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
-import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { TownFactsGate } from "@/components/feature-flags/TownFactsGate";
-import { TownPlanningFallbackGate } from "@/components/feature-flags/TownPlanningFallbackGate";
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
@@ -358,7 +354,6 @@ function BasicTownPage({
     fallback: townPageIntro(town.name, descriptor),
   });
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);
-  const planningProfile = getTownPlanningProfile(town.slug);
   const townPath = townPagePath(town.slug);
 
   const townSchema = generateTownSchema({
@@ -448,18 +443,6 @@ function BasicTownPage({
               guides={guides}
               analyticsCategory="town_guides"
             />
-
-            {planningProfile ? (
-              <TownPlanningFallbackGate hasTownFacts={Boolean(townFacts)}>
-                <SeoImprovementsGate>
-                  <TownPlanningSections
-                    townName={town.name}
-                    townSlug={town.slug}
-                    profile={planningProfile}
-                  />
-                </SeoImprovementsGate>
-              </TownPlanningFallbackGate>
-            ) : null}
 
             {!hasEditorialIntro && pageData.categorySections.length === 0 ? (
               <p className="prose-editorial text-zinc-500">
