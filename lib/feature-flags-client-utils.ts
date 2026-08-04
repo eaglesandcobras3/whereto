@@ -4,6 +4,7 @@ import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import {
   isCommunityTipsEnabled,
   isSeoImprovementsEnabled,
+  isTownFactsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 
@@ -37,4 +38,20 @@ export function isCommunityTipsFeatureEnabledClient(flags: FeatureFlags): boolea
 export function useCommunityTipsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isCommunityTipsFeatureEnabledClient(flags);
+}
+
+function townFactsDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_TOWN_FACTS_ENABLED === "1"
+  );
+}
+
+export function isTownFactsFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isTownFactsEnabled(flags) || townFactsDevBypassEnabled();
+}
+
+export function useTownFactsFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isTownFactsFeatureEnabledClient(flags);
 }

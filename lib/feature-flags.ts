@@ -11,6 +11,7 @@ import {
   isReviewQueueEnabled,
   isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
+  isTownFactsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -28,6 +29,7 @@ export {
   isReviewQueueEnabled,
   isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
+  isTownFactsEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -94,6 +96,15 @@ export function communityTipsDevBypassEnabled(): boolean {
 
 export function isCommunityTipsFeatureEnabled(flags: FeatureFlags): boolean {
   return isCommunityTipsEnabled(flags) || communityTipsDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `town_facts` flag still required in production. */
+export function townFactsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.TOWN_FACTS_ENABLED === "1";
+}
+
+export function isTownFactsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isTownFactsEnabled(flags) || townFactsDevBypassEnabled();
 }
 
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {

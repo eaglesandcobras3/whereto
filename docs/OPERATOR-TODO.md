@@ -301,8 +301,17 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `search_inspector` | Admin search debug tools |
 | `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, town/area planning blocks, category editorial blocks (not guide modules or hub guide clustering) |
 | `community_tips` | Visitor text tips on business, town, area, and guide detail pages (optional stars); account management; admin moderation at `/admin/community-tips` |
+| `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards) |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
+
+### Town facts setup
+
+- [ ] Create PostHog boolean flag `town_facts` (default off).
+- [ ] Apply [scripts/migrations/town-facts.sql](../scripts/migrations/town-facts.sql) (new columns on `public.towns`).
+- [ ] Apply [scripts/migrations/town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) (initial copy for major corridor towns).
+- [ ] Local dev: `TOWN_FACTS_ENABLED=1` and `NEXT_PUBLIC_TOWN_FACTS_ENABLED=1`.
+- [ ] Confirm `/town/rosemary-beach` shows the at-a-glance block below the hero when the flag is on and seed data is present.
 
 ### Community tips setup
 
@@ -419,6 +428,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-04 | PostHog `town_facts`: town “at a glance” section below hero (metrics, highlights, detail cards); SQL [town-facts.sql](../scripts/migrations/town-facts.sql) + [town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) |
 | 2026-08-01 | Page sharing: Share button on town/area/business/guide pages (Web Share API + Copy Link / Email fallback); PostHog `share_button_clicked` / `share_completed` / `share_cancelled`; provision with `npm run posthog:setup-page-sharing` |
 | 2026-07-30 | Tag↔subcategory links: `search_tag_categories` + import from [tags-cats.csv](tags-cats.csv); free intake suggests mapped tags (+/check) toward the 6-tag cap. SQL [search-tag-categories.sql](../scripts/migrations/search-tag-categories.sql) |
 | 2026-07-29 | IRSE town calibration: penalize templated Stay/Eat/Explore SEO titles and near-duplicate hub copy; require guides/areas for discovery; removed free template points. `/town/watersound` no longer labeled indexed via root `/watersound` alias. |

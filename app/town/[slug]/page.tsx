@@ -14,7 +14,10 @@ import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { townPageMetadataFromAudit } from "@/lib/seo/hub-metadata";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { getTownPlanningProfile } from "@/lib/data/town-planning";
+import { getTownFactsBySlug } from "@/lib/data/town-facts-queries";
+import type { TownFacts } from "@/lib/data/town-facts";
 import { TownPlanningSections } from "@/components/town/TownPlanningSections";
+import { TownAtAGlanceSection } from "@/components/town/TownAtAGlanceSection";
 import { generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -35,6 +38,8 @@ import {
 import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
+import { TownFactsGate } from "@/components/feature-flags/TownFactsGate";
+import { TownPlanningFallbackGate } from "@/components/feature-flags/TownPlanningFallbackGate";
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
@@ -305,11 +310,19 @@ export default async function TownDetailPage({ params }: Props) {
   const town = await getTownBySlug(slug);
   if (!town) notFound();
 
-  const [pageData, guides] = await Promise.all([
+  const [pageData, guides, townFacts] = await Promise.all([
     getTownPageData(town.id),
     getGuidesForTown(town.id),
+    getTownFactsBySlug(town.slug),
   ]);
-  return <BasicTownPage town={town} pageData={pageData} guides={guides} />;
+  return (
+    <BasicTownPage
+      town={town}
+      pageData={pageData}
+      guides={guides}
+      townFacts={townFacts}
+    />
+  );
 }
 
 type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
@@ -323,10 +336,12 @@ function BasicTownPage({
   town,
   pageData,
   guides,
+  townFacts,
 }: {
   town: TownRecord;
   pageData: TownPageData;
   guides: TownGuideCard[];
+  townFacts: TownFacts | null;
 }) {
   const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
   const descriptor = getTownDescriptor(town.slug);
@@ -391,6 +406,12 @@ function BasicTownPage({
           />
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
+            {townFacts ? (
+              <TownFactsGate>
+                <TownAtAGlanceSection townName={town.name} facts={townFacts} />
+              </TownFactsGate>
+            ) : null}
+
             <PlaceCategoryBusinessSections
               placeName={town.name}
               placeSlug={town.slug}
@@ -429,13 +450,15 @@ function BasicTownPage({
             />
 
             {planningProfile ? (
-              <SeoImprovementsGate>
-                <TownPlanningSections
-                  townName={town.name}
-                  townSlug={town.slug}
-                  profile={planningProfile}
-                />
-              </SeoImprovementsGate>
+              <TownPlanningFallbackGate hasTownFacts={Boolean(townFacts)}>
+                <SeoImprovementsGate>
+                  <TownPlanningSections
+                    townName={town.name}
+                    townSlug={town.slug}
+                    profile={planningProfile}
+                  />
+                </SeoImprovementsGate>
+              </TownPlanningFallbackGate>
             ) : null}
 
             {!hasEditorialIntro && pageData.categorySections.length === 0 ? (
