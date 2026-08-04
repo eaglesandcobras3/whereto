@@ -317,6 +317,7 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 - [ ] Create PostHog boolean flag `community_tips` (default off).
 - [ ] Apply [scripts/migrations/community-tips.sql](../scripts/migrations/community-tips.sql) (`profiles.attribution_city` + `community_tips` table + RLS).
+- [ ] Re-apply [scripts/migrations/community-tips.sql](../scripts/migrations/community-tips.sql) in existing environments to enforce `profiles.is_admin` anti-escalation and `community_tips.status='pending'` write checks.
 - [ ] Confirm signup requires **City you’re from** (no age) for semi-anonymous attribution.
 - [ ] Confirm `/admin/community-tips` is reachable for admins when the flag is on.
 - [ ] Local dev: `COMMUNITY_TIPS_ENABLED=1` and `NEXT_PUBLIC_COMMUNITY_TIPS_ENABLED=1`.
@@ -342,7 +343,7 @@ In-app editor at `/admin/guides` for markdown guides stored in `public.guides`.
 
 ### Setup
 
-- [ ] Ensure admin access (`ADMIN_USER_IDS`, `ADMIN_EMAILS`, or `profiles.is_admin`).
+- [ ] Ensure admin access (`ADMIN_USER_IDS` or `ADMIN_EMAILS`).
 - [ ] Set `OPENAI_API_KEY` (and optional `OPENAI_MODEL`, default `gpt-4o-mini`) for the **Enrich** action.
 - [x] Apply [scripts/migrations/guides-search-tags.sql](../scripts/migrations/guides-search-tags.sql) (`guides.search_tags`)
 - [ ] Apply [scripts/migrations/guide-tags-vocabulary.sql](../scripts/migrations/guide-tags-vocabulary.sql) (`guide_tags_vocabulary` + seed `all_towns`)
@@ -428,6 +429,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-04 | Security hardening: `/api/ask/inspect/*` now requires env-based admin identity + rate limiting; `/api/ask/share` now requires authenticated, server-bound artifact sessions; `community-tips.sql` now blocks `profiles.is_admin` client escalation and enforces pending-only user writes |
 | 2026-08-04 | PostHog `town_facts`: town “at a glance” section below hero (metrics, highlights, detail cards); SQL [town-facts.sql](../scripts/migrations/town-facts.sql) + [town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) |
 | 2026-08-01 | Page sharing: Share button on town/area/business/guide pages (Web Share API + Copy Link / Email fallback); PostHog `share_button_clicked` / `share_completed` / `share_cancelled`; provision with `npm run posthog:setup-page-sharing` |
 | 2026-07-30 | Tag↔subcategory links: `search_tag_categories` + import from [tags-cats.csv](tags-cats.csv); free intake suggests mapped tags (+/check) toward the 6-tag cap. SQL [search-tag-categories.sql](../scripts/migrations/search-tag-categories.sql) |
