@@ -7,6 +7,7 @@ import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
 import { BusinessQuickFacts } from "@/components/business/BusinessQuickFacts";
 import { BusinessProfileCollapsibleSections } from "@/components/business/BusinessProfileCollapsibleSections";
+import { VerifiedBadge } from "@/components/business/VerifiedBadge";
 import { extractOverviewFromContent } from "@/lib/business/extract-overview";
 import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
 import {
@@ -496,17 +497,9 @@ export default async function BusinessPage({ params }: Props) {
             {/* Title and meta */}
             <div className="flex-1">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <h1 className="text-editorial-headline flex min-w-0 flex-1 flex-wrap items-center gap-2 text-3xl text-zinc-900 sm:text-4xl">
-                  <span>{b.name as string}</span>
-                  {isVerified ? (
-                    <span
-                      className="material-symbols-outlined !text-[1.75rem] text-[var(--color-logo-teal)] sm:!text-[2rem]"
-                      title="Verified listing"
-                      aria-label="Verified listing"
-                    >
-                      verified
-                    </span>
-                  ) : null}
+                <h1 className="text-editorial-headline flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-3xl text-zinc-900 sm:text-4xl">
+                  <span className="min-w-0">{b.name as string}</span>
+                  {isVerified ? <VerifiedBadge /> : null}
                 </h1>
                 <PageShareButton
                   pageType="business"
