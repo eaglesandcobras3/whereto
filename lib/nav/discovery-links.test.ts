@@ -22,6 +22,7 @@ const discoverOnly: FeatureFlags = {
   free_onboard: false,
   seo_improvements: false,
   community_tips: false,
+  town_facts: false,
 };
 const discoverNlOn: FeatureFlags = {
   ...discoverOnly,
