@@ -1,9 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  parseTownFacts,
-  TOWN_FACTS_SELECT,
-  type TownFactsRow,
-} from "@/lib/data/town-facts";
+import { getTownFactsBySlug } from "@/lib/data/town-facts-queries";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import {
   isTemplatedTownSeoTitle,
@@ -50,7 +46,7 @@ export async function loadTownIrseInput(
       countTownGuides(supabase, row.id),
       countTownAreas(supabase, row.id),
       maxContentOverlap(supabase, key, row.excerpt, row.content),
-      loadTownFacts(supabase, key),
+      getTownFactsBySlug(key),
     ]);
 
   return {
@@ -76,17 +72,6 @@ export async function loadTownIrseInput(
     planning_faq_count: townFacts?.details.length ?? 0,
     planning_nearby_count: townFacts?.highlights.length ?? 0,
   };
-}
-
-async function loadTownFacts(supabase: SupabaseClient, slug: string) {
-  const { data, error } = await supabase
-    .from("towns")
-    .select(TOWN_FACTS_SELECT)
-    .eq("slug", slug)
-    .limit(1)
-    .maybeSingle();
-  if (error || !data) return null;
-  return parseTownFacts(data as TownFactsRow);
 }
 
 async function countTownListings(supabase: SupabaseClient, townId: string): Promise<number> {
