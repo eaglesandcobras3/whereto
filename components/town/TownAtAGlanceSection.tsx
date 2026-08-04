@@ -67,8 +67,8 @@ function IconCircle({
 }) {
   const sizeClass =
     size === "sm"
-      ? "h-11 w-11 sm:h-12 sm:w-12 [&_.material-symbols-outlined]:!text-[1.35rem] sm:[&_.material-symbols-outlined]:!text-[1.55rem]"
-      : "h-[62px] w-[62px] sm:h-[84px] sm:w-[84px] [&_.material-symbols-outlined]:!text-[2rem] sm:[&_.material-symbols-outlined]:!text-[2.625rem]";
+      ? "h-9 w-9 [&_.material-symbols-outlined]:!text-lg"
+      : "h-11 w-11 sm:h-12 sm:w-12 [&_.material-symbols-outlined]:!text-[1.35rem] sm:[&_.material-symbols-outlined]:!text-[1.5rem]";
 
   return (
     <div
@@ -86,48 +86,32 @@ function toneForDetail(title: string, index: number): IconTone {
 
 /** Town profile “at a glance” — metrics, highlights, detail cards, and disclaimer. */
 export function TownAtAGlanceSection({ townName, facts }: Props) {
-  const titleId = "town-at-a-glance-heading";
   const highlightsId = "town-at-a-glance-highlights";
 
   return (
     <section
       className="text-[var(--tg-body)]"
-      aria-labelledby={titleId}
+      aria-label={`${townName} at a glance`}
       style={GLANCE_VARS}
     >
-      <header className="mb-7">
-        <p className="mb-2.5 text-[0.78rem] font-extrabold uppercase tracking-[0.12em] text-[var(--tg-navy)]">
-          Town Profile
-        </p>
-        <h2
-          id={titleId}
-          className="font-headline m-0 text-[clamp(2.4rem,5vw,3.75rem)] font-medium leading-[1.05] tracking-[-0.035em] text-[var(--tg-navy)]"
-        >
-          {townName} at a glance
-        </h2>
-        <p className="mt-4 max-w-[820px] text-[clamp(1rem,1.7vw,1.35rem)] leading-[1.55]">
-          {facts.description}
-        </p>
-      </header>
-
-      <div className="grid grid-cols-1 gap-[22px] lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
         {facts.metrics.map((metric, metricIndex) => {
           const tone = METRIC_TONES[metricIndex % METRIC_TONES.length];
           return (
             <article
               key={metric.label}
-              className="grid min-h-0 grid-cols-[64px_1fr] items-center gap-4 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-[18px] py-[22px] sm:min-h-[220px] sm:grid-cols-[92px_1fr] sm:gap-[22px] sm:p-[30px] lg:min-h-[220px]"
+              className="grid grid-cols-[44px_1fr] items-center gap-3 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-4 py-4 sm:grid-cols-[52px_1fr] sm:gap-4 sm:px-5 sm:py-5"
             >
               <IconCircle tone={tone}>
                 <MsIcon name={metric.icon} />
               </IconCircle>
               <div className="min-w-0">
-                <p className="m-0 mb-2 text-base text-[var(--tg-navy)]">{metric.label}</p>
-                <h3 className="font-headline m-0 text-[clamp(1.55rem,2vw,2rem)] leading-[1.2] font-semibold text-[var(--tg-navy)]">
+                <p className="m-0 text-sm text-[var(--tg-navy)]">{metric.label}</p>
+                <h3 className="font-headline m-0 mt-0.5 text-base font-semibold leading-snug text-[var(--tg-navy)] sm:text-lg">
                   {metric.value}
                 </h3>
                 {metric.subtext ? (
-                  <p className="mt-3 text-base leading-[1.55]">{metric.subtext}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed">{metric.subtext}</p>
                 ) : null}
               </div>
             </article>
@@ -137,25 +121,25 @@ export function TownAtAGlanceSection({ townName, facts }: Props) {
 
       {facts.highlights.length > 0 ? (
         <section
-          className="mt-[22px] rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-[18px] py-5 sm:px-7 sm:pb-[26px] sm:pt-[22px]"
+          className="mt-4 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-4 py-4 sm:mt-5 sm:px-5 sm:py-5"
           aria-labelledby={highlightsId}
         >
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-3">
             <IconCircle tone="gold" size="sm">
               <MsIcon name="star" />
             </IconCircle>
             <h3
               id={highlightsId}
-              className="font-headline m-0 text-xl font-semibold text-[var(--tg-navy)]"
+              className="font-headline m-0 text-base font-semibold text-[var(--tg-navy)] sm:text-lg"
             >
               Highlights
             </h3>
           </div>
-          <div className="mt-5 flex flex-wrap gap-3 sm:pl-[62px]">
+          <div className="mt-3 flex flex-wrap gap-2 sm:mt-4 sm:pl-12">
             {facts.highlights.map((label) => (
               <span
                 key={label}
-                className="inline-flex min-h-[38px] items-center rounded-full border border-[var(--tg-tag-border)] bg-[#fffdfa] px-[18px] py-2 text-[0.92rem] text-[var(--tg-navy)]"
+                className="inline-flex min-h-8 items-center rounded-full border border-[var(--tg-tag-border)] bg-[#fffdfa] px-3.5 py-1.5 text-sm text-[var(--tg-navy)]"
               >
                 {label}
               </span>
@@ -164,39 +148,39 @@ export function TownAtAGlanceSection({ townName, facts }: Props) {
         </section>
       ) : null}
 
-      <div className="mt-[22px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 sm:grid-cols-2 lg:grid-cols-4">
         {facts.details.map((detail, detailIndex) => {
           const tone = toneForDetail(detail.title, detailIndex);
           return (
             <article
               key={detail.title}
-              className="min-h-0 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] p-[22px] lg:min-h-[300px]"
+              className="rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] p-4 sm:p-5"
             >
-              <div className="flex items-center gap-3.5 border-b border-[var(--tg-border)] pb-4">
+              <div className="flex items-center gap-3 border-b border-[var(--tg-border)] pb-3">
                 <IconCircle tone={tone} size="sm">
                   <MsIcon name={detail.icon} />
                 </IconCircle>
-                <h3 className="font-headline m-0 text-xl font-semibold text-[var(--tg-navy)]">
+                <h3 className="font-headline m-0 text-base font-semibold text-[var(--tg-navy)] sm:text-lg">
                   {detail.title}
                 </h3>
               </div>
-              <p className="mt-5 text-base leading-[1.65]">{detail.body}</p>
+              <p className="mt-3 text-sm leading-relaxed">{detail.body}</p>
             </article>
           );
         })}
       </div>
 
       <aside
-        className="mt-[18px] flex items-start gap-4 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-5 py-4"
+        className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-4 py-3.5 sm:mt-5"
         aria-label="Information disclaimer"
       >
         <div
-          className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border-2 border-[var(--tg-navy)] text-[var(--tg-navy)]"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-[var(--tg-navy)] text-[var(--tg-navy)]"
           aria-hidden
         >
-          <MsIcon name="info" className="!text-lg" />
+          <MsIcon name="info" className="!text-base" />
         </div>
-        <p className="m-0 text-[0.92rem] leading-[1.55]">
+        <p className="m-0 text-sm leading-relaxed">
           <strong className="text-[var(--tg-navy)]">Disclaimer:</strong> Information
           provided is for general guidance only and may change. Always verify details
           directly with your rental property, local city, government, property
