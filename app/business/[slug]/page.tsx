@@ -15,11 +15,8 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
-import { getGuidesForBusiness } from "@/lib/data/town-hub";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
-import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
-import type { RelatedGuideLink } from "@/lib/seo/guide-related-links";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import {
   businessListingTitleSegment,
@@ -314,8 +311,6 @@ export default async function BusinessPage({ params }: Props) {
     limit: 6,
   });
 
-  const townGuides = await getGuidesForBusiness(businessId, townId);
-
   const town = b.towns as { name?: string; slug?: string } | null;
   const primaryArea = b.primary_area as { name: string; slug: string } | null;
   const category = b.categories as { name?: string; slug?: string } | null;
@@ -405,13 +400,6 @@ export default async function BusinessPage({ params }: Props) {
     .map((p) => p.trim())
     .filter(Boolean);
   const hasOverview = overviewParagraphs.length > 0;
-
-  const relatedGuideLinks: RelatedGuideLink[] = townGuides.map((g) => ({
-    slug: g.slug,
-    title: g.title,
-    href: g.slug === town?.slug ? townPagePath(g.slug) : `/guide/${g.slug}`,
-    reason: g.subtitle?.trim() || undefined,
-  }));
 
   const gaBiz = String(b.slug);
 
@@ -723,62 +711,45 @@ export default async function BusinessPage({ params }: Props) {
             </aside>
           </div>
 
-          {(relatedBusinesses.length > 0 || relatedGuideLinks.length > 0) ? (
-            <div className="mt-10 space-y-8 sm:mt-12 sm:space-y-10">
-              {relatedBusinesses.length > 0 ? (
-                <div className="space-y-4">
-                  <PlaceRelatedSection
-                    title={town?.name ? `Similar in ${town.name}` : "Similar places"}
-                    description={
-                      town?.name
-                        ? `More spots near ${b.name as string} in ${town.name}.`
-                        : `More spots like ${b.name as string}.`
-                    }
-                  >
-                    {relatedBusinesses.map((rb) => (
-                      <BusinessPreviewCard
-                        key={rb.id}
-                        name={rb.name}
-                        slug={rb.slug}
-                        excerpt={rb.ai_one_liner ?? rb.ai_summary}
-                        heroImageUrl={rb.hero_image_url}
-                        analyticsCategory={`business_similar_${gaBiz}`}
-                        analyticsLabel={rb.slug}
-                      />
-                    ))}
-                  </PlaceRelatedSection>
-                  {townId ? (
-                    <DiscoveryNavLink
-                      params={{ town_id: townId }}
-                      {...gaClickProps({
-                        event: "nav_click",
-                        category: "business_detail_related",
-                        label: `${gaBiz}_view_more_town_search`,
-                      })}
-                      className="inline-flex text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
-                      aria-label={
-                        town?.name
-                          ? `View more businesses in ${town.name}`
-                          : "View more businesses in this town"
-                      }
-                    >
-                      View more
-                    </DiscoveryNavLink>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {relatedGuideLinks.length > 0 ? (
-                <RelatedGuidesSection
-                  title={
+          {relatedBusinesses.length > 0 ? (
+            <div className="mt-10 space-y-4 sm:mt-12">
+              <PlaceRelatedSection
+                title={town?.name ? `Similar in ${town.name}` : "Similar places"}
+                description={
+                  town?.name
+                    ? `More spots near ${b.name as string} in ${town.name}.`
+                    : `More spots like ${b.name as string}.`
+                }
+              >
+                {relatedBusinesses.map((rb) => (
+                  <BusinessPreviewCard
+                    key={rb.id}
+                    name={rb.name}
+                    slug={rb.slug}
+                    excerpt={rb.ai_one_liner ?? rb.ai_summary}
+                    heroImageUrl={rb.hero_image_url}
+                    analyticsCategory={`business_similar_${gaBiz}`}
+                    analyticsLabel={rb.slug}
+                  />
+                ))}
+              </PlaceRelatedSection>
+              {townId ? (
+                <DiscoveryNavLink
+                  params={{ town_id: townId }}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "business_detail_related",
+                    label: `${gaBiz}_view_more_town_search`,
+                  })}
+                  className="inline-flex text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
+                  aria-label={
                     town?.name
-                      ? `Guides for ${town.name}`
-                      : "Guides & stories"
+                      ? `View more businesses in ${town.name}`
+                      : "View more businesses in this town"
                   }
-                  links={relatedGuideLinks}
-                  analyticsCategory={`business_related_guides_${gaBiz}`}
-                  collapsible={false}
-                />
+                >
+                  View more
+                </DiscoveryNavLink>
               ) : null}
             </div>
           ) : null}
