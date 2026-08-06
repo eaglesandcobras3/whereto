@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
 
@@ -39,16 +40,13 @@ export function PlaceGuidesSection({
             className="group flex h-full flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-primary)]"
           >
             {imageUrl ? (
-              <div className="w-full shrink-0 overflow-hidden bg-[var(--color-background)]">
-                {/* eslint-disable-next-line @next/next/no-img-element -- remote CDN/Storage URLs; keep intrinsic aspect ratio */}
-                <img
-                  src={imageUrl}
-                  alt={guide.title}
-                  className="block h-auto w-full"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
+              <ListingThumbnail
+                slug={guide.slug}
+                imageUrl={imageUrl}
+                imageAlt={guide.title}
+                className="aspect-[16/10] w-full"
+                rounded="none"
+              />
             ) : null}
             <div className="flex flex-1 flex-col gap-1.5 p-3.5 sm:p-4">
               <span className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] sm:text-base">
