@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
 
@@ -11,8 +12,8 @@ type Props = {
 };
 
 /**
- * Town/area guides — compact text cards (same density as business RelatedGuidesSection),
- * no hero images so the section stays secondary on mobile.
+ * Town/area guides — vertically stacked cards with an optional horizontal
+ * thumbnail above the existing title/subtitle/CTA content.
  */
 export function PlaceGuidesSection({
   title,
@@ -24,33 +25,48 @@ export function PlaceGuidesSection({
 
   return (
     <PlaceRelatedSection title={title} description={description} layout="grid">
-      {guides.map((guide) => (
-        <Link
-          key={guide.id}
-          href={`/guide/${guide.slug}`}
-          {...gaClickProps({
-            event: "nav_click",
-            category: analyticsCategory,
-            label: guide.slug,
-          })}
-          className="group flex h-full flex-col gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-colors hover:border-[var(--color-primary)] sm:p-4"
-        >
-          <span className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] sm:text-base">
-            {guide.title}
-          </span>
-          {guide.subtitle ? (
-            <span className="text-xs leading-relaxed text-[var(--color-text-secondary)] line-clamp-2 sm:text-sm">
-              {guide.subtitle}
-            </span>
-          ) : null}
-          <span className="mt-auto inline-flex items-center gap-1 pt-1 text-xs font-semibold text-[var(--color-primary)] sm:text-sm">
-            Read guide
-            <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
-              arrow_forward
-            </span>
-          </span>
-        </Link>
-      ))}
+      {guides.map((guide) => {
+        const imageUrl = guide.hero_image_url?.trim() || null;
+
+        return (
+          <Link
+            key={guide.id}
+            href={`/guide/${guide.slug}`}
+            {...gaClickProps({
+              event: "nav_click",
+              category: analyticsCategory,
+              label: guide.slug,
+            })}
+            className="group flex h-full flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-primary)]"
+          >
+            {imageUrl ? (
+              <ListingThumbnail
+                slug={guide.slug}
+                imageUrl={imageUrl}
+                imageAlt={guide.title}
+                className="aspect-[16/10] w-full"
+                rounded="none"
+              />
+            ) : null}
+            <div className="flex flex-1 flex-col gap-1.5 p-3.5 sm:p-4">
+              <span className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] sm:text-base">
+                {guide.title}
+              </span>
+              {guide.subtitle ? (
+                <span className="text-xs leading-relaxed text-[var(--color-text-secondary)] line-clamp-2 sm:text-sm">
+                  {guide.subtitle}
+                </span>
+              ) : null}
+              <span className="mt-auto inline-flex items-center gap-1 pt-1 text-xs font-semibold text-[var(--color-primary)] sm:text-sm">
+                Read guide
+                <span className="material-symbols-outlined !text-sm transition-transform group-hover:translate-x-0.5">
+                  arrow_forward
+                </span>
+              </span>
+            </div>
+          </Link>
+        );
+      })}
     </PlaceRelatedSection>
   );
 }
