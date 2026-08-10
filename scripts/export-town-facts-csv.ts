@@ -176,7 +176,7 @@ async function main() {
       process.exit(1);
     }
 
-    const batch = (data ?? []) as TownFactsExportRow[];
+    const batch = (data ?? []) as unknown as TownFactsExportRow[];
     rows.push(...batch);
     if (batch.length < pageSize) break;
     from += pageSize;

@@ -236,8 +236,9 @@ async function main() {
       continue;
     }
 
+    const existingRow = existing as unknown as Record<string, unknown> & { id: string };
     const patch = buildPatch(csv);
-    const changed = diffPatch(existing as Record<string, unknown>, patch);
+    const changed = diffPatch(existingRow, patch);
     if (changed.length === 0) {
       console.log(`  ${slug}: unchanged`);
       unchanged++;
@@ -253,7 +254,7 @@ async function main() {
     const { error: updateErr } = await supabase
       .from("towns")
       .update(patch)
-      .eq("id", (existing as { id: string }).id);
+      .eq("id", existingRow.id);
 
     if (updateErr) {
       console.error(`  ${slug}: update failed — ${updateErr.message}`);
