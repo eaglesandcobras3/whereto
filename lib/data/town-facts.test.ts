@@ -76,10 +76,8 @@ describe("parseTownFacts", () => {
     });
     expect(facts?.metrics[2]?.label).toBe("Getting Around");
     expect(facts?.highlights).toEqual(["Boutique Shopping", "Walkable", "Events"]);
-    expect(facts?.details).toHaveLength(4);
+    expect(facts?.details).toHaveLength(2);
     expect(facts?.details.map((d) => d.title)).toEqual([
-      "Beach Access",
-      "Getting Around",
       "Dining & Town Center",
       "Parking",
     ]);

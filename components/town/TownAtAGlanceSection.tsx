@@ -26,10 +26,6 @@ const GLANCE_VARS = {
 const METRIC_TONES: IconTone[] = ["lavender", "blue", "peach"];
 
 const DETAIL_TONES: Record<string, IconTone> = {
-  "beach access": "blue",
-  "private beach": "blue",
-  "public beach": "blue",
-  "getting around": "green",
   "dining & town center": "peach",
   parking: "lavender",
 };
@@ -148,7 +144,7 @@ export function TownAtAGlanceSection({ townName, facts }: Props) {
         </section>
       ) : null}
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 sm:grid-cols-2">
         {facts.details.map((detail, detailIndex) => {
           const tone = toneForDetail(detail.title, detailIndex);
           return (
