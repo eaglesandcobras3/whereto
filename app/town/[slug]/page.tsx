@@ -339,18 +339,18 @@ function BasicTownPage({
   guides: TownGuideCard[];
   townFacts: TownFacts | null;
 }) {
-  const seoDesc = (town as unknown as { seo_description?: string | null }).seo_description;
   const descriptor = getTownDescriptor(town.slug);
+  // Visible hero uses excerpt (at-a-glance / editorial intro). seo_description stays for metadata.
   const hasEditorialIntro = Boolean(
     resolvePlaceIntro({
       excerpt: town.excerpt,
-      seoDescription: seoDesc,
+      seoDescription: null,
       fallback: "",
     }),
   );
   const intro = resolvePlaceIntro({
     excerpt: town.excerpt,
-    seoDescription: seoDesc,
+    seoDescription: null,
     fallback: townPageIntro(town.name, descriptor),
   });
   const portraitUrl = businessListingImageUrl(town.hero_image_thumb_url as string | null);

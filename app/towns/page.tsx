@@ -21,7 +21,6 @@ type TownRow = {
   id: string;
   name: string;
   slug: string;
-  subtitle: string | null;
   hero_image_url: string | null;
 };
 
@@ -29,7 +28,7 @@ async function getTowns(): Promise<TownRow[]> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("towns_view")
-    .select("id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort")
+    .select("id, title, slug, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
@@ -56,7 +55,6 @@ async function getTowns(): Promise<TownRow[]> {
         id: String(r.id),
         name: String((r as { title: string }).title),
         slug: String(r.slug),
-        subtitle: (r.excerpt as string | null) ?? null,
         hero_image_url: heroUrl,
       };
     })
@@ -121,7 +119,7 @@ export default async function TownsPage() {
                 key={t.slug}
                 name={t.name}
                 slug={t.slug}
-                subtitle={t.subtitle ?? getTownDescriptor(t.slug)}
+                subtitle={getTownDescriptor(t.slug)}
                 imageUrl={t.hero_image_url}
                 analyticsCategory="towns_hub"
               />
