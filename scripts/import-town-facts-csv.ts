@@ -4,6 +4,9 @@
  *
  * Highlights: pipe-separated (`A | B | C`) — same format as export-town-facts-csv.ts.
  *
+ * For inter-town getting-around-only updates, prefer:
+ *   npx tsx scripts/import-getting-around-csv.ts --file docs/getting_around.csv --apply
+ *
  * Usage:
  *   npx tsx scripts/import-town-facts-csv.ts --file docs/updated-at-a-glance.csv
  *   npx tsx scripts/import-town-facts-csv.ts --file docs/updated-at-a-glance.csv --apply

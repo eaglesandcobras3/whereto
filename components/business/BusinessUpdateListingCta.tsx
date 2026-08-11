@@ -36,8 +36,9 @@ export function BusinessUpdateListingCta({
             Own or manage this business?
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-white/75 sm:text-base">
-            Keep your listing accurate by updating your business description, phone number, website,
-            and search tags for free. Have a different business on 30A? You can add that too.
+            Verify this listing to earn the verified badge on your business profile — and keep
+            details like your description, phone, website, and search tags accurate. Have another
+            business on 30A? Add that listing too.
           </p>
         </div>
         <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
@@ -50,7 +51,7 @@ export function BusinessUpdateListingCta({
             })}
             className="inline-flex w-full items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[var(--color-logo-navy)] transition-colors hover:bg-white/90 sm:w-auto md:text-base"
           >
-            Update this listing
+            Verify this listing
           </Link>
           <Link
             href={addBusinessHref}

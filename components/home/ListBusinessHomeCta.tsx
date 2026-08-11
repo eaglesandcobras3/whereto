@@ -24,89 +24,86 @@ export function ListBusinessHomeCta() {
     >
       <div className={PAGE_SECTION_CONTAINER_CLASS}>
         <div className="overflow-hidden rounded-2xl bg-[var(--color-logo-navy)]">
-          <div className="grid gap-10 p-8 md:p-12 lg:grid-cols-[1fr,minmax(0,16rem)] lg:gap-14 lg:p-14">
-            <div className="min-w-0">
-              <p className="text-eyebrow mb-3 text-[var(--color-logo-teal)]">For local businesses</p>
-              <h2
-                id="home-list-business-heading"
-                className="font-headline text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl"
+          <div className="p-8 md:p-12 lg:p-14">
+            <p className="text-eyebrow mb-3 text-white">For local businesses</p>
+            <h2
+              id="home-list-business-heading"
+              className="max-w-3xl font-headline text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl"
+            >
+              Verify your listing. Earn your verified badge
+            </h2>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">
+              Already on WhereTo30A? Verify your listing to get the verified badge on your business
+              profile — so travelers and locals know the details come from you.
+            </p>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/55">
+              We review every submission before anything goes live, with the same thoughtful
+              standards as the rest of the guide.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href={listHref}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-[var(--color-logo-navy)] transition-colors hover:bg-white/90 sm:w-auto md:text-base"
               >
-                List your business. It&apos;s free on WhereTo30A
-              </h2>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">
-                Reach travelers and locals who are already budgeting time on Scenic Highway 30A. One
-                short request puts your storefront or service in front of visitors planning meals,
-                errands, date nights, and beach weeks.
-              </p>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/55">
-                We review every submission before anything goes live, with the same thoughtful
-                standards as the rest of the guide.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link
-                  href={listHref}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-[var(--color-logo-navy)] transition-colors hover:bg-white/90 sm:w-auto md:text-base"
-                >
-                  <span className="material-symbols-outlined !text-xl" aria-hidden>
-                    storefront
-                  </span>
-                  List your business
-                </Link>
-                <span className="text-xs font-medium uppercase tracking-wider text-white/50">
-                  No listing fee · quick form
+                <span className="material-symbols-outlined !text-xl" aria-hidden>
+                  verified
                 </span>
-              </div>
+                Verify your listing
+              </Link>
+              <Link
+                href={listHref}
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/35 bg-transparent px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/10 sm:w-auto md:text-base"
+              >
+                Add a new business
+              </Link>
             </div>
 
-            <div className="flex flex-col justify-center border-t border-white/15 pt-10 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
-              <dl className="space-y-5 text-sm">
-                <div className="flex gap-3">
-                  <span
-                    className="material-symbols-outlined mt-0.5 shrink-0 text-[var(--color-logo-teal)]"
-                    aria-hidden
-                  >
-                    check_circle
-                  </span>
-                  <div>
-                    <dt className="font-semibold text-white">Visible audience</dt>
-                    <dd className="mt-1 leading-relaxed text-white/70">
-                      People browsing town hubs, search, and related picks, not a billboard on the
-                      interstate.
-                    </dd>
-                  </div>
+            <dl className="mt-10 max-w-2xl space-y-5 text-sm">
+              <div className="flex gap-3">
+                <span
+                  className="material-symbols-outlined mt-0.5 shrink-0 text-white"
+                  aria-hidden
+                >
+                  verified
+                </span>
+                <div>
+                  <dt className="font-semibold text-white">Verified badge</dt>
+                  <dd className="mt-1 leading-relaxed text-white/70">
+                    Show on your profile that the listing is owner-verified — a clear signal for
+                    people planning their trip.
+                  </dd>
                 </div>
-                <div className="flex gap-3">
-                  <span
-                    className="material-symbols-outlined mt-0.5 shrink-0 text-[var(--color-logo-teal)]"
-                    aria-hidden
-                  >
-                    handshake
-                  </span>
-                  <div>
-                    <dt className="font-semibold text-white">Human review</dt>
-                    <dd className="mt-1 leading-relaxed text-white/70">
-                      We verify details so the guide stays trustworthy for neighbors and vacationers
-                      alike.
-                    </dd>
-                  </div>
+              </div>
+              <div className="flex gap-3">
+                <span
+                  className="material-symbols-outlined mt-0.5 shrink-0 text-white"
+                  aria-hidden
+                >
+                  storefront
+                </span>
+                <div>
+                  <dt className="font-semibold text-white">Not listed yet?</dt>
+                  <dd className="mt-1 leading-relaxed text-white/70">
+                    Add your business to the guide, then verify it so your profile earns the badge.
+                  </dd>
                 </div>
-                <div className="flex gap-3">
-                  <span
-                    className="material-symbols-outlined mt-0.5 shrink-0 text-[var(--color-logo-teal)]"
-                    aria-hidden
-                  >
-                    mail
-                  </span>
-                  <div>
-                    <dt className="font-semibold text-white">Simple next step</dt>
-                    <dd className="mt-1 leading-relaxed text-white/70">
-                      Tell us the basics and how you operate. We&apos;ll follow up when we&apos;re
-                      ready to publish or need more info.
-                    </dd>
-                  </div>
+              </div>
+              <div className="flex gap-3">
+                <span
+                  className="material-symbols-outlined mt-0.5 shrink-0 text-white"
+                  aria-hidden
+                >
+                  handshake
+                </span>
+                <div>
+                  <dt className="font-semibold text-white">Human review</dt>
+                  <dd className="mt-1 leading-relaxed text-white/70">
+                    We check every request so the guide stays trustworthy for neighbors and
+                    vacationers alike.
+                  </dd>
                 </div>
-              </dl>
-            </div>
+              </div>
+            </dl>
           </div>
         </div>
       </div>
