@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import { staysBookingGoPath } from "@/lib/stays/constants";
@@ -8,20 +9,17 @@ import { staysBookingGoPath } from "@/lib/stays/constants";
 type Props = {
   propertyId: string;
   businessId: string;
-  checkIn?: string | null;
-  checkOut?: string | null;
-  guests?: number | null;
   className?: string;
 };
 
-export function RentalBookingCta({
-  propertyId,
-  businessId,
-  checkIn,
-  checkOut,
-  guests,
-  className,
-}: Props) {
+export function RentalBookingCta({ propertyId, businessId, className }: Props) {
+  const searchParams = useSearchParams();
+  const checkIn = searchParams.get("check_in");
+  const checkOut = searchParams.get("check_out");
+  const guestsRaw = searchParams.get("guests");
+  const guests = guestsRaw ? Number(guestsRaw) : null;
+  const guestsOk = guests != null && Number.isFinite(guests) && guests > 0 ? guests : null;
+
   useEffect(() => {
     captureEvent("rental_property_viewed", {
       property_id: propertyId,
@@ -32,7 +30,7 @@ export function RentalBookingCta({
   const sp = new URLSearchParams();
   if (checkIn) sp.set("check_in", checkIn);
   if (checkOut) sp.set("check_out", checkOut);
-  if (guests) sp.set("guests", String(guests));
+  if (guestsOk) sp.set("guests", String(guestsOk));
   const href = `${staysBookingGoPath(propertyId)}${sp.toString() ? `?${sp}` : ""}`;
 
   return (
@@ -47,7 +45,7 @@ export function RentalBookingCta({
             property_id: propertyId,
             business_id: businessId,
             has_dates: Boolean(checkIn && checkOut),
-            guests: guests ?? undefined,
+            guests: guestsOk ?? undefined,
             source: "property_detail",
           });
         }}

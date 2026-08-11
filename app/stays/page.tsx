@@ -10,7 +10,9 @@ import { staysFilteredMetadata, staysHubMetadata } from "@/lib/stays/seo";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { notFound } from "next/navigation";
 
-export const revalidate = 3600;
+/** ISR — same cadence as business listings. */
+export const revalidate = 21600;
+export const dynamicParams = true;
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

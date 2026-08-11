@@ -14,11 +14,41 @@ import { getPublishedRentalBySlug } from "@/lib/stays/execute-search";
 import { generateVacationRentalSchema, staysPropertyMetadata } from "@/lib/stays/seo";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
-export const revalidate = 3600;
+/** ISR — same cadence as business listings. */
+export const revalidate = 21600;
+export const dynamicParams = true;
+
+const STATIC_PARAMS_PAGE_SIZE = 1000;
+
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  try {
+    const supabase = getServiceSupabase();
+    const out: { slug: string }[] = [];
+    let from = 0;
+    for (;;) {
+      const { data, error } = await supabase
+        .from("rental_properties")
+        .select("slug")
+        .eq("status", "published")
+        .order("id", { ascending: true })
+        .range(from, from + STATIC_PARAMS_PAGE_SIZE - 1);
+      if (error) break;
+      const batch = (data ?? []) as { slug: string }[];
+      for (const row of batch) {
+        const slug = row.slug?.trim();
+        if (slug) out.push({ slug });
+      }
+      if (batch.length < STATIC_PARAMS_PAGE_SIZE) break;
+      from += STATIC_PARAMS_PAGE_SIZE;
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -38,12 +68,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function StayDetailPage({ params, searchParams }: Props) {
+export default async function StayDetailPage({ params }: Props) {
   const flags = await getAllFeatureFlags();
   if (!isRentalsFeatureEnabled(flags)) notFound();
 
   const { slug } = await params;
-  const sp = await searchParams;
   let property;
   try {
     property = await getPublishedRentalBySlug(slug);
@@ -51,10 +80,6 @@ export default async function StayDetailPage({ params, searchParams }: Props) {
     notFound();
   }
   if (!property || !isPublicRentalVisible(property)) notFound();
-
-  const checkIn = typeof sp.check_in === "string" ? sp.check_in : null;
-  const checkOut = typeof sp.check_out === "string" ? sp.check_out : null;
-  const guests = typeof sp.guests === "string" ? Number(sp.guests) : null;
 
   const supabase = getServiceSupabase();
   const { data: images } = await supabase
@@ -285,9 +310,6 @@ export default async function StayDetailPage({ params, searchParams }: Props) {
                 <RentalBookingCta
                   propertyId={property.id}
                   businessId={property.business_id}
-                  checkIn={checkIn}
-                  checkOut={checkOut}
-                  guests={Number.isFinite(guests) ? guests : null}
                 />
               </div>
             </div>

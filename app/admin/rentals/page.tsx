@@ -20,8 +20,8 @@ export default async function AdminRentalsPage() {
         Vacation rentals
       </h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Manage partners, inventory, and CSV imports. Directus can also edit the same tables after
-        migration.
+        Manage partners, inventory, and CSV imports via Supabase (admin API). Directus is
+        not required for the app.
       </p>
       <div className="mt-8">
         <RentalsAdminClient />

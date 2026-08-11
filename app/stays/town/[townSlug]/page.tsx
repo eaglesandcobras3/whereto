@@ -8,7 +8,9 @@ import { listPublishedRentalsForTownSlug } from "@/lib/stays/execute-search";
 import { staysTownMetadata } from "@/lib/stays/seo";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
-export const revalidate = 3600;
+/** ISR — same cadence as business listings. */
+export const revalidate = 21600;
+export const dynamicParams = true;
 
 type Props = { params: Promise<{ townSlug: string }> };
 
