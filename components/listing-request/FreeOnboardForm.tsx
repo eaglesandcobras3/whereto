@@ -6,6 +6,7 @@ import {
   BusinessNameTypeahead,
   type BusinessSearchHit,
 } from "@/components/listing-request/BusinessNameTypeahead";
+import { CategoryTypeahead } from "@/components/listing-request/CategoryTypeahead";
 import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
@@ -116,7 +117,6 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [suggestedCategory, setSuggestedCategory] = useState("");
-  const [suggestedCategoryOpen, setSuggestedCategoryOpen] = useState(false);
   const [isStorefront, setIsStorefront] = useState(false);
   const [isService, setIsService] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -139,7 +139,6 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
     setSuggestedTags([]);
     setSuggestedCategory("");
-    setSuggestedCategoryOpen(false);
     setIsStorefront(Boolean(b.is_storefront));
     setIsService(Boolean(b.is_service_business));
     setLocations([
@@ -164,7 +163,6 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setSelectedTags([]);
     setSuggestedTags([]);
     setSuggestedCategory("");
-    setSuggestedCategoryOpen(false);
     setIsStorefront(false);
     setIsService(false);
     setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
@@ -183,7 +181,6 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setSelectedTags([]);
     setSuggestedTags([]);
     setSuggestedCategory("");
-    setSuggestedCategoryOpen(false);
     setIsStorefront(false);
     setIsService(false);
     setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
@@ -293,6 +290,23 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       .map((slug) => bySlug.get(slug) ?? { slug, label: formatSearchTagLabel(slug) })
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [categoryId, tagsByCategoryId, searchTagOptions]);
+
+  const categoryTypeaheadOptions = useMemo(() => {
+    if (categoryGroups.length > 0) {
+      return categoryGroups.flatMap((g) =>
+        g.leaves.map((c) => ({
+          id: c.id,
+          title: c.title,
+          groupTitle: g.title,
+        })),
+      );
+    }
+    return categories.map((c) => ({
+      id: c.id,
+      title: c.title,
+      groupTitle: c.rollupTitle ?? null,
+    }));
+  }, [categoryGroups, categories]);
 
   const tagSlotsUsed = selectedTags.length + suggestedTags.length;
   const atTagCap = tagSlotsUsed >= FREE_ONBOARD_SEARCH_TAGS_MAX;
@@ -820,80 +834,24 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           Category
         </label>
         <p className={helpClass}>
-          Pick the closest fit — used on Categories, Businesses, and Services browse hubs.
+          Search for the closest fit. If yours isn&apos;t listed, choose Suggest — we review new
+          categories before they go live.
         </p>
-        <select
+        <CategoryTypeahead
           id="category_id"
+          options={categoryTypeaheadOptions}
           value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
-            if (e.target.value) {
-              setSuggestedCategory("");
-              setSuggestedCategoryOpen(false);
-            }
-          }}
-          className={`${inputClass} mt-1.5`}
+          suggestedValue={suggestedCategory}
           disabled={!isStorefront && !isService}
-        >
-          <option value="">
-            {isStorefront || isService
-              ? "Choose a category"
-              : "Select how customers work with you first"}
-          </option>
-          {categoryGroups.length > 0
-            ? categoryGroups.map((g) => (
-                <optgroup key={g.id} label={g.title}>
-                  {g.leaves.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </optgroup>
-              ))
-            : categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.rollupTitle ? `${c.rollupTitle} — ${c.title}` : c.title}
-                </option>
-              ))}
-        </select>
-        {isStorefront || isService ? (
-          <div className="mt-1.5 flex items-center justify-end">
-            {!suggestedCategoryOpen ? (
-              <button
-                type="button"
-                onClick={() => setSuggestedCategoryOpen(true)}
-                className="shrink-0 text-xs font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
-              >
-                Can&apos;t find yours? Suggest one
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-        {suggestedCategoryOpen && (isStorefront || isService) ? (
-          <div className="mt-3">
-            <label className={labelClass} htmlFor="suggested_category">
-              Suggested category
-            </label>
-            <p className={helpClass}>
-              Our team reviews suggestions before they go live. You can leave the list above empty
-              if none of the options fit.
-            </p>
-            <input
-              id="suggested_category"
-              name="suggested_category"
-              value={suggestedCategory}
-              onChange={(e) => {
-                const next = e.target.value.slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
-                setSuggestedCategory(next);
-                if (next.trim()) setCategoryId("");
-              }}
-              className={`${inputClass} mt-1.5`}
-              placeholder="e.g. Kayak rentals"
-              maxLength={FREE_ONBOARD_SUGGESTED_CATEGORY_MAX}
-              autoComplete="off"
-            />
-          </div>
-        ) : null}
+          inputClassName={inputClass}
+          placeholder={
+            isStorefront || isService
+              ? "Search categories…"
+              : "Select how customers work with you first"
+          }
+          onChange={setCategoryId}
+          onSuggestedChange={setSuggestedCategory}
+        />
       </div>
 
       <div>
