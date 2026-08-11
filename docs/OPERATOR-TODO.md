@@ -27,7 +27,7 @@ Direct-booking referral marketplace for vacation rentals (`/stays`), gated by Po
 
 - CTA copy: **Check availability** (not Book now) until live sync is trustworthy
 - Owner Verified (`businesses.is_verified`) ≠ rental partner approval (`rental_partner_profiles.status`)
-- Sample CSV: [docs/samples/rental-import-sample.csv](samples/rental-import-sample.csv)
+- Sample inventory is entered manually via `/admin/rentals` (Supabase admin API) — no CSV import in MVP
 - Trip spine (future): [docs/rentals-trip-spine.md](rentals-trip-spine.md)
 
 ---
@@ -473,7 +473,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
-| 2026-08-11 | Vacation rentals marketplace: PostHog `rentals` flag (default off); SQL [rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql); `/stays` ISR via Supabase (not Directus); `/list-your-rentals`, `/admin/rentals`, booking redirect + referral clicks |
+| 2026-08-11 | Vacation rentals marketplace: PostHog `rentals` flag (default off); SQL [rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql); `/stays` ISR via Supabase (not Directus); manual admin inventory (no CSV); `/list-your-rentals`, `/admin/rentals`, booking redirect + referral clicks |
 | 2026-08-04 | Town at-a-glance: `town_facts` wins — removed hardcoded `seo_improvements` town planning fallback (`TownPlanningSections` / `town-planning.ts`); `town_facts` code default **on**; IRSE town scoring uses DB facts |
 | 2026-08-04 | `free_onboard` code default is now **on** (PostHog can still force off); owner-verified tooltip copy updated |
 | 2026-08-04 | Business `is_verified`: set on approved non-admin free-onboard add/update (and portal new listing/edit); verified badge on detail page; hide bottom owner CTA. SQL [businesses-is-verified.sql](../scripts/migrations/businesses-is-verified.sql) |

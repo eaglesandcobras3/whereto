@@ -1,5 +1,5 @@
 /**
- * Generic rental source adapter — implement CSV/iCal/API without multi-PMS sprawl.
+ * Generic rental source adapter — iCal/API later; inventory is admin/manual for MVP.
  */
 export type AdapterProperty = {
   externalId: string;
@@ -22,7 +22,7 @@ export type AdapterAvailabilityDay = {
 };
 
 export interface RentalSourceAdapter {
-  readonly sourceType: "manual" | "csv" | "ical" | "api";
+  readonly sourceType: "manual" | "ical" | "api";
   listProperties(): Promise<AdapterProperty[]>;
   listAvailability?(externalId: string): Promise<AdapterAvailabilityDay[]>;
 }

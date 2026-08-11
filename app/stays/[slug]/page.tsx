@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { OpenStreetMap } from "@/components/OpenStreetMap";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import { RentalBookingCta } from "@/components/stays/RentalBookingCta";
@@ -307,10 +308,18 @@ export default async function StayDetailPage({ params }: Props) {
                 </p>
               )}
               <div className="mt-4">
-                <RentalBookingCta
-                  propertyId={property.id}
-                  businessId={property.business_id}
-                />
+                <Suspense
+                  fallback={
+                    <div className="inline-flex w-full items-center justify-center bg-teal-800/80 px-5 py-3 text-sm font-semibold text-white">
+                      Check availability
+                    </div>
+                  }
+                >
+                  <RentalBookingCta
+                    propertyId={property.id}
+                    businessId={property.business_id}
+                  />
+                </Suspense>
               </div>
             </div>
           </aside>

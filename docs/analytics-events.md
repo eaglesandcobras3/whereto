@@ -49,8 +49,5 @@ Do **not** send guest emails, phones, or exact addresses.
 | `rental_booking_click` | `property_id`, `business_id`, `destination_host?`, `has_dates`, `guests?`, `source` |
 | `rental_partner_application_started` | `step` |
 | `rental_partner_application_submitted` | `business_id`, `partner_id`, `import_method`, `pms_name?` |
-| `rental_import_started` | `partner_id`, `method` |
-| `rental_import_completed` | `job_id`, `rows_ok`, `rows_failed` |
-| `rental_import_failed` | `job_id?`, `error_code` |
 
 Server also writes `rental_referral_clicks` on `/api/stays/go/[propertyId]`.

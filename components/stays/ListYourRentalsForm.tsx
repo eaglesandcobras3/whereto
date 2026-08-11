@@ -31,7 +31,7 @@ export function ListYourRentalsForm() {
       booking_url_template: String(fd.get("booking_url_template") ?? "") || null,
       portfolio_size: fd.get("portfolio_size") ? Number(fd.get("portfolio_size")) : null,
       towns_served: String(fd.get("towns_served") ?? "") || null,
-      import_method: String(fd.get("import_method") ?? "csv"),
+      import_method: String(fd.get("import_method") ?? "manual"),
       authority_attested: fd.get("authority_attested") === "on",
       content_rights_attested: fd.get("content_rights_attested") === "on",
       notes: String(fd.get("notes") ?? "") || null,
@@ -163,11 +163,11 @@ export function ListYourRentalsForm() {
           <input name="portfolio_size" type="number" min={1} className={field} />
         </label>
         <label className="block text-sm font-medium text-zinc-800">
-          Import method
-          <select name="import_method" className={field} defaultValue="csv">
-            <option value="manual">Manual / admin entry</option>
-            <option value="csv">CSV import</option>
-            <option value="ical">iCal (availability later)</option>
+          How will inventory be managed?
+          <select name="import_method" className={field} defaultValue="manual">
+            <option value="manual">Manual entry with WhereTo30A</option>
+            <option value="ical">iCal availability later</option>
+            <option value="api">API / PMS (future)</option>
           </select>
         </label>
       </div>

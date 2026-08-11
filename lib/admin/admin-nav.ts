@@ -28,7 +28,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     href: "/admin/rentals",
     title: "Vacation rentals",
-    description: "Partners, inventory, CSV import, and marketplace status.",
+    description: "Partners, inventory, and marketplace status.",
     requiresRentals: true,
   },
   {

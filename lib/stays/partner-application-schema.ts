@@ -50,7 +50,7 @@ export const rentalPartnerApplicationSchema = z
     booking_url_template: z.string().trim().max(2000).optional().nullable(),
     portfolio_size: z.coerce.number().int().min(1).max(5000).optional().nullable(),
     towns_served: z.string().trim().max(500).optional().nullable(),
-    import_method: z.enum(RENTAL_IMPORT_METHODS).default("csv"),
+    import_method: z.enum(RENTAL_IMPORT_METHODS).default("manual"),
     authority_attested: z.boolean().refine((v) => v === true, {
       message: "Confirm you have authority to list these properties.",
     }),

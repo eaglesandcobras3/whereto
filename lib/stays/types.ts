@@ -39,7 +39,7 @@ export type RentalPropertyType = (typeof RENTAL_PROPERTY_TYPES)[number];
 export const RENTAL_BEACH_ACCESS = ["none", "public", "private", "unknown"] as const;
 export type RentalBeachAccess = (typeof RENTAL_BEACH_ACCESS)[number];
 
-export const RENTAL_IMPORT_METHODS = ["manual", "csv", "ical", "api"] as const;
+export const RENTAL_IMPORT_METHODS = ["manual", "ical", "api"] as const;
 export type RentalImportMethod = (typeof RENTAL_IMPORT_METHODS)[number];
 
 export const RENTAL_LOCATION_PRECISION = ["exact", "approximate", "hidden"] as const;

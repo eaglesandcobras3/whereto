@@ -3,10 +3,10 @@ import {
   buildPartnerBookingUrl,
   isBookingHostAllowed,
 } from "@/lib/stays/booking-url";
-import { parseCsv, validateCsvRows, slugifyRentalTitle } from "@/lib/stays/csv";
 import { isRentalIndexReady } from "@/lib/stays/eligibility";
 import { parseIcalBusyDates } from "@/lib/stays/adapters/ical";
 import { parseRentalSearchParams } from "@/lib/stays/search-params";
+import { slugifyRentalTitle } from "@/lib/stays/slug";
 
 describe("buildPartnerBookingUrl", () => {
   it("fills template placeholders", () => {
@@ -45,29 +45,7 @@ describe("isBookingHostAllowed", () => {
   });
 });
 
-describe("csv parse/validate", () => {
-  it("parses quoted fields", () => {
-    const { rows } = parseCsv('a,b\n"1,2",ok');
-    expect(rows[0]?.a).toBe("1,2");
-    expect(rows[0]?.b).toBe("ok");
-  });
-
-  it("validates required columns", () => {
-    const validated = validateCsvRows([
-      {
-        external_id: "1",
-        title: "Beach House",
-        property_type: "house",
-        bedrooms: "3",
-        bathrooms: "2",
-        sleeps: "8",
-        town_slug: "seaside",
-        booking_url: "https://book.example.com/1",
-      },
-    ]);
-    expect(validated[0]?.ok).toBe(true);
-  });
-
+describe("slugifyRentalTitle", () => {
   it("slugifies titles", () => {
     expect(slugifyRentalTitle("Ocean View!!", "EXT-9")).toMatch(/ocean-view/);
   });
