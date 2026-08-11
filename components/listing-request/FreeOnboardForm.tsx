@@ -586,9 +586,12 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           <div className="mt-1.5 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/50 px-3 py-2.5">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                Updating: {prefill.title}
+                Verifying: {prefill.title}
               </p>
-              <p className={helpClass}>We loaded your current listing details below. Edit anything that needs a refresh.</p>
+              <p className={helpClass}>
+                We loaded your current listing details below. Confirm or edit anything that needs a
+                refresh, then submit to earn your verified badge.
+              </p>
             </div>
             <button
               type="button"
@@ -945,7 +948,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
         disabled={pending || prefillLoading}
         className="rounded-xl bg-[var(--color-primary)] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--color-primary-light)] disabled:opacity-50"
       >
-        {pending ? "Sending…" : isUpdate ? "Submit update request" : "Submit listing request"}
+        {pending ? "Sending…" : isUpdate ? "Submit verification" : "Submit listing request"}
       </button>
         </>
       ) : (

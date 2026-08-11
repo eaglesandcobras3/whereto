@@ -90,8 +90,7 @@ export function CategoryTypeahead({
     if (!open) return;
     function onDocPointer(e: MouseEvent) {
       if (!rootRef.current?.contains(e.target as Node)) {
-        setOpen(false);
-        setQuery("");
+        cancelChange();
       }
     }
     document.addEventListener("mousedown", onDocPointer);
@@ -117,12 +116,16 @@ export function CategoryTypeahead({
     setOpen(false);
   }
 
-  function clearSelection() {
-    onChange("");
-    onSuggestedChange?.("");
+  /** Open search without clearing — cancel restores the category that was selected. */
+  function startChange() {
     setQuery("");
     setOpen(true);
     window.setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function cancelChange() {
+    setOpen(false);
+    setQuery("");
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -134,8 +137,7 @@ export function CategoryTypeahead({
     if (!open) return;
 
     if (e.key === "Escape") {
-      setOpen(false);
-      setQuery("");
+      cancelChange();
       e.preventDefault();
       return;
     }
@@ -199,7 +201,7 @@ export function CategoryTypeahead({
         <button
           type="button"
           disabled={disabled}
-          onClick={clearSelection}
+          onClick={startChange}
           className="shrink-0 text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline disabled:opacity-50"
         >
           Change
@@ -210,28 +212,40 @@ export function CategoryTypeahead({
 
   return (
     <div ref={rootRef} className="relative mt-1.5">
-      <input
-        ref={inputRef}
-        id={inputId}
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={
-          open && activeIndex >= 0 ? `${listId}-opt-${activeIndex}` : undefined
-        }
-        disabled={disabled}
-        value={query}
-        autoComplete="off"
-        placeholder={placeholder}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={onKeyDown}
-        className={inputClassName}
-      />
+      <div className="flex items-center gap-2">
+        <input
+          ref={inputRef}
+          id={inputId}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={
+            open && activeIndex >= 0 ? `${listId}-opt-${activeIndex}` : undefined
+          }
+          disabled={disabled}
+          value={query}
+          autoComplete="off"
+          placeholder={placeholder}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKeyDown}
+          className={`${inputClassName} min-w-0 flex-1`}
+        />
+        {hasSelection ? (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={cancelChange}
+            className="shrink-0 text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        ) : null}
+      </div>
       <input type="hidden" name="category_id" value={value} />
       <input type="hidden" name="suggested_category" value={suggested} />
       {open && !disabled ? (

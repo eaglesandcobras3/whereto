@@ -19,9 +19,9 @@ type PageProps = {
 function copyForMode(mode: ListBusinessMode): { title: string; description: string } {
   if (mode === "slug") {
     return {
-      title: "Update a business",
+      title: "Verify a business",
       description:
-        "Suggest updates for your Emerald Coast listing on WhereTo30A. Submissions are reviewed before publication.",
+        "Verify your Emerald Coast listing on WhereTo30A to earn your verified badge. Submissions are reviewed before publication.",
     };
   }
   if (mode === "new") {
@@ -34,7 +34,7 @@ function copyForMode(mode: ListBusinessMode): { title: string; description: stri
   return {
     title: "Verify a business",
     description:
-      "Find your existing WhereTo30A listing to verify or update it. Submissions are reviewed before publication.",
+      "Find your existing WhereTo30A listing to verify it and earn your verified badge. Submissions are reviewed before publication.",
   };
 }
 
@@ -59,20 +59,20 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 export default async function ListYourBusinessPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const mode = resolveListBusinessMode({ business: sp.business, new: sp.new });
-  const { title } = copyForMode(mode);
+  const { title, description } = copyForMode(mode);
 
   return (
     <SiteDocument
       title={title}
-      description="Submit a request to add or update a local listing. We review every submission before it appears on the site."
+      description={description}
       afterDescription={
         mode === "find" ? (
           <p className="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
             <span className="material-symbols-outlined !text-sm" aria-hidden>
-              search
+              verified
             </span>
             <span>
-              Start typing your business name to find an existing listing. Not listed yet?{" "}
+              Search for your listing to verify it. Not listed yet?{" "}
               <Link
                 href="/list-your-business?new=1"
                 className="underline underline-offset-2 hover:text-[var(--color-primary)]"
