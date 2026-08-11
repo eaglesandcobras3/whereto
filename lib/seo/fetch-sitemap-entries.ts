@@ -7,6 +7,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { buildSitemapEntries, staticFallbackSitemap } from "@/lib/seo/sitemap-strategy";
 import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
+import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
 
 const SITEMAP_PAGE_SIZE = 1000;
 
@@ -50,7 +51,8 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       return staticFallbackSitemap(base, now);
     }
 
-    const [towns, guides, areas, pointsOfInterest, categories, events] = await Promise.all([
+    const [towns, guides, areas, pointsOfInterest, categories, events, rentalBundle] =
+      await Promise.all([
       fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
       fetchSitemapGuides(supabase),
       fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
@@ -65,6 +67,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
         "slug, date_updated, published_at, date_created",
       ),
       fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
+      fetchSitemapRentals(supabase),
     ]);
 
     return buildSitemapEntries({
@@ -76,6 +79,8 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       categories,
       pointsOfInterest,
       events,
+      rentals: rentalBundle.rentals,
+      rentalTownHubs: rentalBundle.rentalTownHubs,
     });
   } catch (err) {
     console.error("[sitemap] generation failed:", err);
