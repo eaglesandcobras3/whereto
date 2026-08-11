@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { RentalCard } from "@/components/stays/RentalCard";
 import type { RentalPropertyView } from "@/lib/stays/types";
 
@@ -11,9 +12,9 @@ export function StaysResults({ items, total }: Props) {
     return (
       <p className="mt-8 text-sm text-zinc-600">
         No published stays match these filters yet. Try fewer filters, or{" "}
-        <a href="/list-your-rentals" className="font-medium text-teal-900 underline">
+        <Link href="/list-your-rentals" className="font-medium text-teal-900 underline">
           partner with WhereTo30A
-        </a>{" "}
+        </Link>{" "}
         if you manage rentals on 30A.
       </p>
     );

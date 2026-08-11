@@ -6,7 +6,7 @@ import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags
 import { RENTAL_TOWN_HUB_MIN_PROPERTIES, STAYS_HUB_PATH } from "@/lib/stays/constants";
 import { listPublishedRentalsForTownSlug } from "@/lib/stays/execute-search";
 import { staysTownMetadata } from "@/lib/stays/seo";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 /** ISR — same cadence as business listings. */
 export const revalidate = 21600;
@@ -14,9 +14,28 @@ export const dynamicParams = true;
 
 type Props = { params: Promise<{ townSlug: string }> };
 
+export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
+  try {
+    const { data } = await supabase
+      .from("towns")
+      .select("slug")
+      .eq("status", "published")
+      .limit(200);
+    return ((data ?? []) as { slug: string }[])
+      .map((t) => t.slug?.trim())
+      .filter(Boolean)
+      .map((townSlug) => ({ townSlug: townSlug as string }));
+  } catch {
+    return [];
+  }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { townSlug } = await params;
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return { title: "Stays", robots: { index: false } };
   const { data: town } = await supabase
     .from("towns")
     .select("title, slug")

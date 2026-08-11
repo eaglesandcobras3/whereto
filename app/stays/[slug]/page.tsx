@@ -13,7 +13,7 @@ import { PROPERTY_TYPE_LABELS, staysPropertyPath, STAYS_HUB_PATH } from "@/lib/s
 import { isPublicRentalVisible, isRentalIndexReady } from "@/lib/stays/eligibility";
 import { getPublishedRentalBySlug } from "@/lib/stays/execute-search";
 import { generateVacationRentalSchema, staysPropertyMetadata } from "@/lib/stays/seo";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 /** ISR — same cadence as business listings. */
 export const revalidate = 21600;
@@ -22,8 +22,9 @@ export const dynamicParams = true;
 const STATIC_PARAMS_PAGE_SIZE = 1000;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   try {
-    const supabase = getServiceSupabase();
     const out: { slug: string }[] = [];
     let from = 0;
     for (;;) {
