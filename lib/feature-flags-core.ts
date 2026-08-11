@@ -15,6 +15,7 @@ export const FEATURE_FLAG_KEYS = [
   "seo_improvements",
   "community_tips",
   "town_facts",
+  "rentals",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -32,6 +33,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   seo_improvements: false,
   community_tips: false,
   town_facts: true,
+  rentals: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -112,4 +114,9 @@ export function isCommunityTipsEnabled(flags: FeatureFlags): boolean {
 /** Town profile “at a glance” section (DB-backed facts below the hero). */
 export function isTownFactsEnabled(flags: FeatureFlags): boolean {
   return flags.town_facts === true;
+}
+
+/** Vacation rentals marketplace (`/stays`, partner intake, admin rentals). */
+export function isRentalsEnabled(flags: FeatureFlags): boolean {
+  return flags.rentals === true;
 }

@@ -6,6 +6,7 @@ import {
   isDiscoverEnabled,
   isFreeOnboardEnabled,
   isOnboardEnabled,
+  isRentalsEnabled,
   isReviewQueueEnabled,
   isSearchInspectorEnabled,
 } from "@/lib/feature-flags-core";
@@ -23,6 +24,12 @@ function pathnameNeedsFeatureFlags(pathname: string): boolean {
   if (pathname === "/discover" || pathname.startsWith("/discover/")) return true;
   if (pathname === "/api/discovery" || pathname.startsWith("/api/discovery/")) return true;
   if (pathname === "/list-your-business") return true;
+  if (pathname === "/stays" || pathname.startsWith("/stays/")) return true;
+  if (pathname === "/list-your-rentals" || pathname.startsWith("/list-your-rentals/")) return true;
+  if (pathname === "/api/stays" || pathname.startsWith("/api/stays/")) return true;
+  if (pathname === "/api/rentals" || pathname.startsWith("/api/rentals/")) return true;
+  if (pathname === "/admin/rentals" || pathname.startsWith("/admin/rentals/")) return true;
+  if (pathname.startsWith("/api/admin/rentals")) return true;
   if (pathname === "/portal" || pathname.startsWith("/portal/")) return true;
   if (pathname.startsWith("/api/portal/")) return true;
   if (pathname === "/admin/review" || pathname.startsWith("/api/admin/review")) return true;
@@ -236,6 +243,31 @@ export async function middleware(request: NextRequest) {
     (pathname === "/admin/search-debug" || pathname.startsWith("/admin/search-debug/"))
   ) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  const rentalsDevBypass =
+    process.env.NODE_ENV === "development" && process.env.RENTALS_ENABLED === "1";
+  const rentalsOn = isRentalsEnabled(flags) || rentalsDevBypass;
+  if (
+    !rentalsOn &&
+    (pathname === "/stays" ||
+      pathname.startsWith("/stays/") ||
+      pathname === "/list-your-rentals" ||
+      pathname.startsWith("/list-your-rentals/") ||
+      pathname === "/admin/rentals" ||
+      pathname.startsWith("/admin/rentals/"))
+  ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+  if (
+    !rentalsOn &&
+    (pathname === "/api/stays" ||
+      pathname.startsWith("/api/stays/") ||
+      pathname === "/api/rentals" ||
+      pathname.startsWith("/api/rentals/") ||
+      pathname.startsWith("/api/admin/rentals"))
+  ) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   if (!supabase) {

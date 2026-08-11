@@ -48,6 +48,7 @@ export const SITEMAP_EXCLUDED_EXACT_PATHS = new Set([
   "/about",
   "/feedback",
   "/list-your-business",
+  "/list-your-rentals",
   "/terms",
   "/privacy",
   "/guide",
@@ -60,6 +61,7 @@ export const SITEMAP_HUB_PAGES = [
   { path: "/areas", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/businesses", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/guides", priority: 0.9, changeFreq: "weekly" as const },
+  { path: "/stays", priority: 0.88, changeFreq: "daily" as const },
 ] as const;
 
 export const SITEMAP_HOME = {
@@ -80,6 +82,10 @@ export type BuildSitemapInput = {
   /** POIs resolve at `/area/[slug]` — deduped against areas. */
   pointsOfInterest?: SitemapRow[];
   events?: SitemapRow[];
+  /** Index-eligible vacation rentals (`/stays/[slug]`). */
+  rentals?: SitemapRow[];
+  /** Town hubs with enough inventory (`/stays/town/[slug]`). */
+  rentalTownHubs?: SitemapRow[];
 };
 
 export function pathnameFromSitemapUrl(base: string, url: string): string {
@@ -133,6 +139,8 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     categories,
     pointsOfInterest = [],
     events = [],
+    rentals = [],
+    rentalTownHubs = [],
   } = input;
   const entries: MetadataRoute.Sitemap = [];
 
@@ -241,6 +249,28 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
       lastModified: pickSitemapDate(ev, now),
       changeFrequency: "weekly",
       priority: 0.65,
+    });
+  }
+
+  for (const r of rentals) {
+    const slug = String(r.slug ?? "").trim();
+    if (!slug) continue;
+    entries.push({
+      url: `${base}/stays/${encodeURIComponent(slug)}`,
+      lastModified: pickSitemapDate(r, now),
+      changeFrequency: "weekly",
+      priority: 0.78,
+    });
+  }
+
+  for (const hub of rentalTownHubs) {
+    const slug = String(hub.slug ?? "").trim();
+    if (!slug) continue;
+    entries.push({
+      url: `${base}/stays/town/${encodeURIComponent(slug)}`,
+      lastModified: pickSitemapDate(hub, now),
+      changeFrequency: "weekly",
+      priority: 0.8,
     });
   }
 

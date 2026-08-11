@@ -86,6 +86,24 @@ export function CategoryTypeahead({
 
   const optionCount = filtered.length + (canSuggest ? 1 : 0);
 
+  function updateQuery(next: string) {
+    setQuery(next);
+    setActiveIndex(0);
+  }
+
+  /** Open search without clearing — cancel restores the category that was selected. */
+  function startChange() {
+    updateQuery("");
+    setOpen(true);
+    setActiveIndex(0);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function cancelChange() {
+    setOpen(false);
+    updateQuery("");
+  }
+
   useEffect(() => {
     if (!open) return;
     function onDocPointer(e: MouseEvent) {
@@ -97,14 +115,10 @@ export function CategoryTypeahead({
     return () => document.removeEventListener("mousedown", onDocPointer);
   }, [open]);
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query, open]);
-
   function selectOption(option: CategoryTypeaheadOption) {
     onChange(option.id);
     onSuggestedChange?.("");
-    setQuery("");
+    updateQuery("");
     setOpen(false);
   }
 
@@ -112,20 +126,8 @@ export function CategoryTypeahead({
     if (!onSuggestedChange || !canSuggest) return;
     onSuggestedChange(normalizedSuggest);
     onChange("");
-    setQuery("");
+    updateQuery("");
     setOpen(false);
-  }
-
-  /** Open search without clearing — cancel restores the category that was selected. */
-  function startChange() {
-    setQuery("");
-    setOpen(true);
-    window.setTimeout(() => inputRef.current?.focus(), 0);
-  }
-
-  function cancelChange() {
-    setOpen(false);
-    setQuery("");
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -228,10 +230,13 @@ export function CategoryTypeahead({
           autoComplete="off"
           placeholder={placeholder}
           onChange={(e) => {
-            setQuery(e.target.value);
+            updateQuery(e.target.value);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true);
+            setActiveIndex(0);
+          }}
           onKeyDown={onKeyDown}
           className={`${inputClassName} min-w-0 flex-1`}
         />

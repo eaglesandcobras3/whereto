@@ -33,6 +33,8 @@ export const RESERVED_ROOT_SLUGS = new Set([
   "robots.txt",
   "share",
   "signup",
+  "stays",
+  "list-your-rentals",
   "terms",
   "town",
   "towns",

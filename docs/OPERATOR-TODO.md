@@ -6,6 +6,32 @@ General operator tasks for WhereTo30A (env, deploy, shared infra).
 
 ---
 
+## Vacation rentals marketplace
+
+Direct-booking referral marketplace for vacation rentals (`/stays`), gated by PostHog flag `rentals` (code default **off**).
+
+**Runtime data path:** Next.js → **Supabase** (service-role / SSR clients) only. The app does **not** call Directus. Public stays pages use **ISR** (`revalidate`). Admin CRUD is `/admin/rentals` + `/api/admin/rentals*`.
+
+### Setup
+
+- [ ] Apply SQL in Supabase SQL editor: [scripts/migrations/rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql)
+- [ ] PostHog: create boolean flag `rentals` (default false); enable for internal cohort then gradual rollout
+- [ ] Dev bypass (optional): `RENTALS_ENABLED=1` when `NODE_ENV=development`
+- [ ] Confirm founding property-manager partners and PMS / booking URL hosts; set `booking_url_hosts` allowlists on partner profiles
+- [ ] Storage: partner image URLs or uploads under existing media bucket paths (document path convention `rentals/{partner_id}/…`)
+- [ ] Manual freshness cron (optional): `curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/rentals-freshness"`
+- [ ] Regenerate or hand-extend Supabase types after migration (`lib/supabase/database.types.ts` lags portal tables)
+- [ ] Optional: if ops still use Directus against the same Postgres, add collections for rental tables (admin UI only — not required for the Next.js app)
+
+### Product notes
+
+- CTA copy: **Check availability** (not Book now) until live sync is trustworthy
+- Owner Verified (`businesses.is_verified`) ≠ rental partner approval (`rental_partner_profiles.status`)
+- Sample inventory is entered manually via `/admin/rentals` (Supabase admin API) — no CSV import in MVP
+- Trip spine (future): [docs/rentals-trip-spine.md](rentals-trip-spine.md)
+
+---
+
 ## RankScore → Guides sync
 
 Pull completed RankScore articles into `public.guides` (published at `/guide/[slug]` and listed on `/guides`).
@@ -447,6 +473,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-11 | Vacation rentals marketplace: PostHog `rentals` flag (default off); SQL [rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql); `/stays` ISR via Supabase (not Directus); manual admin inventory (no CSV); `/list-your-rentals`, `/admin/rentals`, booking redirect + referral clicks |
 | 2026-08-04 | Town at-a-glance: `town_facts` wins — removed hardcoded `seo_improvements` town planning fallback (`TownPlanningSections` / `town-planning.ts`); `town_facts` code default **on**; IRSE town scoring uses DB facts |
 | 2026-08-04 | `free_onboard` code default is now **on** (PostHog can still force off); owner-verified tooltip copy updated |
 | 2026-08-04 | Business `is_verified`: set on approved non-admin free-onboard add/update (and portal new listing/edit); verified badge on detail page; hide bottom owner CTA. SQL [businesses-is-verified.sql](../scripts/migrations/businesses-is-verified.sql) |
