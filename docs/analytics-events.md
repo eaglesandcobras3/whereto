@@ -33,3 +33,24 @@ In PostHog, filter or break down events by `event_category`, `event_label`, and 
 **Forms:** Navbar search `gaEvent`, hero search `gaEvent`, listing feedback submit `gaEvent` on success.
 
 Re-run **`rg 'gaClickProps|gaEvent|captureEvent'`** occasionally to verify new UI keeps parity.
+
+## Vacation rentals (`rentals` flag)
+
+Do **not** send guest emails, phones, or exact addresses.
+
+| Event | Typical properties |
+|-------|-------------------|
+| `rental_search_started` | `source`, `town_slug?`, `has_dates`, `guests?` |
+| `rental_search_completed` | `town_slug?`, `guests?`, `bedrooms?`, `filter_keys[]`, `result_count?` |
+| `rental_filter_applied` | `filter`, `value`, `result_count?` |
+| `rental_result_viewed` | `property_id` / label, position via data attrs |
+| `rental_property_viewed` | `property_id`, `business_id` |
+| `rental_manager_viewed` | business slug / id |
+| `rental_booking_click` | `property_id`, `business_id`, `destination_host?`, `has_dates`, `guests?`, `source` |
+| `rental_partner_application_started` | `step` |
+| `rental_partner_application_submitted` | `business_id`, `partner_id`, `import_method`, `pms_name?` |
+| `rental_import_started` | `partner_id`, `method` |
+| `rental_import_completed` | `job_id`, `rows_ok`, `rows_failed` |
+| `rental_import_failed` | `job_id?`, `error_code` |
+
+Server also writes `rental_referral_clicks` on `/api/stays/go/[propertyId]`.

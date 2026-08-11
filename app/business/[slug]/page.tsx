@@ -34,9 +34,14 @@ import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
-import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
+import { BusinessRentalPortfolio } from "@/components/business/BusinessRentalPortfolio";
+import {
+  getActivePartnerForBusiness,
+  listPublishedRentalsForBusiness,
+} from "@/lib/stays/execute-search";
 
 export const revalidate = 21600;
 
@@ -293,6 +298,7 @@ export default async function BusinessPage({ params }: Props) {
 
   const flags = await getAllFeatureFlags();
   const freeOnboardEnabled = isFreeOnboardEnabled(flags);
+  const rentalsEnabled = isRentalsFeatureEnabled(flags);
 
   const row = b as Record<string, unknown>;
   const rawSlug = row.slug;
@@ -310,6 +316,20 @@ export default async function BusinessPage({ params }: Props) {
     primaryCategoryId: (b.primary_category_id as string | null) ?? null,
     limit: 6,
   });
+
+  let rentalProperties: Awaited<ReturnType<typeof listPublishedRentalsForBusiness>> = [];
+  let partnerStatus: string | null = null;
+  if (rentalsEnabled) {
+    try {
+      const partner = await getActivePartnerForBusiness(businessId);
+      partnerStatus = partner?.status ?? null;
+      if (partnerStatus === "active" || partnerStatus === "paused") {
+        rentalProperties = await listPublishedRentalsForBusiness(businessId, 12);
+      }
+    } catch {
+      // Rentals tables may not exist until migration is applied.
+    }
+  }
 
   const town = b.towns as { name?: string; slug?: string } | null;
   const primaryArea = b.primary_area as { name: string; slug: string } | null;
@@ -710,6 +730,14 @@ export default async function BusinessPage({ params }: Props) {
               )}
             </aside>
           </div>
+
+          {rentalsEnabled && (rentalProperties.length > 0 || partnerStatus === "active") ? (
+            <BusinessRentalPortfolio
+              properties={rentalProperties}
+              partnerStatus={partnerStatus}
+              isVerified={(b.is_verified as boolean | null) ?? null}
+            />
+          ) : null}
 
           {relatedBusinesses.length > 0 ? (
             <div className="mt-10 space-y-4 sm:mt-12">

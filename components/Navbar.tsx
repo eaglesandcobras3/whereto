@@ -7,9 +7,10 @@ import { NavbarCategoryLinks } from "@/components/NavbarCategoryLinks";
 import { NavbarMobileMenu } from "@/components/NavbarMobileMenu";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { isOnboardEnabled } from "@/lib/feature-flags-core";
+import { isOnboardEnabled, isRentalsEnabled } from "@/lib/feature-flags-core";
 import {
   applyDiscoveryBrowseNav,
+  applyRentalsBrowseNav,
   discoveryHref,
   showNavbarAskUi,
   showNavbarDiscoverQueryUi,
@@ -54,7 +55,10 @@ export function Navbar({
 }: Props) {
   const featureFlags = useAppFeatureFlags();
   const onboardEnabled = isOnboardEnabled(featureFlags);
-  const browseNavItems = applyDiscoveryBrowseNav(browseNavItemsProp, featureFlags);
+  const browseNavItems = applyRentalsBrowseNav(
+    applyDiscoveryBrowseNav(browseNavItemsProp, featureFlags),
+    isRentalsEnabled(featureFlags),
+  );
 
   const pathname = usePathname();
   const router = useRouter();

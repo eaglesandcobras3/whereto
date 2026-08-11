@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { OperatorToolsLinks } from "@/components/admin/OperatorToolsLinks";
 import { adminNavItemsForSession } from "@/lib/admin/admin-nav";
-import { getAllFeatureFlags, isCommunityTipsFeatureEnabled, isFreeOnboardEnabled, isOnboardEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isCommunityTipsFeatureEnabled, isFreeOnboardEnabled, isOnboardEnabled, isRentalsFeatureEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 
 export const metadata = {
@@ -20,6 +20,7 @@ export default async function AdminHomePage() {
     freeOnboardEnabled: isFreeOnboardEnabled(flags),
     searchInspectorEnabled: isSearchInspectorEnabled(flags),
     communityTipsEnabled: isCommunityTipsFeatureEnabled(flags),
+    rentalsEnabled: isRentalsFeatureEnabled(flags),
   });
 
   return (
