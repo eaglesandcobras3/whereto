@@ -12,6 +12,7 @@ import {
   isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
   isTownFactsEnabled,
+  isRentalsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -30,6 +31,7 @@ export {
   isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
   isTownFactsEnabled,
+  isRentalsEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -107,6 +109,15 @@ export function isTownFactsFeatureEnabled(flags: FeatureFlags): boolean {
   return isTownFactsEnabled(flags) || townFactsDevBypassEnabled();
 }
 
+/** Local dev escape hatch — PostHog `rentals` flag still required in production. */
+export function rentalsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.RENTALS_ENABLED === "1";
+}
+
+export function isRentalsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isRentalsEnabled(flags) || rentalsDevBypassEnabled();
+}
+
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {
   return isDiscoverEnabled(flags) || discoverDevBypassEnabled();
 }
@@ -162,6 +173,14 @@ export async function reviewApiBlocked(): Promise<NextResponse | null> {
 /** For route handlers: returns a 404 when community tips/reviews are off. */
 export async function communityTipsApiBlocked(): Promise<NextResponse | null> {
   if (!isCommunityTipsFeatureEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when the vacation rentals marketplace is off. */
+export async function rentalsApiBlocked(): Promise<NextResponse | null> {
+  if (!isRentalsFeatureEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;

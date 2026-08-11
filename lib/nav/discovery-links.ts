@@ -137,3 +137,24 @@ export function applyDiscoveryBrowseNav(
     }
   });
 }
+
+/** Insert Stays browse link when rentals marketplace flag is on. */
+export function applyRentalsBrowseNav(
+  items: BrowseNavItem[],
+  rentalsEnabled: boolean,
+): BrowseNavItem[] {
+  if (!rentalsEnabled) return items;
+  if (items.some((i) => i.href === "/stays")) return items;
+  const staysItem: BrowseNavItem = {
+    label: "Stays",
+    href: "/stays",
+    activePaths: ["/stays"],
+  };
+  const guidesIdx = items.findIndex((i) => i.href === "/guides");
+  if (guidesIdx >= 0) {
+    const next = [...items];
+    next.splice(guidesIdx, 0, staysItem);
+    return next;
+  }
+  return [...items, staysItem];
+}

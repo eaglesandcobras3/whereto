@@ -10,6 +10,8 @@ export type AdminNavItem = {
   requiresSearchInspector?: boolean;
   /** Hidden when the `community_tips` feature flag is off */
   requiresCommunityTips?: boolean;
+  /** Hidden when the `rentals` feature flag is off */
+  requiresRentals?: boolean;
 };
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
@@ -22,6 +24,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/irse",
     title: "Index readiness",
     description: "Score pages for Google index readiness; optional GSC inspection + calibration.",
+  },
+  {
+    href: "/admin/rentals",
+    title: "Vacation rentals",
+    description: "Partners, inventory, and marketplace status.",
+    requiresRentals: true,
   },
   {
     href: "/admin/review",
@@ -59,6 +67,7 @@ export function adminNavItemsForSession(flags: {
   freeOnboardEnabled?: boolean;
   searchInspectorEnabled: boolean;
   communityTipsEnabled?: boolean;
+  rentalsEnabled?: boolean;
 }): AdminNavItem[] {
   const reviewEnabled = flags.onboardEnabled || flags.freeOnboardEnabled === true;
   return ADMIN_NAV_ITEMS.filter((item) => {
@@ -66,6 +75,7 @@ export function adminNavItemsForSession(flags: {
     if (item.requiresOnboard && !flags.onboardEnabled) return false;
     if (item.requiresSearchInspector && !flags.searchInspectorEnabled) return false;
     if (item.requiresCommunityTips && flags.communityTipsEnabled !== true) return false;
+    if (item.requiresRentals && flags.rentalsEnabled !== true) return false;
     return true;
   });
 }
