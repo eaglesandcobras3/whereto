@@ -11,10 +11,13 @@ import { PAGE_SECTION_CONTAINER_CLASS } from "@/lib/layout/page-section";
  */
 export function ListBusinessHomeCta() {
   const flags = useAppFeatureFlags();
-  const listHref =
+  const listBase =
     isFreeOnboardEnabled(flags) || !isOnboardEnabled(flags)
       ? "/list-your-business"
       : "/portal/businesses/new";
+  const verifyHref = listBase;
+  const addHref =
+    listBase === "/list-your-business" ? "/list-your-business?new=1" : listBase;
 
   return (
     <section
@@ -42,7 +45,7 @@ export function ListBusinessHomeCta() {
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
-                href={listHref}
+                href={verifyHref}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-[var(--color-logo-navy)] transition-colors hover:bg-white/90 sm:w-auto md:text-base"
               >
                 <span className="material-symbols-outlined !text-xl" aria-hidden>
@@ -51,7 +54,7 @@ export function ListBusinessHomeCta() {
                 Verify your listing
               </Link>
               <Link
-                href={listHref}
+                href={addHref}
                 className="inline-flex w-full items-center justify-center rounded-xl border border-white/35 bg-transparent px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/10 sm:w-auto md:text-base"
               >
                 Add a new business

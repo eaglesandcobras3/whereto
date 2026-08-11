@@ -16,7 +16,7 @@ type Props = {
  */
 export function BusinessUpdateListingCta({
   updateListingHref,
-  addBusinessHref = "/list-your-business",
+  addBusinessHref = "/list-your-business?new=1",
   analyticsLabel,
   className = "",
 }: Props) {

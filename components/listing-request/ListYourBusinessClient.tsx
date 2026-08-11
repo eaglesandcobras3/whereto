@@ -9,12 +9,17 @@ import {
 import { FreeOnboardForm } from "@/components/listing-request/FreeOnboardForm";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags-core";
+import { resolveListBusinessMode } from "@/lib/listing-requests/list-business-mode";
 import { fetchPublicTowns } from "@/lib/public/fetch-public-towns-client";
 
 export function ListYourBusinessClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const businessSlug = searchParams.get("business")?.trim() || null;
+  const mode = resolveListBusinessMode({
+    business: businessSlug,
+    new: searchParams.get("new"),
+  });
   const flags = useAppFeatureFlags();
   const freeOnboard = isFreeOnboardEnabled(flags);
   const onboard = isOnboardEnabled(flags);
@@ -72,7 +77,7 @@ export function ListYourBusinessClient() {
   }
 
   if (freeOnboard) {
-    return <FreeOnboardForm towns={towns} businessSlug={businessSlug} />;
+    return <FreeOnboardForm towns={towns} mode={mode} businessSlug={businessSlug} />;
   }
 
   return <ListBusinessForm towns={towns} />;

@@ -764,7 +764,7 @@ export default async function BusinessPage({ params }: Props) {
             <BusinessUpdateListingCta
               className="mt-10 sm:mt-12"
               updateListingHref={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}
-              addBusinessHref="/list-your-business"
+              addBusinessHref="/list-your-business?new=1"
               analyticsLabel={`${gaBiz}_listing_cta`}
             />
           ) : null}

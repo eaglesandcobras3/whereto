@@ -3,26 +3,45 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { SiteDocument } from "@/components/legal/SiteDocument";
 import { ListYourBusinessClient } from "@/components/listing-request/ListYourBusinessClient";
+import {
+  resolveListBusinessMode,
+  type ListBusinessMode,
+} from "@/lib/listing-requests/list-business-mode";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 
 export const revalidate = 21600;
 
 type PageProps = {
-  searchParams: Promise<{ business?: string }>;
+  searchParams: Promise<{ business?: string; new?: string }>;
 };
 
-function isUpdateRequest(searchParams: { business?: string }): boolean {
-  return Boolean(searchParams.business?.trim());
+function copyForMode(mode: ListBusinessMode): { title: string; description: string } {
+  if (mode === "slug") {
+    return {
+      title: "Update a business",
+      description:
+        "Suggest updates for your Emerald Coast listing on WhereTo30A. Submissions are reviewed before publication.",
+    };
+  }
+  if (mode === "new") {
+    return {
+      title: "List your business",
+      description:
+        "Request to add your Emerald Coast business or service to WhereTo30A. Submissions are reviewed before publication.",
+    };
+  }
+  return {
+    title: "Verify a business",
+    description:
+      "Find your existing WhereTo30A listing to verify or update it. Submissions are reviewed before publication.",
+  };
 }
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const sp = await searchParams;
-  const isUpdate = isUpdateRequest(sp);
-  const title = isUpdate ? "Update a business" : "List your business";
-  const description = isUpdate
-    ? "Suggest updates for your Emerald Coast listing on WhereTo30A. Submissions are reviewed before publication."
-    : "Request to add your Emerald Coast business or service to WhereTo30A. Submissions are reviewed before publication.";
+  const mode = resolveListBusinessMode({ business: sp.business, new: sp.new });
+  const { title, description } = copyForMode(mode);
 
   return {
     ...canonicalAlternates("/list-your-business"),
@@ -39,22 +58,44 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
 export default async function ListYourBusinessPage({ searchParams }: PageProps) {
   const sp = await searchParams;
-  const isUpdate = isUpdateRequest(sp);
-  const title = isUpdate ? "Update a business" : "List your business";
+  const mode = resolveListBusinessMode({ business: sp.business, new: sp.new });
+  const { title } = copyForMode(mode);
 
   return (
     <SiteDocument
       title={title}
       description="Submit a request to add or update a local listing. We review every submission before it appears on the site."
       afterDescription={
-        !isUpdate ? (
+        mode === "find" ? (
           <p className="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
             <span className="material-symbols-outlined !text-sm" aria-hidden>
-              flag
+              search
             </span>
             <span>
-              Looking to update an existing business? Go to your business listing and select update
-              your business.
+              Start typing your business name to find an existing listing. Not listed yet?{" "}
+              <Link
+                href="/list-your-business?new=1"
+                className="underline underline-offset-2 hover:text-[var(--color-primary)]"
+              >
+                Add a new business
+              </Link>
+              .
+            </span>
+          </p>
+        ) : mode === "new" ? (
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+            <span className="material-symbols-outlined !text-sm" aria-hidden>
+              verified
+            </span>
+            <span>
+              Already on WhereTo30A?{" "}
+              <Link
+                href="/list-your-business"
+                className="underline underline-offset-2 hover:text-[var(--color-primary)]"
+              >
+                Verify your existing listing
+              </Link>
+              .
             </span>
           </p>
         ) : null

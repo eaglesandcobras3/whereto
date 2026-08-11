@@ -2,11 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
+import {
+  BusinessNameTypeahead,
+  type BusinessSearchHit,
+} from "@/components/listing-request/BusinessNameTypeahead";
 import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
+import type { ListBusinessMode } from "@/lib/listing-requests/list-business-mode";
 import {
   FREE_ONBOARD_EXCERPT_MAX,
   FREE_ONBOARD_LOCATIONS_MAX,
@@ -57,6 +62,8 @@ type PrefillBusiness = {
 
 type Props = {
   towns: ListBusinessTownOption[];
+  /** Intake mode from URL (`find` = typeahead verify, `new` = blank, `slug` = prefill). */
+  mode?: ListBusinessMode;
   /** Prefill from existing listing slug (update/claim). */
   businessSlug?: string | null;
 };
@@ -73,8 +80,9 @@ function CharCount({ value, max }: { value: string; max: number }) {
   );
 }
 
-export function FreeOnboardForm({ towns, businessSlug }: Props) {
-  const isUpdate = Boolean(businessSlug);
+type FindPhase = "searching" | "selected" | "creating-new";
+
+export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -85,6 +93,10 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [searchTagOptions, setSearchTagOptions] = useState<DiscoverSearchTagOption[]>([]);
   const [tagsByCategoryId, setTagsByCategoryId] = useState<Record<string, string[]>>({});
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
+  const [findPhase, setFindPhase] = useState<FindPhase>(
+    mode === "find" ? "searching" : mode === "slug" ? "selected" : "creating-new",
+  );
+  const [prefillLoading, setPrefillLoading] = useState(false);
   const [removalOpen, setRemovalOpen] = useState(false);
   const [removalName, setRemovalName] = useState("");
   const [removalEmail, setRemovalEmail] = useState("");
@@ -95,6 +107,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [overview, setOverview] = useState("");
+  const [website, setWebsite] = useState("");
+  const [phone, setPhone] = useState("");
   const [locations, setLocations] = useState<LocationRow[]>([
     { key: newLocationKey(), town_id: "", address: "" },
   ]);
@@ -109,6 +123,92 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   // Listing photo upload temporarily disabled — approve cannot write image URL columns yet.
+
+  const isUpdate = Boolean(prefill?.id);
+  const showTypeahead = mode === "find" && findPhase === "searching";
+  const findDecisionNeeded = mode === "find" && findPhase === "searching";
+
+  function applyPrefillBusiness(b: PrefillBusiness) {
+    setPrefill(b);
+    setTitle(b.title);
+    setExcerpt((b.excerpt ?? "").slice(0, FREE_ONBOARD_EXCERPT_MAX));
+    setOverview((b.overview ?? "").slice(0, FREE_ONBOARD_OVERVIEW_MAX));
+    setWebsite(b.website ?? "");
+    setPhone(b.phone ?? "");
+    setCategoryId(b.category_id ?? b.service_category_id ?? "");
+    setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
+    setSuggestedTags([]);
+    setSuggestedCategory("");
+    setSuggestedCategoryOpen(false);
+    setIsStorefront(Boolean(b.is_storefront));
+    setIsService(Boolean(b.is_service_business));
+    setLocations([
+      {
+        key: newLocationKey(),
+        town_id: b.town_id ?? "",
+        address: b.address ?? "",
+      },
+    ]);
+    setFindPhase("selected");
+  }
+
+  function clearToSearch(keepTitle = false) {
+    const kept = keepTitle ? title : "";
+    setPrefill(null);
+    setTitle(kept);
+    setExcerpt("");
+    setOverview("");
+    setWebsite("");
+    setPhone("");
+    setCategoryId("");
+    setSelectedTags([]);
+    setSuggestedTags([]);
+    setSuggestedCategory("");
+    setSuggestedCategoryOpen(false);
+    setIsStorefront(false);
+    setIsService(false);
+    setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+    setFindPhase("searching");
+    setErr(null);
+  }
+
+  function blankForNewListing(name: string) {
+    setPrefill(null);
+    setTitle(name.slice(0, FREE_ONBOARD_TITLE_MAX));
+    setExcerpt("");
+    setOverview("");
+    setWebsite("");
+    setPhone("");
+    setCategoryId("");
+    setSelectedTags([]);
+    setSuggestedTags([]);
+    setSuggestedCategory("");
+    setSuggestedCategoryOpen(false);
+    setIsStorefront(false);
+    setIsService(false);
+    setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+    setFindPhase("creating-new");
+    setErr(null);
+  }
+
+  async function loadPrefillBySlug(slug: string) {
+    setPrefillLoading(true);
+    setErr(null);
+    try {
+      const res = await fetch(
+        `/api/listing-requests/prefill?slug=${encodeURIComponent(slug)}`,
+      );
+      const j = (await res.json()) as { business?: PrefillBusiness; error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Could not load listing");
+      if (!j.business) throw new Error("Could not load listing");
+      applyPrefillBusiness(j.business);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not load listing");
+      if (mode === "find") setFindPhase("searching");
+    } finally {
+      setPrefillLoading(false);
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -154,7 +254,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!businessSlug) return;
+    if (!businessSlug || mode !== "slug") return;
     const controller = new AbortController();
     void (async () => {
       try {
@@ -166,28 +266,16 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         if (!res.ok) throw new Error(j.error ?? "Could not load listing");
         const b = j.business;
         if (!b) return;
-        setPrefill(b);
-        setTitle(b.title);
-        setExcerpt((b.excerpt ?? "").slice(0, FREE_ONBOARD_EXCERPT_MAX));
-        setOverview((b.overview ?? "").slice(0, FREE_ONBOARD_OVERVIEW_MAX));
-        setCategoryId(b.category_id ?? b.service_category_id ?? "");
-        setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
-        setIsStorefront(Boolean(b.is_storefront));
-        setIsService(Boolean(b.is_service_business));
-        setLocations([
-          {
-            key: newLocationKey(),
-            town_id: b.town_id ?? "",
-            address: b.address ?? "",
-          },
-        ]);
+        if (controller.signal.aborted) return;
+        applyPrefillBusiness(b);
       } catch (e) {
         if (controller.signal.aborted) return;
         setErr(e instanceof Error ? e.message : "Could not load listing");
       }
     })();
     return () => controller.abort();
-  }, [businessSlug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when slug/mode change
+  }, [businessSlug, mode]);
 
   const tagOptions: DiscoverSearchTagOption[] = useMemo(() => {
     const bySlug = new Map(searchTagOptions.map((t) => [t.slug, t]));
@@ -234,6 +322,12 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
     setPending(true);
     setErr(null);
 
+    if (findDecisionNeeded) {
+      setPending(false);
+      setErr("Select your existing listing from the search results, or choose Add as a new listing.");
+      return;
+    }
+
     if (!isStorefront && !isService) {
       setPending(false);
       setErr("Select whether you have a physical location, operate as a service business, or both.");
@@ -268,8 +362,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       is_storefront: isStorefront,
       is_service_business: isService,
       locations: locationPayload,
-      website: String(fd.get("website") ?? ""),
-      phone: String(fd.get("phone") ?? ""),
+      website: website.trim(),
+      phone: phone.trim(),
       excerpt: excerpt.trim(),
       overview: overview.trim(),
       category_id: categoryId || null,
@@ -283,7 +377,7 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
       is_explorable: false,
       marketing_opt_in: isAdmin ? false : fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
-      target_business_slug: prefill?.slug ?? businessSlug ?? null,
+      target_business_slug: prefill?.slug ?? (mode === "slug" ? businessSlug : null) ?? null,
     };
 
     if (selectedTags.length + payload.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
@@ -474,18 +568,75 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
         <label className={labelClass} htmlFor="title">
           Business or service name
         </label>
-        <input
-          id="title"
-          name="title"
-          required
-          maxLength={FREE_ONBOARD_TITLE_MAX}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className={`${inputClass} mt-1.5`}
-        />
-        <CharCount value={title} max={FREE_ONBOARD_TITLE_MAX} />
+        {mode === "find" && findPhase === "selected" && prefill ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/50 px-3 py-2.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                Updating: {prefill.title}
+              </p>
+              <p className={helpClass}>We loaded your current listing details below. Edit anything that needs a refresh.</p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
+              onClick={() => clearToSearch(true)}
+            >
+              Change
+            </button>
+          </div>
+        ) : null}
+        {mode === "find" && findPhase === "creating-new" ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/50 px-3 py-2.5">
+            <p className="min-w-0 flex-1 text-sm text-[var(--color-text-secondary)]">
+              Creating a new listing. You can still search if this business already exists.
+            </p>
+            <button
+              type="button"
+              className="shrink-0 text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
+              onClick={() => clearToSearch(true)}
+            >
+              Search existing
+            </button>
+          </div>
+        ) : null}
+        {showTypeahead ? (
+          <>
+            <BusinessNameTypeahead
+              value={title}
+              maxLength={FREE_ONBOARD_TITLE_MAX}
+              inputClassName={inputClass}
+              disabled={prefillLoading}
+              onQueryChange={setTitle}
+              onSelectBusiness={(hit: BusinessSearchHit) => {
+                setTitle(hit.title);
+                void loadPrefillBySlug(hit.slug);
+              }}
+              onAddNew={(name) => blankForNewListing(name)}
+            />
+            <p className={helpClass}>
+              {prefillLoading
+                ? "Loading listing…"
+                : "Search for your listing to verify it, or add as new if it is not found."}
+            </p>
+          </>
+        ) : (
+          <>
+            <input
+              id="title"
+              name="title"
+              required
+              maxLength={FREE_ONBOARD_TITLE_MAX}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={`${inputClass} mt-1.5`}
+            />
+            <CharCount value={title} max={FREE_ONBOARD_TITLE_MAX} />
+          </>
+        )}
       </div>
 
+      {!findDecisionNeeded ? (
+        <>
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
         <legend className={`${labelClass} px-1`}>How do customers work with you?</legend>
         <p className="text-xs text-[var(--color-text-tertiary)]">
@@ -609,7 +760,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             type="text"
             inputMode="url"
             autoComplete="url"
-            defaultValue={prefill?.website ?? ""}
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
             placeholder="example.com"
             className={`${inputClass} mt-1.5`}
           />
@@ -622,7 +774,8 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
             name="phone"
             id="phone"
             type="tel"
-            defaultValue={prefill?.phone ?? ""}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className={`${inputClass} mt-1.5`}
           />
         </div>
@@ -831,11 +984,24 @@ export function FreeOnboardForm({ towns, businessSlug }: Props) {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || prefillLoading}
         className="rounded-xl bg-[var(--color-primary)] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--color-primary-light)] disabled:opacity-50"
       >
         {pending ? "Sending…" : isUpdate ? "Submit update request" : "Submit listing request"}
       </button>
+        </>
+      ) : (
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          Select a matching listing above, or choose{" "}
+          <span className="font-medium">Add as a new listing</span> to continue.
+        </p>
+      )}
+
+      {err && findDecisionNeeded ? (
+        <p className="text-sm text-red-700 dark:text-red-300" role="alert">
+          {err}
+        </p>
+      ) : null}
 
       <p className="text-sm text-[var(--color-text-secondary)]">
         Have questions or need help? Email{" "}
