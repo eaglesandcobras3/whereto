@@ -28,7 +28,7 @@ export function ListBusinessHomeCta() {
       <div className={PAGE_SECTION_CONTAINER_CLASS}>
         <div className="overflow-hidden rounded-2xl bg-[var(--color-logo-navy)]">
           <div className="p-8 md:p-12 lg:p-14">
-            <p className="text-eyebrow mb-3 text-white">For local businesses</p>
+            <p className="text-eyebrow mb-3 !text-white">For local businesses</p>
             <h2
               id="home-list-business-heading"
               className="max-w-3xl font-headline text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl"
