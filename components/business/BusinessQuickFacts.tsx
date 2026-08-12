@@ -70,7 +70,7 @@ export function BusinessQuickFacts({
 
   let mapsHref: string | null = null;
   if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)) {
-    mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
+    mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
   } else if (addr) {
     mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
   }
@@ -84,180 +84,195 @@ export function BusinessQuickFacts({
   if (!hasAny) return null;
 
   return (
-    <section
-      aria-labelledby="business-quick-facts-heading"
-      className="mt-6 rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-5 shadow-sm sm:p-6"
-    >
-      <h2 id="business-quick-facts-heading" className="text-eyebrow mb-4">
-        Essentials
-      </h2>
+    <div>
+      <section
+        aria-labelledby="business-quick-facts-heading"
+        className="rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] p-5 shadow-sm sm:p-6"
+      >
+        <h2 id="business-quick-facts-heading" className="text-eyebrow mb-4">
+          Essentials
+        </h2>
 
-      <div className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
-        {hasLocationFacts ? (
-          <div className="min-w-0 sm:col-span-2">
+        <div className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
+          {hasLocationFacts ? (
+            <div className="min-w-0 sm:col-span-2">
+              <div className="flex gap-3">
+                <MsIcon name="location_on" className="!text-[22px]" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    Location
+                  </h3>
+                  {primaryLocationLine ? (
+                    <p className="text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">
+                      {primaryLocationLine}
+                    </p>
+                  ) : mapsHref ? (
+                    <p className="text-sm italic text-zinc-600">
+                      Exact map coordinates on file. We&apos;re filling in street details when
+                      operators confirm them.
+                    </p>
+                  ) : null}
+                  {addr && svc ? (
+                    <p className="text-xs leading-relaxed text-zinc-600">
+                      <span className="font-medium text-zinc-500">Also serves:&nbsp;</span>
+                      <span>{svc}</span>
+                    </p>
+                  ) : null}
+                  {mapsHref ? (
+                    <p>
+                      <a
+                        href={mapsHref}
+                        {...gaClickProps({
+                          event: "outbound_click",
+                          category: "business_essentials",
+                          label: "maps",
+                        })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
+                      >
+                        Open in Maps
+                        <MsIcon
+                          name="north_east"
+                          className="!text-base text-[var(--color-logo-navy)]"
+                        />
+                      </a>
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {phon ? (
             <div className="flex gap-3">
-              <MsIcon name="location_on" className="!text-[22px]" />
-              <div className="min-w-0 flex-1 space-y-2">
+              <MsIcon name="call" className="!text-[22px]" />
+              <div className="min-w-0 flex-1">
                 <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Location
+                  Phone
                 </h3>
-                {primaryLocationLine ? (
-                  <p className="text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">{primaryLocationLine}</p>
-                ) : mapsHref ? (
-                  <p className="text-sm italic text-zinc-600">
-                    Exact map coordinates on file. We&apos;re filling in street details when operators confirm them.
-                  </p>
-                ) : null}
-                {addr && svc ? (
-                  <p className="text-xs leading-relaxed text-zinc-600">
-                    <span className="font-medium text-zinc-500">Also serves:&nbsp;</span>
-                    <span>{svc}</span>
-                  </p>
-                ) : null}
-                {mapsHref ? (
+                <p className="mt-1">
+                  {phoneLink ? (
+                    <a
+                      href={phoneLink}
+                      {...gaClickProps({
+                        event: "contact_click",
+                        category: "business_essentials",
+                        label: "phone",
+                      })}
+                      className="break-all text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
+                    >
+                      {phon}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-zinc-700">{phon}</span>
+                  )}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {hoursText ? (
+            <div className="flex gap-3 sm:col-span-2">
+              <MsIcon name="schedule" className="!text-[22px]" />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Hours
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">
+                  {hoursText}
+                </p>
+                <p className="mt-1.5 text-xs text-zinc-500">
+                  Hours can change anytime. Please confirm close to your visit.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {site ? (
+            <div className="flex gap-3">
+              <MsIcon name="language" className="!text-[22px]" />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Website
+                </h3>
+                <p className="mt-1 break-all">
+                  <a
+                    href={externalWebsiteHref(site) ?? "#"}
+                    {...gaClickProps({
+                      event: "outbound_click",
+                      category: "business_essentials",
+                      label: "website",
+                    })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
+                  >
+                    {hostnameLabel(site)}
+                  </a>
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {(menu || booking) && (
+            <div className="flex flex-wrap gap-3 sm:col-span-2">
+              <MsIcon name="more_horiz" className="!text-[22px] sm:translate-y-1" />
+              <div className="flex flex-1 flex-wrap gap-x-6 gap-y-2">
+                {menu ? (
                   <p>
                     <a
-                      href={mapsHref}
+                      href={externalWebsiteHref(menu) ?? "#"}
                       {...gaClickProps({
                         event: "outbound_click",
                         category: "business_essentials",
-                        label: "maps",
+                        label: "menu",
                       })}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"
                     >
-                      Open in Maps
-                      <MsIcon name="north_east" className="!text-base text-[var(--color-logo-navy)]" />
+                      <MsIcon
+                        name="restaurant_menu"
+                        className="!text-lg text-[var(--color-primary)]"
+                      />
+                      Menu
                     </a>
                   </p>
                 ) : null}
-                {fieldFlagEntityId ? (
-                  <ListingFieldFlagNote
-                    entity="business"
-                    entityId={fieldFlagEntityId}
-                    field="address"
-                  />
+                {booking ? (
+                  <p>
+                    <a
+                      href={externalWebsiteHref(booking) ?? "#"}
+                      {...gaClickProps({
+                        event: "outbound_click",
+                        category: "business_essentials",
+                        label: "book",
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"
+                    >
+                      <MsIcon
+                        name="event_available"
+                        className="!text-lg text-[var(--color-primary)]"
+                      />
+                      Book
+                    </a>
+                  </p>
                 ) : null}
               </div>
             </div>
-          </div>
-        ) : null}
-
-        {phon ? (
-          <div className="flex gap-3">
-            <MsIcon name="call" className="!text-[22px]" />
-            <div className="min-w-0 flex-1">
-              <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">Phone</h3>
-              <p className="mt-1">
-                {phoneLink ? (
-                  <a
-                    href={phoneLink}
-                    {...gaClickProps({
-                      event: "contact_click",
-                      category: "business_essentials",
-                      label: "phone",
-                    })}
-                    className="break-all text-sm font-medium text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
-                  >
-                    {phon}
-                  </a>
-                ) : (
-                  <span className="text-sm text-zinc-700">{phon}</span>
-                )}
-              </p>
-              {fieldFlagEntityId ? (
-                <ListingFieldFlagNote
-                  entity="business"
-                  entityId={fieldFlagEntityId}
-                  field="phone"
-                />
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-
-        {hoursText ? (
-          <div className="flex gap-3 sm:col-span-2">
-            <MsIcon name="schedule" className="!text-[22px]" />
-            <div className="min-w-0 flex-1">
-              <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">Hours</h3>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">{hoursText}</p>
-              <p className="mt-1.5 text-xs text-zinc-500">
-                Hours can change anytime. Please confirm close to your visit.
-              </p>
-            </div>
-          </div>
-        ) : null}
-
-        {site ? (
-          <div className="flex gap-3">
-            <MsIcon name="language" className="!text-[22px]" />
-            <div className="min-w-0 flex-1">
-              <h3 className="font-headline text-xs font-semibold uppercase tracking-wide text-zinc-500">Website</h3>
-              <p className="mt-1 break-all">
-                <a
-                  href={externalWebsiteHref(site) ?? "#"}
-                  {...gaClickProps({
-                    event: "outbound_click",
-                    category: "business_essentials",
-                    label: "website",
-                  })}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
-                >
-                  {hostnameLabel(site)}
-                </a>
-              </p>
-            </div>
-          </div>
-        ) : null}
-
-        {(menu || booking) && (
-          <div className="flex flex-wrap gap-3 sm:col-span-2">
-            <MsIcon name="more_horiz" className="!text-[22px] sm:translate-y-1" />
-            <div className="flex flex-1 flex-wrap gap-x-6 gap-y-2">
-              {menu ? (
-                <p>
-                  <a
-                    href={externalWebsiteHref(menu) ?? "#"}
-                    {...gaClickProps({
-                      event: "outbound_click",
-                      category: "business_essentials",
-                      label: "menu",
-                    })}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"
-                  >
-                    <MsIcon name="restaurant_menu" className="!text-lg text-[var(--color-primary)]" />
-                    Menu
-                  </a>
-                </p>
-              ) : null}
-              {booking ? (
-                <p>
-                  <a
-                    href={externalWebsiteHref(booking) ?? "#"}
-                    {...gaClickProps({
-                      event: "outbound_click",
-                      category: "business_essentials",
-                      label: "book",
-                    })}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)]/70 px-3 py-1.5 text-sm font-semibold text-zinc-800 transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)]"
-                  >
-                    <MsIcon name="event_available" className="!text-lg text-[var(--color-primary)]" />
-                    Book
-                  </a>
-                </p>
-              ) : null}
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
+          )}
+        </div>
+      </section>
+      {fieldFlagEntityId ? (
+        <ListingFieldFlagNote
+          entity="business"
+          entityId={fieldFlagEntityId}
+          field="essentials"
+        />
+      ) : null}
+    </div>
   );
 }

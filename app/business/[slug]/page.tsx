@@ -569,13 +569,6 @@ export default async function BusinessPage({ params }: Props) {
                       <VerifiedBadge listBusinessHref="/list-your-business" />
                     ) : null}
                   </h1>
-                  {canFlagFields ? (
-                    <ListingFieldFlagNote
-                      entity="business"
-                      entityId={businessId}
-                      field="name"
-                    />
-                  ) : null}
                 </div>
                 <PageShareButton
                   pageType="business"
@@ -610,37 +603,19 @@ export default async function BusinessPage({ params }: Props) {
                   </span>
                 )}
               </div>
-              {canFlagFields && category?.name ? (
+
+              {oneLiner ? (
+                <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
+              ) : null}
+              {tagSlugs.length > 0 ? (
+                <TagPills tags={tagSlugs} className="mt-3" />
+              ) : null}
+              {canFlagFields ? (
                 <ListingFieldFlagNote
                   entity="business"
                   entityId={businessId}
-                  field="category"
+                  field="header"
                 />
-              ) : null}
-
-              {oneLiner ? (
-                <div className="mt-4">
-                  <p className="text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
-                  {canFlagFields ? (
-                    <ListingFieldFlagNote
-                      entity="business"
-                      entityId={businessId}
-                      field="excerpt"
-                    />
-                  ) : null}
-                </div>
-              ) : null}
-              {tagSlugs.length > 0 ? (
-                <div className="mt-3">
-                  <TagPills tags={tagSlugs} className="!mt-0" />
-                  {canFlagFields ? (
-                    <ListingFieldFlagNote
-                      entity="business"
-                      entityId={businessId}
-                      field="tags"
-                    />
-                  ) : null}
-                </div>
               ) : null}
               {!hasOverview ? (
                 <p className="prose-editorial mt-4 text-base leading-relaxed text-zinc-600">
@@ -651,19 +626,6 @@ export default async function BusinessPage({ params }: Props) {
                   )}
                 </p>
               ) : null}
-
-              <BusinessQuickFacts
-                address={b.address as string | null}
-                phone={b.phone as string | null}
-                website={b.website as string | null}
-                menuUrl={(b.menu_url as string | null) ?? null}
-                bookingUrl={(b.booking_url as string | null) ?? null}
-                serviceArea={(b.service_area as string | null) ?? null}
-                lat={b.lat as number | null}
-                lng={b.lng as number | null}
-                hours={(b.hours as unknown) ?? null}
-                fieldFlagEntityId={canFlagFields ? businessId : null}
-              />
 
               {/* Score badges inline */}
               {(familyScore || dateScore || valueScore) && (
@@ -679,6 +641,19 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
             <div className="space-y-4">
+              <BusinessQuickFacts
+                address={b.address as string | null}
+                phone={b.phone as string | null}
+                website={b.website as string | null}
+                menuUrl={(b.menu_url as string | null) ?? null}
+                bookingUrl={(b.booking_url as string | null) ?? null}
+                serviceArea={(b.service_area as string | null) ?? null}
+                lat={b.lat as number | null}
+                lng={b.lng as number | null}
+                hours={(b.hours as unknown) ?? null}
+                fieldFlagEntityId={canFlagFields ? businessId : null}
+              />
+
               {hasOverview ? (
                 <div className="space-y-4">
                   {overviewParagraphs.map((paragraph, index) => (
@@ -792,61 +767,56 @@ export default async function BusinessPage({ params }: Props) {
               ) : null}
 
               {((town?.slug && town?.name) || primaryArea) && (
-                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                  <h2 className="text-eyebrow mb-4">Town &amp; area</h2>
-                  <ul className="space-y-2">
-                    {town?.slug && town?.name ? (
-                      <li>
-                        <Link
-                          href={townPagePath(town.slug)}
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "business_detail_sidebar",
-                            label: `${gaBiz}_town_link`,
-                          })}
-                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                        >
-                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                            place
-                          </span>
-                          {town.name}
-                        </Link>
-                        {canFlagFields ? (
-                          <ListingFieldFlagNote
-                            entity="business"
-                            entityId={businessId}
-                            field="town"
-                          />
-                        ) : null}
-                      </li>
-                    ) : null}
-                    {primaryArea ? (
-                      <li>
-                        <Link
-                          href={`/area/${primaryArea.slug}`}
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "business_detail_sidebar",
-                            label: `${gaBiz}_area_${primaryArea.slug}`,
-                          })}
-                          className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                        >
-                          <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                            explore
-                          </span>
-                          {primaryArea.name}
-                        </Link>
-                        {canFlagFields ? (
-                          <ListingFieldFlagNote
-                            entity="business"
-                            entityId={businessId}
-                            field="area"
-                          />
-                        ) : null}
-                      </li>
-                    ) : null}
-                  </ul>
-                </section>
+                <div>
+                  <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                    <h2 className="text-eyebrow mb-4">Town &amp; area</h2>
+                    <ul className="space-y-2">
+                      {town?.slug && town?.name ? (
+                        <li>
+                          <Link
+                            href={townPagePath(town.slug)}
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "business_detail_sidebar",
+                              label: `${gaBiz}_town_link`,
+                            })}
+                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                          >
+                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                              place
+                            </span>
+                            {town.name}
+                          </Link>
+                        </li>
+                      ) : null}
+                      {primaryArea ? (
+                        <li>
+                          <Link
+                            href={`/area/${primaryArea.slug}`}
+                            {...gaClickProps({
+                              event: "nav_click",
+                              category: "business_detail_sidebar",
+                              label: `${gaBiz}_area_${primaryArea.slug}`,
+                            })}
+                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                          >
+                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                              explore
+                            </span>
+                            {primaryArea.name}
+                          </Link>
+                        </li>
+                      ) : null}
+                    </ul>
+                  </section>
+                  {canFlagFields ? (
+                    <ListingFieldFlagNote
+                      entity="business"
+                      entityId={businessId}
+                      field="town_area"
+                    />
+                  ) : null}
+                </div>
               )}
             </aside>
           </div>

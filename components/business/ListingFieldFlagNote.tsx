@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFeedbackFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import {
   LISTING_FIELD_FLAG_LABELS,
+  LISTING_FIELD_FLAG_PROMPTS,
   type ListingFieldFlagEntity,
   type ListingFieldFlagField,
 } from "@/lib/listing-requests/listing-field-flag";
@@ -16,7 +17,7 @@ type Props = {
 };
 
 /**
- * Compact “something wrong?” control under unverified listing fields.
+ * Compact “something wrong?” control for a listing section (grouped, not per-field).
  * Gated by PostHog `feedback` (parents should also gate; this is a client safety net).
  */
 export function ListingFieldFlagNote({ entity, entityId, field, className = "" }: Props) {
@@ -29,6 +30,7 @@ export function ListingFieldFlagNote({ entity, entityId, field, className = "" }
   const [error, setError] = useState<string | null>(null);
 
   const label = LISTING_FIELD_FLAG_LABELS[field];
+  const prompt = LISTING_FIELD_FLAG_PROMPTS[field];
 
   if (!feedbackEnabled) return null;
 
@@ -60,27 +62,25 @@ export function ListingFieldFlagNote({ entity, entityId, field, className = "" }
 
   if (done) {
     return (
-      <p className={`mt-1 text-[11px] text-zinc-500 ${className}`}>
+      <p className={`mt-1.5 text-[11px] text-zinc-500 ${className}`}>
         Thanks — we&apos;ll review the {label.toLowerCase()}.
       </p>
     );
   }
 
   return (
-    <div className={`mt-1 ${className}`}>
+    <div className={`mt-1.5 ${className}`}>
       {!open ? (
         <button
           type="button"
           onClick={() => setOpen(true)}
           className="text-[11px] text-zinc-400 underline-offset-2 hover:text-zinc-600 hover:underline"
         >
-          Is this {label.toLowerCase()} wrong?
+          {prompt}
         </button>
       ) : (
         <div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50/80 p-2.5">
-          <p className="text-[11px] font-medium text-zinc-700">
-            Report incorrect {label.toLowerCase()}
-          </p>
+          <p className="text-[11px] font-medium text-zinc-700">Report incorrect {label.toLowerCase()}</p>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}

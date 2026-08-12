@@ -28,7 +28,7 @@ type Props = {
 };
 
 /**
- * Location map section — monochrome Carto tiles (light/dark) via Leaflet.
+ * Location map section — soft-color Carto Voyager tiles via Leaflet.
  */
 export function BusinessMapSection({
   markers,
@@ -45,7 +45,7 @@ export function BusinessMapSection({
       <h2 className="font-headline text-xl font-semibold text-zinc-900">{title}</h2>
       {description ? <p className="mt-1 text-sm text-zinc-500">{description}</p> : null}
       <div className="mt-3 h-64 overflow-hidden border border-zinc-200 sm:h-80 dark:border-zinc-700">
-        <BusinessesOpenStreetMap markers={markers} zoom={17} className="!rounded-none" />
+        <BusinessesOpenStreetMap markers={markers} zoom={19} className="!rounded-none" />
       </div>
       {fieldFlagEntityId ? (
         <ListingFieldFlagNote

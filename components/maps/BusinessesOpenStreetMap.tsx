@@ -11,7 +11,8 @@ type Props = {
   zoom?: number;
 };
 
-const LIGHT_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const LIGHT_TILES =
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
@@ -21,9 +22,9 @@ function readDarkMode(): boolean {
   return document.documentElement.classList.contains("dark");
 }
 
-function monoMarkerSvg(dark: boolean): string {
-  const fill = dark ? "#e4e4e7" : "#27272a";
-  const stroke = dark ? "#09090b" : "#fafafa";
+function mapMarkerSvg(dark: boolean): string {
+  const fill = dark ? "#5eead4" : "#0f766e";
+  const stroke = dark ? "#042f2e" : "#f0fdfa";
   return encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
       <path fill="${fill}" stroke="${stroke}" stroke-width="2"
@@ -34,9 +35,9 @@ function monoMarkerSvg(dark: boolean): string {
 }
 
 /**
- * Monochrome OpenStreetMap (Leaflet + Carto light/dark tiles). Client-only.
+ * OpenStreetMap via Leaflet — Carto Voyager (soft color) in light mode, dark_all in dark.
  */
-export function BusinessesOpenStreetMap({ markers, className = "", zoom = 17 }: Props) {
+export function BusinessesOpenStreetMap({ markers, className = "", zoom = 19 }: Props) {
   const mapId = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [dark, setDark] = useState(false);
@@ -63,7 +64,7 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 17 }: 
       if (cancelled || !containerRef.current) return;
 
       const icon = L.icon({
-        iconUrl: `data:image/svg+xml;charset=UTF-8,${monoMarkerSvg(dark)}`,
+        iconUrl: `data:image/svg+xml;charset=UTF-8,${mapMarkerSvg(dark)}`,
         iconSize: [28, 40],
         iconAnchor: [14, 40],
         popupAnchor: [0, -36],
@@ -94,7 +95,7 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 17 }: 
       if (markers.length === 1) {
         map.setView([markers[0].lat, markers[0].lng], zoom);
       } else if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.05), { maxZoom: Math.max(zoom, 16) });
+        map.fitBounds(bounds.pad(0.05), { maxZoom: Math.max(zoom, 18) });
       }
 
       requestAnimationFrame(() => map?.invalidateSize());

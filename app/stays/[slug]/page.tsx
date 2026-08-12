@@ -163,27 +163,28 @@ export default async function StayDetailPage({ params }: Props) {
             <h1 className="font-headline text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
               {property.title}
             </h1>
-            {canFlagFields ? (
-              <ListingFieldFlagNote entity="rental" entityId={property.id} field="name" />
-            ) : null}
             <p className="mt-2 text-sm text-zinc-600">
               {typeLabel} · {property.bedrooms} bed · {property.bathrooms} bath · Sleeps{" "}
               {property.sleeps}
               {property.area_title ? ` · ${property.area_title}` : ""}
             </p>
+            {property.excerpt?.trim() ? (
+              <p className="mt-3 text-base leading-relaxed text-zinc-600">{property.excerpt.trim()}</p>
+            ) : null}
+            {tagSlugs.length > 0 ? (
+              <TagPills tags={tagSlugs} className="mt-3" />
+            ) : null}
             {canFlagFields ? (
-              <div className="mt-1 flex flex-wrap gap-x-4">
-                <ListingFieldFlagNote entity="rental" entityId={property.id} field="category" />
-                {property.area_title ? (
-                  <ListingFieldFlagNote entity="rental" entityId={property.id} field="area" />
-                ) : null}
-              </div>
+              <ListingFieldFlagNote entity="rental" entityId={property.id} field="header" />
             ) : null}
             {property.community_name ||
             property.town_title ||
             (property.location_precision === "exact" && property.street_address) ? (
-              <div className="mt-1">
-                <p className="text-sm text-zinc-600">
+              <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Location
+                </p>
+                <p className="mt-1 text-sm text-zinc-600">
                   {property.location_precision === "exact" && property.street_address
                     ? [
                         property.street_address,
@@ -199,37 +200,13 @@ export default async function StayDetailPage({ params }: Props) {
                     <span className="text-zinc-500"> · Approximate area</span>
                   ) : null}
                 </p>
-                {canFlagFields ? (
-                  <div className="mt-1 flex flex-wrap gap-x-4">
-                    {property.location_precision === "exact" && property.street_address ? (
-                      <ListingFieldFlagNote
-                        entity="rental"
-                        entityId={property.id}
-                        field="address"
-                      />
-                    ) : null}
-                    {property.town_title ? (
-                      <ListingFieldFlagNote entity="rental" entityId={property.id} field="town" />
-                    ) : null}
-                  </div>
-                ) : null}
               </div>
             ) : null}
-            {property.excerpt?.trim() ? (
-              <div className="mt-3">
-                <p className="text-base leading-relaxed text-zinc-600">{property.excerpt.trim()}</p>
-                {canFlagFields ? (
-                  <ListingFieldFlagNote entity="rental" entityId={property.id} field="excerpt" />
-                ) : null}
-              </div>
-            ) : null}
-            {tagSlugs.length > 0 ? (
-              <div className="mt-3">
-                <TagPills tags={tagSlugs} className="!mt-0" />
-                {canFlagFields ? (
-                  <ListingFieldFlagNote entity="rental" entityId={property.id} field="tags" />
-                ) : null}
-              </div>
+            {canFlagFields &&
+            (property.street_address ||
+              property.community_name ||
+              property.town_title) ? (
+              <ListingFieldFlagNote entity="rental" entityId={property.id} field="essentials" />
             ) : null}
             <div className="mt-3">
               <RentalPartnerBadge
@@ -348,23 +325,39 @@ export default async function StayDetailPage({ params }: Props) {
             ) : null}
 
             {property.town_slug ? (
-              <p className="mt-8 text-sm text-zinc-600">
-                Explore more in{" "}
-                <Link
-                  href={`/town/${property.town_slug}`}
-                  className="font-medium text-teal-900 underline"
-                >
-                  {property.town_title}
-                </Link>{" "}
-                or{" "}
-                <Link
-                  href={`/stays/town/${property.town_slug}`}
-                  className="font-medium text-teal-900 underline"
-                >
-                  more stays in {property.town_title}
-                </Link>
-                .
-              </p>
+              <div className="mt-8">
+                <p className="text-sm text-zinc-600">
+                  Explore more in{" "}
+                  <Link
+                    href={`/town/${property.town_slug}`}
+                    className="font-medium text-teal-900 underline"
+                  >
+                    {property.town_title}
+                  </Link>{" "}
+                  or{" "}
+                  <Link
+                    href={`/stays/town/${property.town_slug}`}
+                    className="font-medium text-teal-900 underline"
+                  >
+                    more stays in {property.town_title}
+                  </Link>
+                  .
+                </p>
+                {canFlagFields ? (
+                  <ListingFieldFlagNote
+                    entity="rental"
+                    entityId={property.id}
+                    field="town_area"
+                  />
+                ) : null}
+              </div>
+            ) : canFlagFields && property.area_title ? (
+              <ListingFieldFlagNote
+                entity="rental"
+                entityId={property.id}
+                field="town_area"
+                className="mt-8"
+              />
             ) : null}
 
             {property.last_synced_at ? (

@@ -21,7 +21,8 @@ type Props = {
   helpText?: string;
 };
 
-const LIGHT_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const LIGHT_TILES =
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
@@ -31,9 +32,9 @@ function readDarkMode(): boolean {
   return document.documentElement.classList.contains("dark");
 }
 
-function monoMarkerSvg(dark: boolean): string {
-  const fill = dark ? "#e4e4e7" : "#27272a";
-  const stroke = dark ? "#09090b" : "#fafafa";
+function mapMarkerSvg(dark: boolean): string {
+  const fill = dark ? "#5eead4" : "#0f766e";
+  const stroke = dark ? "#042f2e" : "#f0fdfa";
   return encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
       <path fill="${fill}" stroke="${stroke}" stroke-width="2"
@@ -48,14 +49,14 @@ function roundCoord(n: number): number {
 }
 
 /**
- * Click / drag to set a map pin. Monochrome Carto tiles follow site light/dark.
+ * Click / drag to set a map pin. Soft-color Carto Voyager tiles (dark_all in dark mode).
  */
 export function MapLocationPicker({
   lat,
   lng,
   onChange,
   className = "",
-  zoom = 16,
+  zoom = 18,
   emptyZoom = 11,
   latInputName,
   lngInputName,
@@ -132,7 +133,7 @@ export function MapLocationPicker({
       if (cancelled || mapRef.current !== map) return;
 
       const icon = L.icon({
-        iconUrl: `data:image/svg+xml;charset=UTF-8,${monoMarkerSvg(dark)}`,
+        iconUrl: `data:image/svg+xml;charset=UTF-8,${mapMarkerSvg(dark)}`,
         iconSize: [28, 40],
         iconAnchor: [14, 40],
       });

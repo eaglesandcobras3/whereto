@@ -345,7 +345,7 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 - [ ] PostHog: create boolean flag `feedback` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `FEEDBACK_ENABLED=1` and `NEXT_PUBLIC_FEEDBACK_ENABLED=1`
-- [ ] Smoke-test: unverified `/business/[slug]` and `/stays/[slug]` show “Is this … wrong?” under name/town/area/category/excerpt/tags/description/address/phone/map; submit appears in `/admin/review` as `listing_field_flag` with Open update form
+- [ ] Smoke-test: unverified `/business/[slug]` and `/stays/[slug]` show section flags (listing details, essentials, description, town & area, map); submit appears in `/admin/review` as `listing_field_flag` with Open update form
 
 ### Business maps setup
 

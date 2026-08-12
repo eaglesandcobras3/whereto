@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import {
+  currentValueForBusinessGroup,
+  currentValueForRentalGroup,
   LISTING_FIELD_FLAG_ENTITIES,
   LISTING_FIELD_FLAG_FIELDS,
   LISTING_FIELD_FLAG_TYPE,
-  type ListingFieldFlagField,
   type ListingFieldFlagPayload,
 } from "@/lib/listing-requests/listing-field-flag";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
@@ -46,87 +47,8 @@ const bodySchema = z.object({
     }),
 });
 
-function currentValueForBusiness(
-  field: ListingFieldFlagField,
-  row: {
-    title: string;
-    address: string | null;
-    phone: string | null;
-    overview: string | null;
-    excerpt: string | null;
-    map_lat: number | null;
-    map_lng: number | null;
-    search_tags: unknown;
-    town_title: string | null;
-    area_title: string | null;
-    category_title: string | null;
-  },
-): string | null {
-  if (field === "name") return row.title?.trim() || null;
-  if (field === "town") return row.town_title?.trim() || null;
-  if (field === "area") return row.area_title?.trim() || null;
-  if (field === "category") return row.category_title?.trim() || null;
-  if (field === "excerpt") return row.excerpt?.trim() || null;
-  if (field === "tags") {
-    const tags = Array.isArray(row.search_tags)
-      ? row.search_tags.filter((t): t is string => typeof t === "string" && t.trim().length > 0)
-      : [];
-    return tags.length ? tags.join(", ") : null;
-  }
-  if (field === "description") return row.overview?.trim() || null;
-  if (field === "address") return row.address?.trim() || null;
-  if (field === "phone") return row.phone?.trim() || null;
-  if (field === "map") {
-    return row.map_lat != null && row.map_lng != null
-      ? `${row.map_lat}, ${row.map_lng}`
-      : null;
-  }
-  return null;
-}
-
-function currentValueForRental(
-  field: ListingFieldFlagField,
-  row: {
-    title: string;
-    description: string | null;
-    excerpt: string | null;
-    street_address: string | null;
-    map_lat: number | null;
-    map_lng: number | null;
-    search_tags: unknown;
-    town_title: string | null;
-    area_title: string | null;
-    property_type: string | null;
-  },
-): string | null {
-  if (field === "name") return row.title?.trim() || null;
-  if (field === "town") return row.town_title?.trim() || null;
-  if (field === "area") return row.area_title?.trim() || null;
-  if (field === "category") {
-    const t = row.property_type?.trim() || "";
-    if (!t) return null;
-    return PROPERTY_TYPE_LABELS[t] ?? t;
-  }
-  if (field === "excerpt") return row.excerpt?.trim() || null;
-  if (field === "tags") {
-    const tags = Array.isArray(row.search_tags)
-      ? row.search_tags.filter((t): t is string => typeof t === "string" && t.trim().length > 0)
-      : [];
-    return tags.length ? tags.join(", ") : null;
-  }
-  if (field === "description") return row.description?.trim() || null;
-  if (field === "address") return row.street_address?.trim() || null;
-  if (field === "phone") return null;
-  if (field === "map") {
-    return row.map_lat != null && row.map_lng != null
-      ? `${row.map_lat}, ${row.map_lng}`
-      : null;
-  }
-  return null;
-}
-
 /**
- * Public: flag an incorrect field on an unverified business or rental listing.
+ * Public: flag an incorrect section on an unverified business or rental listing.
  * Creates a `listing_field_flag` portal review item.
  */
 export async function POST(request: NextRequest) {
@@ -183,10 +105,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (d.field === "phone") {
-      return NextResponse.json({ error: "That field is not available for rentals." }, { status: 400 });
-    }
-
     const row = prop as {
       id: string;
       title: string;
@@ -203,6 +121,9 @@ export async function POST(request: NextRequest) {
       business_id: string | null;
     };
 
+    const typeLabel = row.property_type
+      ? (PROPERTY_TYPE_LABELS[row.property_type] ?? row.property_type)
+      : null;
     const title = String(row.title ?? "Stay");
     const slug = String(row.slug ?? "");
     const payload: ListingFieldFlagPayload = {
@@ -214,7 +135,10 @@ export async function POST(request: NextRequest) {
       listing_slug: slug,
       business_title: title,
       business_slug: slug,
-      current_value: currentValueForRental(d.field, row),
+      current_value: currentValueForRentalGroup(d.field, {
+        ...row,
+        property_type_label: typeLabel,
+      }),
       reporter_email: d.reporter_email,
     };
 
@@ -237,7 +161,7 @@ export async function POST(request: NextRequest) {
   const { data: biz, error: bizErr } = await supabase
     .from("businesses_view")
     .select(
-      "id, title, slug, address, phone, overview, excerpt, map_lat, map_lng, search_tags, is_verified, town_id, area_id, primary_category_id, towns ( title ), areas ( title ), business_categories ( title )",
+      "id, title, slug, address, phone, website, overview, excerpt, map_lat, map_lng, search_tags, is_verified, town_id, area_id, primary_category_id, towns ( title ), areas ( title ), business_categories ( title )",
     )
     .eq("id", entityId)
     .is("archived_at", null)
@@ -271,6 +195,7 @@ export async function POST(request: NextRequest) {
     title: String(row.title ?? "Business"),
     address: (row.address as string | null) ?? null,
     phone: (row.phone as string | null) ?? null,
+    website: (row.website as string | null) ?? null,
     overview: (row.overview as string | null) ?? null,
     excerpt: (row.excerpt as string | null) ?? null,
     map_lat: (row.map_lat as number | null) ?? null,
@@ -292,7 +217,7 @@ export async function POST(request: NextRequest) {
     listing_slug: slug,
     business_title: title,
     business_slug: slug,
-    current_value: currentValueForBusiness(d.field, normalized),
+    current_value: currentValueForBusinessGroup(d.field, normalized),
     reporter_email: d.reporter_email,
   };
 

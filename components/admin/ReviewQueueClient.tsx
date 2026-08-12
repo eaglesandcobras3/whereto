@@ -17,11 +17,10 @@ import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-util
 import type { FreeOnboardPhotoPayload } from "@/lib/listing-requests/free-onboard-schema";
 import {
   isListingFieldFlagType,
-  LISTING_FIELD_FLAG_LABELS,
   listingFieldFlagEntityFromPayload,
+  listingFieldFlagLabel,
   listingFieldFlagSlugFromPayload,
   listingUpdatePath,
-  type ListingFieldFlagField,
 } from "@/lib/listing-requests/listing-field-flag";
 import { staysPropertyPath } from "@/lib/stays/constants";
 
@@ -559,10 +558,7 @@ export function ReviewQueueClient() {
             const fieldFlagEntity = listingFieldFlagEntityFromPayload(item.payload);
             const fieldKey =
               typeof item.payload.field === "string" ? item.payload.field : "";
-            const fieldLabel =
-              fieldKey in LISTING_FIELD_FLAG_LABELS
-                ? LISTING_FIELD_FLAG_LABELS[fieldKey as ListingFieldFlagField]
-                : fieldKey || "Field";
+            const fieldLabel = listingFieldFlagLabel(fieldKey);
 
             return (
               <li key={item.id} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
