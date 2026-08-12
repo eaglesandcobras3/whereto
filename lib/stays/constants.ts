@@ -4,6 +4,7 @@ export const LIST_YOUR_RENTALS_PATH = "/list-your-rentals" as const;
 export const RENTAL_INDEX_MIN_UNIQUE_TEXT = 80;
 export const RENTAL_TOWN_HUB_MIN_PROPERTIES = 3;
 export const RENTAL_STALE_DAYS = 30;
+export const RENTAL_LISTING_MAX_PHOTOS = 8;
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   house: "House",

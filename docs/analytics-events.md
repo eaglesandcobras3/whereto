@@ -50,6 +50,6 @@ Do **not** send guest emails, phones, or exact addresses.
 | `rental_partner_application_started` | `step` |
 | `rental_partner_application_submitted` | `business_id?`, `partner_id`, `import_method`, `pms_name?`, `link_public_business` |
 | `rental_listing_started` | `step` |
-| `rental_listing_submitted` | `property_id?`, `partner_id?`, `partner_created?`, `town_id?`, `property_type?` |
+| `rental_listing_submitted` | `property_id?`, `partner_id?`, `partner_created?`, `town_id?`, `property_type?`, `photo_count?`, `has_street_address?` |
 
 Server also writes `rental_referral_clicks` on `/api/stays/go/[propertyId]`.
