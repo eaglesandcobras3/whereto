@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import {
-  RENTAL_BEACH_ACCESS,
   RENTAL_LOCATION_PRECISION,
   RENTAL_PROPERTY_TYPES,
 } from "@/lib/stays/types";
@@ -185,16 +184,6 @@ export function ListARentalForm() {
             <input name="sleeps" type="number" min={1} defaultValue={6} required className={field} />
           </label>
           <label className="block text-sm font-medium text-zinc-800">
-            Beach access
-            <select name="beach_access" className={field} defaultValue="unknown">
-              {RENTAL_BEACH_ACCESS.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm font-medium text-zinc-800">
             Starting nightly rate (optional)
             <input name="starting_nightly_rate" type="number" min={0} className={field} />
           </label>
@@ -205,6 +194,7 @@ export function ListARentalForm() {
             [
               ["pets_allowed", "Pets allowed"],
               ["private_pool", "Private pool"],
+              ["private_beach_access", "Private beach access"],
               ["gulf_front", "Gulf front"],
               ["gulf_view", "Gulf view"],
               ["golf_cart_included", "Golf cart included"],

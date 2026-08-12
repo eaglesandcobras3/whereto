@@ -133,7 +133,7 @@ export function listingFieldsFromFormData(fd: FormData): Record<string, unknown>
     sleeps: String(fd.get("sleeps") ?? "2"),
     booking_url: String(fd.get("booking_url") ?? ""),
     starting_nightly_rate: String(fd.get("starting_nightly_rate") ?? ""),
-    beach_access: String(fd.get("beach_access") ?? "unknown"),
+    beach_access: bool("private_beach_access") ? "private" : "unknown",
     pets_allowed: bool("pets_allowed"),
     private_pool: bool("private_pool"),
     gulf_front: bool("gulf_front"),
