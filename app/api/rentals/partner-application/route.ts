@@ -31,10 +31,11 @@ export async function POST(request: NextRequest) {
         distinctId: "anonymous",
         event: "rental_partner_application_submitted",
         properties: {
-          business_id: result.businessId,
+          business_id: result.businessId ?? undefined,
           partner_id: result.partnerId,
           import_method: parsed.data.import_method,
           pms_name: parsed.data.pms_name ?? undefined,
+          link_public_business: parsed.data.link_public_business === true,
         },
       });
       await ph.shutdown();

@@ -27,11 +27,12 @@ export default async function ListYourRentalsPage() {
         discovery and referral tracking — you keep reservations, payments, and guest support.
       </p>
       <p className="mt-2 text-sm text-zinc-600">
-        Owner Verified on your business profile is separate from rental partner approval.{" "}
+        A public property-management company page is optional. You can partner with stay listings
+        only, or also{" "}
         <Link href="/list-your-business" className="font-medium text-teal-900 underline">
-          Claim or update your business
+          list your business
         </Link>{" "}
-        first if needed.
+        if you want a company profile.
       </p>
       <div className="mt-8">
         <ListYourRentalsForm />

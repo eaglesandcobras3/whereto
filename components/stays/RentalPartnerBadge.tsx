@@ -5,17 +5,25 @@ import { gaClickProps } from "@/lib/analytics/ga-click-props";
 type Props = {
   businessSlug: string | null;
   businessTitle: string | null;
+  partnerDisplayName?: string | null;
+  showPublicBusiness?: boolean | null;
   isVerified?: boolean | null;
   partnerActive?: boolean;
 };
 
+/** Shows rental-partner mark; company link only when a public business profile is opted in. */
 export function RentalPartnerBadge({
   businessSlug,
   businessTitle,
+  partnerDisplayName,
+  showPublicBusiness,
   isVerified,
   partnerActive,
 }: Props) {
-  if (!partnerActive && !businessTitle) return null;
+  const showCompany =
+    showPublicBusiness === true && Boolean(businessSlug && businessTitle);
+
+  if (!partnerActive && !showCompany && !partnerDisplayName) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -24,21 +32,19 @@ export function RentalPartnerBadge({
           Rental partner
         </span>
       ) : null}
-      {isVerified ? <VerifiedBadge /> : null}
-      {businessSlug && businessTitle ? (
+      {showCompany && isVerified ? <VerifiedBadge /> : null}
+      {showCompany ? (
         <Link
-          href={`/business/${encodeURIComponent(businessSlug)}`}
+          href={`/business/${encodeURIComponent(businessSlug!)}`}
           className="text-sm font-medium text-teal-900 underline-offset-2 hover:underline"
           {...gaClickProps({
             event: "rental_manager_viewed",
             category: "stays_detail",
-            label: businessSlug,
+            label: businessSlug!,
           })}
         >
           Managed by {businessTitle}
         </Link>
-      ) : businessTitle ? (
-        <span className="text-sm text-zinc-700">Managed by {businessTitle}</span>
       ) : null}
     </div>
   );

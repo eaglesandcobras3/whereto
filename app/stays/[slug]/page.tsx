@@ -165,6 +165,8 @@ export default async function StayDetailPage({ params }: Props) {
               <RentalPartnerBadge
                 businessSlug={property.business_slug}
                 businessTitle={property.business_title}
+                partnerDisplayName={property.partner_display_name}
+                showPublicBusiness={property.partner_show_public_business_profile}
                 isVerified={property.business_is_verified}
                 partnerActive={property.partner_status === "active"}
               />

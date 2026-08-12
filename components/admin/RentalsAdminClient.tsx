@@ -17,7 +17,9 @@ type PropertyRow = {
 
 type PartnerRow = {
   id: string;
-  business_id: string;
+  business_id: string | null;
+  display_name: string | null;
+  show_public_business_profile: boolean;
   status: string;
   contact_name: string | null;
   contact_email: string | null;
@@ -145,11 +147,17 @@ export function RentalsAdminClient() {
             <div key={p.id} className="border border-zinc-200 p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="font-medium text-zinc-900">{p.contact_name || p.id}</p>
+                  <p className="font-medium text-zinc-900">
+                    {p.display_name || p.contact_name || p.id}
+                  </p>
                   <p className="text-zinc-600">
                     {p.contact_email} · {p.status} · {p.pms_name || "PMS n/a"}
                   </p>
-                  <p className="text-xs text-zinc-400">business {p.business_id}</p>
+                  <p className="text-xs text-zinc-400">
+                    {p.business_id
+                      ? `business ${p.business_id}${p.show_public_business_profile ? " · public profile" : ""}`
+                      : "no public business link"}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {["under_review", "approved", "active", "paused", "rejected"].map((s) => (
