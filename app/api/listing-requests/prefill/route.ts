@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("businesses_view")
     .select(
-      "id, title, slug, town_id, address, website, phone, excerpt, overview, content, is_storefront, is_service_business, primary_category_id, service_category_id, search_tags, main_image_url, hero_image_url, towns ( title, slug )",
+      "id, title, slug, town_id, address, map_lat, map_lng, website, phone, excerpt, overview, content, is_storefront, is_service_business, primary_category_id, service_category_id, search_tags, main_image_url, hero_image_url, towns ( title, slug )",
     )
     .eq("slug", slug)
     .is("archived_at", null)
@@ -53,6 +53,14 @@ export async function GET(request: NextRequest) {
       town_id: data.town_id ? String(data.town_id) : null,
       town_title: town?.title ?? null,
       address: (data.address as string | null) ?? null,
+      map_lat:
+        data.map_lat != null && Number.isFinite(Number(data.map_lat))
+          ? Number(data.map_lat)
+          : null,
+      map_lng:
+        data.map_lng != null && Number.isFinite(Number(data.map_lng))
+          ? Number(data.map_lng)
+          : null,
       website: (data.website as string | null) ?? null,
       phone: (data.phone as string | null) ?? null,
       excerpt: (data.excerpt as string | null) ?? null,

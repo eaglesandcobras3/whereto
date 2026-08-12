@@ -1,6 +1,7 @@
 import { summarizeBusinessHours } from "@/lib/business/format-business-hours";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 
 type Props = {
   address?: string | null;
@@ -12,6 +13,8 @@ type Props = {
   lat?: number | null;
   lng?: number | null;
   hours?: unknown;
+  /** When set (unverified listings), show compact wrong-field reports. */
+  fieldFlagEntityId?: string | null;
 };
 
 function telHref(phone: string): string | null {
@@ -54,6 +57,7 @@ export function BusinessQuickFacts({
   lat,
   lng,
   hours,
+  fieldFlagEntityId,
 }: Props) {
   const addr = typeof address === "string" ? address.trim() : "";
   const phon = typeof phone === "string" ? phone.trim() : "";
@@ -128,6 +132,13 @@ export function BusinessQuickFacts({
                     </a>
                   </p>
                 ) : null}
+                {fieldFlagEntityId ? (
+                  <ListingFieldFlagNote
+                    entity="business"
+                    entityId={fieldFlagEntityId}
+                    field="address"
+                  />
+                ) : null}
               </div>
             </div>
           </div>
@@ -155,6 +166,13 @@ export function BusinessQuickFacts({
                   <span className="text-sm text-zinc-700">{phon}</span>
                 )}
               </p>
+              {fieldFlagEntityId ? (
+                <ListingFieldFlagNote
+                  entity="business"
+                  entityId={fieldFlagEntityId}
+                  field="phone"
+                />
+              ) : null}
             </div>
           </div>
         ) : null}

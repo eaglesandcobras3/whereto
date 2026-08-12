@@ -13,7 +13,12 @@ import {
   type FreeOnboardPayload,
 } from "@/lib/listing-requests/free-onboard-schema";
 import { findSimilarBusinessesForListingRequest } from "@/lib/listing-requests/find-similar-businesses";
+import { attachFreeOnboardPhotos } from "@/lib/listing-requests/free-onboard-photos";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
+import {
+  getAllFeatureFlags,
+  isBusinessPhotosFeatureEnabled,
+} from "@/lib/feature-flags";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
@@ -205,6 +210,8 @@ export async function handleFreeOnboardListingRequest(
       town_title: town?.title ?? null,
       town_slug: town?.slug ?? null,
       address: l.address,
+      map_lat: l.map_lat ?? null,
+      map_lng: l.map_lng ?? null,
       status: "pending" as const,
     };
   });
@@ -245,6 +252,11 @@ export async function handleFreeOnboardListingRequest(
     marketing_opt_in: submittedByAdmin ? false : d.marketing_opt_in,
     target_business_id: targetBusinessId,
     locations,
+    photos: d.photos.map((p) => ({
+      public_url: p.public_url,
+      storage_path: p.storage_path,
+      include: p.include !== false,
+    })),
     ...(mainImageUrl !== undefined ? { main_image_url: mainImageUrl } : {}),
     submitted_by_admin: submittedByAdmin,
   };
@@ -272,6 +284,18 @@ export async function handleFreeOnboardListingRequest(
       },
       { status: 500 },
     );
+  }
+
+  // Updates already have a business — queue gallery rows as pending for checkbox review.
+  if (targetBusinessId && payload.photos && payload.photos.length > 0) {
+    const flags = await getAllFeatureFlags();
+    if (isBusinessPhotosFeatureEnabled(flags)) {
+      try {
+        await attachFreeOnboardPhotos(supabase, targetBusinessId, payload.photos, "pending");
+      } catch (e) {
+        console.error("[free-onboard] attach pending photos", e);
+      }
+    }
   }
 
   // Confirm receipt to the submitter (decision email comes later when live/rejected).

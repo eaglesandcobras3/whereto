@@ -17,17 +17,36 @@ import {
   FREE_ONBOARD_EXCERPT_MAX,
   FREE_ONBOARD_LOCATIONS_MAX,
   FREE_ONBOARD_OVERVIEW_MAX,
+  FREE_ONBOARD_PHOTOS_MAX,
   FREE_ONBOARD_REMOVAL_REASON_MAX,
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_SUGGESTED_CATEGORY_MAX,
   FREE_ONBOARD_TITLE_MAX,
 } from "@/lib/listing-requests/free-onboard-schema";
 import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
+import dynamic from "next/dynamic";
+
+const MapLocationPickerClient = dynamic(
+  () => import("@/components/maps/MapLocationPicker").then((m) => m.MapLocationPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-56 items-center justify-center border border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text-tertiary)] sm:h-64">
+        Loading map…
+      </div>
+    ),
+  },
+);
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
 const labelClass = "block text-sm font-medium text-[var(--color-text-secondary)]";
 const helpClass = "mt-1 text-xs text-[var(--color-text-tertiary)]";
+
+type UploadedIntakePhoto = {
+  public_url: string;
+  storage_path: string;
+};
 
 type CategoryOption = {
   id: string;
@@ -42,7 +61,13 @@ type CategoryGroup = {
   slug: string;
   leaves: Array<{ id: string; title: string; slug: string }>;
 };
-type LocationRow = { key: string; town_id: string; address: string };
+type LocationRow = {
+  key: string;
+  town_id: string;
+  address: string;
+  map_lat: number | null;
+  map_lng: number | null;
+};
 
 type PrefillBusiness = {
   id: string;
@@ -50,6 +75,8 @@ type PrefillBusiness = {
   slug: string;
   town_id: string | null;
   address: string | null;
+  map_lat?: number | null;
+  map_lng?: number | null;
   website: string | null;
   phone: string | null;
   excerpt: string | null;
@@ -112,7 +139,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [website, setWebsite] = useState("");
   const [phone, setPhone] = useState("");
   const [locations, setLocations] = useState<LocationRow[]>([
-    { key: newLocationKey(), town_id: "", address: "" },
+    { key: newLocationKey(), town_id: "", address: "", map_lat: null, map_lng: null },
   ]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -128,6 +155,9 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [initialMainImageUrl, setInitialMainImageUrl] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [imageErr, setImageErr] = useState<string | null>(null);
+  const [galleryPhotos, setGalleryPhotos] = useState<UploadedIntakePhoto[]>([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryErr, setGalleryErr] = useState<string | null>(null);
   const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
 
   const isUpdate = Boolean(prefill?.id);
@@ -154,6 +184,8 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
         key: newLocationKey(),
         town_id: b.town_id ?? "",
         address: b.address ?? "",
+        map_lat: b.map_lat ?? null,
+        map_lng: b.map_lng ?? null,
       },
     ]);
     setFindPhase("selected");
@@ -173,7 +205,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setSuggestedCategory("");
     setIsStorefront(false);
     setIsService(false);
-    setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+    setLocations([{ key: newLocationKey(), town_id: "", address: "", map_lat: null, map_lng: null }]);
     setFindPhase("searching");
     setErr(null);
   }
@@ -191,7 +223,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setSuggestedCategory("");
     setIsStorefront(false);
     setIsService(false);
-    setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+    setLocations([{ key: newLocationKey(), town_id: "", address: "", map_lat: null, map_lng: null }]);
     setFindPhase("creating-new");
     setErr(null);
   }
@@ -330,7 +362,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   function setStorefrontChecked(checked: boolean) {
     setIsStorefront(checked);
     if (checked && locations.length === 0) {
-      setLocations([{ key: newLocationKey(), town_id: "", address: "" }]);
+      setLocations([{ key: newLocationKey(), town_id: "", address: "", map_lat: null, map_lng: null }]);
     }
   }
 
@@ -365,6 +397,8 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       ? locations.map((l) => ({
           town_id: l.town_id,
           address: l.address,
+          map_lat: l.map_lat,
+          map_lng: l.map_lng,
         }))
       : [];
 
@@ -403,6 +437,15 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       businessPhotosEnabled &&
       mainImageUrl !== initialMainImageUrl
         ? { main_image_url: mainImageUrl }
+        : {}),
+      ...(businessPhotosEnabled && galleryPhotos.length > 0
+        ? {
+            photos: galleryPhotos.map((p) => ({
+              public_url: p.public_url,
+              storage_path: p.storage_path,
+              include: true,
+            })),
+          }
         : {}),
     };
 
@@ -820,6 +863,19 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
                   placeholder="Street, suite"
                 />
               </div>
+              <div>
+                <p className={labelClass}>Map pin</p>
+                <MapLocationPickerClient
+                  lat={loc.map_lat}
+                  lng={loc.map_lng}
+                  onChange={(map_lat, map_lng) =>
+                    setLocations((prev) =>
+                      prev.map((l) => (l.key === loc.key ? { ...l, map_lat, map_lng } : l)),
+                    )
+                  }
+                  className="mt-1.5"
+                />
+              </div>
             </div>
           ))}
 
@@ -831,7 +887,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
                 onClick={() =>
                   setLocations((prev) => [
                     ...prev,
-                    { key: newLocationKey(), town_id: "", address: "" },
+                    { key: newLocationKey(), town_id: "", address: "", map_lat: null, map_lng: null },
                   ])
                 }
               >
@@ -907,6 +963,93 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
         />
         <CharCount value={overview} max={FREE_ONBOARD_OVERVIEW_MAX} />
       </div>
+
+      {businessPhotosEnabled ? (
+        <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
+          <div>
+            <p className={labelClass}>Photos (optional)</p>
+            <p className={helpClass}>
+              Add up to {FREE_ONBOARD_PHOTOS_MAX} photos of your place. They go to our review queue —
+              we&apos;ll choose which ones to publish. Images are resized and saved as WebP.
+            </p>
+          </div>
+          {galleryPhotos.length > 0 ? (
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {galleryPhotos.map((photo) => (
+                <li key={photo.storage_path} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.public_url}
+                    alt=""
+                    className="aspect-[4/3] w-full rounded-lg object-cover"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-zinc-800 shadow-sm"
+                    onClick={() =>
+                      setGalleryPhotos((prev) =>
+                        prev.filter((p) => p.storage_path !== photo.storage_path),
+                      )
+                    }
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {galleryPhotos.length < FREE_ONBOARD_PHOTOS_MAX ? (
+            <input
+              type="file"
+              accept="image/*"
+              disabled={galleryUploading}
+              className="block w-full text-sm text-[var(--color-text-secondary)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                void (async () => {
+                  setGalleryErr(null);
+                  setGalleryUploading(true);
+                  try {
+                    const body = new FormData();
+                    body.set("file", file);
+                    const res = await fetch("/api/listing-requests/photos", {
+                      method: "POST",
+                      body,
+                    });
+                    const j = (await res.json()) as {
+                      ok?: boolean;
+                      public_url?: string;
+                      storage_path?: string;
+                      error?: string;
+                    };
+                    if (!res.ok || !j.public_url || !j.storage_path) {
+                      throw new Error(j.error ?? "Upload failed");
+                    }
+                    setGalleryPhotos((prev) => {
+                      if (prev.length >= FREE_ONBOARD_PHOTOS_MAX) return prev;
+                      if (prev.some((p) => p.storage_path === j.storage_path)) return prev;
+                      return [
+                        ...prev,
+                        { public_url: j.public_url!, storage_path: j.storage_path! },
+                      ];
+                    });
+                  } catch (err) {
+                    setGalleryErr(err instanceof Error ? err.message : "Upload failed");
+                  } finally {
+                    setGalleryUploading(false);
+                  }
+                })();
+              }}
+            />
+          ) : (
+            <p className={helpClass}>Photo limit reached ({FREE_ONBOARD_PHOTOS_MAX}).</p>
+          )}
+          {galleryUploading ? <p className={helpClass}>Uploading…</p> : null}
+          {galleryErr ? <p className="text-sm text-red-600">{galleryErr}</p> : null}
+        </div>
+      ) : null}
 
       <div>
         <label className={labelClass} htmlFor="category_id">

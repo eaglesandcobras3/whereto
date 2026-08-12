@@ -39,6 +39,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     apply_suggested_tags?: unknown;
     category_resolution?: unknown;
     is_explorable?: unknown;
+    photo_includes?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -84,6 +85,44 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
+    if (action === "set_photo_includes") {
+      const includes = Array.isArray(body.photo_includes) ? body.photo_includes : [];
+      const byUrl = new Map<string, boolean>();
+      for (const row of includes) {
+        if (!row || typeof row !== "object") continue;
+        const r = row as { public_url?: unknown; include?: unknown };
+        if (typeof r.public_url !== "string" || !r.public_url.trim()) continue;
+        byUrl.set(r.public_url.trim(), r.include !== false);
+      }
+      const { data: item, error } = await supabase
+        .from("portal_review_items")
+        .select("payload, status, type")
+        .eq("id", id)
+        .maybeSingle();
+      if (error || !item) throw new Error("Review item not found");
+      if ((item.status as string) !== "pending") throw new Error("Item already reviewed");
+      if (
+        item.type !== FREE_ONBOARD_TYPES.newListing &&
+        item.type !== FREE_ONBOARD_TYPES.update
+      ) {
+        throw new Error("Photo includes only apply to free intake");
+      }
+      const payload = { ...((item.payload as Record<string, unknown>) ?? {}) };
+      const photos = Array.isArray(payload.photos) ? [...payload.photos] : [];
+      payload.photos = photos.map((p) => {
+        if (!p || typeof p !== "object") return p;
+        const photo = p as Record<string, unknown>;
+        const url = typeof photo.public_url === "string" ? photo.public_url : "";
+        if (!url || !byUrl.has(url)) return photo;
+        return { ...photo, include: byUrl.get(url) };
+      });
+      const { error: updErr } = await supabase
+        .from("portal_review_items")
+        .update({ payload })
+        .eq("id", id);
+      if (updErr) throw new Error(updErr.message);
+      return NextResponse.json({ ok: true });
+    }
     if (action === "create_location") {
       if (!locationId) {
         return NextResponse.json({ error: "location_id required" }, { status: 400 });
@@ -152,7 +191,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         error:
-          "action must be approve, reject, needs_changes, create_location, skip_location, or approve_all_locations",
+          "action must be approve, reject, needs_changes, create_location, skip_location, approve_all_locations, or set_photo_includes",
       },
       { status: 400 },
     );

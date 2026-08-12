@@ -26,6 +26,7 @@ const discoverOnly: FeatureFlags = {
   rentals: false,
   business_photos: false,
   business_maps: false,
+  feedback: false,
 };
 const discoverNlOn: FeatureFlags = {
   ...discoverOnly,

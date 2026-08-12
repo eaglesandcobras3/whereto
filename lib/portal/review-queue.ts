@@ -431,6 +431,12 @@ export async function approveReviewItem(
     return;
   }
 
+  if (row.type === "listing_field_flag") {
+    // Visitor report only — admin edits via the update form; approve = acknowledged.
+    await finalizeReviewItem(supabase, itemId, reviewerId, "approved", null);
+    return;
+  }
+
   throw new Error(`Approve not implemented for type: ${row.type}`);
 }
 

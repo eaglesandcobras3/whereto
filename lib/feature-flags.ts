@@ -15,6 +15,7 @@ import {
   isRentalsEnabled,
   isBusinessPhotosEnabled,
   isBusinessMapsEnabled,
+  isFeedbackEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -36,6 +37,7 @@ export {
   isRentalsEnabled,
   isBusinessPhotosEnabled,
   isBusinessMapsEnabled,
+  isFeedbackEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -138,6 +140,15 @@ export function businessMapsDevBypassEnabled(): boolean {
 
 export function isBusinessMapsFeatureEnabled(flags: FeatureFlags): boolean {
   return isBusinessMapsEnabled(flags) || businessMapsDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `feedback` flag still required in production. */
+export function feedbackDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.FEEDBACK_ENABLED === "1";
+}
+
+export function isFeedbackFeatureEnabled(flags: FeatureFlags): boolean {
+  return isFeedbackEnabled(flags) || feedbackDevBypassEnabled();
 }
 
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {

@@ -14,6 +14,7 @@ import {
   type FreeOnboardRemovalPayload,
 } from "@/lib/listing-requests/free-onboard-schema";
 import { buildSearchDocumentFields } from "@/lib/search/derive-search-document";
+import { attachFreeOnboardPhotos } from "@/lib/listing-requests/free-onboard-photos";
 
 function asPayload(raw: Record<string, unknown>): FreeOnboardPayload {
   return raw as unknown as FreeOnboardPayload;
@@ -275,6 +276,8 @@ export async function createFreeListingForLocation(
     status: "published",
     town_id: loc.town_id,
     address: loc.address,
+    map_lat: loc.map_lat ?? null,
+    map_lng: loc.map_lng ?? null,
     website: payload.website,
     phone: payload.phone,
     email: payload.submitter_email,
@@ -312,6 +315,16 @@ export async function createFreeListingForLocation(
   loc.town_slug = town.slug;
 
   await savePayload(supabase, itemId, payload, created.id as string);
+  const priorCreated = payload.locations.some(
+    (l) => l.id !== locationId && l.status === "created" && Boolean(l.resulting_business_id),
+  );
+  if (!priorCreated) {
+    try {
+      await attachFreeOnboardPhotos(supabase, created.id as string, payload.photos, "approved");
+    } catch (e) {
+      console.error("[free-onboard] attach photos on create", e);
+    }
+  }
   const isUpdate = item.type === FREE_ONBOARD_TYPES.update;
   const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
     isUpdate,
@@ -535,6 +548,11 @@ async function createFreeServiceListingWithoutTown(
   ];
 
   await savePayload(supabase, itemId, payload, createdBiz.id as string);
+  try {
+    await attachFreeOnboardPhotos(supabase, createdBiz.id as string, payload.photos, "approved");
+  } catch (e) {
+    console.error("[free-onboard] attach photos on service create", e);
+  }
   const reviewStatus = await finalizeIfComplete(supabase, itemId, reviewerId, payload, {
     isUpdate: false,
     notify: opts?.deferNotify !== true,
@@ -608,6 +626,8 @@ export async function approveFreeUpdate(
     slug,
     town_id: townId,
     address: primaryLoc?.address ?? null,
+    map_lat: primaryLoc?.map_lat ?? null,
+    map_lng: primaryLoc?.map_lng ?? null,
     website: payload.website,
     phone: payload.phone,
     email: payload.submitter_email,

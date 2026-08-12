@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
+import { TagPills } from "@/components/discovery/TagPills";
 import { OpenStreetMap } from "@/components/OpenStreetMap";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import { RentalBookingCta } from "@/components/stays/RentalBookingCta";
 import { RentalPartnerBadge } from "@/components/stays/RentalPartnerBadge";
 import { StayUpdateListingCta } from "@/components/stays/StayUpdateListingCta";
-import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isFeedbackFeatureEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { getSiteUrl } from "@/lib/site-url";
 import { PROPERTY_TYPE_LABELS, staysPropertyPath, STAYS_HUB_PATH } from "@/lib/stays/constants";
@@ -15,6 +17,7 @@ import { isPublicRentalVisible, isRentalIndexReady } from "@/lib/stays/eligibili
 import { getPublishedRentalBySlug } from "@/lib/stays/execute-search";
 import { generateVacationRentalSchema, staysPropertyMetadata } from "@/lib/stays/seo";
 import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
 
 /** ISR — same cadence as business listings. */
 export const revalidate = 21600;
@@ -122,6 +125,9 @@ export default async function StayDetailPage({ params }: Props) {
     property.map_lng != null;
 
   const typeLabel = PROPERTY_TYPE_LABELS[property.property_type] ?? property.property_type;
+  const canFlagFields =
+    isFeedbackFeatureEnabled(flags) && !Boolean(property.business_is_verified);
+  const tagSlugs = normalizeSearchTags(property.search_tags);
   const amenityFlags = [
     property.pets_allowed ? "Pet friendly" : null,
     property.private_pool ? "Private pool" : null,
@@ -157,30 +163,73 @@ export default async function StayDetailPage({ params }: Props) {
             <h1 className="font-headline text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
               {property.title}
             </h1>
+            {canFlagFields ? (
+              <ListingFieldFlagNote entity="rental" entityId={property.id} field="name" />
+            ) : null}
             <p className="mt-2 text-sm text-zinc-600">
               {typeLabel} · {property.bedrooms} bed · {property.bathrooms} bath · Sleeps{" "}
               {property.sleeps}
               {property.area_title ? ` · ${property.area_title}` : ""}
             </p>
+            {canFlagFields ? (
+              <div className="mt-1 flex flex-wrap gap-x-4">
+                <ListingFieldFlagNote entity="rental" entityId={property.id} field="category" />
+                {property.area_title ? (
+                  <ListingFieldFlagNote entity="rental" entityId={property.id} field="area" />
+                ) : null}
+              </div>
+            ) : null}
             {property.community_name ||
             property.town_title ||
             (property.location_precision === "exact" && property.street_address) ? (
-              <p className="mt-1 text-sm text-zinc-600">
-                {property.location_precision === "exact" && property.street_address
-                  ? [
-                      property.street_address,
-                      property.community_name,
-                      property.town_title,
-                      property.postal_code,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")
-                  : [property.community_name, property.town_title].filter(Boolean).join(" · ") ||
-                    property.town_title}
-                {property.location_precision === "approximate" ? (
-                  <span className="text-zinc-500"> · Approximate area</span>
+              <div className="mt-1">
+                <p className="text-sm text-zinc-600">
+                  {property.location_precision === "exact" && property.street_address
+                    ? [
+                        property.street_address,
+                        property.community_name,
+                        property.town_title,
+                        property.postal_code,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")
+                    : [property.community_name, property.town_title].filter(Boolean).join(" · ") ||
+                      property.town_title}
+                  {property.location_precision === "approximate" ? (
+                    <span className="text-zinc-500"> · Approximate area</span>
+                  ) : null}
+                </p>
+                {canFlagFields ? (
+                  <div className="mt-1 flex flex-wrap gap-x-4">
+                    {property.location_precision === "exact" && property.street_address ? (
+                      <ListingFieldFlagNote
+                        entity="rental"
+                        entityId={property.id}
+                        field="address"
+                      />
+                    ) : null}
+                    {property.town_title ? (
+                      <ListingFieldFlagNote entity="rental" entityId={property.id} field="town" />
+                    ) : null}
+                  </div>
                 ) : null}
-              </p>
+              </div>
+            ) : null}
+            {property.excerpt?.trim() ? (
+              <div className="mt-3">
+                <p className="text-base leading-relaxed text-zinc-600">{property.excerpt.trim()}</p>
+                {canFlagFields ? (
+                  <ListingFieldFlagNote entity="rental" entityId={property.id} field="excerpt" />
+                ) : null}
+              </div>
+            ) : null}
+            {tagSlugs.length > 0 ? (
+              <div className="mt-3">
+                <TagPills tags={tagSlugs} className="!mt-0" />
+                {canFlagFields ? (
+                  <ListingFieldFlagNote entity="rental" entityId={property.id} field="tags" />
+                ) : null}
+              </div>
             ) : null}
             <div className="mt-3">
               <RentalPartnerBadge
@@ -219,6 +268,13 @@ export default async function StayDetailPage({ params }: Props) {
                 <div className="prose prose-zinc mt-3 max-w-none whitespace-pre-wrap text-sm leading-relaxed">
                   {property.description}
                 </div>
+                {canFlagFields ? (
+                  <ListingFieldFlagNote
+                    entity="rental"
+                    entityId={property.id}
+                    field="description"
+                  />
+                ) : null}
               </section>
             ) : null}
 
@@ -285,6 +341,9 @@ export default async function StayDetailPage({ params }: Props) {
                     className="h-full min-h-[16rem] !rounded-none"
                   />
                 </div>
+                {canFlagFields ? (
+                  <ListingFieldFlagNote entity="rental" entityId={property.id} field="map" />
+                ) : null}
               </section>
             ) : null}
 

@@ -337,14 +337,21 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `rentals` | Vacation rentals marketplace (`/stays`, listing intake, admin rentals); code default **off** |
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
+| `feedback` | Visitor “is this wrong?” field flags on unverified business / rental detail pages (admin review queue); code default **off** |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
+
+### Listing field feedback setup
+
+- [ ] PostHog: create boolean flag `feedback` (default false); enable for internal cohort then gradual rollout
+- [ ] Local dev (optional): `FEEDBACK_ENABLED=1` and `NEXT_PUBLIC_FEEDBACK_ENABLED=1`
+- [ ] Smoke-test: unverified `/business/[slug]` and `/stays/[slug]` show “Is this … wrong?” under name/town/area/category/excerpt/tags/description/address/phone/map; submit appears in `/admin/review` as `listing_field_flag` with Open update form
 
 ### Business maps setup
 
 - [ ] PostHog: create boolean flag `business_maps` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `BUSINESS_MAPS_ENABLED=1` and `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED=1`
-- [ ] Smoke-test: `/business/[slug]` shows Location map only when the listing has a physical location (coords) **and** a non-empty address; town/area/category hubs show multi-pin map only when at least one storefront has coordinates; hubs with no mapped storefronts hide the map
+- [ ] Smoke-test: `/list-your-business` (add or update) can upload gallery photos when `business_photos` is on; photos appear in `/admin/review` with include/exclude checkboxes; approve publishes included photos
 
 ### Business photos setup
 
@@ -499,6 +506,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-12 | PostHog `feedback`: visitor field-correction reports on unverified business/rental pages → admin review (`listing_field_flag`); local bypass `FEEDBACK_ENABLED` / `NEXT_PUBLIC_FEEDBACK_ENABLED` |
 | 2026-08-12 | PostHog `business_maps`: OpenStreetMap on storefront business detail + multi-pin maps on town/area/category hubs (storefronts with coordinates only); Leaflet for multi-pin; local bypass `BUSINESS_MAPS_ENABLED` / `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED` |
 | 2026-08-12 | PostHog `business_photos`: admin main-image update + portal additional photos (WebP max 1600px); public profile gallery + lightbox; SQL [businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql) + [business-photos.sql](../scripts/migrations/business-photos.sql). Writes target `businesses` table URL columns (not view aliases). Rentals listing form: remove hero URL fallback; main + additional photo fields. |
 | 2026-08-12 | Rentals listing form: **photo upload** + address fields (`street_address`, `postal_code`, community, lat/lng, precision); SQL [rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql). PMS/API sync still deferred (referral marketplace, not Airbnb clone) |

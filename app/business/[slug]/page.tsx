@@ -28,15 +28,15 @@ import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { BusinessUpdateListingCta } from "@/components/business/BusinessUpdateListingCta";
-import { BusinessPhotosEmptyState } from "@/components/business/BusinessPhotosEmptyState";
 import { BusinessPhotoGallery } from "@/components/business/BusinessPhotoGallery";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFeedbackFeatureEnabled, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
 import { BusinessRentalPortfolio } from "@/components/business/BusinessRentalPortfolio";
@@ -305,6 +305,7 @@ export default async function BusinessPage({ params }: Props) {
   const rentalsEnabled = isRentalsFeatureEnabled(flags);
   const businessPhotosEnabled = isBusinessPhotosFeatureEnabled(flags);
   const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
+  const feedbackEnabled = isFeedbackFeatureEnabled(flags);
 
   const row = b as Record<string, unknown>;
   const rawSlug = row.slug;
@@ -420,6 +421,7 @@ export default async function BusinessPage({ params }: Props) {
   const canonicalSegment = dbSlug || bizId;
   const canonicalPath = `/business/${encodeURIComponent(canonicalSegment)}`;
   const isVerified = Boolean(b.is_verified);
+  const canFlagFields = feedbackEnabled && !isVerified;
 
   const breadcrumbItems = [
     { name: "Home", url: "/" },
@@ -560,12 +562,21 @@ export default async function BusinessPage({ params }: Props) {
             {/* Title and meta */}
             <div className="flex-1">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <h1 className="text-editorial-headline flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-3xl text-zinc-900 sm:text-4xl">
-                  <span className="min-w-0">{b.name as string}</span>
-                  {isVerified ? (
-                    <VerifiedBadge listBusinessHref="/list-your-business" />
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-editorial-headline flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-3xl text-zinc-900 sm:text-4xl">
+                    <span className="min-w-0">{b.name as string}</span>
+                    {isVerified ? (
+                      <VerifiedBadge listBusinessHref="/list-your-business" />
+                    ) : null}
+                  </h1>
+                  {canFlagFields ? (
+                    <ListingFieldFlagNote
+                      entity="business"
+                      entityId={businessId}
+                      field="name"
+                    />
                   ) : null}
-                </h1>
+                </div>
                 <PageShareButton
                   pageType="business"
                   pageName={b.name as string}
@@ -599,12 +610,37 @@ export default async function BusinessPage({ params }: Props) {
                   </span>
                 )}
               </div>
+              {canFlagFields && category?.name ? (
+                <ListingFieldFlagNote
+                  entity="business"
+                  entityId={businessId}
+                  field="category"
+                />
+              ) : null}
 
               {oneLiner ? (
-                <p className="mt-4 text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
+                <div className="mt-4">
+                  <p className="text-lg leading-relaxed text-zinc-600">{oneLiner}</p>
+                  {canFlagFields ? (
+                    <ListingFieldFlagNote
+                      entity="business"
+                      entityId={businessId}
+                      field="excerpt"
+                    />
+                  ) : null}
+                </div>
               ) : null}
               {tagSlugs.length > 0 ? (
-                <TagPills tags={tagSlugs} className="mt-3" />
+                <div className="mt-3">
+                  <TagPills tags={tagSlugs} className="!mt-0" />
+                  {canFlagFields ? (
+                    <ListingFieldFlagNote
+                      entity="business"
+                      entityId={businessId}
+                      field="tags"
+                    />
+                  ) : null}
+                </div>
               ) : null}
               {!hasOverview ? (
                 <p className="prose-editorial mt-4 text-base leading-relaxed text-zinc-600">
@@ -626,6 +662,7 @@ export default async function BusinessPage({ params }: Props) {
                 lat={b.lat as number | null}
                 lng={b.lng as number | null}
                 hours={(b.hours as unknown) ?? null}
+                fieldFlagEntityId={canFlagFields ? businessId : null}
               />
 
               {/* Score badges inline */}
@@ -642,23 +679,6 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
             <div className="space-y-4">
-              {businessPhotosEnabled ? (
-                galleryPhotos.length > 0 ? (
-                  <BusinessPhotoGallery
-                    photos={galleryPhotos}
-                    businessName={b.name as string}
-                  />
-                ) : (
-                  <BusinessPhotosEmptyState
-                    businessName={b.name as string}
-                    updateListingHref={
-                      freeOnboardEnabled
-                        ? `/list-your-business?business=${encodeURIComponent(String(b.slug))}`
-                        : undefined
-                    }
-                  />
-                )
-              ) : null}
               {hasOverview ? (
                 <div className="space-y-4">
                   {overviewParagraphs.map((paragraph, index) => (
@@ -669,6 +689,13 @@ export default async function BusinessPage({ params }: Props) {
                       {paragraph}
                     </p>
                   ))}
+                  {canFlagFields ? (
+                    <ListingFieldFlagNote
+                      entity="business"
+                      entityId={businessId}
+                      field="description"
+                    />
+                  ) : null}
                 </div>
               ) : null}
 
@@ -681,6 +708,13 @@ export default async function BusinessPage({ params }: Props) {
                     : undefined
                 }
               />
+
+              {businessPhotosEnabled && galleryPhotos.length > 0 ? (
+                <BusinessPhotoGallery
+                  photos={galleryPhotos}
+                  businessName={b.name as string}
+                />
+              ) : null}
 
               <BusinessProfileCollapsibleSections
                 vibe={vibe}
@@ -777,6 +811,13 @@ export default async function BusinessPage({ params }: Props) {
                           </span>
                           {town.name}
                         </Link>
+                        {canFlagFields ? (
+                          <ListingFieldFlagNote
+                            entity="business"
+                            entityId={businessId}
+                            field="town"
+                          />
+                        ) : null}
                       </li>
                     ) : null}
                     {primaryArea ? (
@@ -795,6 +836,13 @@ export default async function BusinessPage({ params }: Props) {
                           </span>
                           {primaryArea.name}
                         </Link>
+                        {canFlagFields ? (
+                          <ListingFieldFlagNote
+                            entity="business"
+                            entityId={businessId}
+                            field="area"
+                          />
+                        ) : null}
                       </li>
                     ) : null}
                   </ul>
@@ -809,6 +857,7 @@ export default async function BusinessPage({ params }: Props) {
               markers={businessMapMarkers}
               title="Location"
               description={`Find ${String(b.name)} on the map.`}
+              fieldFlagEntityId={canFlagFields ? businessId : null}
             />
           ) : null}
 

@@ -12,7 +12,18 @@ import {
 } from "@/lib/listing-requests/free-onboard-schema";
 import { AdminBusinessMainImageControl } from "@/components/admin/AdminBusinessMainImageControl";
 import { AdminBusinessPendingPhotosReview } from "@/components/admin/AdminBusinessPendingPhotosReview";
+import { AdminFreeOnboardPayloadPhotosReview } from "@/components/admin/AdminFreeOnboardPayloadPhotosReview";
 import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
+import type { FreeOnboardPhotoPayload } from "@/lib/listing-requests/free-onboard-schema";
+import {
+  isListingFieldFlagType,
+  LISTING_FIELD_FLAG_LABELS,
+  listingFieldFlagEntityFromPayload,
+  listingFieldFlagSlugFromPayload,
+  listingUpdatePath,
+  type ListingFieldFlagField,
+} from "@/lib/listing-requests/listing-field-flag";
+import { staysPropertyPath } from "@/lib/stays/constants";
 
 type ReviewItem = {
   id: string;
@@ -469,6 +480,9 @@ export function ReviewQueueClient() {
             {visible.map((item) => {
               const title =
                 item.businesses?.title ??
+                (typeof item.payload.listing_title === "string"
+                  ? item.payload.listing_title
+                  : null) ??
                 (typeof item.payload.title === "string" ? item.payload.title : null) ??
                 (typeof item.payload.business_title === "string"
                   ? item.payload.business_title
@@ -530,13 +544,25 @@ export function ReviewQueueClient() {
           {visible.map((item) => {
             const title =
               item.businesses?.title ??
+              (typeof item.payload.listing_title === "string"
+                ? item.payload.listing_title
+                : null) ??
               (typeof item.payload.title === "string" ? item.payload.title : null) ??
               (typeof item.payload.business_title === "string"
                 ? item.payload.business_title
                 : null) ??
               item.id;
             const free = isFreeType(item.type);
+            const fieldFlag = isListingFieldFlagType(item.type);
             const locations = free ? freeLocations(item.payload) : [];
+            const fieldFlagSlug = listingFieldFlagSlugFromPayload(item.payload);
+            const fieldFlagEntity = listingFieldFlagEntityFromPayload(item.payload);
+            const fieldKey =
+              typeof item.payload.field === "string" ? item.payload.field : "";
+            const fieldLabel =
+              fieldKey in LISTING_FIELD_FLAG_LABELS
+                ? LISTING_FIELD_FLAG_LABELS[fieldKey as ListingFieldFlagField]
+                : fieldKey || "Field";
 
             return (
               <li key={item.id} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -544,6 +570,7 @@ export function ReviewQueueClient() {
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                       {item.type} · {item.status}
+                      {fieldFlag ? ` · ${fieldFlagEntity}` : ""}
                     </p>
                     <p className="mt-1 font-semibold text-zinc-900">{title}</p>
                     <p className="mt-1 text-xs text-zinc-500">
@@ -555,19 +582,70 @@ export function ReviewQueueClient() {
                       </p>
                     ) : null}
                   </div>
-                  {item.businesses?.slug ? (
-                    <a
-                      href={`/business/${encodeURIComponent(item.businesses.slug)}`}
-                      className="text-sm text-[var(--color-primary)] hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View listing
-                    </a>
-                  ) : null}
+                  <div className="flex flex-wrap gap-3">
+                    {fieldFlag && fieldFlagSlug ? (
+                      <a
+                        href={listingUpdatePath({
+                          entity: fieldFlagEntity,
+                          slug: fieldFlagSlug,
+                        })}
+                        className="rounded-lg bg-teal-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-900"
+                      >
+                        Open update form
+                      </a>
+                    ) : null}
+                    {fieldFlag && fieldFlagEntity === "rental" && fieldFlagSlug ? (
+                      <a
+                        href={staysPropertyPath(fieldFlagSlug)}
+                        className="text-sm text-[var(--color-primary)] hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View stay
+                      </a>
+                    ) : item.businesses?.slug ? (
+                      <a
+                        href={`/business/${encodeURIComponent(item.businesses.slug)}`}
+                        className="text-sm text-[var(--color-primary)] hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View listing
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
 
-                {free ? (
+                {fieldFlag ? (
+                  <div className="mt-4 space-y-2 text-sm text-zinc-600">
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+                      Visitor flagged <strong>{fieldLabel}</strong> as wrong on an unverified{" "}
+                      {fieldFlagEntity === "rental" ? "rental" : "business"} listing. Open the
+                      update form to correct it, then mark done.
+                    </p>
+                    <p>
+                      <span className="font-medium text-zinc-800">Current value:</span>{" "}
+                      {typeof item.payload.current_value === "string" &&
+                      item.payload.current_value.trim()
+                        ? item.payload.current_value
+                        : "—"}
+                    </p>
+                    {typeof item.payload.note === "string" && item.payload.note.trim() ? (
+                      <p className="whitespace-pre-wrap">
+                        <span className="font-medium text-zinc-800">Note:</span> {item.payload.note}
+                      </p>
+                    ) : null}
+                    {typeof item.payload.reporter_email === "string" &&
+                    item.payload.reporter_email.trim() ? (
+                      <p>
+                        <span className="font-medium text-zinc-800">Reporter:</span>{" "}
+                        {item.payload.reporter_email}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {!fieldFlag && free ? (
                   <div className="mt-4 space-y-3 text-sm text-zinc-600">
                     <p>
                       <span className="font-medium text-zinc-800">Submitter:</span>{" "}
@@ -923,7 +1001,7 @@ export function ReviewQueueClient() {
                       </>
                     )}
                   </div>
-                ) : (
+                ) : !fieldFlag ? (
                   <dl className="mt-4 space-y-1 text-sm text-zinc-600">
                     {item.type === "edit" &&
                     item.payload.changes &&
@@ -981,10 +1059,22 @@ export function ReviewQueueClient() {
                       )
                     )}
                   </dl>
-                )}
+                ) : null}
 
-                {item.business_id && businessPhotosEnabled ? (
+                {!fieldFlag && item.business_id && businessPhotosEnabled ? (
                   <AdminBusinessPendingPhotosReview businessId={item.business_id} />
+                ) : null}
+
+                {!item.business_id &&
+                businessPhotosEnabled &&
+                free &&
+                Array.isArray(item.payload.photos) &&
+                (item.payload.photos as FreeOnboardPhotoPayload[]).length > 0 ? (
+                  <AdminFreeOnboardPayloadPhotosReview
+                    itemId={item.id}
+                    photos={item.payload.photos as FreeOnboardPhotoPayload[]}
+                    onSaved={() => load()}
+                  />
                 ) : null}
 
                 <textarea
@@ -1040,27 +1130,35 @@ export function ReviewQueueClient() {
                         onClick={() => void act(item.id, "approve")}
                         className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
                       >
-                        {item.type === "photo" && !businessPhotosEnabled
-                          ? "Include (photos off)"
-                          : item.type === "photo"
-                            ? "Include photo"
-                            : "Approve"}
+                        {fieldFlag
+                          ? "Mark done"
+                          : item.type === "photo" && !businessPhotosEnabled
+                            ? "Include (photos off)"
+                            : item.type === "photo"
+                              ? "Include photo"
+                              : "Approve"}
                       </button>
-                      <button
-                        type="button"
-                        disabled={acting === item.id}
-                        onClick={() => void act(item.id, "needs_changes")}
-                        className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
-                      >
-                        Request changes
-                      </button>
+                      {!fieldFlag ? (
+                        <button
+                          type="button"
+                          disabled={acting === item.id}
+                          onClick={() => void act(item.id, "needs_changes")}
+                          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                        >
+                          Request changes
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         disabled={acting === item.id}
                         onClick={() => void act(item.id, "reject")}
                         className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
                       >
-                        {item.type === "photo" ? "Exclude photo" : "Reject"}
+                        {fieldFlag
+                          ? "Dismiss"
+                          : item.type === "photo"
+                            ? "Exclude photo"
+                            : "Reject"}
                       </button>
                     </>
                   )}

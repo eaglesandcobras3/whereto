@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import "leaflet/dist/leaflet.css";
 
@@ -11,14 +11,46 @@ type Props = {
   zoom?: number;
 };
 
+const LIGHT_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const TILE_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+function readDarkMode(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("dark");
+}
+
+function monoMarkerSvg(dark: boolean): string {
+  const fill = dark ? "#e4e4e7" : "#27272a";
+  const stroke = dark ? "#09090b" : "#fafafa";
+  return encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
+      <path fill="${fill}" stroke="${stroke}" stroke-width="2"
+        d="M14 1C7.4 1 2 6.4 2 13c0 9.1 12 25 12 25s12-15.9 12-25C26 6.4 20.6 1 14 1z"/>
+      <circle cx="14" cy="13" r="4.5" fill="${stroke}"/>
+    </svg>`,
+  );
+}
+
 /**
- * Multi-pin OpenStreetMap (Leaflet + OSM tiles). Client-only.
- * Renders nothing useful without markers — callers should gate empty lists.
+ * Monochrome OpenStreetMap (Leaflet + Carto light/dark tiles). Client-only.
  */
-export function BusinessesOpenStreetMap({ markers, className = "", zoom = 14 }: Props) {
+export function BusinessesOpenStreetMap({ markers, className = "", zoom = 17 }: Props) {
   const mapId = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [dark, setDark] = useState(false);
   const markersKey = markers.map((m) => `${m.id}:${m.lat}:${m.lng}`).join("|");
+
+  useEffect(() => {
+    setDark(readDarkMode());
+    const observer = new MutationObserver(() => setDark(readDarkMode()));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || markers.length === 0) return;
@@ -28,16 +60,13 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 14 }: 
 
     async function mount() {
       const L = (await import("leaflet")).default;
-
       if (cancelled || !containerRef.current) return;
 
-      // Fix default marker icon paths under bundlers.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      const icon = L.icon({
+        iconUrl: `data:image/svg+xml;charset=UTF-8,${monoMarkerSvg(dark)}`,
+        iconSize: [28, 40],
+        iconAnchor: [14, 40],
+        popupAnchor: [0, -36],
       });
 
       map = L.map(containerRef.current, {
@@ -45,27 +74,29 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 14 }: 
         attributionControl: true,
       });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
+      L.tileLayer(dark ? DARK_TILES : LIGHT_TILES, {
+        attribution: TILE_ATTR,
+        maxZoom: 20,
+        subdomains: "abcd",
       }).addTo(map);
 
       const bounds = L.latLngBounds([]);
       for (const m of markers) {
         const latlng = L.latLng(m.lat, m.lng);
         bounds.extend(latlng);
-        const popup = `<a href="/business/${encodeURIComponent(m.slug)}" class="font-medium text-teal-900 underline">${escapeHtml(m.title)}</a>`;
-        L.marker(latlng).addTo(map).bindPopup(popup);
+        const linkClass = dark
+          ? "font-medium text-zinc-100 underline"
+          : "font-medium text-zinc-900 underline";
+        const popup = `<a href="/business/${encodeURIComponent(m.slug)}" class="${linkClass}">${escapeHtml(m.title)}</a>`;
+        L.marker(latlng, { icon }).addTo(map).bindPopup(popup);
       }
 
       if (markers.length === 1) {
         map.setView([markers[0].lat, markers[0].lng], zoom);
       } else if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.18), { maxZoom: 15 });
+        map.fitBounds(bounds.pad(0.05), { maxZoom: Math.max(zoom, 16) });
       }
 
-      // Leaflet needs a layout pass after the container mounts.
       requestAnimationFrame(() => map?.invalidateSize());
     }
 
@@ -78,7 +109,7 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 14 }: 
     };
     // markersKey captures marker identity/coords without depending on array identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markersKey, zoom, mapId]);
+  }, [markersKey, zoom, mapId, dark]);
 
   if (markers.length === 0) return null;
 
@@ -86,7 +117,7 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 14 }: 
     <div
       ref={containerRef}
       id={`businesses-map-${mapId}`}
-      className={`h-full min-h-[16rem] w-full ${className}`}
+      className={`h-full min-h-[16rem] w-full bg-[var(--color-surface)] ${className}`}
       role="img"
       aria-label="Map of businesses"
     />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { FormEvent, useEffect, useState } from "react";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import {
@@ -11,6 +12,18 @@ import { RENTAL_LISTING_MAX_PHOTOS } from "@/lib/stays/constants";
 
 const field =
   "mt-1 w-full border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-teal-700";
+
+const MapLocationPickerClient = dynamic(
+  () => import("@/components/maps/MapLocationPicker").then((m) => m.MapLocationPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-56 items-center justify-center border border-zinc-200 bg-zinc-50 text-xs text-zinc-500 sm:h-64">
+        Loading map…
+      </div>
+    ),
+  },
+);
 
 type TownOption = { id: string; label: string; sublabel?: string };
 
@@ -23,6 +36,8 @@ export function ListARentalForm() {
   const [photoCount, setPhotoCount] = useState(0);
   const [hasMainPhoto, setHasMainPhoto] = useState(false);
   const [additionalCount, setAdditionalCount] = useState(0);
+  const [mapLat, setMapLat] = useState<number | null>(null);
+  const [mapLng, setMapLng] = useState<number | null>(null);
 
   useEffect(() => {
     void fetch("/api/rentals/form-options")
@@ -240,19 +255,24 @@ export function ListARentalForm() {
           Street address (optional)
           <input name="street_address" className={field} placeholder="123 Coastal Hwy" />
         </label>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <label className="block text-sm font-medium text-zinc-800">
-            ZIP / postal code
-            <input name="postal_code" className={field} placeholder="32459" />
-          </label>
-          <label className="block text-sm font-medium text-zinc-800">
-            Latitude (optional)
-            <input name="map_lat" type="number" step="any" className={field} />
-          </label>
-          <label className="block text-sm font-medium text-zinc-800">
-            Longitude (optional)
-            <input name="map_lng" type="number" step="any" className={field} />
-          </label>
+        <label className="block text-sm font-medium text-zinc-800">
+          ZIP / postal code
+          <input name="postal_code" className={field} placeholder="32459" />
+        </label>
+        <div>
+          <p className="text-sm font-medium text-zinc-800">Map pin (optional)</p>
+          <MapLocationPickerClient
+            className="mt-1"
+            lat={mapLat}
+            lng={mapLng}
+            latInputName="map_lat"
+            lngInputName="map_lng"
+            onChange={(lat, lng) => {
+              setMapLat(lat);
+              setMapLng(lng);
+            }}
+            helpText="Click the map to drop a pin guests can find, or drag to adjust. Leave blank if you prefer approximate town-only placement."
+          />
         </div>
         <label className="block text-sm font-medium text-zinc-800">
           Map / address precision

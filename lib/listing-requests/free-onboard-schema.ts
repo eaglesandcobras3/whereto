@@ -8,6 +8,8 @@ export const FREE_ONBOARD_EXCERPT_MAX = 160;
 export const FREE_ONBOARD_OVERVIEW_MAX = 500;
 export const FREE_ONBOARD_LOCATIONS_MAX = 10;
 export const FREE_ONBOARD_SEARCH_TAGS_MAX = 6;
+/** Max gallery photos a submitter can attach on free intake. */
+export const FREE_ONBOARD_PHOTOS_MAX = 8;
 /** Cap for a single suggested category/specialty phrase. */
 export const FREE_ONBOARD_SUGGESTED_CATEGORY_MAX = 80;
 /** Cap for generated search_keywords strings written on approve/submit. */
@@ -93,6 +95,27 @@ export const freeOnboardLocationSchema = z.object({
     .max(500)
     .optional()
     .transform((s) => (s ?? "").trim() || null),
+  map_lat: z
+    .number()
+    .min(-90)
+    .max(90)
+    .optional()
+    .nullable()
+    .transform((n) => (n == null || !Number.isFinite(n) ? null : n)),
+  map_lng: z
+    .number()
+    .min(-180)
+    .max(180)
+    .optional()
+    .nullable()
+    .transform((n) => (n == null || !Number.isFinite(n) ? null : n)),
+});
+
+export const freeOnboardPhotoSchema = z.object({
+  public_url: z.string().url().max(2000),
+  storage_path: z.string().trim().min(1).max(500),
+  /** Admin include/exclude before approve; defaults to include. */
+  include: z.boolean().optional().default(true),
 });
 
 export const freeOnboardBodySchema = z
@@ -166,6 +189,8 @@ export const freeOnboardBodySchema = z
      * Ignored for non-admin submissions.
      */
     main_image_url: z.union([z.string().url().max(2000), z.null()]).optional(),
+    /** Gallery photos uploaded during free intake (pending admin include/exclude). */
+    photos: z.array(freeOnboardPhotoSchema).max(FREE_ONBOARD_PHOTOS_MAX).default([]),
     marketing_opt_in: z.boolean().optional().default(false),
     target_business_id: z.string().uuid().optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),
@@ -247,12 +272,21 @@ export type FreeOnboardRemovalPayload = {
   submitter_notified?: boolean;
 };
 
+export type FreeOnboardPhotoPayload = {
+  public_url: string;
+  storage_path: string;
+  /** Admin include/exclude; omitted means include. */
+  include?: boolean;
+};
+
 export type FreeOnboardLocationPayload = {
   id: string;
   town_id: string;
   town_title?: string | null;
   town_slug?: string | null;
   address: string | null;
+  map_lat?: number | null;
+  map_lng?: number | null;
   status: "pending" | "created" | "skipped";
   resulting_business_id?: string | null;
   resulting_business_slug?: string | null;
@@ -290,6 +324,8 @@ export type FreeOnboardPayload = {
   marketing_opt_in: boolean;
   target_business_id: string | null;
   locations: FreeOnboardLocationPayload[];
+  /** Gallery photos from free intake; admin may set include false before approve. */
+  photos?: FreeOnboardPhotoPayload[];
   /** Admin-only hero/main image public URL. Omit when unchanged on update. */
   main_image_url?: string | null;
   /** True when an admin submitted without typing name/email (filled from session). */

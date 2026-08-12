@@ -5,6 +5,7 @@ import {
   isBusinessMapsEnabled,
   isBusinessPhotosEnabled,
   isCommunityTipsEnabled,
+  isFeedbackEnabled,
   isSeoImprovementsEnabled,
   isTownFactsEnabled,
   type FeatureFlags,
@@ -88,4 +89,20 @@ export function isBusinessMapsFeatureEnabledClient(flags: FeatureFlags): boolean
 export function useBusinessMapsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isBusinessMapsFeatureEnabledClient(flags);
+}
+
+function feedbackDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_FEEDBACK_ENABLED === "1"
+  );
+}
+
+export function isFeedbackFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isFeedbackEnabled(flags) || feedbackDevBypassEnabled();
+}
+
+export function useFeedbackFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isFeedbackFeatureEnabledClient(flags);
 }
