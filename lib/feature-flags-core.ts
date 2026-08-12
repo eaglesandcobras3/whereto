@@ -16,6 +16,7 @@ export const FEATURE_FLAG_KEYS = [
   "community_tips",
   "town_facts",
   "rentals",
+  "business_photos",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -34,6 +35,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   community_tips: false,
   town_facts: true,
   rentals: false,
+  business_photos: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -119,4 +121,12 @@ export function isTownFactsEnabled(flags: FeatureFlags): boolean {
 /** Vacation rentals marketplace (`/stays`, partner intake, admin rentals). */
 export function isRentalsEnabled(flags: FeatureFlags): boolean {
   return flags.rentals === true;
+}
+
+/**
+ * Business listing photos: admin main-image update, portal additional uploads,
+ * public profile gallery (requires writable `businesses.main_image_url` / `hero_image_url`).
+ */
+export function isBusinessPhotosEnabled(flags: FeatureFlags): boolean {
+  return flags.business_photos === true;
 }

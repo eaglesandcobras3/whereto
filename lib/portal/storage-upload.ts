@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const VARIANTS = { hero: 1600, card: 640, thumbnail: 320 } as const;
+/** Max longest edge for portal / rental / business photo uploads (WebP). */
+export const PORTAL_IMAGE_MAX_DIMENSION = 1600;
+
+const VARIANTS = { hero: PORTAL_IMAGE_MAX_DIMENSION, card: 640, thumbnail: 320 } as const;
 
 function sanitizeFileName(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9.\-_]/g, "-");
@@ -25,8 +28,14 @@ export async function uploadPortalImage(
   const candidateBuckets = ["whereto30a-media", "whereto-media", "cms-media", "business-images"] as const;
   let activeBucket: (typeof candidateBuckets)[number] = "whereto30a-media";
 
+  // Fit inside max×max so neither edge exceeds the limit (portrait or landscape).
   const transformed = await base
-    .resize({ width: VARIANTS.hero, withoutEnlargement: true })
+    .resize({
+      width: VARIANTS.hero,
+      height: VARIANTS.hero,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
     .webp({ quality: 78, effort: 4 })
     .toBuffer({ resolveWithObject: true });
 

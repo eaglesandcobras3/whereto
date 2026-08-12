@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { planDisplayName } from "@/lib/portal/entitlements";
+import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 
 type Business = {
   id: string;
@@ -41,6 +42,7 @@ function reviewLabel(item: ReviewItem): string {
 }
 
 export function PortalDashboardClient() {
+  const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [pending, setPending] = useState<ReviewItem[]>([]);
   const [recentDecisions, setRecentDecisions] = useState<ReviewItem[]>([]);
@@ -178,12 +180,14 @@ export function PortalDashboardClient() {
                     >
                       Edit listing
                     </Link>
-                    <Link
-                      href={`/portal/businesses/${encodeURIComponent(b.id)}/photos`}
-                      className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-surface-secondary)]"
-                    >
-                      Photos
-                    </Link>
+                    {businessPhotosEnabled ? (
+                      <Link
+                        href={`/portal/businesses/${encodeURIComponent(b.id)}/photos`}
+                        className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-surface-secondary)]"
+                      >
+                        Photos
+                      </Link>
+                    ) : null}
                     {b.role === "owner" ? (
                       <>
                         <Link

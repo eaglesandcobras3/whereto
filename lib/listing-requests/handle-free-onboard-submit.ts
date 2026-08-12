@@ -53,6 +53,8 @@ export async function handleFreeOnboardListingRequest(
   let submitterName = d.submitter_name.trim();
   let submitterEmail = d.submitter_email.trim();
   let submittedByAdmin = false;
+  /** undefined = do not touch image on approve; null = clear; string = set. */
+  let mainImageUrl: string | null | undefined = undefined;
 
   if (admin) {
     submittedByAdmin = true;
@@ -66,7 +68,9 @@ export async function handleFreeOnboardListingRequest(
       }
       submitterEmail = admin.email;
     }
-    // Listing photos temporarily disabled — do not accept main_image_url.
+    if (Object.prototype.hasOwnProperty.call(d, "main_image_url")) {
+      mainImageUrl = d.main_image_url ?? null;
+    }
   } else {
     if (!submitterName || submitterName.length < 1) {
       return NextResponse.json(
@@ -241,8 +245,7 @@ export async function handleFreeOnboardListingRequest(
     marketing_opt_in: submittedByAdmin ? false : d.marketing_opt_in,
     target_business_id: targetBusinessId,
     locations,
-    // Listing photos temporarily disabled (image URL columns are view aliases only).
-    main_image_url: null,
+    ...(mainImageUrl !== undefined ? { main_image_url: mainImageUrl } : {}),
     submitted_by_admin: submittedByAdmin,
   };
 

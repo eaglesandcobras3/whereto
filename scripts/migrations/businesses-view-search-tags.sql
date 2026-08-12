@@ -1,14 +1,17 @@
--- Recreate businesses_view so new `businesses` columns (e.g. search_tags) are exposed.
+-- Recreate businesses_view so new `businesses` columns (e.g. search_tags, overview,
+-- main_image_url / hero_image_url) are exposed via `b.*`.
 -- PostgreSQL views with `SELECT b.*` do not pick up columns added after CREATE VIEW.
--- Safe to re-run: idempotent DROP + CREATE with the same join shape as 20260604130100.
+-- Safe to re-run: idempotent DROP + CREATE.
+--
+-- Note: do not re-add `resolve_directus_file_url(...) AS main_image_url/hero_image_url`
+-- once those columns exist on `businesses` (duplicate column names). Prefer the table
+-- columns; see businesses-external-image-urls.sql for ADD + backfill.
 
 DROP VIEW IF EXISTS public.businesses_view;
 
 CREATE VIEW public.businesses_view AS
 SELECT
   b.*,
-  resolve_directus_file_url(b.main_image) AS main_image_url,
-  resolve_directus_file_url(b.hero_image) AS hero_image_url,
   sc.slug AS service_category_slug,
   sc.title AS service_category_title
 FROM public.businesses b
