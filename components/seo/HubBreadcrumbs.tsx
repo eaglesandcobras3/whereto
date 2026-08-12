@@ -39,7 +39,7 @@ export function HubBreadcrumbs({ items, analyticsCategory = "hub_breadcrumb" }: 
                   category: analyticsCategory,
                   label: item.name.toLowerCase().replace(/\s+/g, "_"),
                 })}
-                className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
+                className="font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
               >
                 {item.name}
               </Link>

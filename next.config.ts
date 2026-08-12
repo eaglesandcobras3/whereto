@@ -96,9 +96,14 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        // Taxonomy index merged into businesses hub; rollup pages stay at /categories/[slug].
+        // Taxonomy index merged into businesses hub; rollup + leaf pages live at /businesses/[slug].
         source: "/categories",
         destination: "/businesses",
+        permanent: true,
+      },
+      {
+        source: "/categories/:slug",
+        destination: "/businesses/:slug",
         permanent: true,
       },
       {

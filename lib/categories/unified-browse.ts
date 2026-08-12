@@ -201,7 +201,7 @@ export function unifiedRollupFromPublicSegment(segment: string): string | null {
 }
 
 export function unifiedRollupHubPath(rollupSlug: string): string {
-  return `/categories/${unifiedRollupPublicSegment(rollupSlug)}`;
+  return `/businesses/${unifiedRollupPublicSegment(rollupSlug)}`;
 }
 
 export function browseSectionIcon(sectionId: string): string {

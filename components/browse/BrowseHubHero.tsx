@@ -8,6 +8,8 @@ type Props = {
   collapsibleDescription?: string;
   eyebrow?: string;
   meta?: ReactNode;
+  /** Optional trail above the eyebrow (e.g. Home / Businesses / Bars). */
+  breadcrumbs?: ReactNode;
   children?: ReactNode;
   className?: string;
 };
@@ -18,14 +20,17 @@ export function BrowseHubHero({
   collapsibleDescription,
   eyebrow = "30A · South Walton, Florida",
   meta,
+  breadcrumbs,
   children,
   className,
 }: Props) {
   return (
     <div className={cn("coastal-hero border-b border-[var(--color-border)]", className)}>
       <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
+        {breadcrumbs}
         <header className="max-w-3xl space-y-3">
-          <p className="text-eyebrow">{eyebrow}</p>
+          {children}
+          {eyebrow ? <p className="text-eyebrow">{eyebrow}</p> : null}
           <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
             {title}
           </h1>
@@ -39,7 +44,6 @@ export function BrowseHubHero({
             />
           ) : null}
           {meta ? <div className="text-sm text-[var(--color-text-tertiary)]">{meta}</div> : null}
-          {children}
         </header>
       </div>
     </div>

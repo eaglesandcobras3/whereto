@@ -26,7 +26,7 @@ export {
 /** Paths excluded from sitemap (still live on site, crawlable via links). */
 export const SITEMAP_EXCLUDED_PATH_PREFIXES = ["/business/"] as const;
 
-/** Rolled-up storefront and service browse groups (e.g. `/categories/restaurants-and-bars`). */
+/** Rolled-up storefront and service browse groups (e.g. `/businesses/restaurants-and-bars`). */
 export const SITEMAP_BROWSE_GROUP_ENTRY = {
   changeFreq: "weekly" as const,
   priority: 0.72,

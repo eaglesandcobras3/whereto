@@ -28,7 +28,7 @@ export function parseSitemapLocs(xml: string): string[] {
 }
 
 export function isSitemapBrowseGroupPath(pathname: string): boolean {
-  if (!pathname.startsWith("/categories/")) return false;
+  if (!pathname.startsWith("/businesses/")) return false;
   const segment = pathname.split("/")[2] ?? "";
   return (
     businessBrowseGroupFromPublicSegment(segment) !== null ||
@@ -123,19 +123,17 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
   if (!paths.some((p) => isCategoryHubPublicPath(p))) {
     violations.push({
       rule: "category-pages",
-      detail: "Expected at least one category hub (e.g. /restaurants)",
+      detail: "Expected at least one category hub (e.g. /businesses/restaurants)",
     });
   }
 
   for (const path of paths) {
     if (!path.startsWith("/categories/") || path === "/categories") continue;
-    if (!isSitemapBrowseGroupPath(path)) {
-      violations.push({
-        rule: "no-legacy-category-urls",
-        url: `${base}${path}`,
-        detail: `Legacy /categories/[slug] URLs must not appear in sitemap: ${path}`,
-      });
-    }
+    violations.push({
+      rule: "no-legacy-category-urls",
+      url: `${base}${path}`,
+      detail: `Legacy /categories/[slug] URLs must not appear in sitemap: ${path}`,
+    });
   }
 
   for (const path of paths) {

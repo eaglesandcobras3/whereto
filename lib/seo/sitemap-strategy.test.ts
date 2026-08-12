@@ -61,8 +61,8 @@ describe("sitemap strategy", () => {
 
   it("includes rollup browse groups (unified + legacy)", () => {
     const allPaths = paths(sample);
-    expect(allPaths).toContain("/categories/food-and-drink");
-    expect(allPaths).toContain("/categories/restaurants-and-bars");
+    expect(allPaths).toContain("/businesses/food-and-drink");
+    expect(allPaths).toContain("/businesses/restaurants-and-bars");
     expect(allPaths).not.toContain("/services/home-trades");
   });
 
@@ -71,7 +71,7 @@ describe("sitemap strategy", () => {
     expect(allPaths).toContain("/town/rosemary-beach");
     expect(allPaths).toContain("/town/seaside");
     expect(allPaths).toContain("/area/rosemary-beach-town-center");
-    expect(allPaths).toContain("/restaurants");
+    expect(allPaths).toContain("/businesses/restaurants");
     expect(allPaths).toContain("/guide/best-coffee-30a");
     expect(allPaths).not.toContain("/guide/rosemary-beach");
   });
@@ -86,9 +86,9 @@ describe("sitemap strategy", () => {
       categories: [{ slug: "services" }, { slug: "restaurants" }],
     });
     const allPaths = paths(vendorAndStorefront);
-    expect(categoryHubPath("services")).toBe("/service-businesses");
+    expect(categoryHubPath("services")).toBe("/businesses/service-businesses");
     expect(allPaths).toContain("/businesses");
-    expect(allPaths).toContain("/service-businesses");
+    expect(allPaths).toContain("/businesses/service-businesses");
     expect(allPaths).not.toContain("/services");
     expect(allPaths).not.toContain("/categories/services");
     expect(allPaths).not.toContain("/services-on-30a");
@@ -108,7 +108,7 @@ describe("sitemap strategy", () => {
     expect(byPath.get("/towns")).toBe(0.9);
     expect(byPath.get("/town/rosemary-beach")).toBe(0.85);
     expect(byPath.get(PRIMARY_EDITORIAL_GUIDE_PATH)).toBe(0.8);
-    expect(byPath.get("/restaurants")).toBe(0.75);
+    expect(byPath.get("/businesses/restaurants")).toBe(0.75);
     expect(byPath.get("/area/rosemary-beach-town-center")).toBe(0.7);
   });
 

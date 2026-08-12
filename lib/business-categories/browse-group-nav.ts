@@ -5,7 +5,7 @@ import {
   type BusinessCategoryGroupSlug,
 } from "@/lib/business-categories/groups";
 
-export const BUSINESS_BROWSE_HUB_PATH = "/categories" as const;
+export const BUSINESS_BROWSE_HUB_PATH = "/businesses" as const;
 
 export type BusinessBrowseGroupNavItem = {
   slug: BusinessCategoryGroupSlug;

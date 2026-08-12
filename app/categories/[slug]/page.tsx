@@ -1,50 +1,27 @@
-import { notFound, permanentRedirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { loadCategory } from "@/lib/data/category-hub";
-import { buildCategoryHubMetadata } from "@/lib/data/category-hub";
 import {
   businessBrowseGroupFromPublicSegment,
+  businessBrowseGroupHubPath,
   businessBrowseGroupPublicSegment,
 } from "@/lib/business-categories/browse-group-nav";
 import { BUSINESS_CATEGORY_GROUP_SLUGS } from "@/lib/business-categories/groups";
 import {
-  buildBrowseGroupHubMetadata,
-  loadBrowseGroupHubPage,
-} from "@/lib/data/browse-group-hub";
-import { BrowseGroupHubView } from "@/components/browse/BrowseGroupHubView";
-import {
   listUnifiedRollupOrder,
   unifiedRollupFromPublicSegment,
+  unifiedRollupHubPath,
   unifiedRollupPublicSegment,
 } from "@/lib/categories/unified-browse";
-import { browseSectionIcon } from "@/lib/categories/unified-browse";
-import { listStorefrontMapMarkersForBusinessIds } from "@/lib/data/business-map-markers";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
-import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
+import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 
 export const revalidate = 21600;
 
 type Props = { params: Promise<{ slug: string }> };
 
-async function mapMarkersForHub(
-  businesses: { id: string; is_storefront: boolean }[],
-  hubSlug: string,
-): Promise<BusinessMapMarker[]> {
-  const flags = await getAllFeatureFlags();
-  if (!isBusinessMapsFeatureEnabled(flags)) return [];
-  const storefrontIds = businesses.filter((b) => b.is_storefront).map((b) => b.id);
-  if (storefrontIds.length === 0) return [];
-  try {
-    return await listStorefrontMapMarkersForBusinessIds(storefrontIds, {
-      defaultIcon: browseSectionIcon(hubSlug),
-    });
-  } catch {
-    return [];
-  }
-}
-
+/** Keep old `/categories/[slug]` URLs generating so redirects stay warm. */
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   const legacy = BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => ({
     slug: businessBrowseGroupPublicSegment(slug),
@@ -62,43 +39,25 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return out;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug: raw } = await params;
-  const rollupSlug = unifiedRollupFromPublicSegment(raw);
-  if (rollupSlug) return buildBrowseGroupHubMetadata(rollupSlug);
-
-  const groupSlug = businessBrowseGroupFromPublicSegment(raw);
-  if (groupSlug) return buildBrowseGroupHubMetadata(groupSlug);
-
-  const slug = normalizeBusinessCategorySlug(raw) ?? raw.trim().toLowerCase();
-  if (!slug) return { title: "Category" };
-  const cat = await loadCategory(slug);
-  if (!cat) return { title: "Category" };
-  return buildCategoryHubMetadata(slug);
+export async function generateMetadata(): Promise<Metadata> {
+  return { robots: { index: false, follow: true } };
 }
 
-export default async function CategoryOrBrowseGroupPage({ params }: Props) {
+/** Legacy `/categories/[slug]` → `/businesses/[slug]` (308). */
+export default async function LegacyCategoriesRedirectPage({ params }: Props) {
   const { slug: raw } = await params;
+  const segment = normalizeUrlSegment(raw) || raw.trim().toLowerCase();
+  if (!segment) permanentRedirect("/businesses");
 
-  const rollupSlug = unifiedRollupFromPublicSegment(raw);
-  if (rollupSlug) {
-    const hub = await loadBrowseGroupHubPage(rollupSlug, "all");
-    if (!hub) notFound();
-    const mapMarkers = await mapMarkersForHub(hub.businesses, rollupSlug);
-    return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
-  }
+  const rollupSlug = unifiedRollupFromPublicSegment(segment);
+  if (rollupSlug) permanentRedirect(unifiedRollupHubPath(rollupSlug));
 
-  const groupSlug = businessBrowseGroupFromPublicSegment(raw);
-  if (groupSlug) {
-    const hub = await loadBrowseGroupHubPage(groupSlug, "all");
-    if (!hub) notFound();
-    const mapMarkers = await mapMarkersForHub(hub.businesses, groupSlug);
-    return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
-  }
+  const groupSlug = businessBrowseGroupFromPublicSegment(segment);
+  if (groupSlug) permanentRedirect(businessBrowseGroupHubPath(groupSlug));
 
-  const slug = normalizeBusinessCategorySlug(raw) ?? raw.trim().toLowerCase();
-  if (!slug) notFound();
+  const slug = normalizeBusinessCategorySlug(segment) ?? segment;
   const cat = await loadCategory(slug);
-  if (!cat) notFound();
-  permanentRedirect(categoryHubPath(cat.slug));
+  if (cat) permanentRedirect(categoryHubPath(cat.slug));
+
+  permanentRedirect(`/businesses/${segment}`);
 }

@@ -15,10 +15,12 @@ import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-di
 import {
   categoryDbSlugFromLegacyOn30aSegment,
   categoryHubPath,
+  isLegacyRootCategorySegment,
 } from "@/lib/routes/category-hub-path";
 import { businessBrowseGroupFromPublicSegment } from "@/lib/business-categories/browse-group-nav";
-import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
+import { unifiedRollupFromPublicSegment } from "@/lib/categories/unified-browse";
 import { isPortalProtectedPath, portalLoginNextPath } from "@/lib/portal/portal-paths";
+import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 
 function pathnameNeedsFeatureFlags(pathname: string): boolean {
   if (pathname === "/ask" || pathname.startsWith("/ask/")) return true;
@@ -44,7 +46,7 @@ function pathnameNeedsFeatureFlags(pathname: string): boolean {
   return false;
 }
 
-/** Legacy `/*-on-30a` category URLs → short canonical paths (e.g. `/restaurants`). */
+/** Legacy `/*-on-30a` category URLs → `/businesses/...`. */
 function maybeRedirectLegacyCategoryOn30a(request: NextRequest): NextResponse | null {
   const segment = request.nextUrl.pathname.replace(/^\//, "").split("/")[0] ?? "";
   const dbSlug = categoryDbSlugFromLegacyOn30aSegment(segment);
@@ -54,15 +56,31 @@ function maybeRedirectLegacyCategoryOn30a(request: NextRequest): NextResponse | 
   return NextResponse.redirect(new URL(categoryHubPath(dbSlug), request.url), 308);
 }
 
-/** `/categories/[slug]` → canonical category hub (e.g. `/restaurants`) for granular slugs only. */
+/** `/categories/[slug]` → `/businesses/[slug]` (rollups + leaves). */
 function maybeRedirectLegacyCategory(request: NextRequest): NextResponse | null {
   const match = request.nextUrl.pathname.match(/^\/categories\/([^/]+)\/?$/);
   if (!match) return null;
-  const segment = match[1] ?? "";
-  if (businessBrowseGroupFromPublicSegment(segment)) return null;
-  const slug = normalizeBusinessCategorySlug(segment);
-  if (!slug) return null;
-  return NextResponse.redirect(new URL(categoryHubPath(slug), request.url), 308);
+  const segment = (match[1] ?? "").trim().toLowerCase();
+  if (!segment) {
+    return NextResponse.redirect(new URL("/businesses", request.url), 308);
+  }
+  return NextResponse.redirect(new URL(`/businesses/${segment}`, request.url), 308);
+}
+
+/** Root `/bars` (etc.) → `/businesses/bars` for former category hub URLs. */
+function maybeRedirectRootCategoryHub(request: NextRequest): NextResponse | null {
+  const parts = request.nextUrl.pathname.split("/").filter(Boolean);
+  if (parts.length !== 1) return null;
+  const segment = parts[0]!.toLowerCase();
+  if (isReservedRootSlug(segment)) return null;
+  if (
+    isLegacyRootCategorySegment(segment) ||
+    businessBrowseGroupFromPublicSegment(segment) ||
+    unifiedRollupFromPublicSegment(segment)
+  ) {
+    return NextResponse.redirect(new URL(`/businesses/${segment}`, request.url), 308);
+  }
+  return null;
 }
 
 /** Server-side redirects for legacy /search URLs — avoids 200 HTML + client meta refresh. */
@@ -136,6 +154,9 @@ export async function middleware(request: NextRequest) {
 
   const legacyCategoryRedirect = maybeRedirectLegacyCategory(request);
   if (legacyCategoryRedirect) return legacyCategoryRedirect;
+
+  const rootCategoryRedirect = maybeRedirectRootCategoryHub(request);
+  if (rootCategoryRedirect) return rootCategoryRedirect;
 
   const searchRedirect = maybeRedirectSearch(request);
   if (searchRedirect) return searchRedirect;

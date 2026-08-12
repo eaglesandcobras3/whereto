@@ -125,14 +125,14 @@ describe("scoreFromInput guide / category", () => {
       title: "Restaurants",
       excerpt: "Find the best restaurants on 30A by town, from casual brunch to date-night dinners.",
       status: "published",
-      public_path: "/restaurants",
+      public_path: "/businesses/restaurants",
       has_audit_metadata: true,
       listing_count: 40,
       town_coverage_count: 8,
       has_editorial_block: true,
     };
     const result = scoreFromInput(input);
-    expect(result.path).toBe("/restaurants");
+    expect(result.path).toBe("/businesses/restaurants");
     expect(result.indexReady).toBe(true);
   });
 });

@@ -1,5 +1,8 @@
 import { normalizeBusinessCategorySlug } from "@/lib/search/category-slugs";
 
+/** Canonical prefix for category / browse-group hubs. */
+export const CATEGORY_HUB_BASE = "/businesses" as const;
+
 /** DB `business_categories.slug` → public URL segment (no leading slash). */
 export const CATEGORY_HUB_PUBLIC_SEGMENT: Record<string, string> = {
   restaurants: "restaurants",
@@ -37,12 +40,12 @@ function dbSlugToPublicSegment(dbSlug: string): string {
   return CATEGORY_HUB_PUBLIC_SEGMENT[key] ?? key.replace(/_/g, "-");
 }
 
-/** Canonical indexable path for a category hub (e.g. `/restaurants`). */
+/** Canonical indexable path for a category hub (e.g. `/businesses/restaurants`). */
 export function categoryHubPath(dbSlug: string): string {
-  return `/${dbSlugToPublicSegment(dbSlug)}`;
+  return `${CATEGORY_HUB_BASE}/${dbSlugToPublicSegment(dbSlug)}`;
 }
 
-/** Resolve a URL segment to a DB category slug, or null if not a category hub path. */
+/** Resolve a URL segment to a DB category slug, or null if not a mapped category hub path. */
 export function categoryDbSlugFromPublicPath(segment: string): string | null {
   const norm = segment.trim().toLowerCase();
   if (!norm) return null;
@@ -85,12 +88,28 @@ export function legacyCategoryPath(dbSlug: string): string {
   return `/categories/${key}`;
 }
 
+/** True for `/businesses/{segment}` category hubs (mapped or hyphenated leaf candidates). */
 export function isCategoryHubPublicPath(pathname: string): boolean {
-  const segment = pathname.replace(/^\//, "").split("/")[0]?.toLowerCase() ?? "";
-  return categoryDbSlugFromPublicPath(segment) !== null;
+  const parts = pathname.replace(/^\//, "").split("/").filter(Boolean);
+  if (parts.length !== 2 || parts[0] !== "businesses") return false;
+  const segment = parts[1]!.toLowerCase();
+  return (
+    categoryDbSlugFromPublicPath(segment) !== null ||
+    categoryDbSlugCandidatesFromPublicPath(segment).length > 0
+  );
 }
 
 export function isLegacyCategoryOn30aPath(pathname: string): boolean {
   const segment = pathname.replace(/^\//, "").split("/")[0]?.toLowerCase() ?? "";
   return categoryDbSlugFromLegacyOn30aSegment(segment) !== null;
+}
+
+/** Root single-segment paths that used to be category hubs (for 308 → `/businesses/...`). */
+export function isLegacyRootCategorySegment(segment: string): boolean {
+  const norm = segment.trim().toLowerCase();
+  if (!norm || norm.includes("/")) return false;
+  return (
+    ALL_CATEGORY_HUB_PUBLIC_SEGMENTS.includes(norm) ||
+    categoryDbSlugFromPublicPath(norm) !== null
+  );
 }

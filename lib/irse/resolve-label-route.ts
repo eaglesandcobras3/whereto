@@ -188,8 +188,11 @@ export function resolveLabelRoute(
   // Explicit IRSE paths first
   const direct = parseLabelRoute(pathname);
   if (direct) {
-    // /categories/X → prefer published category slug normalization
-    if (direct.kind === "category" && pathname.startsWith("/categories/")) {
+    // /categories/X or /businesses/X → prefer published leaf category slug normalization
+    if (
+      direct.kind === "category" &&
+      (pathname.startsWith("/categories/") || pathname.startsWith("/businesses/"))
+    ) {
       const resolved = resolveCategorySlug(direct.slug, lookup);
       if (resolved) {
         return {
@@ -198,8 +201,12 @@ export function resolveLabelRoute(
             slug: resolved,
             path: categoryHubPath(resolved),
           },
-          via: pathname !== categoryHubPath(resolved) ? `categories alias → ${resolved}` : undefined,
+          via: pathname !== categoryHubPath(resolved) ? `category alias → ${resolved}` : undefined,
         };
+      }
+      // Rollup / browse-group hubs live under /businesses without a leaf category row.
+      if (pathname.startsWith("/businesses/")) {
+        return { route: direct };
       }
       return null;
     }

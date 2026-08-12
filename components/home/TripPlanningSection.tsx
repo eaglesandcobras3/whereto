@@ -25,7 +25,7 @@ const PLANNING_LINKS = [
     icon: "location_city",
   },
   {
-    href: "/restaurants",
+    href: "/businesses/restaurants",
     label: "Restaurants on 30A",
     description: "Best places to eat by town, from brunch to date night.",
     icon: "restaurant",

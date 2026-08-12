@@ -13,25 +13,25 @@ const CATEGORY_EDITORIAL: Record<string, EditorialBlock[]> = {
     {
       title: "Breakfast & brunch",
       description: "Start the day at local cafes and brunch spots before the beach crowds arrive.",
-      href: "/restaurants",
+      href: "/businesses/restaurants",
       icon: "free_breakfast",
     },
     {
       title: "Waterfront dining",
       description: "Gulf views and sunset dinners — compare options by town along the corridor.",
-      href: "/restaurants",
+      href: "/businesses/restaurants",
       icon: "water",
     },
     {
       title: "Seafood & casual",
       description: "Fresh catch, tacos, and laid-back spots that define a 30A vacation week.",
-      href: "/restaurants",
+      href: "/businesses/restaurants",
       icon: "set_meal",
     },
     {
       title: "Date night",
       description: "Upscale reservations in Rosemary, Alys, and Seaside when you want a slower evening.",
-      href: "/restaurants",
+      href: "/businesses/restaurants",
       icon: "wine_bar",
     },
   ],
@@ -39,7 +39,7 @@ const CATEGORY_EDITORIAL: Record<string, EditorialBlock[]> = {
     {
       title: "Boutiques & gifts",
       description: "Independent shops for resort wear, home goods, and souvenirs you will actually use.",
-      href: "/shopping",
+      href: "/businesses/shopping",
       icon: "storefront",
     },
     {
@@ -51,7 +51,7 @@ const CATEGORY_EDITORIAL: Record<string, EditorialBlock[]> = {
     {
       title: "Resort retail",
       description: "Convenience shopping tied to major communities and beach rentals.",
-      href: "/shopping",
+      href: "/businesses/shopping",
       icon: "shopping_bag",
     },
   ],

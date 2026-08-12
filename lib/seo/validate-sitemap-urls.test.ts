@@ -33,7 +33,7 @@ describe("validateSitemapStructure", () => {
     expect(violations.some((v) => v.rule === "no-business-urls")).toBe(true);
   });
 
-  it("fails on legacy granular /categories/[slug] but allows rollup groups", () => {
+  it("fails on legacy /categories/[slug] in sitemap", () => {
     const entries = buildSitemapEntries({
       base: BASE,
       now: new Date(),
@@ -63,7 +63,7 @@ describe("validateSitemapStructure", () => {
       `${BASE}/businesses`,
       `${BASE}/town/seaside`,
       `${BASE}/area/x`,
-      `${BASE}/restaurants`,
+      `${BASE}/businesses/restaurants`,
     ]);
     expect(violations.some((v) => v.rule === "no-standalone-guide")).toBe(true);
   });
@@ -76,7 +76,7 @@ describe("validateSitemapStructure", () => {
       `${BASE}/businesses`,
       `${BASE}/town/seaside`,
       `${BASE}/area/x`,
-      `${BASE}/restaurants`,
+      `${BASE}/businesses/restaurants`,
     ]);
     expect(violations.some((v) => v.rule === "guides-hub")).toBe(false);
     expect(violations.some((v) => v.rule === "primary-editorial-guide")).toBe(false);

@@ -8,18 +8,18 @@ import {
 } from "@/lib/routes/category-hub-path";
 
 describe("categoryHubPath", () => {
-  it("uses short canonical paths", () => {
-    expect(categoryHubPath("restaurants")).toBe("/restaurants");
-    expect(categoryHubPath("coffee_shops")).toBe("/coffee-shops");
-    expect(categoryHubPath("services")).toBe("/service-businesses");
+  it("uses /businesses/… canonical paths", () => {
+    expect(categoryHubPath("restaurants")).toBe("/businesses/restaurants");
+    expect(categoryHubPath("coffee_shops")).toBe("/businesses/coffee-shops");
+    expect(categoryHubPath("services")).toBe("/businesses/service-businesses");
   });
 
   it("normalizes aliases", () => {
-    expect(categoryHubPath("coffee")).toBe("/coffee-shops");
+    expect(categoryHubPath("coffee")).toBe("/businesses/coffee-shops");
   });
 
   it("falls back for unknown slugs", () => {
-    expect(categoryHubPath("pet_grooming")).toBe("/pet-grooming");
+    expect(categoryHubPath("pet_grooming")).toBe("/businesses/pet-grooming");
   });
 });
 

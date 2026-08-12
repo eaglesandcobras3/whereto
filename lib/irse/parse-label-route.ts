@@ -54,14 +54,22 @@ export function parseLabelRoute(raw: string): ParsedLabelRoute | null {
     return { kind: "area", slug: parts[1], path: `/area/${parts[1]}` };
   }
   if (head === "categories" && parts[1]) {
-    return { kind: "category", slug: parts[1], path: `/categories/${parts[1]}` };
+    return { kind: "category", slug: parts[1], path: `/businesses/${parts[1]}` };
+  }
+  if (head === "businesses" && parts[1] && parts.length === 2) {
+    const mapped = categoryDbSlugFromPublicPath(parts[1]);
+    return {
+      kind: "category",
+      slug: mapped ?? parts[1].replace(/-/g, "_"),
+      path: `/businesses/${parts[1]}`,
+    };
   }
 
-  // Category hubs: /restaurants, /coffee-shops, … (explicit map only)
+  // Legacy root category hubs: /restaurants, /coffee-shops, …
   if (parts.length === 1) {
     const dbSlug = categoryDbSlugFromPublicPath(head);
     if (dbSlug) {
-      return { kind: "category", slug: dbSlug, path: `/${head}` };
+      return { kind: "category", slug: dbSlug, path: `/businesses/${head}` };
     }
   }
 
@@ -78,7 +86,7 @@ export function parseKindSlugLabel(
   if (!isPageKind(kind) || !slug) return null;
   const path =
     kind === "category"
-      ? `/${slug.replace(/_/g, "-")}`
+      ? `/businesses/${slug.replace(/_/g, "-")}`
       : `/${kind}/${slug}`;
   return { kind, slug, path };
 }

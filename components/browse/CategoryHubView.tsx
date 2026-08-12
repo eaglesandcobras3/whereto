@@ -3,8 +3,9 @@ import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSect
 import { CategoryHubEditorial } from "@/components/browse/CategoryHubEditorial";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import {
-  generateBreadcrumbSchema,
   generateCollectionPageSchema,
   generateItemListSchema,
 } from "@/lib/seo/breadcrumb-schema";
@@ -15,6 +16,7 @@ import type {
   CategoryTownGroup,
 } from "@/lib/data/category-hub";
 import { partitionCategoryBusinessesByTown } from "@/lib/data/category-hub";
+import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { categoryHubIntro } from "@/lib/seo/page-intro-copy";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 
@@ -22,9 +24,15 @@ type Props = {
   cat: CategoryRow;
   townGroups: CategoryTownGroup[];
   businesses: CategoryBusinessRow[];
+  mapMarkers?: BusinessMapMarker[];
 };
 
-export function CategoryHubView({ cat, townGroups: _townGroups, businesses }: Props) {
+export function CategoryHubView({
+  cat,
+  townGroups: _townGroups,
+  businesses,
+  mapMarkers = [],
+}: Props) {
   const hubPath = categoryHubPath(cat.slug);
   const { townGroups, regional } = partitionCategoryBusinessesByTown(businesses);
   const townCount = townGroups.length;
@@ -37,12 +45,6 @@ export function CategoryHubView({ cat, townGroups: _townGroups, businesses }: Pr
     path: hubPath,
     description: intro,
   });
-
-  const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: "Home", url: "/" },
-    { name: "Businesses", url: "/businesses" },
-    { name: cat.title, url: hubPath },
-  ]);
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -81,10 +83,6 @@ export function CategoryHubView({ cat, townGroups: _townGroups, businesses }: Pr
       </SeoImprovementsGate>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
 
@@ -98,9 +96,27 @@ export function CategoryHubView({ cat, townGroups: _townGroups, businesses }: Pr
           }
           collapsibleDescription={intro}
           meta={<>{metaParts.join(" · ")}</>}
+          breadcrumbs={
+            <HubBreadcrumbs
+              items={[
+                { name: "Home", href: "/" },
+                { name: "Businesses", href: "/businesses" },
+                { name: cat.title, href: hubPath, current: true },
+              ]}
+              analyticsCategory="category_hub_breadcrumb"
+            />
+          }
         />
 
-        <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
+        <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+          {mapMarkers.length > 0 ? (
+            <BusinessMapSection
+              markers={mapMarkers}
+              title={`Map of ${cat.title}`}
+              description="Storefronts with a mapped location."
+            />
+          ) : null}
+
           <div className="min-w-0 space-y-8 sm:space-y-10">
             <CategoryHubTownSections
               townGroups={townGroups}

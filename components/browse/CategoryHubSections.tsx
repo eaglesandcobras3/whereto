@@ -28,7 +28,7 @@ type Props = {
 function sectionHubPath(slug: string): string {
   if (isUnifiedRollupSlug(slug)) return unifiedRollupHubPath(slug);
   if (isBusinessBrowseGroupSlug(slug)) return businessBrowseGroupHubPath(slug);
-  return `/categories/${slug.replace(/_/g, "-")}`;
+  return `/businesses/${slug.replace(/_/g, "-")}`;
 }
 
 function isValidSectionHash(value: string): boolean {

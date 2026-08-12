@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubLinkSections } from "@/components/browse/CategoryHubLinkSections";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { countCategoryHubBusinesses } from "@/lib/data/category-hub";
 import { loadCategoryHubLinkSections } from "@/lib/categories/load-unified-categories";
-import Link from "next/link";
 
 export const revalidate = 21600;
 
@@ -44,6 +45,15 @@ export default async function BusinessesHubPage() {
                 ? ` in ${sections.length} browse ${sections.length === 1 ? "group" : "groups"}`
                 : ""}
             </>
+          }
+          breadcrumbs={
+            <HubBreadcrumbs
+              items={[
+                { name: "Home", href: "/" },
+                { name: "Businesses", href: "/businesses", current: true },
+              ]}
+              analyticsCategory="businesses_hub_breadcrumb"
+            />
           }
         />
 

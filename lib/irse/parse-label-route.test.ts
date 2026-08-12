@@ -26,13 +26,20 @@ describe("parseLabelRoute", () => {
   });
 
   it("parses category hubs", () => {
+    expect(parseLabelRoute("/businesses/restaurants")).toMatchObject({
+      kind: "category",
+      slug: "restaurants",
+      path: "/businesses/restaurants",
+    });
+    expect(parseLabelRoute("/businesses/coffee-shops")).toMatchObject({
+      kind: "category",
+      slug: "coffee_shops",
+      path: "/businesses/coffee-shops",
+    });
     expect(parseLabelRoute("/restaurants")).toMatchObject({
       kind: "category",
       slug: "restaurants",
-    });
-    expect(parseLabelRoute("/coffee-shops")).toMatchObject({
-      kind: "category",
-      slug: "coffee_shops",
+      path: "/businesses/restaurants",
     });
   });
 

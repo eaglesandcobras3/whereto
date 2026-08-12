@@ -2,7 +2,8 @@ import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
-import { generateBreadcrumbSchema, generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
+import { generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
 import { businessBrowseGroupHubPath } from "@/lib/business-categories/browse-group-nav";
 import {
   isUnifiedRollupSlug,
@@ -27,12 +28,6 @@ export function BrowseGroupHubView({ hub, mapMarkers = [] }: Props) {
   const hubPath = hubPathFor(hub.slug);
   const { townGroups, regional } = partitionCategoryBusinessesByTown(hub.businesses);
   const townCount = townGroups.length;
-
-  const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: "Home", url: "/" },
-    { name: "Businesses", url: "/businesses" },
-    { name: hub.title, url: hubPath },
-  ]);
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -60,10 +55,6 @@ export function BrowseGroupHubView({ hub, mapMarkers = [] }: Props) {
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
 
@@ -77,6 +68,16 @@ export function BrowseGroupHubView({ hub, mapMarkers = [] }: Props) {
           }
           collapsibleDescription={`Browse ${hub.title.toLowerCase()} by town when there is a storefront, or under Regional for mobile and appointment-based providers. Confirm hours and availability with each business.`}
           meta={<>{metaParts.join(" · ")}</>}
+          breadcrumbs={
+            <HubBreadcrumbs
+              items={[
+                { name: "Home", href: "/" },
+                { name: "Businesses", href: "/businesses" },
+                { name: hub.title, href: hubPath, current: true },
+              ]}
+              analyticsCategory="browse_group_hub_breadcrumb"
+            />
+          }
         />
 
         <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
@@ -84,7 +85,7 @@ export function BrowseGroupHubView({ hub, mapMarkers = [] }: Props) {
             <BusinessMapSection
               markers={mapMarkers}
               title={`Map of ${hub.title}`}
-              description="Storefront businesses with a mapped location."
+              description="Storefronts with a mapped location."
             />
           ) : null}
 

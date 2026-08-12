@@ -16,7 +16,7 @@ describe("unified-browse", () => {
   });
 
   it("resolves rollup hub paths", () => {
-    expect(unifiedRollupHubPath("food_and_drink")).toBe("/categories/food-and-drink");
+    expect(unifiedRollupHubPath("food_and_drink")).toBe("/businesses/food-and-drink");
     expect(unifiedRollupFromPublicSegment("food-and-drink")).toBe("food_and_drink");
   });
 });
