@@ -106,6 +106,7 @@ export async function listPublishedRentalsForBusiness(
     .eq("business_id", businessId)
     .eq("status", "published")
     .eq("partner_status", "active")
+    .eq("partner_show_public_business_profile", true)
     .eq("is_hidden_from_search", false)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
@@ -143,13 +144,14 @@ export async function listPublishedRentalsForTownSlug(
 
 export async function getActivePartnerForBusiness(
   businessId: string,
-): Promise<{ id: string; status: string } | null> {
+): Promise<{ id: string; status: string; show_public_business_profile: boolean } | null> {
   const supabase = getServiceSupabase();
   const { data } = await supabase
     .from("rental_partner_profiles")
-    .select("id, status")
+    .select("id, status, show_public_business_profile")
     .eq("business_id", businessId)
+    .eq("show_public_business_profile", true)
     .in("status", ["active", "import_pending", "approved", "paused"])
     .maybeSingle();
-  return (data as { id: string; status: string } | null) ?? null;
+  return (data as { id: string; status: string; show_public_business_profile: boolean } | null) ?? null;
 }

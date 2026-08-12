@@ -5,8 +5,11 @@ import {
 } from "@/lib/stays/booking-url";
 import { isRentalIndexReady } from "@/lib/stays/eligibility";
 import { parseIcalBusyDates } from "@/lib/stays/adapters/ical";
+import { rentalPartnerApplicationSchema } from "@/lib/stays/partner-application-schema";
 import { parseRentalSearchParams } from "@/lib/stays/search-params";
+import { generateVacationRentalSchema } from "@/lib/stays/seo";
 import { slugifyRentalTitle } from "@/lib/stays/slug";
+import type { RentalPropertyView } from "@/lib/stays/types";
 
 describe("buildPartnerBookingUrl", () => {
   it("fills template placeholders", () => {
@@ -105,5 +108,72 @@ describe("search params", () => {
     expect(plan.hasFilters).toBe(true);
     expect(plan.townSlug).toBe("seaside");
     expect(plan.guests).toBe(4);
+  });
+});
+
+describe("partner application schema", () => {
+  const base = {
+    display_name: "Gulf Homes PM",
+    contact_name: "Alex Manager",
+    contact_email: "alex@example.com",
+    authority_attested: true,
+    content_rights_attested: true,
+  };
+
+  it("allows apply without a public business link", () => {
+    const parsed = rentalPartnerApplicationSchema.safeParse({
+      ...base,
+      link_public_business: false,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("requires business slug or id when linking a public profile", () => {
+    const parsed = rentalPartnerApplicationSchema.safeParse({
+      ...base,
+      link_public_business: true,
+    });
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe("vacation rental schema provider", () => {
+  const property = {
+    title: "Ocean Cottage",
+    description: "A calm stay near the beach.",
+    excerpt: null,
+    bedrooms: 3,
+    sleeps: 6,
+    town_title: "Seaside",
+    hero_image_url: null,
+    primary_image_url: null,
+    pricing_reliable: false,
+    starting_nightly_rate: null,
+    currency: "USD",
+    business_title: "Public Co",
+    business_website: "https://public.example.com",
+    partner_display_name: "Ops Brand",
+    partner_show_public_business_profile: false,
+  } as unknown as RentalPropertyView;
+
+  it("uses partner display name when public business is off", () => {
+    const schema = generateVacationRentalSchema(property, "https://example.com/stays/ocean");
+    expect(schema.provider).toEqual({
+      "@type": "Organization",
+      name: "Ops Brand",
+      url: undefined,
+    });
+  });
+
+  it("uses business title when public business is on", () => {
+    const schema = generateVacationRentalSchema(
+      { ...property, partner_show_public_business_profile: true },
+      "https://example.com/stays/ocean",
+    );
+    expect(schema.provider).toEqual({
+      "@type": "Organization",
+      name: "Public Co",
+      url: "https://public.example.com",
+    });
   });
 });

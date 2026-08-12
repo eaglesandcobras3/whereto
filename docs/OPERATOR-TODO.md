@@ -15,6 +15,7 @@ Direct-booking referral marketplace for vacation rentals (`/stays`), gated by Po
 ### Setup
 
 - [ ] Apply SQL in Supabase SQL editor: [scripts/migrations/rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql)
+- [ ] If rentals tables already exist, also apply [scripts/migrations/rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql) (makes `business_id` optional; public company profile is opt-in)
 - [ ] PostHog: create boolean flag `rentals` (default false); enable for internal cohort then gradual rollout
 - [ ] Dev bypass (optional): `RENTALS_ENABLED=1` when `NODE_ENV=development`
 - [ ] Confirm founding property-manager partners and PMS / booking URL hosts; set `booking_url_hosts` allowlists on partner profiles
@@ -473,6 +474,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-12 | Rentals: public PM company profile is **optional** — SQL [rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql); partner apply no longer requires listing a business first |
 | 2026-08-11 | Vacation rentals marketplace: PostHog `rentals` flag (default off); SQL [rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql); `/stays` ISR via Supabase (not Directus); manual admin inventory (no CSV); `/list-your-rentals`, `/admin/rentals`, booking redirect + referral clicks |
 | 2026-08-04 | Town at-a-glance: `town_facts` wins — removed hardcoded `seo_improvements` town planning fallback (`TownPlanningSections` / `town-planning.ts`); `town_facts` code default **on**; IRSE town scoring uses DB facts |
 | 2026-08-04 | `free_onboard` code default is now **on** (PostHog can still force off); owner-verified tooltip copy updated |
