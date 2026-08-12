@@ -129,7 +129,13 @@ describe("listing submission schema", () => {
   };
 
   it("accepts a complete public listing submission", () => {
-    const parsed = rentalListingSubmissionSchema.safeParse(base);
+    const parsed = rentalListingSubmissionSchema.safeParse({
+      ...base,
+      community_name: "Seagrove",
+      street_address: "123 Coastal Hwy",
+      postal_code: "32459",
+      location_precision: "approximate",
+    });
     expect(parsed.success).toBe(true);
   });
 

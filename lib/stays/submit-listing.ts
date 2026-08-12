@@ -1,5 +1,7 @@
 import "server-only";
 
+import { uploadPortalImage } from "@/lib/portal/storage-upload";
+import { RENTAL_LISTING_MAX_PHOTOS } from "@/lib/stays/constants";
 import type { RentalListingSubmission } from "@/lib/stays/listing-submission-schema";
 import { slugifyRentalTitle } from "@/lib/stays/slug";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -101,14 +103,30 @@ async function resolvePartnerForSubmission(
   return { partnerId: created.id as string, businessId: null, created: true };
 }
 
-export async function submitRentalListing(body: RentalListingSubmission): Promise<{
+export async function submitRentalListing(
+  body: RentalListingSubmission,
+  photos: File[] = [],
+): Promise<{
   propertyId: string;
   partnerId: string;
   slug: string;
   partnerCreated: boolean;
+  photoCount: number;
 }> {
   if (body._hp_company_website) {
     throw new Error("Rejected");
+  }
+
+  if (photos.length > RENTAL_LISTING_MAX_PHOTOS) {
+    throw new Error(`You can upload up to ${RENTAL_LISTING_MAX_PHOTOS} photos.`);
+  }
+  for (const file of photos) {
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Photos must be image files.");
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      throw new Error("Each photo must be under 12MB.");
+    }
   }
 
   const supabase = getServiceSupabase();
@@ -131,6 +149,12 @@ export async function submitRentalListing(body: RentalListingSubmission): Promis
       property_type: body.property_type,
       status: "pending_review",
       town_id: body.town_id,
+      community_name: body.community_name,
+      street_address: body.street_address,
+      postal_code: body.postal_code,
+      map_lat: body.map_lat ?? null,
+      map_lng: body.map_lng ?? null,
+      location_precision: body.location_precision,
       bedrooms: body.bedrooms,
       bathrooms: body.bathrooms,
       sleeps: body.sleeps,
@@ -151,6 +175,36 @@ export async function submitRentalListing(body: RentalListingSubmission): Promis
     .single();
   if (error) throw new Error(error.message);
 
+  const propertyId = property.id as string;
+  let heroFromUpload: string | null = null;
+  let photoCount = 0;
+
+  for (let i = 0; i < photos.length; i++) {
+    const file = photos[i]!;
+    const uploaded = await uploadPortalImage(
+      supabase,
+      file,
+      `rentals/${partnerId}/${propertyId}`,
+    );
+    const { error: imgErr } = await supabase.from("rental_images").insert({
+      property_id: propertyId,
+      storage_url: uploaded.publicUrl,
+      sort: i,
+      alt: body.title,
+      rights_confirmed: true,
+    });
+    if (imgErr) throw new Error(imgErr.message);
+    if (i === 0) heroFromUpload = uploaded.publicUrl;
+    photoCount += 1;
+  }
+
+  if (heroFromUpload && !body.hero_image_url) {
+    await supabase
+      .from("rental_properties")
+      .update({ hero_image_url: heroFromUpload, date_updated: now })
+      .eq("id", propertyId);
+  }
+
   await supabase
     .from("portal_review_items")
     .insert({
@@ -159,12 +213,14 @@ export async function submitRentalListing(body: RentalListingSubmission): Promis
       business_id: businessId,
       submitted_by: null,
       payload: {
-        property_id: property.id,
+        property_id: propertyId,
         partner_id: partnerId,
         slug,
         title: body.title,
         contact_email: body.contact_email,
         notes: body.notes,
+        photo_count: photoCount,
+        has_street_address: Boolean(body.street_address),
         source: "public_list_your_rentals",
       },
     })
@@ -173,9 +229,10 @@ export async function submitRentalListing(body: RentalListingSubmission): Promis
     });
 
   return {
-    propertyId: property.id as string,
+    propertyId,
     partnerId,
     slug,
     partnerCreated,
+    photoCount,
   };
 }
