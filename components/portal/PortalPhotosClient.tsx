@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlanEntitlements } from "@/lib/portal/entitlements";
 import { PlanGate } from "@/components/portal/PlanGate";
+import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 
 type PhotoRow = {
   id: string;
@@ -20,12 +21,13 @@ type Props = {
 };
 
 export function PortalPhotosClient({ businessId, businessTitle }: Props) {
+  const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [photos, setPhotos] = useState<PhotoRow[]>([]);
   const [entitlements, setEntitlements] = useState<PlanEntitlements | null>(null);
-  const [isHero, setIsHero] = useState(false);
+  const [uploadKind, setUploadKind] = useState<"main" | "additional">("additional");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
@@ -46,11 +48,16 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
   }, [businessId]);
 
   useEffect(() => {
+    if (!businessPhotosEnabled) {
+      setLoading(false);
+      return;
+    }
     queueMicrotask(() => load());
-  }, [load]);
+  }, [load, businessPhotosEnabled]);
 
   const activeCount = photos.filter((p) => p.status === "pending" || p.status === "approved").length;
   const atLimit = entitlements ? activeCount >= entitlements.max_photos : false;
+  const hasMain = photos.some((p) => p.is_hero && (p.status === "pending" || p.status === "approved"));
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +72,7 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
 
     const fd = new FormData();
     fd.set("file", file);
-    fd.set("is_hero", isHero ? "true" : "false");
+    fd.set("is_hero", uploadKind === "main" ? "true" : "false");
 
     const res = await fetch(`/api/portal/businesses/${encodeURIComponent(businessId)}/photos`, {
       method: "POST",
@@ -80,8 +87,27 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
     }
 
     if (fileRef.current) fileRef.current.value = "";
-    setIsHero(false);
+    setUploadKind("additional");
     load();
+  }
+
+  if (!businessPhotosEnabled) {
+    return (
+      <div>
+        <Link
+          href={`/portal/businesses/${encodeURIComponent(businessId)}`}
+          className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+        >
+          ← Edit listing
+        </Link>
+        <h1 className="font-headline mt-6 text-2xl font-semibold text-[var(--color-text-primary)]">
+          Photos for {businessTitle}
+        </h1>
+        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+          Business photo uploads are not enabled yet.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -105,7 +131,9 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
         Photos for {businessTitle}
       </h1>
       <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-        Uploaded photos are reviewed before they appear on your public listing.
+        Uploads are resized (max 1600px) and saved as WebP, then reviewed before they appear on your
+        public listing. Mark one photo as the <strong>main image</strong> — that&apos;s what shows
+        on discovery cards.
       </p>
 
       {entitlements ? (
@@ -127,10 +155,15 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
                 >
                   <div className="relative aspect-[4/3] bg-[var(--color-surface-secondary)]">
                     <Image src={p.public_url} alt="" fill className="object-cover" sizes="320px" />
+                    {p.is_hero ? (
+                      <span className="absolute left-2 top-2 bg-[var(--color-primary)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                        Main (card)
+                      </span>
+                    ) : null}
                   </div>
                   <div className="px-3 py-2 text-xs text-[var(--color-text-secondary)]">
                     <span className="capitalize">{p.status}</span>
-                    {p.is_hero ? " · hero" : ""}
+                    {p.is_hero ? " · main listing image" : " · additional"}
                   </div>
                 </li>
               ))}
@@ -157,14 +190,40 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
                   className="mt-1 block w-full text-sm"
                 />
               </div>
-              <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                <input
-                  type="checkbox"
-                  checked={isHero}
-                  onChange={(e) => setIsHero(e.target.checked)}
-                />
-                Use as main listing photo when approved
-              </label>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-[var(--color-text-secondary)]">
+                  Photo type
+                </legend>
+                <label className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
+                  <input
+                    type="radio"
+                    name="upload_kind"
+                    checked={uploadKind === "main"}
+                    onChange={() => setUploadKind("main")}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="font-medium text-[var(--color-text-primary)]">Main image</span>
+                    {" — "}shown on discovery cards
+                    {hasMain ? " (replaces the previous main when approved)" : ""}
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
+                  <input
+                    type="radio"
+                    name="upload_kind"
+                    checked={uploadKind === "additional"}
+                    onChange={() => setUploadKind("additional")}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="font-medium text-[var(--color-text-primary)]">
+                      Additional photo
+                    </span>
+                    {" — "}appears in the profile gallery
+                  </span>
+                </label>
+              </fieldset>
               <button
                 type="submit"
                 disabled={uploading}

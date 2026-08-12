@@ -34,10 +34,11 @@ import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
-import { getAllFeatureFlags, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessPhotosFeatureEnabled, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
 import { BusinessRentalPortfolio } from "@/components/business/BusinessRentalPortfolio";
+import { BusinessPhotoGallery } from "@/components/business/BusinessPhotoGallery";
 import {
   getActivePartnerForBusiness,
   listPublishedRentalsForBusiness,
@@ -299,6 +300,7 @@ export default async function BusinessPage({ params }: Props) {
   const flags = await getAllFeatureFlags();
   const freeOnboardEnabled = isFreeOnboardEnabled(flags);
   const rentalsEnabled = isRentalsFeatureEnabled(flags);
+  const businessPhotosEnabled = isBusinessPhotosFeatureEnabled(flags);
 
   const row = b as Record<string, unknown>;
   const rawSlug = row.slug;
@@ -316,6 +318,44 @@ export default async function BusinessPage({ params }: Props) {
     primaryCategoryId: (b.primary_category_id as string | null) ?? null,
     limit: 6,
   });
+
+  let galleryPhotos: Array<{ id: string; public_url: string; is_hero: boolean }> = [];
+  if (businessPhotosEnabled) {
+    try {
+      const supabase = getServiceSupabase();
+      const { data: photoRows } = await supabase
+        .from("business_photos")
+        .select("id, public_url, is_hero, sort_order, created_at")
+        .eq("business_id", businessId)
+        .eq("status", "approved")
+        .order("is_hero", { ascending: false })
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      galleryPhotos = (photoRows ?? [])
+        .map((p) => ({
+          id: String(p.id),
+          public_url: String(p.public_url),
+          is_hero: Boolean(p.is_hero),
+        }))
+        .filter((p) => p.public_url.startsWith("http"));
+
+      // Ensure the listing main image appears even if not yet in business_photos.
+      const listingHero = businessListingImageUrl(b.hero_image_url as string | null);
+      if (listingHero && !galleryPhotos.some((p) => p.public_url === listingHero)) {
+        galleryPhotos = [
+          { id: `listing-hero-${businessId}`, public_url: listingHero, is_hero: true },
+          ...galleryPhotos.map((p) => ({ ...p, is_hero: false })),
+        ];
+      } else if (listingHero) {
+        galleryPhotos = galleryPhotos.map((p) => ({
+          ...p,
+          is_hero: p.public_url === listingHero,
+        }));
+      }
+    } catch {
+      galleryPhotos = [];
+    }
+  }
 
   let rentalProperties: Awaited<ReturnType<typeof listPublishedRentalsForBusiness>> = [];
   let partnerStatus: string | null = null;
@@ -587,6 +627,12 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
             <div className="space-y-4">
+              {businessPhotosEnabled && galleryPhotos.length > 0 ? (
+                <BusinessPhotoGallery
+                  photos={galleryPhotos}
+                  businessName={b.name as string}
+                />
+              ) : null}
               {hasOverview ? (
                 <div className="space-y-4">
                   {overviewParagraphs.map((paragraph, index) => (

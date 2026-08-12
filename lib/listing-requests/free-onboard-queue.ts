@@ -23,6 +23,24 @@ function asRemovalPayload(raw: Record<string, unknown>): FreeOnboardRemovalPaylo
   return raw as unknown as FreeOnboardRemovalPayload;
 }
 
+/**
+ * Apply admin listing image fields only when the intake payload explicitly includes them.
+ * Omitted = leave existing image alone; null = clear; string = set main + hero URLs on `businesses`.
+ */
+function applyListingImageFields(
+  row: Record<string, unknown>,
+  payload: FreeOnboardPayload,
+): void {
+  if (!Object.prototype.hasOwnProperty.call(payload, "main_image_url")) return;
+  const url = payload.main_image_url ?? null;
+  row.main_image_url = url;
+  row.hero_image_url = url;
+  if (url) {
+    row.main_image = null;
+    row.hero_image = null;
+  }
+}
+
 /** Prefer generated keywords from listing signals; fall back to an existing value. */
 function resolveSearchKeywords(
   payload: FreeOnboardPayload,
@@ -278,8 +296,7 @@ export async function createFreeListingForLocation(
     seo_description: seoDescription,
     is_verified: shouldMarkVerifiedOnApprove(payload),
   };
-  // Listing photos temporarily disabled — businesses.main_image_url / hero_image_url
-  // are view aliases only; writing them breaks approve.
+  applyListingImageFields(insertRow, payload);
 
   const { data: created, error: createErr } = await supabase
     .from("businesses")
@@ -494,7 +511,7 @@ async function createFreeServiceListingWithoutTown(
     seo_description: seoDescription,
     is_verified: shouldMarkVerifiedOnApprove(payload),
   };
-  // Listing photos temporarily disabled — see createFreeListingForLocation.
+  applyListingImageFields(insertRow, payload);
 
   const { data: createdBiz, error: createErr } = await supabase
     .from("businesses")
@@ -612,7 +629,7 @@ export async function approveFreeUpdate(
   if (shouldMarkVerifiedOnApprove(payload)) {
     updates.is_verified = true;
   }
-  // Listing photos temporarily disabled — do not write main_image_url / hero_image_url.
+  applyListingImageFields(updates, payload);
 
   const { error: updateErr } = await supabase.from("businesses").update(updates).eq("id", businessId);
   if (updateErr) throw new Error(updateErr.message);

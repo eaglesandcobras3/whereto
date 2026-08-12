@@ -22,6 +22,7 @@ import {
   FREE_ONBOARD_SUGGESTED_CATEGORY_MAX,
   FREE_ONBOARD_TITLE_MAX,
 } from "@/lib/listing-requests/free-onboard-schema";
+import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
@@ -122,7 +123,12 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
-  // Listing photo upload temporarily disabled — approve cannot write image URL columns yet.
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  /** Prefill baseline — only send main_image_url when the admin changes the image. */
+  const [initialMainImageUrl, setInitialMainImageUrl] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageErr, setImageErr] = useState<string | null>(null);
+  const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
 
   const isUpdate = Boolean(prefill?.id);
   const showTypeahead = mode === "find" && findPhase === "searching";
@@ -141,6 +147,8 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setSuggestedCategory("");
     setIsStorefront(Boolean(b.is_storefront));
     setIsService(Boolean(b.is_service_business));
+    setMainImageUrl(b.main_image_url ?? null);
+    setInitialMainImageUrl(b.main_image_url ?? null);
     setLocations([
       {
         key: newLocationKey(),
@@ -392,6 +400,11 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       marketing_opt_in: isAdmin ? false : fd.get("marketing_opt_in") === "on",
       target_business_id: prefill?.id ?? null,
       target_business_slug: prefill?.slug ?? (mode === "slug" ? businessSlug : null) ?? null,
+      ...(isAdmin &&
+      businessPhotosEnabled &&
+      mainImageUrl !== initialMainImageUrl
+        ? { main_image_url: mainImageUrl }
+        : {}),
     };
 
     if (selectedTags.length + payload.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
@@ -654,6 +667,70 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
 
       {!findDecisionNeeded ? (
         <>
+      {isAdmin && businessPhotosEnabled ? (
+        <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
+          <div>
+            <p className={labelClass}>Main listing image (admin)</p>
+            <p className={helpClass}>
+              Used on discovery cards. Upload is resized to max 1600px and saved as WebP. Only sent
+              when you change or remove the image; applied when the request is approved.
+            </p>
+          </div>
+          {mainImageUrl ? (
+            <div className="flex flex-wrap items-start gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={mainImageUrl}
+                alt="Listing preview"
+                className="h-28 w-40 rounded-lg object-cover"
+              />
+              <button
+                type="button"
+                className="text-sm font-medium text-[var(--color-logo-navy)] underline-offset-2 hover:underline"
+                onClick={() => setMainImageUrl(null)}
+              >
+                Remove image
+              </button>
+            </div>
+          ) : null}
+          <input
+            type="file"
+            accept="image/*"
+            disabled={imageUploading}
+            className="block w-full text-sm text-[var(--color-text-secondary)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              void (async () => {
+                setImageErr(null);
+                setImageUploading(true);
+                try {
+                  const body = new FormData();
+                  body.set("file", file);
+                  body.set("folder", "free-onboard");
+                  const res = await fetch("/api/admin/media/upload", {
+                    method: "POST",
+                    body,
+                  });
+                  const j = (await res.json()) as { ok?: boolean; url?: string; error?: string };
+                  if (!res.ok || !j.url) {
+                    throw new Error(j.error ?? "Upload failed");
+                  }
+                  setMainImageUrl(j.url);
+                } catch (err) {
+                  setImageErr(err instanceof Error ? err.message : "Upload failed");
+                } finally {
+                  setImageUploading(false);
+                }
+              })();
+            }}
+          />
+          {imageUploading ? <p className={helpClass}>Uploading…</p> : null}
+          {imageErr ? <p className="text-sm text-red-600">{imageErr}</p> : null}
+        </div>
+      ) : null}
+
       <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
         <legend className={`${labelClass} px-1`}>How do customers work with you?</legend>
         <p className="text-xs text-[var(--color-text-tertiary)]">

@@ -334,8 +334,21 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, area planning blocks, category editorial blocks (town at-a-glance is `town_facts`) |
 | `community_tips` | Visitor text tips on business, town, area, and guide detail pages (optional stars); account management; admin moderation at `/admin/community-tips` |
 | `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**) |
+| `rentals` | Vacation rentals marketplace (`/stays`, listing intake, admin rentals); code default **off** |
+| `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
+
+### Business photos setup
+
+- [ ] Apply [scripts/migrations/businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql) (`main_image_url` / `hero_image_url` on **`businesses`**, recreate `businesses_view` without duplicate resolve aliases)
+- [ ] Apply [scripts/migrations/business-photos.sql](../scripts/migrations/business-photos.sql) if `business_photos` table is missing
+- [ ] PostHog: create boolean flag `business_photos` (default false); enable for internal cohort then gradual rollout
+- [ ] Local dev (optional): `BUSINESS_PHOTOS_ENABLED=1` and `NEXT_PUBLIC_BUSINESS_PHOTOS_ENABLED=1`
+- [ ] Confirm storage buckets allow public reads for `portal/{businessId}/…` and `admin/businesses/{id}/…` WebP uploads
+- [ ] Smoke-test: admin sets main image via `/admin/review` photo item or free-intake admin upload; portal member uploads additional photo; public `/business/[slug]` shows Photos section + lightbox
+
+**Write path reminder:** always update `public.businesses.main_image_url` / `hero_image_url` (table). Do **not** write image URLs through `businesses_view` (view is read-only / historically aliased Directus resolves).
 
 ### Town facts setup
 
@@ -479,6 +492,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-12 | PostHog `business_photos`: admin main-image update + portal additional photos (WebP max 1600px); public profile gallery + lightbox; SQL [businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql) + [business-photos.sql](../scripts/migrations/business-photos.sql). Writes target `businesses` table URL columns (not view aliases). Rentals listing form: remove hero URL fallback; main + additional photo fields. |
 | 2026-08-12 | Rentals listing form: **photo upload** + address fields (`street_address`, `postal_code`, community, lat/lng, precision); SQL [rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql). PMS/API sync still deferred (referral marketplace, not Airbnb clone) |
 | 2026-08-12 | Rentals: public **list a vacation rental** at `/list-your-rentals` (creates `pending_review` listing); partner-only form at `/list-your-rentals/partner`; admin create retained at `/admin/rentals` |
 | 2026-08-12 | Rentals: public PM company profile is **optional** — SQL [rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql); partner apply no longer requires listing a business first |

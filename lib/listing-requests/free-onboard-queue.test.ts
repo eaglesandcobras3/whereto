@@ -437,12 +437,9 @@ describe("approveFreeUpdate search_keywords", () => {
     expect(businessUpdate!.row.search_keywords).toBe("espresso, seaside coffee");
   });
 
-  it("does not write image URL columns even when main_image_url is in the payload", async () => {
+  it("does not touch image columns when main_image_url is omitted", async () => {
     const { supabase, updates } = mockUpdateApproveSupabase({
-      payload: {
-        ...basePayload(),
-        main_image_url: "https://cdn.example.com/hero.webp",
-      },
+      payload: basePayload(),
       existing,
     });
 
@@ -452,6 +449,33 @@ describe("approveFreeUpdate search_keywords", () => {
     expect(businessUpdate).toBeDefined();
     expect(businessUpdate!.row).not.toHaveProperty("main_image_url");
     expect(businessUpdate!.row).not.toHaveProperty("hero_image_url");
+  });
+
+  it("sets main and hero image URLs when main_image_url is provided", async () => {
+    const imageUrl = "https://cdn.example.com/hero.webp";
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: { ...basePayload(), main_image_url: imageUrl },
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate!.row.main_image_url).toBe(imageUrl);
+    expect(businessUpdate!.row.hero_image_url).toBe(imageUrl);
+  });
+
+  it("clears main and hero image URLs when main_image_url is null", async () => {
+    const { supabase, updates } = mockUpdateApproveSupabase({
+      payload: { ...basePayload(), main_image_url: null },
+      existing,
+    });
+
+    await approveFreeUpdate(supabase, "review-1", "admin-1");
+
+    const businessUpdate = updates.find((u) => u.table === "businesses");
+    expect(businessUpdate!.row.main_image_url).toBeNull();
+    expect(businessUpdate!.row.hero_image_url).toBeNull();
   });
 
   it("updates address on the target business without inserting a new listing", async () => {

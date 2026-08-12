@@ -161,16 +161,11 @@ export const freeOnboardBodySchema = z
     /** Admin-only on approve; submitters always get false. */
     is_explorable: z.boolean().optional().default(false),
     /**
-     * Admin listing image URL — temporarily ignored on submit/approve
-     * (`businesses.main_image_url` / `hero_image_url` are view aliases only).
+     * Admin-only listing image URL (from /api/admin/media/upload).
+     * Omit to leave the existing image unchanged on update; null clears; URL sets.
+     * Ignored for non-admin submissions.
      */
-    main_image_url: z
-      .string()
-      .url()
-      .max(2000)
-      .optional()
-      .nullable()
-      .transform((s) => s || null),
+    main_image_url: z.union([z.string().url().max(2000), z.null()]).optional(),
     marketing_opt_in: z.boolean().optional().default(false),
     target_business_id: z.string().uuid().optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),
@@ -295,7 +290,7 @@ export type FreeOnboardPayload = {
   marketing_opt_in: boolean;
   target_business_id: string | null;
   locations: FreeOnboardLocationPayload[];
-  /** Admin-only hero/main image public URL. */
+  /** Admin-only hero/main image public URL. Omit when unchanged on update. */
   main_image_url?: string | null;
   /** True when an admin submitted without typing name/email (filled from session). */
   submitted_by_admin?: boolean;

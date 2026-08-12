@@ -13,6 +13,7 @@ import {
   isCommunityTipsEnabled,
   isTownFactsEnabled,
   isRentalsEnabled,
+  isBusinessPhotosEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -32,6 +33,7 @@ export {
   isCommunityTipsEnabled,
   isTownFactsEnabled,
   isRentalsEnabled,
+  isBusinessPhotosEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -118,6 +120,15 @@ export function isRentalsFeatureEnabled(flags: FeatureFlags): boolean {
   return isRentalsEnabled(flags) || rentalsDevBypassEnabled();
 }
 
+/** Local dev escape hatch — PostHog `business_photos` flag still required in production. */
+export function businessPhotosDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.BUSINESS_PHOTOS_ENABLED === "1";
+}
+
+export function isBusinessPhotosFeatureEnabled(flags: FeatureFlags): boolean {
+  return isBusinessPhotosEnabled(flags) || businessPhotosDevBypassEnabled();
+}
+
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {
   return isDiscoverEnabled(flags) || discoverDevBypassEnabled();
 }
@@ -181,6 +192,14 @@ export async function communityTipsApiBlocked(): Promise<NextResponse | null> {
 /** For route handlers: returns a 404 when the vacation rentals marketplace is off. */
 export async function rentalsApiBlocked(): Promise<NextResponse | null> {
   if (!isRentalsFeatureEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when business photos are off. */
+export async function businessPhotosApiBlocked(): Promise<NextResponse | null> {
+  if (!isBusinessPhotosFeatureEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;
