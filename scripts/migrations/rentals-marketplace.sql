@@ -6,7 +6,9 @@
 -- ---------------------------------------------------------------------------
 create table if not exists public.rental_partner_profiles (
   id uuid primary key default gen_random_uuid(),
-  business_id uuid not null references public.businesses (id) on delete cascade,
+  business_id uuid references public.businesses (id) on delete set null,
+  display_name text,
+  show_public_business_profile boolean not null default false,
   status text not null default 'draft'
     check (status in (
       'draft', 'submitted', 'under_review', 'approved',
@@ -65,7 +67,7 @@ create index if not exists rental_sources_partner_id_idx
 -- ---------------------------------------------------------------------------
 create table if not exists public.rental_properties (
   id uuid primary key default gen_random_uuid(),
-  business_id uuid not null references public.businesses (id) on delete restrict,
+  business_id uuid references public.businesses (id) on delete set null,
   partner_id uuid not null references public.rental_partner_profiles (id) on delete restrict,
   source_id uuid references public.rental_sources (id) on delete set null,
   external_id text,
@@ -259,9 +261,7 @@ create index if not exists rental_import_jobs_partner_idx
 create table if not exists public.rental_referral_clicks (
   id uuid primary key default gen_random_uuid(),
   property_id uuid not null references public.rental_properties (id) on delete cascade,
-  business_id uuid not null references public.businesses (id) on delete cascade,
-  partner_id uuid not null references public.rental_partner_profiles (id) on delete cascade,
-  clicked_at timestamptz not null default now(),
+  business_id uuid references public.businesses (id) on delete set null,
   check_in date,
   check_out date,
   guests integer,
@@ -294,6 +294,8 @@ select
   b.is_verified as business_is_verified,
   b.website as business_website,
   rp.status as partner_status,
+  rp.display_name as partner_display_name,
+  rp.show_public_business_profile as partner_show_public_business_profile,
   rp.booking_url_template as partner_booking_url_template,
   rp.booking_engine_base_url as partner_booking_engine_base_url,
   (

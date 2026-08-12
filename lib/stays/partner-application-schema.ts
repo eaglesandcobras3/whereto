@@ -27,12 +27,27 @@ function phoneDigitCount(raw: string): number {
   return raw.replace(/\D/g, "").length;
 }
 
+const optionalTrimmed = z
+  .string()
+  .max(200)
+  .optional()
+  .nullable()
+  .transform((s) => {
+    const t = (s ?? "").trim();
+    return t || null;
+  });
+
 export const rentalPartnerApplicationSchema = z
   .object({
     _hp_company_website: z.string().max(200).optional(),
+    /** Optional public directory listing link. */
     business_id: z.string().uuid().optional().nullable(),
     business_slug: z.string().trim().max(160).optional().nullable(),
-    business_title: z.string().trim().min(2).max(120),
+    /** Org/brand name for ops — does not require a public business page. */
+    display_name: z.string().trim().min(2).max(120),
+    /** Legacy alias accepted from older clients; maps to display_name. */
+    business_title: z.string().trim().max(120).optional().nullable(),
+    link_public_business: z.boolean().optional().default(false),
     contact_name: z.string().trim().min(2).max(120),
     contact_email: z.string().trim().email().max(200),
     contact_phone: z
@@ -44,8 +59,8 @@ export const rentalPartnerApplicationSchema = z
         message: "Enter a valid phone number.",
       })
       .transform((s) => s || null),
-    pms_name: z.string().trim().max(120).optional().nullable(),
-    pms_other: z.string().trim().max(120).optional().nullable(),
+    pms_name: optionalTrimmed,
+    pms_other: optionalTrimmed,
     booking_engine_base_url: optionalWebsite,
     booking_url_template: z.string().trim().max(2000).optional().nullable(),
     portfolio_size: z.coerce.number().int().min(1).max(5000).optional().nullable(),
@@ -59,8 +74,14 @@ export const rentalPartnerApplicationSchema = z
     }),
     notes: z.string().trim().max(2000).optional().nullable(),
   })
-  .refine((v) => Boolean(v.business_id || v.business_slug || v.business_title), {
-    message: "Business is required",
+  .superRefine((v, ctx) => {
+    if (v.link_public_business && !v.business_id && !v.business_slug) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add a business slug or ID to link a public company profile, or leave linking off.",
+        path: ["business_slug"],
+      });
+    }
   });
 
 export type RentalPartnerApplication = z.infer<typeof rentalPartnerApplicationSchema>;

@@ -77,13 +77,20 @@ export function generateVacationRentalSchema(property: RentalPropertyView, pageU
         }
       : undefined,
     image: image ? [image] : undefined,
-    provider: property.business_title
-      ? {
-          "@type": "Organization",
-          name: property.business_title,
-          url: property.business_website || undefined,
-        }
-      : undefined,
+    provider: (() => {
+      const showPublic =
+        property.partner_show_public_business_profile === true &&
+        Boolean(property.business_title);
+      const name = showPublic
+        ? property.business_title
+        : property.partner_display_name || undefined;
+      if (!name) return undefined;
+      return {
+        "@type": "Organization",
+        name,
+        url: showPublic ? property.business_website || undefined : undefined,
+      };
+    })(),
   };
 
   if (

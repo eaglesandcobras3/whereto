@@ -91,7 +91,7 @@ export async function GET(request: NextRequest, { params }: Props) {
       event: "rental_booking_click",
       properties: {
         property_id: row.id,
-        business_id: row.business_id,
+        business_id: row.business_id || undefined,
         destination_host: bookingDestinationHost(destination),
         has_dates: Boolean(checkIn && checkOut),
         guests: Number.isFinite(guests) ? guests : undefined,
