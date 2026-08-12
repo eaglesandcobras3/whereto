@@ -3,10 +3,14 @@ import { z } from "zod";
 import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import {
   currentValueForBusinessGroup,
+  currentValueForGuideGroup,
+  currentValueForPlaceGroup,
   currentValueForRentalGroup,
   LISTING_FIELD_FLAG_ENTITIES,
   LISTING_FIELD_FLAG_FIELDS,
   LISTING_FIELD_FLAG_TYPE,
+  type ListingFieldFlagEntity,
+  type ListingFieldFlagField,
   type ListingFieldFlagPayload,
 } from "@/lib/listing-requests/listing-field-flag";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
@@ -21,7 +25,7 @@ export const runtime = "nodejs";
 
 const bodySchema = z.object({
   entity: z.enum(LISTING_FIELD_FLAG_ENTITIES).default("business"),
-  /** Business id when entity=business; rental property id when entity=rental. */
+  /** Entity primary key (business / rental / town / area / guide). */
   entity_id: z.string().uuid().optional(),
   /** @deprecated Prefer entity_id — older clients sent business_id only. */
   business_id: z.string().uuid().optional(),
@@ -47,8 +51,31 @@ const bodySchema = z.object({
     }),
 });
 
+function payloadFor(
+  entity: ListingFieldFlagEntity,
+  field: ListingFieldFlagField,
+  title: string,
+  slug: string,
+  currentValue: string | null,
+  note: string | null,
+  reporterEmail: string | null,
+): ListingFieldFlagPayload {
+  return {
+    source: "listing_field_flag",
+    entity,
+    field,
+    note,
+    listing_title: title,
+    listing_slug: slug,
+    business_title: title,
+    business_slug: slug,
+    current_value: currentValue,
+    reporter_email: reporterEmail,
+  };
+}
+
 /**
- * Public: flag an incorrect section on an unverified business or rental listing.
+ * Public: flag an incorrect section on a business, rental, town, area, or guide.
  * Creates a `listing_field_flag` portal review item.
  */
 export async function POST(request: NextRequest) {
@@ -126,38 +153,164 @@ export async function POST(request: NextRequest) {
       : null;
     const title = String(row.title ?? "Stay");
     const slug = String(row.slug ?? "");
-    const payload: ListingFieldFlagPayload = {
-      source: "listing_field_flag",
-      entity: "rental",
-      field: d.field,
-      note: d.note,
-      listing_title: title,
-      listing_slug: slug,
-      business_title: title,
-      business_slug: slug,
-      current_value: currentValueForRentalGroup(d.field, {
-        ...row,
-        property_type_label: typeLabel,
-      }),
-      reporter_email: d.reporter_email,
-    };
-
     const { error: insertErr } = await supabase.from("portal_review_items").insert({
       type: LISTING_FIELD_FLAG_TYPE,
       status: "pending",
       business_id: row.business_id,
       submitted_by: null,
-      payload,
+      payload: payloadFor(
+        "rental",
+        d.field,
+        title,
+        slug,
+        currentValueForRentalGroup(d.field, { ...row, property_type_label: typeLabel }),
+        d.note,
+        d.reporter_email,
+      ),
     });
 
     if (insertErr) {
       console.error("[listing-field-flag] rental insert", insertErr);
       return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
     }
-
     return NextResponse.json({ ok: true });
   }
 
+  if (d.entity === "town") {
+    const { data: town, error } = await supabase
+      .from("towns")
+      .select("id, title, slug, excerpt, status")
+      .eq("id", entityId)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .maybeSingle();
+
+    if (error || !town) {
+      return NextResponse.json({ error: "Town not found." }, { status: 404 });
+    }
+
+    const row = town as { id: string; title: string; slug: string; excerpt: string | null };
+    const title = String(row.title ?? "Town");
+    const slug = String(row.slug ?? "");
+    const { error: insertErr } = await supabase.from("portal_review_items").insert({
+      type: LISTING_FIELD_FLAG_TYPE,
+      status: "pending",
+      business_id: null,
+      submitted_by: null,
+      payload: payloadFor(
+        "town",
+        d.field,
+        title,
+        slug,
+        currentValueForPlaceGroup(d.field, { title, excerpt: row.excerpt }),
+        d.note,
+        d.reporter_email,
+      ),
+    });
+
+    if (insertErr) {
+      console.error("[listing-field-flag] town insert", insertErr);
+      return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (d.entity === "area") {
+    const { data: area, error } = await supabase
+      .from("areas")
+      .select("id, title, slug, excerpt, towns ( title ), status")
+      .eq("id", entityId)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .maybeSingle();
+
+    if (error || !area) {
+      return NextResponse.json({ error: "Area not found." }, { status: 404 });
+    }
+
+    const row = area as Record<string, unknown>;
+    const townsEmbed = row.towns as { title?: string } | { title?: string }[] | null;
+    const townOne = townsEmbed && Array.isArray(townsEmbed) ? townsEmbed[0] : townsEmbed;
+    const title = String(row.title ?? "Area");
+    const slug = String(row.slug ?? "");
+    const { error: insertErr } = await supabase.from("portal_review_items").insert({
+      type: LISTING_FIELD_FLAG_TYPE,
+      status: "pending",
+      business_id: null,
+      submitted_by: null,
+      payload: payloadFor(
+        "area",
+        d.field,
+        title,
+        slug,
+        currentValueForPlaceGroup(d.field, {
+          title,
+          excerpt: (row.excerpt as string | null) ?? null,
+          town_title: townOne?.title?.trim() || null,
+        }),
+        d.note,
+        d.reporter_email,
+      ),
+    });
+
+    if (insertErr) {
+      console.error("[listing-field-flag] area insert", insertErr);
+      return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (d.entity === "guide") {
+    const { data: guide, error } = await supabase
+      .from("guides")
+      .select("id, title, slug, excerpt, content, status")
+      .eq("id", entityId)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .maybeSingle();
+
+    if (error || !guide) {
+      return NextResponse.json({ error: "Guide not found." }, { status: 404 });
+    }
+
+    const row = guide as {
+      id: string;
+      title: string;
+      slug: string;
+      excerpt: string | null;
+      content: string | null;
+    };
+    const title = String(row.title ?? "Guide");
+    const slug = String(row.slug ?? "");
+    const { error: insertErr } = await supabase.from("portal_review_items").insert({
+      type: LISTING_FIELD_FLAG_TYPE,
+      status: "pending",
+      business_id: null,
+      submitted_by: null,
+      payload: payloadFor(
+        "guide",
+        d.field,
+        title,
+        slug,
+        currentValueForGuideGroup(d.field, {
+          title,
+          excerpt: row.excerpt,
+          content: row.content,
+        }),
+        d.note,
+        d.reporter_email,
+      ),
+    });
+
+    if (insertErr) {
+      console.error("[listing-field-flag] guide insert", insertErr);
+      return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // business (default)
   const { data: biz, error: bizErr } = await supabase
     .from("businesses_view")
     .select(
@@ -208,25 +361,20 @@ export async function POST(request: NextRequest) {
 
   const title = normalized.title;
   const slug = String(row.slug ?? "");
-  const payload: ListingFieldFlagPayload = {
-    source: "listing_field_flag",
-    entity: "business",
-    field: d.field,
-    note: d.note,
-    listing_title: title,
-    listing_slug: slug,
-    business_title: title,
-    business_slug: slug,
-    current_value: currentValueForBusinessGroup(d.field, normalized),
-    reporter_email: d.reporter_email,
-  };
-
   const { error: insertErr } = await supabase.from("portal_review_items").insert({
     type: LISTING_FIELD_FLAG_TYPE,
     status: "pending",
     business_id: String(row.id),
     submitted_by: null,
-    payload,
+    payload: payloadFor(
+      "business",
+      d.field,
+      title,
+      slug,
+      currentValueForBusinessGroup(d.field, normalized),
+      d.note,
+      d.reporter_email,
+    ),
   });
 
   if (insertErr) {

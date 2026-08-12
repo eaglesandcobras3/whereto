@@ -1,10 +1,17 @@
-/** Visitor reports that listing details look wrong (unverified business / rental). */
+/** Visitor reports that public content looks wrong (gated by PostHog `feedback`). */
 
 import { LIST_YOUR_RENTALS_PATH } from "@/lib/stays/constants";
+import { townPagePath } from "@/lib/routes/town-page-path";
 
 export const LISTING_FIELD_FLAG_TYPE = "listing_field_flag" as const;
 
-export const LISTING_FIELD_FLAG_ENTITIES = ["business", "rental"] as const;
+export const LISTING_FIELD_FLAG_ENTITIES = [
+  "business",
+  "rental",
+  "town",
+  "area",
+  "guide",
+] as const;
 export type ListingFieldFlagEntity = (typeof LISTING_FIELD_FLAG_ENTITIES)[number];
 
 /** Grouped report targets — one control per section, not per field. */
@@ -14,16 +21,20 @@ export const LISTING_FIELD_FLAG_FIELDS = [
   "description",
   "town_area",
   "map",
+  "facts",
+  "content",
 ] as const;
 
 export type ListingFieldFlagField = (typeof LISTING_FIELD_FLAG_FIELDS)[number];
 
 export const LISTING_FIELD_FLAG_LABELS: Record<ListingFieldFlagField, string> = {
-  header: "Listing details",
+  header: "These details",
   essentials: "Essentials",
   description: "Description",
   town_area: "Town & area",
   map: "Map",
+  facts: "At a glance",
+  content: "Guide content",
 };
 
 /** Short CTA under each section. */
@@ -33,6 +44,8 @@ export const LISTING_FIELD_FLAG_PROMPTS: Record<ListingFieldFlagField, string> =
   description: "Is this description wrong?",
   town_area: "Wrong town or area?",
   map: "Is this map wrong?",
+  facts: "Something wrong with these facts?",
+  content: "Something off in this guide?",
 };
 
 /** Older per-field keys may still appear in the admin queue. */
@@ -61,7 +74,7 @@ export type ListingFieldFlagPayload = {
   entity: ListingFieldFlagEntity;
   field: ListingFieldFlagField;
   note: string | null;
-  /** Display title of the flagged listing (business name or rental title). */
+  /** Display title of the flagged listing / place / guide. */
   listing_title: string;
   listing_slug: string;
   /** @deprecated Prefer listing_title — kept for older queue items. */
@@ -80,10 +93,41 @@ export function listingUpdatePath(opts: {
   entity?: ListingFieldFlagEntity | string | null;
   slug: string;
 }): string {
+  const slug = opts.slug.trim();
   if (opts.entity === "rental") {
-    return `${LIST_YOUR_RENTALS_PATH}?property=${encodeURIComponent(opts.slug)}`;
+    return `${LIST_YOUR_RENTALS_PATH}?property=${encodeURIComponent(slug)}`;
   }
-  return `/list-your-business?business=${encodeURIComponent(opts.slug)}`;
+  if (opts.entity === "town") {
+    return townPagePath(slug);
+  }
+  if (opts.entity === "area") {
+    return `/area/${encodeURIComponent(slug)}`;
+  }
+  if (opts.entity === "guide") {
+    return `/guide/${encodeURIComponent(slug)}`;
+  }
+  return `/list-your-business?business=${encodeURIComponent(slug)}`;
+}
+
+export function listingFieldFlagCtaLabel(entity: ListingFieldFlagEntity | string): string {
+  if (entity === "business" || entity === "rental") return "Open update form";
+  return "Open page";
+}
+
+export function listingFieldFlagPublicPath(opts: {
+  entity: ListingFieldFlagEntity | string;
+  slug: string;
+}): string | null {
+  const slug = opts.slug.trim();
+  if (!slug) return null;
+  if (opts.entity === "rental") {
+    return `/stays/${encodeURIComponent(slug)}`;
+  }
+  if (opts.entity === "town") return townPagePath(slug);
+  if (opts.entity === "area") return `/area/${encodeURIComponent(slug)}`;
+  if (opts.entity === "guide") return `/guide/${encodeURIComponent(slug)}`;
+  if (opts.entity === "business") return `/business/${encodeURIComponent(slug)}`;
+  return null;
 }
 
 export function listingFieldFlagSlugFromPayload(payload: Record<string, unknown>): string {
@@ -99,7 +143,11 @@ export function listingFieldFlagSlugFromPayload(payload: Record<string, unknown>
 export function listingFieldFlagEntityFromPayload(
   payload: Record<string, unknown>,
 ): ListingFieldFlagEntity {
-  return payload.entity === "rental" ? "rental" : "business";
+  const e = payload.entity;
+  if (e === "rental" || e === "town" || e === "area" || e === "guide" || e === "business") {
+    return e;
+  }
+  return "business";
 }
 
 function joinParts(parts: Array<string | null | undefined>): string | null {
@@ -180,6 +228,39 @@ export function currentValueForRentalGroup(
     return row.map_lat != null && row.map_lng != null
       ? `${row.map_lat}, ${row.map_lng}`
       : null;
+  }
+  return null;
+}
+
+export function currentValueForPlaceGroup(
+  field: ListingFieldFlagField,
+  row: {
+    title: string;
+    excerpt: string | null;
+    town_title?: string | null;
+  },
+): string | null {
+  if (field === "header") return joinParts([row.title, row.excerpt]);
+  if (field === "description") return row.excerpt?.trim() || null;
+  if (field === "town_area") return row.town_title?.trim() || null;
+  if (field === "facts") return joinParts([row.title, "at-a-glance"]);
+  if (field === "map") return row.title?.trim() || null;
+  return null;
+}
+
+export function currentValueForGuideGroup(
+  field: ListingFieldFlagField,
+  row: {
+    title: string;
+    excerpt: string | null;
+    content: string | null;
+  },
+): string | null {
+  if (field === "header") return joinParts([row.title, row.excerpt]);
+  if (field === "content" || field === "description") {
+    const body = row.content?.trim() || row.excerpt?.trim() || null;
+    if (!body) return row.title?.trim() || null;
+    return body.length > 280 ? `${body.slice(0, 277)}…` : body;
   }
   return null;
 }

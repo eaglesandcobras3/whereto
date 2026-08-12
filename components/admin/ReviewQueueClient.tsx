@@ -17,12 +17,13 @@ import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-util
 import type { FreeOnboardPhotoPayload } from "@/lib/listing-requests/free-onboard-schema";
 import {
   isListingFieldFlagType,
+  listingFieldFlagCtaLabel,
   listingFieldFlagEntityFromPayload,
   listingFieldFlagLabel,
+  listingFieldFlagPublicPath,
   listingFieldFlagSlugFromPayload,
   listingUpdatePath,
 } from "@/lib/listing-requests/listing-field-flag";
-import { staysPropertyPath } from "@/lib/stays/constants";
 
 type ReviewItem = {
   id: string;
@@ -587,37 +588,48 @@ export function ReviewQueueClient() {
                         })}
                         className="rounded-lg bg-teal-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-900"
                       >
-                        Open update form
+                        {listingFieldFlagCtaLabel(fieldFlagEntity)}
                       </a>
                     ) : null}
-                    {fieldFlag && fieldFlagEntity === "rental" && fieldFlagSlug ? (
-                      <a
-                        href={staysPropertyPath(fieldFlagSlug)}
-                        className="text-sm text-[var(--color-primary)] hover:underline"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View stay
-                      </a>
-                    ) : item.businesses?.slug ? (
-                      <a
-                        href={`/business/${encodeURIComponent(item.businesses.slug)}`}
-                        className="text-sm text-[var(--color-primary)] hover:underline"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View listing
-                      </a>
-                    ) : null}
+                    {(() => {
+                      const publicPath =
+                        fieldFlag && fieldFlagSlug
+                          ? listingFieldFlagPublicPath({
+                              entity: fieldFlagEntity,
+                              slug: fieldFlagSlug,
+                            })
+                          : item.businesses?.slug
+                            ? `/business/${encodeURIComponent(item.businesses.slug)}`
+                            : null;
+                      if (!publicPath) return null;
+                      // Avoid duplicating the same URL next to "Open page" for town/area/guide.
+                      if (
+                        fieldFlag &&
+                        (fieldFlagEntity === "town" ||
+                          fieldFlagEntity === "area" ||
+                          fieldFlagEntity === "guide")
+                      ) {
+                        return null;
+                      }
+                      return (
+                        <a
+                          href={publicPath}
+                          className="text-sm text-[var(--color-primary)] hover:underline"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {fieldFlagEntity === "rental" ? "View stay" : "View listing"}
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
 
                 {fieldFlag ? (
                   <div className="mt-4 space-y-2 text-sm text-zinc-600">
                     <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
-                      Visitor flagged <strong>{fieldLabel}</strong> as wrong on an unverified{" "}
-                      {fieldFlagEntity === "rental" ? "rental" : "business"} listing. Open the
-                      update form to correct it, then mark done.
+                      Visitor flagged <strong>{fieldLabel}</strong> as wrong on a{" "}
+                      {fieldFlagEntity} page. Review and correct if needed, then mark done.
                     </p>
                     <p>
                       <span className="font-medium text-zinc-800">Current value:</span>{" "}

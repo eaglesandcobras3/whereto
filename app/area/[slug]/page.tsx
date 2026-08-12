@@ -29,7 +29,8 @@ import { getGuidesForArea } from "@/lib/data/town-hub";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForPlace } from "@/lib/data/business-map-markers";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 
 export const revalidate = 21600;
 
@@ -95,6 +96,7 @@ export default async function AreaPage({ params }: Props) {
     getAllFeatureFlags(),
   ]);
   const planningProfile = getAreaPlanningProfile(area.slug);
+  const feedbackEnabled = isFeedbackFeatureEnabled(flags);
 
   let mapMarkers: Awaited<ReturnType<typeof listStorefrontMapMarkersForPlace>> = [];
   if (isBusinessMapsFeatureEnabled(flags)) {
@@ -215,6 +217,11 @@ export default async function AreaPage({ params }: Props) {
                 </div>
               ) : undefined
             }
+            footer={
+              feedbackEnabled ? (
+                <ListingFieldFlagNote entity="area" entityId={area.id} field="header" />
+              ) : null
+            }
           />
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
@@ -231,6 +238,8 @@ export default async function AreaPage({ params }: Props) {
                 markers={mapMarkers}
                 title={`Map of ${area.title}`}
                 description="Storefront businesses with a mapped location."
+                fieldFlagEntityId={feedbackEnabled ? area.id : null}
+                fieldFlagEntity="area"
               />
             ) : null}
 

@@ -345,7 +345,7 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 - [ ] PostHog: create boolean flag `feedback` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `FEEDBACK_ENABLED=1` and `NEXT_PUBLIC_FEEDBACK_ENABLED=1`
-- [ ] Smoke-test: unverified `/business/[slug]` and `/stays/[slug]` show section flags (listing details, essentials, description, town & area, map); submit appears in `/admin/review` as `listing_field_flag` with Open update form
+- [ ] Smoke-test: with `feedback` on — unverified business/rental section flags; town (header/facts/map), area (header/map), guide (top+bottom content); admin queue opens update form or public page
 
 ### Business maps setup
 
@@ -506,7 +506,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
-| 2026-08-12 | PostHog `feedback`: visitor field-correction reports on unverified business/rental pages → admin review (`listing_field_flag`); local bypass `FEEDBACK_ENABLED` / `NEXT_PUBLIC_FEEDBACK_ENABLED` |
+| 2026-08-12 | PostHog `feedback`: visitor section reports on unverified business/rental + town/area/guide pages → admin review (`listing_field_flag`); local bypass `FEEDBACK_ENABLED` / `NEXT_PUBLIC_FEEDBACK_ENABLED` |
 | 2026-08-12 | PostHog `business_maps`: OpenStreetMap on storefront business detail + multi-pin maps on town/area/category hubs (storefronts with coordinates only); Leaflet for multi-pin; local bypass `BUSINESS_MAPS_ENABLED` / `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED` |
 | 2026-08-12 | PostHog `business_photos`: admin main-image update + portal additional photos (WebP max 1600px); public profile gallery + lightbox; SQL [businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql) + [business-photos.sql](../scripts/migrations/business-photos.sql). Writes target `businesses` table URL columns (not view aliases). Rentals listing form: remove hero URL fallback; main + additional photo fields. |
 | 2026-08-12 | Rentals listing form: **photo upload** + address fields (`street_address`, `postal_code`, community, lat/lng, precision); SQL [rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql). PMS/API sync still deferred (referral marketplace, not Airbnb clone) |

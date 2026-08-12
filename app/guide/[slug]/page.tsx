@@ -25,6 +25,8 @@ import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcr
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
+import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 
 export const revalidate = 21600;
 
@@ -153,7 +155,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const page = await loadGuide(slug);
+  const [page, flags] = await Promise.all([loadGuide(slug), getAllFeatureFlags()]);
 
   if (!page) notFound();
 
@@ -170,6 +172,7 @@ export default async function GuidePage({ params }: Props) {
   const guidePath = `/guide/${guideSeg}`;
   const guidePageId =
     "id" in page && typeof page.id === "string" ? page.id : null;
+  const canFlagGuide = isFeedbackFeatureEnabled(flags) && Boolean(guidePageId);
   const shareButton = (
     <PageShareButton
       pageType="guide"
@@ -269,6 +272,9 @@ export default async function GuidePage({ params }: Props) {
                     ))}
                   </div>
                 ) : null}
+                {guidePageId && canFlagGuide ? (
+                  <ListingFieldFlagNote entity="guide" entityId={guidePageId} field="content" />
+                ) : null}
               </header>
             </div>
           </div>
@@ -365,6 +371,11 @@ export default async function GuidePage({ params }: Props) {
                   ))}
                 </div>
               ) : null}
+              {guidePageId && canFlagGuide ? (
+                <div className="mb-10">
+                  <ListingFieldFlagNote entity="guide" entityId={guidePageId} field="content" />
+                </div>
+              ) : null}
             </>
           ) : null}
 
@@ -387,6 +398,11 @@ export default async function GuidePage({ params }: Props) {
           ) : null}
 
           <MarkdownRenderer content={bodyMarkdown} />
+          {guidePageId && canFlagGuide ? (
+            <div className="mt-8">
+              <ListingFieldFlagNote entity="guide" entityId={guidePageId} field="content" />
+            </div>
+          ) : null}
 
           {showCorridorMap ? (
             <SeoImprovementsGate>

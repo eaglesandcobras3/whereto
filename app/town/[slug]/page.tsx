@@ -42,8 +42,9 @@ import type { TownGuideCard } from "@/lib/data/town-hub";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForTown } from "@/lib/data/business-map-markers";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 
 type SidebarArea = {
   id: string;
@@ -317,6 +318,7 @@ export default async function TownDetailPage({ params }: Props) {
     getAllFeatureFlags(),
   ]);
   const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
+  const feedbackEnabled = isFeedbackFeatureEnabled(flags);
   let mapMarkers: BusinessMapMarker[] = [];
   if (businessMapsEnabled) {
     try {
@@ -332,6 +334,7 @@ export default async function TownDetailPage({ params }: Props) {
       guides={guides}
       townFacts={townFacts}
       mapMarkers={mapMarkers}
+      feedbackEnabled={feedbackEnabled}
     />
   );
 }
@@ -349,12 +352,14 @@ function BasicTownPage({
   guides,
   townFacts,
   mapMarkers,
+  feedbackEnabled,
 }: {
   town: TownRecord;
   pageData: TownPageData;
   guides: TownGuideCard[];
   townFacts: TownFacts | null;
   mapMarkers: BusinessMapMarker[];
+  feedbackEnabled: boolean;
 }) {
   const descriptor = getTownDescriptor(town.slug);
   // Visible hero uses excerpt (at-a-glance / editorial intro). seo_description stays for metadata.
@@ -415,12 +420,22 @@ function BasicTownPage({
                 path={townPath}
               />
             }
+            footer={
+              feedbackEnabled ? (
+                <ListingFieldFlagNote entity="town" entityId={town.id} field="header" />
+              ) : null
+            }
           />
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
             {townFacts ? (
               <TownFactsGate>
-                <TownAtAGlanceSection townName={town.name} facts={townFacts} />
+                <div>
+                  <TownAtAGlanceSection townName={town.name} facts={townFacts} />
+                  {feedbackEnabled ? (
+                    <ListingFieldFlagNote entity="town" entityId={town.id} field="facts" />
+                  ) : null}
+                </div>
               </TownFactsGate>
             ) : null}
 
@@ -439,6 +454,8 @@ function BasicTownPage({
                 markers={mapMarkers}
                 title={`Map of ${town.name}`}
                 description="Storefront businesses with a mapped location."
+                fieldFlagEntityId={feedbackEnabled ? town.id : null}
+                fieldFlagEntity="town"
               />
             ) : null}
 

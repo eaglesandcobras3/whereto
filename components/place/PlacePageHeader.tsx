@@ -11,6 +11,8 @@ type Props = {
   meta?: ReactNode;
   /** Primary actions near the title (e.g. Share). */
   actions?: ReactNode;
+  /** Optional content under the intro (e.g. feedback note). */
+  footer?: ReactNode;
 };
 
 export function PlacePageHeader({
@@ -22,6 +24,7 @@ export function PlacePageHeader({
   fallbackIcon = "location_city",
   meta,
   actions,
+  footer,
 }: Props) {
   return (
     <header className="mb-6 sm:mb-10">
@@ -51,6 +54,7 @@ export function PlacePageHeader({
           </div>
           {meta}
           <PlacePageIntro text={intro} className="mt-2 sm:mt-3" />
+          {footer}
         </div>
       </div>
     </header>

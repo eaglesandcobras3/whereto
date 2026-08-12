@@ -22,9 +22,9 @@ type Props = {
   title?: string;
   description?: string;
   className?: string;
-  /** Unverified listings: allow visitors to flag a wrong map pin. */
+  /** Unverified listings / places: allow visitors to flag a wrong map. */
   fieldFlagEntityId?: string | null;
-  fieldFlagEntity?: "business" | "rental";
+  fieldFlagEntity?: "business" | "rental" | "town" | "area";
 };
 
 /**
