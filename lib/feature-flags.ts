@@ -13,8 +13,10 @@ import {
   isCommunityTipsEnabled,
   isTownFactsEnabled,
   isRentalsEnabled,
+  isRentalPartnersEnabled,
   isBusinessPhotosEnabled,
   isBusinessMapsEnabled,
+  isTownMapsEnabled,
   isFeedbackEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
@@ -35,8 +37,10 @@ export {
   isCommunityTipsEnabled,
   isTownFactsEnabled,
   isRentalsEnabled,
+  isRentalPartnersEnabled,
   isBusinessPhotosEnabled,
   isBusinessMapsEnabled,
+  isTownMapsEnabled,
   isFeedbackEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
@@ -124,6 +128,15 @@ export function isRentalsFeatureEnabled(flags: FeatureFlags): boolean {
   return isRentalsEnabled(flags) || rentalsDevBypassEnabled();
 }
 
+/** Local dev escape hatch — PostHog `rental_partners` flag still required in production. */
+export function rentalPartnersDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.RENTAL_PARTNERS_ENABLED === "1";
+}
+
+export function isRentalPartnersFeatureEnabled(flags: FeatureFlags): boolean {
+  return isRentalPartnersEnabled(flags) || rentalPartnersDevBypassEnabled();
+}
+
 /** Local dev escape hatch — PostHog `business_photos` flag still required in production. */
 export function businessPhotosDevBypassEnabled(): boolean {
   return process.env.NODE_ENV === "development" && process.env.BUSINESS_PHOTOS_ENABLED === "1";
@@ -140,6 +153,15 @@ export function businessMapsDevBypassEnabled(): boolean {
 
 export function isBusinessMapsFeatureEnabled(flags: FeatureFlags): boolean {
   return isBusinessMapsEnabled(flags) || businessMapsDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `town_maps` flag still required in production. */
+export function townMapsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.TOWN_MAPS_ENABLED === "1";
+}
+
+export function isTownMapsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isTownMapsEnabled(flags) || townMapsDevBypassEnabled();
 }
 
 /** Local dev escape hatch — PostHog `feedback` flag still required in production. */
@@ -214,6 +236,14 @@ export async function communityTipsApiBlocked(): Promise<NextResponse | null> {
 /** For route handlers: returns a 404 when the vacation rentals marketplace is off. */
 export async function rentalsApiBlocked(): Promise<NextResponse | null> {
   if (!isRentalsFeatureEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when rental partner applications are off. */
+export async function rentalPartnersApiBlocked(): Promise<NextResponse | null> {
+  if (!isRentalPartnersFeatureEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;

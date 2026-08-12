@@ -6,8 +6,10 @@ import {
   isBusinessPhotosEnabled,
   isCommunityTipsEnabled,
   isFeedbackEnabled,
+  isRentalPartnersEnabled,
   isSeoImprovementsEnabled,
   isTownFactsEnabled,
+  isTownMapsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 
@@ -89,6 +91,38 @@ export function isBusinessMapsFeatureEnabledClient(flags: FeatureFlags): boolean
 export function useBusinessMapsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isBusinessMapsFeatureEnabledClient(flags);
+}
+
+function townMapsDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_TOWN_MAPS_ENABLED === "1"
+  );
+}
+
+export function isTownMapsFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isTownMapsEnabled(flags) || townMapsDevBypassEnabled();
+}
+
+export function useTownMapsFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isTownMapsFeatureEnabledClient(flags);
+}
+
+function rentalPartnersDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_RENTAL_PARTNERS_ENABLED === "1"
+  );
+}
+
+export function isRentalPartnersFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isRentalPartnersEnabled(flags) || rentalPartnersDevBypassEnabled();
+}
+
+export function useRentalPartnersFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isRentalPartnersFeatureEnabledClient(flags);
 }
 
 function feedbackDevBypassEnabled(): boolean {

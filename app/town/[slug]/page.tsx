@@ -439,16 +439,6 @@ function BasicTownPage({
               </TownFactsGate>
             ) : null}
 
-            <PlaceCategoryBusinessSections
-              placeName={town.name}
-              placeSlug={town.slug}
-              sections={pageData.categorySections}
-              analyticsCategoryPrefix="town_guide_category"
-              emptyMessage={
-                <TownEmptyDiscoveryMessage townName={town.name} townId={town.id} />
-              }
-            />
-
             {mapMarkers.length > 0 ? (
               <BusinessMapSection
                 markers={mapMarkers}
@@ -458,6 +448,16 @@ function BasicTownPage({
                 fieldFlagEntity="town"
               />
             ) : null}
+
+            <PlaceCategoryBusinessSections
+              placeName={town.name}
+              placeSlug={town.slug}
+              sections={pageData.categorySections}
+              analyticsCategoryPrefix="town_guide_category"
+              emptyMessage={
+                <TownEmptyDiscoveryMessage townName={town.name} townId={town.id} />
+              }
+            />
 
             {pageData.areas.length > 0 ? (
               <PlaceRelatedSection

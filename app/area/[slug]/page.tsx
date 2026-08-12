@@ -225,14 +225,6 @@ export default async function AreaPage({ params }: Props) {
           />
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
-            <PlaceCategoryBusinessSections
-              placeName={area.title}
-              placeSlug={area.slug}
-              sections={categorySections}
-              analyticsCategoryPrefix="area_guide_category"
-              emptyMessage={<AreaEmptyDiscoveryMessage place={area} />}
-            />
-
             {mapMarkers.length > 0 ? (
               <BusinessMapSection
                 markers={mapMarkers}
@@ -242,6 +234,14 @@ export default async function AreaPage({ params }: Props) {
                 fieldFlagEntity="area"
               />
             ) : null}
+
+            <PlaceCategoryBusinessSections
+              placeName={area.title}
+              placeSlug={area.slug}
+              sections={categorySections}
+              analyticsCategoryPrefix="area_guide_category"
+              emptyMessage={<AreaEmptyDiscoveryMessage place={area} />}
+            />
 
             {planningProfile ? (
               <SeoImprovementsGate>

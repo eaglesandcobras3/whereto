@@ -2,12 +2,16 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { AreaCard } from "@/components/discovery/AreaCard";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
+import { listAreaHubMapMarkers } from "@/lib/data/place-map-markers";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { hubAreasIntro } from "@/lib/seo/page-intro-copy";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
+import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
 export const revalidate = 21600;
 
@@ -106,6 +110,17 @@ async function getAreas(): Promise<AreaRow[]> {
 
 export default async function AreasPage() {
   const areas = await getAreas();
+  const flags = await getAllFeatureFlags();
+  const townMapsEnabled = isTownMapsFeatureEnabled(flags);
+
+  let mapMarkers: BusinessMapMarker[] = [];
+  if (townMapsEnabled && areas.length > 0) {
+    try {
+      mapMarkers = await listAreaHubMapMarkers(areas);
+    } catch (err) {
+      console.error("areas hub map markers", err);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -129,8 +144,17 @@ export default async function AreasPage() {
         </div>
       </div>
 
-      {/* Area grid */}
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+        {mapMarkers.length > 0 ? (
+          <BusinessMapSection
+            markers={mapMarkers}
+            title="Map of districts & town centers"
+            description="Areas with a mapped center along Scenic Highway 30A."
+            zoom={13}
+            fitMaxZoom={13}
+          />
+        ) : null}
+
         {areas.length === 0 ? (
           <p className="text-center text-[var(--color-text-secondary)]">No areas found.</p>
         ) : (

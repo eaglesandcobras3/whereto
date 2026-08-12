@@ -8,7 +8,7 @@ General operator tasks for WhereTo30A (env, deploy, shared infra).
 
 ## Vacation rentals marketplace
 
-Direct-booking referral marketplace for vacation rentals (`/stays`), gated by PostHog flag `rentals` (code default **off**; enable only via PostHog).
+Direct-booking referral marketplace for vacation rentals (`/stays`), gated by PostHog flag `rentals` (code default **off**; enable only via PostHog). Partner company applications use a separate flag `rental_partners`.
 
 **Runtime data path:** Next.js → **Supabase** (service-role / SSR clients) only. The app does **not** call Directus. Public stays pages use **ISR** (`revalidate`). Admin CRUD is `/admin/rentals` + `/api/admin/rentals*`.
 
@@ -19,7 +19,8 @@ Direct-booking referral marketplace for vacation rentals (`/stays`), gated by Po
 - [ ] If rentals tables already exist, also apply [scripts/migrations/rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql) (`street_address`, `postal_code`)
 - [ ] Confirm storage bucket allows public reads for `rentals/{partner_id}/…` uploads (same media buckets as portal)
 - [ ] PostHog: create boolean flag `rentals` (default false); enable for internal cohort then gradual rollout
-- [ ] Dev bypass (optional): `RENTALS_ENABLED=1` when `NODE_ENV=development`
+- [ ] PostHog: create boolean flag `rental_partners` (default false) for `/list-your-rentals/partner` + `/api/rentals/partner-application`
+- [ ] Dev bypass (optional): `RENTALS_ENABLED=1` and/or `RENTAL_PARTNERS_ENABLED=1` when `NODE_ENV=development` (client: `NEXT_PUBLIC_RENTAL_PARTNERS_ENABLED=1`)
 - [ ] Confirm founding property-manager partners and PMS / booking URL hosts; set `booking_url_hosts` allowlists on partner profiles
 - [ ] Storage: partner image URLs or uploads under existing media bucket paths (document path convention `rentals/{partner_id}/…`)
 - [ ] Manual freshness cron (optional): `curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/rentals-freshness"`
@@ -335,8 +336,10 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `community_tips` | Visitor text tips on business, town, area, and guide detail pages (optional stars); account management; admin moderation at `/admin/community-tips` |
 | `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**) |
 | `rentals` | Vacation rentals marketplace (`/stays`, listing intake, admin rentals); code default **off** |
+| `rental_partners` | Company partner application at `/list-your-rentals/partner` (separate from `rentals`); code default **off** |
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
+| `town_maps` | OpenStreetMap of place centers on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
 | `feedback` | Visitor “is this wrong?” field flags on unverified business / rental detail pages (admin review queue); code default **off** |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
@@ -351,7 +354,15 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 - [ ] PostHog: create boolean flag `business_maps` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `BUSINESS_MAPS_ENABLED=1` and `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED=1`
-- [ ] Smoke-test: `/list-your-business` (add or update) can upload gallery photos when `business_photos` is on; photos appear in `/admin/review` with include/exclude checkboxes; approve publishes included photos
+- [ ] Smoke-test: business detail + town/area/category hubs show storefront pins when coords exist
+
+### Town / area hub maps setup
+
+- [ ] Apply [scripts/migrations/town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql) (ensures `towns.center_lat/lng` + `areas.latitude_center/longitude_center`; seeds known 30A town centers when missing/default)
+- [ ] PostHog: create boolean flag `town_maps` (default false); enable for internal cohort then gradual rollout
+- [ ] Local dev (optional): `TOWN_MAPS_ENABLED=1` and `NEXT_PUBLIC_TOWN_MAPS_ENABLED=1`
+- [ ] Fill remaining town/area centers in Directus/admin (or markdown + content sync) — areas need `latitude_center` / `longitude_center` for pins
+- [ ] Smoke-test: `/towns` and `/areas` show interactive maps above cards when `town_maps` is on; pin popups link to town/area pages
 
 ### Business photos setup
 
@@ -506,6 +517,8 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-12 | PostHog `rental_partners`: partner application at `/list-your-rentals/partner` (+ API) split from `rentals`; local bypass `RENTAL_PARTNERS_ENABLED` / `NEXT_PUBLIC_RENTAL_PARTNERS_ENABLED` |
+| 2026-08-12 | PostHog `town_maps`: interactive OSM place pins on `/towns` + `/areas` hubs (separate from `business_maps`); SQL [town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql); local bypass `TOWN_MAPS_ENABLED` / `NEXT_PUBLIC_TOWN_MAPS_ENABLED` |
 | 2026-08-12 | PostHog `feedback`: visitor section reports on unverified business/rental + town/area/guide pages → admin review (`listing_field_flag`); local bypass `FEEDBACK_ENABLED` / `NEXT_PUBLIC_FEEDBACK_ENABLED` |
 | 2026-08-12 | PostHog `business_maps`: OpenStreetMap on storefront business detail + multi-pin maps on town/area/category hubs (storefronts with coordinates only); Leaflet for multi-pin; local bypass `BUSINESS_MAPS_ENABLED` / `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED` |
 | 2026-08-12 | PostHog `business_photos`: admin main-image update + portal additional photos (WebP max 1600px); public profile gallery + lightbox; SQL [businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql) + [business-photos.sql](../scripts/migrations/business-photos.sql). Writes target `businesses` table URL columns (not view aliases). Rentals listing form: remove hero URL fallback; main + additional photo fields. |

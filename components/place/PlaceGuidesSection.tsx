@@ -76,9 +76,9 @@ export function PlaceGuidesSection({
           category: analyticsCategory,
           label: "explore_more_guides",
         })}
-        className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] transition-colors hover:underline"
+        className="group inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] transition-colors"
       >
-        Explore more guides
+        <span className="underline-offset-2 group-hover:underline">Explore more guides</span>
         <span className="material-symbols-outlined !text-base" aria-hidden>
           arrow_forward
         </span>

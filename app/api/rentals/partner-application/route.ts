@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPostHogServerClient } from "@/lib/analytics/posthog-server";
-import { rentalsApiBlocked } from "@/lib/feature-flags";
+import { rentalPartnersApiBlocked } from "@/lib/feature-flags";
 import { rentalPartnerApplicationSchema } from "@/lib/stays/partner-application-schema";
 import { submitRentalPartnerApplication } from "@/lib/stays/partner-application";
 
 export async function POST(request: NextRequest) {
-  const blocked = await rentalsApiBlocked();
+  const blocked = await rentalPartnersApiBlocked();
   if (blocked) return blocked;
 
   let json: unknown;

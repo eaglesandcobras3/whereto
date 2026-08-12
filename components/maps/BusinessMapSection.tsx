@@ -10,7 +10,7 @@ const BusinessesOpenStreetMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-64 items-center justify-center bg-[var(--color-surface)] text-sm text-[var(--color-text-tertiary)]">
+      <div className="flex h-80 items-center justify-center bg-[var(--color-surface)] text-sm text-[var(--color-text-tertiary)] sm:h-96">
         Loading map…
       </div>
     ),
@@ -22,6 +22,8 @@ type Props = {
   title?: string;
   description?: string;
   className?: string;
+  zoom?: number;
+  fitMaxZoom?: number;
   /** Unverified listings / places: allow visitors to flag a wrong map. */
   fieldFlagEntityId?: string | null;
   fieldFlagEntity?: "business" | "rental" | "town" | "area";
@@ -35,6 +37,8 @@ export function BusinessMapSection({
   title = "Location",
   description,
   className = "",
+  zoom = 18,
+  fitMaxZoom = 17,
   fieldFlagEntityId,
   fieldFlagEntity = "business",
 }: Props) {
@@ -44,8 +48,13 @@ export function BusinessMapSection({
     <section className={className}>
       <h2 className="font-headline text-xl font-semibold text-zinc-900">{title}</h2>
       {description ? <p className="mt-1 text-sm text-zinc-500">{description}</p> : null}
-      <div className="mt-3 h-64 overflow-hidden border border-zinc-200 sm:h-80 dark:border-zinc-700">
-        <BusinessesOpenStreetMap markers={markers} zoom={18} className="!rounded-none" />
+      <div className="mt-3 h-80 overflow-hidden border border-zinc-200 sm:h-96 dark:border-zinc-700">
+        <BusinessesOpenStreetMap
+          markers={markers}
+          zoom={zoom}
+          fitMaxZoom={fitMaxZoom}
+          className="!rounded-none"
+        />
       </div>
       {fieldFlagEntityId ? (
         <ListingFieldFlagNote

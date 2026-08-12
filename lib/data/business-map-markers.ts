@@ -1,5 +1,6 @@
 import "server-only";
 
+import { leafCategoryIcon } from "@/lib/categories/unified-browse";
 import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
@@ -13,12 +14,31 @@ export type BusinessMapMarker = {
   slug: string;
   lat: number;
   lng: number;
+  /** Material Symbols name for category-styled pins (optional). */
+  icon?: string | null;
+  /** Popup link path; defaults to `/business/{slug}`. */
+  href?: string | null;
 };
 
-const MARKER_SELECT = "id, title, slug, map_lat, map_lng";
+const MARKER_SELECT =
+  "id, title, slug, map_lat, map_lng, business_categories ( slug )";
 const MARKER_CAP = 500;
 
-function rowsToMarkers(rows: Record<string, unknown>[]): BusinessMapMarker[] {
+function categorySlugFromRow(row: Record<string, unknown>): string | null {
+  const embed = row.business_categories as
+    | { slug?: string | null }
+    | { slug?: string | null }[]
+    | null
+    | undefined;
+  const one = embed && Array.isArray(embed) ? embed[0] : embed;
+  const slug = typeof one?.slug === "string" ? one.slug.trim() : "";
+  return slug || null;
+}
+
+function rowsToMarkers(
+  rows: Record<string, unknown>[],
+  opts?: { defaultIcon?: string | null },
+): BusinessMapMarker[] {
   const byId = new Map<string, BusinessMapMarker>();
   for (const row of rows) {
     const lat = Number(row.map_lat);
@@ -30,7 +50,12 @@ function rowsToMarkers(rows: Record<string, unknown>[]): BusinessMapMarker[] {
     const slug = String(row.slug ?? "").trim();
     const title = String(row.title ?? "").trim();
     if (!slug || !title) continue;
-    byId.set(id, { id, title, slug, lat, lng });
+    const catSlug = categorySlugFromRow(row);
+    const icon =
+      (catSlug ? leafCategoryIcon(catSlug) : null) ||
+      opts?.defaultIcon?.trim() ||
+      "storefront";
+    byId.set(id, { id, title, slug, lat, lng, icon });
   }
   return [...byId.values()].sort((a, b) => a.title.localeCompare(b.title));
 }
@@ -157,6 +182,7 @@ export async function listStorefrontMapMarkersForPlace(
 /** Storefront map pins for a known set of business ids (e.g. category hub pool). */
 export async function listStorefrontMapMarkersForBusinessIds(
   businessIds: string[],
+  opts?: { defaultIcon?: string | null },
 ): Promise<BusinessMapMarker[]> {
   const ids = [...new Set(businessIds.filter(Boolean))];
   if (ids.length === 0) return [];
@@ -167,5 +193,5 @@ export async function listStorefrontMapMarkersForBusinessIds(
     const { data } = await storefrontBrowseQuery().in("id", chunk).limit(MARKER_CAP);
     rows.push(...((data as Record<string, unknown>[] | null) ?? []));
   }
-  return rowsToMarkers(rows);
+  return rowsToMarkers(rows, opts);
 }

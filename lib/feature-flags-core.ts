@@ -16,8 +16,10 @@ export const FEATURE_FLAG_KEYS = [
   "community_tips",
   "town_facts",
   "rentals",
+  "rental_partners",
   "business_photos",
   "business_maps",
+  "town_maps",
   "feedback",
 ] as const;
 
@@ -37,8 +39,10 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   community_tips: false,
   town_facts: true,
   rentals: false,
+  rental_partners: false,
   business_photos: false,
   business_maps: false,
+  town_maps: false,
   feedback: false,
 };
 
@@ -122,9 +126,14 @@ export function isTownFactsEnabled(flags: FeatureFlags): boolean {
   return flags.town_facts === true;
 }
 
-/** Vacation rentals marketplace (`/stays`, partner intake, admin rentals). */
+/** Vacation rentals marketplace (`/stays`, listing intake, admin rentals). */
 export function isRentalsEnabled(flags: FeatureFlags): boolean {
   return flags.rentals === true;
+}
+
+/** Company-level rental partner application (`/list-your-rentals/partner`). */
+export function isRentalPartnersEnabled(flags: FeatureFlags): boolean {
+  return flags.rental_partners === true;
 }
 
 /**
@@ -138,6 +147,11 @@ export function isBusinessPhotosEnabled(flags: FeatureFlags): boolean {
 /** OpenStreetMap embeds on business detail + storefront pins on town/area/category hubs. */
 export function isBusinessMapsEnabled(flags: FeatureFlags): boolean {
   return flags.business_maps === true;
+}
+
+/** OpenStreetMap of towns/areas on `/towns` and `/areas` hubs (place centers, not businesses). */
+export function isTownMapsEnabled(flags: FeatureFlags): boolean {
+  return flags.town_maps === true;
 }
 
 /** Visitor “is this wrong?” field flags on unverified business / rental detail pages. */

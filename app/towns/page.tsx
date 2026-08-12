@@ -1,8 +1,10 @@
-import Image from "next/image";
 import type { Metadata } from "next";
+import Image from "next/image";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
+import { listTownHubMapMarkers } from "@/lib/data/place-map-markers";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
@@ -12,6 +14,8 @@ import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { generateCollectionPageSchema } from "@/lib/seo/breadcrumb-schema";
+import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
+import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
 export const revalidate = 21600;
 
@@ -63,6 +67,18 @@ async function getTowns(): Promise<TownRow[]> {
 
 export default async function TownsPage() {
   const towns = await getTowns();
+  const flags = await getAllFeatureFlags();
+  const townMapsEnabled = isTownMapsFeatureEnabled(flags);
+
+  let mapMarkers: BusinessMapMarker[] = [];
+  if (townMapsEnabled && towns.length > 0) {
+    try {
+      mapMarkers = await listTownHubMapMarkers(towns);
+    } catch (err) {
+      console.error("towns hub map markers", err);
+    }
+  }
+
   const collectionSchema = generateCollectionPageSchema({
     name: "30A Beach Towns",
     path: "/towns",
@@ -106,8 +122,17 @@ export default async function TownsPage() {
         </div>
       </div>
 
-      {/* Town grid */}
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+        {mapMarkers.length > 0 ? (
+          <BusinessMapSection
+            markers={mapMarkers}
+            title="Map of towns along 30A"
+            description="The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen."
+            zoom={13}
+            fitMaxZoom={13}
+          />
+        ) : null}
+
         {towns.length === 0 ? (
           <p className="text-center text-[var(--color-text-secondary)]">
             No towns are available right now. Check back soon.
@@ -128,27 +153,29 @@ export default async function TownsPage() {
         )}
       </div>
 
-      {/* 30A corridor map */}
-      <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10 sm:py-14">
-        <div className="mx-auto max-w-6xl px-4 md:px-10">
-          <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
-            Map of towns along 30A
-          </h2>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen.
-          </p>
-          <div className="mt-6 overflow-hidden rounded-xl border border-[var(--color-border)] shadow-sm">
-            <Image
-              src="/map.jpeg"
-              alt="Map of beach towns along Scenic Highway 30A from Inlet Beach to Dune Allen"
-              width={1200}
-              height={600}
-              className="h-auto w-full"
-              loading="lazy"
-            />
+      {/* Static corridor map only when interactive town_maps is off */}
+      {!townMapsEnabled ? (
+        <section className="border-t border-[var(--color-border)] bg-[var(--color-surface-container-low)] py-10 sm:py-14">
+          <div className="mx-auto max-w-6xl px-4 md:px-10">
+            <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)] sm:text-xl">
+              Map of towns along 30A
+            </h2>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen.
+            </p>
+            <div className="mt-6 overflow-hidden rounded-xl border border-[var(--color-border)] shadow-sm">
+              <Image
+                src="/map.jpeg"
+                alt="Map of beach towns along Scenic Highway 30A from Inlet Beach to Dune Allen"
+                width={1200}
+                height={600}
+                className="h-auto w-full"
+                loading="lazy"
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

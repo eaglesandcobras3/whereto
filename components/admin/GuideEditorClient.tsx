@@ -717,9 +717,9 @@ export function GuideEditorClient({ guideId }: Props) {
                 <Link
                   href={`/guide/${encodeURIComponent(slug)}`}
                   target="_blank"
-                  className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                  className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)]"
                 >
-                  Preview public page
+                  <span className="underline-offset-2 group-hover:underline">Preview public page</span>
                   <span className="material-symbols-outlined !text-sm" aria-hidden>
                     open_in_new
                   </span>

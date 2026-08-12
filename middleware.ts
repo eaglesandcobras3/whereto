@@ -6,6 +6,7 @@ import {
   isDiscoverEnabled,
   isFreeOnboardEnabled,
   isOnboardEnabled,
+  isRentalPartnersEnabled,
   isRentalsEnabled,
   isReviewQueueEnabled,
   isSearchInspectorEnabled,
@@ -248,25 +249,42 @@ export async function middleware(request: NextRequest) {
   const rentalsDevBypass =
     process.env.NODE_ENV === "development" && process.env.RENTALS_ENABLED === "1";
   const rentalsOn = isRentalsEnabled(flags) || rentalsDevBypass;
+  const rentalPartnersDevBypass =
+    process.env.NODE_ENV === "development" && process.env.RENTAL_PARTNERS_ENABLED === "1";
+  const rentalPartnersOn = isRentalPartnersEnabled(flags) || rentalPartnersDevBypass;
+
+  const isPartnerApplicationPath =
+    pathname === "/list-your-rentals/partner" ||
+    pathname.startsWith("/list-your-rentals/partner/");
+  const isPartnerApplicationApi =
+    pathname === "/api/rentals/partner-application" ||
+    pathname.startsWith("/api/rentals/partner-application/");
+
   if (
     !rentalsOn &&
     (pathname === "/stays" ||
       pathname.startsWith("/stays/") ||
-      pathname === "/list-your-rentals" ||
-      pathname.startsWith("/list-your-rentals/") ||
       pathname === "/admin/rentals" ||
-      pathname.startsWith("/admin/rentals/"))
+      pathname.startsWith("/admin/rentals/") ||
+      (pathname === "/list-your-rentals" && !isPartnerApplicationPath) ||
+      (pathname.startsWith("/list-your-rentals/") && !isPartnerApplicationPath))
   ) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+  if (!rentalPartnersOn && isPartnerApplicationPath) {
     return NextResponse.redirect(new URL("/", request.url));
   }
   if (
     !rentalsOn &&
     (pathname === "/api/stays" ||
       pathname.startsWith("/api/stays/") ||
-      pathname === "/api/rentals" ||
-      pathname.startsWith("/api/rentals/") ||
-      pathname.startsWith("/api/admin/rentals"))
+      pathname.startsWith("/api/admin/rentals") ||
+      ((pathname === "/api/rentals" || pathname.startsWith("/api/rentals/")) &&
+        !isPartnerApplicationApi))
   ) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (!rentalPartnersOn && isPartnerApplicationApi) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

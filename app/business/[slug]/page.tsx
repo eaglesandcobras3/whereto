@@ -46,6 +46,7 @@ import {
   listPublishedRentalsForBusiness,
 } from "@/lib/stays/execute-search";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
+import { leafCategoryIcon } from "@/lib/categories/unified-browse";
 
 export const revalidate = 21600;
 
@@ -389,6 +390,10 @@ export default async function BusinessPage({ params }: Props) {
     hasCoords &&
     Number.isFinite(Number(b.lat)) &&
     Number.isFinite(Number(b.lng));
+  const categorySlug =
+    b.categories && typeof (b.categories as { slug?: string }).slug === "string"
+      ? String((b.categories as { slug: string }).slug).trim()
+      : "";
   const businessMapMarkers: BusinessMapMarker[] = showBusinessMap
     ? [
         {
@@ -397,6 +402,7 @@ export default async function BusinessPage({ params }: Props) {
           slug: String(b.slug),
           lat: Number(b.lat),
           lng: Number(b.lng),
+          icon: leafCategoryIcon(categorySlug || "storefront"),
         },
       ]
     : [];

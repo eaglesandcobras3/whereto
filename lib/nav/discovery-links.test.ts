@@ -24,8 +24,10 @@ const discoverOnly: FeatureFlags = {
   community_tips: false,
   town_facts: true,
   rentals: false,
+  rental_partners: false,
   business_photos: false,
   business_maps: false,
+  town_maps: false,
   feedback: false,
 };
 const discoverNlOn: FeatureFlags = {

@@ -9,6 +9,8 @@ type Props = {
   className?: string;
   /** Default zoom when only one marker. */
   zoom?: number;
+  /** Cap for multi-marker fitBounds (hubs spanning a corridor use a lower value). */
+  fitMaxZoom?: number;
 };
 
 const LIGHT_TILES =
@@ -22,9 +24,9 @@ function readDarkMode(): boolean {
   return document.documentElement.classList.contains("dark");
 }
 
-function mapMarkerSvg(dark: boolean): string {
-  const fill = dark ? "#5eead4" : "#0f766e";
-  const stroke = dark ? "#042f2e" : "#f0fdfa";
+function teardropPinSvg(dark: boolean): string {
+  const fill = dark ? "#9fd4d6" : "#6cb2b5";
+  const stroke = dark ? "#1c3257" : "#f7fbfb";
   return encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
       <path fill="${fill}" stroke="${stroke}" stroke-width="2"
@@ -34,14 +36,35 @@ function mapMarkerSvg(dark: boolean): string {
   );
 }
 
+function categoryPinHtml(iconName: string, dark: boolean): string {
+  const bg = dark ? "#9fd4d6" : "#6cb2b5";
+  const fg = dark ? "#1c3257" : "#ffffff";
+  const tip = bg;
+  const safeIcon = escapeHtml(iconName.replace(/[^a-z0-9_]/gi, "") || "storefront");
+  return `<div style="position:relative;width:36px;height:44px;filter:drop-shadow(0 2px 4px rgba(28,50,87,.28));">
+  <div style="width:34px;height:34px;border-radius:9999px;background:${bg};border:2px solid ${dark ? "#1c3257" : "#ffffff"};display:flex;align-items:center;justify-content:center;">
+    <span class="material-symbols-outlined" style="font-size:18px;line-height:1;color:${fg};font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24;">${safeIcon}</span>
+  </div>
+  <div style="position:absolute;left:50%;bottom:1px;width:0;height:0;margin-left:-6px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid ${tip};"></div>
+</div>`;
+}
+
 /**
  * OpenStreetMap via Leaflet — Carto Voyager (soft color) in light mode, dark_all in dark.
+ * Multi-pin hubs use category Material Symbol chips when `marker.icon` is set.
  */
-export function BusinessesOpenStreetMap({ markers, className = "", zoom = 18 }: Props) {
+export function BusinessesOpenStreetMap({
+  markers,
+  className = "",
+  zoom = 18,
+  fitMaxZoom = 17,
+}: Props) {
   const mapId = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [dark, setDark] = useState(false);
-  const markersKey = markers.map((m) => `${m.id}:${m.lat}:${m.lng}`).join("|");
+  const markersKey = markers
+    .map((m) => `${m.id}:${m.lat}:${m.lng}:${m.icon ?? ""}:${m.href ?? ""}`)
+    .join("|");
 
   useEffect(() => {
     setDark(readDarkMode());
@@ -63,12 +86,29 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 18 }: 
       const L = (await import("leaflet")).default;
       if (cancelled || !containerRef.current) return;
 
-      const icon = L.icon({
-        iconUrl: `data:image/svg+xml;charset=UTF-8,${mapMarkerSvg(dark)}`,
+      const defaultIcon = L.icon({
+        iconUrl: `data:image/svg+xml;charset=UTF-8,${teardropPinSvg(dark)}`,
         iconSize: [28, 40],
         iconAnchor: [14, 40],
         popupAnchor: [0, -36],
       });
+
+      const iconCache = new Map<string, import("leaflet").DivIcon>();
+      function iconFor(marker: BusinessMapMarker) {
+        const name = marker.icon?.trim();
+        if (!name) return defaultIcon;
+        const cached = iconCache.get(name);
+        if (cached) return cached;
+        const divIcon = L.divIcon({
+          className: "whereto-map-cat-pin",
+          html: categoryPinHtml(name, dark),
+          iconSize: [36, 44],
+          iconAnchor: [18, 44],
+          popupAnchor: [0, -40],
+        });
+        iconCache.set(name, divIcon);
+        return divIcon;
+      }
 
       map = L.map(containerRef.current, {
         scrollWheelZoom: false,
@@ -88,14 +128,17 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 18 }: 
         const linkClass = dark
           ? "font-medium text-zinc-100 underline"
           : "font-medium text-zinc-900 underline";
-        const popup = `<a href="/business/${encodeURIComponent(m.slug)}" class="${linkClass}">${escapeHtml(m.title)}</a>`;
-        L.marker(latlng, { icon }).addTo(map).bindPopup(popup);
+        const href =
+          (typeof m.href === "string" && m.href.trim()) ||
+          `/business/${encodeURIComponent(m.slug)}`;
+        const popup = `<a href="${escapeHtml(href)}" class="${linkClass}">${escapeHtml(m.title)}</a>`;
+        L.marker(latlng, { icon: iconFor(m) }).addTo(map).bindPopup(popup);
       }
 
       if (markers.length === 1) {
         map.setView([markers[0].lat, markers[0].lng], zoom);
       } else if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.05), { maxZoom: Math.max(zoom, 17) });
+        map.fitBounds(bounds.pad(0.08), { maxZoom: fitMaxZoom });
       }
 
       requestAnimationFrame(() => map?.invalidateSize());
@@ -110,7 +153,7 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 18 }: 
     };
     // markersKey captures marker identity/coords without depending on array identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markersKey, zoom, mapId, dark]);
+  }, [markersKey, zoom, fitMaxZoom, mapId, dark]);
 
   if (markers.length === 0) return null;
 
@@ -118,9 +161,9 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 18 }: 
     <div
       ref={containerRef}
       id={`businesses-map-${mapId}`}
-      className={`h-full min-h-[16rem] w-full bg-[var(--color-surface)] ${className}`}
+      className={`h-full min-h-[20rem] w-full bg-[var(--color-surface)] ${className}`}
       role="img"
-      aria-label="Map of businesses"
+      aria-label="Map"
     />
   );
 }

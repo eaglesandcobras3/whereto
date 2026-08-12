@@ -19,6 +19,7 @@ import {
   unifiedRollupFromPublicSegment,
   unifiedRollupPublicSegment,
 } from "@/lib/categories/unified-browse";
+import { browseSectionIcon } from "@/lib/categories/unified-browse";
 import { listStorefrontMapMarkersForBusinessIds } from "@/lib/data/business-map-markers";
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
@@ -29,13 +30,16 @@ type Props = { params: Promise<{ slug: string }> };
 
 async function mapMarkersForHub(
   businesses: { id: string; is_storefront: boolean }[],
+  hubSlug: string,
 ): Promise<BusinessMapMarker[]> {
   const flags = await getAllFeatureFlags();
   if (!isBusinessMapsFeatureEnabled(flags)) return [];
   const storefrontIds = businesses.filter((b) => b.is_storefront).map((b) => b.id);
   if (storefrontIds.length === 0) return [];
   try {
-    return await listStorefrontMapMarkersForBusinessIds(storefrontIds);
+    return await listStorefrontMapMarkersForBusinessIds(storefrontIds, {
+      defaultIcon: browseSectionIcon(hubSlug),
+    });
   } catch {
     return [];
   }
@@ -80,7 +84,7 @@ export default async function CategoryOrBrowseGroupPage({ params }: Props) {
   if (rollupSlug) {
     const hub = await loadBrowseGroupHubPage(rollupSlug, "all");
     if (!hub) notFound();
-    const mapMarkers = await mapMarkersForHub(hub.businesses);
+    const mapMarkers = await mapMarkersForHub(hub.businesses, rollupSlug);
     return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
   }
 
@@ -88,7 +92,7 @@ export default async function CategoryOrBrowseGroupPage({ params }: Props) {
   if (groupSlug) {
     const hub = await loadBrowseGroupHubPage(groupSlug, "all");
     if (!hub) notFound();
-    const mapMarkers = await mapMarkersForHub(hub.businesses);
+    const mapMarkers = await mapMarkersForHub(hub.businesses, groupSlug);
     return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
   }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { FormEvent, useEffect, useState } from "react";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
+import { useRentalPartnersFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import {
   RENTAL_LOCATION_PRECISION,
   RENTAL_PROPERTY_TYPES,
@@ -28,6 +29,7 @@ const MapLocationPickerClient = dynamic(
 type TownOption = { id: string; label: string; sublabel?: string };
 
 export function ListARentalForm() {
+  const partnersEnabled = useRentalPartnersFeatureEnabled();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -370,13 +372,15 @@ export function ListARentalForm() {
         {busy ? "Submitting…" : "Submit listing for review"}
       </button>
 
-      <p className="text-xs text-zinc-500">
-        Prefer a company partnership application without a specific home?{" "}
-        <Link href="/list-your-rentals/partner" className="underline">
-          Partner application
-        </Link>
-        .
-      </p>
+      {partnersEnabled ? (
+        <p className="text-xs text-zinc-500">
+          Prefer a company partnership application without a specific home?{" "}
+          <Link href="/list-your-rentals/partner" className="underline">
+            Partner application
+          </Link>
+          .
+        </p>
+      ) : null}
     </form>
   );
 }

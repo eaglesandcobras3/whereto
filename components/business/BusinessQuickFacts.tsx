@@ -129,9 +129,9 @@ export function BusinessQuickFacts({
                         })}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-logo-navy)] underline-offset-4 hover:underline"
+                        className="group inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-logo-navy)]"
                       >
-                        Open in Maps
+                        <span className="underline-offset-4 group-hover:underline">Open in Maps</span>
                         <MsIcon
                           name="north_east"
                           className="!text-base text-[var(--color-logo-navy)]"

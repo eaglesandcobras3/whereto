@@ -33,8 +33,9 @@ function readDarkMode(): boolean {
 }
 
 function mapMarkerSvg(dark: boolean): string {
-  const fill = dark ? "#5eead4" : "#0f766e";
-  const stroke = dark ? "#042f2e" : "#f0fdfa";
+  // Logo 30A ocean teal (`--color-logo-teal`) + navy stroke for contrast
+  const fill = dark ? "#9fd4d6" : "#6cb2b5";
+  const stroke = dark ? "#1c3257" : "#f7fbfb";
   return encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
       <path fill="${fill}" stroke="${stroke}" stroke-width="2"

@@ -102,9 +102,9 @@ export function CategoryHubEditorial({ categorySlug }: Props) {
                       category: "category_hub_editorial",
                       label: block.title,
                     })}
-                    className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-primary)] hover:underline"
+                    className="group mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-primary)]"
                   >
-                    Explore listings
+                    <span className="underline-offset-2 group-hover:underline">Explore listings</span>
                     <span className="material-symbols-outlined !text-base">arrow_forward</span>
                   </Link>
                 ) : null}
