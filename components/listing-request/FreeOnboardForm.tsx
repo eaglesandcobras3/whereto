@@ -279,7 +279,6 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       }
     })();
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when slug/mode change
   }, [businessSlug, mode]);
 
   const tagOptions: DiscoverSearchTagOption[] = useMemo(() => {

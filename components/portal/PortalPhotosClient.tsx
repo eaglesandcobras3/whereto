@@ -48,10 +48,7 @@ export function PortalPhotosClient({ businessId, businessTitle }: Props) {
   }, [businessId]);
 
   useEffect(() => {
-    if (!businessPhotosEnabled) {
-      setLoading(false);
-      return;
-    }
+    if (!businessPhotosEnabled) return;
     queueMicrotask(() => load());
   }, [load, businessPhotosEnabled]);
 
