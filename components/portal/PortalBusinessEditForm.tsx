@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { summarizeBusinessHours } from "@/lib/business/format-business-hours";
 import type { PlanEntitlements } from "@/lib/portal/entitlements";
 import { PlanGate } from "@/components/portal/PlanGate";
+import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
@@ -42,6 +43,7 @@ function hoursToText(hours: unknown): string {
 }
 
 export function PortalBusinessEditForm({ businessId }: Props) {
+  const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -142,12 +144,14 @@ export function PortalBusinessEditForm({ businessId }: Props) {
         >
           ← Dashboard
         </Link>
-        <Link
-          href={`/portal/businesses/${encodeURIComponent(businessId)}/photos`}
-          className="text-sm font-medium text-[var(--color-primary)] hover:underline"
-        >
-          Manage photos
-        </Link>
+        {businessPhotosEnabled ? (
+          <Link
+            href={`/portal/businesses/${encodeURIComponent(businessId)}/photos`}
+            className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+          >
+            Manage photos
+          </Link>
+        ) : null}
       </div>
 
       <h1 className="font-headline mt-6 text-2xl font-semibold text-[var(--color-text-primary)]">

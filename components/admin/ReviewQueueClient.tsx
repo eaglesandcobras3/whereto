@@ -10,6 +10,8 @@ import {
   FREE_ONBOARD_TYPES,
   isFreeOnboardReviewType,
 } from "@/lib/listing-requests/free-onboard-schema";
+import { AdminBusinessMainImageControl } from "@/components/admin/AdminBusinessMainImageControl";
+import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 
 type ReviewItem = {
   id: string;
@@ -122,6 +124,7 @@ function buildTagActions(
 }
 
 export function ReviewQueueClient() {
+  const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -942,10 +945,27 @@ export function ReviewQueueClient() {
                           alt=""
                           className="mt-2 max-h-48 rounded-lg border border-zinc-200 object-cover"
                         />
-                        <p className="mt-2 text-xs text-amber-800">
-                          Photo approval is temporarily disabled (image URL columns). You can still
-                          reject if needed.
+                        <p className="mt-2 text-xs text-zinc-600">
+                          {item.payload.is_hero
+                            ? "Requested as main listing image (card)."
+                            : "Additional gallery photo."}
                         </p>
+                        {!businessPhotosEnabled ? (
+                          <p className="mt-2 text-xs text-amber-800">
+                            Enable PostHog flag <code>business_photos</code> (and apply image URL
+                            migrations) before approving. You can still reject if needed.
+                          </p>
+                        ) : null}
+                        {item.business_id && businessPhotosEnabled ? (
+                          <AdminBusinessMainImageControl
+                            businessId={item.business_id}
+                            currentImageUrl={
+                              typeof item.payload.public_url === "string"
+                                ? item.payload.public_url
+                                : null
+                            }
+                          />
+                        ) : null}
                       </div>
                     ) : (
                       Object.entries(item.payload).map(([k, v]) =>
@@ -1008,11 +1028,16 @@ export function ReviewQueueClient() {
                     <>
                       <button
                         type="button"
-                        disabled={acting === item.id || item.type === "photo"}
+                        disabled={
+                          acting === item.id ||
+                          (item.type === "photo" && !businessPhotosEnabled)
+                        }
                         onClick={() => void act(item.id, "approve")}
                         className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
                       >
-                        {item.type === "photo" ? "Approve (disabled)" : "Approve"}
+                        {item.type === "photo" && !businessPhotosEnabled
+                          ? "Approve (photos off)"
+                          : "Approve"}
                       </button>
                       <button
                         type="button"

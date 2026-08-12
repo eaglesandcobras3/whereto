@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { onboardApiBlocked } from "@/lib/feature-flags";
+import { businessPhotosApiBlocked, onboardApiBlocked } from "@/lib/feature-flags";
 import { getBusinessPlan } from "@/lib/portal/entitlements";
 import { sendPortalOwnerEmail } from "@/lib/portal/notifications";
 import { requireBusinessMember } from "@/lib/portal/require-business-member";
@@ -11,8 +11,10 @@ export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ businessId: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  const blocked = await onboardApiBlocked();
-  if (blocked) return blocked;
+  const onboardBlocked = await onboardApiBlocked();
+  if (onboardBlocked) return onboardBlocked;
+  const photosBlocked = await businessPhotosApiBlocked();
+  if (photosBlocked) return photosBlocked;
 
   const { businessId } = await context.params;
   const member = await requireBusinessMember(businessId);
@@ -33,8 +35,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  const blocked = await onboardApiBlocked();
-  if (blocked) return blocked;
+  const onboardBlocked = await onboardApiBlocked();
+  if (onboardBlocked) return onboardBlocked;
+  const photosBlocked = await businessPhotosApiBlocked();
+  if (photosBlocked) return photosBlocked;
 
   const { businessId } = await context.params;
   const member = await requireBusinessMember(businessId);
@@ -76,6 +80,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed";
     return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  if (isHero) {
+    await supabase
+      .from("business_photos")
+      .update({ is_hero: false })
+      .eq("business_id", businessId)
+      .in("status", ["pending", "approved"]);
   }
 
   const { data: photo, error: photoErr } = await supabase

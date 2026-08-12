@@ -117,6 +117,9 @@ export async function submitRentalListing(
     throw new Error("Rejected");
   }
 
+  if (photos.length === 0) {
+    throw new Error("Add a main photo for the listing card.");
+  }
   if (photos.length > RENTAL_LISTING_MAX_PHOTOS) {
     throw new Error(`You can upload up to ${RENTAL_LISTING_MAX_PHOTOS} photos.`);
   }
@@ -159,7 +162,7 @@ export async function submitRentalListing(
       bathrooms: body.bathrooms,
       sleeps: body.sleeps,
       booking_url: body.booking_url,
-      hero_image_url: body.hero_image_url,
+      hero_image_url: null,
       starting_nightly_rate: body.starting_nightly_rate ?? null,
       beach_access: body.beach_access ?? "unknown",
       pets_allowed: body.pets_allowed ?? null,
@@ -198,7 +201,7 @@ export async function submitRentalListing(
     photoCount += 1;
   }
 
-  if (heroFromUpload && !body.hero_image_url) {
+  if (heroFromUpload) {
     await supabase
       .from("rental_properties")
       .update({ hero_image_url: heroFromUpload, date_updated: now })

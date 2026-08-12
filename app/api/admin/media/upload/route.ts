@@ -55,7 +55,12 @@ export async function POST(request: NextRequest) {
       const maxWidth = VARIANTS[variant];
       const transformed = await base
         .clone()
-        .resize({ width: maxWidth, withoutEnlargement: true })
+        .resize({
+          width: maxWidth,
+          height: maxWidth,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
         .webp({ quality: 78, effort: 4 })
         .toBuffer({ resolveWithObject: true });
 
