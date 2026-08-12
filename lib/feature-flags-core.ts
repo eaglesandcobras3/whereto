@@ -33,7 +33,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   seo_improvements: false,
   community_tips: false,
   town_facts: true,
-  rentals: false,
+  rentals: true,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
