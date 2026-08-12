@@ -19,10 +19,27 @@ import {
   unifiedRollupFromPublicSegment,
   unifiedRollupPublicSegment,
 } from "@/lib/categories/unified-browse";
+import { listStorefrontMapMarkersForBusinessIds } from "@/lib/data/business-map-markers";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
+import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
 export const revalidate = 21600;
 
 type Props = { params: Promise<{ slug: string }> };
+
+async function mapMarkersForHub(
+  businesses: { id: string; is_storefront: boolean }[],
+): Promise<BusinessMapMarker[]> {
+  const flags = await getAllFeatureFlags();
+  if (!isBusinessMapsFeatureEnabled(flags)) return [];
+  const storefrontIds = businesses.filter((b) => b.is_storefront).map((b) => b.id);
+  if (storefrontIds.length === 0) return [];
+  try {
+    return await listStorefrontMapMarkersForBusinessIds(storefrontIds);
+  } catch {
+    return [];
+  }
+}
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   const legacy = BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => ({
@@ -63,14 +80,16 @@ export default async function CategoryOrBrowseGroupPage({ params }: Props) {
   if (rollupSlug) {
     const hub = await loadBrowseGroupHubPage(rollupSlug, "all");
     if (!hub) notFound();
-    return <BrowseGroupHubView hub={hub} />;
+    const mapMarkers = await mapMarkersForHub(hub.businesses);
+    return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
   }
 
   const groupSlug = businessBrowseGroupFromPublicSegment(raw);
   if (groupSlug) {
     const hub = await loadBrowseGroupHubPage(groupSlug, "all");
     if (!hub) notFound();
-    return <BrowseGroupHubView hub={hub} />;
+    const mapMarkers = await mapMarkersForHub(hub.businesses);
+    return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
   }
 
   const slug = normalizeBusinessCategorySlug(raw) ?? raw.trim().toLowerCase();

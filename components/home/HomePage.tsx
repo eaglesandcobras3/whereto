@@ -7,11 +7,14 @@ import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { useSeoImprovementsFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
+import { FeaturedRentalsSection } from "@/components/home/FeaturedRentalsSection";
 import { TripPlanningSection } from "@/components/home/TripPlanningSection";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
+import { ListRentalsHomeCta } from "@/components/stays/ListRentalsHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
+import type { RentalPropertyView } from "@/lib/stays/types";
 
 function MsIcon({
   name,
@@ -111,6 +114,7 @@ type Props = {
     featured_description?: string | null;
     badge?: string | null;
   })[];
+  featuredRentals?: RentalPropertyView[];
   towns?: TownPayload[];
   heroSettings?: {
     imageUrl: string;
@@ -121,6 +125,7 @@ type Props = {
 
 export function HomePage({
   featuredBusinesses = [],
+  featuredRentals = [],
   towns = [],
   heroSettings = {
     imageUrl: HOME_HERO_IMAGE_PATH,
@@ -226,6 +231,8 @@ export function HomePage({
           </section>
         )}
 
+        <FeaturedRentalsSection rentals={featuredRentals} />
+
         {towns.length > 0 && (
           <section
             id="section-neighborhoods"
@@ -295,6 +302,7 @@ export function HomePage({
         {seoImprovements ? <TripPlanningSection /> : null}
 
         <ListBusinessHomeCta />
+        <ListRentalsHomeCta />
       </div>
     </div>
   );

@@ -28,21 +28,24 @@ import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { BusinessUpdateListingCta } from "@/components/business/BusinessUpdateListingCta";
+import { BusinessPhotosEmptyState } from "@/components/business/BusinessPhotosEmptyState";
+import { BusinessPhotoGallery } from "@/components/business/BusinessPhotoGallery";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
-import { getAllFeatureFlags, isBusinessPhotosFeatureEnabled, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
 import { BusinessRentalPortfolio } from "@/components/business/BusinessRentalPortfolio";
-import { BusinessPhotoGallery } from "@/components/business/BusinessPhotoGallery";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import {
   getActivePartnerForBusiness,
   listPublishedRentalsForBusiness,
 } from "@/lib/stays/execute-search";
+import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
 export const revalidate = 21600;
 
@@ -93,7 +96,7 @@ async function loadBusiness(slug: string) {
         menu_url, booking_url, service_area, hours,
         excerpt, content, overview, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
-        claim_status, search_tags, status, published_at, price_level, is_verified,
+        claim_status, search_tags, status, published_at, price_level, is_verified, is_storefront,
         towns ( title, slug ),
         areas ( title, slug ),
         business_categories ( title, slug )
@@ -301,6 +304,7 @@ export default async function BusinessPage({ params }: Props) {
   const freeOnboardEnabled = isFreeOnboardEnabled(flags);
   const rentalsEnabled = isRentalsFeatureEnabled(flags);
   const businessPhotosEnabled = isBusinessPhotosFeatureEnabled(flags);
+  const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
 
   const row = b as Record<string, unknown>;
   const rawSlug = row.slug;
@@ -331,27 +335,18 @@ export default async function BusinessPage({ params }: Props) {
         .order("is_hero", { ascending: false })
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
+      const listingHero = businessListingImageUrl(b.hero_image_url as string | null);
+      // Gallery shows additional approved photos only — main/card image stays in the header.
       galleryPhotos = (photoRows ?? [])
         .map((p) => ({
           id: String(p.id),
           public_url: String(p.public_url),
           is_hero: Boolean(p.is_hero),
         }))
-        .filter((p) => p.public_url.startsWith("http"));
-
-      // Ensure the listing main image appears even if not yet in business_photos.
-      const listingHero = businessListingImageUrl(b.hero_image_url as string | null);
-      if (listingHero && !galleryPhotos.some((p) => p.public_url === listingHero)) {
-        galleryPhotos = [
-          { id: `listing-hero-${businessId}`, public_url: listingHero, is_hero: true },
-          ...galleryPhotos.map((p) => ({ ...p, is_hero: false })),
-        ];
-      } else if (listingHero) {
-        galleryPhotos = galleryPhotos.map((p) => ({
-          ...p,
-          is_hero: p.public_url === listingHero,
-        }));
-      }
+        .filter((p) => p.public_url.startsWith("http"))
+        .filter((p) => !p.is_hero)
+        .filter((p) => !listingHero || p.public_url !== listingHero)
+        .map((p) => ({ ...p, is_hero: false }));
     } catch {
       galleryPhotos = [];
     }
@@ -384,6 +379,26 @@ export default async function BusinessPage({ params }: Props) {
 
   const heroImage = businessListingImageUrl(b.hero_image_url as string | null);
   const hasCoords = b.lat != null && b.lng != null;
+  const addressText =
+    typeof b.address === "string" ? b.address.trim() : "";
+  const showBusinessMap =
+    businessMapsEnabled &&
+    hasPhysicalLocation &&
+    Boolean(addressText) &&
+    hasCoords &&
+    Number.isFinite(Number(b.lat)) &&
+    Number.isFinite(Number(b.lng));
+  const businessMapMarkers: BusinessMapMarker[] = showBusinessMap
+    ? [
+        {
+          id: businessId,
+          title: String(b.name),
+          slug: String(b.slug),
+          lat: Number(b.lat),
+          lng: Number(b.lng),
+        },
+      ]
+    : [];
 
   // AI enrichment data
   const vibe = b.ai_vibe as string[] | null;
@@ -627,11 +642,22 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
             <div className="space-y-4">
-              {businessPhotosEnabled && galleryPhotos.length > 0 ? (
-                <BusinessPhotoGallery
-                  photos={galleryPhotos}
-                  businessName={b.name as string}
-                />
+              {businessPhotosEnabled ? (
+                galleryPhotos.length > 0 ? (
+                  <BusinessPhotoGallery
+                    photos={galleryPhotos}
+                    businessName={b.name as string}
+                  />
+                ) : (
+                  <BusinessPhotosEmptyState
+                    businessName={b.name as string}
+                    updateListingHref={
+                      freeOnboardEnabled
+                        ? `/list-your-business?business=${encodeURIComponent(String(b.slug))}`
+                        : undefined
+                    }
+                  />
+                )
               ) : null}
               {hasOverview ? (
                 <div className="space-y-4">
@@ -776,6 +802,15 @@ export default async function BusinessPage({ params }: Props) {
               )}
             </aside>
           </div>
+
+          {businessMapMarkers.length > 0 ? (
+            <BusinessMapSection
+              className="mt-10 sm:mt-12"
+              markers={businessMapMarkers}
+              title="Location"
+              description={`Find ${String(b.name)} on the map.`}
+            />
+          ) : null}
 
           {rentalsEnabled && (rentalProperties.length > 0 || partnerStatus === "active") ? (
             <BusinessRentalPortfolio

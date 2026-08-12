@@ -142,6 +142,50 @@ export async function listPublishedRentalsForTownSlug(
   return (data ?? []) as unknown as RentalPropertyView[];
 }
 
+export async function listHomepageFeaturedRentals(
+  limit = 6,
+): Promise<{ totalPublished: number; items: RentalPropertyView[] }> {
+  const supabase = getServiceSupabase();
+  const base = () =>
+    supabase
+      .from("rental_properties_view")
+      .select("*", { count: "exact" })
+      .eq("status", "published")
+      .eq("partner_status", "active")
+      .eq("is_hidden_from_search", false)
+      .is("duplicate_of_property_id", null);
+
+  const { count, error: countErr } = await base();
+  if (countErr) throw new Error(countErr.message);
+  const totalPublished = count ?? 0;
+  if (totalPublished <= 4) {
+    return { totalPublished, items: [] };
+  }
+
+  const { data: featured, error: featuredErr } = await base()
+    .eq("featured", true)
+    .order("date_updated", { ascending: false })
+    .limit(limit);
+  if (featuredErr) throw new Error(featuredErr.message);
+
+  let items = (featured ?? []) as unknown as RentalPropertyView[];
+  if (items.length < limit) {
+    const excludeIds = items.map((i) => i.id);
+    let fillQuery = base()
+      .order("featured", { ascending: false })
+      .order("date_updated", { ascending: false })
+      .limit(limit - items.length);
+    if (excludeIds.length > 0) {
+      fillQuery = fillQuery.not("id", "in", `(${excludeIds.join(",")})`);
+    }
+    const { data: fill, error: fillErr } = await fillQuery;
+    if (fillErr) throw new Error(fillErr.message);
+    items = [...items, ...((fill ?? []) as unknown as RentalPropertyView[])];
+  }
+
+  return { totalPublished, items: items.slice(0, limit) };
+}
+
 export async function getActivePartnerForBusiness(
   businessId: string,
 ): Promise<{ id: string; status: string; show_public_business_profile: boolean } | null> {

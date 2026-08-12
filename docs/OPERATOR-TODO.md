@@ -336,8 +336,15 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**) |
 | `rentals` | Vacation rentals marketplace (`/stays`, listing intake, admin rentals); code default **off** |
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
+| `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
+
+### Business maps setup
+
+- [ ] PostHog: create boolean flag `business_maps` (default false); enable for internal cohort then gradual rollout
+- [ ] Local dev (optional): `BUSINESS_MAPS_ENABLED=1` and `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED=1`
+- [ ] Smoke-test: `/business/[slug]` shows Location map only when the listing has a physical location (coords) **and** a non-empty address; town/area/category hubs show multi-pin map only when at least one storefront has coordinates; hubs with no mapped storefronts hide the map
 
 ### Business photos setup
 
@@ -492,6 +499,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-12 | PostHog `business_maps`: OpenStreetMap on storefront business detail + multi-pin maps on town/area/category hubs (storefronts with coordinates only); Leaflet for multi-pin; local bypass `BUSINESS_MAPS_ENABLED` / `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED` |
 | 2026-08-12 | PostHog `business_photos`: admin main-image update + portal additional photos (WebP max 1600px); public profile gallery + lightbox; SQL [businesses-external-image-urls.sql](../scripts/migrations/businesses-external-image-urls.sql) + [business-photos.sql](../scripts/migrations/business-photos.sql). Writes target `businesses` table URL columns (not view aliases). Rentals listing form: remove hero URL fallback; main + additional photo fields. |
 | 2026-08-12 | Rentals listing form: **photo upload** + address fields (`street_address`, `postal_code`, community, lat/lng, precision); SQL [rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql). PMS/API sync still deferred (referral marketplace, not Airbnb clone) |
 | 2026-08-12 | Rentals: public **list a vacation rental** at `/list-your-rentals` (creates `pending_review` listing); partner-only form at `/list-your-rentals/partner`; admin create retained at `/admin/rentals` |

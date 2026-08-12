@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { listTownPickerOptions } from "@/lib/admin/guides";
+import { listAreaPickerOptions, listTownPickerOptions } from "@/lib/admin/guides";
 import { rentalsApiBlocked } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { setPartnerStatus } from "@/lib/stays/partner-application";
@@ -57,8 +57,11 @@ export async function GET(request: NextRequest) {
   }
 
   if (kind === "options") {
-    const towns = await listTownPickerOptions(supabase);
-    return NextResponse.json({ towns });
+    const [towns, areas] = await Promise.all([
+      listTownPickerOptions(supabase),
+      listAreaPickerOptions(supabase),
+    ]);
+    return NextResponse.json({ towns, areas });
   }
 
   if (kind === "jobs") {

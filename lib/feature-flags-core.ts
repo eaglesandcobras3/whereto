@@ -17,6 +17,7 @@ export const FEATURE_FLAG_KEYS = [
   "town_facts",
   "rentals",
   "business_photos",
+  "business_maps",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -36,6 +37,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   town_facts: true,
   rentals: false,
   business_photos: false,
+  business_maps: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -129,4 +131,9 @@ export function isRentalsEnabled(flags: FeatureFlags): boolean {
  */
 export function isBusinessPhotosEnabled(flags: FeatureFlags): boolean {
   return flags.business_photos === true;
+}
+
+/** OpenStreetMap embeds on business detail + storefront pins on town/area/category hubs. */
+export function isBusinessMapsEnabled(flags: FeatureFlags): boolean {
+  return flags.business_maps === true;
 }

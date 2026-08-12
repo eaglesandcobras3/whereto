@@ -27,6 +27,9 @@ import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyD
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getGuidesForArea } from "@/lib/data/town-hub";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
+import { listStorefrontMapMarkersForPlace } from "@/lib/data/business-map-markers";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
 
 export const revalidate = 21600;
 
@@ -86,11 +89,21 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) redirectToSectionHub("areas");
 
-  const [categorySections, guides] = await Promise.all([
+  const [categorySections, guides, flags] = await Promise.all([
     getCategorySectionsForPublicPlace(area),
     getGuidesForArea(area.id, area.town_id),
+    getAllFeatureFlags(),
   ]);
   const planningProfile = getAreaPlanningProfile(area.slug);
+
+  let mapMarkers: Awaited<ReturnType<typeof listStorefrontMapMarkersForPlace>> = [];
+  if (isBusinessMapsFeatureEnabled(flags)) {
+    try {
+      mapMarkers = await listStorefrontMapMarkersForPlace(area);
+    } catch {
+      mapMarkers = [];
+    }
+  }
 
   const portraitUrl = businessListingImageUrl(area.hero_image_url);
   const typeLabel = areaTypeLabel(area.areaTypeLabel);
@@ -212,6 +225,14 @@ export default async function AreaPage({ params }: Props) {
               analyticsCategoryPrefix="area_guide_category"
               emptyMessage={<AreaEmptyDiscoveryMessage place={area} />}
             />
+
+            {mapMarkers.length > 0 ? (
+              <BusinessMapSection
+                markers={mapMarkers}
+                title={`Map of ${area.title}`}
+                description="Storefront businesses with a mapped location."
+              />
+            ) : null}
 
             {planningProfile ? (
               <SeoImprovementsGate>

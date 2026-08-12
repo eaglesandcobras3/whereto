@@ -58,6 +58,10 @@ export const rentalListingSubmissionSchema = z.object({
   description: z.string().trim().min(40).max(20000),
   property_type: z.enum(RENTAL_PROPERTY_TYPES).default("house"),
   town_id: z.string().uuid({ message: "Select a town." }),
+  area_id: z
+    .union([z.string().uuid(), z.literal(""), z.null()])
+    .optional()
+    .transform((s) => (s == null || s === "" ? null : s)),
   community_name: optionalTrimmed,
   street_address: optionalTrimmed,
   postal_code: z
@@ -122,6 +126,7 @@ export function listingFieldsFromFormData(fd: FormData): Record<string, unknown>
     description: String(fd.get("description") ?? ""),
     property_type: String(fd.get("property_type") ?? "house"),
     town_id: String(fd.get("town_id") ?? ""),
+    area_id: String(fd.get("area_id") ?? "") || null,
     community_name: String(fd.get("community_name") ?? "") || null,
     street_address: String(fd.get("street_address") ?? "") || null,
     postal_code: String(fd.get("postal_code") ?? "") || null,

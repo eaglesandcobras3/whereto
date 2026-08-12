@@ -6,6 +6,7 @@ import { OpenStreetMap } from "@/components/OpenStreetMap";
 import { RemoteCoverImage } from "@/components/discovery/RemoteCoverImage";
 import { RentalBookingCta } from "@/components/stays/RentalBookingCta";
 import { RentalPartnerBadge } from "@/components/stays/RentalPartnerBadge";
+import { StayUpdateListingCta } from "@/components/stays/StayUpdateListingCta";
 import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { getSiteUrl } from "@/lib/site-url";
@@ -312,6 +313,11 @@ export default async function StayDetailPage({ params }: Props) {
                 Inventory last updated {new Date(property.last_synced_at).toLocaleDateString()}
               </p>
             ) : null}
+
+            <StayUpdateListingCta
+              className="mt-10 sm:mt-12"
+              analyticsLabel={`stay_${property.slug}`}
+            />
           </div>
 
           <aside className="lg:sticky lg:top-24 lg:self-start">

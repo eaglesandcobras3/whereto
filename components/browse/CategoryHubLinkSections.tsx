@@ -52,11 +52,12 @@ export function CategoryHubLinkSections({
   heading,
   subheading,
   emptyMessage,
-  defaultExpandedCount = 1,
+  defaultExpandedCount,
 }: Props) {
   const { expandedIds, toggle } = usePersistedExpandedSectionIds({
     sectionIds: sections.map((section) => section.id),
-    defaultExpandedCount,
+    defaultExpandedCount: defaultExpandedCount ?? sections.length,
+    desktopOnlyDefaults: false,
     isValidHash: isValidSectionHash,
     onHashApplied: (sectionId) => {
       requestAnimationFrame(() => {

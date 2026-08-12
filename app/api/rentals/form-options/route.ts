@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listTownPickerOptions } from "@/lib/admin/guides";
+import { listAreaPickerOptions, listTownPickerOptions } from "@/lib/admin/guides";
 import { rentalsApiBlocked } from "@/lib/feature-flags";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
@@ -9,6 +9,9 @@ export async function GET() {
   if (blocked) return blocked;
 
   const supabase = getServiceSupabase();
-  const towns = await listTownPickerOptions(supabase);
-  return NextResponse.json({ towns });
+  const [towns, areas] = await Promise.all([
+    listTownPickerOptions(supabase),
+    listAreaPickerOptions(supabase),
+  ]);
+  return NextResponse.json({ towns, areas });
 }

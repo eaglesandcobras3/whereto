@@ -1,6 +1,7 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { generateBreadcrumbSchema, generateItemListSchema } from "@/lib/seo/breadcrumb-schema";
 import { businessBrowseGroupHubPath } from "@/lib/business-categories/browse-group-nav";
 import {
@@ -8,11 +9,13 @@ import {
   unifiedRollupHubPath,
 } from "@/lib/categories/unified-browse";
 import type { BrowseGroupHubPage } from "@/lib/data/browse-group-hub";
+import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { partitionCategoryBusinessesByTown } from "@/lib/data/category-hub";
 import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
 
 type Props = {
   hub: BrowseGroupHubPage;
+  mapMarkers?: BusinessMapMarker[];
 };
 
 function hubPathFor(slug: string): string {
@@ -20,7 +23,7 @@ function hubPathFor(slug: string): string {
   return businessBrowseGroupHubPath(slug as BusinessCategoryGroupSlug);
 }
 
-export function BrowseGroupHubView({ hub }: Props) {
+export function BrowseGroupHubView({ hub, mapMarkers = [] }: Props) {
   const hubPath = hubPathFor(hub.slug);
   const { townGroups, regional } = partitionCategoryBusinessesByTown(hub.businesses);
   const townCount = townGroups.length;
@@ -76,7 +79,15 @@ export function BrowseGroupHubView({ hub }: Props) {
           meta={<>{metaParts.join(" · ")}</>}
         />
 
-        <div className="mx-auto max-w-6xl px-4 py-12 md:px-10">
+        <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+          {mapMarkers.length > 0 ? (
+            <BusinessMapSection
+              markers={mapMarkers}
+              title={`Map of ${hub.title}`}
+              description="Storefront businesses with a mapped location."
+            />
+          ) : null}
+
           <CategoryHubTownSections
             townGroups={townGroups}
             regional={regional}

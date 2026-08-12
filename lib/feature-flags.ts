@@ -14,6 +14,7 @@ import {
   isTownFactsEnabled,
   isRentalsEnabled,
   isBusinessPhotosEnabled,
+  isBusinessMapsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -34,6 +35,7 @@ export {
   isTownFactsEnabled,
   isRentalsEnabled,
   isBusinessPhotosEnabled,
+  isBusinessMapsEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -127,6 +129,15 @@ export function businessPhotosDevBypassEnabled(): boolean {
 
 export function isBusinessPhotosFeatureEnabled(flags: FeatureFlags): boolean {
   return isBusinessPhotosEnabled(flags) || businessPhotosDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `business_maps` flag still required in production. */
+export function businessMapsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.BUSINESS_MAPS_ENABLED === "1";
+}
+
+export function isBusinessMapsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isBusinessMapsEnabled(flags) || businessMapsDevBypassEnabled();
 }
 
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {

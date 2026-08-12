@@ -2,6 +2,7 @@
 
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import {
+  isBusinessMapsEnabled,
   isBusinessPhotosEnabled,
   isCommunityTipsEnabled,
   isSeoImprovementsEnabled,
@@ -71,4 +72,20 @@ export function isBusinessPhotosFeatureEnabledClient(flags: FeatureFlags): boole
 export function useBusinessPhotosFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isBusinessPhotosFeatureEnabledClient(flags);
+}
+
+function businessMapsDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_BUSINESS_MAPS_ENABLED === "1"
+  );
+}
+
+export function isBusinessMapsFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isBusinessMapsEnabled(flags) || businessMapsDevBypassEnabled();
+}
+
+export function useBusinessMapsFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isBusinessMapsFeatureEnabledClient(flags);
 }

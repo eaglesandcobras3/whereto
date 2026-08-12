@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminRentalPhotoReview } from "@/components/admin/AdminRentalPhotoReview";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   RENTAL_BEACH_ACCESS,
@@ -444,6 +445,28 @@ export function RentalsAdminClient() {
               </form>
             ) : null}
           </section>
+
+            {properties.some((p) => p.status === "pending_review") ? (
+              <section className="space-y-4 border border-amber-200 bg-amber-50/50 p-4">
+                <h2 className="font-headline text-lg font-semibold text-zinc-900">
+                  Intake photo review
+                </h2>
+                <p className="text-sm text-zinc-600">
+                  Choose which submitted photos to keep before publishing. Unchecked photos are
+                  removed.
+                </p>
+                {properties
+                  .filter((p) => p.status === "pending_review")
+                  .map((p) => (
+                    <AdminRentalPhotoReview
+                      key={p.id}
+                      propertyId={p.id}
+                      propertyTitle={p.title}
+                      onDone={() => void load()}
+                    />
+                  ))}
+              </section>
+            ) : null}
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">

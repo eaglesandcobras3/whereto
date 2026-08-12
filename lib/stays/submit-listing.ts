@@ -152,6 +152,7 @@ export async function submitRentalListing(
       property_type: body.property_type,
       status: "pending_review",
       town_id: body.town_id,
+      area_id: body.area_id ?? null,
       community_name: body.community_name,
       street_address: body.street_address,
       postal_code: body.postal_code,

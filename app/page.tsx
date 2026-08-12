@@ -14,6 +14,9 @@ import {
 } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { homePageMetadata } from "@/lib/seo/hub-metadata";
+import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
+import { listHomepageFeaturedRentals } from "@/lib/stays/execute-search";
+import type { RentalPropertyView } from "@/lib/stays/types";
 
 // Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
@@ -145,6 +148,17 @@ export default async function Home() {
       };
     });
 
+  let featuredRentals: RentalPropertyView[] = [];
+  const flags = await getAllFeatureFlags();
+  if (isRentalsFeatureEnabled(flags)) {
+    try {
+      const rentalFeatured = await listHomepageFeaturedRentals(6);
+      featuredRentals = rentalFeatured.items;
+    } catch (e) {
+      console.error("home: featured rentals", e);
+    }
+  }
+
   return (
     <>
       <Suspense fallback={null}>
@@ -152,6 +166,7 @@ export default async function Home() {
       </Suspense>
       <HomePage
         featuredBusinesses={featuredBusinesses}
+        featuredRentals={featuredRentals}
         towns={townList}
         heroSettings={heroSettings}
       />

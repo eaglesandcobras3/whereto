@@ -51,9 +51,7 @@ export function BusinessPhotoGallery({ photos, businessName }: Props) {
       <h2 id={titleId} className="font-headline text-xl font-semibold text-zinc-900">
         Photos
       </h2>
-      <p className="mt-1 text-sm text-zinc-500">
-        Tap a photo to view it larger. The main image is marked — that&apos;s what appears on cards.
-      </p>
+      <p className="mt-1 text-sm text-zinc-500">Tap a photo to view it larger.</p>
       <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {photos.map((photo, index) => (
           <li key={photo.id}>
@@ -69,11 +67,6 @@ export function BusinessPhotoGallery({ photos, businessName }: Props) {
                 className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                 loading="lazy"
               />
-              {photo.is_hero ? (
-                <span className="absolute left-2 top-2 bg-teal-900/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                  Main
-                </span>
-              ) : null}
             </button>
           </li>
         ))}
@@ -131,7 +124,6 @@ export function BusinessPhotoGallery({ photos, businessName }: Props) {
               className="max-h-[85vh] w-auto max-w-full object-contain"
             />
             <p className="mt-3 text-center text-sm text-white/80">
-              {openPhoto.is_hero ? "Main listing image · " : ""}
               {openIndex + 1} of {photos.length}
             </p>
           </div>

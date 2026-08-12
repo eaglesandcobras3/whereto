@@ -8,17 +8,18 @@ import { RENTAL_PROPERTY_TYPES } from "@/lib/stays/types";
 import { PROPERTY_TYPE_LABELS } from "@/lib/stays/constants";
 
 type TownOption = { id: string; slug: string; title: string };
+type AreaOption = { id: string; slug: string; title: string };
 
 type Props = {
   initial: RentalSearchPlan;
   towns: TownOption[];
+  areas?: AreaOption[];
 };
 
-export function StaysSearchForm({ initial, towns }: Props) {
+export function StaysSearchForm({ initial, towns, areas = [] }: Props) {
   const router = useRouter();
   const [town, setTown] = useState(initial.townSlug ?? "");
-  const [checkIn, setCheckIn] = useState(initial.checkIn ?? "");
-  const [checkOut, setCheckOut] = useState(initial.checkOut ?? "");
+  const [area, setArea] = useState(initial.areaSlug ?? "");
   const [guests, setGuests] = useState(initial.guests?.toString() ?? "");
   const [bedrooms, setBedrooms] = useState(initial.bedrooms?.toString() ?? "");
   const [type, setType] = useState(initial.propertyType ?? "");
@@ -27,7 +28,7 @@ export function StaysSearchForm({ initial, towns }: Props) {
   const [gulfFront, setGulfFront] = useState(Boolean(initial.gulfFront));
   const [gulfView, setGulfView] = useState(Boolean(initial.gulfView));
   const [golfCart, setGolfCart] = useState(Boolean(initial.golfCart));
-  const [beach, setBeach] = useState(initial.beachAccess ?? "");
+  const [privateBeach, setPrivateBeach] = useState(initial.beachAccess === "private");
   const started = useRef(false);
 
   useEffect(() => {
@@ -36,7 +37,6 @@ export function StaysSearchForm({ initial, towns }: Props) {
     captureEvent("rental_search_started", {
       source: "hub",
       town_slug: initial.townSlug || undefined,
-      has_dates: Boolean(initial.checkIn && initial.checkOut),
       guests: initial.guests || undefined,
     });
   }, [initial]);
@@ -45,8 +45,7 @@ export function StaysSearchForm({ initial, towns }: Props) {
     e.preventDefault();
     const plan: Partial<RentalSearchPlan> = {
       townSlug: town || undefined,
-      checkIn: checkIn || undefined,
-      checkOut: checkOut || undefined,
+      areaSlug: area || undefined,
       guests: guests ? Number(guests) : undefined,
       bedrooms: bedrooms ? Number(bedrooms) : undefined,
       propertyType: type ? (type as RentalSearchPlan["propertyType"]) : undefined,
@@ -55,12 +54,13 @@ export function StaysSearchForm({ initial, towns }: Props) {
       gulfFront: gulfFront || undefined,
       gulfView: gulfView || undefined,
       golfCart: golfCart || undefined,
-      beachAccess: beach ? (beach as RentalSearchPlan["beachAccess"]) : undefined,
+      beachAccess: privateBeach ? "private" : undefined,
       page: 1,
     };
     const url = buildStaysSearchUrl(plan);
     captureEvent("rental_search_completed", {
       town_slug: plan.townSlug,
+      area_slug: plan.areaSlug,
       guests: plan.guests,
       bedrooms: plan.bedrooms,
       filter_keys: Object.keys(plan).filter((k) => k !== "page"),
@@ -85,24 +85,19 @@ export function StaysSearchForm({ initial, towns }: Props) {
             ))}
           </select>
         </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-zinc-700">Check-in</span>
-          <input
-            type="date"
-            className={field}
-            value={checkIn}
-            onChange={(e) => setCheckIn(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-zinc-700">Check-out</span>
-          <input
-            type="date"
-            className={field}
-            value={checkOut}
-            onChange={(e) => setCheckOut(e.target.value)}
-          />
-        </label>
+        {areas.length > 0 ? (
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-zinc-700">Neighborhood</span>
+            <select className={field} value={area} onChange={(e) => setArea(e.target.value)}>
+              <option value="">Any neighborhood</option>
+              {areas.map((a) => (
+                <option key={a.id} value={a.slug}>
+                  {a.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-zinc-700">Guests</span>
           <input
@@ -115,9 +110,6 @@ export function StaysSearchForm({ initial, towns }: Props) {
             placeholder="Any"
           />
         </label>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-zinc-700">Bedrooms</span>
           <input
@@ -131,6 +123,9 @@ export function StaysSearchForm({ initial, towns }: Props) {
             placeholder="Any"
           />
         </label>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-zinc-700">Property type</span>
           <select className={field} value={type} onChange={(e) => setType(e.target.value)}>
@@ -142,14 +137,6 @@ export function StaysSearchForm({ initial, towns }: Props) {
             ))}
           </select>
         </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-zinc-700">Beach access</span>
-          <select className={field} value={beach} onChange={(e) => setBeach(e.target.value)}>
-            <option value="">Any</option>
-            <option value="public">Public</option>
-            <option value="private">Private</option>
-          </select>
-        </label>
       </div>
 
       <div className="flex flex-wrap gap-4 text-sm text-zinc-800">
@@ -157,6 +144,7 @@ export function StaysSearchForm({ initial, towns }: Props) {
           [
             ["Pets OK", pets, setPets],
             ["Private pool", pool, setPool],
+            ["Private beach", privateBeach, setPrivateBeach],
             ["Gulf front", gulfFront, setGulfFront],
             ["Gulf view", gulfView, setGulfView],
             ["Golf cart included", golfCart, setGolfCart],

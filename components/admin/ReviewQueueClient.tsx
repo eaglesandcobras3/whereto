@@ -11,6 +11,7 @@ import {
   isFreeOnboardReviewType,
 } from "@/lib/listing-requests/free-onboard-schema";
 import { AdminBusinessMainImageControl } from "@/components/admin/AdminBusinessMainImageControl";
+import { AdminBusinessPendingPhotosReview } from "@/components/admin/AdminBusinessPendingPhotosReview";
 import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 
 type ReviewItem = {
@@ -948,12 +949,12 @@ export function ReviewQueueClient() {
                         <p className="mt-2 text-xs text-zinc-600">
                           {item.payload.is_hero
                             ? "Requested as main listing image (card)."
-                            : "Additional gallery photo."}
+                            : "Additional gallery photo — include to show in the Photos section."}
                         </p>
                         {!businessPhotosEnabled ? (
                           <p className="mt-2 text-xs text-amber-800">
                             Enable PostHog flag <code>business_photos</code> (and apply image URL
-                            migrations) before approving. You can still reject if needed.
+                            migrations) before including. You can still exclude if needed.
                           </p>
                         ) : null}
                         {item.business_id && businessPhotosEnabled ? (
@@ -981,6 +982,10 @@ export function ReviewQueueClient() {
                     )}
                   </dl>
                 )}
+
+                {item.business_id && businessPhotosEnabled ? (
+                  <AdminBusinessPendingPhotosReview businessId={item.business_id} />
+                ) : null}
 
                 <textarea
                   value={notes[item.id] ?? ""}
@@ -1036,8 +1041,10 @@ export function ReviewQueueClient() {
                         className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
                       >
                         {item.type === "photo" && !businessPhotosEnabled
-                          ? "Approve (photos off)"
-                          : "Approve"}
+                          ? "Include (photos off)"
+                          : item.type === "photo"
+                            ? "Include photo"
+                            : "Approve"}
                       </button>
                       <button
                         type="button"
@@ -1053,7 +1060,7 @@ export function ReviewQueueClient() {
                         onClick={() => void act(item.id, "reject")}
                         className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
                       >
-                        Reject
+                        {item.type === "photo" ? "Exclude photo" : "Reject"}
                       </button>
                     </>
                   )}

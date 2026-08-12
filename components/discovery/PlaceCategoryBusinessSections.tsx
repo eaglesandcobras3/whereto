@@ -16,7 +16,7 @@ type Props = {
   heading?: string;
   subheading?: string;
   emptyMessage?: ReactNode;
-  /** How many categories to show expanded by default on desktop. All collapsed on mobile/tablet. */
+  /** How many categories to show expanded by default (all breakpoints). */
   defaultExpandedCount?: number;
 };
 
@@ -28,11 +28,12 @@ export function PlaceCategoryBusinessSections({
   heading,
   subheading,
   emptyMessage,
-  defaultExpandedCount = 1,
+  defaultExpandedCount,
 }: Props) {
   const { expandedIds, toggle } = usePersistedExpandedSectionIds({
     sectionIds: sections.map((section) => section.id),
-    defaultExpandedCount,
+    defaultExpandedCount: defaultExpandedCount ?? sections.length,
+    desktopOnlyDefaults: false,
   });
 
   if (sections.length === 0) {
@@ -46,7 +47,7 @@ export function PlaceCategoryBusinessSections({
           {heading ?? `Local businesses in ${placeName}`}
         </h2>
         <p className="mt-1.5 text-left text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-          {subheading ?? "Browse by category. Tap a section to expand."}
+          {subheading ?? "Browse by category. Tap a section to collapse."}
         </p>
       </div>
 

@@ -41,11 +41,12 @@ export function CategoryHubSections({
   heading,
   subheading,
   emptyMessage,
-  defaultExpandedCount = 1,
+  defaultExpandedCount,
 }: Props) {
   const { expandedIds, toggle } = usePersistedExpandedSectionIds({
     sectionIds: sections.map((section) => section.id),
-    defaultExpandedCount,
+    defaultExpandedCount: defaultExpandedCount ?? sections.length,
+    desktopOnlyDefaults: false,
     isValidHash: isValidSectionHash,
     onHashApplied: (sectionId) => {
       requestAnimationFrame(() => {
@@ -65,7 +66,7 @@ export function CategoryHubSections({
           {heading ?? "Browse by category"}
         </h2>
         <p className="mt-1.5 text-left text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-          {subheading ?? "Tap a group to expand and browse listings."}
+          {subheading ?? "Tap a group to collapse and browse listings."}
         </p>
       </div>
 

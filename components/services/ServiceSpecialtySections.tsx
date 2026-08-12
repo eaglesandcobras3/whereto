@@ -36,12 +36,13 @@ export function ServiceSpecialtySections({
   heading,
   subheading,
   emptyMessage,
-  defaultExpandedCount = 1,
+  defaultExpandedCount,
 }: Props) {
   const router = useRouter();
   const { expandedIds, toggle } = usePersistedExpandedSectionIds({
     sectionIds: sections.map((section) => section.id),
-    defaultExpandedCount,
+    defaultExpandedCount: defaultExpandedCount ?? sections.length,
+    desktopOnlyDefaults: false,
   });
 
   useEffect(() => {

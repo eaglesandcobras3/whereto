@@ -40,6 +40,10 @@ import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyD
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
+import { listStorefrontMapMarkersForTown } from "@/lib/data/business-map-markers";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
+import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
 type SidebarArea = {
   id: string;
@@ -306,17 +310,28 @@ export default async function TownDetailPage({ params }: Props) {
   const town = await getTownBySlug(slug);
   if (!town) notFound();
 
-  const [pageData, guides, townFacts] = await Promise.all([
+  const [pageData, guides, townFacts, flags] = await Promise.all([
     getTownPageData(town.id),
     getGuidesForTown(town.id),
     getTownFactsBySlug(town.slug),
+    getAllFeatureFlags(),
   ]);
+  const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
+  let mapMarkers: BusinessMapMarker[] = [];
+  if (businessMapsEnabled) {
+    try {
+      mapMarkers = await listStorefrontMapMarkersForTown(town.id);
+    } catch {
+      mapMarkers = [];
+    }
+  }
   return (
     <BasicTownPage
       town={town}
       pageData={pageData}
       guides={guides}
       townFacts={townFacts}
+      mapMarkers={mapMarkers}
     />
   );
 }
@@ -333,11 +348,13 @@ function BasicTownPage({
   pageData,
   guides,
   townFacts,
+  mapMarkers,
 }: {
   town: TownRecord;
   pageData: TownPageData;
   guides: TownGuideCard[];
   townFacts: TownFacts | null;
+  mapMarkers: BusinessMapMarker[];
 }) {
   const descriptor = getTownDescriptor(town.slug);
   // Visible hero uses excerpt (at-a-glance / editorial intro). seo_description stays for metadata.
@@ -416,6 +433,14 @@ function BasicTownPage({
                 <TownEmptyDiscoveryMessage townName={town.name} townId={town.id} />
               }
             />
+
+            {mapMarkers.length > 0 ? (
+              <BusinessMapSection
+                markers={mapMarkers}
+                title={`Map of ${town.name}`}
+                description="Storefront businesses with a mapped location."
+              />
+            ) : null}
 
             {pageData.areas.length > 0 ? (
               <PlaceRelatedSection

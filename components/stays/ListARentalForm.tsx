@@ -19,6 +19,7 @@ export function ListARentalForm() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [towns, setTowns] = useState<TownOption[]>([]);
+  const [areas, setAreas] = useState<TownOption[]>([]);
   const [photoCount, setPhotoCount] = useState(0);
   const [hasMainPhoto, setHasMainPhoto] = useState(false);
   const [additionalCount, setAdditionalCount] = useState(0);
@@ -26,8 +27,14 @@ export function ListARentalForm() {
   useEffect(() => {
     void fetch("/api/rentals/form-options")
       .then((r) => r.json())
-      .then((j: { towns?: TownOption[] }) => setTowns(j.towns ?? []))
-      .catch(() => setTowns([]));
+      .then((j: { towns?: TownOption[]; areas?: TownOption[] }) => {
+        setTowns(j.towns ?? []);
+        setAreas(j.areas ?? []);
+      })
+      .catch(() => {
+        setTowns([]);
+        setAreas([]);
+      });
   }, []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -156,6 +163,17 @@ export function ListARentalForm() {
             </select>
           </label>
           <label className="block text-sm font-medium text-zinc-800">
+            Neighborhood / area
+            <select name="area_id" className={field} defaultValue="">
+              <option value="">Optional — select if known</option>
+              {areas.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-zinc-800">
             Bedrooms
             <input
               name="bedrooms"
@@ -215,7 +233,7 @@ export function ListARentalForm() {
           only shown publicly if you choose &quot;exact&quot; precision.
         </p>
         <label className="block text-sm font-medium text-zinc-800">
-          Community / neighborhood (optional)
+          Community / neighborhood label (optional)
           <input name="community_name" className={field} placeholder="e.g. WaterColor, Seagrove" />
         </label>
         <label className="block text-sm font-medium text-zinc-800">
