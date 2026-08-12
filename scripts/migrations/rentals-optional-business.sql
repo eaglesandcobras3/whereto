@@ -22,8 +22,11 @@ comment on column public.rental_partner_profiles.business_id is
 comment on column public.rental_partner_profiles.show_public_business_profile is
   'When true and business_id is set, show Managed-by / portfolio on the public business page.';
 
--- Keep the public view in sync with optional partner display fields.
-create or replace view public.rental_properties_view as
+-- Recreate the view so new partner columns can be inserted mid-list.
+-- CREATE OR REPLACE VIEW cannot rename/reorder existing columns (42P16).
+drop view if exists public.rental_properties_view;
+
+create view public.rental_properties_view as
 select
   p.*,
   t.title as town_title,
