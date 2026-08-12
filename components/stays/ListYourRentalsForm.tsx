@@ -11,6 +11,7 @@ export function ListYourRentalsForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [linkPublicBusiness, setLinkPublicBusiness] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -19,9 +20,10 @@ export function ListYourRentalsForm() {
     const fd = new FormData(e.currentTarget);
     const body = {
       _hp_company_website: String(fd.get("_hp_company_website") ?? ""),
+      display_name: String(fd.get("display_name") ?? ""),
       business_id: String(fd.get("business_id") ?? "") || null,
       business_slug: String(fd.get("business_slug") ?? "") || null,
-      business_title: String(fd.get("business_title") ?? ""),
+      link_public_business: linkPublicBusiness,
       contact_name: String(fd.get("contact_name") ?? ""),
       contact_email: String(fd.get("contact_email") ?? ""),
       contact_phone: String(fd.get("contact_phone") ?? ""),
@@ -51,6 +53,7 @@ export function ListYourRentalsForm() {
         business_id: body.business_id || undefined,
         import_method: body.import_method,
         pms_name: body.pms_name || undefined,
+        link_public_business: linkPublicBusiness,
       });
       setDone(true);
     } catch (err) {
@@ -65,14 +68,8 @@ export function ListYourRentalsForm() {
       <div className="border border-teal-200 bg-teal-50/60 p-6 text-sm text-zinc-800">
         <h2 className="font-headline text-lg font-semibold text-teal-950">Application received</h2>
         <p className="mt-2">
-          Thanks — we&apos;ll review your rental partner application. Owner Verified status on your
-          business profile is separate from marketplace approval.
-        </p>
-        <p className="mt-3">
-          Need to claim or update your business first?{" "}
-          <Link href="/list-your-business" className="font-medium text-teal-900 underline">
-            List your business
-          </Link>
+          Thanks — we&apos;ll review your rental partner application. A public company listing on
+          WhereTo30A is optional and separate from marketplace approval.
         </p>
       </div>
     );
@@ -80,7 +77,6 @@ export function ListYourRentalsForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      {/* honeypot */}
       <input
         type="text"
         name="_hp_company_website"
@@ -92,31 +88,53 @@ export function ListYourRentalsForm() {
 
       <div>
         <label className="block text-sm font-medium text-zinc-800">
-          Property management company name
-          <input name="business_title" required className={field} />
+          Company or brand name
+          <input name="display_name" required className={field} />
         </label>
+        <p className="mt-1 text-xs text-zinc-500">
+          Used for ops and partner review. This does not create a public business page by itself.
+        </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-medium text-zinc-800">
-          Existing business slug (optional)
+
+      <fieldset className="space-y-3 border border-zinc-200 p-4">
+        <legend className="px-1 text-sm font-medium text-zinc-800">Public company profile</legend>
+        <label className="flex items-start gap-2 text-sm text-zinc-800">
           <input
-            name="business_slug"
-            className={field}
-            placeholder="your-company-slug"
+            type="checkbox"
+            className="mt-1"
+            checked={linkPublicBusiness}
+            onChange={(e) => setLinkPublicBusiness(e.target.checked)}
           />
+          Also show my property-management company on WhereTo30A (optional)
         </label>
-        <label className="block text-sm font-medium text-zinc-800">
-          Existing business ID (optional)
-          <input name="business_id" className={field} placeholder="uuid" />
-        </label>
-      </div>
-      <p className="text-xs text-zinc-500">
-        Prefer linking an existing listing. Find or add one via{" "}
-        <Link href="/list-your-business" className="underline">
-          List your business
-        </Link>
-        . No account is required to apply.
-      </p>
+        <p className="text-xs text-zinc-500">
+          Leave unchecked if you only want stay pages and booking referral links — no company
+          directory profile required.
+        </p>
+        {linkPublicBusiness ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-medium text-zinc-800">
+              Existing business slug
+              <input
+                name="business_slug"
+                className={field}
+                placeholder="your-company-slug"
+              />
+            </label>
+            <label className="block text-sm font-medium text-zinc-800">
+              Existing business ID
+              <input name="business_id" className={field} placeholder="uuid" />
+            </label>
+            <p className="sm:col-span-2 text-xs text-zinc-500">
+              Need a directory listing first?{" "}
+              <Link href="/list-your-business" className="underline">
+                List your business
+              </Link>
+              .
+            </p>
+          </div>
+        ) : null}
+      </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="block text-sm font-medium text-zinc-800">

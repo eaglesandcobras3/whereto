@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
   if (kind === "partners") {
     const { data, error } = await supabase
       .from("rental_partner_profiles")
-      .select("id, business_id, status, contact_name, contact_email, pms_name, import_method, created_at, updated_at")
+      .select(
+        "id, business_id, display_name, show_public_business_profile, status, contact_name, contact_email, pms_name, import_method, created_at, updated_at",
+      )
       .order("updated_at", { ascending: false })
       .limit(100);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
 
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
-  business_id: z.string().uuid(),
+  business_id: z.string().uuid().optional().nullable(),
   partner_id: z.string().uuid(),
   slug: z.string().trim().min(2).max(160),
   title: z.string().trim().min(2).max(200),

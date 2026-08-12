@@ -47,7 +47,9 @@ export type RentalLocationPrecision = (typeof RENTAL_LOCATION_PRECISION)[number]
 
 export type RentalPartnerProfile = {
   id: string;
-  business_id: string;
+  business_id: string | null;
+  display_name: string | null;
+  show_public_business_profile: boolean;
   status: RentalPartnerStatus;
   contact_name: string | null;
   contact_email: string | null;
@@ -73,7 +75,7 @@ export type RentalPartnerProfile = {
 
 export type RentalProperty = {
   id: string;
-  business_id: string;
+  business_id: string | null;
   partner_id: string;
   source_id: string | null;
   external_id: string | null;
@@ -137,6 +139,8 @@ export type RentalPropertyView = RentalProperty & {
   business_is_verified: boolean | null;
   business_website: string | null;
   partner_status: RentalPartnerStatus | null;
+  partner_display_name: string | null;
+  partner_show_public_business_profile: boolean | null;
   partner_booking_url_template: string | null;
   partner_booking_engine_base_url: string | null;
   primary_image_url: string | null;

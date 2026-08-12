@@ -8,7 +8,7 @@ import { staysBookingGoPath } from "@/lib/stays/constants";
 
 type Props = {
   propertyId: string;
-  businessId: string;
+  businessId?: string | null;
   className?: string;
 };
 
@@ -23,7 +23,7 @@ export function RentalBookingCta({ propertyId, businessId, className }: Props) {
   useEffect(() => {
     captureEvent("rental_property_viewed", {
       property_id: propertyId,
-      business_id: businessId,
+      business_id: businessId || undefined,
     });
   }, [propertyId, businessId]);
 
@@ -43,7 +43,7 @@ export function RentalBookingCta({ propertyId, businessId, className }: Props) {
         onClick={() => {
           captureEvent("rental_booking_click", {
             property_id: propertyId,
-            business_id: businessId,
+            business_id: businessId || undefined,
             has_dates: Boolean(checkIn && checkOut),
             guests: guestsOk ?? undefined,
             source: "property_detail",
