@@ -20,7 +20,8 @@ export default async function AdminRentalsPage() {
         Vacation rentals
       </h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Manage partners and inventory via Supabase (admin API).
+        Create partners and stay listings here. Path: Admin → Rentals (
+        <code className="text-xs">/admin/rentals</code>).
       </p>
       <div className="mt-8">
         <RentalsAdminClient />
