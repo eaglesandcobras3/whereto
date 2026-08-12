@@ -8,7 +8,7 @@ General operator tasks for WhereTo30A (env, deploy, shared infra).
 
 ## Vacation rentals marketplace
 
-Direct-booking referral marketplace for vacation rentals (`/stays`), gated by PostHog flag `rentals` (code default **on**; PostHog can still force off).
+Direct-booking referral marketplace for vacation rentals (`/stays`), gated by PostHog flag `rentals` (code default **off**; enable only via PostHog).
 
 **Runtime data path:** Next.js → **Supabase** (service-role / SSR clients) only. The app does **not** call Directus. Public stays pages use **ISR** (`revalidate`). Admin CRUD is `/admin/rentals` + `/api/admin/rentals*`.
 
@@ -16,8 +16,8 @@ Direct-booking referral marketplace for vacation rentals (`/stays`), gated by Po
 
 - [ ] Apply SQL in Supabase SQL editor: [scripts/migrations/rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql)
 - [ ] If rentals tables already exist, also apply [scripts/migrations/rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql) (makes `business_id` optional; public company profile is opt-in)
-- [ ] PostHog: create/confirm boolean flag `rentals` (code default **on**; set PostHog false to kill-switch)
-- [ ] Dev bypass (optional): `RENTALS_ENABLED=1` when `NODE_ENV=development` (only needed if PostHog forces the flag off)
+- [ ] PostHog: create boolean flag `rentals` (default false); enable for internal cohort then gradual rollout
+- [ ] Dev bypass (optional): `RENTALS_ENABLED=1` when `NODE_ENV=development`
 - [ ] Confirm founding property-manager partners and PMS / booking URL hosts; set `booking_url_hosts` allowlists on partner profiles
 - [ ] Storage: partner image URLs or uploads under existing media bucket paths (document path convention `rentals/{partner_id}/…`)
 - [ ] Manual freshness cron (optional): `curl -H "Authorization: Bearer $CRON_SECRET" "https://whereto30a.com/api/cron/rentals-freshness"`
@@ -475,7 +475,6 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
-| 2026-08-12 | Rentals: code default for PostHog flag `rentals` is now **on** (PostHog can still force off) |
 | 2026-08-12 | Rentals: public **list a vacation rental** at `/list-your-rentals` (creates `pending_review` listing); partner-only form at `/list-your-rentals/partner`; admin create retained at `/admin/rentals` |
 | 2026-08-12 | Rentals: public PM company profile is **optional** — SQL [rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql); partner apply no longer requires listing a business first |
 | 2026-08-11 | Vacation rentals marketplace: PostHog `rentals` flag (default off); SQL [rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql); `/stays` ISR via Supabase (not Directus); manual admin inventory (no CSV); `/list-your-rentals`, `/admin/rentals`, booking redirect + referral clicks |
