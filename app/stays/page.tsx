@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ListRentalHomeCta } from "@/components/stays/ListRentalHomeCta";
+import Link from "next/link";
 import { RentalCard } from "@/components/stays/RentalCard";
 import { StaysResults } from "@/components/stays/StaysResults";
 import { StaysSearchForm } from "@/components/stays/StaysSearchForm";
@@ -72,6 +72,11 @@ export default async function StaysPage({ searchParams }: Props) {
             Compare homes by town, bedrooms, and beach access — then check availability on the
             property manager&apos;s own booking site.
           </p>
+          <p className="mt-4 text-sm">
+            <Link href="/list-your-rentals" className="font-medium text-teal-900 underline">
+              Property managers: list a vacation rental
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -97,8 +102,6 @@ export default async function StaysPage({ searchParams }: Props) {
 
         <StaysResults items={items} total={total} />
       </section>
-
-      <ListRentalHomeCta />
     </main>
   );
 }
