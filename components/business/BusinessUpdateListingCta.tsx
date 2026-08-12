@@ -7,11 +7,15 @@ type Props = {
   addBusinessHref?: string;
   analyticsLabel?: string;
   className?: string;
+  /**
+   * `verify` — unverified listings (earn badge).
+   * `manage` — verified listings (update details).
+   */
+  variant?: "verify" | "manage";
 };
 
 /**
- * Bottom-of-page CTA for business owners to update their public listing,
- * with a secondary path to list a different business.
+ * Bottom-of-page CTA for business owners.
  * Dark navy banner — matches ListBusinessHomeCta styling.
  */
 export function BusinessUpdateListingCta({
@@ -19,8 +23,10 @@ export function BusinessUpdateListingCta({
   addBusinessHref = "/list-your-business?new=1",
   analyticsLabel,
   className = "",
+  variant = "verify",
 }: Props) {
   const analyticsBase = analyticsLabel ?? "business_listing_cta";
+  const isManage = variant === "manage";
 
   return (
     <section
@@ -36,9 +42,9 @@ export function BusinessUpdateListingCta({
             Own or manage this business?
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-white/75 sm:text-base">
-            Verify this listing to earn the verified badge on your business profile — and keep
-            details like your description, phone, website, and search tags accurate. Have another
-            business on 30A? Add that listing too.
+            {isManage
+              ? "Keep details like your description, phone, website, hours, and search tags accurate — or submit changes for review. Have another business on 30A? Add that listing too."
+              : "Verify this listing to earn the verified badge on your business profile — and keep details like your description, phone, website, and search tags accurate. Have another business on 30A? Add that listing too."}
           </p>
         </div>
         <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
@@ -47,11 +53,11 @@ export function BusinessUpdateListingCta({
             {...gaClickProps({
               event: "cta_click",
               category: "business_detail",
-              label: `${analyticsBase}_update`,
+              label: `${analyticsBase}_${isManage ? "update" : "verify"}`,
             })}
             className="inline-flex w-full items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[var(--color-logo-navy)] transition-colors hover:bg-white/90 sm:w-auto md:text-base"
           >
-            Verify this listing
+            {isManage ? "Update this listing" : "Verify this listing"}
           </Link>
           <Link
             href={addBusinessHref}

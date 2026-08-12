@@ -641,6 +641,13 @@ export default async function BusinessPage({ params }: Props) {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
             {/* Main Content */}
             <div className="space-y-4">
+              {businessPhotosEnabled && galleryPhotos.length > 0 ? (
+                <BusinessPhotoGallery
+                  photos={galleryPhotos}
+                  businessName={b.name as string}
+                />
+              ) : null}
+
               <BusinessQuickFacts
                 address={b.address as string | null}
                 phone={b.phone as string | null}
@@ -677,19 +684,7 @@ export default async function BusinessPage({ params }: Props) {
               <BusinessDirectoryDisclaimer
                 variant="flag"
                 businessSlug={String(b.slug)}
-                updateListingHref={
-                  freeOnboardEnabled
-                    ? `/list-your-business?business=${encodeURIComponent(String(b.slug))}`
-                    : undefined
-                }
               />
-
-              {businessPhotosEnabled && galleryPhotos.length > 0 ? (
-                <BusinessPhotoGallery
-                  photos={galleryPhotos}
-                  businessName={b.name as string}
-                />
-              ) : null}
 
               <BusinessProfileCollapsibleSections
                 vibe={vibe}
@@ -888,9 +883,10 @@ export default async function BusinessPage({ params }: Props) {
             entityTitle={String(b.name ?? "this place")}
           />
 
-          {freeOnboardEnabled && !isVerified ? (
+          {freeOnboardEnabled ? (
             <BusinessUpdateListingCta
               className="mt-10 sm:mt-12"
+              variant={isVerified ? "manage" : "verify"}
               updateListingHref={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}
               addBusinessHref="/list-your-business?new=1"
               analyticsLabel={`${gaBiz}_listing_cta`}

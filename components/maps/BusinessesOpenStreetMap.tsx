@@ -37,7 +37,7 @@ function mapMarkerSvg(dark: boolean): string {
 /**
  * OpenStreetMap via Leaflet — Carto Voyager (soft color) in light mode, dark_all in dark.
  */
-export function BusinessesOpenStreetMap({ markers, className = "", zoom = 19 }: Props) {
+export function BusinessesOpenStreetMap({ markers, className = "", zoom = 18 }: Props) {
   const mapId = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [dark, setDark] = useState(false);
@@ -95,7 +95,7 @@ export function BusinessesOpenStreetMap({ markers, className = "", zoom = 19 }: 
       if (markers.length === 1) {
         map.setView([markers[0].lat, markers[0].lng], zoom);
       } else if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.05), { maxZoom: Math.max(zoom, 18) });
+        map.fitBounds(bounds.pad(0.05), { maxZoom: Math.max(zoom, 17) });
       }
 
       requestAnimationFrame(() => map?.invalidateSize());
