@@ -74,7 +74,7 @@ export default async function StaysPage({ searchParams }: Props) {
           </p>
           <p className="mt-4 text-sm">
             <Link href="/list-your-rentals" className="font-medium text-teal-900 underline">
-              Property managers: partner with WhereTo30A
+              Property managers: list a vacation rental
             </Link>
           </p>
         </div>

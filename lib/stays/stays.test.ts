@@ -5,6 +5,7 @@ import {
 } from "@/lib/stays/booking-url";
 import { isRentalIndexReady } from "@/lib/stays/eligibility";
 import { parseIcalBusyDates } from "@/lib/stays/adapters/ical";
+import { rentalListingSubmissionSchema } from "@/lib/stays/listing-submission-schema";
 import { rentalPartnerApplicationSchema } from "@/lib/stays/partner-application-schema";
 import { parseRentalSearchParams } from "@/lib/stays/search-params";
 import { generateVacationRentalSchema } from "@/lib/stays/seo";
@@ -108,6 +109,37 @@ describe("search params", () => {
     expect(plan.hasFilters).toBe(true);
     expect(plan.townSlug).toBe("seaside");
     expect(plan.guests).toBe(4);
+  });
+});
+
+describe("listing submission schema", () => {
+  const base = {
+    display_name: "Gulf Homes PM",
+    contact_name: "Alex Manager",
+    contact_email: "alex@example.com",
+    title: "Ocean Cottage",
+    description: "A calm three-bedroom stay a short walk from the beach with a porch.",
+    town_id: "11111111-1111-4111-8111-111111111111",
+    bedrooms: 3,
+    bathrooms: 2,
+    sleeps: 6,
+    booking_url: "https://book.example.com/ocean",
+    authority_attested: true,
+    content_rights_attested: true,
+  };
+
+  it("accepts a complete public listing submission", () => {
+    const parsed = rentalListingSubmissionSchema.safeParse(base);
+    expect(parsed.success).toBe(true);
+  });
+
+  it("requires booking url and description", () => {
+    expect(
+      rentalListingSubmissionSchema.safeParse({ ...base, booking_url: "" }).success,
+    ).toBe(false);
+    expect(
+      rentalListingSubmissionSchema.safeParse({ ...base, description: "too short" }).success,
+    ).toBe(false);
   });
 });
 

@@ -8,7 +8,7 @@ General operator tasks for WhereTo30A (env, deploy, shared infra).
 
 ## Vacation rentals marketplace
 
-Direct-booking referral marketplace for vacation rentals (`/stays`), gated by PostHog flag `rentals` (code default **off**).
+Direct-booking referral marketplace for vacation rentals (`/stays`), gated by PostHog flag `rentals` (code default **off**; enable only via PostHog).
 
 **Runtime data path:** Next.js → **Supabase** (service-role / SSR clients) only. The app does **not** call Directus. Public stays pages use **ISR** (`revalidate`). Admin CRUD is `/admin/rentals` + `/api/admin/rentals*`.
 
@@ -28,7 +28,8 @@ Direct-booking referral marketplace for vacation rentals (`/stays`), gated by Po
 
 - CTA copy: **Check availability** (not Book now) until live sync is trustworthy
 - Owner Verified (`businesses.is_verified`) ≠ rental partner approval (`rental_partner_profiles.status`)
-- Sample inventory is entered manually via `/admin/rentals` (Supabase admin API) — no CSV import in MVP
+- Inventory: **users** submit stays at `/list-your-rentals` (pending review); admins can also create at `/admin/rentals` — no CSV import in MVP
+- Review queue: `portal_review_items` types `rental_listing_submission` and `rental_partner_application`
 - Trip spine (future): [docs/rentals-trip-spine.md](rentals-trip-spine.md)
 
 ---
@@ -474,6 +475,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-12 | Rentals: public **list a vacation rental** at `/list-your-rentals` (creates `pending_review` listing); partner-only form at `/list-your-rentals/partner`; admin create retained at `/admin/rentals` |
 | 2026-08-12 | Rentals: public PM company profile is **optional** — SQL [rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql); partner apply no longer requires listing a business first |
 | 2026-08-11 | Vacation rentals marketplace: PostHog `rentals` flag (default off); SQL [rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql); `/stays` ISR via Supabase (not Directus); manual admin inventory (no CSV); `/list-your-rentals`, `/admin/rentals`, booking redirect + referral clicks |
 | 2026-08-04 | Town at-a-glance: `town_facts` wins — removed hardcoded `seo_improvements` town planning fallback (`TownPlanningSections` / `town-planning.ts`); `town_facts` code default **on**; IRSE town scoring uses DB facts |
