@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { reviewApiBlocked } from "@/lib/feature-flags";
+import {
+  getAllFeatureFlags,
+  isBusinessPhotosFeatureEnabled,
+  reviewApiBlocked,
+} from "@/lib/feature-flags";
 import {
   parseCategoryResolution,
   resolveSuggestedCategory,
@@ -101,6 +105,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ ok: true, ...result });
     }
     if (action === "approve") {
+      const { data: pendingItem } = await supabase
+        .from("portal_review_items")
+        .select("type")
+        .eq("id", id)
+        .maybeSingle();
+      if (
+        pendingItem?.type === "photo" &&
+        !isBusinessPhotosFeatureEnabled(await getAllFeatureFlags())
+      ) {
+        return NextResponse.json(
+          { error: "Business photos are disabled. Enable the business_photos flag to approve." },
+          { status: 403 },
+        );
+      }
       await applySuggestionsIfRequested();
       await approveReviewItem(supabase, id, admin.userId);
       return NextResponse.json({ ok: true, status: "approved" });

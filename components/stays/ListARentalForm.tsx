@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import {
-  RENTAL_BEACH_ACCESS,
   RENTAL_LOCATION_PRECISION,
   RENTAL_PROPERTY_TYPES,
 } from "@/lib/stays/types";
@@ -21,6 +20,8 @@ export function ListARentalForm() {
   const [done, setDone] = useState(false);
   const [towns, setTowns] = useState<TownOption[]>([]);
   const [photoCount, setPhotoCount] = useState(0);
+  const [hasMainPhoto, setHasMainPhoto] = useState(false);
+  const [additionalCount, setAdditionalCount] = useState(0);
 
   useEffect(() => {
     void fetch("/api/rentals/form-options")
@@ -183,16 +184,6 @@ export function ListARentalForm() {
             <input name="sleeps" type="number" min={1} defaultValue={6} required className={field} />
           </label>
           <label className="block text-sm font-medium text-zinc-800">
-            Beach access
-            <select name="beach_access" className={field} defaultValue="unknown">
-              {RENTAL_BEACH_ACCESS.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm font-medium text-zinc-800">
             Starting nightly rate (optional)
             <input name="starting_nightly_rate" type="number" min={0} className={field} />
           </label>
@@ -203,6 +194,7 @@ export function ListARentalForm() {
             [
               ["pets_allowed", "Pets allowed"],
               ["private_pool", "Private pool"],
+              ["private_beach_access", "Private beach access"],
               ["gulf_front", "Gulf front"],
               ["gulf_view", "Gulf view"],
               ["golf_cart_included", "Golf cart included"],
@@ -258,26 +250,45 @@ export function ListARentalForm() {
 
       <fieldset className="space-y-4">
         <legend className="font-headline text-lg font-semibold text-zinc-900">Photos</legend>
+        <p className="text-xs text-zinc-500">
+          Images are resized (max {1600}px) and saved as WebP. The main photo is what guests see on
+          stay cards.
+        </p>
         <label className="block text-sm font-medium text-zinc-800">
-          Upload photos (up to {RENTAL_LISTING_MAX_PHOTOS})
+          Main photo (listing card)
+          <input
+            name="photo_main"
+            type="file"
+            accept="image/*"
+            required
+            className={field}
+            onChange={(e) => {
+              const has = Boolean(e.target.files?.[0]?.size);
+              setHasMainPhoto(has);
+              setPhotoCount((has ? 1 : 0) + additionalCount);
+            }}
+          />
+        </label>
+        <label className="block text-sm font-medium text-zinc-800">
+          Additional photos (optional, up to {RENTAL_LISTING_MAX_PHOTOS - 1} more)
           <input
             name="photos"
             type="file"
             accept="image/*"
             multiple
             className={field}
-            onChange={(e) => setPhotoCount(e.target.files?.length ?? 0)}
+            onChange={(e) => {
+              const n = Math.min(e.target.files?.length ?? 0, RENTAL_LISTING_MAX_PHOTOS - 1);
+              setAdditionalCount(n);
+              setPhotoCount((hasMainPhoto ? 1 : 0) + n);
+            }}
           />
         </label>
         <p className="text-xs text-zinc-500">
           {photoCount > 0
-            ? `${Math.min(photoCount, RENTAL_LISTING_MAX_PHOTOS)} selected (first becomes the hero).`
-            : "JPG/PNG/WebP preferred. First photo is used as the hero image."}
+            ? `${Math.min(photoCount, RENTAL_LISTING_MAX_PHOTOS)} selected — main photo is used on the card.`
+            : "JPG/PNG/WebP preferred. Main photo is required."}
         </p>
-        <label className="block text-sm font-medium text-zinc-800">
-          Or paste a hero image URL (optional fallback)
-          <input name="hero_image_url" type="url" className={field} placeholder="https://…" />
-        </label>
       </fieldset>
 
       <fieldset className="space-y-4">

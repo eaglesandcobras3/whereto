@@ -20,17 +20,6 @@ function looksLikeWebsite(raw: string): boolean {
   }
 }
 
-const optionalUrl = z
-  .string()
-  .max(2000)
-  .optional()
-  .nullable()
-  .transform((s) => (s ?? "").trim())
-  .refine((s) => !s || looksLikeWebsite(s), {
-    message: "Enter a valid URL or domain.",
-  })
-  .transform((s) => (s ? externalWebsiteHref(s) : null));
-
 const optionalTrimmed = z
   .string()
   .max(200)
@@ -97,7 +86,6 @@ export const rentalListingSubmissionSchema = z.object({
     .max(2000)
     .refine((s) => looksLikeWebsite(s), { message: "Enter a valid booking URL." })
     .transform((s) => externalWebsiteHref(s)!),
-  hero_image_url: optionalUrl,
   starting_nightly_rate: optionalNumber.refine((n) => n == null || (n >= 0 && n <= 100000), {
     message: "Enter a valid nightly rate.",
   }),
@@ -144,9 +132,8 @@ export function listingFieldsFromFormData(fd: FormData): Record<string, unknown>
     bathrooms: String(fd.get("bathrooms") ?? "1"),
     sleeps: String(fd.get("sleeps") ?? "2"),
     booking_url: String(fd.get("booking_url") ?? ""),
-    hero_image_url: String(fd.get("hero_image_url") ?? "") || null,
     starting_nightly_rate: String(fd.get("starting_nightly_rate") ?? ""),
-    beach_access: String(fd.get("beach_access") ?? "unknown"),
+    beach_access: bool("private_beach_access") ? "private" : "unknown",
     pets_allowed: bool("pets_allowed"),
     private_pool: bool("private_pool"),
     gulf_front: bool("gulf_front"),
@@ -159,8 +146,11 @@ export function listingFieldsFromFormData(fd: FormData): Record<string, unknown>
 }
 
 export function listingPhotoFilesFromFormData(fd: FormData): File[] {
-  const files = fd
+  const main = fd.get("photo_main");
+  const mainFile = main instanceof File && main.size > 0 ? main : null;
+  const additional = fd
     .getAll("photos")
     .filter((f): f is File => f instanceof File && f.size > 0);
+  const files = mainFile ? [mainFile, ...additional] : additional;
   return files.slice(0, RENTAL_LISTING_MAX_PHOTOS);
 }

@@ -480,6 +480,7 @@ export type Database = {
           facebook_url: string | null
           featured: boolean | null
           hero_image: string | null
+          hero_image_url: string | null
           hours: Json | null
           id: string
           instagram_url: string | null
@@ -489,6 +490,7 @@ export type Database = {
           is_storefront: boolean | null
           is_verified: boolean | null
           main_image: string | null
+          main_image_url: string | null
           map_lat: number | null
           map_lng: number | null
           menu_url: string | null
@@ -530,6 +532,7 @@ export type Database = {
           facebook_url?: string | null
           featured?: boolean | null
           hero_image?: string | null
+          hero_image_url?: string | null
           hours?: Json | null
           id: string
           instagram_url?: string | null
@@ -539,6 +542,7 @@ export type Database = {
           is_storefront?: boolean | null
           is_verified?: boolean | null
           main_image?: string | null
+          main_image_url?: string | null
           map_lat?: number | null
           map_lng?: number | null
           menu_url?: string | null
@@ -580,6 +584,7 @@ export type Database = {
           facebook_url?: string | null
           featured?: boolean | null
           hero_image?: string | null
+          hero_image_url?: string | null
           hours?: Json | null
           id?: string
           instagram_url?: string | null
@@ -589,6 +594,7 @@ export type Database = {
           is_storefront?: boolean | null
           is_verified?: boolean | null
           main_image?: string | null
+          main_image_url?: string | null
           map_lat?: number | null
           map_lng?: number | null
           menu_url?: string | null
