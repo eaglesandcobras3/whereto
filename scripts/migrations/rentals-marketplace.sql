@@ -87,6 +87,8 @@ create table if not exists public.rental_properties (
   town_id uuid references public.towns (id) on delete set null,
   area_id uuid references public.areas (id) on delete set null,
   community_name text,
+  street_address text,
+  postal_code text,
   bedrooms numeric(3, 1) not null default 1,
   bathrooms numeric(3, 1) not null default 1,
   sleeps integer not null default 2 check (sleeps > 0),

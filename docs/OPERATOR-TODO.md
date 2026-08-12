@@ -16,6 +16,8 @@ Direct-booking referral marketplace for vacation rentals (`/stays`), gated by Po
 
 - [ ] Apply SQL in Supabase SQL editor: [scripts/migrations/rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql)
 - [ ] If rentals tables already exist, also apply [scripts/migrations/rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql) (makes `business_id` optional; public company profile is opt-in)
+- [ ] If rentals tables already exist, also apply [scripts/migrations/rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql) (`street_address`, `postal_code`)
+- [ ] Confirm storage bucket allows public reads for `rentals/{partner_id}/…` uploads (same media buckets as portal)
 - [ ] PostHog: create boolean flag `rentals` (default false); enable for internal cohort then gradual rollout
 - [ ] Dev bypass (optional): `RENTALS_ENABLED=1` when `NODE_ENV=development`
 - [ ] Confirm founding property-manager partners and PMS / booking URL hosts; set `booking_url_hosts` allowlists on partner profiles
@@ -28,8 +30,10 @@ Direct-booking referral marketplace for vacation rentals (`/stays`), gated by Po
 
 - CTA copy: **Check availability** (not Book now) until live sync is trustworthy
 - Owner Verified (`businesses.is_verified`) ≠ rental partner approval (`rental_partner_profiles.status`)
-- Inventory: **users** submit stays at `/list-your-rentals` (pending review); admins can also create at `/admin/rentals` — no CSV import in MVP
+- Inventory: **users** submit stays at `/list-your-rentals` (pending review) with **photo upload** + address fields; admins can also create at `/admin/rentals` — no CSV import in MVP
 - Review queue: `portal_review_items` types `rental_listing_submission` and `rental_partner_application`
+- Not Airbnb-parity: WhereTo30A is a **direct-booking referral** layer (guests check availability on the partner site). Live PMS/API calendar sync is Phase 5 (schema stubs exist; not in public submit yet)
+- Address SQL (if tables already exist): [rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql)
 - Trip spine (future): [docs/rentals-trip-spine.md](rentals-trip-spine.md)
 
 ---
@@ -475,6 +479,7 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-12 | Rentals listing form: **photo upload** + address fields (`street_address`, `postal_code`, community, lat/lng, precision); SQL [rentals-listing-address.sql](../scripts/migrations/rentals-listing-address.sql). PMS/API sync still deferred (referral marketplace, not Airbnb clone) |
 | 2026-08-12 | Rentals: public **list a vacation rental** at `/list-your-rentals` (creates `pending_review` listing); partner-only form at `/list-your-rentals/partner`; admin create retained at `/admin/rentals` |
 | 2026-08-12 | Rentals: public PM company profile is **optional** — SQL [rentals-optional-business.sql](../scripts/migrations/rentals-optional-business.sql); partner apply no longer requires listing a business first |
 | 2026-08-11 | Vacation rentals marketplace: PostHog `rentals` flag (default off); SQL [rentals-marketplace.sql](../scripts/migrations/rentals-marketplace.sql); `/stays` ISR via Supabase (not Directus); manual admin inventory (no CSV); `/list-your-rentals`, `/admin/rentals`, booking redirect + referral clicks |

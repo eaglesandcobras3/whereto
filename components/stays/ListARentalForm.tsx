@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
-import { RENTAL_BEACH_ACCESS, RENTAL_PROPERTY_TYPES } from "@/lib/stays/types";
+import {
+  RENTAL_BEACH_ACCESS,
+  RENTAL_LOCATION_PRECISION,
+  RENTAL_PROPERTY_TYPES,
+} from "@/lib/stays/types";
+import { RENTAL_LISTING_MAX_PHOTOS } from "@/lib/stays/constants";
 
 const field =
   "mt-1 w-full border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-teal-700";
@@ -15,6 +20,7 @@ export function ListARentalForm() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [towns, setTowns] = useState<TownOption[]>([]);
+  const [photoCount, setPhotoCount] = useState(0);
 
   useEffect(() => {
     void fetch("/api/rentals/form-options")
@@ -27,49 +33,22 @@ export function ListARentalForm() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
-    const body = {
-      _hp_company_website: String(fd.get("_hp_company_website") ?? ""),
-      display_name: String(fd.get("display_name") ?? ""),
-      contact_name: String(fd.get("contact_name") ?? ""),
-      contact_email: String(fd.get("contact_email") ?? ""),
-      contact_phone: String(fd.get("contact_phone") ?? ""),
-      title: String(fd.get("title") ?? ""),
-      description: String(fd.get("description") ?? ""),
-      property_type: String(fd.get("property_type") ?? "house"),
-      town_id: String(fd.get("town_id") ?? ""),
-      bedrooms: Number(fd.get("bedrooms") ?? 1),
-      bathrooms: Number(fd.get("bathrooms") ?? 1),
-      sleeps: Number(fd.get("sleeps") ?? 2),
-      booking_url: String(fd.get("booking_url") ?? ""),
-      hero_image_url: String(fd.get("hero_image_url") ?? "") || null,
-      starting_nightly_rate: fd.get("starting_nightly_rate")
-        ? Number(fd.get("starting_nightly_rate"))
-        : null,
-      beach_access: String(fd.get("beach_access") ?? "unknown"),
-      pets_allowed: fd.get("pets_allowed") === "on",
-      private_pool: fd.get("private_pool") === "on",
-      gulf_front: fd.get("gulf_front") === "on",
-      gulf_view: fd.get("gulf_view") === "on",
-      golf_cart_included: fd.get("golf_cart_included") === "on",
-      authority_attested: fd.get("authority_attested") === "on",
-      content_rights_attested: fd.get("content_rights_attested") === "on",
-      notes: String(fd.get("notes") ?? "") || null,
-    };
+    const form = e.currentTarget;
+    const fd = new FormData(form);
 
     captureEvent("rental_listing_started", { step: "submit" });
 
     try {
       const res = await fetch("/api/rentals/listing", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: fd,
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(json.error || "Submission failed");
       captureEvent("rental_listing_submitted", {
-        property_type: body.property_type,
-        town_id: body.town_id,
+        property_type: String(fd.get("property_type") ?? ""),
+        town_id: String(fd.get("town_id") ?? ""),
+        photo_count: photoCount,
       });
       setDone(true);
     } catch (err) {
@@ -97,7 +76,7 @@ export function ListARentalForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-5" encType="multipart/form-data">
       <input
         type="text"
         name="_hp_company_website"
@@ -219,24 +198,6 @@ export function ListARentalForm() {
           </label>
         </div>
 
-        <label className="block text-sm font-medium text-zinc-800">
-          Booking URL
-          <input
-            name="booking_url"
-            type="url"
-            required
-            className={field}
-            placeholder="https://your-booking-site.com/…"
-          />
-          <span className="mt-1 block text-xs text-zinc-500">
-            Guests leave WhereTo30A to check availability on your site.
-          </span>
-        </label>
-        <label className="block text-sm font-medium text-zinc-800">
-          Hero image URL (optional)
-          <input name="hero_image_url" type="url" className={field} placeholder="https://…" />
-        </label>
-
         <div className="flex flex-wrap gap-4 text-sm text-zinc-800">
           {(
             [
@@ -253,7 +214,88 @@ export function ListARentalForm() {
             </label>
           ))}
         </div>
+      </fieldset>
 
+      <fieldset className="space-y-4">
+        <legend className="font-headline text-lg font-semibold text-zinc-900">Location</legend>
+        <p className="text-xs text-zinc-500">
+          Guests usually see an approximate area (town / community). Exact street is for review and
+          only shown publicly if you choose &quot;exact&quot; precision.
+        </p>
+        <label className="block text-sm font-medium text-zinc-800">
+          Community / neighborhood (optional)
+          <input name="community_name" className={field} placeholder="e.g. WaterColor, Seagrove" />
+        </label>
+        <label className="block text-sm font-medium text-zinc-800">
+          Street address (optional)
+          <input name="street_address" className={field} placeholder="123 Coastal Hwy" />
+        </label>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="block text-sm font-medium text-zinc-800">
+            ZIP / postal code
+            <input name="postal_code" className={field} placeholder="32459" />
+          </label>
+          <label className="block text-sm font-medium text-zinc-800">
+            Latitude (optional)
+            <input name="map_lat" type="number" step="any" className={field} />
+          </label>
+          <label className="block text-sm font-medium text-zinc-800">
+            Longitude (optional)
+            <input name="map_lng" type="number" step="any" className={field} />
+          </label>
+        </div>
+        <label className="block text-sm font-medium text-zinc-800">
+          Map / address precision
+          <select name="location_precision" className={field} defaultValue="approximate">
+            {RENTAL_LOCATION_PRECISION.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset className="space-y-4">
+        <legend className="font-headline text-lg font-semibold text-zinc-900">Photos</legend>
+        <label className="block text-sm font-medium text-zinc-800">
+          Upload photos (up to {RENTAL_LISTING_MAX_PHOTOS})
+          <input
+            name="photos"
+            type="file"
+            accept="image/*"
+            multiple
+            className={field}
+            onChange={(e) => setPhotoCount(e.target.files?.length ?? 0)}
+          />
+        </label>
+        <p className="text-xs text-zinc-500">
+          {photoCount > 0
+            ? `${Math.min(photoCount, RENTAL_LISTING_MAX_PHOTOS)} selected (first becomes the hero).`
+            : "JPG/PNG/WebP preferred. First photo is used as the hero image."}
+        </p>
+        <label className="block text-sm font-medium text-zinc-800">
+          Or paste a hero image URL (optional fallback)
+          <input name="hero_image_url" type="url" className={field} placeholder="https://…" />
+        </label>
+      </fieldset>
+
+      <fieldset className="space-y-4">
+        <legend className="font-headline text-lg font-semibold text-zinc-900">Booking</legend>
+        <label className="block text-sm font-medium text-zinc-800">
+          Booking URL
+          <input
+            name="booking_url"
+            type="url"
+            required
+            className={field}
+            placeholder="https://your-booking-site.com/…"
+          />
+          <span className="mt-1 block text-xs text-zinc-500">
+            Guests leave WhereTo30A to check availability on your site. Live PMS calendar sync is
+            not required for this submission.
+          </span>
+        </label>
         <label className="block text-sm font-medium text-zinc-800">
           Notes for our team (optional)
           <textarea name="notes" rows={2} className={field} />

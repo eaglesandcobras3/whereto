@@ -89,6 +89,8 @@ export type RentalProperty = {
   town_id: string | null;
   area_id: string | null;
   community_name: string | null;
+  street_address: string | null;
+  postal_code: string | null;
   bedrooms: number;
   bathrooms: number;
   sleeps: number;

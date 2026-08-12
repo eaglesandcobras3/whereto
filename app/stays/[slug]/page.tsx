@@ -161,6 +161,26 @@ export default async function StayDetailPage({ params }: Props) {
               {property.sleeps}
               {property.area_title ? ` · ${property.area_title}` : ""}
             </p>
+            {property.community_name ||
+            property.town_title ||
+            (property.location_precision === "exact" && property.street_address) ? (
+              <p className="mt-1 text-sm text-zinc-600">
+                {property.location_precision === "exact" && property.street_address
+                  ? [
+                      property.street_address,
+                      property.community_name,
+                      property.town_title,
+                      property.postal_code,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")
+                  : [property.community_name, property.town_title].filter(Boolean).join(" · ") ||
+                    property.town_title}
+                {property.location_precision === "approximate" ? (
+                  <span className="text-zinc-500"> · Approximate area</span>
+                ) : null}
+              </p>
+            ) : null}
             <div className="mt-3">
               <RentalPartnerBadge
                 businessSlug={property.business_slug}
