@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags-core";
+import {
+  isFreeOnboardEnabled,
+  isOnboardEnabled,
+  isRentalsEnabled,
+} from "@/lib/feature-flags-core";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const footerLinkClass =
@@ -14,6 +18,7 @@ export function FooterCompanyLinks() {
     isFreeOnboardEnabled(flags) || !isOnboardEnabled(flags)
       ? "/list-your-business"
       : "/portal/businesses/new";
+  const rentalsEnabled = isRentalsEnabled(flags);
 
   const companyLinks = [
     {
@@ -36,6 +41,19 @@ export function FooterCompanyLinks() {
       href: listBusinessHref,
       ...gaClickProps({ event: "cta_click", category: "footer_company", label: "list_your_business" }),
     },
+    ...(rentalsEnabled
+      ? [
+          {
+            name: "List a vacation rental",
+            href: "/list-your-rentals",
+            ...gaClickProps({
+              event: "cta_click",
+              category: "footer_company",
+              label: "list_your_rentals",
+            }),
+          },
+        ]
+      : []),
     {
       name: "Privacy",
       href: "/privacy",

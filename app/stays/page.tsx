@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ListRentalHomeCta } from "@/components/stays/ListRentalHomeCta";
 import { RentalCard } from "@/components/stays/RentalCard";
 import { StaysResults } from "@/components/stays/StaysResults";
 import { StaysSearchForm } from "@/components/stays/StaysSearchForm";
@@ -98,25 +98,7 @@ export default async function StaysPage({ searchParams }: Props) {
         <StaysResults items={items} total={total} />
       </section>
 
-      <section className="border-t border-teal-100/80 bg-teal-50/40">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-12 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-headline text-xl font-semibold text-teal-950">
-              Manage rentals on 30A?
-            </h2>
-            <p className="mt-1 max-w-xl text-sm text-zinc-600">
-              Submit your stay for review. Guests find it here, then check availability on your
-              booking site.
-            </p>
-          </div>
-          <Link
-            href="/list-your-rentals"
-            className="inline-flex shrink-0 items-center justify-center bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-900"
-          >
-            List a vacation rental
-          </Link>
-        </div>
-      </section>
+      <ListRentalHomeCta />
     </main>
   );
 }
