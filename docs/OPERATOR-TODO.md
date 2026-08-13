@@ -349,7 +349,7 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Apply [scripts/migrations/portal-review-items-listing-field-flag.sql](../scripts/migrations/portal-review-items-listing-field-flag.sql) so `portal_review_items.type` allows `listing_field_flag` (and other types added in app code). Without this, “Suggest an update” returns **Could not save your report.**
 - [ ] PostHog: create boolean flag `feedback` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `FEEDBACK_ENABLED=1` and `NEXT_PUBLIC_FEEDBACK_ENABLED=1`
-- [ ] Smoke-test: with `feedback` on — unverified business/rental section flags; town (header/facts/map), area (header/map), guide (top+bottom content); **Suggest a business · Add a business** on town/area/category listing sections; **Suggest a category** on each `/businesses` rollup; **Suggest a guide** on `/guides`; admin queue opens update form or public page
+- [ ] Smoke-test: with `feedback` on — unverified business/rental section flags; town (header/facts/map), area (header/map), guide (top+bottom content); **Suggest a business · Add a business** once at the bottom of town, area, and category listing blocks; **Suggest a category** once at the bottom of `/businesses`; **Suggest a guide** on `/guides` and on town/area guide blocks; **Suggest an area** on town area blocks; admin queue opens update form or public page
 
 ### Business maps setup
 

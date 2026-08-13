@@ -90,4 +90,16 @@ describe("listing-field-flags body schema", () => {
     });
     expect(parsed.success).toBe(true);
   });
+
+  it("accepts a missing-area suggestion on a town page", () => {
+    const parsed = listingFieldFlagBodySchema.safeParse({
+      entity: "town",
+      entity_id: "00000000-0000-4000-8000-000000000001",
+      field: "areas",
+      note: "Add Alys Beach",
+      page_title: "Seaside",
+      page_slug: "seaside",
+    });
+    expect(parsed.success).toBe(true);
+  });
 });

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import { ListingThumbnail } from "@/components/discovery/ListingThumbnail";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
@@ -9,7 +10,29 @@ type Props = {
   description?: string;
   guides: TownGuideCard[];
   analyticsCategory?: string;
+  flagEntity?: "town" | "area";
+  flagEntityId?: string;
+  placeName?: string;
+  placeSlug?: string;
 };
+
+function SuggestAGuide({
+  flagEntity,
+  flagEntityId,
+  placeName,
+  placeSlug,
+}: Pick<Props, "flagEntity" | "flagEntityId" | "placeName" | "placeSlug">) {
+  if (!flagEntity || !flagEntityId) return null;
+  return (
+    <ListingFieldFlagNote
+      entity={flagEntity}
+      entityId={flagEntityId}
+      field="guides"
+      pageTitle={placeName}
+      pageSlug={placeSlug}
+    />
+  );
+}
 
 /**
  * Town/area guides — vertically stacked cards with an optional horizontal
@@ -20,8 +43,23 @@ export function PlaceGuidesSection({
   description,
   guides,
   analyticsCategory = "place_guides",
+  flagEntity,
+  flagEntityId,
+  placeName,
+  placeSlug,
 }: Props) {
-  if (guides.length === 0) return null;
+  const suggest = (
+    <SuggestAGuide
+      flagEntity={flagEntity}
+      flagEntityId={flagEntityId}
+      placeName={placeName}
+      placeSlug={placeSlug}
+    />
+  );
+
+  if (guides.length === 0) {
+    return suggest;
+  }
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -83,6 +121,7 @@ export function PlaceGuidesSection({
           arrow_forward
         </span>
       </Link>
+      {suggest}
     </div>
   );
 }

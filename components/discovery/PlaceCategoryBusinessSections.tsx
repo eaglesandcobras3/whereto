@@ -96,36 +96,34 @@ export function PlaceCategoryBusinessSections({
             open={isOpen}
             onToggle={() => toggle(section.id)}
           >
-            <div className="space-y-3">
-              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {businessItems.map((business) => (
-                  <li key={business.id} className="h-full">
-                    <BusinessPreviewCard
-                      name={business.name}
-                      slug={business.slug}
-                      excerpt={business.excerpt}
-                      heroImageUrl={business.heroImageUrl}
-                      analyticsCategory={`${analyticsCategoryPrefix}_business`}
-                      analyticsLabel={`${placeSlug}_${business.slug}`}
-                    />
-                  </li>
-                ))}
-              </ul>
-              {flagEntity && flagEntityId ? (
-                <ListingFieldFlagNote
-                  entity={flagEntity}
-                  entityId={flagEntityId}
-                  field="listings"
-                  section={section.title}
-                  pageTitle={placeName}
-                  pageSlug={placeSlug}
-                  addHref={ADD_BUSINESS_HREF}
-                />
-              ) : null}
-            </div>
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {businessItems.map((business) => (
+                <li key={business.id} className="h-full">
+                  <BusinessPreviewCard
+                    name={business.name}
+                    slug={business.slug}
+                    excerpt={business.excerpt}
+                    heroImageUrl={business.heroImageUrl}
+                    analyticsCategory={`${analyticsCategoryPrefix}_business`}
+                    analyticsLabel={`${placeSlug}_${business.slug}`}
+                  />
+                </li>
+              ))}
+            </ul>
           </CollapsibleBrowseSection>
         );
       })}
+
+      {flagEntity && flagEntityId ? (
+        <ListingFieldFlagNote
+          entity={flagEntity}
+          entityId={flagEntityId}
+          field="listings"
+          pageTitle={placeName}
+          pageSlug={placeSlug}
+          addHref={ADD_BUSINESS_HREF}
+        />
+      ) : null}
     </div>
   );
 }

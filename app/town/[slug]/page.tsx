@@ -461,31 +461,44 @@ function BasicTownPage({
               flagEntityId={town.id}
             />
 
-            {pageData.areas.length > 0 ? (
-              <PlaceRelatedSection
-                title="Explore areas"
-                description={`Neighborhoods and points of interest in ${town.name}.`}
-                layout="stack"
-              >
-                {pageData.areas.map((area) => (
-                  <AreaCard
-                    key={area.id}
-                    name={area.name}
-                    slug={area.slug}
-                    subtitle={area.subtitle}
-                    imageUrl={area.imageUrl}
-                    fullWidth
-                    analyticsCategory="town_guide_related"
-                  />
-                ))}
-              </PlaceRelatedSection>
-            ) : null}
+            <div className="space-y-3 sm:space-y-4">
+              {pageData.areas.length > 0 ? (
+                <PlaceRelatedSection
+                  title="Explore areas"
+                  description={`Neighborhoods and points of interest in ${town.name}.`}
+                  layout="stack"
+                >
+                  {pageData.areas.map((area) => (
+                    <AreaCard
+                      key={area.id}
+                      name={area.name}
+                      slug={area.slug}
+                      subtitle={area.subtitle}
+                      imageUrl={area.imageUrl}
+                      fullWidth
+                      analyticsCategory="town_guide_related"
+                    />
+                  ))}
+                </PlaceRelatedSection>
+              ) : null}
+              <ListingFieldFlagNote
+                entity="town"
+                entityId={town.id}
+                field="areas"
+                pageTitle={town.name}
+                pageSlug={town.slug}
+              />
+            </div>
 
             <PlaceGuidesSection
               title={`Guides for ${town.name}`}
               description={`Local planning guides for ${town.name} and the corridor.`}
               guides={guides}
               analyticsCategory="town_guides"
+              flagEntity="town"
+              flagEntityId={town.id}
+              placeName={town.name}
+              placeSlug={town.slug}
             />
 
             {!hasEditorialIntro && pageData.categorySections.length === 0 ? (

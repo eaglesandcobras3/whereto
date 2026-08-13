@@ -30,6 +30,7 @@ export const LISTING_FIELD_FLAG_FIELDS = [
   "listings",
   "categories",
   "guides",
+  "areas",
 ] as const;
 
 export type ListingFieldFlagField = (typeof LISTING_FIELD_FLAG_FIELDS)[number];
@@ -45,6 +46,7 @@ export const LISTING_FIELD_FLAG_LABELS: Record<ListingFieldFlagField, string> = 
   listings: "Business",
   categories: "Category",
   guides: "Guide",
+  areas: "Area",
 };
 
 /** Short CTA under each section. */
@@ -52,6 +54,7 @@ export const LISTING_FIELD_FLAG_PROMPT = "Suggest an update";
 export const SUGGEST_A_BUSINESS_PROMPT = "Suggest a business";
 export const SUGGEST_A_CATEGORY_PROMPT = "Suggest a category";
 export const SUGGEST_A_GUIDE_PROMPT = "Suggest a guide";
+export const SUGGEST_AN_AREA_PROMPT = "Suggest an area";
 export const ADD_BUSINESS_HREF = "/list-your-business?new=1";
 export const ADD_BUSINESS_LABEL = "Add a business";
 
@@ -66,6 +69,7 @@ export const LISTING_FIELD_FLAG_PROMPTS: Record<ListingFieldFlagField, string> =
   listings: SUGGEST_A_BUSINESS_PROMPT,
   categories: SUGGEST_A_CATEGORY_PROMPT,
   guides: SUGGEST_A_GUIDE_PROMPT,
+  areas: SUGGEST_AN_AREA_PROMPT,
 };
 
 export const LISTING_FIELD_FLAG_PLACEHOLDERS: Record<ListingFieldFlagField, string> = {
@@ -79,6 +83,7 @@ export const LISTING_FIELD_FLAG_PLACEHOLDERS: Record<ListingFieldFlagField, stri
   listings: "Name and town help. (optional)",
   categories: "What should we add? (optional)",
   guides: "What should we cover? (optional)",
+  areas: "Neighborhood or place name. (optional)",
 };
 
 export function listingFieldFlagPrompt(field: ListingFieldFlagField): string {
@@ -90,7 +95,12 @@ export function listingFieldFlagPlaceholder(field: ListingFieldFlagField): strin
 }
 
 export function isHubSuggestionField(field: string): boolean {
-  return field === "listings" || field === "categories" || field === "guides";
+  return (
+    field === "listings" ||
+    field === "categories" ||
+    field === "guides" ||
+    field === "areas"
+  );
 }
 
 /** Older per-field keys may still appear in the admin queue. */

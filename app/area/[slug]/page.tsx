@@ -260,6 +260,10 @@ export default async function AreaPage({ params }: Props) {
               }
               guides={guides}
               analyticsCategory="area_guides"
+              flagEntity="area"
+              flagEntityId={area.id}
+              placeName={area.title}
+              placeSlug={area.slug}
             />
 
             {!hasEditorialIntro && categorySections.length === 0 ? (

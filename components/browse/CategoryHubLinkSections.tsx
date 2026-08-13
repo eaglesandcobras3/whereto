@@ -69,7 +69,17 @@ export function CategoryHubLinkSections({
   });
 
   if (sections.length === 0) {
-    return emptyMessage ? <div>{emptyMessage}</div> : null;
+    return (
+      <div className="space-y-3">
+        {emptyMessage ? <div>{emptyMessage}</div> : null}
+        <ListingFieldFlagNote
+          entity="hub"
+          field="categories"
+          pageTitle="Businesses"
+          pageSlug="businesses"
+        />
+      </div>
+    );
   }
 
   return (
@@ -110,42 +120,39 @@ export function CategoryHubLinkSections({
             open={isOpen}
             onToggle={() => toggle(section.id)}
           >
-            <div className="space-y-3">
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {section.leaves.map((leaf) => (
-                  <li key={leaf.id}>
-                    <Link
-                      href={categoryHubPath(leaf.slug)}
-                      className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {section.leaves.map((leaf) => (
+                <li key={leaf.id}>
+                  <Link
+                    href={categoryHubPath(leaf.slug)}
+                    className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  >
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-container-high)] text-[var(--color-primary)]"
+                      aria-hidden
                     >
-                      <span
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-container-high)] text-[var(--color-primary)]"
-                        aria-hidden
-                      >
-                        <span className="material-symbols-outlined !text-xl">
-                          {leafCategoryIcon(leaf.slug)}
-                        </span>
+                      <span className="material-symbols-outlined !text-xl">
+                        {leafCategoryIcon(leaf.slug)}
                       </span>
-                      <span className="min-w-0 flex-1">{leaf.title}</span>
-                      <span className="material-symbols-outlined !text-lg shrink-0 text-[var(--color-text-tertiary)]" aria-hidden>
-                        chevron_right
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <ListingFieldFlagNote
-                entity={section.categoryId ? "category" : "hub"}
-                entityId={section.categoryId}
-                field="categories"
-                section={section.title}
-                pageTitle={section.title}
-                pageSlug={section.slug}
-              />
-            </div>
+                    </span>
+                    <span className="min-w-0 flex-1">{leaf.title}</span>
+                    <span className="material-symbols-outlined !text-lg shrink-0 text-[var(--color-text-tertiary)]" aria-hidden>
+                      chevron_right
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </CollapsibleBrowseSection>
         );
       })}
+
+      <ListingFieldFlagNote
+        entity="hub"
+        field="categories"
+        pageTitle="Businesses"
+        pageSlug="businesses"
+      />
     </div>
   );
 }

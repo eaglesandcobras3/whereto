@@ -687,10 +687,13 @@ export default async function BusinessPage({ params }: Props) {
                 </div>
               ) : null}
 
-              <BusinessDirectoryDisclaimer
-                variant="flag"
-                businessSlug={String(b.slug)}
-              />
+              {isVerified ? (
+                <BusinessDirectoryDisclaimer
+                  variant="flag"
+                  businessSlug={String(b.slug)}
+                  updateListingHref={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}
+                />
+              ) : null}
 
               <BusinessProfileCollapsibleSections
                 vibe={vibe}
@@ -889,10 +892,10 @@ export default async function BusinessPage({ params }: Props) {
             entityTitle={String(b.name ?? "this place")}
           />
 
-          {freeOnboardEnabled ? (
+          {freeOnboardEnabled && !isVerified ? (
             <BusinessUpdateListingCta
               className="mt-10 sm:mt-12"
-              variant={isVerified ? "manage" : "verify"}
+              variant="verify"
               updateListingHref={`/list-your-business?business=${encodeURIComponent(String(b.slug))}`}
               addBusinessHref="/list-your-business?new=1"
               analyticsLabel={`${gaBiz}_listing_cta`}

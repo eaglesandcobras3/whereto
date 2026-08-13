@@ -144,20 +144,11 @@ export function CategoryHubTownSections({
                 open={isOpen}
                 onToggle={() => toggle(id)}
               >
-                <div className="space-y-3">
-                  <BusinessGrid
-                    businesses={group.businesses}
-                    categorySlug={categorySlug}
-                    analyticsSuffix={id}
-                  />
-                  <SectionSuggest
-                    flagEntity={flagEntity}
-                    flagEntityId={flagEntityId}
-                    pageTitle={pageTitle}
-                    pageSlug={categorySlug}
-                    section={group.name}
-                  />
-                </div>
+                <BusinessGrid
+                  businesses={group.businesses}
+                  categorySlug={categorySlug}
+                  analyticsSuffix={id}
+                />
               </CollapsibleBrowseSection>
             );
           })}
@@ -188,23 +179,22 @@ export function CategoryHubTownSections({
             open={expandedIds.has(REGIONAL_SECTION_ID)}
             onToggle={() => toggle(REGIONAL_SECTION_ID)}
           >
-            <div className="space-y-3">
-              <BusinessGrid
-                businesses={regional}
-                categorySlug={categorySlug}
-                analyticsSuffix="regional"
-              />
-              <SectionSuggest
-                flagEntity={flagEntity}
-                flagEntityId={flagEntityId}
-                pageTitle={pageTitle}
-                pageSlug={categorySlug}
-                section="Regional & by appointment"
-              />
-            </div>
+            <BusinessGrid
+              businesses={regional}
+              categorySlug={categorySlug}
+              analyticsSuffix="regional"
+            />
           </CollapsibleBrowseSection>
         </div>
       ) : null}
+
+      <SectionSuggest
+        flagEntity={flagEntity}
+        flagEntityId={flagEntityId}
+        pageTitle={pageTitle}
+        pageSlug={categorySlug}
+        section={pageTitle || categorySlug}
+      />
     </div>
   );
 }
