@@ -654,6 +654,19 @@ export default async function BusinessPage({ params }: Props) {
                 />
               ) : null}
 
+              <BusinessQuickFacts
+                address={b.address as string | null}
+                phone={b.phone as string | null}
+                website={b.website as string | null}
+                menuUrl={(b.menu_url as string | null) ?? null}
+                bookingUrl={(b.booking_url as string | null) ?? null}
+                serviceArea={(b.service_area as string | null) ?? null}
+                lat={b.lat as number | null}
+                lng={b.lng as number | null}
+                hours={(b.hours as unknown) ?? null}
+                fieldFlagEntityId={canFlagFields ? businessId : null}
+              />
+
               {hasOverview ? (
                 <div className="space-y-4">
                   {overviewParagraphs.map((paragraph, index) => (
@@ -673,19 +686,6 @@ export default async function BusinessPage({ params }: Props) {
                   ) : null}
                 </div>
               ) : null}
-
-              <BusinessQuickFacts
-                address={b.address as string | null}
-                phone={b.phone as string | null}
-                website={b.website as string | null}
-                menuUrl={(b.menu_url as string | null) ?? null}
-                bookingUrl={(b.booking_url as string | null) ?? null}
-                serviceArea={(b.service_area as string | null) ?? null}
-                lat={b.lat as number | null}
-                lng={b.lng as number | null}
-                hours={(b.hours as unknown) ?? null}
-                fieldFlagEntityId={canFlagFields ? businessId : null}
-              />
 
               <BusinessDirectoryDisclaimer
                 variant="flag"
