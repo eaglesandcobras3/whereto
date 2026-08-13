@@ -241,6 +241,8 @@ export default async function AreaPage({ params }: Props) {
               sections={categorySections}
               analyticsCategoryPrefix="area_guide_category"
               emptyMessage={<AreaEmptyDiscoveryMessage place={area} />}
+              flagEntity="area"
+              flagEntityId={area.id}
             />
 
             {planningProfile ? (

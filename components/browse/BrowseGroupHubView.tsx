@@ -98,6 +98,8 @@ export function BrowseGroupHubView({ hub, mapMarkers = [] }: Props) {
                 No listings found for this category yet.
               </p>
             }
+            flagEntity="hub"
+            pageTitle={hub.title}
           />
         </div>
 

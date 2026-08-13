@@ -346,9 +346,10 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 ### Listing field feedback setup
 
+- [ ] Apply [scripts/migrations/portal-review-items-listing-field-flag.sql](../scripts/migrations/portal-review-items-listing-field-flag.sql) so `portal_review_items.type` allows `listing_field_flag` (and other types added in app code). Without this, “Suggest an update” returns **Could not save your report.**
 - [ ] PostHog: create boolean flag `feedback` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `FEEDBACK_ENABLED=1` and `NEXT_PUBLIC_FEEDBACK_ENABLED=1`
-- [ ] Smoke-test: with `feedback` on — unverified business/rental section flags; town (header/facts/map), area (header/map), guide (top+bottom content); admin queue opens update form or public page
+- [ ] Smoke-test: with `feedback` on — unverified business/rental section flags; town (header/facts/map), area (header/map), guide (top+bottom content); **Suggest a business · Add a business** on town/area/category listing sections; **Suggest a category** on each `/businesses` rollup; **Suggest a guide** on `/guides`; admin queue opens update form or public page
 
 ### Business maps setup
 
@@ -517,6 +518,8 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 | Date | Change |
 |------|--------|
+| 2026-08-13 | Listing field feedback: hub suggestions — missing business (town/area/category sections + add link), missing category on `/businesses` rollups, missing guide on `/guides` |
+| 2026-08-13 | Listing field feedback: widen `portal_review_items.type` CHECK for `listing_field_flag` — SQL [portal-review-items-listing-field-flag.sql](../scripts/migrations/portal-review-items-listing-field-flag.sql) (drops existing type check, including Postgres `= ANY` form). Without it, visitor reports 500 with “Could not save your report.” |
 | 2026-08-12 | PostHog `rental_partners`: partner application at `/list-your-rentals/partner` (+ API) split from `rentals`; local bypass `RENTAL_PARTNERS_ENABLED` / `NEXT_PUBLIC_RENTAL_PARTNERS_ENABLED` |
 | 2026-08-12 | PostHog `town_maps`: interactive OSM place pins on `/towns` + `/areas` hubs (separate from `business_maps`); SQL [town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql); local bypass `TOWN_MAPS_ENABLED` / `NEXT_PUBLIC_TOWN_MAPS_ENABLED` |
 | 2026-08-12 | PostHog `feedback`: visitor section reports on unverified business/rental + town/area/guide pages → admin review (`listing_field_flag`); local bypass `FEEDBACK_ENABLED` / `NEXT_PUBLIC_FEEDBACK_ENABLED` |

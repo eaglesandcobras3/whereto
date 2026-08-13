@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import {
   currentValueForBusinessGroup,
   currentValueForGuideGroup,
+  currentValueForHubSuggestion,
   currentValueForPlaceGroup,
   currentValueForRentalGroup,
-  LISTING_FIELD_FLAG_ENTITIES,
-  LISTING_FIELD_FLAG_FIELDS,
+  isHubSuggestionField,
+  listingFieldFlagBodySchema,
   LISTING_FIELD_FLAG_TYPE,
   type ListingFieldFlagEntity,
   type ListingFieldFlagField,
@@ -23,33 +23,25 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 export const runtime = "nodejs";
 
-const bodySchema = z.object({
-  entity: z.enum(LISTING_FIELD_FLAG_ENTITIES).default("business"),
-  /** Entity primary key (business / rental / town / area / guide). */
-  entity_id: z.string().uuid().optional(),
-  /** @deprecated Prefer entity_id — older clients sent business_id only. */
-  business_id: z.string().uuid().optional(),
-  field: z.enum(LISTING_FIELD_FLAG_FIELDS),
-  note: z
-    .string()
-    .max(500)
-    .optional()
-    .transform((s) => {
-      const t = (s ?? "").trim();
-      return t || null;
+function insertFailedResponse(
+  context: string,
+  insertErr: { message?: string; code?: string; details?: string; hint?: string },
+) {
+  console.error(
+    `[listing-field-flag] ${context} insert`,
+    JSON.stringify({
+      message: insertErr.message,
+      code: insertErr.code,
+      details: insertErr.details,
+      hint: insertErr.hint,
     }),
-  reporter_email: z
-    .string()
-    .max(320)
-    .optional()
-    .transform((s) => {
-      const t = (s ?? "").trim();
-      return t || null;
-    })
-    .refine((s) => s == null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s), {
-      message: "Enter a valid email.",
-    }),
-});
+  );
+  const body: { error: string; detail?: string } = { error: "Could not save your report." };
+  if (process.env.NODE_ENV !== "production" && insertErr.message) {
+    body.detail = insertErr.message;
+  }
+  return NextResponse.json(body, { status: 500 });
+}
 
 function payloadFor(
   entity: ListingFieldFlagEntity,
@@ -59,6 +51,7 @@ function payloadFor(
   currentValue: string | null,
   note: string | null,
   reporterEmail: string | null,
+  sectionTitle: string | null = null,
 ): ListingFieldFlagPayload {
   return {
     source: "listing_field_flag",
@@ -71,7 +64,18 @@ function payloadFor(
     business_slug: slug,
     current_value: currentValue,
     reporter_email: reporterEmail,
+    section_title: sectionTitle,
   };
+}
+
+function valueForField(
+  field: ListingFieldFlagField,
+  pageTitle: string,
+  section: string | null,
+  fallback: string | null,
+): string | null {
+  if (isHubSuggestionField(field)) return currentValueForHubSuggestion(pageTitle, section);
+  return fallback;
 }
 
 /**
@@ -95,7 +99,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = bodySchema.safeParse(json);
+  const parsed = listingFieldFlagBodySchema.safeParse(json);
   if (!parsed.success) {
     const fieldErrors = parsed.error.flatten().fieldErrors;
     const firstFieldError = Object.values(fieldErrors)
@@ -112,11 +116,73 @@ export async function POST(request: NextRequest) {
 
   const d = parsed.data;
   const entityId = d.entity_id ?? d.business_id;
+  const supabase = getServiceSupabase();
+
+  if (d.entity === "hub") {
+    const title = d.page_title || "WhereTo30A";
+    const slug = d.page_slug || "";
+    const { error: insertErr } = await supabase.from("portal_review_items").insert({
+      type: LISTING_FIELD_FLAG_TYPE,
+      status: "pending",
+      business_id: null,
+      submitted_by: null,
+      payload: payloadFor(
+        "hub",
+        d.field,
+        title,
+        slug,
+        valueForField(d.field, title, d.section, title),
+        d.note,
+        d.reporter_email,
+        d.section,
+      ),
+    });
+    if (insertErr) {
+      return insertFailedResponse("hub", insertErr);
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   if (!entityId) {
     return NextResponse.json({ error: "Listing id required." }, { status: 400 });
   }
 
-  const supabase = getServiceSupabase();
+  if (d.entity === "category") {
+    const { data: cat, error } = await supabase
+      .from("business_categories")
+      .select("id, title, slug")
+      .eq("id", entityId)
+      .is("archived_at", null)
+      .maybeSingle();
+
+    if (error || !cat) {
+      return NextResponse.json({ error: "Category not found." }, { status: 404 });
+    }
+
+    const row = cat as { id: string; title: string; slug: string };
+    const title = d.page_title || String(row.title ?? "Category");
+    const slug = d.page_slug || String(row.slug ?? "");
+    const { error: insertErr } = await supabase.from("portal_review_items").insert({
+      type: LISTING_FIELD_FLAG_TYPE,
+      status: "pending",
+      business_id: null,
+      submitted_by: null,
+      payload: payloadFor(
+        "category",
+        d.field,
+        title,
+        slug,
+        valueForField(d.field, title, d.section, title),
+        d.note,
+        d.reporter_email,
+        d.section,
+      ),
+    });
+    if (insertErr) {
+      return insertFailedResponse("category", insertErr);
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   if (d.entity === "rental") {
     const { data: prop, error: propErr } = await supabase
@@ -170,15 +236,20 @@ export async function POST(request: NextRequest) {
         d.field,
         title,
         slug,
-        currentValueForRentalGroup(d.field, { ...row, property_type_label: typeLabel }),
+        valueForField(
+          d.field,
+          title,
+          d.section,
+          currentValueForRentalGroup(d.field, { ...row, property_type_label: typeLabel }),
+        ),
         d.note,
         d.reporter_email,
+        d.section,
       ),
     });
 
     if (insertErr) {
-      console.error("[listing-field-flag] rental insert", insertErr);
-      return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+      return insertFailedResponse("rental", insertErr);
     }
     return NextResponse.json({ ok: true });
   }
@@ -209,15 +280,20 @@ export async function POST(request: NextRequest) {
         d.field,
         title,
         slug,
-        currentValueForPlaceGroup(d.field, { title, excerpt: row.excerpt }),
+        valueForField(
+          d.field,
+          title,
+          d.section,
+          currentValueForPlaceGroup(d.field, { title, excerpt: row.excerpt }),
+        ),
         d.note,
         d.reporter_email,
+        d.section,
       ),
     });
 
     if (insertErr) {
-      console.error("[listing-field-flag] town insert", insertErr);
-      return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+      return insertFailedResponse("town", insertErr);
     }
     return NextResponse.json({ ok: true });
   }
@@ -250,19 +326,24 @@ export async function POST(request: NextRequest) {
         d.field,
         title,
         slug,
-        currentValueForPlaceGroup(d.field, {
+        valueForField(
+          d.field,
           title,
-          excerpt: (row.excerpt as string | null) ?? null,
-          town_title: townOne?.title?.trim() || null,
-        }),
+          d.section,
+          currentValueForPlaceGroup(d.field, {
+            title,
+            excerpt: (row.excerpt as string | null) ?? null,
+            town_title: townOne?.title?.trim() || null,
+          }),
+        ),
         d.note,
         d.reporter_email,
+        d.section,
       ),
     });
 
     if (insertErr) {
-      console.error("[listing-field-flag] area insert", insertErr);
-      return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+      return insertFailedResponse("area", insertErr);
     }
     return NextResponse.json({ ok: true });
   }
@@ -300,19 +381,24 @@ export async function POST(request: NextRequest) {
         d.field,
         title,
         slug,
-        currentValueForGuideGroup(d.field, {
+        valueForField(
+          d.field,
           title,
-          excerpt: row.excerpt,
-          content: row.content,
-        }),
+          d.section,
+          currentValueForGuideGroup(d.field, {
+            title,
+            excerpt: row.excerpt,
+            content: row.content,
+          }),
+        ),
         d.note,
         d.reporter_email,
+        d.section,
       ),
     });
 
     if (insertErr) {
-      console.error("[listing-field-flag] guide insert", insertErr);
-      return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+      return insertFailedResponse("guide", insertErr);
     }
     return NextResponse.json({ ok: true });
   }
@@ -378,15 +464,15 @@ export async function POST(request: NextRequest) {
       d.field,
       title,
       slug,
-      currentValueForBusinessGroup(d.field, normalized),
+      valueForField(d.field, title, d.section, currentValueForBusinessGroup(d.field, normalized)),
       d.note,
       d.reporter_email,
+      d.section,
     ),
   });
 
   if (insertErr) {
-    console.error("[listing-field-flag] insert", insertErr);
-    return NextResponse.json({ error: "Could not save your report." }, { status: 500 });
+    return insertFailedResponse("business", insertErr);
   }
 
   return NextResponse.json({ ok: true });

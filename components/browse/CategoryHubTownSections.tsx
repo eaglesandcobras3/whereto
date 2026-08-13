@@ -2,9 +2,11 @@
 
 import { type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 import type { CategoryBusinessRow, CategoryTownGroup } from "@/lib/data/category-hub";
 import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
+import { ADD_BUSINESS_HREF } from "@/lib/listing-requests/listing-field-flag";
 
 type Props = {
   townGroups: CategoryTownGroup[];
@@ -12,6 +14,9 @@ type Props = {
   regional?: CategoryBusinessRow[];
   categorySlug: string;
   emptyMessage?: ReactNode;
+  flagEntity?: "category" | "hub";
+  flagEntityId?: string;
+  pageTitle?: string;
 };
 
 const REGIONAL_SECTION_ID = "regional";
@@ -47,11 +52,41 @@ function BusinessGrid({
   );
 }
 
+function SectionSuggest({
+  flagEntity,
+  flagEntityId,
+  pageTitle,
+  pageSlug,
+  section,
+}: {
+  flagEntity?: "category" | "hub";
+  flagEntityId?: string;
+  pageTitle?: string;
+  pageSlug: string;
+  section: string;
+}) {
+  if (!flagEntity) return null;
+  return (
+    <ListingFieldFlagNote
+      entity={flagEntity}
+      entityId={flagEntityId}
+      field="listings"
+      section={section}
+      pageTitle={pageTitle}
+      pageSlug={pageSlug}
+      addHref={ADD_BUSINESS_HREF}
+    />
+  );
+}
+
 export function CategoryHubTownSections({
   townGroups,
   regional = [],
   categorySlug,
   emptyMessage,
+  flagEntity,
+  flagEntityId,
+  pageTitle,
 }: Props) {
   const sectionIds = [
     ...townGroups.map(groupKey),
@@ -65,7 +100,18 @@ export function CategoryHubTownSections({
   });
 
   if (townGroups.length === 0 && regional.length === 0) {
-    return emptyMessage ? <div>{emptyMessage}</div> : null;
+    return (
+      <div className="space-y-3">
+        {emptyMessage ? <div>{emptyMessage}</div> : null}
+        <SectionSuggest
+          flagEntity={flagEntity}
+          flagEntityId={flagEntityId}
+          pageTitle={pageTitle}
+          pageSlug={categorySlug}
+          section={pageTitle || categorySlug}
+        />
+      </div>
+    );
   }
 
   return (
@@ -98,11 +144,20 @@ export function CategoryHubTownSections({
                 open={isOpen}
                 onToggle={() => toggle(id)}
               >
-                <BusinessGrid
-                  businesses={group.businesses}
-                  categorySlug={categorySlug}
-                  analyticsSuffix={id}
-                />
+                <div className="space-y-3">
+                  <BusinessGrid
+                    businesses={group.businesses}
+                    categorySlug={categorySlug}
+                    analyticsSuffix={id}
+                  />
+                  <SectionSuggest
+                    flagEntity={flagEntity}
+                    flagEntityId={flagEntityId}
+                    pageTitle={pageTitle}
+                    pageSlug={categorySlug}
+                    section={group.name}
+                  />
+                </div>
               </CollapsibleBrowseSection>
             );
           })}
@@ -133,11 +188,20 @@ export function CategoryHubTownSections({
             open={expandedIds.has(REGIONAL_SECTION_ID)}
             onToggle={() => toggle(REGIONAL_SECTION_ID)}
           >
-            <BusinessGrid
-              businesses={regional}
-              categorySlug={categorySlug}
-              analyticsSuffix="regional"
-            />
+            <div className="space-y-3">
+              <BusinessGrid
+                businesses={regional}
+                categorySlug={categorySlug}
+                analyticsSuffix="regional"
+              />
+              <SectionSuggest
+                flagEntity={flagEntity}
+                flagEntityId={flagEntityId}
+                pageTitle={pageTitle}
+                pageSlug={categorySlug}
+                section="Regional & by appointment"
+              />
+            </div>
           </CollapsibleBrowseSection>
         </div>
       ) : null}

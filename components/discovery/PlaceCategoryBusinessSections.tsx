@@ -2,11 +2,13 @@
 
 import { type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import { browseGroupIcon } from "@/lib/business-categories/group-browse-sections";
 import type { BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
 import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
+import { ADD_BUSINESS_HREF } from "@/lib/listing-requests/listing-field-flag";
 
 type Props = {
   placeName: string;
@@ -18,6 +20,8 @@ type Props = {
   emptyMessage?: ReactNode;
   /** How many categories to show expanded by default (all breakpoints). */
   defaultExpandedCount?: number;
+  flagEntity?: "town" | "area";
+  flagEntityId?: string;
 };
 
 export function PlaceCategoryBusinessSections({
@@ -29,6 +33,8 @@ export function PlaceCategoryBusinessSections({
   subheading,
   emptyMessage,
   defaultExpandedCount,
+  flagEntity,
+  flagEntityId,
 }: Props) {
   const { expandedIds, toggle } = usePersistedExpandedSectionIds({
     sectionIds: sections.map((section) => section.id),
@@ -37,7 +43,21 @@ export function PlaceCategoryBusinessSections({
   });
 
   if (sections.length === 0) {
-    return emptyMessage ? <div>{emptyMessage}</div> : null;
+    return (
+      <div className="space-y-3">
+        {emptyMessage ? <div>{emptyMessage}</div> : null}
+        {flagEntity && flagEntityId ? (
+          <ListingFieldFlagNote
+            entity={flagEntity}
+            entityId={flagEntityId}
+            field="listings"
+            pageTitle={placeName}
+            pageSlug={placeSlug}
+            addHref={ADD_BUSINESS_HREF}
+          />
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -76,20 +96,33 @@ export function PlaceCategoryBusinessSections({
             open={isOpen}
             onToggle={() => toggle(section.id)}
           >
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {businessItems.map((business) => (
-                <li key={business.id} className="h-full">
-                  <BusinessPreviewCard
-                    name={business.name}
-                    slug={business.slug}
-                    excerpt={business.excerpt}
-                    heroImageUrl={business.heroImageUrl}
-                    analyticsCategory={`${analyticsCategoryPrefix}_business`}
-                    analyticsLabel={`${placeSlug}_${business.slug}`}
-                  />
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-3">
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {businessItems.map((business) => (
+                  <li key={business.id} className="h-full">
+                    <BusinessPreviewCard
+                      name={business.name}
+                      slug={business.slug}
+                      excerpt={business.excerpt}
+                      heroImageUrl={business.heroImageUrl}
+                      analyticsCategory={`${analyticsCategoryPrefix}_business`}
+                      analyticsLabel={`${placeSlug}_${business.slug}`}
+                    />
+                  </li>
+                ))}
+              </ul>
+              {flagEntity && flagEntityId ? (
+                <ListingFieldFlagNote
+                  entity={flagEntity}
+                  entityId={flagEntityId}
+                  field="listings"
+                  section={section.title}
+                  pageTitle={placeName}
+                  pageSlug={placeSlug}
+                  addHref={ADD_BUSINESS_HREF}
+                />
+              ) : null}
+            </div>
           </CollapsibleBrowseSection>
         );
       })}

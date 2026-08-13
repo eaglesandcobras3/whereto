@@ -127,6 +127,9 @@ export function CategoryHubView({
                   No listings found for this category yet.
                 </p>
               }
+              flagEntity="category"
+              flagEntityId={cat.id}
+              pageTitle={cat.title}
             />
           </div>
         </div>

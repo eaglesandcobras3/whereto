@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { GuideCard } from "@/components/discovery/GuideCard";
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
+import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { hubGuidesIntro } from "@/lib/seo/page-intro-copy";
@@ -64,6 +65,15 @@ export function GuidesHubClient({ allGuides }: Props) {
   const featuredGuides = pickDailySubset(allGuides, DAILY_FEATURED_LIMIT);
   const featuredSlugSet = new Set(featuredGuides.map((g) => g.slug));
   const moreGuides = allGuides.filter((g) => !featuredSlugSet.has(g.slug));
+  const suggestAGuide = (
+    <ListingFieldFlagNote
+      entity="hub"
+      field="guides"
+      pageTitle="Travel guides"
+      pageSlug="guides"
+      className="mt-6"
+    />
+  );
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -96,6 +106,7 @@ export function GuidesHubClient({ allGuides }: Props) {
                 />
               ))}
             </div>
+            {moreGuides.length === 0 ? suggestAGuide : null}
           </div>
         </section>
       ) : null}
@@ -124,13 +135,17 @@ export function GuidesHubClient({ allGuides }: Props) {
                 />
               ))}
             </div>
+            {suggestAGuide}
           </div>
         </section>
       ) : null}
 
       {allGuides.length === 0 ? (
         <section className="py-14">
-          <p className="text-center text-[var(--color-text-secondary)]">No guides found.</p>
+          <div className="mx-auto max-w-6xl px-4 text-center">
+            <p className="text-[var(--color-text-secondary)]">No guides found.</p>
+            <div className="mt-4 flex justify-center">{suggestAGuide}</div>
+          </div>
         </section>
       ) : null}
     </div>

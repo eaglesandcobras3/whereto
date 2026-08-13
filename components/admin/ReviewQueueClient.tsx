@@ -16,6 +16,7 @@ import { AdminFreeOnboardPayloadPhotosReview } from "@/components/admin/AdminFre
 import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import type { FreeOnboardPhotoPayload } from "@/lib/listing-requests/free-onboard-schema";
 import {
+  isHubSuggestionField,
   isListingFieldFlagType,
   listingFieldFlagCtaLabel,
   listingFieldFlagEntityFromPayload,
@@ -607,7 +608,9 @@ export function ReviewQueueClient() {
                         fieldFlag &&
                         (fieldFlagEntity === "town" ||
                           fieldFlagEntity === "area" ||
-                          fieldFlagEntity === "guide")
+                          fieldFlagEntity === "guide" ||
+                          fieldFlagEntity === "category" ||
+                          fieldFlagEntity === "hub")
                       ) {
                         return null;
                       }
@@ -628,9 +631,25 @@ export function ReviewQueueClient() {
                 {fieldFlag ? (
                   <div className="mt-4 space-y-2 text-sm text-zinc-600">
                     <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
-                      Visitor flagged <strong>{fieldLabel}</strong> as wrong on a{" "}
-                      {fieldFlagEntity} page. Review and correct if needed, then mark done.
+                      {isHubSuggestionField(fieldKey) ? (
+                        <>
+                          Visitor suggested a missing <strong>{fieldLabel.toLowerCase()}</strong> on
+                          this page. Review and add if it belongs, then mark done.
+                        </>
+                      ) : (
+                        <>
+                          Visitor flagged <strong>{fieldLabel}</strong> as wrong on a{" "}
+                          {fieldFlagEntity} page. Review and correct if needed, then mark done.
+                        </>
+                      )}
                     </p>
+                    {typeof item.payload.section_title === "string" &&
+                    item.payload.section_title.trim() ? (
+                      <p>
+                        <span className="font-medium text-zinc-800">Section:</span>{" "}
+                        {item.payload.section_title}
+                      </p>
+                    ) : null}
                     <p>
                       <span className="font-medium text-zinc-800">Current value:</span>{" "}
                       {typeof item.payload.current_value === "string" &&

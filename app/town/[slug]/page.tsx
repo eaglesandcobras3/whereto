@@ -457,6 +457,8 @@ function BasicTownPage({
               emptyMessage={
                 <TownEmptyDiscoveryMessage townName={town.name} townId={town.id} />
               }
+              flagEntity="town"
+              flagEntityId={town.id}
             />
 
             {pageData.areas.length > 0 ? (

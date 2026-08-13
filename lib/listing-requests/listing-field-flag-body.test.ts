@@ -1,40 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
-import {
-  LISTING_FIELD_FLAG_ENTITIES,
-  LISTING_FIELD_FLAG_FIELDS,
-} from "@/lib/listing-requests/listing-field-flag";
-
-/** Mirrors `app/api/listing-field-flags/route.ts` body schema (kept local to avoid route imports). */
-const bodySchema = z.object({
-  entity: z.enum(LISTING_FIELD_FLAG_ENTITIES).default("business"),
-  entity_id: z.string().uuid().optional(),
-  business_id: z.string().uuid().optional(),
-  field: z.enum(LISTING_FIELD_FLAG_FIELDS),
-  note: z
-    .string()
-    .max(500)
-    .optional()
-    .transform((s) => {
-      const t = (s ?? "").trim();
-      return t || null;
-    }),
-  reporter_email: z
-    .string()
-    .max(320)
-    .optional()
-    .transform((s) => {
-      const t = (s ?? "").trim();
-      return t || null;
-    })
-    .refine((s) => s == null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s), {
-      message: "Enter a valid email.",
-    }),
-});
+import { listingFieldFlagBodySchema } from "@/lib/listing-requests/listing-field-flag";
 
 describe("listing-field-flags body schema", () => {
+  it("accepts header + short note (client default section)", () => {
+    const parsed = listingFieldFlagBodySchema.safeParse({
+      entity: "business",
+      entity_id: "00000000-0000-4000-8000-000000000001",
+      field: "header",
+      note: "test",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
   it("accepts a note-only report without email (client no longer sends email)", () => {
-    const parsed = bodySchema.safeParse({
+    const parsed = listingFieldFlagBodySchema.safeParse({
       entity: "business",
       entity_id: "00000000-0000-4000-8000-000000000001",
       field: "essentials",
@@ -47,7 +26,7 @@ describe("listing-field-flags body schema", () => {
   });
 
   it("accepts an empty optional note", () => {
-    const parsed = bodySchema.safeParse(
+    const parsed = listingFieldFlagBodySchema.safeParse(
       JSON.parse(
         JSON.stringify({
           entity: "business",
@@ -63,7 +42,7 @@ describe("listing-field-flags body schema", () => {
   });
 
   it("rejects autofilled invalid reporter_email with a clear message", () => {
-    const parsed = bodySchema.safeParse({
+    const parsed = listingFieldFlagBodySchema.safeParse({
       entity: "business",
       entity_id: "00000000-0000-4000-8000-000000000001",
       field: "essentials",
@@ -73,5 +52,42 @@ describe("listing-field-flags body schema", () => {
     if (parsed.success) return;
     const fieldErrors = parsed.error.flatten().fieldErrors;
     expect(fieldErrors.reporter_email?.[0]).toBe("Enter a valid email.");
+  });
+
+  it("accepts a missing-business suggestion on a town section without email", () => {
+    const parsed = listingFieldFlagBodySchema.safeParse({
+      entity: "town",
+      entity_id: "00000000-0000-4000-8000-000000000001",
+      field: "listings",
+      note: "Add Bud & Alley’s",
+      section: "Food & drink",
+      page_title: "Seaside",
+      page_slug: "seaside",
+    });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.section).toBe("Food & drink");
+  });
+
+  it("accepts a hub suggestion without entity_id (guides / businesses hub)", () => {
+    const parsed = listingFieldFlagBodySchema.safeParse({
+      entity: "hub",
+      field: "guides",
+      note: "Need a rainy-day guide",
+      page_title: "Travel guides",
+      page_slug: "guides",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts a category suggestion on a rollup", () => {
+    const parsed = listingFieldFlagBodySchema.safeParse({
+      entity: "category",
+      entity_id: "00000000-0000-4000-8000-000000000001",
+      field: "categories",
+      note: "Add gelato shops",
+      section: "Food & drink",
+    });
+    expect(parsed.success).toBe(true);
   });
 });

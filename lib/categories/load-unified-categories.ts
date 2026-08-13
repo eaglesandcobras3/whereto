@@ -8,6 +8,8 @@ export type CategoryRollupOption = {
   id: string;
   title: string;
   slug: string;
+  /** UUID from `business_categories` when `id` is overwritten with the slug for hash expand. */
+  categoryId?: string;
   leaves: Array<{ id: string; title: string; slug: string }>;
 };
 
@@ -59,12 +61,12 @@ export async function loadCategoryHubLinkSections(): Promise<CategoryRollupOptio
     if (!section || section.leaves.length === 0) continue;
     seen.add(slug);
     // Use taxonomy slug as id so `/businesses#food_and_drink` hash expand still works.
-    out.push({ ...section, id: section.slug });
+    out.push({ ...section, categoryId: section.id, id: section.slug });
   }
 
   for (const section of options) {
     if (seen.has(section.slug) || section.leaves.length === 0) continue;
-    out.push({ ...section, id: section.slug });
+    out.push({ ...section, categoryId: section.id, id: section.slug });
   }
 
   return out;

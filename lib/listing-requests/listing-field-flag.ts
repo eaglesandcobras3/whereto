@@ -1,5 +1,7 @@
 /** Visitor reports that public content looks wrong (gated by PostHog `feedback`). */
 
+import { z } from "zod";
+import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { LIST_YOUR_RENTALS_PATH } from "@/lib/stays/constants";
 import { townPagePath } from "@/lib/routes/town-page-path";
 
@@ -11,6 +13,8 @@ export const LISTING_FIELD_FLAG_ENTITIES = [
   "town",
   "area",
   "guide",
+  "category",
+  "hub",
 ] as const;
 export type ListingFieldFlagEntity = (typeof LISTING_FIELD_FLAG_ENTITIES)[number];
 
@@ -23,6 +27,9 @@ export const LISTING_FIELD_FLAG_FIELDS = [
   "map",
   "facts",
   "content",
+  "listings",
+  "categories",
+  "guides",
 ] as const;
 
 export type ListingFieldFlagField = (typeof LISTING_FIELD_FLAG_FIELDS)[number];
@@ -35,18 +42,56 @@ export const LISTING_FIELD_FLAG_LABELS: Record<ListingFieldFlagField, string> = 
   map: "Map",
   facts: "At a glance",
   content: "Guide content",
+  listings: "Business",
+  categories: "Category",
+  guides: "Guide",
 };
 
 /** Short CTA under each section. */
+export const LISTING_FIELD_FLAG_PROMPT = "Suggest an update";
+export const SUGGEST_A_BUSINESS_PROMPT = "Suggest a business";
+export const SUGGEST_A_CATEGORY_PROMPT = "Suggest a category";
+export const SUGGEST_A_GUIDE_PROMPT = "Suggest a guide";
+export const ADD_BUSINESS_HREF = "/list-your-business?new=1";
+export const ADD_BUSINESS_LABEL = "Add a business";
+
 export const LISTING_FIELD_FLAG_PROMPTS: Record<ListingFieldFlagField, string> = {
-  header: "Something wrong with these details?",
-  essentials: "Something wrong with essentials?",
-  description: "Is this description wrong?",
-  town_area: "Wrong town or area?",
-  map: "Is this map wrong?",
-  facts: "Something wrong with these facts?",
-  content: "Something off in this guide?",
+  header: LISTING_FIELD_FLAG_PROMPT,
+  essentials: LISTING_FIELD_FLAG_PROMPT,
+  description: LISTING_FIELD_FLAG_PROMPT,
+  town_area: LISTING_FIELD_FLAG_PROMPT,
+  map: LISTING_FIELD_FLAG_PROMPT,
+  facts: LISTING_FIELD_FLAG_PROMPT,
+  content: LISTING_FIELD_FLAG_PROMPT,
+  listings: SUGGEST_A_BUSINESS_PROMPT,
+  categories: SUGGEST_A_CATEGORY_PROMPT,
+  guides: SUGGEST_A_GUIDE_PROMPT,
 };
+
+export const LISTING_FIELD_FLAG_PLACEHOLDERS: Record<ListingFieldFlagField, string> = {
+  header: "What’s wrong? (optional)",
+  essentials: "What’s wrong? (optional)",
+  description: "What’s wrong? (optional)",
+  town_area: "What’s wrong? (optional)",
+  map: "What’s wrong? (optional)",
+  facts: "What’s wrong? (optional)",
+  content: "What’s wrong? (optional)",
+  listings: "Name and town help. (optional)",
+  categories: "What should we add? (optional)",
+  guides: "What should we cover? (optional)",
+};
+
+export function listingFieldFlagPrompt(field: ListingFieldFlagField): string {
+  return LISTING_FIELD_FLAG_PROMPTS[field];
+}
+
+export function listingFieldFlagPlaceholder(field: ListingFieldFlagField): string {
+  return LISTING_FIELD_FLAG_PLACEHOLDERS[field];
+}
+
+export function isHubSuggestionField(field: string): boolean {
+  return field === "listings" || field === "categories" || field === "guides";
+}
 
 /** Older per-field keys may still appear in the admin queue. */
 export const LISTING_FIELD_FLAG_LEGACY_LABELS: Record<string, string> = {
@@ -83,6 +128,8 @@ export type ListingFieldFlagPayload = {
   business_slug: string;
   current_value: string | null;
   reporter_email: string | null;
+  /** Browse section the visitor was looking at (e.g. “Food & drink”). */
+  section_title?: string | null;
 };
 
 export function isListingFieldFlagType(type: string): boolean {
@@ -106,6 +153,9 @@ export function listingUpdatePath(opts: {
   if (opts.entity === "guide") {
     return `/guide/${encodeURIComponent(slug)}`;
   }
+  if (opts.entity === "category" || opts.entity === "hub") {
+    return listingFieldFlagPublicPath({ entity: opts.entity, slug }) ?? "/businesses";
+  }
   return `/list-your-business?business=${encodeURIComponent(slug)}`;
 }
 
@@ -127,6 +177,13 @@ export function listingFieldFlagPublicPath(opts: {
   if (opts.entity === "area") return `/area/${encodeURIComponent(slug)}`;
   if (opts.entity === "guide") return `/guide/${encodeURIComponent(slug)}`;
   if (opts.entity === "business") return `/business/${encodeURIComponent(slug)}`;
+  if (opts.entity === "category") return categoryHubPath(slug);
+  if (opts.entity === "hub") {
+    if (slug.startsWith("/")) return slug;
+    if (slug === "guides") return "/guides";
+    if (slug === "businesses") return "/businesses";
+    return categoryHubPath(slug);
+  }
   return null;
 }
 
@@ -144,7 +201,15 @@ export function listingFieldFlagEntityFromPayload(
   payload: Record<string, unknown>,
 ): ListingFieldFlagEntity {
   const e = payload.entity;
-  if (e === "rental" || e === "town" || e === "area" || e === "guide" || e === "business") {
+  if (
+    e === "rental" ||
+    e === "town" ||
+    e === "area" ||
+    e === "guide" ||
+    e === "business" ||
+    e === "category" ||
+    e === "hub"
+  ) {
     return e;
   }
   return "business";
@@ -245,7 +310,15 @@ export function currentValueForPlaceGroup(
   if (field === "town_area") return row.town_title?.trim() || null;
   if (field === "facts") return joinParts([row.title, "at-a-glance"]);
   if (field === "map") return row.title?.trim() || null;
+  if (isHubSuggestionField(field)) return row.title?.trim() || null;
   return null;
+}
+
+export function currentValueForHubSuggestion(
+  pageTitle: string,
+  section: string | null,
+): string | null {
+  return joinParts([section, pageTitle]);
 }
 
 export function currentValueForGuideGroup(
@@ -264,3 +337,38 @@ export function currentValueForGuideGroup(
   }
   return null;
 }
+
+function optionalTrimmed(max: number) {
+  return z
+    .string()
+    .max(max)
+    .optional()
+    .transform((s) => {
+      const t = (s ?? "").trim();
+      return t || null;
+    });
+}
+
+/** POST /api/listing-field-flags body. */
+export const listingFieldFlagBodySchema = z.object({
+  entity: z.enum(LISTING_FIELD_FLAG_ENTITIES).default("business"),
+  entity_id: z.string().uuid().optional(),
+  /** @deprecated Prefer entity_id — older clients sent business_id only. */
+  business_id: z.string().uuid().optional(),
+  field: z.enum(LISTING_FIELD_FLAG_FIELDS),
+  note: optionalTrimmed(500),
+  reporter_email: z
+    .string()
+    .max(320)
+    .optional()
+    .transform((s) => {
+      const t = (s ?? "").trim();
+      return t || null;
+    })
+    .refine((s) => s == null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s), {
+      message: "Enter a valid email.",
+    }),
+  page_title: optionalTrimmed(160),
+  page_slug: optionalTrimmed(160),
+  section: optionalTrimmed(80),
+});

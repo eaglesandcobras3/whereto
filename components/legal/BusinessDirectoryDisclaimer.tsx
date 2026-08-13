@@ -54,9 +54,8 @@ export function BusinessDirectoryDisclaimer({
           flag
         </span>
         <span>
-          See something wrong?{" "}
           <Link href={feedbackHref} className={linkCn}>
-            Send a correction
+            Suggest an update
           </Link>
           {" · "}
           <Link href="/terms#directory-and-business-listings" className={linkCn}>
@@ -72,7 +71,7 @@ export function BusinessDirectoryDisclaimer({
       Listings aren&apos;t verified. Hours, descriptions, and suitability cues can be out of date.
       Appearance here isn&apos;t an endorsement unless we say so.{" "}
       <Link href={feedbackHref} className={linkCn}>
-        Send a correction
+        Suggest an update
       </Link>
       {" · "}
       <Link href="/terms#directory-and-business-listings" className={linkCn}>
