@@ -133,7 +133,8 @@ async function fetchPostHogFlagsWithNode(distinctId: string): Promise<Partial<Fe
     const raw = await client.getAllFlags(distinctId, {
       flagKeys: [...FEATURE_FLAG_KEYS],
     });
-    return pickKnownBooleanFlags(raw as Record<string, unknown>);
+    const picked = pickKnownBooleanFlags(raw as Record<string, unknown>);
+    return Object.keys(picked).length > 0 ? picked : null;
   } catch {
     return null;
   }
@@ -152,7 +153,11 @@ export async function fetchPostHogFeatureFlags(options?: {
     ANONYMOUS_DISTINCT_ID;
 
   if (options?.runtime === "node") {
-    return fetchPostHogFlagsWithNode(distinctId);
+    const fromNode = await fetchPostHogFlagsWithNode(distinctId);
+    // posthog-node can return {} when remote evaluation fails; fall back to the same
+    // /flags HTTP API used on the edge path (and closer to posthog-js).
+    if (fromNode && Object.keys(fromNode).length > 0) return fromNode;
+    return fetchPostHogFlagsFromApi(distinctId);
   }
 
   return fetchPostHogFlagsFromApi(distinctId);
