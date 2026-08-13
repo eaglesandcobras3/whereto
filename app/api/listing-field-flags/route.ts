@@ -97,8 +97,15 @@ export async function POST(request: NextRequest) {
 
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    const firstFieldError = Object.values(fieldErrors)
+      .flatMap((msgs) => msgs ?? [])
+      .find((m) => typeof m === "string" && m.trim());
     return NextResponse.json(
-      { error: "Check the form and try again.", fieldErrors: parsed.error.flatten().fieldErrors },
+      {
+        error: firstFieldError || "Check the form and try again.",
+        fieldErrors,
+      },
       { status: 400 },
     );
   }

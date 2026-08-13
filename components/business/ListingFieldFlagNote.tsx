@@ -24,7 +24,6 @@ export function ListingFieldFlagNote({ entity, entityId, field, className = "" }
   const feedbackEnabled = useFeedbackFeatureEnabled();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
-  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,16 +40,24 @@ export function ListingFieldFlagNote({ entity, entityId, field, className = "" }
       const res = await fetch("/api/listing-field-flags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({
           entity,
           entity_id: entityId,
           field,
           note: note.trim() || undefined,
-          reporter_email: email.trim() || undefined,
         }),
       });
-      const j = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(j.error || "Could not send report");
+      const j = (await res.json()) as {
+        error?: string;
+        fieldErrors?: Record<string, string[] | undefined>;
+      };
+      if (!res.ok) {
+        const fieldMsg = Object.values(j.fieldErrors ?? {})
+          .flatMap((msgs) => msgs ?? [])
+          .find((m) => typeof m === "string" && m.trim());
+        throw new Error(fieldMsg || j.error || "Could not send report");
+      }
       setDone(true);
       setOpen(false);
     } catch (e) {
@@ -87,14 +94,6 @@ export function ListingFieldFlagNote({ entity, entityId, field, className = "" }
             rows={2}
             maxLength={500}
             placeholder="What’s wrong? (optional)"
-            className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-800 outline-none focus:border-zinc-400"
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            maxLength={320}
-            placeholder="Email if you want a reply (optional)"
             className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-800 outline-none focus:border-zinc-400"
           />
           {error ? <p className="text-[11px] text-red-600">{error}</p> : null}
