@@ -1,9 +1,12 @@
 /**
  * Export businesses for manual audit (storefronts + services in one file).
  *
- * Columns: title, slug, is_storefront, is_service_business, town, area, category,
+ * Columns: id, title, slug, is_storefront, is_service_business, is_verified, town, area, category,
  * search_tags, excerpt, overview, seo_title, seo_description, search_keywords,
- * location, phone, website.
+ * location, phone, website, map_lat, map_lng.
+ *
+ * Import skips content edits on verified listings. Coordinates apply only to storefronts
+ * (including verified storefronts).
  *
  * Rows are sorted by category, then town, then title.
  *
@@ -46,10 +49,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 type Rel<T> = T | T[] | null;
 
 type ExportRow = {
+  id: string;
   title: string;
   slug: string;
   is_storefront: boolean | null;
   is_service_business: boolean | null;
+  is_verified: boolean | null;
   address: string | null;
   phone: string | null;
   website: string | null;
@@ -59,6 +64,8 @@ type ExportRow = {
   seo_description: string | null;
   search_keywords: string | null;
   search_tags: string[] | null;
+  map_lat: number | null;
+  map_lng: number | null;
   towns: Rel<{ title: string }>;
   areas: Rel<{ title: string }>;
   business_categories: Rel<{ title: string; slug: string }>;
@@ -66,8 +73,9 @@ type ExportRow = {
 };
 
 const SELECT = `
-  title, slug, is_storefront, is_service_business, address, phone, website,
+  id, title, slug, is_storefront, is_service_business, is_verified, address, phone, website,
   excerpt, overview, seo_title, seo_description, search_keywords, search_tags,
+  map_lat, map_lng,
   towns ( title ),
   areas ( title ),
   business_categories ( title, slug ),
@@ -75,10 +83,12 @@ const SELECT = `
 `;
 
 const HEADERS = [
+  "id",
   "title",
   "slug",
   "is_storefront",
   "is_service_business",
+  "is_verified",
   "town",
   "area",
   "category",
@@ -91,6 +101,8 @@ const HEADERS = [
   "location",
   "phone",
   "website",
+  "map_lat",
+  "map_lng",
 ] as const;
 
 function relOne<T>(rel: Rel<T>): T | null {
@@ -132,14 +144,21 @@ function categoryLabel(row: ExportRow): string {
   return specialty?.title?.trim() || "";
 }
 
+function formatCoord(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(Number(value))) return "";
+  return String(value);
+}
+
 function mapRow(row: ExportRow): Record<string, string> {
   const town = relOne(row.towns);
   const area = relOne(row.areas);
   return {
+    id: row.id ?? "",
     title: row.title ?? "",
     slug: row.slug ?? "",
     is_storefront: formatBool(row.is_storefront),
     is_service_business: formatBool(row.is_service_business),
+    is_verified: formatBool(row.is_verified),
     town: town?.title?.trim() ?? "",
     area: area?.title?.trim() ?? "",
     category: categoryLabel(row),
@@ -152,6 +171,8 @@ function mapRow(row: ExportRow): Record<string, string> {
     location: row.address ?? "",
     phone: row.phone ?? "",
     website: row.website ?? "",
+    map_lat: formatCoord(row.map_lat),
+    map_lng: formatCoord(row.map_lng),
   };
 }
 

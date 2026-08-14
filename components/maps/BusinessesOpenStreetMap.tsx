@@ -148,7 +148,7 @@ export function BusinessesOpenStreetMap({
       }
 
       map = L.map(containerRef.current, {
-        scrollWheelZoom: false,
+        scrollWheelZoom: true,
         attributionControl: true,
       });
 

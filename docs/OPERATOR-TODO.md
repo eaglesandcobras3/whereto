@@ -339,7 +339,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `rental_partners` | Company partner application at `/list-your-rentals/partner` (separate from `rentals`); code default **off** |
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
-| `town_maps` | OpenStreetMap of place centers on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
+| `town_maps` | OpenStreetMap of place pins (`map_lat`/`map_lng`) on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
 | `feedback` | Visitor “is this wrong?” field flags on unverified business / rental detail pages (admin review queue); code default **off** |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
@@ -359,10 +359,10 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 ### Town / area hub maps setup
 
-- [ ] Apply [scripts/migrations/town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql) (ensures `towns.center_lat/lng` + `areas.latitude_center/longitude_center`; seeds known 30A town centers when missing/default)
+- [ ] Apply [scripts/migrations/town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql) (ensures `towns`/`areas`.`map_lat`/`map_lng`; backfills from legacy `center_*` / `latitude_center` when needed; seeds known 30A town pins)
 - [ ] PostHog: create boolean flag `town_maps` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `TOWN_MAPS_ENABLED=1` and `NEXT_PUBLIC_TOWN_MAPS_ENABLED=1`
-- [ ] Fill remaining town/area centers in Directus/admin (or markdown + content sync) — areas need `latitude_center` / `longitude_center` for pins
+- [ ] Fill remaining town/area pins in Directus/admin via **`map_lat` / `map_lng`** (same fields as businesses/rentals) — do not use legacy `center_lat` / `latitude_center`
 - [ ] Smoke-test: `/towns` and `/areas` show interactive maps above cards when `town_maps` is on; pin popups link to town/area pages
 
 ### Business photos setup
@@ -514,10 +514,56 @@ See also [`lib/email/templates/supabase/README.md`](../lib/email/templates/supab
 
 ---
 
+## Directory audit (Gemini Search + Census pins)
+
+Most listings were LLM-invented. Verify facts with **Gemini + Google Search grounding**, rewrite short directory copy, assign **search tags locally** (full vocabulary, no Gemini), then pin storefronts with the **US Census geocoder** (not Google Maps). Do not import until you have reviewed the CSV.
+
+### Setup
+
+- [ ] Add `GEMINI_API_KEY` to `.env.local` (Google AI Studio). New projects cannot use `gemini-2.5-flash`; default is `gemini-3.7-flash`. Optional: `GEMINI_MODEL`. Gemini 3 Search grounding needs **prepaid credits** (or a paid billing account) — free-tier-only keys will 429 with “prepayment credits are depleted.”
+- [ ] Export the current directory: `npm run export:businesses`
+
+### Run
+
+```bash
+# Smoke-test a handful of rows (resumes into the same outfile)
+npx tsx scripts/audit-businesses-gemini.ts --limit 5
+
+# Full pass (safe to re-run; skips rows already marked exists/closed/cannot_confirm/skipped_verified)
+npx tsx scripts/audit-businesses-gemini.ts
+
+# Assign search_tags from audited title/category/copy using full local keyword vocab (no LLM)
+npm run assign:business-audit-tags
+
+# Replace storefront coordinates from Census (overwrites LLM pins by default;
+# skips service-only and unconfirmed/closed rows). Use --keep-existing-pins to fill blanks only.
+npm run geocode:businesses-census
+
+# Review docs/businesses-audit-gemini.csv, then:
+npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemini.csv
+npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemini.csv --apply
+```
+
+### Notes
+
+- Extra columns `audit_status`, `audit_confidence`, `audit_sources`, `audit_notes` are ignored by import.
+- `cannot_confirm` / `closed` keep the original copy so you can decide; `exists` overwrites phone/website/address/copy from Search. Gemini does **not** change `search_tags`.
+- Local tag assigner: matches Gemini `audit_suggested_tags` (up to 10 freeform phrases) onto the full vocab, then fills gaps with `TAG_KEYWORD_RULES` on title/category/copy.
+- Verified listings are skipped for content. Import still ignores their content and only applies storefront coordinates.
+- Do **not** enable Google Maps grounding. Census pins are for OSM maps.
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-08-14 | Town/area hub maps + discovery + content-compiler use **`map_lat` / `map_lng`** only (same as businesses/rentals). Re-apply [town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql) to backfill from legacy `center_*` / `latitude_center` if needed. |
+| 2026-08-14 | Gemini audit suggests up to 10 freeform tags (`audit_suggested_tags`); local assigner matches them to vocab then keyword-fills. |
+| 2026-08-14 | Directory audit: Gemini no longer assigns final `search_tags`; local `assign-business-audit-tags.ts` uses full keyword vocabulary after copy is verified. |
+| 2026-08-14 | Directory audit default model → `gemini-3.7-flash` (Gemini 3 Search grounding requires prepaid; ~550 listings typically well under $10). |
+| 2026-08-14 | Census geocode defaults to **overwrite** existing storefront pins (LLM-invented coords); `--keep-existing-pins` fills blanks only. |
+| 2026-08-13 | Directory audit CLI: Gemini Search grounding (`GEMINI_API_KEY`) rewrites unverified listing facts + copy to `docs/businesses-audit-gemini.csv`; Census geocoder fills storefront pins. Do not use Google Geocoding/Maps grounding. |
 | 2026-08-13 | Listing field feedback: hub suggestions — missing business (town/area/category sections + add link), missing category on `/businesses` rollups, missing guide on `/guides` |
 | 2026-08-13 | Listing field feedback: widen `portal_review_items.type` CHECK for `listing_field_flag` — SQL [portal-review-items-listing-field-flag.sql](../scripts/migrations/portal-review-items-listing-field-flag.sql) (drops existing type check, including Postgres `= ANY` form). Without it, visitor reports 500 with “Could not save your report.” |
 | 2026-08-12 | PostHog `rental_partners`: partner application at `/list-your-rentals/partner` (+ API) split from `rentals`; local bypass `RENTAL_PARTNERS_ENABLED` / `NEXT_PUBLIC_RENTAL_PARTNERS_ENABLED` |

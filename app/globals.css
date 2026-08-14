@@ -1162,6 +1162,15 @@ body {
   aspect-ratio: 3/4;
 }
 
+/*
+ * Leaflet panes use z-index 200–1000. Without a local stacking context those
+ * values compete with the sticky site header (z-50) and the map slides over it.
+ */
+.leaflet-container {
+  z-index: 0;
+  isolation: isolate;
+}
+
 /* Leaflet place-card popups (Google Maps–style thumbnail + title) */
 .leaflet-container .whereto-map-popup .leaflet-popup-content-wrapper {
   padding: 0;

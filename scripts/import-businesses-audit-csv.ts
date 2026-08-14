@@ -5,7 +5,10 @@
  * Supports the slim audit export columns:
  *   title, slug, is_storefront, is_service_business, town, area, category,
  *   search_tags, excerpt, overview, seo_title, seo_description, search_keywords,
- *   location, phone, website
+ *   location, phone, website, map_lat, map_lng
+ *
+ * Verified listings: content columns are ignored. `map_lat` / `map_lng` still apply
+ * when the existing row is a storefront. Service-only rows never get coordinate updates.
  *
  * Also accepts the older wide export (town_slug, primary_category, item_tags, …)
  * and the previous split files (docs/storefronts-audit.csv / docs/services-audit.csv).
@@ -63,6 +66,7 @@ type ExistingRow = {
   featured: boolean | null;
   is_storefront: boolean | null;
   is_service_business: boolean | null;
+  is_verified: boolean | null;
   is_hidden_from_search: boolean | null;
   town_id: string | null;
   area_id: string | null;
@@ -95,7 +99,7 @@ type ExistingRow = {
 
 const EXISTING_SELECT = `
   id, slug, title, status, published_at, archived_at, featured,
-  is_storefront, is_service_business, is_hidden_from_search,
+  is_storefront, is_service_business, is_verified, is_hidden_from_search,
   town_id, area_id, primary_category_id, service_category_id,
   address, map_lat, map_lng, phone, website, service_area,
   excerpt, overview, seo_title, seo_description, search_keywords, search_terms, embedding_summary,
@@ -401,6 +405,8 @@ function buildPatch(
   const changes: string[] = [];
   const matchKey = row.id?.trim() || row.slug?.trim() || existing.slug;
   const now = new Date().toISOString();
+  const verified = Boolean(existing.is_verified);
+  const storefront = Boolean(existing.is_storefront);
 
   function setIfChanged(field: string, next: unknown, prev: unknown, label?: string) {
     const same =
@@ -411,6 +417,20 @@ function buildPatch(
       patch[field] = next;
       changes.push(label ?? field);
     }
+  }
+
+  // Pins: storefronts only (including verified). Ignore blank CSV cells so we do not wipe coords.
+  if (storefront) {
+    if (hasColumn(row, "map_lat") && row.map_lat.trim()) {
+      setIfChanged("map_lat", nullableNumber(row.map_lat), existing.map_lat);
+    }
+    if (hasColumn(row, "map_lng") && row.map_lng.trim()) {
+      setIfChanged("map_lng", nullableNumber(row.map_lng), existing.map_lng);
+    }
+  }
+
+  if (verified) {
+    return { patch, changes, matchKey };
   }
 
   setIfChanged("title", nullableText(row.title), existing.title);
@@ -460,13 +480,6 @@ function buildPatch(
       : undefined;
   if (addressRaw !== undefined) {
     setIfChanged("address", nullableText(addressRaw), existing.address, "location");
-  }
-
-  if (hasColumn(row, "map_lat")) {
-    setIfChanged("map_lat", nullableNumber(row.map_lat), existing.map_lat);
-  }
-  if (hasColumn(row, "map_lng")) {
-    setIfChanged("map_lng", nullableNumber(row.map_lng), existing.map_lng);
   }
 
   if (hasColumn(row, "phone")) setIfChanged("phone", nullableText(row.phone), existing.phone);
@@ -600,6 +613,8 @@ async function main() {
 
   console.log(`\nAudit CSV import  [${APPLY ? "APPLY" : "DRY RUN"}]`);
   console.log(`Source: ${CSV_PATH}`);
+  console.log(`Verified listings: content ignored; storefront coordinates still apply.`);
+  console.log(`Service-only listings: coordinates ignored.`);
   console.log(`Rows: ${csvRows.length}`);
   console.log(`Updated: ${updated.length}`);
   console.log(`Unchanged: ${unchanged.length}`);
