@@ -198,7 +198,7 @@ export function BusinessesOpenStreetMap({
     <div
       ref={containerRef}
       id={`businesses-map-${mapId}`}
-      className={`h-full min-h-[20rem] w-full bg-[var(--color-surface)] ${className}`}
+      className={`h-full min-h-80 w-full bg-[var(--color-surface)] sm:min-h-[650px] ${className}`}
       role="img"
       aria-label="Map"
     />

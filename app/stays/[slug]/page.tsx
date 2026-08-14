@@ -310,12 +310,12 @@ export default async function StayDetailPage({ params }: Props) {
                     ? "Approximate location for privacy."
                     : "Map location provided by the property manager."}
                 </p>
-                <div className="mt-3 h-80 overflow-hidden border border-zinc-200 sm:h-96">
+                <div className="mt-3 h-80 overflow-hidden border border-zinc-200 sm:h-[650px]">
                   <OpenStreetMap
                     lat={property.map_lat!}
                     lng={property.map_lng!}
                     zoom={13}
-                    className="h-full min-h-[20rem] !rounded-none"
+                    className="h-full min-h-80 !rounded-none sm:min-h-[650px]"
                   />
                 </div>
                 {canFlagFields ? (

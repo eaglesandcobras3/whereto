@@ -10,7 +10,7 @@ const BusinessesOpenStreetMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-80 items-center justify-center bg-[var(--color-surface)] text-sm text-[var(--color-text-tertiary)] sm:h-96">
+      <div className="flex h-80 items-center justify-center bg-[var(--color-surface)] text-sm text-[var(--color-text-tertiary)] sm:h-[650px]">
         Loading map…
       </div>
     ),
@@ -48,7 +48,7 @@ export function BusinessMapSection({
     <section className={className}>
       <h2 className="font-headline text-xl font-semibold text-zinc-900">{title}</h2>
       {description ? <p className="mt-1 text-sm text-zinc-500">{description}</p> : null}
-      <div className="mt-3 h-80 overflow-hidden border border-zinc-200 sm:h-96 dark:border-zinc-700">
+      <div className="mt-3 h-80 overflow-hidden border border-zinc-200 sm:h-[650px] dark:border-zinc-700">
         <BusinessesOpenStreetMap
           markers={markers}
           zoom={zoom}
