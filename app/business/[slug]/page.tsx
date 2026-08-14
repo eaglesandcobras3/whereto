@@ -403,6 +403,8 @@ export default async function BusinessPage({ params }: Props) {
           lat: Number(b.lat),
           lng: Number(b.lng),
           icon: leafCategoryIcon(categorySlug || "storefront"),
+          imageUrl: heroImage,
+          subtitle: category?.name?.trim() || null,
         },
       ]
     : [];

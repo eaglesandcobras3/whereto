@@ -49,6 +49,40 @@ function categoryPinHtml(iconName: string, dark: boolean): string {
 </div>`;
 }
 
+function markerPopupHtml(marker: BusinessMapMarker, dark: boolean): string {
+  const href =
+    (typeof marker.href === "string" && marker.href.trim()) ||
+    `/business/${encodeURIComponent(marker.slug)}`;
+  const titleColor = dark ? "#f4f4f5" : "#18181b";
+  const subtitleColor = dark ? "#a1a1aa" : "#71717a";
+  const imageUrl =
+    typeof marker.imageUrl === "string" && marker.imageUrl.startsWith("http")
+      ? marker.imageUrl.trim()
+      : null;
+  const subtitle =
+    typeof marker.subtitle === "string" && marker.subtitle.trim()
+      ? marker.subtitle.trim()
+      : null;
+
+  const imageBlock = imageUrl
+    ? `<div class="whereto-map-popup__media">
+  <img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+</div>`
+    : "";
+
+  const subtitleBlock = subtitle
+    ? `<div class="whereto-map-popup__subtitle" style="color:${subtitleColor}">${escapeHtml(subtitle)}</div>`
+    : "";
+
+  return `<a href="${escapeHtml(href)}" class="whereto-map-popup__card">
+  ${imageBlock}
+  <div class="whereto-map-popup__body">
+    <div class="whereto-map-popup__title" style="color:${titleColor}">${escapeHtml(marker.title)}</div>
+    ${subtitleBlock}
+  </div>
+</a>`;
+}
+
 /**
  * OpenStreetMap via Leaflet — Carto Voyager (soft color) in light mode, dark_all in dark.
  * Multi-pin hubs use category Material Symbol chips when `marker.icon` is set.
@@ -63,7 +97,10 @@ export function BusinessesOpenStreetMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [dark, setDark] = useState(false);
   const markersKey = markers
-    .map((m) => `${m.id}:${m.lat}:${m.lng}:${m.icon ?? ""}:${m.href ?? ""}`)
+    .map(
+      (m) =>
+        `${m.id}:${m.lat}:${m.lng}:${m.icon ?? ""}:${m.href ?? ""}:${m.imageUrl ?? ""}:${m.subtitle ?? ""}`,
+    )
     .join("|");
 
   useEffect(() => {
@@ -125,14 +162,14 @@ export function BusinessesOpenStreetMap({
       for (const m of markers) {
         const latlng = L.latLng(m.lat, m.lng);
         bounds.extend(latlng);
-        const linkClass = dark
-          ? "font-medium text-zinc-100 underline"
-          : "font-medium text-zinc-900 underline";
-        const href =
-          (typeof m.href === "string" && m.href.trim()) ||
-          `/business/${encodeURIComponent(m.slug)}`;
-        const popup = `<a href="${escapeHtml(href)}" class="${linkClass}">${escapeHtml(m.title)}</a>`;
-        L.marker(latlng, { icon: iconFor(m) }).addTo(map).bindPopup(popup);
+        L.marker(latlng, { icon: iconFor(m) })
+          .addTo(map)
+          .bindPopup(markerPopupHtml(m, dark), {
+            className: "whereto-map-popup",
+            maxWidth: 280,
+            minWidth: 220,
+            closeButton: true,
+          });
       }
 
       if (markers.length === 1) {

@@ -229,12 +229,12 @@ async function syncTown(parsed: ParsedContent): Promise<boolean> {
       name: frontmatter.title,
       slug: frontmatter.slug,
       region_id: regionId,
-      center_lat:
+      map_lat:
         frontmatter.latitude ||
         frontmatter.map_center?.lat ||
         frontmatter.map_location?.lat ||
         30.3,
-      center_lng:
+      map_lng:
         frontmatter.longitude ||
         frontmatter.map_center?.lng ||
         frontmatter.map_location?.lng ||
@@ -367,8 +367,8 @@ async function syncArea(parsed: ParsedContent): Promise<boolean> {
     area_type: areaType,
     description_short: frontmatter.seo_description,
     parking_notes: frontmatter.parking_notes,
-    latitude_center: lat ?? null,
-    longitude_center: lng ?? null,
+    map_lat: lat ?? null,
+    map_lng: lng ?? null,
   } as const;
 
   const withBrowseFlag = {

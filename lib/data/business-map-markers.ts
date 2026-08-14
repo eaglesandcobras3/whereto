@@ -2,6 +2,8 @@ import "server-only";
 
 import { leafCategoryIcon } from "@/lib/categories/unified-browse";
 import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
+import { businessListingImageUrl } from "@/lib/media/place-photo";
+import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
@@ -18,21 +20,29 @@ export type BusinessMapMarker = {
   icon?: string | null;
   /** Popup link path; defaults to `/business/{slug}`. */
   href?: string | null;
+  /** Resolved public listing thumbnail for map popups. */
+  imageUrl?: string | null;
+  /** Optional one-line secondary text under the title. */
+  subtitle?: string | null;
 };
 
 const MARKER_SELECT =
-  "id, title, slug, map_lat, map_lng, business_categories ( slug )";
+  "id, title, slug, map_lat, map_lng, main_image, hero_image, main_image_url, hero_image_url, business_categories ( slug, title )";
 const MARKER_CAP = 500;
 
-function categorySlugFromRow(row: Record<string, unknown>): string | null {
+function categoryFromRow(row: Record<string, unknown>): {
+  slug: string | null;
+  title: string | null;
+} {
   const embed = row.business_categories as
-    | { slug?: string | null }
-    | { slug?: string | null }[]
+    | { slug?: string | null; title?: string | null }
+    | { slug?: string | null; title?: string | null }[]
     | null
     | undefined;
   const one = embed && Array.isArray(embed) ? embed[0] : embed;
   const slug = typeof one?.slug === "string" ? one.slug.trim() : "";
-  return slug || null;
+  const title = typeof one?.title === "string" ? one.title.trim() : "";
+  return { slug: slug || null, title: title || null };
 }
 
 function rowsToMarkers(
@@ -50,12 +60,29 @@ function rowsToMarkers(
     const slug = String(row.slug ?? "").trim();
     const title = String(row.title ?? "").trim();
     if (!slug || !title) continue;
-    const catSlug = categorySlugFromRow(row);
+    const cat = categoryFromRow(row);
     const icon =
-      (catSlug ? leafCategoryIcon(catSlug) : null) ||
+      (cat.slug ? leafCategoryIcon(cat.slug) : null) ||
       opts?.defaultIcon?.trim() ||
       "storefront";
-    byId.set(id, { id, title, slug, lat, lng, icon });
+    const imageUrl = businessListingImageUrl(
+      getPublicImageUrlWithView(
+        row.main_image_url as string | null,
+        row.hero_image_url as string | null,
+        row.main_image as string | null,
+        row.hero_image as string | null,
+      ),
+    );
+    byId.set(id, {
+      id,
+      title,
+      slug,
+      lat,
+      lng,
+      icon,
+      imageUrl,
+      subtitle: cat.title,
+    });
   }
   return [...byId.values()].sort((a, b) => a.title.localeCompare(b.title));
 }

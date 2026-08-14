@@ -1161,3 +1161,83 @@ body {
 .aspect-editorial {
   aspect-ratio: 3/4;
 }
+
+/* Leaflet place-card popups (Google Maps–style thumbnail + title) */
+.leaflet-container .whereto-map-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(28, 50, 87, 0.18);
+  background: var(--color-surface, #fff);
+}
+
+.leaflet-container .whereto-map-popup .leaflet-popup-content {
+  margin: 0;
+  width: 240px !important;
+  line-height: 1.35;
+}
+
+.leaflet-container .whereto-map-popup .leaflet-popup-tip {
+  background: var(--color-surface, #fff);
+}
+
+.leaflet-container .whereto-map-popup a.leaflet-popup-close-button {
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 16px;
+  line-height: 22px;
+  text-align: center;
+  text-decoration: none;
+  z-index: 2;
+}
+
+.leaflet-container .whereto-map-popup a.leaflet-popup-close-button:hover {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+.whereto-map-popup__card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.whereto-map-popup__media {
+  aspect-ratio: 16 / 10;
+  background: var(--color-surface-container, #eee);
+  overflow: hidden;
+}
+
+.whereto-map-popup__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.whereto-map-popup__body {
+  padding: 10px 12px 12px;
+}
+
+.whereto-map-popup__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.whereto-map-popup__subtitle {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.dark .leaflet-container .whereto-map-popup .leaflet-popup-content-wrapper,
+.dark .leaflet-container .whereto-map-popup .leaflet-popup-tip {
+  background: var(--color-surface, #18181b);
+}

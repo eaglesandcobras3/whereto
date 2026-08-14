@@ -23,11 +23,11 @@ function validCoord(lat: number, lng: number): boolean {
 }
 
 /**
- * Hub map pins for published towns that have a usable center.
- * Prefers `towns.center_lat` / `center_lng`, then SEO seed coords for known slugs.
+ * Hub map pins for published towns that have usable `map_lat` / `map_lng`.
+ * Falls back to SEO seed coords for known slugs when DB coords are missing.
  */
 export async function listTownHubMapMarkers(
-  towns: { id: string; name: string; slug: string }[],
+  towns: { id: string; name: string; slug: string; hero_image_url?: string | null }[],
 ): Promise<BusinessMapMarker[]> {
   if (towns.length === 0) return [];
 
@@ -39,7 +39,7 @@ export async function listTownHubMapMarkers(
     const chunk = ids.slice(i, i + 120);
     const { data, error } = await supabase
       .from("towns")
-      .select("id, center_lat, center_lng")
+      .select("id, map_lat, map_lng")
       .in("id", chunk);
     if (error) {
       console.error("town hub map markers:", error.message);
@@ -47,8 +47,8 @@ export async function listTownHubMapMarkers(
     }
     for (const row of data ?? []) {
       const id = String((row as { id: string }).id);
-      const lat = Number((row as { center_lat?: number | null }).center_lat);
-      const lng = Number((row as { center_lng?: number | null }).center_lng);
+      const lat = Number((row as { map_lat?: number | null }).map_lat);
+      const lng = Number((row as { map_lng?: number | null }).map_lng);
       if (validCoord(lat, lng)) byId.set(id, { lat, lng });
     }
   }
@@ -60,6 +60,10 @@ export async function listTownHubMapMarkers(
     const lat = fromDb?.lat ?? fromSeo?.latitude;
     const lng = fromDb?.lng ?? fromSeo?.longitude;
     if (lat == null || lng == null || !validCoord(lat, lng)) continue;
+    const imageUrl =
+      typeof town.hero_image_url === "string" && town.hero_image_url.startsWith("http")
+        ? town.hero_image_url.trim()
+        : null;
     markers.push({
       id: town.id,
       title: town.name,
@@ -68,6 +72,8 @@ export async function listTownHubMapMarkers(
       lng,
       icon: "beach_access",
       href: townPagePath(town.slug),
+      imageUrl,
+      subtitle: "Town",
     });
   }
 
@@ -75,10 +81,10 @@ export async function listTownHubMapMarkers(
 }
 
 /**
- * Hub map pins for published areas with `latitude_center` / `longitude_center`.
+ * Hub map pins for published areas with `map_lat` / `map_lng`.
  */
 export async function listAreaHubMapMarkers(
-  areas: { id: string; name: string; slug: string }[],
+  areas: { id: string; name: string; slug: string; hero_image_url?: string | null }[],
 ): Promise<BusinessMapMarker[]> {
   if (areas.length === 0) return [];
 
@@ -90,7 +96,7 @@ export async function listAreaHubMapMarkers(
     const chunk = ids.slice(i, i + 120);
     const { data, error } = await supabase
       .from("areas")
-      .select("id, latitude_center, longitude_center")
+      .select("id, map_lat, map_lng")
       .in("id", chunk);
     if (error) {
       console.error("area hub map markers:", error.message);
@@ -98,8 +104,8 @@ export async function listAreaHubMapMarkers(
     }
     for (const row of data ?? []) {
       const id = String((row as { id: string }).id);
-      const lat = Number((row as { latitude_center?: number | null }).latitude_center);
-      const lng = Number((row as { longitude_center?: number | null }).longitude_center);
+      const lat = Number((row as { map_lat?: number | null }).map_lat);
+      const lng = Number((row as { map_lng?: number | null }).map_lng);
       if (validCoord(lat, lng)) byId.set(id, { lat, lng });
     }
   }
@@ -108,6 +114,10 @@ export async function listAreaHubMapMarkers(
   for (const area of areas) {
     const coords = byId.get(area.id);
     if (!coords) continue;
+    const imageUrl =
+      typeof area.hero_image_url === "string" && area.hero_image_url.startsWith("http")
+        ? area.hero_image_url.trim()
+        : null;
     markers.push({
       id: area.id,
       title: area.name,
@@ -116,6 +126,8 @@ export async function listAreaHubMapMarkers(
       lng: coords.lng,
       icon: "storefront",
       href: `/area/${area.slug}`,
+      imageUrl,
+      subtitle: "Area",
     });
   }
 

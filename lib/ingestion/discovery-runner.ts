@@ -15,12 +15,14 @@ async function nearestTownId(
   lat: number,
   lng: number,
 ): Promise<number | null> {
-  const { data: towns } = await supabase.from("towns").select("id, center_lat, center_lng");
+  const { data: towns } = await supabase.from("towns").select("id, map_lat, map_lng");
   if (!towns?.length) return null;
   let best: { id: number; d: number } | null = null;
   for (const t of towns) {
-    const d =
-      (lat - Number(t.center_lat)) ** 2 + (lng - Number(t.center_lng)) ** 2;
+    const tLat = Number(t.map_lat);
+    const tLng = Number(t.map_lng);
+    if (!Number.isFinite(tLat) || !Number.isFinite(tLng)) continue;
+    const d = (lat - tLat) ** 2 + (lng - tLng) ** 2;
     if (!best || d < best.d) best = { id: t.id as number, d };
   }
   return best?.id ?? null;
@@ -162,7 +164,7 @@ export async function processDiscoveryJob(
   try {
     const { data: town } = await supabase
       .from("towns")
-      .select("center_lat, center_lng, search_radius_meters")
+      .select("map_lat, map_lng, search_radius_meters")
       .eq("id", job.town_id as number)
       .single();
 
@@ -177,8 +179,11 @@ export async function processDiscoveryJob(
       );
     }
 
-    const lat = Number(town.center_lat);
-    const lng = Number(town.center_lng);
+    const lat = Number(town.map_lat);
+    const lng = Number(town.map_lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      throw new Error("Town is missing map_lat / map_lng");
+    }
     const radius = (town.search_radius_meters as number) ?? 5000;
 
     let inserted = 0;
