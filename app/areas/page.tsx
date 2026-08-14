@@ -145,6 +145,16 @@ export default async function AreasPage() {
       </div>
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+        {mapMarkers.length > 0 ? (
+          <BusinessMapSection
+            markers={mapMarkers}
+            title="Map of districts & town centers"
+            description="Areas with a mapped center along Scenic Highway 30A."
+            zoom={13}
+            fitMaxZoom={13}
+          />
+        ) : null}
+
         {areas.length === 0 ? (
           <p className="text-center text-[var(--color-text-secondary)]">No areas found.</p>
         ) : (
@@ -161,16 +171,6 @@ export default async function AreasPage() {
             ))}
           </div>
         )}
-
-        {mapMarkers.length > 0 ? (
-          <BusinessMapSection
-            markers={mapMarkers}
-            title="Map of districts & town centers"
-            description="Areas with a mapped center along Scenic Highway 30A."
-            zoom={13}
-            fitMaxZoom={13}
-          />
-        ) : null}
       </div>
 
       {/* CTA */}

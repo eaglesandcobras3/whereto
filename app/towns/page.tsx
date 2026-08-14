@@ -123,6 +123,16 @@ export default async function TownsPage() {
       </div>
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+        {mapMarkers.length > 0 ? (
+          <BusinessMapSection
+            markers={mapMarkers}
+            title="Map of towns along 30A"
+            description="The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen."
+            zoom={13}
+            fitMaxZoom={13}
+          />
+        ) : null}
+
         {towns.length === 0 ? (
           <p className="text-center text-[var(--color-text-secondary)]">
             No towns are available right now. Check back soon.
@@ -141,16 +151,6 @@ export default async function TownsPage() {
             ))}
           </div>
         )}
-
-        {mapMarkers.length > 0 ? (
-          <BusinessMapSection
-            markers={mapMarkers}
-            title="Map of towns along 30A"
-            description="The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen."
-            zoom={13}
-            fitMaxZoom={13}
-          />
-        ) : null}
       </div>
 
       {/* Static corridor map only when interactive town_maps is off */}
