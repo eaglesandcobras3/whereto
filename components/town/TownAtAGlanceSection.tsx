@@ -82,19 +82,29 @@ function toneForDetail(title: string, index: number): IconTone {
 
 /** Town profile “at a glance” — metrics, highlights, detail cards, and disclaimer. */
 export function TownAtAGlanceSection({ townName, facts }: Props) {
+  const headingId = "town-at-a-glance-heading";
   const highlightsId = "town-at-a-glance-highlights";
 
   return (
     <section
       className="text-[var(--tg-body)]"
-      aria-label={`${townName} at a glance`}
+      aria-labelledby={headingId}
       style={GLANCE_VARS}
     >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
+      <header className="mb-4 sm:mb-5">
+        <h2
+          id={headingId}
+          className="font-headline m-0 text-xl font-bold text-[var(--tg-navy)] sm:text-2xl"
+        >
+          {townName} at a glance
+        </h2>
+      </header>
+
+      <dl className="m-0 grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
         {facts.metrics.map((metric, metricIndex) => {
           const tone = METRIC_TONES[metricIndex % METRIC_TONES.length];
           return (
-            <article
+            <div
               key={metric.label}
               className="grid grid-cols-[44px_1fr] items-center gap-3 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-4 py-4 sm:grid-cols-[52px_1fr] sm:gap-4 sm:px-5 sm:py-5"
             >
@@ -102,18 +112,20 @@ export function TownAtAGlanceSection({ townName, facts }: Props) {
                 <MsIcon name={metric.icon} />
               </IconCircle>
               <div className="min-w-0">
-                <p className="m-0 text-sm text-[var(--tg-navy)]">{metric.label}</p>
-                <h3 className="font-headline m-0 mt-0.5 text-base font-semibold leading-snug text-[var(--tg-navy)] sm:text-lg">
-                  {metric.value}
-                </h3>
-                {metric.subtext ? (
-                  <p className="mt-1.5 text-sm leading-relaxed">{metric.subtext}</p>
-                ) : null}
+                <dt className="m-0 text-sm text-[var(--tg-navy)]">{metric.label}</dt>
+                <dd className="m-0 mt-0.5">
+                  <p className="font-headline m-0 text-base font-semibold leading-snug text-[var(--tg-navy)] sm:text-lg">
+                    {metric.value}
+                  </p>
+                  {metric.subtext ? (
+                    <p className="mt-1.5 text-sm leading-relaxed">{metric.subtext}</p>
+                  ) : null}
+                </dd>
               </div>
-            </article>
+            </div>
           );
         })}
-      </div>
+      </dl>
 
       {facts.highlights.length > 0 ? (
         <section
@@ -131,16 +143,16 @@ export function TownAtAGlanceSection({ townName, facts }: Props) {
               Highlights
             </h3>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2 sm:mt-4 sm:pl-12">
+          <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0 sm:mt-4 sm:pl-12">
             {facts.highlights.map((label) => (
-              <span
+              <li
                 key={label}
                 className="inline-flex min-h-8 items-center rounded-full border border-[var(--tg-tag-border)] bg-[#fffdfa] px-3.5 py-1.5 text-sm text-[var(--tg-navy)]"
               >
                 {label}
-              </span>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       ) : null}
 
