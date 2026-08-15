@@ -36,7 +36,7 @@ import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFeedbackFeatureEnabled, isFreeOnboardEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFeedbackFeatureEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
 import { BusinessRentalPortfolio } from "@/components/business/BusinessRentalPortfolio";
@@ -302,7 +302,6 @@ export default async function BusinessPage({ params }: Props) {
   if (!b) notFound();
 
   const flags = await getAllFeatureFlags();
-  const freeOnboardEnabled = isFreeOnboardEnabled(flags);
   const rentalsEnabled = isRentalsFeatureEnabled(flags);
   const businessPhotosEnabled = isBusinessPhotosFeatureEnabled(flags);
   const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
@@ -894,7 +893,7 @@ export default async function BusinessPage({ params }: Props) {
             entityTitle={String(b.name ?? "this place")}
           />
 
-          {freeOnboardEnabled && !isVerified ? (
+          {!isVerified ? (
             <BusinessUpdateListingCta
               className="mt-10 sm:mt-12"
               variant="verify"

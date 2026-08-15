@@ -7,28 +7,10 @@ import {
   isCommunityTipsEnabled,
   isFeedbackEnabled,
   isRentalPartnersEnabled,
-  isSeoImprovementsEnabled,
-  isTownFactsEnabled,
   isAreaFactsEnabled,
   isTownMapsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
-
-function seoImprovementsDevBypassEnabled(): boolean {
-  return (
-    process.env.NODE_ENV === "development" &&
-    process.env.NEXT_PUBLIC_SEO_IMPROVEMENTS_ENABLED === "1"
-  );
-}
-
-export function isSeoImprovementsFeatureEnabledClient(flags: FeatureFlags): boolean {
-  return isSeoImprovementsEnabled(flags) || seoImprovementsDevBypassEnabled();
-}
-
-export function useSeoImprovementsFeatureEnabled(): boolean {
-  const flags = useAppFeatureFlags();
-  return isSeoImprovementsFeatureEnabledClient(flags);
-}
 
 function communityTipsDevBypassEnabled(): boolean {
   return (
@@ -44,22 +26,6 @@ export function isCommunityTipsFeatureEnabledClient(flags: FeatureFlags): boolea
 export function useCommunityTipsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isCommunityTipsFeatureEnabledClient(flags);
-}
-
-function townFactsDevBypassEnabled(): boolean {
-  return (
-    process.env.NODE_ENV === "development" &&
-    process.env.NEXT_PUBLIC_TOWN_FACTS_ENABLED === "1"
-  );
-}
-
-export function isTownFactsFeatureEnabledClient(flags: FeatureFlags): boolean {
-  return isTownFactsEnabled(flags) || townFactsDevBypassEnabled();
-}
-
-export function useTownFactsFeatureEnabled(): boolean {
-  const flags = useAppFeatureFlags();
-  return isTownFactsFeatureEnabledClient(flags);
 }
 
 function areaFactsDevBypassEnabled(): boolean {

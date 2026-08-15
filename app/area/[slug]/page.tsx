@@ -20,12 +20,9 @@ import {
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { townPagePath } from "@/lib/routes/town-page-path";
-import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 import { getAreaFactsBySlug } from "@/lib/data/area-facts-queries";
-import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
 import { AreaAtAGlanceSection } from "@/components/area/AreaAtAGlanceSection";
 import { AreaFactsGate } from "@/components/feature-flags/AreaFactsGate";
-import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getGuidesForArea } from "@/lib/data/town-hub";
@@ -99,7 +96,6 @@ export default async function AreaPage({ params }: Props) {
     getAllFeatureFlags(),
     area.source === "area" ? getAreaFactsBySlug(area.slug) : Promise.resolve(null),
   ]);
-  const planningProfile = areaFacts ? null : getAreaPlanningProfile(area.slug);
   const feedbackEnabled = isFeedbackFeatureEnabled(flags);
 
   let mapMarkers: Awaited<ReturnType<typeof listStorefrontMapMarkersForPlace>> = [];
@@ -259,12 +255,6 @@ export default async function AreaPage({ params }: Props) {
               flagEntity="area"
               flagEntityId={area.id}
             />
-
-            {!areaFacts && planningProfile ? (
-              <SeoImprovementsGate>
-                <AreaPlanningSections areaName={area.title} profile={planningProfile} />
-              </SeoImprovementsGate>
-            ) : null}
 
             <PlaceGuidesSection
               title={`Guides for ${area.title}`}

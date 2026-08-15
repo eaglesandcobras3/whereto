@@ -4,7 +4,6 @@ import { getFeatureFlagsForMiddleware } from "@/lib/feature-flags-resolve";
 import {
   isAskEnabled,
   isDiscoverEnabled,
-  isFreeOnboardEnabled,
   isOnboardEnabled,
   isRentalPartnersEnabled,
   isRentalsEnabled,
@@ -250,14 +249,6 @@ export async function middleware(request: NextRequest) {
     (pathname === "/admin/review" || pathname.startsWith("/api/admin/review"))
   ) {
     return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (
-    isOnboardEnabled(flags) &&
-    !isFreeOnboardEnabled(flags) &&
-    pathname === "/list-your-business"
-  ) {
-    return NextResponse.redirect(new URL("/portal/businesses/new", request.url));
   }
 
   if (

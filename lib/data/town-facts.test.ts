@@ -4,10 +4,6 @@ import {
   parseTownFacts,
   type TownFactsRow,
 } from "@/lib/data/town-facts";
-import {
-  isTownFactsEnabled,
-  resolveFeatureFlags,
-} from "@/lib/feature-flags-core";
 
 const completeRow: TownFactsRow = {
   at_a_glance_description:
@@ -26,20 +22,6 @@ const completeRow: TownFactsRow = {
   dining_town_center_details: "Boutiques, coffee, and restaurants in a compact loop.",
   parking_details: "Town-center parking gets tight on busy weekends.",
 };
-
-describe("town_facts flag", () => {
-  it("defaults town_facts on", () => {
-    expect(isTownFactsEnabled(resolveFeatureFlags({}))).toBe(true);
-  });
-
-  it("allows PostHog to turn town_facts off", () => {
-    expect(isTownFactsEnabled(resolveFeatureFlags({ town_facts: false }))).toBe(false);
-  });
-
-  it("enables when PostHog flag is true", () => {
-    expect(isTownFactsEnabled(resolveFeatureFlags({ town_facts: true }))).toBe(true);
-  });
-});
 
 describe("parseTownFacts", () => {
   it("returns null when required fields are missing", () => {

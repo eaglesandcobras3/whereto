@@ -9,9 +9,7 @@ import {
   isSearchInspectorEnabled,
   isOnboardEnabled,
   isReviewQueueEnabled,
-  isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
-  isTownFactsEnabled,
   isAreaFactsEnabled,
   isRentalsEnabled,
   isRentalPartnersEnabled,
@@ -32,11 +30,8 @@ export {
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
-  isFreeOnboardEnabled,
   isReviewQueueEnabled,
-  isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
-  isTownFactsEnabled,
   isAreaFactsEnabled,
   isRentalsEnabled,
   isRentalPartnersEnabled,
@@ -94,15 +89,6 @@ export function discoverDevBypassEnabled(): boolean {
   return process.env.NODE_ENV === "development" && process.env.DISCOVER_ENABLED === "1";
 }
 
-/** Local dev escape hatch — PostHog `seo_improvements` flag still required in production. */
-export function seoImprovementsDevBypassEnabled(): boolean {
-  return process.env.NODE_ENV === "development" && process.env.SEO_IMPROVEMENTS_ENABLED === "1";
-}
-
-export function isSeoImprovementsFeatureEnabled(flags: FeatureFlags): boolean {
-  return isSeoImprovementsEnabled(flags) || seoImprovementsDevBypassEnabled();
-}
-
 /** Local dev escape hatch — PostHog `community_tips` flag still required in production. */
 export function communityTipsDevBypassEnabled(): boolean {
   return process.env.NODE_ENV === "development" && process.env.COMMUNITY_TIPS_ENABLED === "1";
@@ -110,15 +96,6 @@ export function communityTipsDevBypassEnabled(): boolean {
 
 export function isCommunityTipsFeatureEnabled(flags: FeatureFlags): boolean {
   return isCommunityTipsEnabled(flags) || communityTipsDevBypassEnabled();
-}
-
-/** Local dev escape hatch — PostHog `town_facts` flag still required in production. */
-export function townFactsDevBypassEnabled(): boolean {
-  return process.env.NODE_ENV === "development" && process.env.TOWN_FACTS_ENABLED === "1";
-}
-
-export function isTownFactsFeatureEnabled(flags: FeatureFlags): boolean {
-  return isTownFactsEnabled(flags) || townFactsDevBypassEnabled();
 }
 
 /** Local dev escape hatch — PostHog `area_facts` flag still required in production. */

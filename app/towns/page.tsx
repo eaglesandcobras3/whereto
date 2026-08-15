@@ -11,9 +11,6 @@ import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { hubTownsIntro } from "@/lib/seo/page-intro-copy";
 import { townsHubMetadata } from "@/lib/seo/hub-metadata";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
-import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
-import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
-import { generateCollectionPageSchema } from "@/lib/seo/breadcrumb-schema";
 import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
@@ -79,33 +76,11 @@ export default async function TownsPage() {
     }
   }
 
-  const collectionSchema = generateCollectionPageSchema({
-    name: "30A Beach Towns",
-    path: "/towns",
-    description: hubTownsIntro(),
-  });
-
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      <SeoImprovementsGate>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
-        />
-      </SeoImprovementsGate>
-
       {/* Hero */}
       <div className="coastal-hero border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
-          <SeoImprovementsGate>
-            <HubBreadcrumbs
-              items={[
-                { name: "Home", href: "/" },
-                { name: "Towns", href: "/towns", current: true },
-              ]}
-              analyticsCategory="towns_hub_breadcrumb"
-            />
-          </SeoImprovementsGate>
           <header className="max-w-3xl space-y-3">
             <p className="text-eyebrow">30A · South Walton, Florida</p>
             <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">

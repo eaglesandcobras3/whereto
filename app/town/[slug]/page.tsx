@@ -35,7 +35,6 @@ import {
 } from "@/lib/business-categories/group-browse-sections";
 import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
-import { TownFactsGate } from "@/components/feature-flags/TownFactsGate";
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
@@ -429,14 +428,12 @@ function BasicTownPage({
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
             {townFacts ? (
-              <TownFactsGate>
-                <div>
-                  <TownAtAGlanceSection townName={town.name} facts={townFacts} />
-                  {feedbackEnabled ? (
-                    <ListingFieldFlagNote entity="town" entityId={town.id} field="facts" />
-                  ) : null}
-                </div>
-              </TownFactsGate>
+              <div>
+                <TownAtAGlanceSection townName={town.name} facts={townFacts} />
+                {feedbackEnabled ? (
+                  <ListingFieldFlagNote entity="town" entityId={town.id} field="facts" />
+                ) : null}
+              </div>
             ) : null}
 
             {mapMarkers.length > 0 ? (

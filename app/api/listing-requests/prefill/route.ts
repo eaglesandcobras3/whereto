@@ -3,17 +3,11 @@ import {
   BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
-import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
 import { FREE_ONBOARD_OVERVIEW_MAX } from "@/lib/listing-requests/free-onboard-schema";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 /** Prefill payload for update/claim free intake (`?business=slug`). */
 export async function GET(request: NextRequest) {
-  const flags = await getAllFeatureFlags();
-  if (!isFreeOnboardEnabled(flags)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   const slug = request.nextUrl.searchParams.get("slug")?.trim();
   if (!slug) {
     return NextResponse.json({ error: "Missing slug" }, { status: 400 });

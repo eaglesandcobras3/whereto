@@ -2,7 +2,7 @@ export type AdminNavItem = {
   href: string;
   title: string;
   description: string;
-  /** Hidden when neither `onboard` nor `free_onboard` is on */
+  /** Hidden when review queue is unavailable (always on now that free intake is ramped) */
   requiresReviewQueue?: boolean;
   /** Hidden when the `onboard` feature flag is off */
   requiresOnboard?: boolean;
@@ -64,14 +64,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
 
 export function adminNavItemsForSession(flags: {
   onboardEnabled: boolean;
-  freeOnboardEnabled?: boolean;
   searchInspectorEnabled: boolean;
   communityTipsEnabled?: boolean;
   rentalsEnabled?: boolean;
 }): AdminNavItem[] {
-  const reviewEnabled = flags.onboardEnabled || flags.freeOnboardEnabled === true;
   return ADMIN_NAV_ITEMS.filter((item) => {
-    if (item.requiresReviewQueue && !reviewEnabled) return false;
+    if (item.requiresReviewQueue) return true;
     if (item.requiresOnboard && !flags.onboardEnabled) return false;
     if (item.requiresSearchInspector && !flags.searchInspectorEnabled) return false;
     if (item.requiresCommunityTips && flags.communityTipsEnabled !== true) return false;

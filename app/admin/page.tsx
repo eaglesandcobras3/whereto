@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { OperatorToolsLinks } from "@/components/admin/OperatorToolsLinks";
 import { adminNavItemsForSession } from "@/lib/admin/admin-nav";
-import { getAllFeatureFlags, isCommunityTipsFeatureEnabled, isFreeOnboardEnabled, isOnboardEnabled, isRentalsFeatureEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isCommunityTipsFeatureEnabled, isOnboardEnabled, isRentalsFeatureEnabled, isSearchInspectorEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 
 export const metadata = {
@@ -17,7 +17,6 @@ export default async function AdminHomePage() {
   const flags = await getAllFeatureFlags();
   const items = adminNavItemsForSession({
     onboardEnabled: isOnboardEnabled(flags),
-    freeOnboardEnabled: isFreeOnboardEnabled(flags),
     searchInspectorEnabled: isSearchInspectorEnabled(flags),
     communityTipsEnabled: isCommunityTipsFeatureEnabled(flags),
     rentalsEnabled: isRentalsFeatureEnabled(flags),
@@ -36,7 +35,6 @@ export default async function AdminHomePage() {
           <p className="mt-4 text-sm text-zinc-500">
             No operator tools are enabled for this environment. Turn on the{" "}
             <code className="rounded bg-zinc-100 px-1">community_tips</code>,{" "}
-            <code className="rounded bg-zinc-100 px-1">free_onboard</code>,{" "}
             <code className="rounded bg-zinc-100 px-1">onboard</code>, or{" "}
             <code className="rounded bg-zinc-100 px-1">search_inspector</code> PostHog flags.
           </p>

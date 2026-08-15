@@ -15,37 +15,12 @@ import {
   freeOnboardRemovalBodySchema,
   parseSuggestedTagsInput,
 } from "@/lib/listing-requests/free-onboard-schema";
-import {
-  isFreeOnboardEnabled,
-  isOnboardEnabled,
-  isReviewQueueEnabled,
-  resolveFeatureFlags,
-} from "@/lib/feature-flags-core";
+import { isReviewQueueEnabled, resolveFeatureFlags } from "@/lib/feature-flags-core";
 
-describe("free onboard flags", () => {
-  it("defaults free_onboard on", () => {
-    const flags = resolveFeatureFlags({});
-    expect(isFreeOnboardEnabled(flags)).toBe(true);
-    expect(isReviewQueueEnabled(flags)).toBe(true);
-  });
-
-  it("allows PostHog to turn free_onboard off", () => {
-    const flags = resolveFeatureFlags({ free_onboard: false });
-    expect(isFreeOnboardEnabled(flags)).toBe(false);
-  });
-
-  it("enables review queue with free_onboard alone", () => {
-    const flags = resolveFeatureFlags({ free_onboard: true });
-    expect(isFreeOnboardEnabled(flags)).toBe(true);
-    expect(isOnboardEnabled(flags)).toBe(false);
-    expect(isReviewQueueEnabled(flags)).toBe(true);
-  });
-
-  it("keeps review queue on when either flag is on", () => {
+describe("review queue (free intake always on)", () => {
+  it("keeps the admin review queue available", () => {
+    expect(isReviewQueueEnabled(resolveFeatureFlags({}))).toBe(true);
     expect(isReviewQueueEnabled(resolveFeatureFlags({ onboard: true }))).toBe(true);
-    expect(
-      isReviewQueueEnabled(resolveFeatureFlags({ onboard: true, free_onboard: true })),
-    ).toBe(true);
   });
 });
 

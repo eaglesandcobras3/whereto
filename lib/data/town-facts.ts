@@ -1,4 +1,4 @@
-/** Town “at a glance” facts stored on `public.towns` (PostHog `town_facts`). */
+/** Town “at a glance” facts stored on `public.towns`. */
 
 export {
   AT_A_GLANCE_FACTS_SELECT as TOWN_FACTS_SELECT,

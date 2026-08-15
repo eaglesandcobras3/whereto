@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { isFreeOnboardEnabled, isOnboardEnabled } from "@/lib/feature-flags-core";
+import { isOnboardEnabled } from "@/lib/feature-flags-core";
 import { discoveryHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
@@ -26,10 +26,6 @@ export function ListBusinessForm({ towns }: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [similar, setSimilar] = useState<SimilarHit[] | null>(null);
   const [done, setDone] = useState(false);
-
-  if (isFreeOnboardEnabled(featureFlags)) {
-    return null;
-  }
 
   if (isOnboardEnabled(featureFlags)) {
     return (

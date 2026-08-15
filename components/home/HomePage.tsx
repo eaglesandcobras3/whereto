@@ -4,11 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { isAskEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { useSeoImprovementsFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { FeaturedRentalsSection } from "@/components/home/FeaturedRentalsSection";
-import { TripPlanningSection } from "@/components/home/TripPlanningSection";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { ListRentalsHomeCta } from "@/components/stays/ListRentalsHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -135,7 +133,6 @@ export function HomePage({
   },
 }: Props) {
   const featureFlags = useAppFeatureFlags();
-  const seoImprovements = useSeoImprovementsFeatureEnabled();
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface antialiased">
@@ -298,8 +295,6 @@ export function HomePage({
             </div>
           </section>
         )}
-
-        {seoImprovements ? <TripPlanningSection /> : null}
 
         <ListBusinessHomeCta />
         <ListRentalsHomeCta />

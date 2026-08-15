@@ -11,10 +11,7 @@ export const FEATURE_FLAG_KEYS = [
   "ask",
   "search_inspector",
   "onboard",
-  "free_onboard",
-  "seo_improvements",
   "community_tips",
-  "town_facts",
   "area_facts",
   "rentals",
   "rental_partners",
@@ -35,10 +32,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   ask: false,
   search_inspector: false,
   onboard: false,
-  free_onboard: true,
-  seo_improvements: false,
   community_tips: false,
-  town_facts: true,
   area_facts: true,
   rentals: false,
   rental_partners: false,
@@ -103,29 +97,14 @@ export function isOnboardEnabled(flags: FeatureFlags): boolean {
   return flags.onboard === true;
 }
 
-/** Free no-account intake form + admin review queue (no portal account/payments). */
-export function isFreeOnboardEnabled(flags: FeatureFlags): boolean {
-  return flags.free_onboard === true;
-}
-
-/** Admin review queue is available for portal onboard and/or free intake. */
-export function isReviewQueueEnabled(flags: FeatureFlags): boolean {
-  return isOnboardEnabled(flags) || isFreeOnboardEnabled(flags);
-}
-
-/** SEO sprint UI: trip planning blocks, town/area planning sections, hub breadcrumbs/schema, category editorial. */
-export function isSeoImprovementsEnabled(flags: FeatureFlags): boolean {
-  return flags.seo_improvements === true;
+/** Admin review queue — always on (free intake is fully ramped). */
+export function isReviewQueueEnabled(_flags?: FeatureFlags): boolean {
+  return true;
 }
 
 /** Community text tips on businesses, towns, areas, and guides (optional stars; moderated). */
 export function isCommunityTipsEnabled(flags: FeatureFlags): boolean {
   return flags.community_tips === true;
-}
-
-/** Town profile “at a glance” section (DB-backed facts below the hero). */
-export function isTownFactsEnabled(flags: FeatureFlags): boolean {
-  return flags.town_facts === true;
 }
 
 /** Area profile “at a glance” section (DB-backed facts below the hero). */

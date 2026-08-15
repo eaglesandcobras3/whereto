@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { guideHeroGradient } from "@/lib/guides/hero-gradient";
@@ -17,9 +16,6 @@ import {
   metaDescriptionSnippet,
   seoTitleSegmentForLayout,
 } from "@/lib/seo/metadata-snippets";
-import { RelatedGuidesSection } from "@/components/seo/RelatedGuidesSection";
-import { FirstTimerTownCompareTable } from "@/components/guide/FirstTimerTownCompareTable";
-import { relatedGuidesForSlug } from "@/lib/seo/guide-related-links";
 import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -163,7 +159,6 @@ export default async function GuidePage({ params }: Props) {
   const hasHeroImage = Boolean(page.og_image_url);
   const lead = page.seo_description?.trim() || null;
   const showCorridorMap = slug === PRIMARY_EDITORIAL_GUIDE_SLUG;
-  const relatedGuides = relatedGuidesForSlug(slug);
   const linkedBusinesses =
     "linked_businesses" in page && Array.isArray(page.linked_businesses)
       ? (page.linked_businesses as { slug: string; title: string }[])
@@ -403,16 +398,6 @@ export default async function GuidePage({ params }: Props) {
               <ListingFieldFlagNote entity="guide" entityId={guidePageId} field="content" />
             </div>
           ) : null}
-
-          {showCorridorMap ? (
-            <SeoImprovementsGate>
-              <FirstTimerTownCompareTable />
-            </SeoImprovementsGate>
-          ) : null}
-
-          <SeoImprovementsGate>
-            <RelatedGuidesSection links={relatedGuides} analyticsCategory="guide_related" />
-          </SeoImprovementsGate>
 
           {"id" in page && typeof page.id === "string" ? (
             <CommunityTipsSection

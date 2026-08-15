@@ -330,12 +330,9 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `search` | `/search`, search API, nav search UI |
 | `ask` | `/ask`, Ask API, concierge UI |
 | `onboard` | Business portal (`/portal`, admin subscriptions) |
-| `free_onboard` | Free no-account intake form (`/list-your-business`), multi-location review queue (`/admin/review`) |
 | `search_inspector` | Admin search debug tools |
-| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, legacy area planning blocks (fallback when `area_facts` has no DB row), category editorial blocks |
 | `community_tips` | Visitor text tips on business, town, area, and guide detail pages (optional stars); account management; admin moderation at `/admin/community-tips` |
-| `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**) |
-| `area_facts` | Area profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**; wins over `seo_improvements` planning when facts exist) |
+| `area_facts` | Area profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**) |
 | `rentals` | Vacation rentals marketplace (`/stays`, listing intake, admin rentals); code default **off** |
 | `rental_partners` | Company partner application at `/list-your-rentals/partner` (separate from `rentals`); code default **off** |
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
@@ -377,13 +374,14 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 **Write path reminder:** always update `public.businesses.main_image_url` / `hero_image_url` (table). Do **not** write image URLs through `businesses_view` (view is read-only / historically aliased Directus resolves).
 
-### Town facts setup
+### Town facts (fully ramped)
 
-- [ ] Create PostHog boolean flag `town_facts` (code default **on** when PostHog omits the key; set PostHog to off to disable).
-- [ ] Apply [scripts/migrations/town-facts.sql](../scripts/migrations/town-facts.sql) (new columns on `public.towns`).
-- [ ] Apply [scripts/migrations/town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) (initial copy for major corridor towns).
-- [ ] Local dev (optional override): `TOWN_FACTS_ENABLED=1` and `NEXT_PUBLIC_TOWN_FACTS_ENABLED=1`.
+Town “at a glance” is always on when DB facts exist (no PostHog flag).
+
+- [x] Apply [scripts/migrations/town-facts.sql](../scripts/migrations/town-facts.sql) (new columns on `public.towns`).
+- [x] Apply [scripts/migrations/town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) (initial copy for major corridor towns).
 - [ ] Confirm `/town/rosemary-beach` shows the at-a-glance block below the hero when seed data is present.
+- [ ] PostHog: archive/remove obsolete `town_facts` flag (no longer read by the app).
 
 ### Area facts setup
 
@@ -392,7 +390,7 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Apply [scripts/migrations/area-facts-seed.sql](../scripts/migrations/area-facts-seed.sql) (initial copy for major area hubs; sourced from former `AREA_PLANNING`).
 - [ ] Local dev (optional override): `AREA_FACTS_ENABLED=1` and `NEXT_PUBLIC_AREA_FACTS_ENABLED=1`.
 - [ ] Confirm `/area/rosemary-beach-town-center` shows the at-a-glance block below the hero when seed data is present.
-- [ ] Note: when DB facts exist, the older `seo_improvements` `AreaPlanningSections` fallback is skipped for that area.
+- [ ] PostHog: archive/remove obsolete `seo_improvements` flag (no longer read by the app).
 
 ### Community tips setup
 
@@ -405,16 +403,18 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 
 Tips stay **pending** until an admin publishes them. Public copy uses “Someone from {city} said…” — never usernames. Default write rate limit: 5 tips / 24h / user (`COMMUNITY_TIPS_RATE_LIMIT_*`).
 
-### Free onboard setup
+### Free onboard (fully ramped)
 
-- [ ] Create PostHog boolean flag `free_onboard` (code default **on** when PostHog omits the key; set PostHog to off to disable).
-- [ ] Apply [scripts/migrations/free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) so `portal_review_items.submitted_by` can be NULL for anonymous intake.
-- [ ] Confirm `/admin/review` is reachable for admins when `free_onboard` is on (even if `onboard` is off).
+`/list-your-business` and `/admin/review` are always available (no PostHog flag).
+
+- [x] Apply [scripts/migrations/free-onboard-review-queue.sql](../scripts/migrations/free-onboard-review-queue.sql) so `portal_review_items.submitted_by` can be NULL for anonymous intake.
+- [ ] Confirm `/admin/review` is reachable for admins.
 - [ ] **Unified categories:** apply [scripts/migrations/unified-categories-explorable.sql](../scripts/migrations/unified-categories-explorable.sql), recreate [businesses-view-search-tags.sql](../scripts/migrations/businesses-view-search-tags.sql), then dry-run / apply `npx tsx scripts/migrate-unified-categories.ts` and triage [docs/uncategorized-businesses.csv](uncategorized-businesses.csv).
 - [ ] On `/admin/review`, resolve **suggested categories** (create under a rollup or map to existing leaf) before approve when missing.
 - [ ] On `/admin/review`, for storefront intakes optionally check **Show on town/area pages** (`is_explorable`).
 - [ ] On `/admin/review`, for **suggested tags**: check to promote (optional rename), or uncheck and enter a replacement / leave empty to discard.
 - [ ] **Service specialty backfill:** legacy rows may still have only `service_category_id` until the unified migration runs.
+- [ ] PostHog: archive/remove obsolete `free_onboard` flag (no longer read by the app).
 
 ---
 
@@ -568,6 +568,8 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-15 | Ramped cleanup: removed PostHog `seo_improvements` and its gated UI (trip planning, category editorials, related guide modules, and legacy area planning display). Archive the flag in PostHog. |
+| 2026-08-15 | Ramped cleanup: removed PostHog `town_facts` and `free_onboard` flags — town at-a-glance and `/list-your-business` + `/admin/review` are always on. Archive those flags in PostHog. |
 | 2026-08-15 | PostHog `area_facts`: area “at a glance” section below hero (DB-backed metrics, highlights, detail cards; code default **on**); SQL [area-facts.sql](../scripts/migrations/area-facts.sql) + [area-facts-seed.sql](../scripts/migrations/area-facts-seed.sql); wins over `seo_improvements` planning fallback when facts exist; IRSE area scoring uses DB facts |
 | 2026-08-14 | Town/area hub maps + discovery + content-compiler use **`map_lat` / `map_lng`** only (same as businesses/rentals). Re-apply [town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql) to backfill from legacy `center_*` / `latitude_center` if needed. |
 | 2026-08-14 | Gemini audit suggests up to 10 freeform tags (`audit_suggested_tags`); local assigner matches them to vocab then keyword-fills. |

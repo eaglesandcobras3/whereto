@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  businessPhotosApiBlocked,
-  getAllFeatureFlags,
-  isFreeOnboardEnabled,
-} from "@/lib/feature-flags";
+import { businessPhotosApiBlocked } from "@/lib/feature-flags";
 import { FREE_ONBOARD_PHOTOS_MAX } from "@/lib/listing-requests/free-onboard-schema";
 import { uploadPortalImage } from "@/lib/portal/storage-upload";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
@@ -18,11 +14,6 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   const photosBlocked = await businessPhotosApiBlocked();
   if (photosBlocked) return photosBlocked;
-
-  const flags = await getAllFeatureFlags();
-  if (!isFreeOnboardEnabled(flags)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
 
   if (isListingRequestRateLimited(`listing-photo:${rateLimitKeyFromRequest(request)}`)) {
     return NextResponse.json({ error: "Too many uploads. Please try again later." }, { status: 429 });

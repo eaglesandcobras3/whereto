@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadUnifiedCategoryOptions } from "@/lib/categories/load-unified-categories";
 import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
-import { getAllFeatureFlags, isFreeOnboardEnabled } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
@@ -33,11 +32,6 @@ async function fetchAllRows<T extends Record<string, unknown>>(
 
 /** Unified categories + search tag vocabulary for the free intake form. */
 export async function GET() {
-  const flags = await getAllFeatureFlags();
-  if (!isFreeOnboardEnabled(flags)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   const supabase = getServiceSupabaseOrNull();
   if (!supabase) {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });

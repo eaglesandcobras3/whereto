@@ -3,7 +3,7 @@ import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import type { CategoryIrseInput } from "../inputs";
 
-/** Categories with dedicated editorial + audit-tuned metadata in hub-metadata / CategoryHubEditorial. */
+/** Categories with dedicated audit-tuned metadata in hub-metadata. */
 const AUDIT_META_SLUGS = new Set(["restaurants", "shopping"]);
 const EDITORIAL_SLUGS = new Set(["restaurants", "shopping"]);
 

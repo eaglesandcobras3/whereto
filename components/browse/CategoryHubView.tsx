@@ -1,12 +1,10 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
-import { CategoryHubEditorial } from "@/components/browse/CategoryHubEditorial";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import {
-  generateCollectionPageSchema,
   generateItemListSchema,
 } from "@/lib/seo/breadcrumb-schema";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
@@ -18,7 +16,6 @@ import type {
 import { partitionCategoryBusinessesByTown } from "@/lib/data/category-hub";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { categoryHubIntro } from "@/lib/seo/page-intro-copy";
-import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 
 type Props = {
   cat: CategoryRow;
@@ -39,12 +36,6 @@ export function CategoryHubView({
   const intro =
     cat.excerpt?.trim() ||
     categoryHubIntro(cat.title, businesses.length, townCount);
-
-  const collectionSchema = generateCollectionPageSchema({
-    name: `${cat.title} on 30A`,
-    path: hubPath,
-    description: intro,
-  });
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -75,12 +66,6 @@ export function CategoryHubView({
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <IrseAdminBadge kind="category" slug={cat.slug} />
-      <SeoImprovementsGate>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
-        />
-      </SeoImprovementsGate>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
@@ -136,9 +121,6 @@ export function CategoryHubView({
 
         <ListBusinessHomeCta />
 
-        <SeoImprovementsGate>
-          <CategoryHubEditorial categorySlug={cat.slug} />
-        </SeoImprovementsGate>
       </main>
     </div>
   );
