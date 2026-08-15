@@ -9,6 +9,7 @@ import {
   isRentalPartnersEnabled,
   isSeoImprovementsEnabled,
   isTownFactsEnabled,
+  isAreaFactsEnabled,
   isTownMapsEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
@@ -59,6 +60,22 @@ export function isTownFactsFeatureEnabledClient(flags: FeatureFlags): boolean {
 export function useTownFactsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isTownFactsFeatureEnabledClient(flags);
+}
+
+function areaFactsDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_AREA_FACTS_ENABLED === "1"
+  );
+}
+
+export function isAreaFactsFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isAreaFactsEnabled(flags) || areaFactsDevBypassEnabled();
+}
+
+export function useAreaFactsFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isAreaFactsFeatureEnabledClient(flags);
 }
 
 function businessPhotosDevBypassEnabled(): boolean {

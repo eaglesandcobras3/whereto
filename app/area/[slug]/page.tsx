@@ -21,7 +21,10 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { getAreaPlanningProfile } from "@/lib/data/area-planning";
+import { getAreaFactsBySlug } from "@/lib/data/area-facts-queries";
 import { AreaPlanningSections } from "@/components/area/AreaPlanningSections";
+import { AreaAtAGlanceSection } from "@/components/area/AreaAtAGlanceSection";
+import { AreaFactsGate } from "@/components/feature-flags/AreaFactsGate";
 import { SeoImprovementsGate } from "@/components/feature-flags/SeoImprovementsGate";
 import { AreaEmptyDiscoveryMessage } from "@/components/feature-flags/AreaEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
@@ -90,12 +93,13 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) redirectToSectionHub("areas");
 
-  const [categorySections, guides, flags] = await Promise.all([
+  const [categorySections, guides, flags, areaFacts] = await Promise.all([
     getCategorySectionsForPublicPlace(area),
     getGuidesForArea(area.id, area.town_id),
     getAllFeatureFlags(),
+    area.source === "area" ? getAreaFactsBySlug(area.slug) : Promise.resolve(null),
   ]);
-  const planningProfile = getAreaPlanningProfile(area.slug);
+  const planningProfile = areaFacts ? null : getAreaPlanningProfile(area.slug);
   const feedbackEnabled = isFeedbackFeatureEnabled(flags);
 
   let mapMarkers: Awaited<ReturnType<typeof listStorefrontMapMarkersForPlace>> = [];
@@ -225,6 +229,17 @@ export default async function AreaPage({ params }: Props) {
           />
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
+            {areaFacts ? (
+              <AreaFactsGate>
+                <div>
+                  <AreaAtAGlanceSection areaName={area.title} facts={areaFacts} />
+                  {feedbackEnabled ? (
+                    <ListingFieldFlagNote entity="area" entityId={area.id} field="facts" />
+                  ) : null}
+                </div>
+              </AreaFactsGate>
+            ) : null}
+
             {mapMarkers.length > 0 ? (
               <BusinessMapSection
                 markers={mapMarkers}
@@ -245,7 +260,7 @@ export default async function AreaPage({ params }: Props) {
               flagEntityId={area.id}
             />
 
-            {planningProfile ? (
+            {!areaFacts && planningProfile ? (
               <SeoImprovementsGate>
                 <AreaPlanningSections areaName={area.title} profile={planningProfile} />
               </SeoImprovementsGate>

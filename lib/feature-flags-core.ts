@@ -15,6 +15,7 @@ export const FEATURE_FLAG_KEYS = [
   "seo_improvements",
   "community_tips",
   "town_facts",
+  "area_facts",
   "rentals",
   "rental_partners",
   "business_photos",
@@ -38,6 +39,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   seo_improvements: false,
   community_tips: false,
   town_facts: true,
+  area_facts: true,
   rentals: false,
   rental_partners: false,
   business_photos: false,
@@ -124,6 +126,11 @@ export function isCommunityTipsEnabled(flags: FeatureFlags): boolean {
 /** Town profile “at a glance” section (DB-backed facts below the hero). */
 export function isTownFactsEnabled(flags: FeatureFlags): boolean {
   return flags.town_facts === true;
+}
+
+/** Area profile “at a glance” section (DB-backed facts below the hero). */
+export function isAreaFactsEnabled(flags: FeatureFlags): boolean {
+  return flags.area_facts === true;
 }
 
 /** Vacation rentals marketplace (`/stays`, listing intake, admin rentals). */
