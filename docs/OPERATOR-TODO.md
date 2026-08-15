@@ -332,9 +332,10 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `onboard` | Business portal (`/portal`, admin subscriptions) |
 | `free_onboard` | Free no-account intake form (`/list-your-business`), multi-location review queue (`/admin/review`) |
 | `search_inspector` | Admin search debug tools |
-| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, area planning blocks, category editorial blocks (town at-a-glance is `town_facts`) |
+| `seo_improvements` | SEO sprint UI: homepage trip-planning section, hub breadcrumbs/schema, legacy area planning blocks (fallback when `area_facts` has no DB row), category editorial blocks |
 | `community_tips` | Visitor text tips on business, town, area, and guide detail pages (optional stars); account management; admin moderation at `/admin/community-tips` |
 | `town_facts` | Town profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**) |
+| `area_facts` | Area profile “at a glance” section below the hero (DB-backed metrics, highlights, detail cards; code default **on**; wins over `seo_improvements` planning when facts exist) |
 | `rentals` | Vacation rentals marketplace (`/stays`, listing intake, admin rentals); code default **off** |
 | `rental_partners` | Company partner application at `/list-your-rentals/partner` (separate from `rentals`); code default **off** |
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
@@ -383,6 +384,15 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Apply [scripts/migrations/town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) (initial copy for major corridor towns).
 - [ ] Local dev (optional override): `TOWN_FACTS_ENABLED=1` and `NEXT_PUBLIC_TOWN_FACTS_ENABLED=1`.
 - [ ] Confirm `/town/rosemary-beach` shows the at-a-glance block below the hero when seed data is present.
+
+### Area facts setup
+
+- [ ] Create PostHog boolean flag `area_facts` (code default **on** when PostHog omits the key; set PostHog to off to disable).
+- [ ] Apply [scripts/migrations/area-facts.sql](../scripts/migrations/area-facts.sql) (new columns on `public.areas`).
+- [ ] Apply [scripts/migrations/area-facts-seed.sql](../scripts/migrations/area-facts-seed.sql) (initial copy for major area hubs; sourced from former `AREA_PLANNING`).
+- [ ] Local dev (optional override): `AREA_FACTS_ENABLED=1` and `NEXT_PUBLIC_AREA_FACTS_ENABLED=1`.
+- [ ] Confirm `/area/rosemary-beach-town-center` shows the at-a-glance block below the hero when seed data is present.
+- [ ] Note: when DB facts exist, the older `seo_improvements` `AreaPlanningSections` fallback is skipped for that area.
 
 ### Community tips setup
 
@@ -558,6 +568,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-15 | PostHog `area_facts`: area “at a glance” section below hero (DB-backed metrics, highlights, detail cards; code default **on**); SQL [area-facts.sql](../scripts/migrations/area-facts.sql) + [area-facts-seed.sql](../scripts/migrations/area-facts-seed.sql); wins over `seo_improvements` planning fallback when facts exist; IRSE area scoring uses DB facts |
 | 2026-08-14 | Town/area hub maps + discovery + content-compiler use **`map_lat` / `map_lng`** only (same as businesses/rentals). Re-apply [town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql) to backfill from legacy `center_*` / `latitude_center` if needed. |
 | 2026-08-14 | Gemini audit suggests up to 10 freeform tags (`audit_suggested_tags`); local assigner matches them to vocab then keyword-fills. |
 | 2026-08-14 | Directory audit: Gemini no longer assigns final `search_tags`; local `assign-business-audit-tags.ts` uses full keyword vocabulary after copy is verified. |

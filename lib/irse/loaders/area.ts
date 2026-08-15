@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getAreaFactsBySlug } from "@/lib/data/area-facts-queries";
 import { getAreaPlanningProfile } from "@/lib/data/area-planning";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import type { AreaIrseInput } from "../inputs";
@@ -51,7 +52,9 @@ async function loadFromView(
     status: string | null;
   };
 
-  const planning = getAreaPlanningProfile(key);
+  const areaFacts =
+    place_kind === "area" ? await getAreaFactsBySlug(key) : null;
+  const planning = areaFacts ? null : getAreaPlanningProfile(key);
   const [listing_count, guide_count] = await Promise.all([
     countAreaListings(supabase, row.id, place_kind),
     countAreaGuides(supabase, row.id),
@@ -74,9 +77,15 @@ async function loadFromView(
     status: row.status,
     listing_count,
     guide_count,
-    has_planning_profile: planning != null,
-    planning_faq_count: planning?.faqs?.length ?? 0,
-    planning_nearby_count: planning?.nearbyTowns?.length ?? planning?.nearbyLinks?.length ?? 0,
+    // Reuses planning_* IRSE fields for DB-backed area_facts (at a glance).
+    has_planning_profile: areaFacts != null || planning != null,
+    planning_faq_count:
+      areaFacts?.details.length ?? planning?.faqs?.length ?? 0,
+    planning_nearby_count:
+      areaFacts?.highlights.length ??
+      planning?.nearbyTowns?.length ??
+      planning?.nearbyLinks?.length ??
+      0,
   };
 }
 
