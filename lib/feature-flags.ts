@@ -12,6 +12,7 @@ import {
   isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
   isTownFactsEnabled,
+  isAreaFactsEnabled,
   isRentalsEnabled,
   isRentalPartnersEnabled,
   isBusinessPhotosEnabled,
@@ -36,6 +37,7 @@ export {
   isSeoImprovementsEnabled,
   isCommunityTipsEnabled,
   isTownFactsEnabled,
+  isAreaFactsEnabled,
   isRentalsEnabled,
   isRentalPartnersEnabled,
   isBusinessPhotosEnabled,
@@ -117,6 +119,15 @@ export function townFactsDevBypassEnabled(): boolean {
 
 export function isTownFactsFeatureEnabled(flags: FeatureFlags): boolean {
   return isTownFactsEnabled(flags) || townFactsDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `area_facts` flag still required in production. */
+export function areaFactsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.AREA_FACTS_ENABLED === "1";
+}
+
+export function isAreaFactsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isAreaFactsEnabled(flags) || areaFactsDevBypassEnabled();
 }
 
 /** Local dev escape hatch — PostHog `rentals` flag still required in production. */

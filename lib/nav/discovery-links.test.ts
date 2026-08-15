@@ -23,6 +23,7 @@ const discoverOnly: FeatureFlags = {
   seo_improvements: false,
   community_tips: false,
   town_facts: true,
+  area_facts: true,
   rentals: false,
   rental_partners: false,
   business_photos: false,

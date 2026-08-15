@@ -33,8 +33,8 @@ export function scoreAreaEntity(input: AreaIrseInput): CategoryCheckResult {
     pass(15, input.has_planning_profile, {
       severity: "info",
       code: "entity_no_planning_profile",
-      message: "No area planning profile in code.",
-    }, "Add an AREA_PLANNING entry when editorial depth is needed."),
+      message: "No area at-a-glance facts in the database.",
+    }, "Add area_facts columns for this area (metrics, highlights, detail cards)."),
     pass(15, true), // Place schema on template
     pass(10, input.place_kind === "area" || input.place_kind === "poi"),
     pass(10, input.status === "published" || input.status == null, {
@@ -75,9 +75,13 @@ export function scoreAreaContent(input: AreaIrseInput): CategoryCheckResult {
     partial(20, Math.min(20, input.planning_faq_count * 7), {
       severity: "info",
       code: "content_no_faqs",
-      message: "No planning FAQs for this area.",
+      message: "Few or no at-a-glance detail cards for this area.",
     }),
-    partial(15, Math.min(15, input.planning_nearby_count * 5)),
+    partial(15, Math.min(15, input.planning_nearby_count * 5), {
+      severity: "info",
+      code: "content_no_highlights",
+      message: "Highlights missing from area at-a-glance facts.",
+    }),
     pass(10, hasImage(input), {
       severity: "warning",
       code: "content_missing_images",
@@ -145,7 +149,7 @@ export function scoreAreaTrust(input: AreaIrseInput): CategoryCheckResult {
     pass(25, input.has_planning_profile || input.listing_count >= 3, {
       severity: "info",
       code: "trust_thin_signals",
-      message: "Limited trust signals (planning profile or listings).",
+      message: "Limited trust signals (at-a-glance facts or listings).",
     }),
     pass(20, input.town_id != null),
   ]);
