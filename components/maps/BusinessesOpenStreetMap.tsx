@@ -95,7 +95,9 @@ export function BusinessesOpenStreetMap({
 }: Props) {
   const mapId = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<import("leaflet").Map | null>(null);
   const [dark, setDark] = useState(false);
+  const [wheelZoomEnabled, setWheelZoomEnabled] = useState(false);
   const markersKey = markers
     .map(
       (m) =>
@@ -118,10 +120,13 @@ export function BusinessesOpenStreetMap({
 
     let cancelled = false;
     let map: import("leaflet").Map | null = null;
+    let disableWheelZoom: (() => void) | null = null;
+    setWheelZoomEnabled(false);
 
     async function mount() {
       const L = (await import("leaflet")).default;
-      if (cancelled || !containerRef.current) return;
+      const el = containerRef.current;
+      if (cancelled || !el) return;
 
       const defaultIcon = L.icon({
         iconUrl: `data:image/svg+xml;charset=UTF-8,${teardropPinSvg(dark)}`,
@@ -147,10 +152,12 @@ export function BusinessesOpenStreetMap({
         return divIcon;
       }
 
-      map = L.map(containerRef.current, {
-        scrollWheelZoom: true,
+      map = L.map(el, {
+        // Page scroll wins until the user clicks the map.
+        scrollWheelZoom: false,
         attributionControl: true,
       });
+      mapRef.current = map;
 
       L.tileLayer(dark ? DARK_TILES : LIGHT_TILES, {
         attribution: TILE_ATTR,
@@ -178,6 +185,19 @@ export function BusinessesOpenStreetMap({
         map.fitBounds(bounds.pad(0.08), { maxZoom: fitMaxZoom });
       }
 
+      const enableWheelZoom = () => {
+        map?.scrollWheelZoom.enable();
+        setWheelZoomEnabled(true);
+      };
+      disableWheelZoom = () => {
+        map?.scrollWheelZoom.disable();
+        setWheelZoomEnabled(false);
+      };
+
+      map.on("click", enableWheelZoom);
+      // Prefer container mouseleave — Leaflet mouseout fires when hovering markers/popups.
+      el.addEventListener("mouseleave", disableWheelZoom);
+
       requestAnimationFrame(() => map?.invalidateSize());
     }
 
@@ -185,8 +205,11 @@ export function BusinessesOpenStreetMap({
 
     return () => {
       cancelled = true;
+      const el = containerRef.current;
+      if (el && disableWheelZoom) el.removeEventListener("mouseleave", disableWheelZoom);
       map?.remove();
       map = null;
+      mapRef.current = null;
     };
     // markersKey captures marker identity/coords without depending on array identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,13 +218,25 @@ export function BusinessesOpenStreetMap({
   if (markers.length === 0) return null;
 
   return (
-    <div
-      ref={containerRef}
-      id={`businesses-map-${mapId}`}
-      className={`h-full min-h-80 w-full bg-[var(--color-surface)] sm:min-h-[650px] ${className}`}
-      role="img"
-      aria-label="Map"
-    />
+    <div className="relative h-full min-h-80 w-full sm:min-h-[650px]">
+      <div
+        ref={containerRef}
+        id={`businesses-map-${mapId}`}
+        className={`h-full min-h-80 w-full bg-[var(--color-surface)] sm:min-h-[650px] ${className}`}
+        role="img"
+        aria-label="Map"
+      />
+      {!wheelZoomEnabled ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-3 z-[500] flex justify-center px-3"
+          aria-hidden
+        >
+          <span className="rounded-md bg-zinc-900/70 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur-sm">
+            Click map to enable scroll zoom
+          </span>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

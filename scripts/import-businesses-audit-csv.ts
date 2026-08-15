@@ -235,6 +235,34 @@ function nullableNumber(raw: string): number | null {
   return n;
 }
 
+/** Match DB column numeric(12,8). */
+const COORD_SCALE = 8;
+const COORD_EPS = 5e-9; // half of 1e-8
+
+function roundCoord(n: number): number {
+  const f = 10 ** COORD_SCALE;
+  return Math.round(n * f) / f;
+}
+
+function nullableCoord(raw: string): number | null {
+  const n = nullableNumber(raw);
+  return n == null ? null : roundCoord(n);
+}
+
+function asCoord(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(n)) return null;
+  return roundCoord(n);
+}
+
+/** Coordinates are stored as numeric(12,8); compare at that scale. */
+function coordinatesEqual(a: number | null, b: number | null): boolean {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  return Math.abs(a - b) < COORD_EPS;
+}
+
 function hasColumn(row: CsvRow, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(row, key);
 }
@@ -422,10 +450,14 @@ function buildPatch(
   // Pins: storefronts only (including verified). Ignore blank CSV cells so we do not wipe coords.
   if (storefront) {
     if (hasColumn(row, "map_lat") && row.map_lat.trim()) {
-      setIfChanged("map_lat", nullableNumber(row.map_lat), existing.map_lat);
+      const next = nullableCoord(row.map_lat);
+      const prev = asCoord(existing.map_lat);
+      if (!coordinatesEqual(next, prev)) setIfChanged("map_lat", next, existing.map_lat);
     }
     if (hasColumn(row, "map_lng") && row.map_lng.trim()) {
-      setIfChanged("map_lng", nullableNumber(row.map_lng), existing.map_lng);
+      const next = nullableCoord(row.map_lng);
+      const prev = asCoord(existing.map_lng);
+      if (!coordinatesEqual(next, prev)) setIfChanged("map_lng", next, existing.map_lng);
     }
   }
 
