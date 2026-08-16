@@ -379,7 +379,6 @@ async function fetchSlugPage(
         .from("areas_view")
         .select("slug")
         .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .is("archived_at", null)
         .not("slug", "is", null)
         .order("id", { ascending: true })

@@ -156,7 +156,6 @@ async function loadBusiness(slug: string) {
         .eq("id", rawAreaId)
         .is("archived_at", null)
         .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .maybeSingle();
       const a = ar as { title?: string; slug?: string } | null;
       if (a?.slug != null && String(a.slug).trim()) {
@@ -182,7 +181,6 @@ async function loadBusiness(slug: string) {
           .eq("id", jid)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .maybeSingle();
         const a = ar as { title?: string; slug?: string } | null;
         if (a?.slug != null && String(a.slug).trim()) {

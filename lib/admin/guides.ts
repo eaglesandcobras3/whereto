@@ -389,6 +389,8 @@ export async function createAdminGuide(
     status,
     guide_type: input.guide_type ?? "editorial",
     reading_time_minutes: estimateReadingTimeMinutes(input.content),
+    // Published editorial content ignores this flag in the app; keep it clear for CMS hygiene.
+    is_hidden_from_search: false,
     date_created: now,
     date_updated: now,
     published_at: null,
@@ -443,6 +445,10 @@ export async function updateAdminGuide(
 
   if (nextStatus === "published" && existing.status !== "published") {
     patch.published_at = now;
+  }
+  if (nextStatus === "published") {
+    // Published means SEO-ready — never leave a soft-hide on.
+    patch.is_hidden_from_search = false;
   }
   if (nextStatus !== "published") {
     patch.published_at = null;

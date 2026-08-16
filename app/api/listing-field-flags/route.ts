@@ -355,7 +355,6 @@ export async function POST(request: NextRequest) {
       .eq("id", entityId)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .maybeSingle();
 
     if (error || !guide) {

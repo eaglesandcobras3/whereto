@@ -55,7 +55,6 @@ export async function buildLabelRouteLookup(
       .select("slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .not("slug", "is", null),
     supabase
       .from("points_of_interest")

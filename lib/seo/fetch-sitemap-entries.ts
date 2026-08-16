@@ -15,22 +15,27 @@ import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
 
 const SITEMAP_PAGE_SIZE = 1000;
 
-async function fetchBrowseableRows(
+async function fetchPublishedRows(
   supabase: SupabaseClient,
   table: string,
   select: string,
+  opts?: { respectHiddenFromSearch?: boolean },
 ): Promise<Record<string, unknown>[]> {
   const out: Record<string, unknown>[] = [];
   let from = 0;
   for (;;) {
-    const { data, error } = await supabase
+    let query = supabase
       .from(table)
       .select(select)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .not("status", "eq", "archived")
-      .not("status", "eq", "draft")
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .not("status", "eq", "draft");
+    // Towns/areas: published means indexable. Listings (POI/events) may soft-hide.
+    if (opts?.respectHiddenFromSearch) {
+      query = query.or(BROWSE_VISIBLE_NOT_HIDDEN);
+    }
+    const { data, error } = await query
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);
     if (error) {
@@ -57,17 +62,20 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 
     const [towns, guides, areas, pointsOfInterest, categories, browseGroupPaths, events, rentalBundle] =
       await Promise.all([
-      fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
+      fetchPublishedRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
       fetchSitemapGuides(supabase),
-      fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
-      fetchBrowseableRows(
+      fetchPublishedRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
+      fetchPublishedRows(
         supabase,
         "points_of_interest",
         "slug, date_updated, published_at, date_created",
+        { respectHiddenFromSearch: true },
       ),
       fetchSitemapCategories(supabase),
       listNonEmptySitemapBrowseGroupPaths(supabase),
-      fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
+      fetchPublishedRows(supabase, "events", "slug, date_updated, published_at, date_created", {
+        respectHiddenFromSearch: true,
+      }),
       fetchSitemapRentals(supabase),
     ]);
 

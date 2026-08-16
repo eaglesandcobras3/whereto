@@ -89,7 +89,7 @@ function buildGuidePayload(
     featured: false,
     search_keywords: mapped.search_keywords,
     status: "published",
-    is_hidden_from_search: null,
+    is_hidden_from_search: false,
     date_updated: mapped.rankscore_updated_at ?? new Date().toISOString(),
   };
   if (includeRankScoreId) {

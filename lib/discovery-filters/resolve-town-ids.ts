@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { expandCorridorTownSlugsForNearSearch } from "@/lib/discovery-filters/corridor-town-scope";
-import { DIRECTUS_PUBLISHED_STATUS, BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 
 export type ResolveTownIdsOptions = {
@@ -55,7 +55,6 @@ async function loadBrowseVisibleTownSlugs(supabase: SupabaseClient): Promise<str
     .select("slug")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title", { ascending: true });
 
   return (data ?? []).map((row) => String((row as { slug: string }).slug));

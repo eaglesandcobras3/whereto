@@ -55,7 +55,6 @@ export default async function Home() {
     .select("id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, status, sort")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("is_featured_destination", { ascending: false, nullsFirst: true })
     .order("featured", { ascending: false, nullsFirst: true })
     .order("sort", { ascending: true, nullsFirst: false })

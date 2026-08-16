@@ -84,7 +84,6 @@ async function getTownPageData(townId: string) {
     .eq("town_id", townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title")
     .limit(TOWN_AREAS_CANDIDATE_CAP);
 

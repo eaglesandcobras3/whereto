@@ -5,7 +5,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
 import { listTownHubMapMarkers } from "@/lib/data/place-map-markers";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { hubTownsIntro } from "@/lib/seo/page-intro-copy";
@@ -32,7 +32,6 @@ async function getTowns(): Promise<TownRow[]> {
     .select("id, title, slug, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("is_featured_destination", { ascending: false, nullsFirst: true })
     .order("featured", { ascending: false, nullsFirst: true })
     .order("sort", { ascending: true, nullsFirst: false })

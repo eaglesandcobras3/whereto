@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PortalNewBusinessForm } from "@/components/portal/PortalNewBusinessForm";
 import { PortalShell } from "@/components/portal/PortalShell";
 import type { ListBusinessTownOption } from "@/components/listing-request/ListBusinessForm";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 export const metadata: Metadata = {
@@ -18,7 +18,6 @@ async function loadTowns(): Promise<ListBusinessTownOption[]> {
       .select("id, title, slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("title");
     return (data ?? []).map((t) => ({
       id: t.id as string,

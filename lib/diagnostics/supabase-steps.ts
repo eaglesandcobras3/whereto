@@ -109,19 +109,19 @@ export async function runSupabaseDataSteps(
     .from("towns")
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
+    .eq("status", "published");
   steps.push({
     n: 4,
     title: "Towns: public visibility",
     ok: !e4 && (townVisible ?? 0) > 0,
     detail: e4
-      ? `${e4.message}\n\nOften: missing column is_hidden_from_search.`
-      : `Visible in app: ${townVisible ?? 0}\n${
+      ? e4.message
+      : `Published towns: ${townVisible ?? 0}\n${
           townVisible === 0 && (townAny ?? 0) > 0
-            ? "Rows exist but are hidden — clear is_hidden_from_search for live rows (see scripts/fix-directus-visibility.sql)."
+            ? "Rows exist but none are published — set status=published for live towns."
             : townVisible === 0
               ? "No town rows; add/restore data in this project."
-              : "At least one town can render at /{slug}."
+              : "At least one published town can render at /{slug}."
         }`,
   });
 
@@ -152,7 +152,7 @@ export async function runSupabaseDataSteps(
     const s = townKey;
     const { data: raws, error: te1 } = await supabase
       .from("towns")
-      .select("id, title, slug, is_hidden_from_search, archived_at")
+      .select("id, title, slug, status, archived_at")
       .eq("slug", s)
       .limit(1);
     const { data: appTowns, error: te2 } = await supabase
@@ -160,7 +160,7 @@ export async function runSupabaseDataSteps(
       .select("id, title, slug")
       .eq("slug", s)
       .is("archived_at", null)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .eq("status", "published")
       .limit(1);
     const raw = raws?.[0];
     const appTown = appTowns?.[0];
@@ -169,15 +169,15 @@ export async function runSupabaseDataSteps(
       te1
         ? `Error: ${te1.message}`
         : raw
-          ? `DB: “${(raw as { title: string }).title}”, is_hidden_from_search=${
-              (raw as { is_hidden_from_search: boolean | null }).is_hidden_from_search
+          ? `DB: “${(raw as { title: string }).title}”, status=${
+              (raw as { status: string | null }).status
             }`
           : "No `towns` row for this slug.",
       te2 ? `Filter query: ${te2.message}` : "",
       !te2 && appTown?.id
         ? `→ Open: /${s}`
         : raw
-          ? "→ 404: fails archived or hidden (or duplicate slug rows: dedupe in DB)."
+          ? "→ 404: fails archived or not published (or duplicate slug rows: dedupe in DB)."
           : "→ 404: use exact slug in DB.",
     ].filter(Boolean);
     steps.push({

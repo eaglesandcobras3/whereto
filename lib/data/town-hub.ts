@@ -1,7 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
@@ -48,10 +47,8 @@ export async function getTownBySlug(slug: string) {
   if (!key) return null;
 
   const supabase = getServiceSupabase();
-  // Town *hub* is a direct URL, not the search index. Match any non-archived row by slug.
-  // (`is_hidden_from_search` is for /search, lists, sitemap — not for /{slug} where someone
-  // has a permalink. Your SQL in the editor often omits the hide filter; the old query
-  // could return zero rows even when a row existed.)
+  // Town hub: published + not archived. Editorial entities ignore is_hidden_from_search
+  // (published means SEO-ready).
   // `towns_view` adds `main_image_url` / `hero_image_url` via `resolve_directus_file_url` → Supabase Storage
   const { data: rows, error } = await supabase
     .from("towns_view")
@@ -219,7 +216,6 @@ export async function getGuidesForTown(townId: string): Promise<TownGuideCard[]>
       .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN),
   ]);
 
   const townSpecificIds = [
@@ -263,7 +259,6 @@ export async function getGuidesForArea(
       .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN),
   ]);
 
   const placeSpecificIds = [
@@ -310,7 +305,6 @@ export async function getGuidesForBusiness(
       .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN),
   ]);
 
   const placeSpecificIds = [
@@ -353,7 +347,6 @@ export async function getGuidesForCategoryHub(
       .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .limit(limit);
     const ids = (data ?? []).map((r) => String((r as { id: string }).id));
     return loadPublishedGuideCards(ids);
@@ -388,7 +381,6 @@ async function loadPublishedGuideCards(
     .in("id", guideIds)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const guideById = new Map<string, TownGuideCard>();
   for (const row of linked ?? []) {
@@ -430,7 +422,6 @@ export async function getTownAreasForLocalGuide(
     .eq("town_id", townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
 
   const districts: TownAreaBrowseRow[] = (areaData ?? []).map((r) => {
@@ -515,7 +506,6 @@ export async function getTownsInRegion(regionId: string) {
     .eq("region_id", regionId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
   return (data ?? []).map((t) => ({
     name: (t as { title: string }).title,

@@ -99,7 +99,6 @@ async function countTownAreas(supabase: SupabaseClient, townId: string): Promise
     .select("id", { count: "exact", head: true })
     .eq("town_id", townId)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .is("archived_at", null);
   return count ?? 0;
 }

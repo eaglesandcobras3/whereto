@@ -45,7 +45,6 @@ export async function getPublicPlaceBySlug(
     .eq("slug", key)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(1);
 
   const area = areaRows?.[0];

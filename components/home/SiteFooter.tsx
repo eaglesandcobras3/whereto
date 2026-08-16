@@ -38,7 +38,6 @@ async function getFooterTowns(): Promise<FooterBrowseLink[]> {
       .select("id, title, slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .limit(FOOTER_BROWSE_LIMIT),
     getBusinessCountsByColumn("town_id"),
   ]);
@@ -81,7 +80,6 @@ async function getFooterAreas(): Promise<FooterBrowseLink[]> {
       .select("id, title, slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .limit(FOOTER_BROWSE_LIMIT),
     getBusinessCountsByColumn("area_id"),
   ]);

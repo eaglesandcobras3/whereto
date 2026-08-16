@@ -22,7 +22,7 @@ async function loadFromView(
   key: string,
   place_kind: "area" | "poi",
 ): Promise<AreaIrseInput | null> {
-  const { data, error } = await supabase
+  let query = supabase
     .from(view)
     .select(
       `
@@ -32,9 +32,14 @@ async function loadFromView(
     )
     .eq("slug", key)
     .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .maybeSingle();
+    .eq("status", DIRECTUS_PUBLISHED_STATUS);
+
+  // Areas: published means indexable. POIs may still soft-hide.
+  if (view !== "areas_view") {
+    query = query.or(BROWSE_VISIBLE_NOT_HIDDEN);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) return null;
   const row = data as {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { GuidesHubClient } from "@/components/guides/GuidesHubClient";
 import { hubGuidesIntro } from "@/lib/seo/page-intro-copy";
 import { guidesHubMetadata } from "@/lib/seo/hub-metadata";
@@ -43,7 +43,6 @@ async function getGuides(): Promise<GuideRow[]> {
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title")
     .limit(GUIDE_POOL_LIMIT);
 
