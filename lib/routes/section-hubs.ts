@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 export const SECTION_HUB_PATHS = {
   guides: "/guides",
@@ -8,7 +8,7 @@ export const SECTION_HUB_PATHS = {
 
 export type SectionHub = keyof typeof SECTION_HUB_PATHS;
 
-/** Redirect to the listing hub when a detail slug no longer exists. */
+/** Permanent redirect to the listing hub when a detail slug no longer exists. */
 export function redirectToSectionHub(section: SectionHub): never {
-  redirect(SECTION_HUB_PATHS[section]);
+  permanentRedirect(SECTION_HUB_PATHS[section]);
 }

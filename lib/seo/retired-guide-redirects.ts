@@ -20,6 +20,11 @@ export const RETIRED_GUIDE_REDIRECTS: Readonly<Record<string, string>> = {
   // Family travel — towns hub owns head-term comparison intent
   "best-30a-towns-for-families": "/towns",
   "things-to-do-with-kids-on-30a": "/guide/family-friendly-30a-beach-vacation",
+  // GSC-reported retired guides — preserve the closest available reader intent.
+  "seaside-florida-girls-trip-guide": "/guide/25-fun-things-to-do-on-a-girls-trip-to-30a",
+  watercolor: "/town/watercolor",
+  "grayton-beach-permit": BEACH_ACCESS_PILLAR_GUIDE_PATH,
+  "where-to-stay-on-30a": "/towns",
 };
 
 /** Next.js redirect rules derived from {@link RETIRED_GUIDE_REDIRECTS}. */
