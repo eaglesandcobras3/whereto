@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
@@ -7,6 +8,8 @@ import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-sec
 import type { CategoryBusinessRow, CategoryTownGroup } from "@/lib/data/category-hub";
 import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 import { ADD_BUSINESS_HREF } from "@/lib/listing-requests/listing-field-flag";
+import { townPagePath } from "@/lib/routes/town-page-path";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   townGroups: CategoryTownGroup[];
@@ -29,10 +32,12 @@ function BusinessGrid({
   businesses,
   categorySlug,
   analyticsSuffix,
+  townLabel,
 }: {
   businesses: CategoryBusinessRow[];
   categorySlug: string;
   analyticsSuffix: string;
+  townLabel?: string | null;
 }) {
   return (
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -43,6 +48,7 @@ function BusinessGrid({
             slug={business.slug}
             excerpt={business.excerpt}
             heroImageUrl={business.hero_image_url}
+            meta={townLabel ?? business.town_name}
             analyticsCategory="category_page_business"
             analyticsLabel={`${categorySlug}_${analyticsSuffix}_${business.slug}`}
           />
@@ -123,13 +129,15 @@ export function CategoryHubTownSections({
               By town
             </h2>
             <p className="mt-1.5 text-left text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-              Places with a location along 30A. Tap a town to collapse.
+              Places with a location along 30A. Open a town guide for beach access and local
+              context.
             </p>
           </div>
 
           {townGroups.map((group) => {
             const id = groupKey(group);
             const isOpen = expandedIds.has(id);
+            const townHref = group.slug ? townPagePath(group.slug) : null;
 
             return (
               <CollapsibleBrowseSection
@@ -143,11 +151,27 @@ export function CategoryHubTownSections({
                 }
                 open={isOpen}
                 onToggle={() => toggle(id)}
+                action={
+                  townHref ? (
+                    <Link
+                      href={townHref}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "category_hub_town_link",
+                        label: group.slug,
+                      })}
+                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                    >
+                      {group.name} guide
+                    </Link>
+                  ) : null
+                }
               >
                 <BusinessGrid
                   businesses={group.businesses}
                   categorySlug={categorySlug}
                   analyticsSuffix={id}
+                  townLabel={group.name}
                 />
               </CollapsibleBrowseSection>
             );
@@ -183,6 +207,7 @@ export function CategoryHubTownSections({
               businesses={regional}
               categorySlug={categorySlug}
               analyticsSuffix="regional"
+              townLabel="Regional"
             />
           </CollapsibleBrowseSection>
         </div>

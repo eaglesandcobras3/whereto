@@ -1,11 +1,15 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
+import { CategoryHubFaqSection } from "@/components/browse/CategoryHubFaqSection";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
+import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import {
+  generateFaqSchema,
   generateItemListSchema,
+  generateCollectionPageSchema,
 } from "@/lib/seo/breadcrumb-schema";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import type {
@@ -13,15 +17,25 @@ import type {
   CategoryRow,
   CategoryTownGroup,
 } from "@/lib/data/category-hub";
-import { partitionCategoryBusinessesByTown } from "@/lib/data/category-hub";
+import {
+  categoryHubInventoryFromPage,
+  partitionCategoryBusinessesByTown,
+} from "@/lib/data/category-hub";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
-import { categoryHubIntro } from "@/lib/seo/page-intro-copy";
+import type { TownGuideCard } from "@/lib/data/town-hub";
+import {
+  buildCategoryHubEditorialBody,
+  buildCategoryHubFaqs,
+  buildCategoryHubHeroDescription,
+  buildCategoryHubSupportingIntro,
+} from "@/lib/seo/category-hub-substance";
 
 type Props = {
   cat: CategoryRow;
   townGroups: CategoryTownGroup[];
   businesses: CategoryBusinessRow[];
   mapMarkers?: BusinessMapMarker[];
+  guides?: TownGuideCard[];
 };
 
 export function CategoryHubView({
@@ -29,13 +43,15 @@ export function CategoryHubView({
   townGroups: _townGroups,
   businesses,
   mapMarkers = [],
+  guides = [],
 }: Props) {
   const hubPath = categoryHubPath(cat.slug);
   const { townGroups, regional } = partitionCategoryBusinessesByTown(businesses);
-  const townCount = townGroups.length;
-  const intro =
-    cat.excerpt?.trim() ||
-    categoryHubIntro(cat.title, businesses.length, townCount);
+  const inventory = categoryHubInventoryFromPage({ cat, businesses });
+  const heroDescription = buildCategoryHubHeroDescription(inventory);
+  const editorialBody = buildCategoryHubEditorialBody(inventory);
+  const supportingIntro = buildCategoryHubSupportingIntro(inventory);
+  const faqs = buildCategoryHubFaqs(inventory);
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -45,22 +61,28 @@ export function CategoryHubView({
       })),
     ),
     name: `${cat.title} on 30A, Florida`,
-    description: `Local ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida`,
+    description: heroDescription,
     numberOfItems: businesses.length,
   };
+
+  const collectionSchema = generateCollectionPageSchema({
+    name: `${cat.title} on 30A`,
+    path: hubPath,
+    description: heroDescription,
+  });
+
+  const faqSchema = faqs.length > 0 ? generateFaqSchema(faqs) : null;
 
   const metaParts: string[] = [
     `${businesses.length} ${businesses.length === 1 ? "listing" : "listings"}`,
   ];
-  if (townCount > 0) {
+  if (townGroups.length > 0) {
     metaParts.push(
-      `${townCount} ${townCount === 1 ? "town" : "towns"}`,
+      `${townGroups.length} ${townGroups.length === 1 ? "town" : "towns"}`,
     );
   }
   if (regional.length > 0) {
-    metaParts.push(
-      `${regional.length} regional`,
-    );
+    metaParts.push(`${regional.length} regional`);
   }
 
   return (
@@ -68,18 +90,24 @@ export function CategoryHubView({
       <IrseAdminBadge kind="category" slug={cat.slug} />
       <script
         type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+      <script
+        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
+      {faqSchema ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      ) : null}
 
       <main className="flex-1">
         <BrowseHubHero
           title={`${cat.title} on 30A`}
-          description={
-            townCount > 0
-              ? `Local ${cat.title.toLowerCase()} along Scenic Highway 30A in South Walton, Florida — by town and regional providers.`
-              : `Local ${cat.title.toLowerCase()} serving Scenic Highway 30A and South Walton, Florida.`
-          }
-          collapsibleDescription={intro}
+          description={heroDescription}
+          collapsibleDescription={supportingIntro}
           meta={<>{metaParts.join(" · ")}</>}
           breadcrumbs={
             <HubBreadcrumbs
@@ -94,6 +122,21 @@ export function CategoryHubView({
         />
 
         <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+          <section
+            className="max-w-3xl space-y-3"
+            aria-labelledby="category-hub-editorial-heading"
+          >
+            <h2
+              id="category-hub-editorial-heading"
+              className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl"
+            >
+              How we use this hub
+            </h2>
+            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
+              {editorialBody}
+            </p>
+          </section>
+
           {mapMarkers.length > 0 ? (
             <BusinessMapSection
               markers={mapMarkers}
@@ -117,10 +160,18 @@ export function CategoryHubView({
               pageTitle={cat.title}
             />
           </div>
+
+          <CategoryHubFaqSection faqs={faqs} />
+
+          <PlaceGuidesSection
+            title="Guides that help with this stop"
+            description={`Planning context for ${cat.title.toLowerCase()} days along 30A.`}
+            guides={guides}
+            analyticsCategory="category_hub_guides"
+          />
         </div>
 
         <ListBusinessHomeCta />
-
       </main>
     </div>
   );
