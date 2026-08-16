@@ -449,362 +449,391 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
   const totalPages = result?.total_pages ?? 0;
   const showResultsLoading = pending && !result;
 
+  const filterControls = (
+    <>
+      <div>
+        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          Type
+        </label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              navigate({ type: "storefront", service_category: "", clearMap: false, page: 1 })
+            }
+            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+              params.type === "storefront"
+                ? "bg-[var(--color-primary)] text-white"
+                : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
+            }`}
+          >
+            Storefront
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => navigate({ type: "service", category: "", clearMap: true, page: 1 })}
+            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+              params.type === "service"
+                ? "bg-[var(--color-primary)] text-white"
+                : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
+            }`}
+          >
+            Services
+          </button>
+        </div>
+        <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+          {softScopeMode
+            ? "Prefers this type; the other may appear when keywords match."
+            : "Only listings of this type are shown."}
+        </p>
+      </div>
+
+      {params.type === "storefront" && mapBbox ? (
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)]/50 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            Map area
+          </p>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Results follow the map bounds
+            {selectedTownSlugs.length
+              ? ` (jumped from ${selectedTownSlugs
+                  .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
+                  .join(", ")})`
+              : ""}
+            .
+          </p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => navigate({ townSlugs: [], clearMap: true, page: 1 })}
+            className="mt-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
+          >
+            Clear map area
+          </button>
+        </div>
+      ) : null}
+
+      {params.type === "storefront" ? (
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <label
+              htmlFor="discover-towns"
+              className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+            >
+              {mapMode ? "Jump to town" : "Towns"}
+            </label>
+            {pending ? (
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
+                <span
+                  className="inline-block size-3 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+                  aria-hidden
+                />
+                Updating…
+              </span>
+            ) : null}
+          </div>
+          <FacetTypeaheadMultiSelect
+            id="discover-towns"
+            options={townOptions}
+            selectedSlugs={selectedTownSlugs}
+            onChange={setTownSlugs}
+            disabled={pending}
+            loading={pending}
+            placeholder="Type a town name…"
+            emptyMessage="No towns match"
+          />
+          <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+            {mapMode
+              ? selectedTownSlugs.length > 1
+                ? "Map covers all selected town centers. Pan or Search this area afterward."
+                : "Picks a map area around the town center. Pan or Search this area afterward."
+              : "Active search towns appear as chips. Remove any to narrow results."}
+          </p>
+        </div>
+      ) : null}
+
+      {params.type === "storefront" ? (
+        <div>
+          <label
+            htmlFor="discover-category"
+            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+          >
+            Category
+          </label>
+          <select
+            id="discover-category"
+            disabled={pending}
+            value={params.category ?? ""}
+            onChange={(e) =>
+              navigate({
+                category: e.target.value,
+                page: 1,
+              })
+            }
+            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-base"
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+            {softScopeMode
+              ? "Prefers this category; others may appear when keywords match."
+              : "Only listings in this category are shown."}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <label
+            htmlFor="discover-service-category"
+            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+          >
+            Specialty
+          </label>
+          <select
+            id="discover-service-category"
+            disabled={pending}
+            value={params.service_category ?? ""}
+            onChange={(e) =>
+              navigate({
+                service_category: e.target.value,
+                page: 1,
+              })
+            }
+            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-base"
+          >
+            <option value="">All specialties</option>
+            {serviceCategories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+            {softScopeMode
+              ? "Prefers this specialty; others may appear when keywords match."
+              : "Only listings in this specialty are shown."}
+          </p>
+        </div>
+      )}
+
+      <div>
+        <div className="mb-2 flex items-center gap-2">
+          <label
+            htmlFor="discover-facets"
+            className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
+          >
+            Keywords
+          </label>
+          {pending ? (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
+              <span
+                className="inline-block size-3 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+                aria-hidden
+              />
+              Updating…
+            </span>
+          ) : null}
+        </div>
+        <FacetTypeaheadMultiSelect
+          id="discover-facets"
+          options={searchTags}
+          selectedSlugs={selectedTags}
+          onChange={setSelectedTags}
+          disabled={pending}
+          loading={pending}
+          placeholder={searchTags.length ? "Type a keyword…" : "No keywords in this scope"}
+          emptyMessage="No keywords match"
+        />
+        <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
+          {softScopeMode
+            ? "Must match at least one keyword. More matches rank higher."
+            : "Add keywords to search across categories and types."}
+        </p>
+      </div>
+    </>
+  );
+
+  const resultsPanel = (
+    <>
+      {nlQuery ? (
+        <div className="mb-4">
+          <DiscoverFilterInterpretation
+            nlQuery={nlQuery}
+            interpretation={filterInterpretation}
+            loading={pending}
+          />
+        </div>
+      ) : null}
+
+      <div className="mb-4 space-y-2">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+          {pending ? (
+            <span className="inline-flex items-center gap-2">
+              <span
+                className="inline-block size-3.5 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+                aria-hidden
+              />
+              Updating results…
+            </span>
+          ) : (
+            <span>
+              {total} result{total === 1 ? "" : "s"}
+            </span>
+          )}
+          {params.type === "storefront"
+            ? selectedTownSlugs.map((slug) => (
+                <span
+                  key={slug}
+                  className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs"
+                >
+                  {towns.find((t) => t.slug === slug)?.name ?? slug}
+                </span>
+              ))
+            : null}
+          {selectedTags.map((slug) => (
+            <span
+              key={slug}
+              className="rounded-full bg-[var(--color-primary)]/15 px-2 py-0.5 text-xs text-[var(--color-primary)]"
+            >
+              {labelForSlug(slug)}
+            </span>
+          ))}
+        </div>
+
+        {hasTagFilters ? (
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {params.type === "storefront"
+              ? mapMode
+                ? "Matching at least one keyword in the map area. Preferred category ranks first."
+                : "Matching at least one keyword in your towns. Preferred type and category rank first."
+              : "Matching at least one keyword across the corridor. Preferred specialty ranks first."}
+          </p>
+        ) : (
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {params.type === "storefront"
+              ? mapMode
+                ? "Results follow the map area and category when selected. Add keywords to search more broadly."
+                : `Filtered by town${typeLabel}, and category when selected. Add keywords to search more broadly.`
+              : "Regional services across the corridor. Choose a specialty or add keywords to narrow results."}
+          </p>
+        )}
+      </div>
+
+      {fetchError ? <p className="text-sm text-red-600">{fetchError}</p> : null}
+
+      {showResultsLoading ? (
+        <DiscoverPageLoading message="Loading results…" variant="results" />
+      ) : pending ? (
+        <DiscoverPageLoading message="Updating results…" variant="results" />
+      ) : listings.length === 0 ? (
+        <div className="space-y-2 text-[var(--color-text-secondary)]">
+          <p>
+            No listings match these filters. Try fewer keywords
+            {params.type === "storefront"
+              ? mapMode
+                ? ", or search a wider map area"
+                : ", or broaden town or category"
+              : " or specialty"}
+            .
+          </p>
+          {queryError ? <p className="text-sm text-red-600">Search error: {queryError}</p> : null}
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {listings.map((listing) => (
+            <li key={listing.id} className="h-full">
+              <DiscoverListingCard
+                listing={listing}
+                labelForSlug={labelForSlug}
+                showTagMatch={hasTagFilters}
+                showMatchReason={showMatchReason}
+                anchorTownSlugs={anchorTownSlugs}
+                preferredEntityType={params.type}
+                hasCategoryPreference={hasCategoryPreference}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {totalPages > 1 ? (
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            disabled={pending || params.page <= 1}
+            onClick={() => navigate({ page: params.page - 1 })}
+            className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-[var(--color-text-secondary)]">
+            Page {params.page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={pending || params.page >= totalPages}
+            onClick={() => navigate({ page: params.page + 1 })}
+            className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       <div className="coastal-hero border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">
           <p className="text-eyebrow">Discover · 30A</p>
           <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">
-            Browse by filters
+            {mapMode ? "Explore the map" : "Browse by filters"}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-secondary)]">
-            For storefronts, town always narrows the list. Services are corridor-wide and are not
-            filtered by town. With keywords selected, type and category prefer matching places but
-            won&apos;t hide others. Without keywords, type and category filter strictly.
+            {mapMode
+              ? "Pan or zoom, then search this area. Jump to a town to frame the map — multiple towns expand the area to cover all of them. Filters sit below the map."
+              : "For storefronts, town always narrows the list. Services are corridor-wide and are not filtered by town. With keywords selected, type and category prefer matching places but won't hide others. Without keywords, type and category filter strictly."}
           </p>
         </div>
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <aside className="w-full shrink-0 space-y-5 lg:w-64">
+        {mapMode ? (
+          <div className="flex flex-col gap-6">
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                Type
-              </label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    navigate({ type: "storefront", service_category: "", clearMap: false, page: 1 })
-                  }
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-                    params.type === "storefront"
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
-                  }`}
-                >
-                  Storefront
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    navigate({ type: "service", category: "", clearMap: true, page: 1 })
-                  }
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-                    params.type === "service"
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
-                  }`}
-                >
-                  Services
-                </button>
-              </div>
-              <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                {softScopeMode
-                  ? "Prefers this type; the other may appear when keywords match."
-                  : "Only listings of this type are shown."}
-              </p>
-            </div>
-
-            {params.type === "storefront" && mapBbox ? (
-              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)]/50 px-3 py-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  Map area
-                </p>
-                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                  Results follow the map bounds
-                  {selectedTownSlugs.length
-                    ? ` (jumped from ${selectedTownSlugs
-                        .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
-                        .join(", ")})`
-                    : ""}
-                  .
-                </p>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => navigate({ townSlugs: [], clearMap: true, page: 1 })}
-                  className="mt-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
-                >
-                  Clear map area
-                </button>
-              </div>
-            ) : null}
-
-            {params.type === "storefront" ? (
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <label
-                  htmlFor="discover-towns"
-                  className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
-                >
-                  {mapMode ? "Jump to town" : "Towns"}
-                </label>
-                {pending ? (
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
-                    <span
-                      className="inline-block size-3 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
-                      aria-hidden
-                    />
-                    Updating…
-                  </span>
-                ) : null}
-              </div>
-              <FacetTypeaheadMultiSelect
-                id="discover-towns"
-                options={townOptions}
-                selectedSlugs={selectedTownSlugs}
-                onChange={setTownSlugs}
-                disabled={pending}
-                loading={pending}
-                placeholder="Type a town name…"
-                emptyMessage="No towns match"
+              <DiscoverStorefrontMap
+                listings={listings}
+                initialBbox={mapBbox}
+                initialZoom={params.zoom}
+                onSearchArea={searchMapArea}
               />
-              <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                {mapMode
-                  ? "Picks a map area around the town center. Pan or Search this area afterward."
-                  : "Active search towns appear as chips. Remove any to narrow results."}
+              <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+                Pan or zoom, then search this area. Map bounds update the URL and results.
               </p>
             </div>
-            ) : null}
 
-            {params.type === "storefront" ? (
-              <div>
-                <label htmlFor="discover-category" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  Category
-                </label>
-                <select
-                  id="discover-category"
-                  disabled={pending}
-                  value={params.category ?? ""}
-                  onChange={(e) =>
-                    navigate({
-                      category: e.target.value,
-                      page: 1,
-                    })
-                  }
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-base"
-                >
-                  <option value="">All categories</option>
-                  {categories.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                  {softScopeMode
-                    ? "Prefers this category; others may appear when keywords match."
-                    : "Only listings in this category are shown."}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <label htmlFor="discover-service-category" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                  Specialty
-                </label>
-                <select
-                  id="discover-service-category"
-                  disabled={pending}
-                  value={params.service_category ?? ""}
-                  onChange={(e) =>
-                    navigate({
-                      service_category: e.target.value,
-                      page: 1,
-                    })
-                  }
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-base"
-                >
-                  <option value="">All specialties</option>
-                  {serviceCategories.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                  {softScopeMode
-                    ? "Prefers this specialty; others may appear when keywords match."
-                    : "Only listings in this specialty are shown."}
-                </p>
-              </div>
-            )}
+            <section
+              aria-label="Filters"
+              className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-2 lg:grid-cols-4"
+            >
+              {filterControls}
+            </section>
 
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <label
-                  htmlFor="discover-facets"
-                  className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
-                >
-                  Keywords
-                </label>
-                {pending ? (
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
-                    <span
-                      className="inline-block size-3 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
-                      aria-hidden
-                    />
-                    Updating…
-                  </span>
-                ) : null}
-              </div>
-              <FacetTypeaheadMultiSelect
-                id="discover-facets"
-                options={searchTags}
-                selectedSlugs={selectedTags}
-                onChange={setSelectedTags}
-                disabled={pending}
-                loading={pending}
-                placeholder={searchTags.length ? "Type a keyword…" : "No keywords in this scope"}
-                emptyMessage="No keywords match"
-              />
-              <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                {softScopeMode
-                  ? "Must match at least one keyword. More matches rank higher."
-                  : "Add keywords to search across categories and types."}
-              </p>
-            </div>
-          </aside>
-
-          <main className="min-w-0 flex-1">
-            {mapMode ? (
-              <div className="mb-6">
-                <DiscoverStorefrontMap
-                  listings={listings}
-                  initialBbox={mapBbox}
-                  initialZoom={params.zoom}
-                  onSearchArea={searchMapArea}
-                />
-                <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
-                  Pan or zoom, then search this area. Map bounds update the URL and results.
-                </p>
-              </div>
-            ) : null}
-
-            {nlQuery ? (
-              <div className="mb-4">
-                <DiscoverFilterInterpretation
-                  nlQuery={nlQuery}
-                  interpretation={filterInterpretation}
-                  loading={pending}
-                />
-              </div>
-            ) : null}
-
-            <div className="mb-4 space-y-2">
-              <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                {pending ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span
-                      className="inline-block size-3.5 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
-                      aria-hidden
-                    />
-                    Updating results…
-                  </span>
-                ) : (
-                  <span>
-                    {total} result{total === 1 ? "" : "s"}
-                  </span>
-                )}
-                {params.type === "storefront"
-                  ? selectedTownSlugs.map((slug) => (
-                      <span
-                        key={slug}
-                        className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs"
-                      >
-                        {towns.find((t) => t.slug === slug)?.name ?? slug}
-                      </span>
-                    ))
-                  : null}
-                {selectedTags.map((slug) => (
-                  <span
-                    key={slug}
-                    className="rounded-full bg-[var(--color-primary)]/15 px-2 py-0.5 text-xs text-[var(--color-primary)]"
-                  >
-                    {labelForSlug(slug)}
-                  </span>
-                ))}
-              </div>
-
-              {hasTagFilters ? (
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  {params.type === "storefront"
-                    ? "Matching at least one keyword in your towns. Preferred type and category rank first."
-                    : "Matching at least one keyword across the corridor. Preferred specialty ranks first."}
-                </p>
-              ) : (
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  {params.type === "storefront"
-                    ? `Filtered by town${typeLabel}, and category when selected. Add keywords to search more broadly.`
-                    : "Regional services across the corridor. Choose a specialty or add keywords to narrow results."}
-                </p>
-              )}
-            </div>
-
-            {fetchError ? (
-              <p className="text-sm text-red-600">{fetchError}</p>
-            ) : null}
-
-            {showResultsLoading ? (
-              <DiscoverPageLoading message="Loading results…" variant="results" />
-            ) : pending ? (
-              <DiscoverPageLoading message="Updating results…" variant="results" />
-            ) : listings.length === 0 ? (
-              <div className="space-y-2 text-[var(--color-text-secondary)]">
-                <p>
-                  No listings match these filters. Try fewer keywords
-                  {params.type === "storefront" ? ", or broaden town or category" : " or specialty"}.
-                </p>
-                {queryError ? (
-                  <p className="text-sm text-red-600">Search error: {queryError}</p>
-                ) : null}
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-4">
-                {listings.map((listing) => (
-                  <li key={listing.id} className="h-full">
-                    <DiscoverListingCard
-                      listing={listing}
-                      labelForSlug={labelForSlug}
-                      showTagMatch={hasTagFilters}
-                      showMatchReason={showMatchReason}
-                      anchorTownSlugs={anchorTownSlugs}
-                      preferredEntityType={params.type}
-                      hasCategoryPreference={hasCategoryPreference}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {totalPages > 1 ? (
-              <div className="mt-8 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  disabled={pending || params.page <= 1}
-                  onClick={() => navigate({ page: params.page - 1 })}
-                  className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-[var(--color-text-secondary)]">
-                  Page {params.page} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={pending || params.page >= totalPages}
-                  onClick={() => navigate({ page: params.page + 1 })}
-                  className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
-            ) : null}
-          </main>
-        </div>
+            <div>{resultsPanel}</div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <aside className="w-full shrink-0 space-y-5 lg:w-64">{filterControls}</aside>
+            <main className="min-w-0 flex-1">{resultsPanel}</main>
+          </div>
+        )}
       </div>
     </div>
   );
