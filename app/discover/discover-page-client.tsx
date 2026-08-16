@@ -292,6 +292,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         clearMap?: boolean;
         /** Keep town slugs in the URL as jump labels while bbox does the geo work. */
         keepTownLabels?: boolean;
+        /** Pagination should return to the top of the page. */
+        scrollToTop?: boolean;
       },
     ) => {
       const type = next.type ?? params.type;
@@ -338,6 +340,10 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         }),
         { scroll: false },
       );
+
+      if (next.scrollToTop) {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
     },
     [params, router, selectedTags, selectedTownSlugs],
   );
@@ -767,7 +773,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           <button
             type="button"
             disabled={pending || params.page <= 1}
-            onClick={() => navigate({ page: params.page - 1 })}
+            onClick={() => navigate({ page: params.page - 1, scrollToTop: true })}
             className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
           >
             Previous
@@ -778,7 +784,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           <button
             type="button"
             disabled={pending || params.page >= totalPages}
-            onClick={() => navigate({ page: params.page + 1 })}
+            onClick={() => navigate({ page: params.page + 1, scrollToTop: true })}
             className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm disabled:opacity-40"
           >
             Next
