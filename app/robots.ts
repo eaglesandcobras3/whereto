@@ -1,6 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl, canonicalSiteHostname } from "@/lib/site-url";
 
+/**
+ * AI crawlers (GPTBot, ChatGPT-User, CCBot) inherit the same allow/disallow
+ * rules as `*` so they can read public guides/towns/businesses — matching
+ * the discovery intent of `/llms.txt`. Private/utility paths stay blocked.
+ */
 export default function robots(): MetadataRoute.Robots {
   const base = getSiteUrl();
   return {
@@ -30,18 +35,6 @@ export default function robots(): MetadataRoute.Robots {
           "/reset-password",
           "/verify",
         ],
-      },
-      {
-        userAgent: "GPTBot",
-        disallow: ["/"],
-      },
-      {
-        userAgent: "ChatGPT-User",
-        disallow: ["/"],
-      },
-      {
-        userAgent: "CCBot",
-        disallow: ["/"],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

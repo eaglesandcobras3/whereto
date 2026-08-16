@@ -12,4 +12,14 @@ describe("stripLeadingH1MatchingTitle", () => {
     const md = "# Other Title\n\nBody.";
     expect(stripLeadingH1MatchingTitle(md, "Page Title")).toBe(md);
   });
+
+  it("removes a leading H1 when it matches any candidate title", () => {
+    const md = "# Does 30A Have Public Beaches?\n\nBody.";
+    expect(
+      stripLeadingH1MatchingTitle(md, [
+        "Explore Public Beaches on Florida's 30A",
+        "Does 30A Have Public Beaches?",
+      ]),
+    ).toBe("Body.");
+  });
 });
