@@ -15,7 +15,6 @@ export type RentalIndexReadinessFields = {
   sleeps?: number | null;
   booking_url?: string | null;
   content_rights_confirmed?: boolean | null;
-  is_hidden_from_search?: boolean | null;
   partner_status?: string | null;
   duplicate_of_property_id?: string | null;
 };
@@ -34,7 +33,6 @@ export function isRentalIndexReady(row: RentalIndexReadinessFields): boolean {
   if (!slug) return false;
   if (row.status !== "published") return false;
   if (row.partner_status !== "active") return false;
-  if (row.is_hidden_from_search === true) return false;
   if (row.duplicate_of_property_id) return false;
   if (!row.content_rights_confirmed) return false;
   if (!row.booking_url?.trim()) return false;
@@ -48,10 +46,8 @@ export function isRentalIndexReady(row: RentalIndexReadinessFields): boolean {
   return true;
 }
 
-export function isPublicRentalVisible(row: Pick<RentalPropertyView, "status" | "partner_status" | "is_hidden_from_search">): boolean {
-  return (
-    row.status === "published" &&
-    row.partner_status === "active" &&
-    row.is_hidden_from_search !== true
-  );
+export function isPublicRentalVisible(
+  row: Pick<RentalPropertyView, "status" | "partner_status">,
+): boolean {
+  return row.status === "published" && row.partner_status === "active";
 }

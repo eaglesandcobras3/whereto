@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import type { CategoryIrseInput } from "../inputs";
 
 /** Categories with dedicated audit-tuned metadata in hub-metadata. */
@@ -76,7 +76,6 @@ async function countCategoryListings(supabase: SupabaseClient, categoryId: strin
     .select("id", { count: "exact", head: true })
     .eq("primary_category_id", categoryId)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .is("archived_at", null);
   return count ?? 0;
 }
@@ -87,7 +86,6 @@ async function countTownCoverage(supabase: SupabaseClient, categoryId: string): 
     .select("town_id")
     .eq("primary_category_id", categoryId)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .is("archived_at", null)
     .not("town_id", "is", null)
     .limit(500);

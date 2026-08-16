@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { buildSitemapEntries, staticFallbackSitemap } from "@/lib/seo/sitemap-strategy";
 import {
   fetchSitemapCategories,
@@ -15,7 +15,7 @@ import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
 
 const SITEMAP_PAGE_SIZE = 1000;
 
-async function fetchBrowseableRows(
+async function fetchPublishedRows(
   supabase: SupabaseClient,
   table: string,
   select: string,
@@ -30,7 +30,6 @@ async function fetchBrowseableRows(
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .not("status", "eq", "archived")
       .not("status", "eq", "draft")
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);
     if (error) {
@@ -57,19 +56,19 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 
     const [towns, guides, areas, pointsOfInterest, categories, browseGroupPaths, events, rentalBundle] =
       await Promise.all([
-      fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
-      fetchSitemapGuides(supabase),
-      fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
-      fetchBrowseableRows(
-        supabase,
-        "points_of_interest",
-        "slug, date_updated, published_at, date_created",
-      ),
-      fetchSitemapCategories(supabase),
-      listNonEmptySitemapBrowseGroupPaths(supabase),
-      fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
-      fetchSitemapRentals(supabase),
-    ]);
+        fetchPublishedRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
+        fetchSitemapGuides(supabase),
+        fetchPublishedRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
+        fetchPublishedRows(
+          supabase,
+          "points_of_interest",
+          "slug, date_updated, published_at, date_created",
+        ),
+        fetchSitemapCategories(supabase),
+        listNonEmptySitemapBrowseGroupPaths(supabase),
+        fetchPublishedRows(supabase, "events", "slug, date_updated, published_at, date_created"),
+        fetchSitemapRentals(supabase),
+      ]);
 
     return buildSitemapEntries({
       base,

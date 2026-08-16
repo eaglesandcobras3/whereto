@@ -20,7 +20,6 @@ import {
   isBusinessPhotosFeatureEnabled,
 } from "@/lib/feature-flags";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getSiteUrl } from "@/lib/site-url";
@@ -127,8 +126,7 @@ export async function handleFreeOnboardListingRequest(
       .select("id, title, slug")
       .in("id", townIds)
       .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN);
+      .eq("status", DIRECTUS_PUBLISHED_STATUS);
 
     if (townErr || !towns || towns.length !== townIds.length) {
       return NextResponse.json({ error: "Choose valid towns for each location." }, { status: 400 });

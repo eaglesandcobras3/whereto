@@ -461,11 +461,21 @@ In-app editor at `/admin/guides` for markdown guides stored in `public.guides`.
 1. **New guide** — write markdown, optionally link a town, place (area), and businesses; add **guide tags** (separate vocabulary from business search tags; create new ones from the editor).
 2. **Save draft** — content is validated as markdown only.
 3. **Enrich** — generates SEO title/description, OG fields, keywords, summary, intent tags, and `custom_fields.search_profile`.
-4. **Publish** — blocked until enriched; sets `status=published` and `published_at`.
+4. **Publish** — blocked until enriched; sets `status=published`, `published_at`, and `is_hidden_from_search=false`. Published guides are always public/SEO-ready (the app ignores soft-hide for guides).
 
 Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`. Business pages prefer guides linked via `guide_businesses`, then town guides.
 
 **Town / area pages:** show published guides linked to that town (or the area’s parent town / the area itself), plus any guide tagged `all_towns`. Cards match the guides hub.
+
+---
+
+## Editorial + listing SEO visibility
+
+Published rows are always public and sitemap-eligible. The app does **not** filter on `is_hidden_from_search` for towns, areas, guides, businesses, events, or POIs. Rentals use `status=published` + active partner (plus index-readiness quality gates). Soft-hide is legacy CMS noise — archive or unpublish to remove something.
+
+### One-time CMS cleanup
+
+- [ ] Run [scripts/fix-directus-visibility.sql](../scripts/fix-directus-visibility.sql) in Supabase SQL editor to clear leftover `is_hidden_from_search=true` on towns/areas/guides/businesses/rentals.
 
 ---
 
@@ -595,6 +605,8 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-16 | Soft-hide removed for businesses/rentals too — published (+ rental partner active) means public/SEO-ready; SQL clears businesses + rentals |
+| 2026-08-16 | Published towns/areas/guides are always SEO-visible — app ignores `is_hidden_from_search` for those tables; admin/RankScore/compiler set the flag false; SQL cleanup [fix-directus-visibility.sql](../scripts/fix-directus-visibility.sql) |
 | 2026-08-16 | PostHog `discover_maps` (requires `discover`, default off): map-first storefront `/discover` with “Search this area” → `bbox`/`zoom` URL params; services stay list-only. Local bypass `DISCOVER_MAPS_ENABLED` / `NEXT_PUBLIC_DISCOVER_MAPS_ENABLED` |
 | 2026-08-16 | PostHog `category_hub_seo` (default off) gates category hub editorial/guides/rollup differentiation; FAQ block removed; sitemap/noindex for empty hubs stays always on. Local bypass `CATEGORY_HUB_SEO_ENABLED` |
 | 2026-08-16 | Category hub SEO: unique inventory-aware editorial/FAQ/guides on `/businesses/[slug]`; rollups link to leaf types; sitemap/noindex gates for empty/parent/sparse hubs; IndexNow pings priority category URLs; `llms.txt` uses canonical `/businesses` paths |

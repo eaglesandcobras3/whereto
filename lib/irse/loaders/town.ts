@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getTownFactsBySlug } from "@/lib/data/town-facts-queries";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import {
   isTemplatedTownSeoTitle,
   jaccardOverlap,
@@ -80,7 +80,6 @@ async function countTownListings(supabase: SupabaseClient, townId: string): Prom
     .select("id", { count: "exact", head: true })
     .eq("town_id", townId)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .is("archived_at", null);
   return count ?? 0;
 }
@@ -99,7 +98,6 @@ async function countTownAreas(supabase: SupabaseClient, townId: string): Promise
     .select("id", { count: "exact", head: true })
     .eq("town_id", townId)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .is("archived_at", null);
   return count ?? 0;
 }

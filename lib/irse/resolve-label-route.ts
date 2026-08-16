@@ -11,7 +11,7 @@ import {
   PRIMARY_EDITORIAL_GUIDE_PATH,
   PRIMARY_EDITORIAL_GUIDE_SLUG,
 } from "@/lib/seo/sitemap-strategy";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { parseLabelRoute, type ParsedLabelRoute } from "./parse-label-route";
 import { pathForKind } from "./paths";
 
@@ -55,21 +55,18 @@ export async function buildLabelRouteLookup(
       .select("slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .not("slug", "is", null),
     supabase
       .from("points_of_interest")
       .select("slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .not("slug", "is", null),
     supabase
       .from("business_categories")
       .select("slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .not("slug", "is", null),
   ]);
 

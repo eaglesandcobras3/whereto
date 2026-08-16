@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { weekdayLongName } from "@/lib/events/recurrence";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrl } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
@@ -57,7 +57,6 @@ async function loadEvent(slug: string): Promise<EventRow | null> {
     .eq("slug", slug)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .maybeSingle();
 
   if (error || !data) return null;

@@ -8,7 +8,7 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { guideHeroGradient } from "@/lib/guides/hero-gradient";
 import { stripLeadingH1MatchingTitle } from "@/lib/markdown/strip-duplicate-title";
 import { getPublicImageUrl, getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
@@ -51,7 +51,6 @@ async function loadGuide(slug: string) {
       .eq("slug", slug)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .maybeSingle();
     if (g) {
       const row = g as {

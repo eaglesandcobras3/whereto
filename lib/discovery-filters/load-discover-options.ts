@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import {
   BUSINESS_CATEGORY_GROUP_LABELS,
   BUSINESS_CATEGORY_GROUP_SLUGS,
@@ -50,7 +50,6 @@ export async function loadDiscoverFilterOptions(): Promise<{
     .select("id, title, slug, map_lat, map_lng")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title", { ascending: true });
 
   const vocabRes = await supabase
