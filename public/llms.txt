@@ -9,9 +9,10 @@ WhereTo30A helps visitors and locals discover what to do, where to eat, and whic
 - [Home](https://whereto30a.com/): Featured picks, search, and entry points across the corridor
 - [Beach towns](https://whereto30a.com/towns): Town guides for Rosemary Beach, Seaside, Alys Beach, WaterColor, Grayton Beach, and more
 - [Areas & districts](https://whereto30a.com/areas): Town centers, shopping districts, and gathering spots
-- [Browse by category](https://whereto30a.com/categories): Restaurants, coffee, bars, activities, shopping, and more
-- [Local businesses](https://whereto30a.com/businesses): Directory of storefront and venue listings
-- [Service providers](https://whereto30a.com/services): Regional contractors, trades, and mobile vendors
+- [Local businesses](https://whereto30a.com/businesses): Directory of storefront and venue listings by category
+- [Restaurants on 30A](https://whereto30a.com/businesses/restaurants): Eat by town along Scenic 30A
+- [Shopping on 30A](https://whereto30a.com/businesses/shopping): Boutiques, town centers, and local stores
+- [Food & drink](https://whereto30a.com/businesses/food-and-drink): Rollup into restaurants, coffee, bars, and related types
 - [Travel guides](https://whereto30a.com/guides): Editorial planning and on-the-ground advice
 
 ## Editorial guides

@@ -1,14 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { type ReactNode } from "react";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import { browseGroupIcon } from "@/lib/business-categories/group-browse-sections";
 import type { BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
 import type { BusinessCategoryGroupSlug } from "@/lib/business-categories/groups";
+import {
+  businessBrowseGroupHubPath,
+  isBusinessBrowseGroupSlug,
+} from "@/lib/business-categories/browse-group-nav";
+import {
+  isUnifiedRollupSlug,
+  unifiedRollupHubPath,
+} from "@/lib/categories/unified-browse";
 import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-section";
 import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 import { ADD_BUSINESS_HREF } from "@/lib/listing-requests/listing-field-flag";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
   placeName: string;
@@ -23,6 +33,12 @@ type Props = {
   flagEntity?: "town" | "area";
   flagEntityId?: string;
 };
+
+function sectionHubPath(slug: string): string {
+  if (isUnifiedRollupSlug(slug)) return unifiedRollupHubPath(slug);
+  if (isBusinessBrowseGroupSlug(slug)) return businessBrowseGroupHubPath(slug);
+  return `/businesses/${slug.replace(/_/g, "-")}`;
+}
 
 export function PlaceCategoryBusinessSections({
   placeName,
@@ -95,6 +111,19 @@ export function PlaceCategoryBusinessSections({
             }
             open={isOpen}
             onToggle={() => toggle(section.id)}
+            action={
+              <Link
+                href={sectionHubPath(section.slug)}
+                {...gaClickProps({
+                  event: "nav_click",
+                  category: `${analyticsCategoryPrefix}_category_hub`,
+                  label: section.slug,
+                })}
+                className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+              >
+                Full {section.title.toLowerCase()} hub
+              </Link>
+            }
           >
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {businessItems.map((business) => (
@@ -104,6 +133,7 @@ export function PlaceCategoryBusinessSections({
                     slug={business.slug}
                     excerpt={business.excerpt}
                     heroImageUrl={business.heroImageUrl}
+                    meta={placeName}
                     analyticsCategory={`${analyticsCategoryPrefix}_business`}
                     analyticsLabel={`${placeSlug}_${business.slug}`}
                   />

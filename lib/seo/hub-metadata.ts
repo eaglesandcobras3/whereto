@@ -66,6 +66,21 @@ const CATEGORY_HUB_COPY: Record<
     description:
       "Discover the best shopping on 30A, including boutiques, town centers, gifts, and local stores from Rosemary Beach to Seaside.",
   },
+  coffee_shops: {
+    titleSegment: "Coffee Shops on 30A: Morning Stops by Town",
+    description:
+      "Browse coffee shops on 30A by town — morning cups near the beach in Rosemary, Seaside, Grayton, and across South Walton.",
+  },
+  bars: {
+    titleSegment: "Bars on 30A: Drinks & Nightlife by Town",
+    description:
+      "Find bars on 30A by town — casual beach drinks, date-night spots, and evening hangs from Seaside to Grayton Beach.",
+  },
+  activities: {
+    titleSegment: "Activities on 30A: Things to Do by Town",
+    description:
+      "Browse activities on 30A by town — bikes, water sports, and rainy-day plans near where you are staying in South Walton.",
+  },
 };
 
 export function categoryHubMetadataFromAudit(
