@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { DiscoverBbox } from "@/lib/discovery-filters/discover-bbox";
 import {
   roundDiscoverCoord,
@@ -23,6 +23,10 @@ type Props = {
   initialZoom?: number;
   /** Called when the user asks to search the current map area (Google-style). */
   onSearchArea: (viewport: DiscoverMapViewport) => void;
+  /** Soft loading indicator while listings refetch. */
+  refreshing?: boolean;
+  /** Map chrome overlays (e.g. town jump) — rendered above the tile pane. */
+  children?: ReactNode;
   className?: string;
 };
 
@@ -119,6 +123,8 @@ export function DiscoverStorefrontMap({
   initialBbox,
   initialZoom,
   onSearchArea,
+  refreshing = false,
+  children,
   className = "",
 }: Props) {
   const mapId = useId().replace(/:/g, "");
@@ -193,13 +199,21 @@ export function DiscoverStorefrontMap({
 
       markersLayerRef.current = L.layerGroup().addTo(map);
 
-      if (initialBbox) {
+      if (initialBbox && initialZoom != null) {
+        map.setView(
+          L.latLng(
+            (initialBbox.south + initialBbox.north) / 2,
+            (initialBbox.west + initialBbox.east) / 2,
+          ),
+          initialZoom,
+        );
+      } else if (initialBbox) {
         map.fitBounds(
           L.latLngBounds(
             [initialBbox.south, initialBbox.west],
             [initialBbox.north, initialBbox.east],
           ),
-          { animate: false, maxZoom: initialZoom ?? 16 },
+          { animate: false, maxZoom: 16 },
         );
       }
 
@@ -236,13 +250,23 @@ export function DiscoverStorefrontMap({
     void import("leaflet").then((mod) => {
       const Leaflet = mod.default;
       if (!mapRef.current) return;
-      if (initialBbox) {
+      if (initialBbox && initialZoom != null) {
+        // Town jumps / URL restores: honor zoom so we don't undershoot via fitBounds.
+        mapRef.current.setView(
+          Leaflet.latLng(
+            (initialBbox.south + initialBbox.north) / 2,
+            (initialBbox.west + initialBbox.east) / 2,
+          ),
+          initialZoom,
+          { animate: false },
+        );
+      } else if (initialBbox) {
         mapRef.current.fitBounds(
           Leaflet.latLngBounds(
             [initialBbox.south, initialBbox.west],
             [initialBbox.north, initialBbox.east],
           ),
-          { animate: false, maxZoom: initialZoom ?? 16 },
+          { animate: false, maxZoom: 16 },
         );
       } else if (initialZoom != null) {
         mapRef.current.setZoom(initialZoom, { animate: false });
@@ -341,7 +365,29 @@ export function DiscoverStorefrontMap({
         role="img"
         aria-label="Discover map"
       />
-      {areaDirty ? (
+      {!mapReady ? (
+        <div className="pointer-events-none absolute inset-0 z-[400] flex items-center justify-center bg-[var(--color-surface-muted)]/80">
+          <span className="inline-flex items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
+            <span
+              className="inline-block size-4 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+              aria-hidden
+            />
+            Loading map…
+          </span>
+        </div>
+      ) : null}
+      {refreshing ? (
+        <div className="pointer-events-none absolute inset-x-0 top-3 z-[500] flex justify-center px-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-zinc-900/75 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur-sm">
+            <span
+              className="inline-block size-3 animate-spin rounded-full border-2 border-white/30 border-t-white"
+              aria-hidden
+            />
+            Updating pins…
+          </span>
+        </div>
+      ) : null}
+      {areaDirty && !refreshing ? (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-[500] flex justify-center px-3">
           <button
             type="button"
@@ -352,13 +398,14 @@ export function DiscoverStorefrontMap({
           </button>
         </div>
       ) : null}
-      {mappable.length === 0 ? (
+      {mapReady && mappable.length === 0 && !refreshing ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 z-[500] flex justify-center px-3">
           <span className="rounded-md bg-zinc-900/70 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur-sm">
             No mapped storefronts in these results
           </span>
         </div>
       ) : null}
+      {children}
     </div>
   );
 }

@@ -57,11 +57,11 @@ export function listingInDiscoverBbox(
 }
 
 /** Default map zoom when jumping to a single town center. */
-export const TOWN_JUMP_ZOOM_SINGLE = 14;
+export const TOWN_JUMP_ZOOM_SINGLE = 16;
 /** Default map zoom when jumping to multiple town centers. */
-export const TOWN_JUMP_ZOOM_MULTI = 12;
+export const TOWN_JUMP_ZOOM_MULTI = 14;
 /** Padding around town centers when converting a jump into a search bbox (km). */
-export const TOWN_JUMP_PADDING_KM = 2.5;
+export const TOWN_JUMP_PADDING_KM = 1.1;
 
 const EARTH_RADIUS_KM = 6371;
 

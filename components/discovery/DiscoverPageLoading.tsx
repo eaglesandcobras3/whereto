@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
+
 type DiscoverPageLoadingProps = {
   message?: string;
   /** Full page shell (route loading) vs results panel only (filter transition). */
-  variant?: "page" | "results";
+  variant?: "page" | "results" | "map";
 };
 
 function ListingRowSkeleton() {
@@ -48,6 +50,38 @@ function SidebarSkeleton() {
   );
 }
 
+function FilterBarSkeleton() {
+  return (
+    <section
+      aria-hidden
+      className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-2 lg:grid-cols-4"
+    >
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="space-y-2">
+          <div className="skeleton h-3 w-14" />
+          <div className="skeleton h-10 w-full rounded-lg" />
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function MapSkeleton() {
+  return (
+    <div
+      className="flex min-h-[28rem] items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]"
+      aria-hidden
+    >
+      <div className="flex items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
+        <span
+          className="inline-block size-4 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+        />
+        Loading map…
+      </div>
+    </div>
+  );
+}
+
 function ResultsSkeleton({ message }: { message: string }) {
   return (
     <div aria-busy="true" aria-live="polite" className="space-y-4">
@@ -69,14 +103,7 @@ function ResultsSkeleton({ message }: { message: string }) {
   );
 }
 
-export function DiscoverPageLoading({
-  message = "Loading discover…",
-  variant = "page",
-}: DiscoverPageLoadingProps) {
-  if (variant === "results") {
-    return <ResultsSkeleton message={message} />;
-  }
-
+function PageChrome({ children }: { children: ReactNode }) {
   return (
     <div
       className="min-h-screen bg-[var(--color-background)]"
@@ -90,17 +117,41 @@ export function DiscoverPageLoading({
           <div className="skeleton mt-3 h-4 w-full max-w-2xl" />
         </div>
       </div>
-
-      <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <aside className="w-full shrink-0 lg:w-64">
-            <SidebarSkeleton />
-          </aside>
-          <main className="min-w-0 flex-1">
-            <ResultsSkeleton message={message} />
-          </main>
-        </div>
-      </div>
+      <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">{children}</div>
     </div>
+  );
+}
+
+export function DiscoverPageLoading({
+  message = "Loading discover…",
+  variant = "page",
+}: DiscoverPageLoadingProps) {
+  if (variant === "results") {
+    return <ResultsSkeleton message={message} />;
+  }
+
+  if (variant === "map") {
+    return (
+      <PageChrome>
+        <div className="flex flex-col gap-6">
+          <FilterBarSkeleton />
+          <MapSkeleton />
+          <ResultsSkeleton message={message} />
+        </div>
+      </PageChrome>
+    );
+  }
+
+  return (
+    <PageChrome>
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <aside className="w-full shrink-0 lg:w-64">
+          <SidebarSkeleton />
+        </aside>
+        <main className="min-w-0 flex-1">
+          <ResultsSkeleton message={message} />
+        </main>
+      </div>
+    </PageChrome>
   );
 }

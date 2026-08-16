@@ -3,6 +3,10 @@ import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
 import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { loadDiscoverFilterOptions } from "@/lib/discovery-filters/load-discover-options";
+import {
+  getAllFeatureFlags,
+  isDiscoverMapsFeatureEnabled,
+} from "@/lib/feature-flags";
 import { DiscoverPageClient } from "./discover-page-client";
 
 export const metadata: Metadata = {
@@ -22,10 +26,21 @@ const getCachedDiscoverOptions = unstable_cache(
 );
 
 export default async function DiscoverPage() {
-  const options = await getCachedDiscoverOptions();
+  const [options, flags] = await Promise.all([
+    getCachedDiscoverOptions(),
+    getAllFeatureFlags(),
+  ]);
+  const mapsLayout = isDiscoverMapsFeatureEnabled(flags);
 
   return (
-    <Suspense fallback={<DiscoverPageLoading message="Loading discover…" />}>
+    <Suspense
+      fallback={
+        <DiscoverPageLoading
+          message="Loading discover…"
+          variant={mapsLayout ? "map" : "page"}
+        />
+      }
+    >
       <DiscoverPageClient
         towns={options.towns}
         categories={options.categories}

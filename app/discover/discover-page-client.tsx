@@ -9,6 +9,8 @@ import {
   formatDiscoverInterpretation,
 } from "@/components/discovery/DiscoverFilterInterpretation";
 import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
+import { DiscoverResultsList } from "@/components/discovery/DiscoverResultsList";
+import { DiscoverTownJumpOverlay } from "@/components/discovery/DiscoverTownJumpOverlay";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import type { DiscoverMapViewport } from "@/components/discovery/DiscoverStorefrontMap";
 import { buildDiscoverUrl, buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
@@ -48,8 +50,14 @@ const DiscoverStorefrontMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex min-h-[28rem] items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-sm text-[var(--color-text-tertiary)]">
-        Loading map…
+      <div className="relative flex min-h-[28rem] items-center justify-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+        <span className="inline-flex items-center gap-2 text-sm text-[var(--color-text-tertiary)]">
+          <span
+            className="inline-block size-4 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
+            aria-hidden
+          />
+          Loading map…
+        </span>
       </div>
     ),
   },
@@ -348,39 +356,39 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     [params, router, selectedTags, selectedTownSlugs],
   );
 
-  const setTownSlugs = (slugs: string[]) => {
-    if (mapMode) {
-      if (!slugs.length) {
-        navigate({ townSlugs: [], clearMap: true, page: 1 });
-        return;
+  const jumpToTown = useCallback(
+    (slug: string) => {
+      const town = towns.find((t) => t.slug === slug);
+      if (
+        town?.map_lat != null &&
+        town.map_lng != null &&
+        Number.isFinite(town.map_lat) &&
+        Number.isFinite(town.map_lng)
+      ) {
+        const points = [{ lat: town.map_lat, lng: town.map_lng }];
+        const bbox = bboxAroundMapPoints(points);
+        if (bbox) {
+          navigate({
+            townSlugs: [slug],
+            bbox: serializeDiscoverBbox(bbox),
+            zoom: townJumpZoom(1),
+            keepTownLabels: true,
+            page: 1,
+          });
+          return;
+        }
       }
-      const points = slugs
-        .map((slug) => towns.find((t) => t.slug === slug))
-        .filter((t): t is (typeof towns)[number] => Boolean(t))
-        .filter(
-          (t) =>
-            t.map_lat != null &&
-            t.map_lng != null &&
-            Number.isFinite(t.map_lat) &&
-            Number.isFinite(t.map_lng),
-        )
-        .map((t) => ({ lat: t.map_lat as number, lng: t.map_lng as number }));
+      // Town without a pin: fall back to classic town filter (no bbox).
+      navigate({ townSlugs: [slug], clearMap: true, page: 1 });
+    },
+    [navigate, towns],
+  );
 
-      const bbox = bboxAroundMapPoints(points);
-      if (bbox) {
-        navigate({
-          townSlugs: slugs,
-          bbox: serializeDiscoverBbox(bbox),
-          zoom: townJumpZoom(points.length),
-          keepTownLabels: true,
-          page: 1,
-        });
-        return;
-      }
-      // Towns without pins: fall back to classic town filter (no bbox).
-      navigate({ townSlugs: slugs, clearMap: true, page: 1 });
-      return;
-    }
+  const clearTownJump = useCallback(() => {
+    navigate({ townSlugs: [], clearMap: true, page: 1 });
+  }, [navigate]);
+
+  const setTownSlugs = (slugs: string[]) => {
     navigate({ townSlugs: slugs, clearMap: true, page: 1 });
   };
 
@@ -453,7 +461,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
   const total = result?.total ?? 0;
   const listings = result?.listings ?? [];
   const totalPages = result?.total_pages ?? 0;
-  const showResultsLoading = pending && !result;
+  const isInitialLoading = pending && !result;
+  const isRefreshing = pending && Boolean(result);
 
   const filterControls = (
     <>
@@ -464,7 +473,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={pending}
             onClick={() =>
               navigate({ type: "storefront", service_category: "", clearMap: false, page: 1 })
             }
@@ -478,7 +486,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           </button>
           <button
             type="button"
-            disabled={pending}
             onClick={() => navigate({ type: "service", category: "", clearMap: true, page: 1 })}
             className={`rounded-full px-3 py-1.5 text-sm font-medium ${
               params.type === "service"
@@ -496,39 +503,14 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         </p>
       </div>
 
-      {params.type === "storefront" && mapBbox ? (
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)]/50 px-3 py-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-            Map area
-          </p>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            Results follow the map bounds
-            {selectedTownSlugs.length
-              ? ` (jumped from ${selectedTownSlugs
-                  .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
-                  .join(", ")})`
-              : ""}
-            .
-          </p>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => navigate({ townSlugs: [], clearMap: true, page: 1 })}
-            className="mt-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
-          >
-            Clear map area
-          </button>
-        </div>
-      ) : null}
-
-      {params.type === "storefront" ? (
+      {params.type === "storefront" && !mapMode ? (
         <div>
           <div className="mb-2 flex items-center gap-2">
             <label
               htmlFor="discover-towns"
               className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
             >
-              {mapMode ? "Jump to town" : "Towns"}
+              Towns
             </label>
             {pending ? (
               <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
@@ -545,17 +527,12 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
             options={townOptions}
             selectedSlugs={selectedTownSlugs}
             onChange={setTownSlugs}
-            disabled={pending}
             loading={pending}
             placeholder="Type a town name…"
             emptyMessage="No towns match"
           />
           <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-            {mapMode
-              ? selectedTownSlugs.length > 1
-                ? "Map covers all selected town centers. Pan or Search this area afterward."
-                : "Picks a map area around the town center. Pan or Search this area afterward."
-              : "Active search towns appear as chips. Remove any to narrow results."}
+            Active search towns appear as chips. Remove any to narrow results.
           </p>
         </div>
       ) : null}
@@ -570,7 +547,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           </label>
           <select
             id="discover-category"
-            disabled={pending}
             value={params.category ?? ""}
             onChange={(e) =>
               navigate({
@@ -603,7 +579,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           </label>
           <select
             id="discover-service-category"
-            disabled={pending}
             value={params.service_category ?? ""}
             onChange={(e) =>
               navigate({
@@ -651,7 +626,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           options={searchTags}
           selectedSlugs={selectedTags}
           onChange={setSelectedTags}
-          disabled={pending}
           loading={pending}
           placeholder={searchTags.length ? "Type a keyword…" : "No keywords in this scope"}
           emptyMessage="No keywords match"
@@ -685,14 +659,14 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 className="inline-block size-3.5 animate-spin rounded-full border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)]"
                 aria-hidden
               />
-              Updating results…
+              {isRefreshing ? "Updating results…" : "Loading results…"}
             </span>
           ) : (
             <span>
               {total} result{total === 1 ? "" : "s"}
             </span>
           )}
-          {params.type === "storefront"
+          {params.type === "storefront" && !mapMode
             ? selectedTownSlugs.map((slug) => (
                 <span
                   key={slug}
@@ -733,10 +707,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
 
       {fetchError ? <p className="text-sm text-red-600">{fetchError}</p> : null}
 
-      {showResultsLoading ? (
+      {isInitialLoading ? (
         <DiscoverPageLoading message="Loading results…" variant="results" />
-      ) : pending ? (
-        <DiscoverPageLoading message="Updating results…" variant="results" />
       ) : listings.length === 0 ? (
         <div className="space-y-2 text-[var(--color-text-secondary)]">
           <p>
@@ -751,21 +723,21 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           {queryError ? <p className="text-sm text-red-600">Search error: {queryError}</p> : null}
         </div>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {listings.map((listing) => (
-            <li key={listing.id} className="h-full">
-              <DiscoverListingCard
-                listing={listing}
-                labelForSlug={labelForSlug}
-                showTagMatch={hasTagFilters}
-                showMatchReason={showMatchReason}
-                anchorTownSlugs={anchorTownSlugs}
-                preferredEntityType={params.type}
-                hasCategoryPreference={hasCategoryPreference}
-              />
-            </li>
-          ))}
-        </ul>
+        <DiscoverResultsList
+          listings={listings}
+          refreshing={isRefreshing}
+          renderItem={(listing) => (
+            <DiscoverListingCard
+              listing={listing}
+              labelForSlug={labelForSlug}
+              showTagMatch={hasTagFilters}
+              showMatchReason={showMatchReason}
+              anchorTownSlugs={anchorTownSlugs}
+              preferredEntityType={params.type}
+              hasCategoryPreference={hasCategoryPreference}
+            />
+          )}
+        />
       )}
 
       {totalPages > 1 ? (
@@ -804,7 +776,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-secondary)]">
             {mapMode
-              ? "Pan or zoom, then search this area. Jump to a town to frame the map — multiple towns expand the area to cover all of them. Filters sit below the map."
+              ? "Use Jump to town on the map, then pan or zoom and search this area. Filters refine what shows in the current map bounds."
               : "For storefronts, town always narrows the list. Services are corridor-wide and are not filtered by town. With keywords selected, type and category prefer matching places but won't hide others. Without keywords, type and category filter strictly."}
           </p>
         </div>
@@ -813,24 +785,32 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
       <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">
         {mapMode ? (
           <div className="flex flex-col gap-6">
+            <section
+              aria-label="Filters"
+              className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {filterControls}
+            </section>
+
             <div>
               <DiscoverStorefrontMap
                 listings={listings}
                 initialBbox={mapBbox}
                 initialZoom={params.zoom}
                 onSearchArea={searchMapArea}
-              />
+                refreshing={pending}
+              >
+                <DiscoverTownJumpOverlay
+                  towns={townOptions}
+                  activeTownSlug={selectedTownSlugs[0] ?? null}
+                  onJump={jumpToTown}
+                  onClear={clearTownJump}
+                />
+              </DiscoverStorefrontMap>
               <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
-                Pan or zoom, then search this area. Map bounds update the URL and results.
+                Jump to a town to frame the map, or pan and zoom then search this area.
               </p>
             </div>
-
-            <section
-              aria-label="Filters"
-              className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-2 lg:grid-cols-4"
-            >
-              {filterControls}
-            </section>
 
             <div>{resultsPanel}</div>
           </div>

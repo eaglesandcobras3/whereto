@@ -95,7 +95,7 @@ describe("bboxAroundMapPoints", () => {
 
 describe("townJumpZoom", () => {
   it("zooms in for a single town and out for many", () => {
-    expect(townJumpZoom(1)).toBe(14);
-    expect(townJumpZoom(3)).toBe(12);
+    expect(townJumpZoom(1)).toBe(16);
+    expect(townJumpZoom(3)).toBe(14);
   });
 });
