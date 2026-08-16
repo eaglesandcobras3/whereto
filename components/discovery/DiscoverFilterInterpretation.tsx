@@ -15,15 +15,9 @@ export function DiscoverFilterInterpretation({ nlQuery, interpretation, loading 
       aria-live="polite"
       aria-busy={loading || undefined}
     >
-      {nlQuery ? (
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          From your search
-        </p>
-      ) : (
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Active filters
-        </p>
-      )}
+      <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        From your search
+      </p>
       {nlQuery ? (
         <p className="mt-1 font-headline text-base font-semibold text-[var(--color-text-primary)]">
           &ldquo;{nlQuery}&rdquo;
