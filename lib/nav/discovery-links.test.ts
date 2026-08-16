@@ -46,6 +46,20 @@ describe("applyDiscoveryBrowseNav", () => {
     const businesses = items.find((i) => i.label === "Businesses");
     expect(businesses?.activePaths).toContain("/services");
   });
+
+  it("rewrites Businesses to /discover when discover is on", () => {
+    const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, discoverOnly);
+    const businesses = items.find((i) => i.label === "Businesses");
+    expect(businesses?.href).toBe("/discover");
+    expect(businesses?.activePaths).toContain("/discover");
+    expect(businesses?.activePaths).toContain("/businesses");
+  });
+
+  it("keeps Businesses on /businesses when discover is off", () => {
+    const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, allOff);
+    const businesses = items.find((i) => i.label === "Businesses");
+    expect(businesses?.href).toBe("/businesses");
+  });
 });
 
 describe("discoveryHref", () => {
@@ -79,12 +93,16 @@ describe("discoveryLinkRel", () => {
 });
 
 describe("showNavbarDiscoverQueryUi", () => {
-  it("is true when discover is on and ask is off", () => {
-    expect(showNavbarDiscoverQueryUi(discoverOnly)).toBe(true);
+  it("is false when discover is on but discover_nl is off", () => {
+    expect(showNavbarDiscoverQueryUi(discoverOnly)).toBe(false);
+  });
+
+  it("is true when discover_nl is on and ask is off", () => {
+    expect(showNavbarDiscoverQueryUi(discoverNlOn)).toBe(true);
   });
 
   it("is false when ask is on", () => {
-    expect(showNavbarDiscoverQueryUi({ ...discoverOnly, ask: true })).toBe(false);
+    expect(showNavbarDiscoverQueryUi({ ...discoverNlOn, ask: true })).toBe(false);
   });
 });
 
