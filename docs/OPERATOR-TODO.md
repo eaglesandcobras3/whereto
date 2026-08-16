@@ -141,6 +141,17 @@ npm run calibrate:irse -- --sample-size=100 --force-inspect
 
 ---
 
+## Category hub SEO (indexable `/businesses/[slug]`)
+
+Leaf category hubs now render inventory-aware editorial, FAQs, related guides, and town links. Empty/parent categories are omitted from the sitemap and `noindex` when below 3 listings.
+
+- [ ] In Supabase/admin, fill richer `business_categories.excerpt` for priority leaves (restaurants, shopping, coffee_shops, bars, activities, then high-traffic niches) — excerpt wins over generated copy when ≥40 chars
+- [ ] After deploy, confirm `/sitemap.xml` lists leaf hubs with inventory only (no empty parents); spot-check a thin hub has `noindex`
+- [ ] In Search Console, monitor coverage on **`/businesses/[slug]`** (legacy `/categories/*` staying excluded/noindex is expected)
+- [ ] Optional: re-run `npm run calibrate:irse -- --score-all --kinds=category` so admin badges reflect the new editorial signals
+
+---
+
 ## Cron jobs
 
 There are currently **no scheduled Vercel cron jobs**.
@@ -568,6 +579,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-16 | Category hub SEO: unique inventory-aware editorial/FAQ/guides on `/businesses/[slug]`; rollups link to leaf types; sitemap/noindex gates for empty/parent/sparse hubs; IndexNow pings priority category URLs; `llms.txt` uses canonical `/businesses` paths |
 | 2026-08-15 | Ramped cleanup: removed PostHog `seo_improvements` and its gated UI (trip planning, category editorials, related guide modules, and legacy area planning display). Archive the flag in PostHog. |
 | 2026-08-15 | Ramped cleanup: removed PostHog `town_facts` and `free_onboard` flags — town at-a-glance and `/list-your-business` + `/admin/review` are always on. Archive those flags in PostHog. |
 | 2026-08-15 | PostHog `area_facts`: area “at a glance” section below hero (DB-backed metrics, highlights, detail cards; code default **on**); SQL [area-facts.sql](../scripts/migrations/area-facts.sql) + [area-facts-seed.sql](../scripts/migrations/area-facts-seed.sql); wins over `seo_improvements` planning fallback when facts exist; IRSE area scoring uses DB facts |

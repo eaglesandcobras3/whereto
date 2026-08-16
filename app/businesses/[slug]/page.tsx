@@ -17,6 +17,7 @@ import {
 import { BUSINESS_CATEGORY_GROUP_SLUGS } from "@/lib/business-categories/groups";
 import {
   buildBrowseGroupHubMetadata,
+  listLeafLinksForBrowseGroup,
   loadBrowseGroupHubPage,
 } from "@/lib/data/browse-group-hub";
 import { BrowseGroupHubView } from "@/components/browse/BrowseGroupHubView";
@@ -30,6 +31,8 @@ import { listStorefrontMapMarkersForBusinessIds } from "@/lib/data/business-map-
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import { getGuidesForCategoryHub } from "@/lib/data/town-hub";
+import { partitionCategoryBusinessesByTown } from "@/lib/data/category-hub";
 
 export const revalidate = 21600;
 
@@ -101,16 +104,26 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
   if (rollupSlug) {
     const hub = await loadBrowseGroupHubPage(rollupSlug, "all");
     if (!hub) notFound();
-    const mapMarkers = await mapMarkersForHub(hub.businesses, rollupSlug);
-    return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
+    const [mapMarkers, leafLinks] = await Promise.all([
+      mapMarkersForHub(hub.businesses, rollupSlug),
+      listLeafLinksForBrowseGroup(rollupSlug),
+    ]);
+    return (
+      <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} leafLinks={leafLinks} />
+    );
   }
 
   const groupSlug = businessBrowseGroupFromPublicSegment(segment);
   if (groupSlug) {
     const hub = await loadBrowseGroupHubPage(groupSlug, "all");
     if (!hub) notFound();
-    const mapMarkers = await mapMarkersForHub(hub.businesses, groupSlug);
-    return <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} />;
+    const [mapMarkers, leafLinks] = await Promise.all([
+      mapMarkersForHub(hub.businesses, groupSlug),
+      listLeafLinksForBrowseGroup(groupSlug),
+    ]);
+    return (
+      <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} leafLinks={leafLinks} />
+    );
   }
 
   const categorySlug = await resolveCategorySlugFromPublicPath(segment);
@@ -120,13 +133,21 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
     const canonical = categoryHubPath(hub.cat.slug);
     const current = `/businesses/${segment}`;
     if (canonical !== current) permanentRedirect(canonical);
-    const mapMarkers = await mapMarkersForHub(hub.businesses, hub.cat.slug);
+    const { townGroups } = partitionCategoryBusinessesByTown(hub.businesses);
+    const townIds = townGroups
+      .map((g) => g.townId)
+      .filter((id): id is string => Boolean(id));
+    const [mapMarkers, guides] = await Promise.all([
+      mapMarkersForHub(hub.businesses, hub.cat.slug),
+      getGuidesForCategoryHub(townIds),
+    ]);
     return (
       <CategoryHubView
         cat={hub.cat}
         townGroups={hub.townGroups}
         businesses={hub.businesses}
         mapMarkers={mapMarkers}
+        guides={guides}
       />
     );
   }

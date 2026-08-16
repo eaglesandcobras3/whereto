@@ -6,6 +6,10 @@ import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { getSiteUrl } from "@/lib/site-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { buildSitemapEntries, staticFallbackSitemap } from "@/lib/seo/sitemap-strategy";
+import {
+  fetchSitemapCategories,
+  listNonEmptySitemapBrowseGroupPaths,
+} from "@/lib/seo/sitemap-categories";
 import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
 import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
 
@@ -51,7 +55,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       return staticFallbackSitemap(base, now);
     }
 
-    const [towns, guides, areas, pointsOfInterest, categories, events, rentalBundle] =
+    const [towns, guides, areas, pointsOfInterest, categories, browseGroupPaths, events, rentalBundle] =
       await Promise.all([
       fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
       fetchSitemapGuides(supabase),
@@ -61,11 +65,8 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
         "points_of_interest",
         "slug, date_updated, published_at, date_created",
       ),
-      fetchBrowseableRows(
-        supabase,
-        "business_categories",
-        "slug, date_updated, published_at, date_created",
-      ),
+      fetchSitemapCategories(supabase),
+      listNonEmptySitemapBrowseGroupPaths(supabase),
       fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
       fetchSitemapRentals(supabase),
     ]);
@@ -77,6 +78,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       guides,
       areas,
       categories,
+      browseGroupPaths,
       pointsOfInterest,
       events,
       rentals: rentalBundle.rentals,
