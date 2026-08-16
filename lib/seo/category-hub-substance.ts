@@ -3,8 +3,6 @@ import {
   CATEGORY_HUB_MIN_LISTINGS_FOR_INDEX,
 } from "@/lib/seo/category-hub-constants";
 
-export type CategoryHubFaq = { question: string; answer: string };
-
 export type CategoryHubInventory = {
   title: string;
   slug: string;
@@ -104,48 +102,6 @@ export function buildCategoryHubSupportingIntro(input: CategoryHubInventory): st
     return `Listings below are grouped by town (${towns}) so you can compare what is actually nearby. Regional providers without a single storefront town appear in their own section.`;
   }
   return `Browse ${lower} serving the 30A corridor. Confirm hours, pricing, and availability directly with each business before you go.`;
-}
-
-export function buildCategoryHubFaqs(input: CategoryHubInventory): CategoryHubFaq[] {
-  const lower = input.title.toLowerCase();
-  const towns = formatTownList(input.townNames);
-  const faqs: CategoryHubFaq[] = [
-    {
-      question: `How do I browse ${lower} on 30A by town?`,
-      answer: towns
-        ? `This hub groups ${input.listingCount} ${lower} by town — including ${towns}. Expand a town section to see storefronts there, or use the town link for beach access and local context.`
-        : `This hub lists ${input.listingCount} ${lower} serving Scenic Highway 30A. When storefront towns are tagged, they appear in By town sections; otherwise check Regional & by appointment.`,
-    },
-    {
-      question: `Are these ${lower} only in one 30A town?`,
-      answer:
-        input.townNames.length >= 2
-          ? `No — coverage currently spans ${input.townNames.length} towns${
-              input.regionalCount > 0 ? ` plus ${input.regionalCount} regional providers` : ""
-            }. Start with the town you are staying in, then widen out if you want more options.`
-          : input.townNames.length === 1
-            ? `Most tagged storefronts here are in ${input.townNames[0]}${
-                input.regionalCount > 0
-                  ? `, with ${input.regionalCount} additional regional providers`
-                  : ""
-              }. Open the town page for a fuller picture of that community.`
-            : `Many of these ${lower} serve the corridor regionally or by appointment rather than a single beach-town storefront.`,
-    },
-  ];
-
-  if (input.regionalCount > 0) {
-    faqs.push({
-      question: `What does “regional & by appointment” mean for ${lower}?`,
-      answer: `${input.regionalCount} providers on this hub serve South Walton without a single mapped storefront town — mobile, remote, or appointment-based. Confirm service area and scheduling directly with them.`,
-    });
-  } else {
-    faqs.push({
-      question: `Should I confirm details before visiting?`,
-      answer: `Yes. Hours, reservations, and seasonal changes are common on 30A. Use each listing for orientation, then confirm with the business before you go.`,
-    });
-  }
-
-  return faqs;
 }
 
 /** Unique meta description from inventory (audit overrides still win upstream). */

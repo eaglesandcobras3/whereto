@@ -17,6 +17,7 @@ import {
   isBusinessMapsEnabled,
   isTownMapsEnabled,
   isFeedbackEnabled,
+  isCategoryHubSeoEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 import { getAllFeatureFlagsFromCookieHeader } from "@/lib/feature-flags-resolve";
@@ -39,6 +40,7 @@ export {
   isBusinessMapsEnabled,
   isTownMapsEnabled,
   isFeedbackEnabled,
+  isCategoryHubSeoEnabled,
   resolveFeatureFlags,
   toDiscoveryFlags,
   type DiscoveryFlags,
@@ -159,6 +161,17 @@ export function feedbackDevBypassEnabled(): boolean {
 
 export function isFeedbackFeatureEnabled(flags: FeatureFlags): boolean {
   return isFeedbackEnabled(flags) || feedbackDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `category_hub_seo` flag still required in production. */
+export function categoryHubSeoDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" && process.env.CATEGORY_HUB_SEO_ENABLED === "1"
+  );
+}
+
+export function isCategoryHubSeoFeatureEnabled(flags: FeatureFlags): boolean {
+  return isCategoryHubSeoEnabled(flags) || categoryHubSeoDevBypassEnabled();
 }
 
 export function isDiscoverFeatureEnabled(flags: FeatureFlags): boolean {
