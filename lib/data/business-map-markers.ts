@@ -5,7 +5,6 @@ import type { PublicPlacePage } from "@/lib/data/public-place-by-slug";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
@@ -96,7 +95,6 @@ function storefrontBrowseQuery() {
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_storefront", true)
     .eq("is_explorable", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .not("map_lat", "is", null)
     .not("map_lng", "is", null);
 }

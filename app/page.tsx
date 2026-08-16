@@ -7,9 +7,8 @@ import type { BusinessPayload } from "@/lib/search/types";
 import { getHomeHeroSettings } from "@/lib/data/site-settings";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
-  applyFeaturedListingPoolFilters,
+  FEATURED_HAS_IMAGE_OR,
   filterFeaturedListingPool,
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
@@ -55,7 +54,6 @@ export default async function Home() {
     .select("id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, status, sort")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("is_featured_destination", { ascending: false, nullsFirst: true })
     .order("featured", { ascending: false, nullsFirst: true })
     .order("sort", { ascending: true, nullsFirst: false })
@@ -99,16 +97,15 @@ export default async function Home() {
     badge?: string | null;
   })[] = [];
 
-  const { data: businessRows, error: bizErr } = await applyFeaturedListingPoolFilters(
-    supabase
-      .from("businesses_view")
-      .select(
-        "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated",
-      )
-      .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN),
-  )
+  const { data: businessRows, error: bizErr } = await supabase
+    .from("businesses_view")
+    .select(
+      "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated",
+    )
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .eq("is_service_business", false)
+    .or(FEATURED_HAS_IMAGE_OR)
     .order("sort", { ascending: true, nullsFirst: false })
     .order("title", { ascending: true })
     .order("id", { ascending: true })

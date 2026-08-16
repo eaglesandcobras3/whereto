@@ -2,7 +2,6 @@ import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import {
@@ -40,7 +39,6 @@ export async function getListedServiceBrowseGroups(): Promise<ListedServiceBrows
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_service_business", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(5000);
 
   if (error) {

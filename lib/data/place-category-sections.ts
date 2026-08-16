@@ -2,7 +2,6 @@ import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import type { BrowseBusinessCard } from "@/lib/data/business-browse-cards";
@@ -141,7 +140,6 @@ export async function getCategorySectionsForPublicPlace(
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .eq("is_storefront", true)
       .eq("is_explorable", true)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (place.source === "area") {
     const { data: byColumn } = await browseQuery().eq("area_id", place.id).limit(cap);

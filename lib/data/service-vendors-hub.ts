@@ -9,7 +9,7 @@ import {
   type ServiceCategoryGroupSlug,
 } from "@/lib/service-categories/groups";
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import {
   SERVICE_UNCATEGORIZED_SECTION_ID,
   SERVICE_UNCATEGORIZED_TITLE,
@@ -66,7 +66,6 @@ function vendorBaseQuery() {
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_service_business", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
 }
 
 function mapVendorRow(row: Record<string, unknown>): ServiceVendorRow {
@@ -109,7 +108,6 @@ export async function listServiceCategories(): Promise<ServiceCategoryRow[]> {
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_service_business", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const counts = new Map<string, number>();
   for (const row of vendors ?? []) {
@@ -210,7 +208,6 @@ export async function countServiceVendors(): Promise<number> {
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_service_business", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
   if (error) {
     console.error("service vendors hub: count query", error);
     return 0;
@@ -255,7 +252,6 @@ export async function countUncategorizedServiceVendors(): Promise<number> {
     .eq("is_service_business", true)
     .is("primary_category_id", null)
     .is("service_category_id", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
   if (error) {
     console.error("uncategorized service vendors: count", error);
     return 0;

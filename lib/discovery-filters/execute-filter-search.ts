@@ -2,7 +2,7 @@ import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
 import { discoverTownFilterApplies } from "@/lib/discovery-filters/discover-town-filter";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
@@ -160,7 +160,6 @@ export async function executeFilterSearch(
     })
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const useBbox = state.entity_type === "storefront" && Boolean(state.bbox);
   const townFilterApplies =

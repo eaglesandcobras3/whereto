@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { FREE_ONBOARD_OVERVIEW_MAX } from "@/lib/listing-requests/free-onboard-schema";
@@ -26,7 +25,6 @@ export async function GET(request: NextRequest) {
     .eq("slug", slug)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .maybeSingle();
 
   if (error) {

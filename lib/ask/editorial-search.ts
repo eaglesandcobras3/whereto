@@ -1,9 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
-  DIRECTUS_PUBLISHED_STATUS,
-} from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export async function editorialTextSearch<T>(opts: {
   supabase: SupabaseClient;
@@ -23,7 +20,6 @@ export async function editorialTextSearch<T>(opts: {
     .select(opts.select)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .is("archived_at", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .textSearch("search_vector", q.split(/\s+/).join(" & "), {
       type: "websearch",
       config: "english",
@@ -41,7 +37,6 @@ export async function editorialTextSearch<T>(opts: {
     .select(opts.select)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .is("archived_at", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .or(orParts.join(","))
     .limit(limit);
 

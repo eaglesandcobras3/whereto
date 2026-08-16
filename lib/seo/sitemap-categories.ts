@@ -7,7 +7,7 @@ import {
   browseSectionForCategorySlug,
   unifiedRollupFromPublicSegment,
 } from "@/lib/categories/unified-browse";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isCategoryEligibleForSitemap } from "@/lib/seo/sitemap-category-eligibility";
 import { listSitemapBrowseGroupPaths } from "@/lib/seo/sitemap-strategy";
 
@@ -30,7 +30,6 @@ export async function fetchSitemapCategories(
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .not("status", "eq", "archived")
       .not("status", "eq", "draft")
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
@@ -51,7 +50,6 @@ export async function fetchSitemapCategories(
       .select("primary_category_id")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .not("primary_category_id", "is", null)
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
@@ -95,7 +93,6 @@ async function listCategorySlugsWithListings(supabase: SupabaseClient): Promise<
       .select("id, slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
@@ -118,7 +115,6 @@ async function listCategorySlugsWithListings(supabase: SupabaseClient): Promise<
       .select("primary_category_id")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .not("primary_category_id", "is", null)
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);

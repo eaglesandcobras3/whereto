@@ -3,7 +3,6 @@ import "server-only";
 import { buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { BROWSE_NAV_ITEMS, type BrowseNavItem } from "@/lib/nav/browse-links";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 
 /**
  * True when at least one `points_of_interest` row passes archive + hide-from-search rules (type=access).
@@ -16,7 +15,6 @@ export async function hasPointOfInterestAreas(): Promise<boolean> {
       .from("points_of_interest")
       .select("id", { count: "exact", head: true })
       .is("archived_at", null)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN);
     if (error) return false;
     return (count ?? 0) > 0;
   } catch {

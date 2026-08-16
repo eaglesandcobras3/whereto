@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { businessCategoryGroupForSlug } from "@/lib/business-categories/groups";
 import { serviceCategoryGroupForSlug } from "@/lib/service-categories/groups";
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
@@ -68,7 +68,6 @@ export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<Dis
     .select("id, search_tags, business_categories ( slug ), service_categories ( slug )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(SCOPED_TAG_POOL_LIMIT);
 
   if (scope.entity_type === "service") {

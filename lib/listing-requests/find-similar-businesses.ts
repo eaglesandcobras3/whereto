@@ -4,7 +4,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { distanceMeters, nameSimilarity } from "@/lib/admin/duplicate-detection";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 
@@ -35,7 +34,6 @@ export async function findSimilarBusinessesForListingRequest(
     .eq("town_id", params.townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(500);
 
   if (error) throw error;

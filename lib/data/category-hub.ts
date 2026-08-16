@@ -9,7 +9,7 @@ import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category
 import {
   categoryDbSlugCandidatesFromPublicPath,
 } from "@/lib/routes/category-hub-path";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { sortBrowseBusinesses } from "@/lib/data/place-category-shared";
 import {
@@ -90,7 +90,6 @@ export async function listPublishedCategorySlugs(): Promise<string[]> {
       .select("slug, parent_category_id")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN);
     return (data ?? [])
       .filter((r) => (r as { parent_category_id?: string | null }).parent_category_id)
       .map((r) => String((r as { slug: string }).slug))
@@ -107,7 +106,6 @@ export async function loadCategory(slug: string): Promise<CategoryRow | null> {
     .select("id, title, slug, excerpt")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .eq("slug", slug)
     .maybeSingle();
   if (!data) return null;
@@ -138,7 +136,6 @@ export async function loadBusinessesForCategory(
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .eq("primary_category_id", categoryId)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
@@ -254,7 +251,6 @@ export async function countCategoryHubBusinesses(
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
   query = applyPresenceFilter(query, presence);
 
   const { count, error } = await query;
@@ -276,7 +272,6 @@ export async function getCategoryHubSections(
     .select(CATEGORY_HUB_BUSINESS_SELECT)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(CATEGORY_HUB_BUSINESS_POOL_LIMIT);
