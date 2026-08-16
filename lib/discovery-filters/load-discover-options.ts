@@ -16,6 +16,9 @@ export type DiscoverTownOption = {
   id: string;
   name: string;
   slug: string;
+  /** Town center for map jump-to (optional until pin is filled). */
+  map_lat: number | null;
+  map_lng: number | null;
 };
 
 export type DiscoverCategoryOption = {
@@ -44,7 +47,7 @@ export async function loadDiscoverFilterOptions(): Promise<{
 
   const townsRes = await supabase
     .from("towns")
-    .select("id, title, slug")
+    .select("id, title, slug, map_lat, map_lng")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN)
@@ -57,8 +60,22 @@ export async function loadDiscoverFilterOptions(): Promise<{
 
   return {
     towns: (townsRes.data ?? []).map((r) => {
-      const row = r as { id: string; title: string; slug: string };
-      return { id: row.id, name: row.title, slug: row.slug };
+      const row = r as {
+        id: string;
+        title: string;
+        slug: string;
+        map_lat?: number | null;
+        map_lng?: number | null;
+      };
+      const lat = typeof row.map_lat === "number" && Number.isFinite(row.map_lat) ? row.map_lat : null;
+      const lng = typeof row.map_lng === "number" && Number.isFinite(row.map_lng) ? row.map_lng : null;
+      return {
+        id: row.id,
+        name: row.title,
+        slug: row.slug,
+        map_lat: lat,
+        map_lng: lng,
+      };
     }),
     categories: BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => ({
       slug,

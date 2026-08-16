@@ -17,6 +17,8 @@ import {
   parseDiscoverBbox,
   parseDiscoverZoom,
   serializeDiscoverBbox,
+  bboxAroundMapPoints,
+  townJumpZoom,
 } from "@/lib/discovery-filters/discover-bbox";
 import {
   fetchDiscoverFilter,
@@ -288,6 +290,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         tags?: string[];
         page?: number;
         clearMap?: boolean;
+        /** Keep town slugs in the URL as jump labels while bbox does the geo work. */
+        keepTownLabels?: boolean;
       },
     ) => {
       const type = next.type ?? params.type;
@@ -310,11 +314,13 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         : "zoom" in next
           ? next.zoom
           : params.zoom;
+      const urlTownSlugs =
+        nextBbox && !next.keepTownLabels ? [] : townSlugs;
 
       router.replace(
         buildDiscoverUrl({
           type,
-          townSlugs: nextBbox ? [] : townSlugs,
+          townSlugs: urlTownSlugs,
           townScope:
             serviceMode ||
             nextBbox ||
@@ -337,6 +343,38 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
   );
 
   const setTownSlugs = (slugs: string[]) => {
+    if (mapMode) {
+      if (!slugs.length) {
+        navigate({ townSlugs: [], clearMap: true, page: 1 });
+        return;
+      }
+      const points = slugs
+        .map((slug) => towns.find((t) => t.slug === slug))
+        .filter((t): t is (typeof towns)[number] => Boolean(t))
+        .filter(
+          (t) =>
+            t.map_lat != null &&
+            t.map_lng != null &&
+            Number.isFinite(t.map_lat) &&
+            Number.isFinite(t.map_lng),
+        )
+        .map((t) => ({ lat: t.map_lat as number, lng: t.map_lng as number }));
+
+      const bbox = bboxAroundMapPoints(points);
+      if (bbox) {
+        navigate({
+          townSlugs: slugs,
+          bbox: serializeDiscoverBbox(bbox),
+          zoom: townJumpZoom(points.length),
+          keepTownLabels: true,
+          page: 1,
+        });
+        return;
+      }
+      // Towns without pins: fall back to classic town filter (no bbox).
+      navigate({ townSlugs: slugs, clearMap: true, page: 1 });
+      return;
+    }
     navigate({ townSlugs: slugs, clearMap: true, page: 1 });
   };
 
@@ -477,12 +515,18 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                   Map area
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                  Results are limited to the current map bounds.
+                  Results follow the map bounds
+                  {selectedTownSlugs.length
+                    ? ` (jumped from ${selectedTownSlugs
+                        .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
+                        .join(", ")})`
+                    : ""}
+                  .
                 </p>
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => navigate({ clearMap: true, page: 1 })}
+                  onClick={() => navigate({ townSlugs: [], clearMap: true, page: 1 })}
                   className="mt-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
                   Clear map area
@@ -490,14 +534,14 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
               </div>
             ) : null}
 
-            {params.type === "storefront" && !mapBbox ? (
+            {params.type === "storefront" ? (
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <label
                   htmlFor="discover-towns"
                   className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
                 >
-                  Towns
+                  {mapMode ? "Jump to town" : "Towns"}
                 </label>
                 {pending ? (
                   <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
@@ -520,7 +564,9 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 emptyMessage="No towns match"
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
-                Active search towns appear as chips. Remove any to narrow results.
+                {mapMode
+                  ? "Picks a map area around the town center. Pan or Search this area afterward."
+                  : "Active search towns appear as chips. Remove any to narrow results."}
               </p>
             </div>
             ) : null}

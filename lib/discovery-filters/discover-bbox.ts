@@ -55,3 +55,63 @@ export function listingInDiscoverBbox(
   }
   return lat >= bbox.south && lat <= bbox.north && lng >= bbox.west && lng <= bbox.east;
 }
+
+/** Default map zoom when jumping to a single town center. */
+export const TOWN_JUMP_ZOOM_SINGLE = 14;
+/** Default map zoom when jumping to multiple town centers. */
+export const TOWN_JUMP_ZOOM_MULTI = 12;
+/** Padding around town centers when converting a jump into a search bbox (km). */
+export const TOWN_JUMP_PADDING_KM = 2.5;
+
+const EARTH_RADIUS_KM = 6371;
+
+function kmToLatDegrees(km: number): number {
+  return (km / EARTH_RADIUS_KM) * (180 / Math.PI);
+}
+
+function kmToLngDegrees(km: number, atLat: number): number {
+  const cos = Math.cos((atLat * Math.PI) / 180);
+  if (Math.abs(cos) < 1e-6) return kmToLatDegrees(km);
+  return kmToLatDegrees(km) / cos;
+}
+
+/**
+ * Build a search bbox around one or more map points (town centers).
+ * Used so town selection in map mode jumps the viewport instead of town_id filtering.
+ */
+export function bboxAroundMapPoints(
+  points: ReadonlyArray<{ lat: number; lng: number }>,
+  paddingKm: number = TOWN_JUMP_PADDING_KM,
+): DiscoverBbox | null {
+  const valid = points.filter(
+    (p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.lat >= -90 && p.lat <= 90,
+  );
+  if (!valid.length || !(paddingKm > 0)) return null;
+
+  let south = Infinity;
+  let north = -Infinity;
+  let west = Infinity;
+  let east = -Infinity;
+
+  for (const p of valid) {
+    const dLat = kmToLatDegrees(paddingKm);
+    const dLng = kmToLngDegrees(paddingKm, p.lat);
+    south = Math.min(south, p.lat - dLat);
+    north = Math.max(north, p.lat + dLat);
+    west = Math.min(west, p.lng - dLng);
+    east = Math.max(east, p.lng + dLng);
+  }
+
+  if (!(south < north) || !(west < east)) return null;
+
+  return {
+    south: roundDiscoverCoord(Math.max(-90, south)),
+    west: roundDiscoverCoord(Math.max(-180, west)),
+    north: roundDiscoverCoord(Math.min(90, north)),
+    east: roundDiscoverCoord(Math.min(180, east)),
+  };
+}
+
+export function townJumpZoom(pointCount: number): number {
+  return pointCount > 1 ? TOWN_JUMP_ZOOM_MULTI : TOWN_JUMP_ZOOM_SINGLE;
+}
