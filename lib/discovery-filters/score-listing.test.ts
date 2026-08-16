@@ -152,4 +152,50 @@ describe("scoreDiscoverListing", () => {
     expect(restaurantScore.score).toBeGreaterThan(boutiqueScore.score);
     expect(marketScore.score).toBeGreaterThan(boutiqueScore.score);
   });
+
+  it("matches keywords against category/specialty when the listing has no matching search tag", () => {
+    const landscaper = {
+      is_storefront: false,
+      is_service_business: true,
+      search_tags: [],
+      business_categories: null,
+      service_categories: { slug: "landscaping" },
+    };
+    const coffeeShop = {
+      ...baseRow,
+      search_tags: [],
+      business_categories: { slug: "coffee_shops" },
+    };
+
+    const bySpecialty = scoreDiscoverListing(
+      landscaper,
+      state({ entity_type: "service", tags: ["landscaping"] }),
+      undefined,
+      undefined,
+    );
+    const byStorefrontLeaf = scoreDiscoverListing(
+      coffeeShop,
+      state({ tags: ["coffee_shops"] }),
+      undefined,
+      undefined,
+    );
+    const byStorefrontGroup = scoreDiscoverListing(
+      coffeeShop,
+      state({ tags: ["coffee_and_treats"] }),
+      undefined,
+      undefined,
+    );
+    const miss = scoreDiscoverListing(
+      landscaper,
+      state({ entity_type: "service", tags: ["plumbing"] }),
+      undefined,
+      undefined,
+    );
+
+    expect(bySpecialty.passes).toBe(true);
+    expect(bySpecialty.tag_match.matched).toEqual(["landscaping"]);
+    expect(byStorefrontLeaf.passes).toBe(true);
+    expect(byStorefrontGroup.passes).toBe(true);
+    expect(miss.passes).toBe(false);
+  });
 });

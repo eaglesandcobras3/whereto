@@ -68,6 +68,34 @@ function rowMatchesCategory(
   return true;
 }
 
+/**
+ * Slugs a keyword may match against for a listing.
+ * Includes search_tags plus category/specialty leaf + rollup group slugs so a
+ * category-shaped keyword (e.g. landscaping) still hits listings that only
+ * carry that as a category — without putting categories in the keyword typeahead.
+ */
+export function listingKeywordMatchSlugs(row: PoolRow): string[] {
+  const slugs = new Set<string>(normalizeSearchTags(row.search_tags));
+
+  const cat = row.business_categories as { slug?: string } | null;
+  const catSlug = cat?.slug?.trim().toLowerCase();
+  if (catSlug) {
+    slugs.add(catSlug);
+    const group = businessCategoryGroupForSlug(catSlug);
+    if (group) slugs.add(group);
+  }
+
+  const svc = row.service_categories as { slug?: string } | null;
+  const svcSlug = svc?.slug?.trim().toLowerCase();
+  if (svcSlug) {
+    slugs.add(svcSlug);
+    const group = serviceCategoryGroupForSlug(svcSlug as ServiceCategorySlug);
+    if (group) slugs.add(group);
+  }
+
+  return [...slugs];
+}
+
 const CUISINE_PREFERRED_GROUP_SET = new Set<string>(CUISINE_PREFERRED_STOREFRONT_GROUPS);
 
 export function scoreDiscoverListing(
@@ -76,7 +104,7 @@ export function scoreDiscoverListing(
   storefrontGroup: string | undefined,
   serviceGroup: string | undefined,
 ): DiscoverListingScore {
-  const tag_match = analyzeTagMatch(normalizeSearchTags(row.search_tags), state.tags);
+  const tag_match = analyzeTagMatch(listingKeywordMatchSlugs(row), state.tags);
   const hasTags = state.tags.length > 0;
   const entity_type_match = rowMatchesEntityType(row, state.entity_type);
   const category_match = rowMatchesCategory(
