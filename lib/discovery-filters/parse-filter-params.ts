@@ -1,3 +1,4 @@
+import { parseDiscoverBbox, parseDiscoverZoom } from "@/lib/discovery-filters/discover-bbox";
 import { parseTagSlugsFromParam } from "@/lib/discovery-filters/parse-tag-params";
 import {
   normalizeServiceCategoryGroupSlug,
@@ -20,6 +21,8 @@ export type RawDiscoverParams = {
   /** @deprecated Merged into `facet` — still read for old bookmarks. */
   facet_any?: string | null;
   q?: string | null;
+  bbox?: string | null;
+  zoom?: string | null;
   page?: string | null;
   page_size?: string | null;
 };
@@ -56,6 +59,10 @@ export function parseDiscoveryFilterState(
   const town_ids = resolvedTownIds ?? [];
 
   const q = params.q?.trim() || undefined;
+  const bbox =
+    entity_type === "storefront" ? parseDiscoverBbox(params.bbox) ?? undefined : undefined;
+  const zoom =
+    entity_type === "storefront" ? parseDiscoverZoom(params.zoom) : undefined;
 
   return discoveryFilterStateSchema.parse({
     entity_type,
@@ -65,6 +72,8 @@ export function parseDiscoveryFilterState(
     service_category_slug,
     tags,
     q,
+    bbox,
+    zoom,
     page,
     page_size,
   });

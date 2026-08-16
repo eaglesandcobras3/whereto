@@ -5,6 +5,8 @@ import {
   DEFAULT_FLAGS,
   isAskEnabled,
   isDiscoverEnabled,
+  isDiscoverNlEnabled,
+  isDiscoverMapsEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
@@ -28,6 +30,7 @@ export {
   isAskEnabled,
   isDiscoverEnabled,
   isDiscoverNlEnabled,
+  isDiscoverMapsEnabled,
   isSearchEnabled,
   isSearchInspectorEnabled,
   isOnboardEnabled,
@@ -152,6 +155,15 @@ export function townMapsDevBypassEnabled(): boolean {
 
 export function isTownMapsFeatureEnabled(flags: FeatureFlags): boolean {
   return isTownMapsEnabled(flags) || townMapsDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `discover_maps` flag still required in production. */
+export function discoverMapsDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.DISCOVER_MAPS_ENABLED === "1";
+}
+
+export function isDiscoverMapsFeatureEnabled(flags: FeatureFlags): boolean {
+  return isDiscoverMapsEnabled(flags) || discoverMapsDevBypassEnabled();
 }
 
 /** Local dev escape hatch — PostHog `feedback` flag still required in production. */

@@ -358,6 +358,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
 | `town_maps` | OpenStreetMap of place pins (`map_lat`/`map_lng`) on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
+| `discover_maps` | Map-first `/discover` UI for **storefront** only (pan/zoom + “Search this area” writes `bbox`/`zoom` URL params); requires `discover`; services stay list-only; code default **off** |
 | `feedback` | Visitor “is this wrong?” field flags on unverified business / rental detail pages (admin review queue); code default **off** |
 
 Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development only).
@@ -382,6 +383,12 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Local dev (optional): `TOWN_MAPS_ENABLED=1` and `NEXT_PUBLIC_TOWN_MAPS_ENABLED=1`
 - [ ] Fill remaining town/area pins in Directus/admin via **`map_lat` / `map_lng`** (same fields as businesses/rentals) — do not use legacy `center_lat` / `latitude_center`
 - [ ] Smoke-test: `/towns` and `/areas` show interactive maps above cards when `town_maps` is on; pin popups link to town/area pages
+
+### Discover maps setup
+
+- [ ] PostHog: create boolean flag `discover_maps` (default false); enable only with `discover` for internal cohort then gradual rollout
+- [ ] Local dev (optional): `DISCOVER_MAPS_ENABLED=1` and `NEXT_PUBLIC_DISCOVER_MAPS_ENABLED=1`
+- [ ] Smoke-test: `/discover` storefront mode shows map; pan/zoom → **Search this area** updates `bbox`/`zoom` in the URL and refreshes results; Services mode has no map
 
 ### Business photos setup
 
@@ -588,6 +595,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-16 | PostHog `discover_maps` (requires `discover`, default off): map-first storefront `/discover` with “Search this area” → `bbox`/`zoom` URL params; services stay list-only. Local bypass `DISCOVER_MAPS_ENABLED` / `NEXT_PUBLIC_DISCOVER_MAPS_ENABLED` |
 | 2026-08-16 | PostHog `category_hub_seo` (default off) gates category hub editorial/guides/rollup differentiation; FAQ block removed; sitemap/noindex for empty hubs stays always on. Local bypass `CATEGORY_HUB_SEO_ENABLED` |
 | 2026-08-16 | Category hub SEO: unique inventory-aware editorial/FAQ/guides on `/businesses/[slug]`; rollups link to leaf types; sitemap/noindex gates for empty/parent/sparse hubs; IndexNow pings priority category URLs; `llms.txt` uses canonical `/businesses` paths |
 | 2026-08-15 | Ramped cleanup: removed PostHog `seo_improvements` and its gated UI (trip planning, category editorials, related guide modules, and legacy area planning display). Archive the flag in PostHog. |
