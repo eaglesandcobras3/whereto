@@ -8,6 +8,7 @@ export const FEATURE_FLAG_KEYS = [
   "search",
   "discover",
   "discover_nl",
+  "discover_maps",
   "ask",
   "search_inspector",
   "onboard",
@@ -30,6 +31,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   search: false,
   discover: false,
   discover_nl: false,
+  discover_maps: false,
   ask: false,
   search_inspector: false,
   onboard: false,
@@ -89,6 +91,11 @@ export function isDiscoverEnabled(flags: FeatureFlags): boolean {
 /** Natural-language query expansion for `/discover` (requires `discover`). */
 export function isDiscoverNlEnabled(flags: FeatureFlags): boolean {
   return flags.discover === true && flags.discover_nl === true;
+}
+
+/** Map-first storefront discover UI (requires `discover`). Services stay list-only. */
+export function isDiscoverMapsEnabled(flags: FeatureFlags): boolean {
+  return flags.discover === true && flags.discover_maps === true;
 }
 
 export function isSearchInspectorEnabled(flags: FeatureFlags): boolean {

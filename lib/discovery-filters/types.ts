@@ -17,6 +17,8 @@ export type DiscoverListingRow = {
   service_category_slug: string | null;
   business_type: string | null;
   search_tags: string[];
+  map_lat: number | null;
+  map_lng: number | null;
   tag_match?: DiscoverTagMatch;
   scope_match?: DiscoverListingScopeMatch;
 };

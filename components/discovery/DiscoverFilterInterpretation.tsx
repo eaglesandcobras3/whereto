@@ -37,7 +37,7 @@ export function DiscoverFilterInterpretation({ nlQuery, interpretation, loading 
         )}
       </p>
       <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
-        Filters in the sidebar match this search. Remove towns, tags, or categories to narrow
+        Filters in the sidebar match this search. Remove towns, keywords, or categories to narrow
         results.
       </p>
     </section>

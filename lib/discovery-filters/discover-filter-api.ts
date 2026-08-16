@@ -19,7 +19,10 @@ export type DiscoverFilterApiParams = {
   facet?: string;
   facet_any?: string;
   q?: string;
+  bbox?: string;
+  zoom?: string;
   page?: string;
+  page_size?: string;
 };
 
 /** Build `/api/discovery/filter` query string from URL-style discover params. */

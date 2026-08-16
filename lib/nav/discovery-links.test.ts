@@ -17,6 +17,7 @@ const discoverOnly: FeatureFlags = {
   search: false,
   discover: true,
   discover_nl: false,
+  discover_maps: false,
   search_inspector: false,
   onboard: false,
   community_tips: false,
