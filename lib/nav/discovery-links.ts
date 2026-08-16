@@ -39,9 +39,13 @@ export function showNavbarDiscoverUi(flags: FeatureFlags): boolean {
   return isDiscoverEnabled(flags);
 }
 
-/** Expandable navbar query panel when filter-first `/discover` is the primary discovery product. */
+/**
+ * Expandable navbar natural-language query panel.
+ * Gated by PostHog `discover_nl` (requires `discover`), not by `discover` alone.
+ */
 export function showNavbarDiscoverQueryUi(flags: FeatureFlags): boolean {
-  return showNavbarDiscoverUi(flags);
+  if (isAskEnabled(flags)) return false;
+  return isDiscoverNlFeatureEnabled(flags);
 }
 
 export function showNavbarAskUi(flags: DiscoveryFlags): boolean {
@@ -119,12 +123,26 @@ export function discoveryLinkRel(href: string): "nofollow" | undefined {
 
 export function applyDiscoveryBrowseNav(
   items: BrowseNavItem[],
-  flags: DiscoveryFlags,
+  flags: DiscoveryFlags | FeatureFlags,
 ): BrowseNavItem[] {
-  if (!isAskEnabled(flags)) return items;
+  const discoverOn =
+    "discover" in flags && isDiscoverEnabled(flags as FeatureFlags);
+  const askOn = isAskEnabled(flags);
+
+  if (!discoverOn && !askOn) return items;
 
   return items.map((item) => {
-    if (!item.href.startsWith("/search")) return item;
+    if (discoverOn && item.href === "/businesses") {
+      return {
+        ...item,
+        href: discoverHref(flags as FeatureFlags),
+        activePaths: Array.from(
+          new Set([...(item.activePaths ?? []), "/discover"]),
+        ),
+      };
+    }
+
+    if (!askOn || !item.href.startsWith("/search")) return item;
     try {
       const url = new URL(item.href, "http://local");
       const type = url.searchParams.get("type") ?? undefined;
