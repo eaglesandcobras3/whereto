@@ -14,7 +14,6 @@ describe("isBusinessIndexReady", () => {
     hero_image_url: "https://cdn.example.com/hero.jpg",
     primary_category_id: "cat-1",
     town_id: "town-1",
-    is_hidden_from_search: false,
   };
 
   it("returns true when all fields are present", () => {
@@ -23,10 +22,6 @@ describe("isBusinessIndexReady", () => {
 
   it("returns false when text is too short", () => {
     expect(isBusinessIndexReady({ ...ready, excerpt: "short", content: null })).toBe(false);
-  });
-
-  it("returns false when hidden from search", () => {
-    expect(isBusinessIndexReady({ ...ready, is_hidden_from_search: true })).toBe(false);
   });
 
   it("returns false without slug", () => {

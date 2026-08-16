@@ -8,7 +8,7 @@ import {
   seoTitleSegmentForLayout,
 } from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
   BUSINESS_CATEGORY_GROUP_LABELS,
@@ -89,7 +89,6 @@ export async function loadBrowseGroupHubPage(
     .select(BROWSE_GROUP_BUSINESS_SELECT)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(BROWSE_GROUP_BUSINESS_POOL_LIMIT);
@@ -147,7 +146,6 @@ export async function listLeafLinksForBrowseGroup(
     .select("primary_category_id, business_categories ( slug )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(BROWSE_GROUP_BUSINESS_POOL_LIMIT);
 
   if (error) {

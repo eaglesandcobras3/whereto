@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export type PublicTownOption = {
   id: string;
@@ -17,7 +17,6 @@ export async function loadPublicTowns(): Promise<PublicTownOption[]> {
     .select("id, title, slug")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title", { ascending: true });
 
   if (error) {

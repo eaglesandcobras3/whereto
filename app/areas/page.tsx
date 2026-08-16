@@ -9,7 +9,7 @@ import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { hubAreasIntro } from "@/lib/seo/page-intro-copy";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
@@ -77,7 +77,6 @@ async function getAreas(): Promise<AreaRow[]> {
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .order("title");
 
   if (error) {

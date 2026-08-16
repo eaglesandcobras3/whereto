@@ -12,7 +12,6 @@ export type BusinessIndexReadinessFields = {
   main_image_url?: string | null;
   primary_category_id?: string | null;
   town_id?: string | null;
-  is_hidden_from_search?: boolean | null;
 };
 
 function textLen(...parts: Array<string | null | undefined>): number {
@@ -38,9 +37,8 @@ export function isBusinessIndexReady(row: BusinessIndexReadinessFields): boolean
   const address = Boolean(row.address?.trim());
   const category = row.primary_category_id != null;
   const town = row.town_id != null;
-  const hidden = row.is_hidden_from_search === true;
 
-  return hasUniqueText && image && address && category && town && !hidden;
+  return hasUniqueText && image && address && category && town;
 }
 
 export function businessSitemapPath(slug: string): string {

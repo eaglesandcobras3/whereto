@@ -438,7 +438,7 @@ async function syncGuide(parsed: ParsedContent): Promise<boolean> {
       ? frontmatter.seo_keywords.join(", ")
       : null,
     status: "published",
-    is_hidden_from_search: null,
+    is_hidden_from_search: false,
   };
 
   const { data: existing, error: lookupErr } = await supabase

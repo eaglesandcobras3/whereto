@@ -43,7 +43,6 @@ export async function executeRentalSearch(plan: RentalSearchPlan): Promise<Renta
     .select("*", { count: "exact" })
     .eq("status", "published")
     .eq("partner_status", "active")
-    .eq("is_hidden_from_search", false)
     .is("duplicate_of_property_id", null);
 
   if (townId) query = query.eq("town_id", townId);
@@ -107,7 +106,6 @@ export async function listPublishedRentalsForBusiness(
     .eq("status", "published")
     .eq("partner_status", "active")
     .eq("partner_show_public_business_profile", true)
-    .eq("is_hidden_from_search", false)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(limit);
@@ -134,7 +132,6 @@ export async function listPublishedRentalsForTownSlug(
     .eq("town_id", (town as { id: string }).id)
     .eq("status", "published")
     .eq("partner_status", "active")
-    .eq("is_hidden_from_search", false)
     .order("featured", { ascending: false })
     .order("date_updated", { ascending: false })
     .limit(limit);
@@ -152,7 +149,6 @@ export async function listHomepageFeaturedRentals(
       .select("*", { count: "exact" })
       .eq("status", "published")
       .eq("partner_status", "active")
-      .eq("is_hidden_from_search", false)
       .is("duplicate_of_property_id", null);
 
   const { count, error: countErr } = await base();

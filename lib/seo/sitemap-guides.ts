@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isGuideEligibleForSitemap } from "@/lib/seo/sitemap-guide-eligibility";
 
 const PAGE_SIZE = 1000;
@@ -20,7 +20,6 @@ export async function fetchSitemapGuides(
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
       .not("status", "eq", "archived")
       .not("status", "eq", "draft")
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
 

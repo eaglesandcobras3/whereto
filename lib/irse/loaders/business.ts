@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nameSimilarity } from "@/lib/admin/duplicate-detection";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import type { BusinessIrseInput } from "../inputs";
 
 type BizRow = {
@@ -142,7 +142,6 @@ async function countSimilar(supabase: SupabaseClient, row: BizRow): Promise<numb
     .from("businesses_view")
     .select("id", { count: "exact", head: true })
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .is("archived_at", null)
     .eq("town_id", row.town_id)
     .eq("primary_category_id", row.primary_category_id)
