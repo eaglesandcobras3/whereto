@@ -27,7 +27,7 @@ import { trackDiscoverLowResults } from "@/lib/discovery-filters/track-discover-
 const DISCOVER_POOL_LIMIT = 2000;
 
 const VIEW_LISTING_SELECT =
-  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, is_storefront, is_service_business, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
+  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, is_storefront, is_service_business, map_lat, map_lng, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
 
 type PoolRow = Record<string, unknown>;
 
@@ -76,6 +76,10 @@ function mapListingRow(row: PoolRow, result?: DiscoverListingScore): DiscoverLis
     service_category_slug: svc?.slug ?? null,
     business_type: (row.business_type as string | null) ?? null,
     search_tags: normalizeSearchTags(row.search_tags),
+    map_lat:
+      typeof row.map_lat === "number" && Number.isFinite(row.map_lat) ? row.map_lat : null,
+    map_lng:
+      typeof row.map_lng === "number" && Number.isFinite(row.map_lng) ? row.map_lng : null,
   };
   if (result) {
     listing.tag_match = toTagMatch(result);
@@ -158,8 +162,11 @@ export async function executeFilterSearch(
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
+  const useBbox = state.entity_type === "storefront" && Boolean(state.bbox);
   const townFilterApplies =
-    discoverTownFilterApplies(state.entity_type) && state.town_ids.length > 0;
+    !useBbox &&
+    discoverTownFilterApplies(state.entity_type) &&
+    state.town_ids.length > 0;
 
   if (hasTags) {
     if (townFilterApplies) {
@@ -180,6 +187,16 @@ export async function executeFilterSearch(
     }
   }
 
+  if (useBbox && state.bbox) {
+    query = query
+      .not("map_lat", "is", null)
+      .not("map_lng", "is", null)
+      .gte("map_lat", state.bbox.south)
+      .lte("map_lat", state.bbox.north)
+      .gte("map_lng", state.bbox.west)
+      .lte("map_lng", state.bbox.east);
+  }
+
   const q = state.q?.trim();
   if (q) {
     const orClause = buildDiscoverTextOrClause(q);
@@ -190,12 +207,14 @@ export async function executeFilterSearch(
 
   const appliedBase = {
     entity_type: state.entity_type,
-    town_ids: state.town_ids,
-    anchor_town_ids: state.anchor_town_ids,
+    town_ids: useBbox ? [] : state.town_ids,
+    anchor_town_ids: useBbox ? [] : state.anchor_town_ids,
     category_slug: state.category_slug ?? null,
     service_category_slug: state.service_category_slug ?? null,
     tags: state.tags,
     q: state.q ?? null,
+    bbox: state.bbox ?? null,
+    zoom: state.zoom ?? null,
     filter_mode: hasTags ? "tags_hard" : "scope_hard",
   };
 

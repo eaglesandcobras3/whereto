@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DiscoverListingCard } from "@/components/discovery/DiscoverListingCard";
 import {
@@ -9,17 +10,25 @@ import {
 } from "@/components/discovery/DiscoverFilterInterpretation";
 import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
+import type { DiscoverMapViewport } from "@/components/discovery/DiscoverStorefrontMap";
 import { buildDiscoverUrl, buildDiscoverUrlFromLinkParams } from "@/lib/discovery-filters/build-discover-url";
 import type { DiscoverUrlLinkParams } from "@/lib/discovery-filters/build-discover-url";
+import {
+  parseDiscoverBbox,
+  parseDiscoverZoom,
+  serializeDiscoverBbox,
+} from "@/lib/discovery-filters/discover-bbox";
 import {
   fetchDiscoverFilter,
   type DiscoverFilterApiParams,
   type DiscoverFilterApiResponse,
 } from "@/lib/discovery-filters/discover-filter-api";
+import { DISCOVER_MAP_PAGE_SIZE } from "@/lib/discovery-filters/filter-state";
 import { parseEntityType } from "@/lib/discovery-filters/parse-filter-params";
 import { hasExplicitDiscoverParams } from "@/lib/discovery-filters/parse-discover-query";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
+import { useDiscoverMapsFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { isDiscoverNlFeatureEnabled } from "@/lib/nav/discovery-links";
 import type {
@@ -28,6 +37,21 @@ import type {
   DiscoverServiceCategoryOption,
   DiscoverTownOption,
 } from "@/lib/discovery-filters/load-discover-options";
+
+const DiscoverStorefrontMap = dynamic(
+  () =>
+    import("@/components/discovery/DiscoverStorefrontMap").then(
+      (m) => m.DiscoverStorefrontMap,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[28rem] items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-sm text-[var(--color-text-tertiary)]">
+        Loading map…
+      </div>
+    ),
+  },
+);
 
 type Props = {
   towns: DiscoverTownOption[];
@@ -44,6 +68,8 @@ type DiscoverParams = {
   facet?: string;
   q?: string;
   nl_q?: string;
+  bbox?: string;
+  zoom?: number;
   page: number;
 };
 
@@ -68,21 +94,31 @@ function paramsFromSearchParams(sp: URLSearchParams): DiscoverParams {
     facet: sp.get("facet")?.trim() || sp.get("facet_any")?.trim() || undefined,
     q: sp.get("q")?.trim() || undefined,
     nl_q: sp.get("nl_q")?.trim() || undefined,
+    bbox: sp.get("bbox")?.trim() || undefined,
+    zoom: parseDiscoverZoom(sp.get("zoom")),
     page: Math.max(1, Number.parseInt(sp.get("page") ?? "1", 10) || 1),
   };
 }
 
-function toApiParams(params: DiscoverParams): DiscoverFilterApiParams {
+function toApiParams(
+  params: DiscoverParams,
+  opts?: { mapMode?: boolean },
+): DiscoverFilterApiParams {
   const serviceMode = params.type === "service";
+  const mapMode = Boolean(opts?.mapMode) && !serviceMode;
+  const useBbox = mapMode && Boolean(parseDiscoverBbox(params.bbox));
   return {
     type: serviceMode ? "services" : "storefront",
-    town: serviceMode ? undefined : params.town,
-    town_scope: serviceMode ? undefined : params.town_scope,
+    town: serviceMode || useBbox ? undefined : params.town,
+    town_scope: serviceMode || useBbox ? undefined : params.town_scope,
     category: params.category,
     service_category: params.service_category,
     facet: params.facet,
     q: params.q,
+    bbox: useBbox ? params.bbox : undefined,
+    zoom: mapMode && params.zoom ? String(params.zoom) : undefined,
     page: params.page > 1 ? String(params.page) : undefined,
+    page_size: mapMode ? String(DISCOVER_MAP_PAGE_SIZE) : undefined,
   };
 }
 
@@ -90,11 +126,17 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
   const router = useRouter();
   const searchParams = useSearchParams();
   const featureFlags = useAppFeatureFlags();
+  const discoverMapsEnabled = useDiscoverMapsFeatureEnabled();
   const nlHandledRef = useRef<string | null>(null);
 
   /** Filter UI + fetch inputs — URL is the only source of truth. */
   const params = useMemo(() => paramsFromSearchParams(searchParams), [searchParams]);
   const paramsKey = searchParams.toString();
+  const mapMode = discoverMapsEnabled && params.type === "storefront";
+  const mapBbox = useMemo(
+    () => (mapMode ? parseDiscoverBbox(params.bbox) : null),
+    [mapMode, params.bbox],
+  );
 
   const [result, setResult] = useState<DiscoverFilterApiResponse | null>(null);
   const [searchTags, setSearchTags] = useState<DiscoverSearchTagOption[]>([]);
@@ -105,7 +147,12 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     setPending(true);
     setFetchError(null);
     try {
-      const data = await fetchDiscoverFilter(toApiParams(nextParams), signal);
+      const data = await fetchDiscoverFilter(
+        toApiParams(nextParams, {
+          mapMode: discoverMapsEnabled && nextParams.type === "storefront",
+        }),
+        signal,
+      );
       if (signal?.aborted) return;
       setResult(data);
       setSearchTags(data.search_tags);
@@ -115,7 +162,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     } finally {
       if (!signal?.aborted) setPending(false);
     }
-  }, []);
+  }, [discoverMapsEnabled]);
 
   useEffect(() => {
     const q = searchParams.get("q")?.trim();
@@ -160,10 +207,17 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     return () => controller.abort();
   }, [loadResults, params, paramsKey]);
 
-  // Services never carry town in the URL — strip leftover town params.
+  const selectedTownSlugs = useMemo(
+    () => parseTownSlugsFromParam(params.town),
+    [params.town],
+  );
+
+  const selectedTags = useMemo(() => parseFacetSlugs(params.facet), [params.facet]);
+
+  // Services never carry town or map bbox in the URL — strip leftovers.
   useEffect(() => {
     if (params.type !== "service") return;
-    if (!params.town && !params.town_scope) return;
+    if (!params.town && !params.town_scope && !params.bbox && params.zoom == null) return;
     router.replace(
       buildDiscoverUrl({
         type: "service",
@@ -177,6 +231,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
       { scroll: false },
     );
   }, [
+    params.bbox,
     params.category,
     params.nl_q,
     params.page,
@@ -185,6 +240,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     params.town,
     params.town_scope,
     params.type,
+    params.zoom,
     router,
     selectedTags,
   ]);
@@ -206,13 +262,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     () => towns.map((town) => ({ slug: town.slug, label: town.name })),
     [towns],
   );
-
-  const selectedTownSlugs = useMemo(
-    () => parseTownSlugsFromParam(params.town),
-    [params.town],
-  );
-
-  const selectedTags = useMemo(() => parseFacetSlugs(params.facet), [params.facet]);
 
   /** Server-expanded town set for result copy only — not for filter controls. */
   const effectiveTownSlugs = result?.effective_town_slugs ?? selectedTownSlugs;
@@ -238,6 +287,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
         townSlugs?: string[];
         tags?: string[];
         page?: number;
+        clearMap?: boolean;
       },
     ) => {
       const type = next.type ?? params.type;
@@ -249,13 +299,26 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
       const nextCategory = "category" in next ? next.category : params.category;
       const nextServiceCategory =
         "service_category" in next ? next.service_category : params.service_category;
+      const clearMap = Boolean(next.clearMap) || serviceMode;
+      const nextBbox = clearMap
+        ? undefined
+        : "bbox" in next
+          ? next.bbox
+          : params.bbox;
+      const nextZoom = clearMap
+        ? undefined
+        : "zoom" in next
+          ? next.zoom
+          : params.zoom;
 
       router.replace(
         buildDiscoverUrl({
           type,
-          townSlugs,
+          townSlugs: nextBbox ? [] : townSlugs,
           townScope:
-            serviceMode || ("townSlugs" in next && next.townSlugs !== undefined)
+            serviceMode ||
+            nextBbox ||
+            ("townSlugs" in next && next.townSlugs !== undefined)
               ? undefined
               : params.town_scope,
           category: nextCategory || undefined,
@@ -263,6 +326,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           tags,
           q: "q" in next ? next.q : params.q,
           nlQuery: "nl_q" in next ? next.nl_q : params.nl_q,
+          bbox: nextBbox,
+          zoom: nextZoom,
           page: next.page ?? 1,
         }),
         { scroll: false },
@@ -272,12 +337,25 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
   );
 
   const setTownSlugs = (slugs: string[]) => {
-    navigate({ townSlugs: slugs, page: 1 });
+    navigate({ townSlugs: slugs, clearMap: true, page: 1 });
   };
 
   const setSelectedTags = (slugs: string[]) => {
     navigate({ tags: slugs, page: 1 });
   };
+
+  const searchMapArea = useCallback(
+    (viewport: DiscoverMapViewport) => {
+      navigate({
+        type: "storefront",
+        townSlugs: [],
+        bbox: serializeDiscoverBbox(viewport.bbox),
+        zoom: viewport.zoom,
+        page: 1,
+      });
+    },
+    [navigate],
+  );
 
   const queryError =
     result && typeof result.applied_filters.error === "string"
@@ -360,7 +438,9 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => navigate({ type: "storefront", service_category: "", page: 1 })}
+                  onClick={() =>
+                    navigate({ type: "storefront", service_category: "", clearMap: false, page: 1 })
+                  }
                   className={`rounded-full px-3 py-1.5 text-sm font-medium ${
                     params.type === "storefront"
                       ? "bg-[var(--color-primary)] text-white"
@@ -372,7 +452,9 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => navigate({ type: "service", category: "", page: 1 })}
+                  onClick={() =>
+                    navigate({ type: "service", category: "", clearMap: true, page: 1 })
+                  }
                   className={`rounded-full px-3 py-1.5 text-sm font-medium ${
                     params.type === "service"
                       ? "bg-[var(--color-primary)] text-white"
@@ -389,7 +471,26 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
               </p>
             </div>
 
-            {params.type === "storefront" ? (
+            {params.type === "storefront" && mapBbox ? (
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)]/50 px-3 py-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  Map area
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                  Results are limited to the current map bounds.
+                </p>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => navigate({ clearMap: true, page: 1 })}
+                  className="mt-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                >
+                  Clear map area
+                </button>
+              </div>
+            ) : null}
+
+            {params.type === "storefront" && !mapBbox ? (
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <label
@@ -523,6 +624,20 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           </aside>
 
           <main className="min-w-0 flex-1">
+            {mapMode ? (
+              <div className="mb-6">
+                <DiscoverStorefrontMap
+                  listings={listings}
+                  initialBbox={mapBbox}
+                  initialZoom={params.zoom}
+                  onSearchArea={searchMapArea}
+                />
+                <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+                  Pan or zoom, then search this area. Map bounds update the URL and results.
+                </p>
+              </div>
+            ) : null}
+
             {nlQuery ? (
               <div className="mb-4">
                 <DiscoverFilterInterpretation

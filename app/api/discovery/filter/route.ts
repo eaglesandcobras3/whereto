@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { discoverApiBlocked } from "@/lib/feature-flags";
+import { parseDiscoverBbox } from "@/lib/discovery-filters/discover-bbox";
 import { discoverTownFilterApplies } from "@/lib/discovery-filters/discover-town-filter";
 import { executeFilterSearch } from "@/lib/discovery-filters/execute-filter-search";
 import { loadScopedSearchTags } from "@/lib/discovery-filters/load-scoped-search-tags";
@@ -25,9 +26,12 @@ export async function GET(request: Request) {
       : sp.get("town_scope") === "exact"
         ? "exact"
         : undefined;
+  const mapBbox =
+    entityType === "storefront" ? parseDiscoverBbox(sp.get("bbox")) : null;
 
-  // Services are corridor-wide — ignore town params entirely.
-  const resolvedTowns = !discoverTownFilterApplies(entityType)
+  // Services / map bbox searches are not town-scoped.
+  const resolvedTowns =
+    !discoverTownFilterApplies(entityType) || mapBbox
       ? {
           town_ids: [] as string[],
           effective_town_slugs: [] as string[],
@@ -44,13 +48,17 @@ export async function GET(request: Request) {
   const state = parseDiscoveryFilterState(
     {
       type: sp.get("type"),
-      town: discoverTownFilterApplies(entityType) ? sp.get("town") : null,
-      town_id: discoverTownFilterApplies(entityType) ? sp.get("town_id") : null,
+      town:
+        discoverTownFilterApplies(entityType) && !mapBbox ? sp.get("town") : null,
+      town_id:
+        discoverTownFilterApplies(entityType) && !mapBbox ? sp.get("town_id") : null,
       category: sp.get("category"),
       service_category: sp.get("service_category"),
       facet: sp.get("facet"),
       facet_any: sp.get("facet_any"),
       q: sp.get("q"),
+      bbox: mapBbox ? sp.get("bbox") : null,
+      zoom: entityType === "storefront" ? sp.get("zoom") : null,
       page: sp.get("page"),
       page_size: sp.get("page_size"),
     },
