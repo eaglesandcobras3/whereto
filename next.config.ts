@@ -4,6 +4,7 @@ import { retiredGuideRedirectRules } from "./lib/seo/retired-guide-redirects";
 import { LEGACY_BROWSE_GROUP_REDIRECTS } from "./lib/seo/legacy-browse-group-redirects";
 import { LEGACY_BUSINESS_REDIRECTS } from "./lib/seo/legacy-business-redirects";
 import { LEGACY_AREA_REDIRECTS } from "./lib/seo/legacy-area-redirects";
+import { LEGACY_CATEGORY_REDIRECTS } from "./lib/seo/legacy-category-redirects";
 
 const supabaseHost = (() => {
   const u = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,6 +79,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       })),
       ...LEGACY_AREA_REDIRECTS.map((r) => ({
+        source: r.source,
+        destination: r.destination,
+        permanent: true,
+      })),
+      ...LEGACY_CATEGORY_REDIRECTS.map((r) => ({
         source: r.source,
         destination: r.destination,
         permanent: true,
