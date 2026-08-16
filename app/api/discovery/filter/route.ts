@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { discoverApiBlocked } from "@/lib/feature-flags";
+import { discoverTownFilterApplies } from "@/lib/discovery-filters/discover-town-filter";
 import { executeFilterSearch } from "@/lib/discovery-filters/execute-filter-search";
 import { loadScopedSearchTags } from "@/lib/discovery-filters/load-scoped-search-tags";
 import { mergeActiveTagsIntoScopedOptions } from "@/lib/discovery-filters/merge-scoped-search-tags";
@@ -17,25 +18,34 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const sp = url.searchParams;
   const supabase = getServiceSupabase();
+  const entityType = parseEntityType(sp.get("type"));
   const townScope =
     sp.get("town_scope") === "near"
       ? "near"
       : sp.get("town_scope") === "exact"
         ? "exact"
         : undefined;
+
+  // Services are corridor-wide — ignore town params entirely.
+  const resolvedTowns = !discoverTownFilterApplies(entityType)
+      ? {
+          town_ids: [] as string[],
+          effective_town_slugs: [] as string[],
+          anchor_town_ids: [] as string[],
+          anchor_town_slugs: [] as string[],
+        }
+      : await resolveTownIdsFromParam(supabase, sp.get("town"), sp.get("town_id"), {
+          townScope,
+        });
+
   const { town_ids, effective_town_slugs, anchor_town_ids, anchor_town_slugs } =
-    await resolveTownIdsFromParam(
-    supabase,
-    sp.get("town"),
-    sp.get("town_id"),
-    { townScope },
-  );
+    resolvedTowns;
 
   const state = parseDiscoveryFilterState(
     {
       type: sp.get("type"),
-      town: sp.get("town"),
-      town_id: sp.get("town_id"),
+      town: discoverTownFilterApplies(entityType) ? sp.get("town") : null,
+      town_id: discoverTownFilterApplies(entityType) ? sp.get("town_id") : null,
       category: sp.get("category"),
       service_category: sp.get("service_category"),
       facet: sp.get("facet"),
@@ -51,7 +61,7 @@ export async function GET(request: Request) {
   const [result, scopedSearchTags] = await Promise.all([
     executeFilterSearch(state),
     loadScopedSearchTags({
-      entity_type: parseEntityType(sp.get("type")),
+      entity_type: entityType,
       town_ids,
       category_slug: sp.get("category") ?? undefined,
       service_category_slug: sp.get("service_category") ?? undefined,

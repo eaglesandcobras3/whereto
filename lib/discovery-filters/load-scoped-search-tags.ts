@@ -5,6 +5,7 @@ import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop
 import { businessCategoryGroupForSlug } from "@/lib/business-categories/groups";
 import { serviceCategoryGroupForSlug } from "@/lib/service-categories/groups";
 import type { ServiceCategorySlug } from "@/lib/service-categories/constants";
+import { discoverTownFilterApplies } from "@/lib/discovery-filters/discover-town-filter";
 import type { DiscoveryEntityType } from "@/lib/discovery-filters/filter-state";
 import {
   normalizeServiceCategoryGroupSlug,
@@ -74,10 +75,9 @@ export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<Dis
     query = query.eq("is_service_business", true);
   } else {
     query = query.eq("is_storefront", true);
-  }
-
-  if (scope.town_ids.length) {
-    query = query.in("town_id", scope.town_ids);
+    if (discoverTownFilterApplies(scope.entity_type) && scope.town_ids.length) {
+      query = query.in("town_id", scope.town_ids);
+    }
   }
 
   const { data, error } = await query;

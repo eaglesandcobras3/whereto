@@ -73,10 +73,11 @@ function paramsFromSearchParams(sp: URLSearchParams): DiscoverParams {
 }
 
 function toApiParams(params: DiscoverParams): DiscoverFilterApiParams {
+  const serviceMode = params.type === "service";
   return {
-    type: params.type === "service" ? "services" : "storefront",
-    town: params.town,
-    town_scope: params.town_scope,
+    type: serviceMode ? "services" : "storefront",
+    town: serviceMode ? undefined : params.town,
+    town_scope: serviceMode ? undefined : params.town_scope,
     category: params.category,
     service_category: params.service_category,
     facet: params.facet,
@@ -159,6 +160,35 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     return () => controller.abort();
   }, [loadResults, params, paramsKey]);
 
+  // Services never carry town in the URL — strip leftover town params.
+  useEffect(() => {
+    if (params.type !== "service") return;
+    if (!params.town && !params.town_scope) return;
+    router.replace(
+      buildDiscoverUrl({
+        type: "service",
+        category: params.category,
+        service_category: params.service_category,
+        tags: selectedTags,
+        q: params.q,
+        nlQuery: params.nl_q,
+        page: params.page,
+      }),
+      { scroll: false },
+    );
+  }, [
+    params.category,
+    params.nl_q,
+    params.page,
+    params.q,
+    params.service_category,
+    params.town,
+    params.town_scope,
+    params.type,
+    router,
+    selectedTags,
+  ]);
+
   const tagLabelBySlug = useMemo(() => {
     const map = new Map<string, string>();
     for (const tag of searchTags) {
@@ -211,7 +241,10 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
       },
     ) => {
       const type = next.type ?? params.type;
-      const townSlugs = next.townSlugs ?? selectedTownSlugs;
+      const serviceMode = type === "service";
+      const townSlugs = serviceMode
+        ? []
+        : (next.townSlugs ?? selectedTownSlugs);
       const tags = next.tags ?? selectedTags;
       const nextCategory = "category" in next ? next.category : params.category;
       const nextServiceCategory =
@@ -222,7 +255,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           type,
           townSlugs,
           townScope:
-            "townSlugs" in next && next.townSlugs !== undefined
+            serviceMode || ("townSlugs" in next && next.townSlugs !== undefined)
               ? undefined
               : params.town_scope,
           category: nextCategory || undefined,
@@ -309,8 +342,9 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
             Browse by filters
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-secondary)]">
-            Town always narrows the list. With tags selected, type and category prefer matching
-            places but won&apos;t hide others. Without tags, type and category filter strictly.
+            For storefronts, town always narrows the list. Services are corridor-wide and are not
+            filtered by town. With keywords selected, type and category prefer matching places but
+            won&apos;t hide others. Without keywords, type and category filter strictly.
           </p>
         </div>
       </div>
@@ -350,11 +384,12 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
               </div>
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                 {softScopeMode
-                  ? "Prefers this type; the other may appear when tags match."
+                  ? "Prefers this type; the other may appear when keywords match."
                   : "Only listings of this type are shown."}
               </p>
             </div>
 
+            {params.type === "storefront" ? (
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <label
@@ -387,6 +422,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 Active search towns appear as chips. Remove any to narrow results.
               </p>
             </div>
+            ) : null}
 
             {params.type === "storefront" ? (
               <div>
@@ -414,7 +450,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 </select>
                 <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                   {softScopeMode
-                    ? "Prefers this category; others may appear when tags match."
+                    ? "Prefers this category; others may appear when keywords match."
                     : "Only listings in this category are shown."}
                 </p>
               </div>
@@ -444,7 +480,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 </select>
                 <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                   {softScopeMode
-                    ? "Prefers this specialty; others may appear when tags match."
+                    ? "Prefers this specialty; others may appear when keywords match."
                     : "Only listings in this specialty are shown."}
                 </p>
               </div>
@@ -456,7 +492,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                   htmlFor="discover-facets"
                   className="block text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]"
                 >
-                  Tags
+                  Keywords
                 </label>
                 {pending ? (
                   <span className="inline-flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-[var(--color-text-tertiary)]">
@@ -475,13 +511,13 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 onChange={setSelectedTags}
                 disabled={pending}
                 loading={pending}
-                placeholder={searchTags.length ? "Type a tag…" : "No tags in this scope"}
-                emptyMessage="No tags match"
+                placeholder={searchTags.length ? "Type a keyword…" : "No keywords in this scope"}
+                emptyMessage="No keywords match"
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                 {softScopeMode
-                  ? "Must match at least one tag. More matches rank higher."
-                  : "Add tags to search across categories and types."}
+                  ? "Must match at least one keyword. More matches rank higher."
+                  : "Add keywords to search across categories and types."}
               </p>
             </div>
           </aside>
@@ -512,14 +548,16 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                     {total} result{total === 1 ? "" : "s"}
                   </span>
                 )}
-                {selectedTownSlugs.map((slug) => (
-                  <span
-                    key={slug}
-                    className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs"
-                  >
-                    {towns.find((t) => t.slug === slug)?.name ?? slug}
-                  </span>
-                ))}
+                {params.type === "storefront"
+                  ? selectedTownSlugs.map((slug) => (
+                      <span
+                        key={slug}
+                        className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs"
+                      >
+                        {towns.find((t) => t.slug === slug)?.name ?? slug}
+                      </span>
+                    ))
+                  : null}
                 {selectedTags.map((slug) => (
                   <span
                     key={slug}
@@ -532,12 +570,15 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
 
               {hasTagFilters ? (
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Matching at least one tag in your towns. Preferred type and category rank first.
+                  {params.type === "storefront"
+                    ? "Matching at least one keyword in your towns. Preferred type and category rank first."
+                    : "Matching at least one keyword across the corridor. Preferred specialty ranks first."}
                 </p>
               ) : (
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Filtered by town{typeLabel}, and category when selected. Add tags to search more
-                  broadly.
+                  {params.type === "storefront"
+                    ? `Filtered by town${typeLabel}, and category when selected. Add keywords to search more broadly.`
+                    : "Regional services across the corridor. Choose a specialty or add keywords to narrow results."}
                 </p>
               )}
             </div>
@@ -553,7 +594,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
             ) : listings.length === 0 ? (
               <div className="space-y-2 text-[var(--color-text-secondary)]">
                 <p>
-                  No listings match these filters. Try fewer tags, or broaden town or category.
+                  No listings match these filters. Try fewer keywords
+                  {params.type === "storefront" ? ", or broaden town or category" : " or specialty"}.
                 </p>
                 {queryError ? (
                   <p className="text-sm text-red-600">Search error: {queryError}</p>

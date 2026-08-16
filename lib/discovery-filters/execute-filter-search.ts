@@ -4,6 +4,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
+import { discoverTownFilterApplies } from "@/lib/discovery-filters/discover-town-filter";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
 import {
   normalizeServiceCategoryGroupSlug,
@@ -157,16 +158,26 @@ export async function executeFilterSearch(
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
+  const townFilterApplies =
+    discoverTownFilterApplies(state.entity_type) && state.town_ids.length > 0;
+
   if (hasTags) {
-    query = query.or("is_storefront.eq.true,is_service_business.eq.true");
+    if (townFilterApplies) {
+      // Services are corridor-wide; town only constrains storefronts.
+      const townList = state.town_ids.join(",");
+      query = query.or(
+        `is_service_business.eq.true,and(is_storefront.eq.true,town_id.in.(${townList}))`,
+      );
+    } else {
+      query = query.or("is_storefront.eq.true,is_service_business.eq.true");
+    }
   } else if (state.entity_type === "service") {
     query = query.eq("is_service_business", true);
   } else {
     query = query.eq("is_storefront", true);
-  }
-
-  if (state.town_ids.length) {
-    query = query.in("town_id", state.town_ids);
+    if (townFilterApplies) {
+      query = query.in("town_id", state.town_ids);
+    }
   }
 
   const q = state.q?.trim();
