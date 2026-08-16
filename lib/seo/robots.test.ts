@@ -23,4 +23,21 @@ describe("robots.txt", () => {
     expect(disallow).toContain("/share/");
     expect(disallow).toContain("/api/");
   });
+
+  it("does not blanket-block AI crawlers (aligns with llms.txt)", async () => {
+    const robots = (await import("@/app/robots")).default;
+    const rules = robots();
+    const ruleList = Array.isArray(rules.rules)
+      ? rules.rules
+      : rules.rules
+        ? [rules.rules]
+        : [];
+    for (const agent of ["GPTBot", "ChatGPT-User", "CCBot"]) {
+      const rule = ruleList.find((r) => {
+        const ua = r.userAgent;
+        return ua === agent || (Array.isArray(ua) && ua.includes(agent));
+      });
+      expect(rule).toBeUndefined();
+    }
+  });
 });

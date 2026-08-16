@@ -8,6 +8,7 @@ import {
   seoTitleSegmentForLayout,
 } from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
+import { buildBrowseGroupHubMetaDescription } from "@/lib/seo/browse-group-meta";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
@@ -200,12 +201,12 @@ export async function buildBrowseGroupHubMetadata(
   const path = sectionPath(groupSlug);
   const count = hub?.businesses.length ?? 0;
   const townCount = hub?.townGroups.length ?? 0;
-  const description =
-    count > 0
-      ? `Browse ${count} ${title.toLowerCase()} along Scenic 30A${
-          townCount > 0 ? ` across ${townCount} towns` : ""
-        }. Open a type hub below for the full by-town listing grid.`
-      : `Browse ${title.toLowerCase()} along Scenic 30A in South Walton, Florida — storefronts and service providers by town.`;
+  const description = buildBrowseGroupHubMetaDescription({
+    groupSlug,
+    title,
+    listingCount: count,
+    townCount,
+  });
 
   return {
     ...canonicalAlternates(path),

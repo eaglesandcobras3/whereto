@@ -37,6 +37,7 @@ import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { getGuidesForCategoryHub } from "@/lib/data/town-hub";
 import { partitionCategoryBusinessesByTown } from "@/lib/data/category-hub";
+import { legacyBrowseGroupRedirectDestination } from "@/lib/seo/legacy-browse-group-redirects";
 
 export const revalidate = 21600;
 
@@ -87,7 +88,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (rollupSlug) return buildBrowseGroupHubMetadata(rollupSlug);
 
   const groupSlug = businessBrowseGroupFromPublicSegment(segment);
-  if (groupSlug) return buildBrowseGroupHubMetadata(groupSlug);
+  if (groupSlug) {
+    const redirectTo = legacyBrowseGroupRedirectDestination(`/businesses/${segment}`);
+    if (redirectTo) return { alternates: { canonical: redirectTo } };
+    return buildBrowseGroupHubMetadata(groupSlug);
+  }
 
   const categorySlug = await resolveCategorySlugFromPublicPath(segment);
   if (categorySlug) return buildCategoryHubMetadata(categorySlug);
@@ -129,6 +134,8 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
 
   const groupSlug = businessBrowseGroupFromPublicSegment(segment);
   if (groupSlug) {
+    const redirectTo = legacyBrowseGroupRedirectDestination(`/businesses/${segment}`);
+    if (redirectTo) permanentRedirect(redirectTo);
     const hub = await loadBrowseGroupHubPage(groupSlug, "all");
     if (!hub) notFound();
     const [mapMarkers, leafLinks] = await Promise.all([
