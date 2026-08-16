@@ -1,5 +1,4 @@
 import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
-import { CategoryHubFaqSection } from "@/components/browse/CategoryHubFaqSection";
 import { CategoryHubTownSections } from "@/components/browse/CategoryHubTownSections";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
@@ -7,7 +6,6 @@ import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import {
-  generateFaqSchema,
   generateItemListSchema,
   generateCollectionPageSchema,
 } from "@/lib/seo/breadcrumb-schema";
@@ -25,10 +23,10 @@ import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import type { TownGuideCard } from "@/lib/data/town-hub";
 import {
   buildCategoryHubEditorialBody,
-  buildCategoryHubFaqs,
   buildCategoryHubHeroDescription,
   buildCategoryHubSupportingIntro,
 } from "@/lib/seo/category-hub-substance";
+import { categoryHubIntro } from "@/lib/seo/page-intro-copy";
 
 type Props = {
   cat: CategoryRow;
@@ -36,6 +34,8 @@ type Props = {
   businesses: CategoryBusinessRow[];
   mapMarkers?: BusinessMapMarker[];
   guides?: TownGuideCard[];
+  /** PostHog `category_hub_seo` — inventory editorial + guides. */
+  seoSubstanceEnabled?: boolean;
 };
 
 export function CategoryHubView({
@@ -44,14 +44,26 @@ export function CategoryHubView({
   businesses,
   mapMarkers = [],
   guides = [],
+  seoSubstanceEnabled = false,
 }: Props) {
   const hubPath = categoryHubPath(cat.slug);
   const { townGroups, regional } = partitionCategoryBusinessesByTown(businesses);
   const inventory = categoryHubInventoryFromPage({ cat, businesses });
-  const heroDescription = buildCategoryHubHeroDescription(inventory);
-  const editorialBody = buildCategoryHubEditorialBody(inventory);
-  const supportingIntro = buildCategoryHubSupportingIntro(inventory);
-  const faqs = buildCategoryHubFaqs(inventory);
+
+  const heroDescription = seoSubstanceEnabled
+    ? buildCategoryHubHeroDescription(inventory)
+    : townGroups.length > 0
+      ? `Local ${cat.title.toLowerCase()} along Scenic Highway 30A in South Walton, Florida — by town and regional providers.`
+      : `Local ${cat.title.toLowerCase()} serving Scenic Highway 30A and South Walton, Florida.`;
+
+  const collapsibleDescription = seoSubstanceEnabled
+    ? buildCategoryHubSupportingIntro(inventory)
+    : cat.excerpt?.trim() ||
+      categoryHubIntro(cat.title, businesses.length, townGroups.length);
+
+  const editorialBody = seoSubstanceEnabled
+    ? buildCategoryHubEditorialBody(inventory)
+    : null;
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -70,8 +82,6 @@ export function CategoryHubView({
     path: hubPath,
     description: heroDescription,
   });
-
-  const faqSchema = faqs.length > 0 ? generateFaqSchema(faqs) : null;
 
   const metaParts: string[] = [
     `${businesses.length} ${businesses.length === 1 ? "listing" : "listings"}`,
@@ -96,18 +106,12 @@ export function CategoryHubView({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
-      {faqSchema ? (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
-      ) : null}
 
       <main className="flex-1">
         <BrowseHubHero
           title={`${cat.title} on 30A`}
           description={heroDescription}
-          collapsibleDescription={supportingIntro}
+          collapsibleDescription={collapsibleDescription}
           meta={<>{metaParts.join(" · ")}</>}
           breadcrumbs={
             <HubBreadcrumbs
@@ -122,20 +126,22 @@ export function CategoryHubView({
         />
 
         <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
-          <section
-            className="max-w-3xl space-y-3"
-            aria-labelledby="category-hub-editorial-heading"
-          >
-            <h2
-              id="category-hub-editorial-heading"
-              className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl"
+          {editorialBody ? (
+            <section
+              className="max-w-3xl space-y-3"
+              aria-labelledby="category-hub-editorial-heading"
             >
-              How we use this hub
-            </h2>
-            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-              {editorialBody}
-            </p>
-          </section>
+              <h2
+                id="category-hub-editorial-heading"
+                className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl"
+              >
+                How we use this hub
+              </h2>
+              <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
+                {editorialBody}
+              </p>
+            </section>
+          ) : null}
 
           {mapMarkers.length > 0 ? (
             <BusinessMapSection
@@ -161,14 +167,14 @@ export function CategoryHubView({
             />
           </div>
 
-          <CategoryHubFaqSection faqs={faqs} />
-
-          <PlaceGuidesSection
-            title="Guides that help with this stop"
-            description={`Planning context for ${cat.title.toLowerCase()} days along 30A.`}
-            guides={guides}
-            analyticsCategory="category_hub_guides"
-          />
+          {seoSubstanceEnabled && guides.length > 0 ? (
+            <PlaceGuidesSection
+              title="Guides that help with this stop"
+              description={`Planning context for ${cat.title.toLowerCase()} days along 30A.`}
+              guides={guides}
+              analyticsCategory="category_hub_guides"
+            />
+          ) : null}
         </div>
 
         <ListBusinessHomeCta />

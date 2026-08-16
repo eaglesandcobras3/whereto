@@ -1,10 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import {
-  categoryHubHasEditorialBlock,
-  type CategoryHubInventory,
-} from "@/lib/seo/category-hub-substance";
 import type { CategoryIrseInput } from "../inputs";
 
 /** Categories with dedicated audit-tuned metadata in hub-metadata. */
@@ -51,21 +47,13 @@ export async function loadCategoryIrseInput(
 
   if (!row) return null;
 
-  const [listing_count, town_coverage_count, townNames] = await Promise.all([
+  const [listing_count, town_coverage_count] = await Promise.all([
     countCategoryListings(supabase, row.id),
     countTownCoverage(supabase, row.id),
-    listTownNamesForCategory(supabase, row.id),
   ]);
 
   const public_path = categoryHubPath(row.slug);
-  const inventory: CategoryHubInventory = {
-    title: row.title?.trim() || row.slug,
-    slug: row.slug,
-    excerpt: row.excerpt,
-    listingCount: listing_count,
-    townNames,
-    regionalCount: 0,
-  };
+  const excerptLen = row.excerpt?.trim().length ?? 0;
 
   return {
     kind: "category",
@@ -77,7 +65,8 @@ export async function loadCategoryIrseInput(
     has_audit_metadata: AUDIT_META_SLUGS.has(row.slug),
     listing_count,
     town_coverage_count,
-    has_editorial_block: categoryHubHasEditorialBlock(inventory),
+    // Seeded/generated editorial is gated by PostHog `category_hub_seo`; only DB excerpt counts here.
+    has_editorial_block: excerptLen >= 80,
   };
 }
 
@@ -108,25 +97,4 @@ async function countTownCoverage(supabase: SupabaseClient, categoryId: string): 
       .filter((id): id is string | number => id != null),
   );
   return towns.size;
-}
-
-async function listTownNamesForCategory(
-  supabase: SupabaseClient,
-  categoryId: string,
-): Promise<string[]> {
-  const { data } = await supabase
-    .from("businesses_view")
-    .select("towns ( title )")
-    .eq("primary_category_id", categoryId)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
-    .is("archived_at", null)
-    .limit(500);
-  const names = new Set<string>();
-  for (const row of data ?? []) {
-    const town = (row as { towns?: { title?: string } | null }).towns;
-    const title = town?.title?.trim();
-    if (title) names.add(title);
-  }
-  return [...names].sort((a, b) => a.localeCompare(b));
 }

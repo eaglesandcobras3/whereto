@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCategoryHubEditorialBody,
-  buildCategoryHubFaqs,
   buildCategoryHubHeroDescription,
   buildCategoryHubMetaDescription,
   buildCategoryHubTitleSegment,
@@ -34,7 +33,7 @@ describe("category hub substance", () => {
     expect(meta).not.toContain("Find the best");
   });
 
-  it("prefers excerpt, then seeded body, with distinct FAQs per inventory", () => {
+  it("prefers excerpt, then seeded body", () => {
     const fromExcerpt = buildCategoryHubEditorialBody({
       ...coffee,
       excerpt: "A".repeat(50),
@@ -44,10 +43,6 @@ describe("category hub substance", () => {
     const seeded = buildCategoryHubEditorialBody(coffee);
     expect(seeded.toLowerCase()).toContain("coffee");
     expect(seeded).not.toContain("This hub groups");
-
-    const faqs = buildCategoryHubFaqs(coffee);
-    expect(faqs.length).toBeGreaterThanOrEqual(2);
-    expect(faqs[0]!.answer).toContain("Rosemary Beach");
     expect(categoryHubHasEditorialBlock(coffee)).toBe(true);
   });
 
