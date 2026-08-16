@@ -4,6 +4,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { validateFilterContract } from "@/lib/discovery-filters/filter-contract";
+import { discoverTownFilterApplies } from "@/lib/discovery-filters/discover-town-filter";
 import type { DiscoveryFilterState } from "@/lib/discovery-filters/filter-state";
 import {
   normalizeServiceCategoryGroupSlug,
@@ -26,7 +27,7 @@ import { trackDiscoverLowResults } from "@/lib/discovery-filters/track-discover-
 const DISCOVER_POOL_LIMIT = 2000;
 
 const VIEW_LISTING_SELECT =
-  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, is_storefront, is_service_business, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
+  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, is_storefront, is_service_business, map_lat, map_lng, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
 
 type PoolRow = Record<string, unknown>;
 
@@ -75,6 +76,10 @@ function mapListingRow(row: PoolRow, result?: DiscoverListingScore): DiscoverLis
     service_category_slug: svc?.slug ?? null,
     business_type: (row.business_type as string | null) ?? null,
     search_tags: normalizeSearchTags(row.search_tags),
+    map_lat:
+      typeof row.map_lat === "number" && Number.isFinite(row.map_lat) ? row.map_lat : null,
+    map_lng:
+      typeof row.map_lng === "number" && Number.isFinite(row.map_lng) ? row.map_lng : null,
   };
   if (result) {
     listing.tag_match = toTagMatch(result);
@@ -157,16 +162,39 @@ export async function executeFilterSearch(
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
+  const useBbox = state.entity_type === "storefront" && Boolean(state.bbox);
+  const townFilterApplies =
+    !useBbox &&
+    discoverTownFilterApplies(state.entity_type) &&
+    state.town_ids.length > 0;
+
   if (hasTags) {
-    query = query.or("is_storefront.eq.true,is_service_business.eq.true");
+    if (townFilterApplies) {
+      // Services are corridor-wide; town only constrains storefronts.
+      const townList = state.town_ids.join(",");
+      query = query.or(
+        `is_service_business.eq.true,and(is_storefront.eq.true,town_id.in.(${townList}))`,
+      );
+    } else {
+      query = query.or("is_storefront.eq.true,is_service_business.eq.true");
+    }
   } else if (state.entity_type === "service") {
     query = query.eq("is_service_business", true);
   } else {
     query = query.eq("is_storefront", true);
+    if (townFilterApplies) {
+      query = query.in("town_id", state.town_ids);
+    }
   }
 
-  if (state.town_ids.length) {
-    query = query.in("town_id", state.town_ids);
+  if (useBbox && state.bbox) {
+    query = query
+      .not("map_lat", "is", null)
+      .not("map_lng", "is", null)
+      .gte("map_lat", state.bbox.south)
+      .lte("map_lat", state.bbox.north)
+      .gte("map_lng", state.bbox.west)
+      .lte("map_lng", state.bbox.east);
   }
 
   const q = state.q?.trim();
@@ -179,12 +207,14 @@ export async function executeFilterSearch(
 
   const appliedBase = {
     entity_type: state.entity_type,
-    town_ids: state.town_ids,
-    anchor_town_ids: state.anchor_town_ids,
+    town_ids: useBbox ? [] : state.town_ids,
+    anchor_town_ids: useBbox ? [] : state.anchor_town_ids,
     category_slug: state.category_slug ?? null,
     service_category_slug: state.service_category_slug ?? null,
     tags: state.tags,
     q: state.q ?? null,
+    bbox: state.bbox ?? null,
+    zoom: state.zoom ?? null,
     filter_mode: hasTags ? "tags_hard" : "scope_hard",
   };
 

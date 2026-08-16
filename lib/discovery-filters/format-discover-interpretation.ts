@@ -42,9 +42,9 @@ export function formatDiscoverInterpretation(input: DiscoverInterpretationInput)
   if (input.tags.length) {
     const tagPhrase = formatTagList(input.tags, input.labelForSlug);
     if (hasCuisineProductTags(input.tags) && !input.categoryLabel) {
-      parts.push(`places tagged ${tagPhrase} (restaurants, markets, and similar)`);
+      parts.push(`places matching ${tagPhrase} (restaurants, markets, and similar)`);
     } else {
-      parts.push(`places tagged ${tagPhrase}`);
+      parts.push(`places matching ${tagPhrase}`);
     }
   } else if (input.categoryLabel) {
     parts.push(input.categoryLabel.toLowerCase());
@@ -54,10 +54,16 @@ export function formatDiscoverInterpretation(input: DiscoverInterpretationInput)
     parts.push(input.type === "service" ? "regional services" : "storefront businesses");
   }
 
-  const townPhrase = formatTownScope(input);
+  // Skip town phrase for services — they are corridor-wide.
+  const townPhrase =
+    input.type === "service" ? null : formatTownScope(input);
   if (townPhrase) parts.push(townPhrase);
 
-  if (input.townScope === "near" && input.anchorTownNames.length) {
+  if (
+    input.type !== "service" &&
+    input.townScope === "near" &&
+    input.anchorTownNames.length
+  ) {
     parts.push(`${input.anchorTownNames.join(" and ")} ranked first`);
   }
 

@@ -5,6 +5,7 @@ import {
   isBusinessMapsEnabled,
   isBusinessPhotosEnabled,
   isCommunityTipsEnabled,
+  isDiscoverMapsEnabled,
   isFeedbackEnabled,
   isRentalPartnersEnabled,
   isAreaFactsEnabled,
@@ -90,6 +91,22 @@ export function isTownMapsFeatureEnabledClient(flags: FeatureFlags): boolean {
 export function useTownMapsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isTownMapsFeatureEnabledClient(flags);
+}
+
+function discoverMapsDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_DISCOVER_MAPS_ENABLED === "1"
+  );
+}
+
+export function isDiscoverMapsFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isDiscoverMapsEnabled(flags) || discoverMapsDevBypassEnabled();
+}
+
+export function useDiscoverMapsFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isDiscoverMapsFeatureEnabledClient(flags);
 }
 
 function rentalPartnersDevBypassEnabled(): boolean {

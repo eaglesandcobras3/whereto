@@ -14,6 +14,8 @@ const baseListing: DiscoverListingRow = {
   service_category_slug: null,
   business_type: "restaurant",
   search_tags: ["seafood"],
+  map_lat: 30.28,
+  map_lng: -86.0,
   tag_match: { matched: ["seafood"], missing: [] },
 };
 

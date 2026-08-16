@@ -10,6 +10,9 @@ export type BuildDiscoverUrlParams = {
   q?: string;
   /** Original NL query — display only, not used for search after expansion. */
   nlQuery?: string;
+  /** Map viewport `south,west,north,east` (storefront map mode). */
+  bbox?: string;
+  zoom?: number;
   page?: number;
 };
 
@@ -41,6 +44,14 @@ export function buildDiscoverUrl(params: BuildDiscoverUrlParams): string {
 
   if (params.q?.trim()) sp.set("q", params.q.trim());
   if (params.nlQuery?.trim()) sp.set("nl_q", params.nlQuery.trim());
+
+  if (entityType !== "service") {
+    if (params.bbox?.trim()) sp.set("bbox", params.bbox.trim());
+    if (params.zoom && params.zoom >= 8 && params.zoom <= 20) {
+      sp.set("zoom", String(params.zoom));
+    }
+  }
+
   if (params.page && params.page > 1) sp.set("page", String(params.page));
 
   const qs = sp.toString();
