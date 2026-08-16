@@ -28,7 +28,11 @@ import {
   unifiedRollupPublicSegment,
 } from "@/lib/categories/unified-browse";
 import { listStorefrontMapMarkersForBusinessIds } from "@/lib/data/business-map-markers";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled } from "@/lib/feature-flags";
+import {
+  getAllFeatureFlags,
+  isBusinessMapsFeatureEnabled,
+  isCategoryHubSeoFeatureEnabled,
+} from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { getGuidesForCategoryHub } from "@/lib/data/town-hub";
@@ -100,16 +104,26 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
   const segment = normalizeUrlSegment(raw) || raw.trim().toLowerCase();
   if (!segment) notFound();
 
+  const flags = await getAllFeatureFlags();
+  const seoSubstanceEnabled = isCategoryHubSeoFeatureEnabled(flags);
+
   const rollupSlug = unifiedRollupFromPublicSegment(segment);
   if (rollupSlug) {
     const hub = await loadBrowseGroupHubPage(rollupSlug, "all");
     if (!hub) notFound();
     const [mapMarkers, leafLinks] = await Promise.all([
       mapMarkersForHub(hub.businesses, rollupSlug),
-      listLeafLinksForBrowseGroup(rollupSlug),
+      seoSubstanceEnabled
+        ? listLeafLinksForBrowseGroup(rollupSlug)
+        : Promise.resolve([]),
     ]);
     return (
-      <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} leafLinks={leafLinks} />
+      <BrowseGroupHubView
+        hub={hub}
+        mapMarkers={mapMarkers}
+        leafLinks={leafLinks}
+        seoSubstanceEnabled={seoSubstanceEnabled}
+      />
     );
   }
 
@@ -119,10 +133,17 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
     if (!hub) notFound();
     const [mapMarkers, leafLinks] = await Promise.all([
       mapMarkersForHub(hub.businesses, groupSlug),
-      listLeafLinksForBrowseGroup(groupSlug),
+      seoSubstanceEnabled
+        ? listLeafLinksForBrowseGroup(groupSlug)
+        : Promise.resolve([]),
     ]);
     return (
-      <BrowseGroupHubView hub={hub} mapMarkers={mapMarkers} leafLinks={leafLinks} />
+      <BrowseGroupHubView
+        hub={hub}
+        mapMarkers={mapMarkers}
+        leafLinks={leafLinks}
+        seoSubstanceEnabled={seoSubstanceEnabled}
+      />
     );
   }
 
@@ -139,7 +160,9 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
       .filter((id): id is string => Boolean(id));
     const [mapMarkers, guides] = await Promise.all([
       mapMarkersForHub(hub.businesses, hub.cat.slug),
-      getGuidesForCategoryHub(townIds),
+      seoSubstanceEnabled
+        ? getGuidesForCategoryHub(townIds)
+        : Promise.resolve([]),
     ]);
     return (
       <CategoryHubView
@@ -148,6 +171,7 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
         businesses={hub.businesses}
         mapMarkers={mapMarkers}
         guides={guides}
+        seoSubstanceEnabled={seoSubstanceEnabled}
       />
     );
   }
