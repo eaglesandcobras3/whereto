@@ -55,8 +55,44 @@ describe("sitemap strategy", () => {
     expect(allPaths).not.toContain("/categories");
     expect(allPaths).toContain("/guides");
     expect(allPaths).not.toContain("/guide");
+    expect(allPaths).not.toContain("/stays");
     expect(allPaths).toContain(PRIMARY_EDITORIAL_GUIDE_PATH);
     expect(allPaths).toContain("/guide/best-coffee-30a");
+  });
+
+  it("includes /stays hub and rental URLs only when includeRentals is set", () => {
+    const without = paths(
+      buildSitemapEntries({
+        base: BASE,
+        now: new Date("2026-06-01"),
+        towns: [],
+        guides: [],
+        areas: [],
+        categories: [],
+        rentals: [{ slug: "ocean-house" }],
+        rentalTownHubs: [{ slug: "seaside" }],
+      }),
+    );
+    expect(without).not.toContain("/stays");
+    expect(without).not.toContain("/stays/ocean-house");
+    expect(without).not.toContain("/stays/town/seaside");
+
+    const withRentals = paths(
+      buildSitemapEntries({
+        base: BASE,
+        now: new Date("2026-06-01"),
+        towns: [],
+        guides: [],
+        areas: [],
+        categories: [],
+        includeRentals: true,
+        rentals: [{ slug: "ocean-house" }],
+        rentalTownHubs: [{ slug: "seaside" }],
+      }),
+    );
+    expect(withRentals).toContain("/stays");
+    expect(withRentals).toContain("/stays/ocean-house");
+    expect(withRentals).toContain("/stays/town/seaside");
   });
 
   it("includes rollup browse groups (unified + legacy)", () => {

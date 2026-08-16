@@ -3,7 +3,9 @@ import { townPagePath } from "@/lib/routes/town-page-path";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import {
   metaDescriptionSnippet,
+  preferTitleWithinBudget,
   seoTitleSegmentForLayout,
+  townTitleSegment,
 } from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 
@@ -22,7 +24,7 @@ export function homePageMetadata(ogImageUrl?: string | null): Metadata {
 
 export function guidesHubMetadata(): Metadata {
   const title = seoTitleSegmentForLayout(
-    "30A Travel Guides: Beach Access, Town Tips & Trip Planning",
+    "30A Travel Guides: Beach Access & Town Tips",
   );
   const description = metaDescriptionSnippet(
     "Explore 30A travel guides for first-timers, beach access, family trips, dining, and local planning advice across South Walton.",
@@ -38,7 +40,7 @@ export function guidesHubMetadata(): Metadata {
 
 export function townsHubMetadata(): Metadata {
   const title = seoTitleSegmentForLayout(
-    "30A Beach Towns Guide: Compare Rosemary, Seaside, Alys & More",
+    "30A Beach Towns: Rosemary, Seaside & Alys",
   );
   const description = metaDescriptionSnippet(
     "Compare the best 30A towns by vibe, beach access, walkability, family fit, and where to stay.",
@@ -116,19 +118,21 @@ export function townPageMetadataFromAudit(
 ): Metadata {
   const auditDefaults: Record<string, { title: string; description: string }> = {
     seaside: {
-      title: "Seaside Florida Travel Guide: Where to Stay, Eat & Go to the Beach",
+      title: "Seaside Florida: Stay, Eat & Beach Guide",
       description:
         "Plan a trip to Seaside, Florida with local tips on where to stay, beach access, restaurants, shopping, and nearby spots on 30A.",
     },
     "inlet-beach": {
-      title: "Inlet Beach Travel Guide: Where to Stay, Eat & Explore on 30A",
+      title: "Inlet Beach: Stay, Eat & Explore on 30A",
       description:
         "Discover Inlet Beach with local tips on beach access, where to stay, 30Avenue, restaurants, and nearby 30A highlights.",
     },
   };
   const audit = auditDefaults[townSlug];
-  const title = seoTitleSegmentForLayout(
-    seoTitle?.trim() || audit?.title || `${townName} Florida Travel Guide`,
+  const compact = townTitleSegment(townName);
+  const title = preferTitleWithinBudget(
+    seoTitle?.trim() || audit?.title,
+    compact,
   );
   const description = metaDescriptionSnippet(
     seoDescription?.trim() || audit?.description || fallbackDescription,

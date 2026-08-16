@@ -17,7 +17,7 @@ export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/areas"),
-  title: "30A Shopping Districts & Town Centers | Areas Guide",
+  title: "30A Town Centers & Shopping Districts",
   description:
     "Explore the town centers, shopping districts, and local gathering spots along Scenic 30A, from Rosemary Beach Town Center and Seaside to Alys Beach and WaterColor's MarketShops.",
   keywords: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   ],
   ...openGraphForPage({
     path: "/areas",
-    title: "30A Shopping Districts & Town Centers | WhereTo30A",
+    title: "30A Town Centers & Shopping Districts | WhereTo30A",
     description:
       "Every notable area, district, and gathering spot along 30A, curated with local restaurants, shops, and things to do nearby.",
   }),

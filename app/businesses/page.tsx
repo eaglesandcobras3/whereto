@@ -13,12 +13,12 @@ export const revalidate = 21600;
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/businesses"),
-  title: "Businesses on 30A | Shops, Restaurants, Services & More",
+  title: "30A Businesses: Restaurants, Shops & Services",
   description:
     "Browse local businesses along Scenic 30A — restaurants, shops, lodging, trades, and appointment-based providers — by category.",
   ...openGraphForPage({
     path: "/businesses",
-    title: "Businesses on 30A | WhereTo30A",
+    title: "30A Businesses: Restaurants, Shops & Services | WhereTo30A",
     description:
       "Local businesses along 30A: places to visit and providers to hire, browsed by category.",
   }),

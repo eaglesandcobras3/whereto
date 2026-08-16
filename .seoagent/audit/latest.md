@@ -23,25 +23,29 @@ _(none)_
 
 ## High
 
-- [ ] **`/stays` is in the live sitemap but redirects to `/`** — rentals are feature-flagged off in production, so Google is asked to crawl a hub that soft-redirects to the homepage. (Confirmed)
+- [x] **`/stays` is in the live sitemap but redirects to `/`** — rentals are feature-flagged off in production, so Google is asked to crawl a hub that soft-redirects to the homepage. (Confirmed)
   - URL: https://whereto30a.com/stays
   - Evidence: live HEAD returns `307` → `/`; sitemap.xml includes `https://whereto30a.com/stays`; evidence.md § https://whereto30a.com/stays shows homepage title/H1/canonical after follow
   - Recommendation: Until rentals launch, remove `/stays` from the sitemap generator (or gate it on the same rentals flag). Prefer a 404/410 or keep the redirect only after the URL is off the sitemap.
+  - Fixed 2026-08-16: `/stays` hub + rental URLs are only emitted when `includeRentals` is true (wired to the rentals feature flag in `fetchSitemapEntries`).
 
-- [ ] **Many high-value titles are pre-truncated with an ellipsis before the brand suffix** — SERP titles waste characters on `…` instead of a complete benefit phrase. Affects towns, guides hub, and editorial guides. (Confirmed)
+- [x] **Many high-value titles are pre-truncated with an ellipsis before the brand suffix** — SERP titles waste characters on `…` instead of a complete benefit phrase. Affects towns, guides hub, and editorial guides. (Confirmed)
   - URLs: https://whereto30a.com/towns, https://whereto30a.com/guides, https://whereto30a.com/town/rosemary-beach, https://whereto30a.com/town/seaside, https://whereto30a.com/guide/ultimate-30a-first-timers-guide, https://whereto30a.com/guide/guide-to-rosemary-beach-florida (and matching town pattern in evidence)
   - Evidence: evidence.md titles literally contain `…` (e.g. towns: `30A Beach Towns Guide: Compare Rosemary,… | WhereTo30A`; Rosemary Beach: `Rosemary Beach Florida: Where to Stay, Eat,… | WhereTo30A`)
   - Recommendation: Rewrite title segments to fit the ~45-char layout budget without ellipsis — lead with the primary keyword and one concrete hook (town name + stay/eat/beach angle), not a long phrase that gets cut.
+  - Fixed 2026-08-16: title truncation no longer emits `…`; towns/guides hubs rewritten to fit; long CMS titles fall back to compact complete titles via `preferTitleWithinBudget` / `townTitleSegment`.
 
 ## Medium
 
-- [ ] **AI crawlers are blocked while `llms.txt` invites AI discovery** — GPTBot, ChatGPT-User, and CCBot are Disallow-all, which undercuts AEO/GEO even though an llms.txt map exists. (Confirmed)
+- [x] **AI crawlers are blocked while `llms.txt` invites AI discovery** — GPTBot, ChatGPT-User, and CCBot are Disallow-all, which undercuts AEO/GEO even though an llms.txt map exists. (Confirmed)
   - Evidence: evidence.md § robots.txt raw contents (`User-Agent: GPTBot` / `ChatGPT-User` / `CCBot` → `Disallow: /`); live `https://whereto30a.com/llms.txt` returns 200 with hub + guide links
   - Recommendation: Decide deliberately — either allow those bots (at least for public guide/town/business paths) or treat llms.txt as human/docs-only and stop implying AI-agent crawl readiness.
+  - Fixed 2026-08-16: removed blanket AI-bot blocks; GPTBot/ChatGPT-User/CCBot inherit the same public allow + private disallow rules as `*`.
 
-- [ ] **Hub titles exceed the ~60-character SERP budget** — `/areas` (64) and `/businesses` (68) will truncate in Google. (Confirmed)
+- [x] **Hub titles exceed the ~60-character SERP budget** — `/areas` (64) and `/businesses` (68) will truncate in Google. (Confirmed)
   - Evidence: evidence.md § https://whereto30a.com/areas title `30A Shopping Districts & Town Centers | Areas Guide | WhereTo30A` (64); § https://whereto30a.com/businesses title `Businesses on 30A | Shops, Restaurants, Services & More | WhereTo30A` (68)
   - Recommendation: Shorten to ~50–60 chars with primary keyword first (e.g. `30A Businesses: Restaurants, Shops & Services | WhereTo30A`).
+  - Fixed 2026-08-16: areas → `30A Town Centers & Shopping Districts` (50 with brand); businesses → `30A Businesses: Restaurants, Shops & Services` (58 with brand).
 
 - [ ] **Indexable `/about`, `/privacy`, and `/terms` are excluded from the sitemap** — still live and indexable via links, but not submitted via sitemap. (Confirmed)
   - Evidence: `seoagent sitemap` missing list includes `/about`, `/privacy`, `/terms`; live HEAD all return 200; `/about` title is only 18 chars (`About | WhereTo30A`)

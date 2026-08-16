@@ -4,13 +4,13 @@ Prioritized from the 2026-08-16 live audit. Check items off as they ship.
 
 ## P0 — Fix crawl/index waste
 
-- [ ] Remove `/stays` from the live sitemap while rentals are feature-flagged off (or enable rentals and serve a real hub)
-- [ ] Stop shipping ellipsis-truncated `<title>` segments on towns/guides — rewrite to fit the layout budget
+- [x] Remove `/stays` from the live sitemap while rentals are feature-flagged off (or enable rentals and serve a real hub)
+- [x] Stop shipping ellipsis-truncated `<title>` segments on towns/guides — rewrite to fit the layout budget
 
 ## P1 — SERP + AI discoverability
 
-- [ ] Shorten `/areas` and `/businesses` titles to ≤60 characters
-- [ ] Decide AI-bot policy: allow GPTBot/ChatGPT-User (and optionally CCBot) for public content, or stop implying AI crawl readiness via llms.txt alone
+- [x] Shorten `/areas` and `/businesses` titles to ≤60 characters
+- [x] Decide AI-bot policy: allow GPTBot/ChatGPT-User (and optionally CCBot) for public content, or stop implying AI crawl readiness via llms.txt alone
 - [ ] Rewrite category-hub meta description templates into natural English
 
 ## P2 — Architecture cleanup

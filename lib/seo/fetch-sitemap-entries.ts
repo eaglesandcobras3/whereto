@@ -12,6 +12,7 @@ import {
 } from "@/lib/seo/sitemap-categories";
 import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
 import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
+import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 
 const SITEMAP_PAGE_SIZE = 1000;
 
@@ -54,8 +55,12 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       return staticFallbackSitemap(base, now);
     }
 
+    const flags = await getAllFeatureFlags();
+    const includeRentals = isRentalsFeatureEnabled(flags);
+
     const [towns, guides, areas, pointsOfInterest, categories, browseGroupPaths, events, rentalBundle] =
       await Promise.all([
+<<<<<<< HEAD
         fetchPublishedRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
         fetchSitemapGuides(supabase),
         fetchPublishedRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
@@ -69,6 +74,23 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
         fetchPublishedRows(supabase, "events", "slug, date_updated, published_at, date_created"),
         fetchSitemapRentals(supabase),
       ]);
+=======
+      fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
+      fetchSitemapGuides(supabase),
+      fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
+      fetchBrowseableRows(
+        supabase,
+        "points_of_interest",
+        "slug, date_updated, published_at, date_created",
+      ),
+      fetchSitemapCategories(supabase),
+      listNonEmptySitemapBrowseGroupPaths(supabase),
+      fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
+      includeRentals
+        ? fetchSitemapRentals(supabase)
+        : Promise.resolve({ rentals: [] as Record<string, unknown>[], rentalTownHubs: [] as Record<string, unknown>[] }),
+    ]);
+>>>>>>> 6dbd155 (Fix sitemap stays leak, title truncation, AI bots, and hub titles)
 
     return buildSitemapEntries({
       base,
@@ -80,6 +102,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       browseGroupPaths,
       pointsOfInterest,
       events,
+      includeRentals,
       rentals: rentalBundle.rentals,
       rentalTownHubs: rentalBundle.rentalTownHubs,
     });

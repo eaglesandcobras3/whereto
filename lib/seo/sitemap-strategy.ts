@@ -61,8 +61,14 @@ export const SITEMAP_HUB_PAGES = [
   { path: "/areas", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/businesses", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/guides", priority: 0.9, changeFreq: "weekly" as const },
-  { path: "/stays", priority: 0.88, changeFreq: "daily" as const },
 ] as const;
+
+/** Vacation-rentals hub — only emit when rentals are feature-enabled in production. */
+export const SITEMAP_STAYS_HUB = {
+  path: "/stays",
+  priority: 0.88,
+  changeFreq: "daily" as const,
+} as const;
 
 export const SITEMAP_HOME = {
   path: "/",
@@ -84,9 +90,15 @@ export type BuildSitemapInput = {
   /** POIs resolve at `/area/[slug]` — deduped against areas. */
   pointsOfInterest?: SitemapRow[];
   events?: SitemapRow[];
-  /** Index-eligible vacation rentals (`/stays/[slug]`). */
+  /**
+   * When true, include `/stays` hub + rental property/town URLs.
+   * Keep false while the rentals feature flag is off so the sitemap does not
+   * advertise URLs that middleware redirects to `/`.
+   */
+  includeRentals?: boolean;
+  /** Index-eligible vacation rentals (`/stays/[slug]`). Ignored unless `includeRentals`. */
   rentals?: SitemapRow[];
-  /** Town hubs with enough inventory (`/stays/town/[slug]`). */
+  /** Town hubs with enough inventory (`/stays/town/[slug]`). Ignored unless `includeRentals`. */
   rentalTownHubs?: SitemapRow[];
 };
 
@@ -142,6 +154,7 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     browseGroupPaths,
     pointsOfInterest = [],
     events = [],
+    includeRentals = false,
     rentals = [],
     rentalTownHubs = [],
   } = input;
@@ -160,6 +173,15 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
       lastModified: now,
       changeFrequency: hub.changeFreq,
       priority: hub.priority,
+    });
+  }
+
+  if (includeRentals) {
+    entries.push({
+      url: `${base}${SITEMAP_STAYS_HUB.path}`,
+      lastModified: now,
+      changeFrequency: SITEMAP_STAYS_HUB.changeFreq,
+      priority: SITEMAP_STAYS_HUB.priority,
     });
   }
 
@@ -256,26 +278,28 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     });
   }
 
-  for (const r of rentals) {
-    const slug = String(r.slug ?? "").trim();
-    if (!slug) continue;
-    entries.push({
-      url: `${base}/stays/${encodeURIComponent(slug)}`,
-      lastModified: pickSitemapDate(r, now),
-      changeFrequency: "weekly",
-      priority: 0.78,
-    });
-  }
+  if (includeRentals) {
+    for (const r of rentals) {
+      const slug = String(r.slug ?? "").trim();
+      if (!slug) continue;
+      entries.push({
+        url: `${base}/stays/${encodeURIComponent(slug)}`,
+        lastModified: pickSitemapDate(r, now),
+        changeFrequency: "weekly",
+        priority: 0.78,
+      });
+    }
 
-  for (const hub of rentalTownHubs) {
-    const slug = String(hub.slug ?? "").trim();
-    if (!slug) continue;
-    entries.push({
-      url: `${base}/stays/town/${encodeURIComponent(slug)}`,
-      lastModified: pickSitemapDate(hub, now),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    });
+    for (const hub of rentalTownHubs) {
+      const slug = String(hub.slug ?? "").trim();
+      if (!slug) continue;
+      entries.push({
+        url: `${base}/stays/town/${encodeURIComponent(slug)}`,
+        lastModified: pickSitemapDate(hub, now),
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
+    }
   }
 
   return dedupeSitemapByUrl(entries).filter((e) => {

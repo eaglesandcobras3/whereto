@@ -14,7 +14,7 @@ import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import {
   metaDescriptionSnippet,
-  seoTitleSegmentForLayout,
+  preferTitleWithinBudget,
 } from "@/lib/seo/metadata-snippets";
 import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
@@ -134,10 +134,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     page.seo_description,
     `Travel guide for 30A: ${page.title}.`,
   );
+  const title = preferTitleWithinBudget(page.seo_title, page.title);
 
   return {
     ...canonicalAlternates(`/guide/${seg}`),
-    title: seoTitleSegmentForLayout(page.seo_title || page.title),
+    title,
     description: ogDescription,
     ...openGraphForPage({
       path: `/guide/${seg}`,
