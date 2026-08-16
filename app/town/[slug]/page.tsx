@@ -20,7 +20,6 @@ import { generateTownSchema } from "@/lib/seo/breadcrumb-schema";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
@@ -116,7 +115,6 @@ async function getTownPageData(townId: string) {
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_storefront", true)
     .eq("is_explorable", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .limit(500);
 
   const bizInTownAreasQuery =
@@ -129,7 +127,6 @@ async function getTownPageData(townId: string) {
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .eq("is_storefront", true)
           .eq("is_explorable", true)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .limit(500)
       : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
 
@@ -142,7 +139,6 @@ async function getTownPageData(townId: string) {
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_storefront", true)
     .eq("is_explorable", true)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   const directAreaBizInAreasQuery =
     townAreaIds.length > 0
@@ -152,7 +148,6 @@ async function getTownPageData(townId: string) {
           .in("area_id", townAreaIds)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN)
       : Promise.resolve({ data: [] as { area_id: string }[] | null });
 
   const [bizTownRes, bizAreaRes, daTownRes, daAreaRes, junctionRes] = await Promise.all([
@@ -216,7 +211,6 @@ async function getTownPageData(townId: string) {
           .in("id", chunk)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN),
       ),
     );
     const visibleBusiness = new Set<string>();

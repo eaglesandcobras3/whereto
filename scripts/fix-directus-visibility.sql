@@ -1,67 +1,28 @@
 -- Diagnose / clear is_hidden_from_search leftovers.
 --
--- App policy (2026-08): towns, areas, and guides ignore this flag — published + not
--- archived means public and SEO-ready. Businesses still respect soft-hide.
--- Clearing the flag here keeps CMS/Directus rows tidy and avoids confusion in SQL.
+-- App policy (2026-08): published + not archived means public and SEO-ready for
+-- towns, areas, guides, businesses, events, and POIs. Rentals use published +
+-- active partner (+ index-readiness gates). Soft-hide is ignored by the app.
+-- Clearing the flag keeps CMS/Directus rows tidy.
 
 -- ========================================
--- STEP 1: DIAGNOSE - Check current state
+-- STEP 1: DIAGNOSE
 -- ========================================
 
-SELECT id, title, slug, status,
-       is_hidden_from_search,
-       archived_at,
-       CASE
-         WHEN archived_at IS NOT NULL THEN 'ARCHIVED'
-         WHEN status IS DISTINCT FROM 'published' THEN 'NOT_PUBLISHED'
-         WHEN is_hidden_from_search = true THEN 'FLAG_SET (app ignores for towns)'
-         ELSE 'PUBLISHED'
-       END as visibility_status
-FROM towns
-ORDER BY date_created DESC
-LIMIT 20;
+SELECT 'towns' as entity, id::text, title, slug, status, is_hidden_from_search, archived_at
+FROM towns ORDER BY date_created DESC NULLS LAST LIMIT 20;
 
-SELECT id, title, slug, status,
-       is_hidden_from_search,
-       archived_at,
-       CASE
-         WHEN archived_at IS NOT NULL THEN 'ARCHIVED'
-         WHEN status IS DISTINCT FROM 'published' THEN 'NOT_PUBLISHED'
-         WHEN is_hidden_from_search = true THEN 'FLAG_SET (app ignores for areas)'
-         ELSE 'PUBLISHED'
-       END as visibility_status
-FROM areas
-ORDER BY date_created DESC
-LIMIT 20;
+SELECT 'areas' as entity, id::text, title, slug, status, is_hidden_from_search, archived_at
+FROM areas ORDER BY date_created DESC NULLS LAST LIMIT 20;
 
-SELECT id, title, slug, status,
-       is_hidden_from_search,
-       archived_at,
-       CASE
-         WHEN archived_at IS NOT NULL THEN 'ARCHIVED'
-         WHEN status IS DISTINCT FROM 'published' THEN 'NOT_PUBLISHED'
-         WHEN is_hidden_from_search = true THEN 'FLAG_SET (app ignores for guides)'
-         ELSE 'PUBLISHED'
-       END as visibility_status
-FROM guides
-ORDER BY date_created DESC
-LIMIT 20;
+SELECT 'guides' as entity, id::text, title, slug, status, is_hidden_from_search, archived_at
+FROM guides ORDER BY date_created DESC NULLS LAST LIMIT 20;
 
--- Businesses still use the soft-hide flag in the app.
-SELECT id, title, slug,
-       is_hidden_from_search,
-       archived_at,
-       CASE
-         WHEN archived_at IS NOT NULL THEN 'HIDDEN: archived'
-         WHEN is_hidden_from_search = true THEN 'HIDDEN: is_hidden_from_search=true'
-         ELSE 'VISIBLE'
-       END as visibility_status
-FROM businesses
-ORDER BY date_created DESC
-LIMIT 20;
+SELECT 'businesses' as entity, id::text, title, slug, status, is_hidden_from_search, archived_at
+FROM businesses ORDER BY date_created DESC NULLS LAST LIMIT 20;
 
 -- ========================================
--- STEP 2: FIX - Clear hide flag on editorial entities + optional businesses
+-- STEP 2: FIX — clear soft-hide on live rows
 -- ========================================
 
 UPDATE towns
@@ -79,12 +40,14 @@ SET is_hidden_from_search = false
 WHERE archived_at IS NULL
   AND (is_hidden_from_search IS DISTINCT FROM false);
 
--- Optional: clear hide on businesses (only if you intend every non-archived listing
--- to be discoverable). Comment out if you rely on soft-hide for thin/duplicate listings.
--- UPDATE businesses
--- SET is_hidden_from_search = false
--- WHERE archived_at IS NULL
---   AND is_hidden_from_search = true;
+UPDATE businesses
+SET is_hidden_from_search = false
+WHERE archived_at IS NULL
+  AND (is_hidden_from_search IS DISTINCT FROM false);
+
+UPDATE rental_properties
+SET is_hidden_from_search = false
+WHERE (is_hidden_from_search IS DISTINCT FROM false);
 
 -- ========================================
 -- STEP 3: VERIFY
@@ -106,6 +69,11 @@ SELECT 'guides',
 FROM guides
 UNION ALL
 SELECT 'businesses',
-       COUNT(*) FILTER (WHERE archived_at IS NULL AND (is_hidden_from_search IS NULL OR is_hidden_from_search = false)),
+       COUNT(*) FILTER (WHERE archived_at IS NULL AND status = 'published'),
        COUNT(*) FILTER (WHERE archived_at IS NULL AND is_hidden_from_search = true)
-FROM businesses;
+FROM businesses
+UNION ALL
+SELECT 'rental_properties',
+       COUNT(*) FILTER (WHERE status = 'published'),
+       COUNT(*) FILTER (WHERE is_hidden_from_search = true)
+FROM rental_properties;

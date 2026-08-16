@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { BROWSE_VISIBLE_NOT_HIDDEN } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 
 export type SupabaseDiagnosticStep = {
@@ -133,17 +132,17 @@ export async function runSupabaseDataSteps(
     .from("businesses")
     .select("id", { count: "exact", head: true })
     .is("archived_at", null)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
+    .eq("status", "published");
   steps.push({
     n: 5,
-    title: "Businesses: not archived + visible",
+    title: "Businesses: published",
     ok: !e5 && (bizAny === 0 || (bizVisible ?? 0) > 0),
     detail: e5
       ? e5.message
-      : `Non-archived: ${bizAny ?? 0}. Visible in app: ${bizVisible ?? 0}.${
+      : `Non-archived: ${bizAny ?? 0}. Published: ${bizVisible ?? 0}.${
           bizAny && !bizVisible
-            ? "\nRows exist but hidden — same visibility fix as towns."
-            : "\nSearch + /business/… use these filters."
+            ? "\nRows exist but none are published."
+            : "\nSearch + /business/… use published + not archived."
         }`,
   });
 
@@ -196,7 +195,7 @@ export async function runSupabaseDataSteps(
     const s = bizKey;
     const { data: bRaws, error: be1 } = await supabase
       .from("businesses")
-      .select("id, title, slug, is_hidden_from_search, archived_at")
+      .select("id, title, slug, status, archived_at")
       .eq("slug", s)
       .limit(1);
     const { data: bApps, error: be2 } = await supabase
@@ -204,7 +203,7 @@ export async function runSupabaseDataSteps(
       .select("id, title, slug")
       .eq("slug", s)
       .is("archived_at", null)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .eq("status", "published")
       .limit(1);
     const bRaw = bRaws?.[0];
     const bApp = bApps?.[0];
@@ -213,15 +212,15 @@ export async function runSupabaseDataSteps(
       be1
         ? `Error: ${be1.message}`
         : bRaw
-          ? `DB: “${(bRaw as { title: string }).title}”, is_hidden_from_search=${
-              (bRaw as { is_hidden_from_search: boolean | null }).is_hidden_from_search
+          ? `DB: “${(bRaw as { title: string }).title}”, status=${
+              (bRaw as { status: string | null }).status
             }`
           : "No `businesses` row for this slug.",
       be2 ? `Filter query: ${be2.message}` : "",
       !be2 && bApp?.id
         ? `→ Open: /business/${s}`
         : bRaw
-          ? "→ 404: fails visibility (or stricter app checks)."
+          ? "→ 404: fails archived or not published (or stricter app checks)."
           : "→ 404: slug may differ in this project.",
     ].filter(Boolean);
     steps.push({

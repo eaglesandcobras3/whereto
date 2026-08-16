@@ -11,7 +11,6 @@ import { VerifiedBadge } from "@/components/business/VerifiedBadge";
 import { extractOverviewFromContent } from "@/lib/business/extract-overview";
 import { normalizeSearchTags } from "@/lib/discovery-filters/search-tag-aggregate";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
@@ -65,7 +64,6 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
       .select("slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .or(BROWSE_VISIBLE_NOT_HIDDEN)
       .order("id", { ascending: true })
       .range(from, from + STATIC_PARAMS_PAGE_SIZE - 1);
     if (error) {
@@ -109,7 +107,6 @@ async function loadBusiness(slug: string) {
           .select(sel)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("id", slug)
           .maybeSingle()
       : await supabase
@@ -117,7 +114,6 @@ async function loadBusiness(slug: string) {
           .select(sel)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .or(BROWSE_VISIBLE_NOT_HIDDEN)
           .eq("slug", slug)
           .maybeSingle();
 

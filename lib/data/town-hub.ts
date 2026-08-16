@@ -47,8 +47,7 @@ export async function getTownBySlug(slug: string) {
   if (!key) return null;
 
   const supabase = getServiceSupabase();
-  // Town hub: published + not archived. Editorial entities ignore is_hidden_from_search
-  // (published means SEO-ready).
+  // Town hub: published + not archived. Soft-hide is ignored sitewide.
   // `towns_view` adds `main_image_url` / `hero_image_url` via `resolve_directus_file_url` → Supabase Storage
   const { data: rows, error } = await supabase
     .from("towns_view")

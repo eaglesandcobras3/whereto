@@ -469,13 +469,13 @@ Junction tables: `guide_towns`, `guide_areas`, `guide_businesses`. Business page
 
 ---
 
-## Editorial SEO visibility (towns / areas / guides)
+## Editorial + listing SEO visibility
 
-Published towns, areas, and guides are always public and sitemap-eligible. The app does **not** filter them by `is_hidden_from_search` (businesses still can soft-hide).
+Published rows are always public and sitemap-eligible. The app does **not** filter on `is_hidden_from_search` for towns, areas, guides, businesses, events, or POIs. Rentals use `status=published` + active partner (plus index-readiness quality gates). Soft-hide is legacy CMS noise — archive or unpublish to remove something.
 
 ### One-time CMS cleanup
 
-- [ ] Run [scripts/fix-directus-visibility.sql](../scripts/fix-directus-visibility.sql) in Supabase SQL editor to clear leftover `is_hidden_from_search=true` on towns/areas/guides.
+- [ ] Run [scripts/fix-directus-visibility.sql](../scripts/fix-directus-visibility.sql) in Supabase SQL editor to clear leftover `is_hidden_from_search=true` on towns/areas/guides/businesses/rentals.
 
 ---
 
@@ -605,6 +605,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-16 | Soft-hide removed for businesses/rentals too — published (+ rental partner active) means public/SEO-ready; SQL clears businesses + rentals |
 | 2026-08-16 | Published towns/areas/guides are always SEO-visible — app ignores `is_hidden_from_search` for those tables; admin/RankScore/compiler set the flag false; SQL cleanup [fix-directus-visibility.sql](../scripts/fix-directus-visibility.sql) |
 | 2026-08-16 | PostHog `discover_maps` (requires `discover`, default off): map-first storefront `/discover` with “Search this area” → `bbox`/`zoom` URL params; services stay list-only. Local bypass `DISCOVER_MAPS_ENABLED` / `NEXT_PUBLIC_DISCOVER_MAPS_ENABLED` |
 | 2026-08-16 | PostHog `category_hub_seo` (default off) gates category hub editorial/guides/rollup differentiation; FAQ block removed; sitemap/noindex for empty hubs stays always on. Local bypass `CATEGORY_HUB_SEO_ENABLED` |

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSiteUrl } from "@/lib/site-url";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { inspectUrl } from "./gsc/client";
 import { isGscConfigured } from "./gsc/config";
 import { absoluteUrlForPath, pathForKind } from "./paths";
@@ -348,7 +348,6 @@ async function fetchSlugPage(
         .from("businesses_view")
         .select("slug")
         .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .is("archived_at", null)
         .not("slug", "is", null)
         .order("id", { ascending: true })
@@ -390,7 +389,6 @@ async function fetchSlugPage(
         .from("business_categories")
         .select("slug")
         .eq("status", DIRECTUS_PUBLISHED_STATUS)
-        .or(BROWSE_VISIBLE_NOT_HIDDEN)
         .is("archived_at", null)
         .not("parent_category_id", "is", null)
         .not("slug", "is", null)

@@ -245,13 +245,13 @@ export function scoreBusinessSeo(input: BusinessIrseInput): CategoryCheckResult 
     pass(12, true), // Open Graph / Twitter from shared helpers
     pass(
       12,
-      input.is_hidden_from_search !== true && input.status === "published",
+      input.status === "published",
       {
         severity: "critical",
         code: "seo_not_indexable_state",
-        message: "Listing is hidden from search or not published.",
+        message: "Listing is not published.",
       },
-      "Publish the listing and clear is_hidden_from_search.",
+      "Publish the listing.",
     ),
     pass(12, true), // structured data LocalBusiness on template
   ];

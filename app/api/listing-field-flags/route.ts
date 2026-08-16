@@ -15,7 +15,6 @@ import {
 } from "@/lib/listing-requests/listing-field-flag";
 import { isListingRequestRateLimited, rateLimitKeyFromRequest } from "@/lib/rate-limit";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { PROPERTY_TYPE_LABELS } from "@/lib/stays/constants";
@@ -411,7 +410,6 @@ export async function POST(request: NextRequest) {
     .eq("id", entityId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .maybeSingle();
 
   if (bizErr || !biz) {

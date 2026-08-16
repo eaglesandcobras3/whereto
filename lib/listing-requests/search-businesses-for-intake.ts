@@ -2,7 +2,6 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 
@@ -35,7 +34,6 @@ export async function searchBusinessesForIntake(
     .select("id, title, slug, towns ( title )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .ilike("title", pattern)
     .order("title", { ascending: true })
     .limit(Math.min(Math.max(limit, 1), 20));

@@ -1,23 +1,23 @@
 /**
- * PostgREST `or` string: **visible** in browse for **business listings** (and similar
- * inventory such as events / POIs that still support soft-hide).
+ * Public listing visibility helpers.
  *
- * Do **not** apply this to towns, areas, or guides. For those editorial entities,
- * `status = published` and `archived_at` null means public and SEO-ready — ignore
- * `is_hidden_from_search`.
- *
- * Do **not** use `not(is_hidden,eq,true)`: in PostgreSQL, `NOT (null = true)` is unknown,
- * so rows with `null` (meaning “not hidden” in the CMS) were incorrectly excluded and
- * lists showed **zero** rows.
+ * Policy: `status = published` and `archived_at` null means public and SEO-ready.
+ * Do not filter on `is_hidden_from_search` for browse, detail pages, search, or sitemaps.
+ * Archive (or draft / pending_review) is the hide path. Soft-hide is legacy CMS noise.
  */
-export const BROWSE_VISIBLE_NOT_HIDDEN =
-  "is_hidden_from_search.is.null,is_hidden_from_search.eq.false" as const;
 
 /** Directus `status` — consumer URLs, browse, search, and sitemap only expose these rows. */
 export const DIRECTUS_PUBLISHED_STATUS = "published" as const;
 
-/** Tables where published + not archived is enough for public/SEO visibility. */
-export const PUBLISHED_MEANS_INDEXABLE_TABLES = ["towns", "areas", "guides"] as const;
+/** Entity tables where published + not archived is enough for public/SEO visibility. */
+export const PUBLISHED_MEANS_INDEXABLE_TABLES = [
+  "towns",
+  "areas",
+  "guides",
+  "businesses",
+  "events",
+  "points_of_interest",
+] as const;
 
 type EqFilterQuery = { eq: (column: string, value: unknown) => unknown };
 type OrFilterQuery = EqFilterQuery & { or: (filters: string) => unknown };
@@ -48,12 +48,12 @@ export function applyFeaturedStorefrontOnlyFilter<Q extends EqFilterQuery>(query
 }
 
 /** Featured pools — only listings with hero or main image. */
-export function applyFeaturedHasImageFilter<Q extends OrFilterQuery>(query: Q): Q {
-  return query.or(FEATURED_HAS_IMAGE_OR) as Q;
+export function applyFeaturedHasImageFilter<Q extends EqFilterQuery>(query: Q): Q {
+  return (query as unknown as OrFilterQuery).or(FEATURED_HAS_IMAGE_OR) as Q;
 }
 
 /** Storefront + has image — home featured, businesses hub, town/area category previews. */
-export function applyFeaturedListingPoolFilters<Q extends OrFilterQuery>(query: Q): Q {
+export function applyFeaturedListingPoolFilters<Q extends EqFilterQuery>(query: Q): Q {
   return applyFeaturedHasImageFilter(applyFeaturedStorefrontOnlyFilter(query));
 }
 

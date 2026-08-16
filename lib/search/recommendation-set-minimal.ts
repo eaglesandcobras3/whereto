@@ -19,7 +19,6 @@ import { getSearchQueryEmbedding } from "@/lib/search/query-embedding";
 import { loadLearningBoostMap } from "@/lib/search/learning-boost";
 import { deriveQueryClusterKey } from "@/lib/search/query-cluster";
 import {
-  BROWSE_VISIBLE_NOT_HIDDEN,
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import type {
@@ -474,7 +473,6 @@ export async function buildMinimalSearchResult(
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN);
 
   if (ilikeOrClause) query = query.or(ilikeOrClause);
 

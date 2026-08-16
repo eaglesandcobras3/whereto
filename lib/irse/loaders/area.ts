@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAreaFactsBySlug } from "@/lib/data/area-facts-queries";
 import { getAreaPlanningProfile } from "@/lib/data/area-planning";
-import { BROWSE_VISIBLE_NOT_HIDDEN, DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import type { AreaIrseInput } from "../inputs";
 
 export async function loadAreaIrseInput(
@@ -22,7 +22,7 @@ async function loadFromView(
   key: string,
   place_kind: "area" | "poi",
 ): Promise<AreaIrseInput | null> {
-  let query = supabase
+  const { data, error } = await supabase
     .from(view)
     .select(
       `
@@ -32,14 +32,8 @@ async function loadFromView(
     )
     .eq("slug", key)
     .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS);
-
-  // Areas: published means indexable. POIs may still soft-hide.
-  if (view !== "areas_view") {
-    query = query.or(BROWSE_VISIBLE_NOT_HIDDEN);
-  }
-
-  const { data, error } = await query.maybeSingle();
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .maybeSingle();
 
   if (error || !data) return null;
   const row = data as {
@@ -105,7 +99,6 @@ async function countAreaListings(
     .select("id", { count: "exact", head: true })
     .eq("area_id", areaId)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .or(BROWSE_VISIBLE_NOT_HIDDEN)
     .is("archived_at", null);
   if ((byAreaId.count ?? 0) > 0) return byAreaId.count ?? 0;
 
