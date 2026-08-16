@@ -79,6 +79,8 @@ export type BuildSitemapInput = {
   guides: SitemapRow[];
   areas: SitemapRow[];
   categories: SitemapRow[];
+  /** When set, only these browse-group paths are emitted (non-empty rollups). */
+  browseGroupPaths?: string[];
   /** POIs resolve at `/area/[slug]` — deduped against areas. */
   pointsOfInterest?: SitemapRow[];
   events?: SitemapRow[];
@@ -137,6 +139,7 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     guides,
     areas,
     categories,
+    browseGroupPaths,
     pointsOfInterest = [],
     events = [],
     rentals = [],
@@ -160,7 +163,8 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     });
   }
 
-  for (const path of listSitemapBrowseGroupPaths()) {
+  const rollupPaths = browseGroupPaths ?? listSitemapBrowseGroupPaths();
+  for (const path of rollupPaths) {
     entries.push({
       url: `${base}${path}`,
       lastModified: now,

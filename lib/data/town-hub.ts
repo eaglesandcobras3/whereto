@@ -336,6 +336,45 @@ export async function getGuidesForBusiness(
   });
 }
 
+/**
+ * Guides relevant to a category hub: union of guides for towns represented on the hub,
+ * plus corridor-wide (`all_towns`) guides. Caps at `limit`.
+ */
+export async function getGuidesForCategoryHub(
+  townIds: string[],
+  limit = 3,
+): Promise<TownGuideCard[]> {
+  const uniqueTownIds = [...new Set(townIds.map((id) => id.trim()).filter(Boolean))];
+  if (uniqueTownIds.length === 0) {
+    const supabase = getServiceSupabase();
+    const { data } = await supabase
+      .from("guides")
+      .select("id")
+      .contains("search_tags", [GUIDE_TAG_ALL_TOWNS])
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .or(BROWSE_VISIBLE_NOT_HIDDEN)
+      .limit(limit);
+    const ids = (data ?? []).map((r) => String((r as { id: string }).id));
+    return loadPublishedGuideCards(ids);
+  }
+
+  const batches = await Promise.all(
+    uniqueTownIds.slice(0, 5).map((townId) => getGuidesForTown(townId)),
+  );
+  const seen = new Set<string>();
+  const out: TownGuideCard[] = [];
+  for (const batch of batches) {
+    for (const guide of batch) {
+      if (seen.has(guide.id)) continue;
+      seen.add(guide.id);
+      out.push(guide);
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}
+
 async function loadPublishedGuideCards(
   guideIds: string[],
   opts?: { preferIds?: string[] },

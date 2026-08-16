@@ -125,17 +125,98 @@ export async function loadBrowseGroupHubPage(
   };
 }
 
+export type BrowseGroupLeafLink = {
+  title: string;
+  slug: string;
+  listingCount: number;
+};
+
+/** Leaf category hubs that contribute listings to this browse rollup/group. */
+export async function listLeafLinksForBrowseGroup(
+  groupSlug: string,
+): Promise<BrowseGroupLeafLink[]> {
+  const { loadUnifiedCategoryOptions } = await import(
+    "@/lib/categories/load-unified-categories"
+  );
+  const options = await loadUnifiedCategoryOptions();
+  const counts = new Map<string, number>();
+
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase
+    .from("businesses_view")
+    .select("primary_category_id, business_categories ( slug )")
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(BROWSE_VISIBLE_NOT_HIDDEN)
+    .limit(BROWSE_GROUP_BUSINESS_POOL_LIMIT);
+
+  if (error) {
+    console.error("browse group leaf links", error);
+  }
+
+  for (const row of data ?? []) {
+    const r = row as Record<string, unknown>;
+    const cat = r.business_categories as { slug?: string } | null;
+    const slug = cat?.slug ?? null;
+    if (!slug) continue;
+    const section = browseSectionForCategorySlug(slug);
+    const legacy = businessCategoryGroupForSlug(slug);
+    if (section?.id !== groupSlug && legacy !== groupSlug) continue;
+    counts.set(slug, (counts.get(slug) ?? 0) + 1);
+  }
+
+  const out: BrowseGroupLeafLink[] = [];
+  for (const rollup of options) {
+    for (const leaf of rollup.leaves) {
+      const listingCount = counts.get(leaf.slug) ?? 0;
+      if (listingCount === 0) continue;
+      const section = browseSectionForCategorySlug(leaf.slug);
+      const legacy = businessCategoryGroupForSlug(leaf.slug);
+      if (section?.id !== groupSlug && legacy !== groupSlug) continue;
+      out.push({
+        title: leaf.title,
+        slug: leaf.slug,
+        listingCount,
+      });
+    }
+  }
+
+  // Also include any counted leaves not present in unified options (legacy).
+  for (const [slug, listingCount] of counts) {
+    if (out.some((l) => l.slug === slug)) continue;
+    out.push({
+      title: slug.replace(/_/g, " "),
+      slug,
+      listingCount,
+    });
+  }
+
+  return out.sort((a, b) => b.listingCount - a.listingCount || a.title.localeCompare(b.title));
+}
+
 export async function buildBrowseGroupHubMetadata(
   groupSlug: string,
 ): Promise<Metadata> {
+  const hub = await loadBrowseGroupHubPage(groupSlug, "all");
   const title = sectionTitle(groupSlug);
   const path = sectionPath(groupSlug);
-  const description = `Browse ${title.toLowerCase()} along Scenic 30A in South Walton, Florida — storefronts and service providers by town.`;
+  const count = hub?.businesses.length ?? 0;
+  const townCount = hub?.townGroups.length ?? 0;
+  const description =
+    count > 0
+      ? `Browse ${count} ${title.toLowerCase()} along Scenic 30A${
+          townCount > 0 ? ` across ${townCount} towns` : ""
+        }. Open a type hub below for the full by-town listing grid.`
+      : `Browse ${title.toLowerCase()} along Scenic 30A in South Walton, Florida — storefronts and service providers by town.`;
 
   return {
     ...canonicalAlternates(path),
-    title: seoTitleSegmentForLayout(`${title} on 30A`),
+    title: seoTitleSegmentForLayout(`${title} on 30A: Types & Towns`),
     description: metaDescriptionSnippet(description, description),
+    robots:
+      count > 0
+        ? { index: true, follow: true }
+        : { index: false, follow: true },
     ...openGraphForPage({
       path,
       title: `${title} on 30A | WhereTo30A`,

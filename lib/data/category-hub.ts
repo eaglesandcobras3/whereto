@@ -16,6 +16,13 @@ import {
   groupBusinessesIntoBrowseSections,
   type BrowseGroupSection,
 } from "@/lib/business-categories/group-browse-sections";
+import { isCategoryHubIndexEligible } from "@/lib/seo/category-hub-substance";
+import {
+  buildCategoryHubMetaDescription,
+  buildCategoryHubTitleSegment,
+  type CategoryHubInventory,
+} from "@/lib/seo/category-hub-substance";
+import { CATEGORY_HUB_FEATURED_NAME_COUNT } from "@/lib/seo/category-hub-constants";
 
 const CATEGORY_HUB_BUSINESS_POOL_LIMIT = 2000;
 
@@ -307,25 +314,49 @@ export async function loadCategoryHubPage(slug: string) {
   };
 }
 
+export function categoryHubInventoryFromPage(input: {
+  cat: CategoryRow;
+  businesses: CategoryBusinessRow[];
+}): CategoryHubInventory {
+  const { townGroups, regional } = partitionCategoryBusinessesByTown(input.businesses);
+  const featuredNames = [...input.businesses]
+    .sort((a, b) => Number(b.featured) - Number(a.featured) || a.name.localeCompare(b.name))
+    .slice(0, CATEGORY_HUB_FEATURED_NAME_COUNT)
+    .map((b) => b.name);
+  return {
+    title: input.cat.title,
+    slug: input.cat.slug,
+    excerpt: input.cat.excerpt,
+    listingCount: input.businesses.length,
+    townNames: townGroups.map((g) => g.name),
+    regionalCount: regional.length,
+    featuredNames,
+  };
+}
+
 export async function buildCategoryHubMetadata(slug: string): Promise<Metadata> {
-  const cat = await loadCategory(slug);
-  if (!cat) return { title: "Category" };
+  const hub = await loadCategoryHubPage(slug);
+  if (!hub) return { title: "Category", robots: { index: false, follow: true } };
 
   const path = categoryHubPath(slug);
-  const fallbackTitle = `${cat.title} on 30A, Florida`;
-  const fallbackDescription = `Find the best ${cat.title.toLowerCase()} along Scenic 30A in South Walton, Florida. Browse local options across Rosemary Beach, Seaside, WaterColor, Alys Beach, Inlet Beach, and more.`;
+  const inventory = categoryHubInventoryFromPage(hub);
+  const fallbackTitle = buildCategoryHubTitleSegment(inventory);
+  const fallbackDescription = buildCategoryHubMetaDescription(inventory);
   const meta = categoryHubMetadataFromAudit(slug, path, fallbackTitle, fallbackDescription);
+  const indexable = isCategoryHubIndexEligible(inventory.listingCount);
 
   return {
     ...canonicalAlternates(path),
     ...meta,
+    robots: indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     keywords: [
-      `${cat.title.toLowerCase()} 30A`,
-      `${cat.title.toLowerCase()} South Walton`,
-      `best ${cat.title.toLowerCase()} 30A Florida`,
-      `${cat.title.toLowerCase()} Rosemary Beach`,
-      `${cat.title.toLowerCase()} Seaside Florida`,
-      `30A ${cat.title.toLowerCase()}`,
+      `${hub.cat.title.toLowerCase()} 30A`,
+      `${hub.cat.title.toLowerCase()} South Walton`,
+      ...(inventory.townNames.slice(0, 3).map(
+        (town) => `${hub.cat.title.toLowerCase()} ${town}`,
+      )),
     ],
   };
 }
