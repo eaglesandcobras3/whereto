@@ -16,7 +16,6 @@ import {
   type DiscoverFilterApiParams,
   type DiscoverFilterApiResponse,
 } from "@/lib/discovery-filters/discover-filter-api";
-import { appliedTagsFromFilters } from "@/lib/discovery-filters/merge-scoped-search-tags";
 import { parseEntityType } from "@/lib/discovery-filters/parse-filter-params";
 import { hasExplicitDiscoverParams } from "@/lib/discovery-filters/parse-discover-query";
 import { parseTownSlugsFromParam } from "@/lib/discovery-filters/parse-town-params";
@@ -85,19 +84,17 @@ function toApiParams(params: DiscoverParams): DiscoverFilterApiParams {
     page: params.page > 1 ? String(params.page) : undefined,
   };
 }
+
 export function DiscoverPageClient({ towns, categories, serviceCategories }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const featureFlags = useAppFeatureFlags();
-  const navigatingRef = useRef(false);
   const nlHandledRef = useRef<string | null>(null);
 
-  const urlParams = useMemo(
-    () => paramsFromSearchParams(searchParams),
-    [searchParams],
-  );
+  /** Filter UI + fetch inputs — URL is the only source of truth. */
+  const params = useMemo(() => paramsFromSearchParams(searchParams), [searchParams]);
+  const paramsKey = searchParams.toString();
 
-  const [params, setParams] = useState<DiscoverParams>(urlParams);
   const [result, setResult] = useState<DiscoverFilterApiResponse | null>(null);
   const [searchTags, setSearchTags] = useState<DiscoverSearchTagOption[]>([]);
   const [pending, setPending] = useState(true);
@@ -111,7 +108,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
       if (signal?.aborted) return;
       setResult(data);
       setSearchTags(data.search_tags);
-      setParams(nextParams);
     } catch (err) {
       if (signal?.aborted) return;
       setFetchError(err instanceof Error ? err.message : "Could not load results");
@@ -157,16 +153,11 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     return () => controller.abort();
   }, [featureFlags, router, searchParams]);
 
-  const paramsKey = searchParams.toString();
-
   useEffect(() => {
-    if (navigatingRef.current) return;
-
     const controller = new AbortController();
-    void loadResults(urlParams, controller.signal);
-
+    void loadResults(params, controller.signal);
     return () => controller.abort();
-  }, [loadResults, paramsKey, urlParams]);
+  }, [loadResults, params, paramsKey]);
 
   const tagLabelBySlug = useMemo(() => {
     const map = new Map<string, string>();
@@ -186,40 +177,30 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
     [towns],
   );
 
-  const activeTownSlugs = useMemo(
+  const selectedTownSlugs = useMemo(
     () => parseTownSlugsFromParam(params.town),
     [params.town],
   );
 
-  const displayTownSlugs = useMemo(() => {
-    if (result?.effective_town_slugs) {
-      return result.effective_town_slugs;
-    }
-    return activeTownSlugs;
-  }, [result, activeTownSlugs]);
+  const selectedTags = useMemo(() => parseFacetSlugs(params.facet), [params.facet]);
+
+  /** Server-expanded town set for result copy only — not for filter controls. */
+  const effectiveTownSlugs = result?.effective_town_slugs ?? selectedTownSlugs;
 
   const anchorTownSlugs = useMemo(() => {
     if (result?.anchor_town_slugs?.length) {
       return result.anchor_town_slugs;
     }
-    if (params.town_scope === "near" && activeTownSlugs.length) {
-      return activeTownSlugs;
+    if (params.town_scope === "near" && selectedTownSlugs.length) {
+      return selectedTownSlugs;
     }
     return [];
-  }, [result, params.town_scope, activeTownSlugs]);
+  }, [result, params.town_scope, selectedTownSlugs]);
 
   const townNameForSlug = useCallback(
     (slug: string) => towns.find((town) => town.slug === slug)?.name ?? slug,
     [towns],
   );
-
-  const selectedTags = useMemo(() => {
-    if (result) {
-      const fromApplied = appliedTagsFromFilters(result.applied_filters);
-      if (fromApplied.length) return fromApplied;
-    }
-    return parseFacetSlugs(params.facet);
-  }, [result, params.facet]);
 
   const navigate = useCallback(
     (
@@ -230,48 +211,31 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
       },
     ) => {
       const type = next.type ?? params.type;
-      const townSlugs = next.townSlugs ?? activeTownSlugs;
+      const townSlugs = next.townSlugs ?? selectedTownSlugs;
       const tags = next.tags ?? selectedTags;
-      const nextParams: DiscoverParams = {
-        type,
-        town: townSlugs.length ? townSlugs.join(",") : undefined,
-        town_scope:
-          "townSlugs" in next && next.townSlugs !== undefined
-            ? undefined
-            : params.town_scope,
-        category: "category" in next ? next.category : params.category,
-        service_category:
-          "service_category" in next ? next.service_category : params.service_category,
-        facet: tags.length ? tags.join(",") : undefined,
-        q: "q" in next ? next.q : params.q,
-        nl_q: "nl_q" in next ? next.nl_q : params.nl_q,
-        page: next.page ?? 1,
-      };
+      const nextCategory = "category" in next ? next.category : params.category;
+      const nextServiceCategory =
+        "service_category" in next ? next.service_category : params.service_category;
 
-      const url = buildDiscoverUrl({
-        type: nextParams.type,
-        townSlugs,
-        townScope: nextParams.town_scope,
-        category: nextParams.category,
-        service_category: nextParams.service_category,
-        tags,
-        q: nextParams.q,
-        nlQuery: nextParams.nl_q,
-        page: nextParams.page,
-      });
-
-      navigatingRef.current = true;
-      router.replace(url, { scroll: false });
-
-      void (async () => {
-        try {
-          await loadResults(nextParams);
-        } finally {
-          navigatingRef.current = false;
-        }
-      })();
+      router.replace(
+        buildDiscoverUrl({
+          type,
+          townSlugs,
+          townScope:
+            "townSlugs" in next && next.townSlugs !== undefined
+              ? undefined
+              : params.town_scope,
+          category: nextCategory || undefined,
+          service_category: nextServiceCategory || undefined,
+          tags,
+          q: "q" in next ? next.q : params.q,
+          nlQuery: "nl_q" in next ? next.nl_q : params.nl_q,
+          page: next.page ?? 1,
+        }),
+        { scroll: false },
+      );
     },
-    [activeTownSlugs, loadResults, params, router, selectedTags],
+    [params, router, selectedTags, selectedTownSlugs],
   );
 
   const setTownSlugs = (slugs: string[]) => {
@@ -314,14 +278,14 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
             ? serviceCategories.find((c) => c.slug === params.service_category)?.title
             : undefined,
         anchorTownNames: anchorTownSlugs.map(townNameForSlug),
-        effectiveTownNames: displayTownSlugs.map(townNameForSlug),
+        effectiveTownNames: effectiveTownSlugs.map(townNameForSlug),
         townScope: params.town_scope,
         labelForSlug,
       }),
     [
       anchorTownSlugs,
       categories,
-      displayTownSlugs,
+      effectiveTownSlugs,
       labelForSlug,
       nlQuery,
       params.category,
@@ -335,7 +299,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
   );
   const hasActiveFilters = Boolean(
     selectedTags.length ||
-      displayTownSlugs.length ||
+      selectedTownSlugs.length ||
       params.category ||
       params.service_category ||
       nlQuery,
@@ -424,7 +388,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
               <FacetTypeaheadMultiSelect
                 id="discover-towns"
                 options={townOptions}
-                selectedSlugs={displayTownSlugs}
+                selectedSlugs={selectedTownSlugs}
                 onChange={setTownSlugs}
                 disabled={pending}
                 loading={pending}
@@ -560,7 +524,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                     {total} result{total === 1 ? "" : "s"}
                   </span>
                 )}
-                {displayTownSlugs.map((slug) => (
+                {selectedTownSlugs.map((slug) => (
                   <span
                     key={slug}
                     className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-xs"
@@ -597,8 +561,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                 <div>
                   <dt className="font-medium text-[var(--color-text-tertiary)]">Towns</dt>
                   <dd>
-                    {displayTownSlugs.length
-                      ? displayTownSlugs
+                    {selectedTownSlugs.length
+                      ? selectedTownSlugs
                           .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
                           .join(", ")
                       : "All towns"}
