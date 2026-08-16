@@ -9,12 +9,12 @@ import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 export const metadata: Metadata = {
   ...canonicalAlternates("/about"),
-  title: "About",
+  title: { absolute: "About WhereTo30A: Local 30A Guides" },
   description:
     "WhereTo30A was created by 30A locals to make it easier to discover restaurants, events, businesses, and things to do along the Emerald Coast.",
   ...openGraphForPage({
     path: "/about",
-    title: "About | WhereTo30A",
+    title: "About WhereTo30A: Local 30A Guides",
     description:
       "Built by 30A locals to bring restaurants, events, businesses, and local experiences into one trusted place.",
   }),

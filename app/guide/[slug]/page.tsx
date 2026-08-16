@@ -16,6 +16,7 @@ import {
   metaDescriptionSnippet,
   preferTitleWithinBudget,
 } from "@/lib/seo/metadata-snippets";
+import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -155,7 +156,13 @@ export default async function GuidePage({ params }: Props) {
 
   if (!page) notFound();
 
-  const bodyMarkdown = stripLeadingH1MatchingTitle(page.body_markdown || "", page.title).trim();
+  const displayTitle =
+    titleSegmentForLayoutTemplate(page.seo_title?.trim() || page.title) || page.title;
+  const bodyMarkdown = stripLeadingH1MatchingTitle(page.body_markdown || "", [
+    displayTitle,
+    page.title,
+    page.seo_title ?? "",
+  ]).trim();
   const hasHeroImage = Boolean(page.og_image_url);
   const lead = page.seo_description?.trim() || null;
   const showCorridorMap = slug === PRIMARY_EDITORIAL_GUIDE_SLUG;
@@ -171,7 +178,7 @@ export default async function GuidePage({ params }: Props) {
   const shareButton = (
     <PageShareButton
       pageType="guide"
-      pageName={page.title}
+      pageName={displayTitle}
       pageSlug={guideSeg}
       pageId={guidePageId}
       path={guidePath}
@@ -181,11 +188,11 @@ export default async function GuidePage({ params }: Props) {
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Guides", url: "/guides" },
-    { name: page.title, url: guidePath },
+    { name: displayTitle, url: guidePath },
   ]);
 
   const guideSchema = generateGuideSchema({
-    title: page.title,
+    title: displayTitle,
     slug,
     description: page.seo_description,
     imageUrl: page.og_image_url,
@@ -240,7 +247,7 @@ export default async function GuidePage({ params }: Props) {
                 <p className="text-eyebrow mb-3">Guide</p>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <h1 className="text-editorial-headline min-w-0 flex-1 text-3xl text-[var(--color-text-primary)] sm:text-4xl lg:text-[2.75rem]">
-                    {page.title}
+                    {displayTitle}
                   </h1>
                   <div className="shrink-0 pt-1">{shareButton}</div>
                 </div>
@@ -326,7 +333,7 @@ export default async function GuidePage({ params }: Props) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={page.og_image_url!}
-                  alt={page.title}
+                  alt={displayTitle}
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
@@ -334,7 +341,7 @@ export default async function GuidePage({ params }: Props) {
                   <p className="text-eyebrow mb-2 text-white/85">Guide</p>
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <h1 className="text-editorial-headline min-w-0 flex-1 text-2xl text-white sm:text-3xl lg:text-4xl">
-                      {page.title}
+                      {displayTitle}
                     </h1>
                     <div className="shrink-0 [&_button]:border-white/35 [&_button]:bg-black/30 [&_button]:text-white [&_button]:hover:bg-black/45 [&_[role=menu]]:text-[var(--color-text-primary)]">
                       {shareButton}
@@ -403,7 +410,7 @@ export default async function GuidePage({ params }: Props) {
             <CommunityTipsSection
               entityType="guide"
               entityId={page.id}
-              entityTitle={page.title}
+              entityTitle={displayTitle}
             />
           ) : null}
         </article>

@@ -52,7 +52,7 @@ export function BrowseGroupHubView({
     ),
     name: `${hub.title} on 30A, Florida`,
     description: seoSubstanceEnabled
-      ? `Browse ${hub.title.toLowerCase()} types along Scenic 30A, then open a category hub for the full town grid.`
+      ? `Explore ${hub.title.toLowerCase()} types along Scenic 30A, then open a category hub for the full town grid.`
       : `Local ${hub.title.toLowerCase()} along Scenic 30A in South Walton, Florida`,
     numberOfItems: listingPool.length,
   };
@@ -94,7 +94,7 @@ export function BrowseGroupHubView({
           collapsibleDescription={
             seoSubstanceEnabled
               ? `This rollup groups related ${hub.title.toLowerCase()} so you can jump into a specific category. Full town-by-town browsing lives on those leaf hubs; the sample below is a quick orientation.`
-              : `Browse ${hub.title.toLowerCase()} by town when there is a storefront, or under Regional for mobile and appointment-based providers. Confirm hours and availability with each business.`
+              : `Explore ${hub.title.toLowerCase()} by town when there is a storefront, or under Regional for mobile and appointment-based providers. Confirm hours and availability with each business.`
           }
           meta={<>{metaParts.join(" · ")}</>}
           breadcrumbs={

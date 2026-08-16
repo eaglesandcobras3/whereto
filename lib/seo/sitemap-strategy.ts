@@ -1,9 +1,5 @@
 import type { MetadataRoute } from "next";
 import {
-  businessBrowseGroupHubPath,
-} from "@/lib/business-categories/browse-group-nav";
-import { BUSINESS_CATEGORY_GROUP_SLUGS } from "@/lib/business-categories/groups";
-import {
   categoryHubPath,
   isCategoryHubPublicPath,
 } from "@/lib/routes/category-hub-path";
@@ -32,11 +28,9 @@ export const SITEMAP_BROWSE_GROUP_ENTRY = {
   priority: 0.72,
 } as const;
 
-/** Canonical rollup browse group paths for the hub sitemap. */
+/** Canonical rollup browse group paths for the hub sitemap (unified only). */
 export function listSitemapBrowseGroupPaths(): string[] {
-  const legacy = BUSINESS_CATEGORY_GROUP_SLUGS.map((slug) => businessBrowseGroupHubPath(slug));
-  const unified = listUnifiedRollupOrder().map((slug) => unifiedRollupHubPath(slug));
-  return [...new Set([...unified, ...legacy])];
+  return listUnifiedRollupOrder().map((slug) => unifiedRollupHubPath(slug));
 }
 
 /** @deprecated Services hub redirects to /businesses — no separate sitemap entries. */
@@ -45,12 +39,9 @@ export function listSitemapServiceGroupPaths(): string[] {
 }
 
 export const SITEMAP_EXCLUDED_EXACT_PATHS = new Set([
-  "/about",
   "/feedback",
   "/list-your-business",
   "/list-your-rentals",
-  "/terms",
-  "/privacy",
   "/guide",
   "/services",
   "/categories",
@@ -61,6 +52,13 @@ export const SITEMAP_HUB_PAGES = [
   { path: "/areas", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/businesses", priority: 0.9, changeFreq: "weekly" as const },
   { path: "/guides", priority: 0.9, changeFreq: "weekly" as const },
+] as const;
+
+/** Policy / trust pages — indexable, lower priority than discovery hubs. */
+export const SITEMAP_POLICY_PAGES = [
+  { path: "/about", priority: 0.4, changeFreq: "monthly" as const },
+  { path: "/privacy", priority: 0.3, changeFreq: "yearly" as const },
+  { path: "/terms", priority: 0.3, changeFreq: "yearly" as const },
 ] as const;
 
 /** Vacation-rentals hub — only emit when rentals are feature-enabled in production. */
@@ -173,6 +171,15 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
       lastModified: now,
       changeFrequency: hub.changeFreq,
       priority: hub.priority,
+    });
+  }
+
+  for (const page of SITEMAP_POLICY_PAGES) {
+    entries.push({
+      url: `${base}${page.path}`,
+      lastModified: now,
+      changeFrequency: page.changeFreq,
+      priority: page.priority,
     });
   }
 

@@ -11,13 +11,13 @@ Prioritized from the 2026-08-16 live audit. Check items off as they ship.
 
 - [x] Shorten `/areas` and `/businesses` titles to ≤60 characters
 - [x] Decide AI-bot policy: allow GPTBot/ChatGPT-User (and optionally CCBot) for public content, or stop implying AI crawl readiness via llms.txt alone
-- [ ] Rewrite category-hub meta description templates into natural English
+- [x] Rewrite category-hub meta description templates into natural English
 
 ## P2 — Architecture cleanup
 
-- [ ] Add `/about`, `/privacy`, `/terms` to the sitemap (and expand About title) — or intentionally noindex them
-- [ ] Collapse duplicate browse hubs (legacy vs unified) with 301s + single sitemap entry per topic
-- [ ] Align guide H1s with title/query intent where they diverge
+- [x] Add `/about`, `/privacy`, `/terms` to the sitemap (and expand About title) — or intentionally noindex them
+- [x] Collapse duplicate browse hubs (legacy vs unified) with 301s + single sitemap entry per topic
+- [x] Align guide H1s with title/query intent where they diverge
 
 ## P3 — Measurement + growth
 

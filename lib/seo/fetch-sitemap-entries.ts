@@ -60,7 +60,6 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 
     const [towns, guides, areas, pointsOfInterest, categories, browseGroupPaths, events, rentalBundle] =
       await Promise.all([
-<<<<<<< HEAD
         fetchPublishedRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
         fetchSitemapGuides(supabase),
         fetchPublishedRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
@@ -72,25 +71,13 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
         fetchSitemapCategories(supabase),
         listNonEmptySitemapBrowseGroupPaths(supabase),
         fetchPublishedRows(supabase, "events", "slug, date_updated, published_at, date_created"),
-        fetchSitemapRentals(supabase),
+        includeRentals
+          ? fetchSitemapRentals(supabase)
+          : Promise.resolve({
+              rentals: [] as Record<string, unknown>[],
+              rentalTownHubs: [] as Record<string, unknown>[],
+            }),
       ]);
-=======
-      fetchBrowseableRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
-      fetchSitemapGuides(supabase),
-      fetchBrowseableRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
-      fetchBrowseableRows(
-        supabase,
-        "points_of_interest",
-        "slug, date_updated, published_at, date_created",
-      ),
-      fetchSitemapCategories(supabase),
-      listNonEmptySitemapBrowseGroupPaths(supabase),
-      fetchBrowseableRows(supabase, "events", "slug, date_updated, published_at, date_created"),
-      includeRentals
-        ? fetchSitemapRentals(supabase)
-        : Promise.resolve({ rentals: [] as Record<string, unknown>[], rentalTownHubs: [] as Record<string, unknown>[] }),
-    ]);
->>>>>>> 6dbd155 (Fix sitemap stays leak, title truncation, AI bots, and hub titles)
 
     return buildSitemapEntries({
       base,
