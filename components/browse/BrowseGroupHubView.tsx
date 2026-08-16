@@ -20,6 +20,8 @@ type Props = {
   hub: BrowseGroupHubPage;
   mapMarkers?: BusinessMapMarker[];
   leafLinks?: BrowseGroupLeafLink[];
+  /** PostHog `category_hub_seo` — leaf type links + sample grid. */
+  seoSubstanceEnabled?: boolean;
 };
 
 function hubPathFor(slug: string): string {
@@ -31,22 +33,28 @@ export function BrowseGroupHubView({
   hub,
   mapMarkers = [],
   leafLinks = [],
+  seoSubstanceEnabled = false,
 }: Props) {
   const hubPath = hubPathFor(hub.slug);
-  const sampleBusinesses = hub.businesses.slice(0, BROWSE_GROUP_HUB_SAMPLE_LIMIT);
-  const { townGroups, regional } = partitionCategoryBusinessesByTown(sampleBusinesses);
-  const townCount = partitionCategoryBusinessesByTown(hub.businesses).townGroups.length;
+  const listingPool = seoSubstanceEnabled
+    ? hub.businesses.slice(0, BROWSE_GROUP_HUB_SAMPLE_LIMIT)
+    : hub.businesses;
+  const { townGroups, regional } = partitionCategoryBusinessesByTown(listingPool);
+  const fullTownCount = partitionCategoryBusinessesByTown(hub.businesses).townGroups.length;
+  const townCount = seoSubstanceEnabled ? fullTownCount : townGroups.length;
 
   const itemListSchema = {
     ...generateItemListSchema(
-      sampleBusinesses.map((b) => ({
+      listingPool.slice(0, 50).map((b) => ({
         name: b.name,
         url: `/business/${b.slug}`,
       })),
     ),
     name: `${hub.title} on 30A, Florida`,
-    description: `Browse ${hub.title.toLowerCase()} types along Scenic 30A, then open a category hub for the full town grid.`,
-    numberOfItems: sampleBusinesses.length,
+    description: seoSubstanceEnabled
+      ? `Browse ${hub.title.toLowerCase()} types along Scenic 30A, then open a category hub for the full town grid.`
+      : `Local ${hub.title.toLowerCase()} along Scenic 30A in South Walton, Florida`,
+    numberOfItems: listingPool.length,
   };
 
   const metaParts: string[] = [
@@ -55,8 +63,13 @@ export function BrowseGroupHubView({
   if (townCount > 0) {
     metaParts.push(`${townCount} ${townCount === 1 ? "town" : "towns"}`);
   }
-  if (leafLinks.length > 0) {
+  if (seoSubstanceEnabled && leafLinks.length > 0) {
     metaParts.push(`${leafLinks.length} types`);
+  } else {
+    const regionalFull = partitionCategoryBusinessesByTown(hub.businesses).regional;
+    if (!seoSubstanceEnabled && regionalFull.length > 0) {
+      metaParts.push(`${regionalFull.length} regional`);
+    }
   }
 
   return (
@@ -70,11 +83,19 @@ export function BrowseGroupHubView({
         <BrowseHubHero
           title={`${hub.title} on 30A`}
           description={
-            townCount > 0
-              ? `${hub.title} across Scenic Highway 30A — start with a type hub for the full by-town list, or sample featured listings below.`
-              : `${hub.title} serving Scenic Highway 30A and South Walton — open a type hub for the full listing grid.`
+            seoSubstanceEnabled
+              ? townCount > 0
+                ? `${hub.title} across Scenic Highway 30A — start with a type hub for the full by-town list, or sample featured listings below.`
+                : `${hub.title} serving Scenic Highway 30A and South Walton — open a type hub for the full listing grid.`
+              : townCount > 0
+                ? `Local ${hub.title.toLowerCase()} along Scenic Highway 30A — by town and regional providers.`
+                : `Local ${hub.title.toLowerCase()} serving Scenic Highway 30A and South Walton.`
           }
-          collapsibleDescription={`This rollup groups related ${hub.title.toLowerCase()} so you can jump into a specific category (restaurants, coffee, bars, and so on). Full town-by-town browsing lives on those leaf hubs; the sample below is a quick orientation, not the complete directory.`}
+          collapsibleDescription={
+            seoSubstanceEnabled
+              ? `This rollup groups related ${hub.title.toLowerCase()} so you can jump into a specific category. Full town-by-town browsing lives on those leaf hubs; the sample below is a quick orientation.`
+              : `Browse ${hub.title.toLowerCase()} by town when there is a storefront, or under Regional for mobile and appointment-based providers. Confirm hours and availability with each business.`
+          }
           meta={<>{metaParts.join(" · ")}</>}
           breadcrumbs={
             <HubBreadcrumbs
@@ -89,29 +110,48 @@ export function BrowseGroupHubView({
         />
 
         <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
-          <BrowseGroupLeafLinks leaves={leafLinks} />
+          {seoSubstanceEnabled ? <BrowseGroupLeafLinks leaves={leafLinks} /> : null}
 
           {mapMarkers.length > 0 ? (
             <BusinessMapSection
               markers={mapMarkers}
-              title={`Map sample: ${hub.title}`}
-              description="A sample of storefronts with a mapped location."
+              title={seoSubstanceEnabled ? `Map sample: ${hub.title}` : `Map of ${hub.title}`}
+              description={
+                seoSubstanceEnabled
+                  ? "A sample of storefronts with a mapped location."
+                  : "Storefronts with a mapped location."
+              }
             />
           ) : null}
 
-          <section className="space-y-4" aria-labelledby="browse-group-sample-heading">
-            <div>
-              <h2
-                id="browse-group-sample-heading"
-                className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl"
-              >
-                Featured sample
-              </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                Up to {BROWSE_GROUP_HUB_SAMPLE_LIMIT} listings for orientation. Open a type hub
-                above for the complete by-town grid.
-              </p>
-            </div>
+          {seoSubstanceEnabled ? (
+            <section className="space-y-4" aria-labelledby="browse-group-sample-heading">
+              <div>
+                <h2
+                  id="browse-group-sample-heading"
+                  className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl"
+                >
+                  Featured sample
+                </h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                  Up to {BROWSE_GROUP_HUB_SAMPLE_LIMIT} listings for orientation. Open a type hub
+                  above for the complete by-town grid.
+                </p>
+              </div>
+              <CategoryHubTownSections
+                townGroups={townGroups}
+                regional={regional}
+                categorySlug={hub.slug}
+                emptyMessage={
+                  <p className="text-[var(--color-text-secondary)]">
+                    No listings found for this category yet.
+                  </p>
+                }
+                flagEntity="hub"
+                pageTitle={hub.title}
+              />
+            </section>
+          ) : (
             <CategoryHubTownSections
               townGroups={townGroups}
               regional={regional}
@@ -124,7 +164,7 @@ export function BrowseGroupHubView({
               flagEntity="hub"
               pageTitle={hub.title}
             />
-          </section>
+          )}
         </div>
 
         <ListBusinessHomeCta />

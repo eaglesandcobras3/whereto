@@ -19,6 +19,7 @@ export const FEATURE_FLAG_KEYS = [
   "business_maps",
   "town_maps",
   "feedback",
+  "category_hub_seo",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -40,6 +41,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   business_maps: false,
   town_maps: false,
   feedback: false,
+  category_hub_seo: false,
 };
 
 export type DiscoveryFlags = Pick<FeatureFlags, "search" | "ask">;
@@ -143,4 +145,13 @@ export function isTownMapsEnabled(flags: FeatureFlags): boolean {
 /** Visitor “is this wrong?” field flags on unverified business / rental detail pages. */
 export function isFeedbackEnabled(flags: FeatureFlags): boolean {
   return flags.feedback === true;
+}
+
+/**
+ * Category hub SEO substance: inventory-aware editorial, related guides,
+ * and differentiated browse-group rollups on `/businesses/[slug]`.
+ * Sitemap/noindex eligibility for empty hubs is always on (not gated).
+ */
+export function isCategoryHubSeoEnabled(flags: FeatureFlags): boolean {
+  return flags.category_hub_seo === true;
 }
