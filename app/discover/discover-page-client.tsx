@@ -251,59 +251,47 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
       ? result.applied_filters.error
       : null;
 
-  const categoryLabel =
-    params.type === "storefront"
-      ? categories.find((c) => c.slug === params.category)?.title
-      : serviceCategories.find((c) => c.slug === params.service_category)?.title;
-
   const hasTagFilters = selectedTags.length > 0;
   const hasCategoryPreference = Boolean(
     params.type === "storefront" ? params.category : params.service_category,
   );
   const softScopeMode = hasTagFilters;
   const showMatchReason = hasTagFilters || anchorTownSlugs.length > 0;
+  /** Only after NL expansion — not for plain filter browse. */
   const nlQuery = params.nl_q;
-  const filterInterpretation = useMemo(
-    () =>
-      formatDiscoverInterpretation({
-        nlQuery,
-        type: params.type,
-        tags: selectedTags,
-        categoryLabel:
-          params.type === "storefront"
-            ? categories.find((c) => c.slug === params.category)?.title
-            : undefined,
-        serviceCategoryLabel:
-          params.type === "service"
-            ? serviceCategories.find((c) => c.slug === params.service_category)?.title
-            : undefined,
-        anchorTownNames: anchorTownSlugs.map(townNameForSlug),
-        effectiveTownNames: effectiveTownSlugs.map(townNameForSlug),
-        townScope: params.town_scope,
-        labelForSlug,
-      }),
-    [
-      anchorTownSlugs,
-      categories,
-      effectiveTownSlugs,
+  const filterInterpretation = useMemo(() => {
+    if (!nlQuery) return "";
+    return formatDiscoverInterpretation({
+      nlQuery,
+      type: params.type,
+      tags: selectedTags,
+      categoryLabel:
+        params.type === "storefront"
+          ? categories.find((c) => c.slug === params.category)?.title
+          : undefined,
+      serviceCategoryLabel:
+        params.type === "service"
+          ? serviceCategories.find((c) => c.slug === params.service_category)?.title
+          : undefined,
+      anchorTownNames: anchorTownSlugs.map(townNameForSlug),
+      effectiveTownNames: effectiveTownSlugs.map(townNameForSlug),
+      townScope: params.town_scope,
       labelForSlug,
-      nlQuery,
-      params.category,
-      params.service_category,
-      params.town_scope,
-      params.type,
-      selectedTags,
-      serviceCategories,
-      townNameForSlug,
-    ],
-  );
-  const hasActiveFilters = Boolean(
-    selectedTags.length ||
-      selectedTownSlugs.length ||
-      params.category ||
-      params.service_category ||
-      nlQuery,
-  );
+    });
+  }, [
+    anchorTownSlugs,
+    categories,
+    effectiveTownSlugs,
+    labelForSlug,
+    nlQuery,
+    params.category,
+    params.service_category,
+    params.town_scope,
+    params.type,
+    selectedTags,
+    serviceCategories,
+    townNameForSlug,
+  ]);
   const typeLabel =
     params.type === "storefront" ? ", storefront businesses" : ", regional services";
 
@@ -499,7 +487,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           </aside>
 
           <main className="min-w-0 flex-1">
-            {hasActiveFilters ? (
+            {nlQuery ? (
               <div className="mb-4">
                 <DiscoverFilterInterpretation
                   nlQuery={nlQuery}
@@ -552,35 +540,6 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                   broadly.
                 </p>
               )}
-
-              <dl className="grid gap-1 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 px-3 py-2 text-xs text-[var(--color-text-secondary)] sm:grid-cols-2">
-                <div>
-                  <dt className="font-medium text-[var(--color-text-tertiary)]">Entity</dt>
-                  <dd>{params.type}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-[var(--color-text-tertiary)]">Towns</dt>
-                  <dd>
-                    {selectedTownSlugs.length
-                      ? selectedTownSlugs
-                          .map((slug) => towns.find((t) => t.slug === slug)?.name ?? slug)
-                          .join(", ")
-                      : "All towns"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-[var(--color-text-tertiary)]">Category</dt>
-                  <dd>{categoryLabel ?? "All"}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-[var(--color-text-tertiary)]">Tags</dt>
-                  <dd>
-                    {selectedTags.length
-                      ? selectedTags.map((slug) => labelForSlug(slug)).join(", ")
-                      : "None"}
-                  </dd>
-                </div>
-              </dl>
             </div>
 
             {fetchError ? (
