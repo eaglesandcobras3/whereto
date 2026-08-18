@@ -27,10 +27,11 @@ export function DiscoverResultsList({
   );
   const sentinelRef = useRef<HTMLLIElement | null>(null);
   const listingsKey = listings.map((l) => l.id).join("|");
-
-  useEffect(() => {
+  const [prevListingsKey, setPrevListingsKey] = useState(listingsKey);
+  if (prevListingsKey !== listingsKey) {
+    setPrevListingsKey(listingsKey);
     setVisibleCount(Math.min(INITIAL_BATCH, listings.length));
-  }, [listingsKey, listings.length]);
+  }
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
