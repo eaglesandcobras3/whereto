@@ -11,8 +11,8 @@ import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
 } from "@/lib/discovery-filters/resolve-category-groups";
-import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
 import { aggregateSearchTagCounts } from "@/lib/discovery-filters/search-tag-aggregate";
+import { buildDiscoverSearchTagOptions } from "@/lib/discovery-filters/build-discover-search-tag-options";
 import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
 
 const SCOPED_TAG_POOL_LIMIT = 2000;
@@ -57,7 +57,7 @@ function applyBrowsePoolFilters(
   return filtered;
 }
 
-/** Tags that appear on listings in the current discover scope. */
+/** Keyword typeahead options: full vocabulary, with per-scope listing counts when available. */
 export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<DiscoverSearchTagOption[]> {
   const supabase = getServiceSupabase();
   const storefrontGroup = normalizeStorefrontCategoryGroupSlug(scope.category_slug);
@@ -103,20 +103,6 @@ export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<Dis
     const r = row as { tag: string; description?: string | null };
     return { slug: String(r.tag), description: r.description ?? null };
   });
-  const descriptionBySlug = new Map(vocab.map((v) => [v.slug, v.description]));
 
-  const tagsInScope = new Set(counts.keys());
-  const orderedSlugs =
-    vocab.length > 0
-      ? vocab.map((v) => v.slug).filter((slug) => tagsInScope.has(slug))
-      : [...tagsInScope].sort((a, b) => a.localeCompare(b));
-
-  return orderedSlugs.map((slug) => {
-    const count = counts.get(slug) ?? 0;
-    return {
-      slug,
-      label: labelForSearchTag(slug, descriptionBySlug.get(slug)),
-      count,
-    };
-  });
+  return buildDiscoverSearchTagOptions(vocab, counts);
 }

@@ -627,7 +627,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
           selectedSlugs={selectedTags}
           onChange={setSelectedTags}
           loading={pending}
-          placeholder={searchTags.length ? "Type a keyword…" : "No keywords in this scope"}
+          placeholder={searchTags.length ? "Type a keyword…" : "No keywords available"}
           emptyMessage="No keywords match"
         />
         <p className="mt-1 text-[10px] text-[var(--color-text-tertiary)]">
