@@ -253,7 +253,7 @@ async function getTownPageData(townId: string) {
     })),
   ).slice(0, SIDEBAR_AREAS_LIMIT);
 
-  return { areas, categorySections, eligibleIntentTemplates: eligibleIntentTemplates.slice(0, 6) };
+  return { areas, categorySections, eligibleIntentTemplates };
 }
 
 type Props = { params: Promise<{ slug: string }> };
