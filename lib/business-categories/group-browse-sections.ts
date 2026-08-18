@@ -1,6 +1,7 @@
 import { sortBrowseBusinesses } from "@/lib/data/place-category-shared";
 import type { BrowseBusinessPreview } from "@/lib/data/place-category-shared";
 import {
+  browseSectionBySlug,
   browseSectionForCategorySlug,
   browseSectionIcon,
   listUnifiedRollupOrder,
@@ -77,6 +78,29 @@ export function groupBusinessesIntoBrowseSections(
 
 export function browseGroupIcon(groupSlug: string): string {
   return browseSectionIcon(groupSlug);
+}
+
+/** Hub rollup for an intent URL: populated section if it exists, otherwise an empty valid section. */
+export function resolveIntentBrowseSection(
+  populatedSections: BrowseGroupSection[],
+  intentSlug: string,
+): BrowseGroupSection | null {
+  const normalized = intentSlug.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const populated = populatedSections.find((section) => section.slug === normalized);
+  if (populated) return populated;
+
+  const ref = browseSectionBySlug(normalized);
+  if (!ref) return null;
+
+  return {
+    id: ref.id,
+    title: ref.title,
+    slug: ref.id,
+    businesses: [],
+    totalCount: 0,
+  };
 }
 
 /** @deprecated Prefer browseGroupIcon(string) — kept for legacy typed call sites. */

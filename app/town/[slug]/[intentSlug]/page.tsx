@@ -7,6 +7,7 @@ import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getTownBySlug, getGuidesForTown } from "@/lib/data/town-hub";
 import { getCategorySectionsForTown } from "@/lib/data/town-category-sections";
+import { resolveIntentBrowseSection } from "@/lib/business-categories/group-browse-sections";
 import {
   generateCollectionPageSchema,
   generateItemListSchema,
@@ -35,8 +36,8 @@ async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
     getCategorySectionsForTown(String(town.id)),
     getGuidesForTown(String(town.id)),
   ]);
-  const activeSection = sections.find((section) => section.slug === normalizedIntentSlug);
-  if (!activeSection || activeSection.businesses.length === 0) return null;
+  const activeSection = resolveIntentBrowseSection(sections, normalizedIntentSlug);
+  if (!activeSection) return null;
 
   return {
     town,
@@ -156,20 +157,26 @@ export default async function TownIntentPage({ params }: Props) {
           </header>
 
           <section className="mt-8 space-y-4 sm:mt-10">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {page.activeSection.businesses.map((business) => (
-                <BusinessPreviewCard
-                  key={business.id}
-                  name={business.name}
-                  slug={business.slug}
-                  excerpt={business.ai_summary || business.ai_one_liner || undefined}
-                  heroImageUrl={business.hero_image_url}
-                  analyticsCategory="town_intent_results"
-                  analyticsLabel={`${page.town.slug}:${page.activeSection.slug}:${business.slug}`}
-                  ctaLabel="Open listing"
-                />
-              ))}
-            </div>
+            {page.activeSection.businesses.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {page.activeSection.businesses.map((business) => (
+                  <BusinessPreviewCard
+                    key={business.id}
+                    name={business.name}
+                    slug={business.slug}
+                    excerpt={business.ai_summary || business.ai_one_liner || undefined}
+                    heroImageUrl={business.hero_image_url}
+                    analyticsCategory="town_intent_results"
+                    analyticsLabel={`${page.town.slug}:${page.activeSection.slug}:${business.slug}`}
+                    ctaLabel="Open listing"
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-base leading-relaxed text-[var(--color-text-secondary)]">
+                No {page.activeSection.title.toLowerCase()} listings in {page.town.name} yet.
+              </p>
+            )}
           </section>
 
           {page.relatedSections.length > 0 ? (

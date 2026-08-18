@@ -7,6 +7,7 @@ import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
+import { resolveIntentBrowseSection } from "@/lib/business-categories/group-browse-sections";
 import { getGuidesForArea } from "@/lib/data/town-hub";
 import {
   generateCollectionPageSchema,
@@ -36,8 +37,8 @@ async function loadAreaIntentPageData(areaSlug: string, intentSlug: string) {
     getCategorySectionsForPublicPlace(area),
     getGuidesForArea(area.id, area.town_id),
   ]);
-  const activeSection = sections.find((section) => section.slug === normalizedIntentSlug);
-  if (!activeSection || activeSection.businesses.length === 0) return null;
+  const activeSection = resolveIntentBrowseSection(sections, normalizedIntentSlug);
+  if (!activeSection) return null;
 
   return {
     area,
@@ -153,20 +154,26 @@ export default async function AreaIntentPage({ params }: Props) {
           </header>
 
           <section className="mt-8 space-y-4 sm:mt-10">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {page.activeSection.businesses.map((business) => (
-                <BusinessPreviewCard
-                  key={business.id}
-                  name={business.name}
-                  slug={business.slug}
-                  excerpt={business.ai_summary || business.ai_one_liner || undefined}
-                  heroImageUrl={business.hero_image_url}
-                  analyticsCategory="area_intent_results"
-                  analyticsLabel={`${page.area.slug}:${page.activeSection.slug}:${business.slug}`}
-                  ctaLabel="Open listing"
-                />
-              ))}
-            </div>
+            {page.activeSection.businesses.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {page.activeSection.businesses.map((business) => (
+                  <BusinessPreviewCard
+                    key={business.id}
+                    name={business.name}
+                    slug={business.slug}
+                    excerpt={business.ai_summary || business.ai_one_liner || undefined}
+                    heroImageUrl={business.hero_image_url}
+                    analyticsCategory="area_intent_results"
+                    analyticsLabel={`${page.area.slug}:${page.activeSection.slug}:${business.slug}`}
+                    ctaLabel="Open listing"
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-base leading-relaxed text-[var(--color-text-secondary)]">
+                No {page.activeSection.title.toLowerCase()} listings in {page.area.title} yet.
+              </p>
+            )}
           </section>
 
           {page.relatedSections.length > 0 ? (

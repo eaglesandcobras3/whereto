@@ -52,7 +52,7 @@ Competitive target: close the **authority + URL surface** gap vs discover30a.com
 **Week 5–6: Ship SEO landing routes (TDD gap)**
 - [x] Add route `app/town/[slug]/[intentSlug]/page.tsx` (and matching `app/area/[slug]/[intentSlug]/page.tsx`)
 - [x] Render from the same populated hub rollup/collapsible sections (not `query_cache` templates)
-- [x] Gate publish: section must contain at least one storefront business
+- [x] Gate hub links + sitemap: section must contain at least one storefront business (empty valid URLs can still render)
 
 **Week 7–8: Precompute + sitemap**
 - [x] Emit populated town/area rollup URLs in sitemap (priority ~0.74–0.76)
