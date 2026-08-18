@@ -50,13 +50,12 @@ Competitive target: close the **authority + URL surface** gap vs discover30a.com
 ### Month 2 — Programmatic town × intent pages
 
 **Week 5–6: Ship SEO landing routes (TDD gap)**
-- [ ] Add route `app/town/[slug]/[intentSlug]/page.tsx` (or equivalent) per `docs/TDD-SEO-TOWNS.md`
-- [ ] Render from `query_cache` rows keyed by `lib/seo/query-cache-keys.ts` (`category_restaurants|town_rosemary-beach`, etc.)
-- [ ] Gate publish: `seo_eligible === true` (≥3 businesses, `lib/cron/recommendation-precompute.ts`)
+- [x] Add route `app/town/[slug]/[intentSlug]/page.tsx` (and matching `app/area/[slug]/[intentSlug]/page.tsx`)
+- [x] Render from the same populated hub rollup/collapsible sections (not `query_cache` templates)
+- [x] Gate publish: section must contain at least one storefront business
 
 **Week 7–8: Precompute + sitemap**
-- [ ] Run precompute for all 15 towns × 18 templates (~270 jobs max)
-- [ ] Emit eligible town/intent URLs in sitemap (priority ~0.7)
+- [x] Emit populated town/area rollup URLs in sitemap (priority ~0.74–0.76)
 - [ ] Enable PostHog `category_hub_seo` when category leaf hubs are ready (`lib/feature-flags.ts`)
 
 **Month 2 target:** sitemap **350–500** URLs; ranking for long-tail (“best coffee rosemary beach”, “kid friendly restaurants seaside”).

@@ -34,7 +34,7 @@ describe("sitemap strategy", () => {
     categories: [{ slug: "restaurants" }, { slug: "coffee_shops" }],
     pointsOfInterest: [{ slug: "rosemary-beach-town-center" }],
     businesses: [{ slug: "black-bear-bread" }],
-    townIntents: [{ town_slug: "rosemary-beach", seo_slug: "restaurants" }],
+    townIntents: [{ town_slug: "rosemary-beach", seo_slug: "food_and_drink" }],
     areaIntents: [{ area_slug: "rosemary-beach-town-center", seo_slug: "shopping" }],
   });
 
@@ -113,7 +113,7 @@ describe("sitemap strategy", () => {
     const allPaths = paths(sample);
     expect(allPaths).toContain("/town/rosemary-beach");
     expect(allPaths).toContain("/town/seaside");
-    expect(allPaths).toContain("/town/rosemary-beach/restaurants");
+    expect(allPaths).toContain("/town/rosemary-beach/food_and_drink");
     expect(allPaths).toContain("/area/rosemary-beach-town-center");
     expect(allPaths).toContain("/area/rosemary-beach-town-center/shopping");
     expect(allPaths).toContain("/businesses/restaurants");
@@ -154,6 +154,7 @@ describe("sitemap strategy", () => {
     expect(byPath.get("/town/rosemary-beach")).toBe(0.85);
     expect(byPath.get(PRIMARY_EDITORIAL_GUIDE_PATH)).toBe(0.8);
     expect(byPath.get("/businesses/restaurants")).toBe(0.75);
+    expect(byPath.get("/town/rosemary-beach/food_and_drink")).toBe(0.76);
     expect(byPath.get("/area/rosemary-beach-town-center/shopping")).toBe(0.74);
     expect(byPath.get("/area/rosemary-beach-town-center")).toBe(0.7);
   });

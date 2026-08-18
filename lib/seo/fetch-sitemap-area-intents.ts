@@ -31,7 +31,7 @@ export async function fetchSitemapAreaIntentRows(
     if (!place) continue;
     const sections = await getCategorySectionsForPublicPlace(place);
     for (const section of sections) {
-      if (!section.slug) continue;
+      if (!section.slug || section.businesses.length === 0) continue;
       out.push({
         area_slug: place.slug,
         seo_slug: section.slug,

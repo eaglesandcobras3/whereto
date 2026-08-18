@@ -103,9 +103,9 @@ export type BuildSitemapInput = {
   rentalTownHubs?: SitemapRow[];
   /** Quality-gated storefront business detail pages. */
   businesses?: SitemapRow[];
-  /** Eligible town × intent SEO pages sourced from precomputed query_cache rows. */
+  /** Eligible town × intent pages sourced from populated rollup sections on each town hub. */
   townIntents?: SitemapRow[];
-  /** Eligible area × intent pages sourced from available rollup sections on each area/POI page. */
+  /** Eligible area × intent pages sourced from populated rollup sections on each area/POI hub. */
   areaIntents?: SitemapRow[];
 };
 

@@ -5,58 +5,45 @@ import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard"
 import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
+import { getTownBySlug, getGuidesForTown } from "@/lib/data/town-hub";
+import { getCategorySectionsForTown } from "@/lib/data/town-category-sections";
 import {
   generateCollectionPageSchema,
   generateItemListSchema,
 } from "@/lib/seo/breadcrumb-schema";
-import { getTownBySlug, getGuidesForTown } from "@/lib/data/town-hub";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
-import {
-  fetchEligibleTownIntentRows,
-  fetchTownIntentPayload,
-  getTownIntentTemplate,
-  listEligibleTownIntentTemplates,
-} from "@/lib/seo/town-intent-pages";
-import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { townIntentPath } from "@/lib/routes/town-intent-path";
-import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import { fetchSitemapTownIntentRows } from "@/lib/seo/fetch-sitemap-town-intents";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 export const revalidate = 21600;
 export const dynamicParams = true;
 
 type Props = { params: Promise<{ slug: string; intentSlug: string }> };
 
-type PageData = Awaited<ReturnType<typeof loadTownIntentPageData>>;
-
 async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
   const normalizedTownSlug = normalizeUrlSegment(townSlug);
   const normalizedIntentSlug = normalizeUrlSegment(intentSlug);
   if (!normalizedTownSlug || !normalizedIntentSlug) return null;
 
-  const template = getTownIntentTemplate(normalizedIntentSlug);
-  if (!template) return null;
-
   const town = await getTownBySlug(normalizedTownSlug);
   if (!town) return null;
 
-  const supabase = getServiceSupabase();
-  const [payload, relatedTemplates, guides] = await Promise.all([
-    fetchTownIntentPayload(supabase, String(town.id), template.seoSlug),
-    listEligibleTownIntentTemplates(supabase, String(town.id)),
+  const [sections, guides] = await Promise.all([
+    getCategorySectionsForTown(String(town.id)),
     getGuidesForTown(String(town.id)),
   ]);
-
-  if (!payload) return null;
-
-  const recommendations = payload.recommendations.filter((rec) => Boolean(rec.business?.slug));
-  if (!recommendations.length) return null;
+  const activeSection = sections.find((section) => section.slug === normalizedIntentSlug);
+  if (!activeSection || activeSection.businesses.length === 0) return null;
 
   return {
     town,
-    template,
-    payload: { ...payload, recommendations },
-    relatedTemplates: relatedTemplates.filter((row) => row.seoSlug !== template.seoSlug).slice(0, 6),
+    activeSection,
+    relatedSections: sections.filter(
+      (section) => section.slug !== normalizedIntentSlug && section.businesses.length > 0,
+    ),
     guides: guides.slice(0, 6),
   };
 }
@@ -64,8 +51,13 @@ async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
 export async function generateStaticParams(): Promise<Array<{ slug: string; intentSlug: string }>> {
   const supabase = getServiceSupabaseOrNull();
   if (!supabase) return [];
-  const rows = await fetchEligibleTownIntentRows(supabase);
-  return rows.map((row) => ({ slug: row.townSlug, intentSlug: row.seoSlug }));
+  const rows = await fetchSitemapTownIntentRows(supabase);
+  return rows
+    .map((row) => ({
+      slug: String(row.town_slug ?? "").trim(),
+      intentSlug: String(row.seo_slug ?? "").trim(),
+    }))
+    .filter((row) => row.slug && row.intentSlug);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -73,19 +65,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = await loadTownIntentPageData(slug, intentSlug);
   if (!page) return { title: metadataTitleSiteOnly };
 
-  const title = `${page.template.seoTitle(page.town.name)} | WhereTo30A`;
-  const description =
-    page.payload.summary?.trim() ||
-    `Local picks for ${page.template.seoTitle(page.town.name).toLowerCase()} on Scenic Highway 30A.`;
+  const title = `${page.activeSection.title} in ${page.town.name} | WhereTo30A`;
+  const description = `Browse ${page.activeSection.title.toLowerCase()} in ${page.town.name} with local business picks from WhereTo30A.`;
 
   return {
     title,
     description,
-    alternates: { canonical: townIntentPath(page.town.slug, page.template.seoSlug) },
+    alternates: { canonical: townIntentPath(page.town.slug, page.activeSection.slug) },
     openGraph: {
       title,
       description,
-      url: townIntentPath(page.town.slug, page.template.seoSlug),
+      url: townIntentPath(page.town.slug, page.activeSection.slug),
       type: "website",
       images: page.town.hero_image_thumb_url ? [page.town.hero_image_thumb_url] : undefined,
     },
@@ -98,35 +88,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-function metaLine(page: NonNullable<PageData>): string {
-  const count = page.payload.recommendations.length;
-  return `${count} ${count === 1 ? "pick" : "picks"} in ${page.town.name}`;
-}
-
 export default async function TownIntentPage({ params }: Props) {
   const { slug, intentSlug } = await params;
   const page = await loadTownIntentPageData(slug, intentSlug);
   if (!page) notFound();
 
-  const pagePath = townIntentPath(page.town.slug, page.template.seoSlug);
+  const pagePath = townIntentPath(page.town.slug, page.activeSection.slug);
   const townPath = townPagePath(page.town.slug);
 
   const itemListSchema = {
     ...generateItemListSchema(
-      page.payload.recommendations.map((rec) => ({
-        name: rec.business.name,
-        url: `/business/${rec.business.slug}`,
+      page.activeSection.businesses.map((business) => ({
+        name: business.name,
+        url: `/business/${business.slug}`,
       })),
     ),
-    name: page.template.seoTitle(page.town.name),
-    description: page.payload.summary,
-    numberOfItems: page.payload.recommendations.length,
+    name: `${page.activeSection.title} in ${page.town.name}`,
+    description: `Local picks for ${page.activeSection.title.toLowerCase()} in ${page.town.name}.`,
+    numberOfItems: page.activeSection.businesses.length,
   };
 
   const collectionSchema = generateCollectionPageSchema({
-    name: page.template.seoTitle(page.town.name),
+    name: `${page.activeSection.title} in ${page.town.name}`,
     path: pagePath,
-    description: page.payload.summary,
+    description: `Local picks for ${page.activeSection.title.toLowerCase()} in ${page.town.name}.`,
   });
 
   return (
@@ -148,7 +133,7 @@ export default async function TownIntentPage({ params }: Props) {
               { name: "Towns", href: "/towns" },
               { name: page.town.name, href: townPath },
               {
-                name: page.template.seoTitle(page.town.name),
+                name: page.activeSection.title,
                 href: pagePath,
                 current: true,
               },
@@ -161,55 +146,52 @@ export default async function TownIntentPage({ params }: Props) {
               Town guide
             </p>
             <h1 className="font-headline text-3xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-4xl">
-              {page.template.seoTitle(page.town.name)}
+              {page.activeSection.title} in {page.town.name}
             </h1>
-            <p className="text-sm text-[var(--color-text-tertiary)]">{metaLine(page)}</p>
             <p className="text-base leading-relaxed text-[var(--color-text-secondary)]">
-              {page.payload.summary}
+              Browse the {page.activeSection.title.toLowerCase()} section from {page.town.name}
+              {"’"}s
+              local guide on its own page.
             </p>
           </header>
 
           <section className="mt-8 space-y-4 sm:mt-10">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {page.payload.recommendations.map((rec) => (
+              {page.activeSection.businesses.map((business) => (
                 <BusinessPreviewCard
-                  key={rec.business_id}
-                  name={rec.business.name}
-                  slug={rec.business.slug!}
-                  excerpt={rec.explanation || rec.business.ai_summary || undefined}
-                  heroImageUrl={rec.business.image_url ?? null}
-                  meta={rec.business.address || rec.business.category_name || null}
+                  key={business.id}
+                  name={business.name}
+                  slug={business.slug}
+                  excerpt={business.ai_summary || business.ai_one_liner || undefined}
+                  heroImageUrl={business.hero_image_url}
                   analyticsCategory="town_intent_results"
-                  analyticsLabel={`${page.town.slug}:${page.template.seoSlug}:${rec.business.slug}`}
+                  analyticsLabel={`${page.town.slug}:${page.activeSection.slug}:${business.slug}`}
                   ctaLabel="Open listing"
                 />
               ))}
             </div>
           </section>
 
-          {page.relatedTemplates.length > 0 ? (
+          {page.relatedSections.length > 0 ? (
             <div className="mt-10">
               <PlaceRelatedSection
-                title={`More ways to plan ${page.town.name}`}
-                description={`Keep browsing ${page.town.name} by the kind of stop or outing you have in mind.`}
+                title={`More categories in ${page.town.name}`}
+                description="Open the other rollup-category pages connected to this town."
               >
-                {page.relatedTemplates.map((template) => {
-                  const href = townIntentPath(page.town.slug, template.seoSlug);
-                  return (
-                    <Link
-                      key={template.seoSlug}
-                      href={href}
-                      className="editorial-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
-                    >
-                      <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-                        {template.seoTitle(page.town.name)}
-                      </h2>
-                      <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                        See local picks curated for this exact plan.
-                      </p>
-                    </Link>
-                  );
-                })}
+                {page.relatedSections.map((section) => (
+                  <Link
+                    key={section.slug}
+                    href={townIntentPath(page.town.slug, section.slug)}
+                    className="editorial-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
+                  >
+                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+                      {section.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                      See the dedicated page for this town section.
+                    </p>
+                  </Link>
+                ))}
               </PlaceRelatedSection>
             </div>
           ) : null}
@@ -217,7 +199,7 @@ export default async function TownIntentPage({ params }: Props) {
           <div className="mt-10">
             <PlaceGuidesSection
               title={`Guides for ${page.town.name}`}
-              description={`Broader planning guides to pair with ${page.template.seoTitle(page.town.name).toLowerCase()}.`}
+              description={`Planning guides related to ${page.town.name}.`}
               guides={page.guides}
               analyticsCategory="town_intent_guides"
               flagEntity="town"

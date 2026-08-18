@@ -263,7 +263,9 @@ export default async function AreaPage({ params }: Props) {
                 title={`Explore ${area.title} by category`}
                 description="Each link opens a focused page for one rollup category from the collapsible sections above."
               >
-                {categorySections.map((section) => (
+                {categorySections
+                  .filter((section) => section.slug && section.businesses.length > 0)
+                  .map((section) => (
                   <Link
                     key={section.slug}
                     href={areaIntentPath(area.slug, section.slug)}

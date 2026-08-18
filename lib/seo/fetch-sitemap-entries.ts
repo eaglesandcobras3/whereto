@@ -14,8 +14,8 @@ import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
 import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
 import { fetchSitemapBusinesses } from "@/lib/seo/fetch-sitemap-businesses";
 import { fetchSitemapAreaIntentRows } from "@/lib/seo/fetch-sitemap-area-intents";
+import { fetchSitemapTownIntentRows } from "@/lib/seo/fetch-sitemap-town-intents";
 import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
-import { fetchEligibleTownIntentRows } from "@/lib/seo/town-intent-pages";
 
 const SITEMAP_PAGE_SIZE = 1000;
 
@@ -93,13 +93,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
               rentalTownHubs: [] as Record<string, unknown>[],
             }),
         fetchSitemapBusinesses(supabase),
-        fetchEligibleTownIntentRows(supabase).then((rows) =>
-          rows.map((row) => ({
-            town_slug: row.townSlug,
-            seo_slug: row.seoSlug,
-            expires_at: row.lastModified,
-          })),
-        ),
+        fetchSitemapTownIntentRows(supabase),
         fetchSitemapAreaIntentRows(supabase),
       ]);
 

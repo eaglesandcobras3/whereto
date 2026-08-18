@@ -16,6 +16,8 @@ import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { areaIntentPath } from "@/lib/routes/area-intent-path";
+import { fetchSitemapAreaIntentRows } from "@/lib/seo/fetch-sitemap-area-intents";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 export const revalidate = 21600;
 export const dynamicParams = true;
@@ -40,9 +42,23 @@ async function loadAreaIntentPageData(areaSlug: string, intentSlug: string) {
   return {
     area,
     activeSection,
-    relatedSections: sections.filter((section) => section.slug !== normalizedIntentSlug),
+    relatedSections: sections.filter(
+      (section) => section.slug !== normalizedIntentSlug && section.businesses.length > 0,
+    ),
     guides: guides.slice(0, 6),
   };
+}
+
+export async function generateStaticParams(): Promise<Array<{ slug: string; intentSlug: string }>> {
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
+  const rows = await fetchSitemapAreaIntentRows(supabase);
+  return rows
+    .map((row) => ({
+      slug: String(row.area_slug ?? "").trim(),
+      intentSlug: String(row.seo_slug ?? "").trim(),
+    }))
+    .filter((row) => row.slug && row.intentSlug);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
