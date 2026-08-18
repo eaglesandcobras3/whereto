@@ -25,12 +25,9 @@ describe("validateSitemapStructure", () => {
     expect(validateSitemapStructure(BASE, urls)).toEqual([]);
   });
 
-  it("fails when business URLs are present", () => {
-    const violations = validateSitemapStructure(BASE, [
-      `${BASE}/`,
-      `${BASE}/business/foo`,
-    ]);
-    expect(violations.some((v) => v.rule === "no-business-urls")).toBe(true);
+  it("allows quality-gated business URLs in the sitemap", () => {
+    const violations = validateSitemapStructure(BASE, [`${BASE}/`, `${BASE}/business/foo`]);
+    expect(violations.some((v) => v.rule === "no-business-urls")).toBe(false);
   });
 
   it("fails on legacy /categories/[slug] in sitemap", () => {

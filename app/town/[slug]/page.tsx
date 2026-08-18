@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuidesForTown, getTownBySlug } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
@@ -24,14 +25,7 @@ import {
 } from "@/lib/shop/public-listing-filters";
 import { chicagoCalendarDaySeed } from "@/lib/home/daily-featured-pick";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
-import {
-  BIZ_CATEGORY_SELECT,
-  rowToCategoryBusiness,
-} from "@/lib/data/place-category-sections";
-import {
-  groupBusinessesIntoBrowseSections,
-  type BrowseGroupSection,
-} from "@/lib/business-categories/group-browse-sections";
+import type { BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
 import { townPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
@@ -43,6 +37,12 @@ import { listStorefrontMapMarkersForTown } from "@/lib/data/business-map-markers
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
+import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import {
+  browseSectionsFromCategoryBusinesses,
+  loadTownBrowseBusinessesForAreaIds,
+} from "@/lib/data/town-category-sections";
+import { townIntentPath } from "@/lib/routes/town-intent-path";
 
 type SidebarArea = {
   id: string;
@@ -107,29 +107,6 @@ async function getTownPageData(townId: string) {
   const townAreaIds = townAreaRows.map((a) => String(a.id));
   const townAreaIdSet = new Set(townAreaIds);
 
-  const bizInTownQuery = supabase
-    .from("businesses_view")
-    .select(BIZ_CATEGORY_SELECT)
-    .eq("town_id", townId)
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("is_storefront", true)
-    .eq("is_explorable", true)
-    .limit(500);
-
-  const bizInTownAreasQuery =
-    townAreaIds.length > 0
-      ? supabase
-          .from("businesses_view")
-          .select(BIZ_CATEGORY_SELECT)
-          .in("area_id", townAreaIds)
-          .is("archived_at", null)
-          .eq("status", DIRECTUS_PUBLISHED_STATUS)
-          .eq("is_storefront", true)
-          .eq("is_explorable", true)
-          .limit(500)
-      : Promise.resolve({ data: [] as Record<string, unknown>[] | null });
-
   const directAreaBizTownQuery = supabase
     .from("businesses_view")
     .select("area_id")
@@ -150,9 +127,8 @@ async function getTownPageData(townId: string) {
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
       : Promise.resolve({ data: [] as { area_id: string }[] | null });
 
-  const [bizTownRes, bizAreaRes, daTownRes, daAreaRes, junctionRes] = await Promise.all([
-    bizInTownQuery,
-    bizInTownAreasQuery,
+  const [townBusinesses, daTownRes, daAreaRes, junctionRes] = await Promise.all([
+    loadTownBrowseBusinessesForAreaIds(supabase, townId, townAreaIds),
     directAreaBizTownQuery,
     directAreaBizInAreasQuery,
     townAreaIds.length > 0
@@ -160,26 +136,8 @@ async function getTownPageData(townId: string) {
       : Promise.resolve({ data: [] as { area_id: string; business_id: string }[] | null }),
   ]);
 
-  const businessById = new Map<string, ReturnType<typeof rowToCategoryBusiness>>();
-  for (const row of [...(bizTownRes.data ?? []), ...(bizAreaRes.data ?? [])]) {
-    const r = row as Record<string, unknown>;
-    const id = String(r.id);
-    if (!businessById.has(id)) {
-      businessById.set(id, rowToCategoryBusiness(r));
-    }
-  }
-  const hasTownBusinesses = businessById.size > 0;
-  const categorySections = groupBusinessesIntoBrowseSections(
-    [...businessById.values()].map((b) => ({
-      id: b.id,
-      name: b.name,
-      slug: b.slug,
-      hero_image_url: b.hero_image_url,
-      ai_one_liner: b.ai_one_liner,
-      ai_summary: b.ai_summary,
-      categorySlug: b.categorySlug,
-    })),
-  );
+  const hasTownBusinesses = townBusinesses.length > 0;
+  const categorySections = browseSectionsFromCategoryBusinesses(townBusinesses);
 
   const areaIdsWithBusiness = new Set<string>();
   for (const row of daTownRes.data ?? []) {
@@ -450,6 +408,35 @@ function BasicTownPage({
               flagEntity="town"
               flagEntityId={town.id}
             />
+
+            {pageData.categorySections.length > 0 ? (
+              <PlaceRelatedSection
+                title={`Explore ${town.name} by category`}
+                description="Each link opens a focused page for one rollup category from the collapsible sections above."
+              >
+                {pageData.categorySections
+                  .filter((section) => section.slug && section.businesses.length > 0)
+                  .map((section) => (
+                  <Link
+                    key={section.slug}
+                    href={townIntentPath(town.slug, section.slug)}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "town_intent_links",
+                      label: `${town.slug}:${section.slug}`,
+                    })}
+                    className="editorial-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
+                  >
+                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+                      {section.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                      Browse the dedicated page for this section.
+                    </p>
+                  </Link>
+                ))}
+              </PlaceRelatedSection>
+            ) : null}
 
             <div className="space-y-3 sm:space-y-4">
               {pageData.areas.length > 0 ? (
