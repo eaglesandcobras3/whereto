@@ -57,7 +57,7 @@ function applyBrowsePoolFilters(
   return filtered;
 }
 
-/** Tags that appear on listings in the current discover scope. */
+/** Keyword typeahead options: full vocabulary, with per-scope listing counts when available. */
 export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<DiscoverSearchTagOption[]> {
   const supabase = getServiceSupabase();
   const storefrontGroup = normalizeStorefrontCategoryGroupSlug(scope.category_slug);
@@ -103,20 +103,33 @@ export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<Dis
     const r = row as { tag: string; description?: string | null };
     return { slug: String(r.tag), description: r.description ?? null };
   });
-  const descriptionBySlug = new Map(vocab.map((v) => [v.slug, v.description]));
 
-  const tagsInScope = new Set(counts.keys());
+  return buildDiscoverSearchTagOptions(vocab, counts);
+}
+
+type VocabRow = { slug: string; description: string | null };
+
+/** Full vocabulary for the keyword typeahead; counts reflect listings in the current scope. */
+export function buildDiscoverSearchTagOptions(
+  vocab: VocabRow[],
+  scopedCounts: Map<string, number>,
+): DiscoverSearchTagOption[] {
+  const descriptionBySlug = new Map(vocab.map((v) => [v.slug, v.description]));
+  const vocabSlugs = new Set(vocab.map((v) => v.slug));
+
   const orderedSlugs =
     vocab.length > 0
-      ? vocab.map((v) => v.slug).filter((slug) => tagsInScope.has(slug))
-      : [...tagsInScope].sort((a, b) => a.localeCompare(b));
+      ? [
+          ...vocab.map((v) => v.slug),
+          ...[...scopedCounts.keys()]
+            .filter((slug) => !vocabSlugs.has(slug))
+            .sort((a, b) => a.localeCompare(b)),
+        ]
+      : [...scopedCounts.keys()].sort((a, b) => a.localeCompare(b));
 
-  return orderedSlugs.map((slug) => {
-    const count = counts.get(slug) ?? 0;
-    return {
-      slug,
-      label: labelForSearchTag(slug, descriptionBySlug.get(slug)),
-      count,
-    };
-  });
+  return orderedSlugs.map((slug) => ({
+    slug,
+    label: labelForSearchTag(slug, descriptionBySlug.get(slug)),
+    count: scopedCounts.get(slug) ?? 0,
+  }));
 }
