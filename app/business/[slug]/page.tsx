@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { TagPills } from "@/components/discovery/TagPills";
@@ -55,8 +55,7 @@ export const dynamicParams = true;
 const STATIC_PARAMS_PAGE_SIZE = 1000;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
+  const supabase = getServiceSupabase();
   const out: { slug: string }[] = [];
   let from = 0;
   for (;;) {
