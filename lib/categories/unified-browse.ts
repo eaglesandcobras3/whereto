@@ -226,6 +226,32 @@ export function isUnifiedRollupSlug(value: string): boolean {
   return rollupBySlug.has(value);
 }
 
+/** Look up a collapsible browse section by its hub slug, even when it has no listings. */
+export function browseSectionBySlug(sectionId: string): BrowseSectionRef | null {
+  const raw = sectionId.trim().toLowerCase();
+  if (!raw) return null;
+
+  const rollup = rollupBySlug.get(raw);
+  if (rollup) {
+    return {
+      id: rollup.slug,
+      title: rollup.title,
+      icon: UNIFIED_ROLLUP_ICONS[rollup.slug] ?? "category",
+    };
+  }
+
+  if ((BUSINESS_CATEGORY_GROUP_LABELS as Record<string, string>)[raw]) {
+    const id = raw as BusinessCategoryGroupSlug;
+    return {
+      id,
+      title: BUSINESS_CATEGORY_GROUP_LABELS[id],
+      icon: BUSINESS_CATEGORY_GROUP_ICONS[id],
+    };
+  }
+
+  return null;
+}
+
 export function listUnifiedRollupOrder(): string[] {
   return getUnifiedRollups().map((r) => r.slug);
 }
