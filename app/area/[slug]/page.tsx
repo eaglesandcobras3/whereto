@@ -35,8 +35,9 @@ import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote
 export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
-  const supabase = getServiceSupabase();
+  const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const [areas, pois] = await Promise.all([
     supabase.from("areas").select("slug").is("archived_at", null).eq("status", "published"),
     supabase.from("points_of_interest").select("slug").is("archived_at", null).eq("status", "published"),

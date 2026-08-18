@@ -12,7 +12,9 @@ import {
 } from "@/lib/seo/sitemap-categories";
 import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
 import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
+import { fetchSitemapBusinesses } from "@/lib/seo/fetch-sitemap-businesses";
 import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
+import { fetchEligibleTownIntentRows } from "@/lib/seo/town-intent-pages";
 
 const SITEMAP_PAGE_SIZE = 1000;
 
@@ -58,7 +60,18 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
     const flags = await getAllFeatureFlags();
     const includeRentals = isRentalsFeatureEnabled(flags);
 
-    const [towns, guides, areas, pointsOfInterest, categories, browseGroupPaths, events, rentalBundle] =
+    const [
+      towns,
+      guides,
+      areas,
+      pointsOfInterest,
+      categories,
+      browseGroupPaths,
+      events,
+      rentalBundle,
+      businesses,
+      townIntents,
+    ] =
       await Promise.all([
         fetchPublishedRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
         fetchSitemapGuides(supabase),
@@ -77,6 +90,14 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
               rentals: [] as Record<string, unknown>[],
               rentalTownHubs: [] as Record<string, unknown>[],
             }),
+        fetchSitemapBusinesses(supabase),
+        fetchEligibleTownIntentRows(supabase).then((rows) =>
+          rows.map((row) => ({
+            town_slug: row.townSlug,
+            seo_slug: row.seoSlug,
+            expires_at: row.lastModified,
+          })),
+        ),
       ]);
 
     return buildSitemapEntries({
@@ -92,6 +113,8 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       includeRentals,
       rentals: rentalBundle.rentals,
       rentalTownHubs: rentalBundle.rentalTownHubs,
+      businesses,
+      townIntents,
     });
   } catch (err) {
     console.error("[sitemap] generation failed:", err);

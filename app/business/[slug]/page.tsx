@@ -55,7 +55,8 @@ export const dynamicParams = true;
 const STATIC_PARAMS_PAGE_SIZE = 1000;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const out: { slug: string }[] = [];
   let from = 0;
   for (;;) {

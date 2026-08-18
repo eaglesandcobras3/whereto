@@ -4,6 +4,7 @@ export const BUSINESS_INDEX_MIN_UNIQUE_TEXT = 80;
 export type BusinessIndexReadinessFields = {
   slug?: string | null;
   excerpt?: string | null;
+  overview?: string | null;
   content?: string | null;
   address?: string | null;
   hero_image?: string | null;
@@ -31,7 +32,7 @@ export function isBusinessIndexReady(row: BusinessIndexReadinessFields): boolean
   const slug = row.slug?.trim();
   if (!slug) return false;
 
-  const uniqueText = textLen(row.excerpt, row.content);
+  const uniqueText = textLen(row.excerpt, row.overview, row.content);
   const hasUniqueText = uniqueText >= BUSINESS_INDEX_MIN_UNIQUE_TEXT;
   const image = hasBusinessListingImage(row);
   const address = Boolean(row.address?.trim());
@@ -43,4 +44,8 @@ export function isBusinessIndexReady(row: BusinessIndexReadinessFields): boolean
 
 export function businessSitemapPath(slug: string): string {
   return `/business/${encodeURIComponent(slug.trim())}`;
+}
+
+export function isBusinessSitemapEligible(row: BusinessIndexReadinessFields): boolean {
+  return isBusinessIndexReady(row);
 }

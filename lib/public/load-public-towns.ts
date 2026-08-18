@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export type PublicTownOption = {
@@ -11,7 +11,8 @@ export type PublicTownOption = {
 
 /** Published towns for public forms (list-your-business, ask, etc.). */
 export async function loadPublicTowns(): Promise<PublicTownOption[]> {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("towns")
     .select("id, title, slug")

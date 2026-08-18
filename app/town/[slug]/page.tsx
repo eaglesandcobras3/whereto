@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuidesForTown, getTownBySlug } from "@/lib/data/town-hub";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
@@ -43,6 +44,8 @@ import { listStorefrontMapMarkersForTown } from "@/lib/data/business-map-markers
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
+import { listEligibleTownIntentTemplates } from "@/lib/seo/town-intent-pages";
+import { townIntentPath } from "@/lib/routes/town-intent-path";
 
 type SidebarArea = {
   id: string;
@@ -150,7 +153,8 @@ async function getTownPageData(townId: string) {
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
       : Promise.resolve({ data: [] as { area_id: string }[] | null });
 
-  const [bizTownRes, bizAreaRes, daTownRes, daAreaRes, junctionRes] = await Promise.all([
+  const [bizTownRes, bizAreaRes, daTownRes, daAreaRes, junctionRes, eligibleIntentTemplates] =
+    await Promise.all([
     bizInTownQuery,
     bizInTownAreasQuery,
     directAreaBizTownQuery,
@@ -158,7 +162,8 @@ async function getTownPageData(townId: string) {
     townAreaIds.length > 0
       ? supabase.from("area_businesses").select("area_id, business_id").in("area_id", townAreaIds)
       : Promise.resolve({ data: [] as { area_id: string; business_id: string }[] | null }),
-  ]);
+      listEligibleTownIntentTemplates(supabase, townId),
+    ]);
 
   const businessById = new Map<string, ReturnType<typeof rowToCategoryBusiness>>();
   for (const row of [...(bizTownRes.data ?? []), ...(bizAreaRes.data ?? [])]) {
@@ -248,7 +253,7 @@ async function getTownPageData(townId: string) {
     })),
   ).slice(0, SIDEBAR_AREAS_LIMIT);
 
-  return { areas, categorySections };
+  return { areas, categorySections, eligibleIntentTemplates: eligibleIntentTemplates.slice(0, 6) };
 }
 
 type Props = { params: Promise<{ slug: string }> };
@@ -260,8 +265,9 @@ type Props = { params: Promise<{ slug: string }> };
 export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
-  const supabase = getServiceSupabase();
+  const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const { data } = await supabase
     .from("towns")
     .select("slug")
@@ -336,6 +342,7 @@ type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 type TownPageData = {
   areas: SidebarArea[];
   categorySections: BrowseGroupSection[];
+  eligibleIntentTemplates: Array<{ seoSlug: string; seoTitle: (townName: string) => string }>;
 };
 
 function BasicTownPage({
@@ -450,6 +457,31 @@ function BasicTownPage({
               flagEntity="town"
               flagEntityId={town.id}
             />
+
+            {pageData.eligibleIntentTemplates.length > 0 ? (
+              <PlaceRelatedSection
+                title={`Plan ${town.name} by intent`}
+                description={`Browse focused local picks when you already know the kind of stop you want to make.`}
+              >
+                {pageData.eligibleIntentTemplates.map((template) => {
+                  const href = townIntentPath(town.slug, template.seoSlug);
+                  return (
+                    <Link
+                      key={template.seoSlug}
+                      href={href}
+                      className="editorial-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
+                    >
+                      <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+                        {template.seoTitle(town.name)}
+                      </h2>
+                      <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                        Open the short list for this plan.
+                      </p>
+                    </Link>
+                  );
+                })}
+              </PlaceRelatedSection>
+            ) : null}
 
             <div className="space-y-3 sm:space-y-4">
               {pageData.areas.length > 0 ? (

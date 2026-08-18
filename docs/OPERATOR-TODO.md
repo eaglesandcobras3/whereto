@@ -141,6 +141,30 @@ npm run calibrate:irse -- --sample-size=100 --force-inspect
 
 ---
 
+## Search Console + sitemap growth
+
+Business detail pages (`/business/[slug]`) are now eligible for the public sitemap when they pass the existing listing-quality gate.
+
+Town intent pages (`/town/[slug]/[intentSlug]`) are now generated from precomputed `query_cache` rows with `seo_eligible = true`.
+
+### Setup
+
+- [ ] Complete the IRSE / GSC setup above before relying on business-page sitemap growth in production
+- [ ] Run a full IRSE snapshot before first rollout: `npm run calibrate:irse -- --score-all --kinds=business,town,guide,area`
+- [ ] After deploy, confirm `/sitemap.xml` now includes quality-gated `/business/[slug]` URLs and eligible `/town/[slug]/[intentSlug]` URLs
+- [ ] In Search Console, monitor coverage separately for:
+  - `/business/`
+  - `/town/*/*`
+- [ ] Keep `INDEXNOW_KEY` configured if you want `/api/cron/indexnow` to speed up discovery of updated hubs
+
+### Notes
+
+- The business-page sitemap gate is intentionally data-first: slug + enough text + image + address + category + town (`lib/seo/business-index-readiness.ts`).
+- Town-intent URLs are only published when a cached recommendation row is both present and `seo_eligible`.
+- Town-intent publishing still reads the legacy enriched recommendation payload path; if search architecture changes later, revisit `lib/cron/recommendation-precompute.ts` and `lib/seo/town-intent-pages.ts` together.
+
+---
+
 ## Category hub SEO (indexable `/businesses/[slug]`)
 
 Empty/parent/sparse category hubs are omitted from the sitemap and get `noindex` when below 3 listings (always on).
@@ -605,6 +629,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-18 | Search Console rollout tightened: business pages can now enter the sitemap when listing-quality checks pass; town intent pages now publish at `/town/[slug]/[intentSlug]` from `query_cache` `seo_eligible` rows; no scheduled cron required |
 | 2026-08-16 | Soft-hide removed for businesses/rentals too — published (+ rental partner active) means public/SEO-ready; SQL clears businesses + rentals |
 | 2026-08-16 | Published towns/areas/guides are always SEO-visible — app ignores `is_hidden_from_search` for those tables; admin/RankScore/compiler set the flag false; SQL cleanup [fix-directus-visibility.sql](../scripts/fix-directus-visibility.sql) |
 | 2026-08-16 | PostHog `discover_maps` (requires `discover`, default off): map-first storefront `/discover` with “Search this area” → `bbox`/`zoom` URL params; services stay list-only. Local bypass `DISCOVER_MAPS_ENABLED` / `NEXT_PUBLIC_DISCOVER_MAPS_ENABLED` |

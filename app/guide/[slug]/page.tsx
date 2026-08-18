@@ -28,8 +28,9 @@ import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flag
 export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
-  const supabase = getServiceSupabase();
+  const { getServiceSupabaseOrNull } = await import("@/lib/supabase/service-role");
+  const supabase = getServiceSupabaseOrNull();
+  if (!supabase) return [];
   const { data } = await supabase
     .from("guides")
     .select("slug")

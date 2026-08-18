@@ -6,7 +6,9 @@ import {
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_DB_SLUG } from "@/lib/routes/primary-region";
 import { townPagePath } from "@/lib/routes/town-page-path";
+import { townIntentPath } from "@/lib/routes/town-intent-path";
 import { unifiedRollupHubPath, listUnifiedRollupOrder } from "@/lib/categories/unified-browse";
+import { businessSitemapPath } from "@/lib/seo/business-index-readiness";
 
 /** Featured first-timer guide — canonical path (not `/guide` hub). */
 export const PRIMARY_EDITORIAL_GUIDE_SLUG = "ultimate-30a-first-timers-guide" as const;
@@ -20,7 +22,7 @@ export {
 } from "@/lib/seo/retired-guide-redirects";
 
 /** Paths excluded from sitemap (still live on site, crawlable via links). */
-export const SITEMAP_EXCLUDED_PATH_PREFIXES = ["/business/"] as const;
+export const SITEMAP_EXCLUDED_PATH_PREFIXES = [] as const;
 
 /** Rolled-up storefront and service browse groups (e.g. `/businesses/restaurants-and-bars`). */
 export const SITEMAP_BROWSE_GROUP_ENTRY = {
@@ -98,6 +100,10 @@ export type BuildSitemapInput = {
   rentals?: SitemapRow[];
   /** Town hubs with enough inventory (`/stays/town/[slug]`). Ignored unless `includeRentals`. */
   rentalTownHubs?: SitemapRow[];
+  /** Quality-gated storefront business detail pages. */
+  businesses?: SitemapRow[];
+  /** Eligible town × intent SEO pages sourced from precomputed query_cache rows. */
+  townIntents?: SitemapRow[];
 };
 
 export function pathnameFromSitemapUrl(base: string, url: string): string {
@@ -119,7 +125,7 @@ export function shouldIncludeGuideInSitemap(guideSlug: string, townSlugs: Set<st
 }
 
 export function pickSitemapDate(row: SitemapRow, fallback: Date): Date {
-  for (const k of ["date_updated", "published_at", "starts_at", "date_created"]) {
+  for (const k of ["date_updated", "published_at", "starts_at", "date_created", "expires_at"]) {
     const v = row[k];
     if (typeof v === "string" && v) {
       const d = new Date(v);
@@ -140,7 +146,7 @@ export function dedupeSitemapByUrl(entries: MetadataRoute.Sitemap): MetadataRout
   return out;
 }
 
-/** Build index-focused sitemap entries (no business URLs, no utility pages). */
+/** Build index-focused sitemap entries (no utility pages, only quality-gated business URLs). */
 export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sitemap {
   const {
     base,
@@ -155,6 +161,8 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     includeRentals = false,
     rentals = [],
     rentalTownHubs = [],
+    businesses = [],
+    townIntents = [],
   } = input;
   const entries: MetadataRoute.Sitemap = [];
 
@@ -235,6 +243,18 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     });
   }
 
+  for (const page of townIntents) {
+    const townSlug = String(page.town_slug ?? "").trim();
+    const intentSlug = String(page.seo_slug ?? "").trim();
+    if (!townSlug || !intentSlug) continue;
+    entries.push({
+      url: `${base}${townIntentPath(townSlug, intentSlug)}`,
+      lastModified: pickSitemapDate(page, now),
+      changeFrequency: "weekly",
+      priority: 0.76,
+    });
+  }
+
   for (const cat of categories) {
     const slug = String(cat.slug ?? "").trim();
     if (!slug) continue;
@@ -243,6 +263,17 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
       lastModified: pickSitemapDate(cat, now),
       changeFrequency: "weekly",
       priority: 0.75,
+    });
+  }
+
+  for (const business of businesses) {
+    const slug = String(business.slug ?? "").trim();
+    if (!slug) continue;
+    entries.push({
+      url: `${base}${businessSitemapPath(slug)}`,
+      lastModified: pickSitemapDate(business, now),
+      changeFrequency: "weekly",
+      priority: 0.68,
     });
   }
 
