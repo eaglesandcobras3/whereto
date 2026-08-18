@@ -7,6 +7,7 @@ import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
 import { PRIMARY_REGION_DB_SLUG } from "@/lib/routes/primary-region";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { townIntentPath } from "@/lib/routes/town-intent-path";
+import { areaIntentPath } from "@/lib/routes/area-intent-path";
 import { unifiedRollupHubPath, listUnifiedRollupOrder } from "@/lib/categories/unified-browse";
 import { businessSitemapPath } from "@/lib/seo/business-index-readiness";
 
@@ -104,6 +105,8 @@ export type BuildSitemapInput = {
   businesses?: SitemapRow[];
   /** Eligible town × intent SEO pages sourced from precomputed query_cache rows. */
   townIntents?: SitemapRow[];
+  /** Eligible area × intent pages sourced from available rollup sections on each area/POI page. */
+  areaIntents?: SitemapRow[];
 };
 
 export function pathnameFromSitemapUrl(base: string, url: string): string {
@@ -163,6 +166,7 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
     rentalTownHubs = [],
     businesses = [],
     townIntents = [],
+    areaIntents = [],
   } = input;
   const entries: MetadataRoute.Sitemap = [];
 
@@ -252,6 +256,18 @@ export function buildSitemapEntries(input: BuildSitemapInput): MetadataRoute.Sit
       lastModified: pickSitemapDate(page, now),
       changeFrequency: "weekly",
       priority: 0.76,
+    });
+  }
+
+  for (const page of areaIntents) {
+    const areaSlug = String(page.area_slug ?? "").trim();
+    const intentSlug = String(page.seo_slug ?? "").trim();
+    if (!areaSlug || !intentSlug) continue;
+    entries.push({
+      url: `${base}${areaIntentPath(areaSlug, intentSlug)}`,
+      lastModified: pickSitemapDate(page, now),
+      changeFrequency: "weekly",
+      priority: 0.74,
     });
   }
 

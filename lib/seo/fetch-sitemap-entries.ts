@@ -13,6 +13,7 @@ import {
 import { fetchSitemapGuides } from "@/lib/seo/sitemap-guides";
 import { fetchSitemapRentals } from "@/lib/seo/sitemap-rentals";
 import { fetchSitemapBusinesses } from "@/lib/seo/fetch-sitemap-businesses";
+import { fetchSitemapAreaIntentRows } from "@/lib/seo/fetch-sitemap-area-intents";
 import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { fetchEligibleTownIntentRows } from "@/lib/seo/town-intent-pages";
 
@@ -71,6 +72,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       rentalBundle,
       businesses,
       townIntents,
+      areaIntents,
     ] =
       await Promise.all([
         fetchPublishedRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
@@ -98,6 +100,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
             expires_at: row.lastModified,
           })),
         ),
+        fetchSitemapAreaIntentRows(supabase),
       ]);
 
     return buildSitemapEntries({
@@ -115,6 +118,7 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       rentalTownHubs: rentalBundle.rentalTownHubs,
       businesses,
       townIntents,
+      areaIntents,
     });
   } catch (err) {
     console.error("[sitemap] generation failed:", err);
