@@ -145,7 +145,7 @@ npm run calibrate:irse -- --sample-size=100 --force-inspect
 
 Business detail pages (`/business/[slug]`) are now eligible for the public sitemap when they pass the existing listing-quality gate.
 
-Town intent pages (`/town/[slug]/[intentSlug]`) and area intent pages (`/area/[slug]/[intentSlug]`) are the same collapsible rollup sections shown on the town/area hub. Empty sections can still render if opened directly. Hub links and sitemap entries are added only when a section contains at least one storefront business.
+Town intent pages (`/town/[slug]/[intentSlug]`) and area intent pages (`/area/[slug]/[intentSlug]`) are the same collapsible rollup sections shown on the town/area hub. Each populated section on the hub links to that place-scoped page (not the corridor-wide `/businesses/[rollup]` hub). Empty sections can still render if opened directly. Sitemap entries are added only when a section contains at least one storefront business.
 
 ### Setup
 
@@ -161,7 +161,7 @@ Town intent pages (`/town/[slug]/[intentSlug]`) and area intent pages (`/area/[s
 ### Notes
 
 - The business-page sitemap gate is intentionally data-first: slug + enough text + image + address + category + town (`lib/seo/business-index-readiness.ts`).
-- Town and area intent URLs appear in hub links and `/sitemap.xml` only when the matching rollup/collapsible section has at least one business. Empty valid sections can still be opened directly; unknown slugs 404.
+- Town and area intent URLs appear in collapsible section links and `/sitemap.xml` only when the matching rollup has at least one business. Empty valid sections can still be opened directly; unknown slugs 404.
 
 ---
 
@@ -629,7 +629,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
-| 2026-08-18 | Empty town/area rollup intent pages can still render, but they are not linked from hubs and are omitted from the sitemap until they have at least one business |
+| 2026-08-18 | Town/area collapsible section links go to place-scoped intent pages (not `/businesses` rollup hubs); intent pages include the same business-map treatment as category hubs |
 | 2026-08-18 | Search Console rollout tightened: business pages can now enter the sitemap when listing-quality checks pass; town/area intent pages publish from populated hub rollups; no scheduled cron required |
 | 2026-08-16 | Soft-hide removed for businesses/rentals too — published (+ rental partner active) means public/SEO-ready; SQL clears businesses + rentals |
 | 2026-08-16 | Published towns/areas/guides are always SEO-visible — app ignores `is_hidden_from_search` for those tables; admin/RankScore/compiler set the flag false; SQL cleanup [fix-directus-visibility.sql](../scripts/fix-directus-visibility.sql) |
