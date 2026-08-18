@@ -17,7 +17,6 @@ See [search-pipeline.md](./search-pipeline.md).
 
 ## What still reads `query_cache`
 
-- **`app/[townSlug]/[intentSlug]/page.tsx`** — SEO intent pages load `response_json` via `seo_pages.recommendation_set_id`.
 - **`lib/data/town-hub-cache.ts`** — Town hub precomputed sets (if row exists and not expired).
 - **`app/api/shares/route.ts`** — Share links reference cached recommendation payloads.
 - **`lib/ingestion/refresh-runner.ts`** — Invalidates cache rows when businesses refresh.

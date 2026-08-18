@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
+import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro } from "@/lib/seo/page-intro-copy";
 import { resolvePlaceIntro } from "@/lib/seo/place-intro";
@@ -31,6 +32,7 @@ import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForPlace } from "@/lib/data/business-map-markers";
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
+import { areaIntentPath } from "@/lib/routes/area-intent-path";
 
 export const revalidate = 21600;
 
@@ -255,6 +257,35 @@ export default async function AreaPage({ params }: Props) {
               flagEntity="area"
               flagEntityId={area.id}
             />
+
+            {categorySections.length > 0 ? (
+              <PlaceRelatedSection
+                title={`Explore ${area.title} by category`}
+                description="Each link opens a focused page for one rollup category from the collapsible sections above."
+              >
+                {categorySections
+                  .filter((section) => section.slug && section.businesses.length > 0)
+                  .map((section) => (
+                  <Link
+                    key={section.slug}
+                    href={areaIntentPath(area.slug, section.slug)}
+                    {...gaClickProps({
+                      event: "nav_click",
+                      category: "area_intent_links",
+                      label: `${area.slug}:${section.slug}`,
+                    })}
+                    className="editorial-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
+                  >
+                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+                      {section.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                      Browse the dedicated page for this section.
+                    </p>
+                  </Link>
+                ))}
+              </PlaceRelatedSection>
+            ) : null}
 
             <PlaceGuidesSection
               title={`Guides for ${area.title}`}

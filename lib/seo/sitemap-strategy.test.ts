@@ -33,11 +33,14 @@ describe("sitemap strategy", () => {
     areas: [{ slug: "rosemary-beach-town-center" }],
     categories: [{ slug: "restaurants" }, { slug: "coffee_shops" }],
     pointsOfInterest: [{ slug: "rosemary-beach-town-center" }],
+    businesses: [{ slug: "black-bear-bread" }],
+    townIntents: [{ town_slug: "rosemary-beach", seo_slug: "food_and_drink" }],
+    areaIntents: [{ area_slug: "rosemary-beach-town-center", seo_slug: "shopping" }],
   });
 
-  it("excludes business detail and utility paths", () => {
+  it("excludes utility paths and keeps policy pages", () => {
     const allPaths = paths(sample);
-    expect(allPaths.some((p) => p.startsWith("/business/"))).toBe(false);
+    expect(allPaths).toContain("/business/black-bear-bread");
     expect(allPaths).not.toContain("/feedback");
     expect(allPaths).not.toContain("/list-your-business");
     expect(allPaths).not.toContain("/services");
@@ -110,7 +113,9 @@ describe("sitemap strategy", () => {
     const allPaths = paths(sample);
     expect(allPaths).toContain("/town/rosemary-beach");
     expect(allPaths).toContain("/town/seaside");
+    expect(allPaths).toContain("/town/rosemary-beach/food_and_drink");
     expect(allPaths).toContain("/area/rosemary-beach-town-center");
+    expect(allPaths).toContain("/area/rosemary-beach-town-center/shopping");
     expect(allPaths).toContain("/businesses/restaurants");
     expect(allPaths).toContain("/guide/best-coffee-30a");
     expect(allPaths).not.toContain("/guide/rosemary-beach");
@@ -136,7 +141,7 @@ describe("sitemap strategy", () => {
   });
 
   it("dedupes POI URLs that share an area slug", () => {
-    const areaUrls = urls(sample).filter((u) => u.includes("/area/rosemary-beach-town-center"));
+    const areaUrls = urls(sample).filter((u) => u === `${BASE}/area/rosemary-beach-town-center`);
     expect(areaUrls).toHaveLength(1);
   });
 
@@ -149,6 +154,8 @@ describe("sitemap strategy", () => {
     expect(byPath.get("/town/rosemary-beach")).toBe(0.85);
     expect(byPath.get(PRIMARY_EDITORIAL_GUIDE_PATH)).toBe(0.8);
     expect(byPath.get("/businesses/restaurants")).toBe(0.75);
+    expect(byPath.get("/town/rosemary-beach/food_and_drink")).toBe(0.76);
+    expect(byPath.get("/area/rosemary-beach-town-center/shopping")).toBe(0.74);
     expect(byPath.get("/area/rosemary-beach-town-center")).toBe(0.7);
   });
 
@@ -164,8 +171,8 @@ describe("sitemap strategy", () => {
     expect(paths(fallback)).not.toContain("/guide");
   });
 
-  it("isExcludedSitemapPath guards business prefix", () => {
-    expect(isExcludedSitemapPath("/business/foo")).toBe(true);
+  it("isExcludedSitemapPath leaves public business pages indexable", () => {
+    expect(isExcludedSitemapPath("/business/foo")).toBe(false);
     expect(isExcludedSitemapPath("/guide/foo")).toBe(false);
   });
 });

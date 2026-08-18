@@ -42,7 +42,7 @@ export function isSitemapServiceGroupPath(pathname: string): boolean {
   return false;
 }
 
-/** Structural rules for hub-focused sitemap (no HTTP). */
+/** Structural rules for public sitemap (no HTTP). */
 export function validateSitemapStructure(base: string, urls: string[]): SitemapRuleViolation[] {
   const violations: SitemapRuleViolation[] = [];
   const paths = urls.map((u) => pathnameFromSitemapUrl(base, u));
@@ -50,13 +50,6 @@ export function validateSitemapStructure(base: string, urls: string[]): SitemapR
 
   for (const url of urls) {
     const path = pathnameFromSitemapUrl(base, url);
-    if (path.startsWith("/business/")) {
-      violations.push({
-        rule: "no-business-urls",
-        url,
-        detail: "Business URLs must not appear in sitemap",
-      });
-    }
     if (isExcludedSitemapPath(path)) {
       violations.push({
         rule: "no-excluded-paths",
