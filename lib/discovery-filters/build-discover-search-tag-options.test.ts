@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDiscoverSearchTagOptions } from "@/lib/discovery-filters/load-scoped-search-tags";
+import { buildDiscoverSearchTagOptions } from "@/lib/discovery-filters/build-discover-search-tag-options";
 
 describe("buildDiscoverSearchTagOptions", () => {
   it("returns the full vocabulary even when a tag has zero listings in scope", () => {

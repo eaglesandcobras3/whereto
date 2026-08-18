@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 export type DiscoverTownJumpOption = {
   slug: string;
@@ -48,17 +48,12 @@ export function DiscoverTownJumpOverlay({
       .slice(0, 8);
   }, [query, towns]);
 
-  useEffect(() => {
-    if (!open) return;
+  const openPanel = () => {
     setQuery("");
     setHighlightIndex(0);
-    const t = window.setTimeout(() => inputRef.current?.focus(), 20);
-    return () => window.clearTimeout(t);
-  }, [open]);
-
-  useEffect(() => {
-    setHighlightIndex(0);
-  }, [query]);
+    setOpen(true);
+    window.setTimeout(() => inputRef.current?.focus(), 20);
+  };
 
   const close = () => setOpen(false);
 
@@ -107,7 +102,10 @@ export function DiscoverTownJumpOverlay({
               id={`${panelId}-input`}
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setHighlightIndex(0);
+              }}
               placeholder="Search towns…"
               className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none ring-[var(--color-primary)] focus:ring-2"
               onKeyDown={(e) => {
@@ -178,7 +176,7 @@ export function DiscoverTownJumpOverlay({
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={openPanel}
             aria-expanded={false}
             aria-controls={panelId}
             className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 py-1.5 text-sm font-semibold text-[var(--color-text-primary)] shadow-md backdrop-blur-md hover:border-[var(--color-primary)]/40"
