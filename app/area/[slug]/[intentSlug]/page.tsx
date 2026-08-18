@@ -19,6 +19,9 @@ import { townPagePath } from "@/lib/routes/town-page-path";
 import { areaIntentPath } from "@/lib/routes/area-intent-path";
 import { fetchSitemapAreaIntentRows } from "@/lib/seo/fetch-sitemap-area-intents";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
+import { listIntentSectionMapMarkers } from "@/lib/data/intent-section-map";
+import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 
 export const revalidate = 21600;
 export const dynamicParams = true;
@@ -33,12 +36,18 @@ async function loadAreaIntentPageData(areaSlug: string, intentSlug: string) {
   const area = await getPublicPlaceBySlug(normalizedAreaSlug);
   if (!area) return null;
 
-  const [sections, guides] = await Promise.all([
+  const [sections, guides, flags] = await Promise.all([
     getCategorySectionsForPublicPlace(area),
     getGuidesForArea(area.id, area.town_id),
+    getAllFeatureFlags(),
   ]);
   const activeSection = resolveIntentBrowseSection(sections, normalizedIntentSlug);
   if (!activeSection) return null;
+
+  const mapMarkers = await listIntentSectionMapMarkers(
+    activeSection.businesses,
+    activeSection.slug,
+  );
 
   return {
     area,
@@ -47,6 +56,8 @@ async function loadAreaIntentPageData(areaSlug: string, intentSlug: string) {
       (section) => section.slug !== normalizedIntentSlug && section.businesses.length > 0,
     ),
     guides: guides.slice(0, 6),
+    mapMarkers,
+    feedbackEnabled: isFeedbackFeatureEnabled(flags),
   };
 }
 
@@ -152,6 +163,18 @@ export default async function AreaIntentPage({ params }: Props) {
               local guide on its own page.
             </p>
           </header>
+
+          {page.mapMarkers.length > 0 ? (
+            <div className="mt-8 sm:mt-10">
+              <BusinessMapSection
+                markers={page.mapMarkers}
+                title={`Map of ${page.activeSection.title} in ${page.area.title}`}
+                description="Storefront businesses with a mapped location."
+                fieldFlagEntityId={page.feedbackEnabled ? page.area.id : null}
+                fieldFlagEntity="area"
+              />
+            </div>
+          ) : null}
 
           <section className="mt-8 space-y-4 sm:mt-10">
             {page.activeSection.businesses.length > 0 ? (
