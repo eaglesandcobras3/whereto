@@ -19,6 +19,8 @@ import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-sec
 import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 import { ADD_BUSINESS_HREF } from "@/lib/listing-requests/listing-field-flag";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { townIntentPath } from "@/lib/routes/town-intent-path";
+import { areaIntentPath } from "@/lib/routes/area-intent-path";
 
 type Props = {
   placeName: string;
@@ -38,6 +40,16 @@ function sectionHubPath(slug: string): string {
   if (isUnifiedRollupSlug(slug)) return unifiedRollupHubPath(slug);
   if (isBusinessBrowseGroupSlug(slug)) return businessBrowseGroupHubPath(slug);
   return `/businesses/${slug.replace(/_/g, "-")}`;
+}
+
+function sectionPagePath(
+  flagEntity: "town" | "area" | undefined,
+  placeSlug: string,
+  sectionSlug: string,
+): string {
+  if (flagEntity === "town") return townIntentPath(placeSlug, sectionSlug);
+  if (flagEntity === "area") return areaIntentPath(placeSlug, sectionSlug);
+  return sectionHubPath(sectionSlug);
 }
 
 export function PlaceCategoryBusinessSections({
@@ -90,6 +102,10 @@ export function PlaceCategoryBusinessSections({
       {sections.map((section) => {
         const iconSlug = browseGroupIcon(section.slug as BusinessCategoryGroupSlug);
         const isOpen = expandedIds.has(section.id);
+        const sectionHref =
+          section.slug && section.businesses.length > 0
+            ? sectionPagePath(flagEntity, placeSlug, section.slug)
+            : null;
 
         const businessItems = section.businesses.map((business) => ({
           id: business.id,
@@ -112,17 +128,19 @@ export function PlaceCategoryBusinessSections({
             open={isOpen}
             onToggle={() => toggle(section.id)}
             action={
-              <Link
-                href={sectionHubPath(section.slug)}
-                {...gaClickProps({
-                  event: "nav_click",
-                  category: `${analyticsCategoryPrefix}_category_hub`,
-                  label: section.slug,
-                })}
-                className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
-              >
-                Full {section.title.toLowerCase()} hub
-              </Link>
+              sectionHref ? (
+                <Link
+                  href={sectionHref}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: `${analyticsCategoryPrefix}_intent_page`,
+                    label: `${placeSlug}:${section.slug}`,
+                  })}
+                  className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                >
+                  {section.title} in {placeName}
+                </Link>
+              ) : null
             }
           >
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
