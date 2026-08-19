@@ -18,8 +18,9 @@ import {
 } from "@/lib/seo/metadata-snippets";
 import { titleSegmentForLayoutTemplate } from "@/lib/seo/metadata-title";
 import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
-import { generateBreadcrumbSchema, generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
+import { generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
@@ -185,11 +186,11 @@ export default async function GuidePage({ params }: Props) {
     />
   );
 
-  const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: "Home", url: "/" },
-    { name: "Guides", url: "/guides" },
-    { name: displayTitle, url: guidePath },
-  ]);
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    { name: "Guides", href: "/guides" },
+    { name: displayTitle, href: guidePath, current: true },
+  ];
 
   const guideSchema = generateGuideSchema({
     title: displayTitle,
@@ -207,36 +208,10 @@ export default async function GuidePage({ params }: Props) {
         {!hasHeroImage ? (
           <div className="coastal-hero border-b border-[var(--color-border)]">
             <div className="mx-auto max-w-3xl px-5 py-10 sm:px-6 md:py-14">
-              <nav
-                className="mb-8 flex flex-wrap items-center gap-2 text-sm"
-                aria-label="Breadcrumb"
-              >
-                <Link
-                  href="/"
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "guide_breadcrumb",
-                    label: "home",
-                  })}
-                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
-                >
-                  Home
-                </Link>
-                <span className="text-[var(--color-border-strong)]" aria-hidden>
-                  /
-                </span>
-                <Link
-                  href="/guides"
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "guide_breadcrumb",
-                    label: "guides",
-                  })}
-                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
-                >
-                  Guides
-                </Link>
-              </nav>
+              <HubBreadcrumbs
+                items={breadcrumbItems}
+                analyticsCategory="guide_breadcrumb"
+              />
 
               <div
                 className={`mb-8 h-1 w-full rounded-full bg-gradient-to-r ${guideHeroGradient(slug)}`}
@@ -289,45 +264,15 @@ export default async function GuidePage({ params }: Props) {
         >
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-          />
-          <script
-            type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(guideSchema) }}
           />
 
           {hasHeroImage ? (
             <>
-              <nav
-                className="mb-8 flex flex-wrap items-center gap-2 text-sm"
-                aria-label="Breadcrumb"
-              >
-                <Link
-                  href="/"
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "guide_breadcrumb",
-                    label: "home",
-                  })}
-                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
-                >
-                  Home
-                </Link>
-                <span className="text-[var(--color-border-strong)]" aria-hidden>
-                  /
-                </span>
-                <Link
-                  href="/guides"
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "guide_breadcrumb",
-                    label: "guides",
-                  })}
-                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-primary)]"
-                >
-                  Guides
-                </Link>
-              </nav>
+              <HubBreadcrumbs
+                items={breadcrumbItems}
+                analyticsCategory="guide_breadcrumb"
+              />
 
               <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl sm:aspect-[2/1]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
