@@ -18,8 +18,9 @@ import {
   seoTitleSegmentForLayout,
 } from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { generateBreadcrumbSchema, generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
+import { generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
 import { townPagePath } from "@/lib/routes/town-page-path";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getAreaFactsBySlug } from "@/lib/data/area-facts-queries";
 import { AreaAtAGlanceSection } from "@/components/area/AreaAtAGlanceSection";
 import { AreaFactsGate } from "@/components/feature-flags/AreaFactsGate";
@@ -111,13 +112,13 @@ export default async function AreaPage({ params }: Props) {
   const typeLabel = areaTypeLabel(area.areaTypeLabel);
   const areaPath = `/area/${normalizeUrlSegment(area.slug)}`;
   const breadcrumbItems = [
-    { name: "Home", url: "/" },
+    { name: "Home", href: "/" },
+    { name: "Areas", href: "/areas" },
     ...(area.town_slug && area.town_name
-      ? [{ name: area.town_name, url: townPagePath(area.town_slug) }]
+      ? [{ name: area.town_name, href: townPagePath(area.town_slug) }]
       : []),
-    { name: area.title, url: areaPath },
+    { name: area.title, href: areaPath, current: true },
   ];
-  const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
   const intro = resolvePlaceIntro({
     excerpt: area.excerpt,
@@ -148,40 +149,13 @@ export default async function AreaPage({ params }: Props) {
         <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 md:px-10 md:py-12">
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-          />
-          <script
-            type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(areaSchema) }}
           />
 
-          <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm">
-            <Link
-              href="/"
-              {...gaClickProps({ event: "nav_click", category: "area_breadcrumb", label: "home" })}
-              className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
-            >
-              Home
-            </Link>
-            {area.town_slug && area.town_name && (
-              <>
-                <span className="text-zinc-300">/</span>
-                <Link
-                  href={townPagePath(area.town_slug)}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "area_breadcrumb",
-                    label: area.town_slug,
-                  })}
-                  className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
-                >
-                  {area.town_name}
-                </Link>
-              </>
-            )}
-            <span className="text-zinc-300">/</span>
-            <span className="text-zinc-500">{area.title}</span>
-          </nav>
+          <HubBreadcrumbs
+            items={breadcrumbItems}
+            analyticsCategory="area_breadcrumb"
+          />
 
           <PlacePageHeader
             eyebrow={typeLabel}

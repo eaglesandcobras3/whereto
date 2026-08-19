@@ -10,7 +10,7 @@ import { RentalBookingCta } from "@/components/stays/RentalBookingCta";
 import { RentalPartnerBadge } from "@/components/stays/RentalPartnerBadge";
 import { StayUpdateListingCta } from "@/components/stays/StayUpdateListingCta";
 import { getAllFeatureFlags, isFeedbackFeatureEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
-import { generateBreadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getSiteUrl } from "@/lib/site-url";
 import { PROPERTY_TYPE_LABELS, staysPropertyPath, STAYS_HUB_PATH } from "@/lib/stays/constants";
 import { isPublicRentalVisible, isRentalIndexReady } from "@/lib/stays/eligibility";
@@ -110,14 +110,14 @@ export default async function StayDetailPage({ params }: Props) {
 
   const pageUrl = `${getSiteUrl()}${staysPropertyPath(property.slug)}`;
   const schema = generateVacationRentalSchema(property, pageUrl);
-  const breadcrumbs = generateBreadcrumbSchema([
-    { name: "Home", url: "/" },
-    { name: "Stays", url: STAYS_HUB_PATH },
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    { name: "Stays", href: STAYS_HUB_PATH },
     ...(property.town_slug && property.town_title
-      ? [{ name: property.town_title, url: `/stays/town/${property.town_slug}` }]
+      ? [{ name: property.town_title, href: `/stays/town/${property.town_slug}` }]
       : []),
-    { name: property.title, url: staysPropertyPath(property.slug) },
-  ]);
+    { name: property.title, href: staysPropertyPath(property.slug), current: true },
+  ];
 
   const showMap =
     property.location_precision !== "hidden" &&
@@ -145,18 +145,11 @@ export default async function StayDetailPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
-      />
-
       <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
-        <p className="text-sm text-zinc-500">
-          <Link href={STAYS_HUB_PATH} className="hover:text-teal-900">
-            Stays
-          </Link>
-          {property.town_title ? ` / ${property.town_title}` : null}
-        </p>
+        <HubBreadcrumbs
+          items={breadcrumbItems}
+          analyticsCategory="stay_detail_breadcrumb"
+        />
 
         <div className="mt-4 grid gap-10 lg:grid-cols-[1.4fr_0.8fr]">
           <div>
