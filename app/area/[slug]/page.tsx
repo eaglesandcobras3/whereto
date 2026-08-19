@@ -114,9 +114,6 @@ export default async function AreaPage({ params }: Props) {
   const breadcrumbItems = [
     { name: "Home", href: "/" },
     { name: "Areas", href: "/areas" },
-    ...(area.town_slug && area.town_name
-      ? [{ name: area.town_name, href: townPagePath(area.town_slug) }]
-      : []),
     { name: area.title, href: areaPath, current: true },
   ];
 
