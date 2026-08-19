@@ -180,7 +180,7 @@ export default async function AreaPage({ params }: Props) {
               </>
             )}
             <span className="text-zinc-300">/</span>
-            <span className="text-zinc-500">{typeLabel}</span>
+            <span className="text-zinc-500">{area.title}</span>
           </nav>
 
           <PlacePageHeader
