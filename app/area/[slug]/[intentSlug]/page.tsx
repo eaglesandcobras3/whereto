@@ -15,7 +15,6 @@ import {
 } from "@/lib/seo/breadcrumb-schema";
 import { metadataTitleSiteOnly } from "@/lib/seo/metadata-title";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
-import { townPagePath } from "@/lib/routes/town-page-path";
 import { areaIntentPath } from "@/lib/routes/area-intent-path";
 import { fetchSitemapAreaIntentRows } from "@/lib/seo/fetch-sitemap-area-intents";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
@@ -137,9 +136,7 @@ export default async function AreaIntentPage({ params }: Props) {
           <HubBreadcrumbs
             items={[
               { name: "Home", href: "/" },
-              ...(page.area.town_slug && page.area.town_name
-                ? [{ name: page.area.town_name, href: townPagePath(page.area.town_slug) }]
-                : []),
+              { name: "Areas", href: "/areas" },
               { name: page.area.title, href: areaPath },
               {
                 name: page.activeSection.title,
