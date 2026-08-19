@@ -8,6 +8,8 @@ import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { countCategoryHubBusinesses } from "@/lib/data/category-hub";
 import { loadCategoryHubLinkSections } from "@/lib/categories/load-unified-categories";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { discoverHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 
 export const revalidate = 21600;
 
@@ -26,10 +28,12 @@ export const metadata: Metadata = {
 
 /** Combined directory hub: links into category pages (listings live on those hubs). */
 export default async function BusinessesHubPage() {
-  const [sections, totalCount] = await Promise.all([
+  const [sections, totalCount, flags] = await Promise.all([
     loadCategoryHubLinkSections(),
     countCategoryHubBusinesses("all"),
+    getAllFeatureFlags(),
   ]);
+  const businessesHref = isDiscoveryEnabled(flags) ? discoverHref(flags) : "/businesses";
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -50,7 +54,7 @@ export default async function BusinessesHubPage() {
             <HubBreadcrumbs
               items={[
                 { name: "Home", href: "/" },
-                { name: "Businesses", href: "/businesses", current: true },
+                { name: "Businesses", href: businessesHref, current: true },
               ]}
               analyticsCategory="businesses_hub_breadcrumb"
             />

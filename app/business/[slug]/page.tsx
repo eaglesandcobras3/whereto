@@ -23,7 +23,8 @@ import {
 } from "@/lib/seo/metadata-snippets";
 import { businessListingIntro } from "@/lib/seo/page-intro-copy";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { generateBreadcrumbSchema, generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
+import { generateLocalBusinessSchema } from "@/lib/seo/breadcrumb-schema";
+import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { externalWebsiteHref } from "@/lib/urls/external-website-href";
 import { BusinessDirectoryDisclaimer } from "@/components/legal/BusinessDirectoryDisclaimer";
 import { BusinessUpdateListingCta } from "@/components/business/BusinessUpdateListingCta";
@@ -34,6 +35,7 @@ import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
+import { discoverHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFeedbackFeatureEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
@@ -424,22 +426,16 @@ export default async function BusinessPage({ params }: Props) {
   const isVerified = Boolean(b.is_verified);
   const canFlagFields = feedbackEnabled && !isVerified;
 
+  const businessesHref = isDiscoveryEnabled(flags) ? discoverHref(flags) : "/businesses";
   const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    ...(town?.slug && town?.name ? [{ name: town.name, url: townPagePath(town.slug) }] : []),
-    ...(breadcrumbCategoryLabel
-      ? [
-          {
-            name: breadcrumbCategoryLabel,
-            url: category?.slug
-              ? categoryHubPath(category.slug)
-              : "/businesses",
-          },
-        ]
+    { name: "Home", href: "/" },
+    { name: "Businesses", href: businessesHref },
+    ...(town?.slug && town?.name ? [{ name: town.name, href: townPagePath(town.slug) }] : []),
+    ...(breadcrumbCategoryLabel && category?.slug
+      ? [{ name: breadcrumbCategoryLabel, href: categoryHubPath(category.slug) }]
       : []),
-    { name: b.name as string, url: canonicalPath },
+    { name: b.name as string, href: canonicalPath, current: true },
   ];
-  const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
   const websiteHref = externalWebsiteHref(b.website as string | null);
 
@@ -488,63 +484,13 @@ export default async function BusinessPage({ params }: Props) {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-          />
-          <script
-            type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(businessSchema) }}
           />
 
-          {/* Editorial Breadcrumb */}
-          <nav className="mb-6 flex items-center gap-2 text-sm">
-            <Link
-              href="/"
-              {...gaClickProps({
-                event: "nav_click",
-                category: "business_detail_breadcrumb",
-                label: `${gaBiz}_home`,
-              })}
-              className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
-            >
-              Home
-            </Link>
-            {town?.slug && (
-              <>
-                <span className="text-zinc-300">/</span>
-                <Link
-                  href={townPagePath(town.slug)}
-                  {...gaClickProps({
-                    event: "nav_click",
-                    category: "business_detail_breadcrumb",
-                    label: `${gaBiz}_town_${town.slug}`,
-                  })}
-                  className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
-                >
-                  {town.name}
-                </Link>
-              </>
-            )}
-            {breadcrumbCategoryLabel && (
-              <>
-                <span className="text-zinc-300">/</span>
-                {category?.slug ? (
-                  <Link
-                    href={categoryHubPath(category.slug)}
-                    {...gaClickProps({
-                      event: "nav_click",
-                      category: "business_detail_breadcrumb",
-                      label: `${gaBiz}_category_${category.slug}`,
-                    })}
-                    className="text-zinc-400 transition-colors hover:text-[var(--color-primary)]"
-                  >
-                    {breadcrumbCategoryLabel}
-                  </Link>
-                ) : (
-                  <span className="text-zinc-500">{breadcrumbCategoryLabel}</span>
-                )}
-              </>
-            )}
-          </nav>
+          <HubBreadcrumbs
+            items={breadcrumbItems}
+            analyticsCategory="business_detail_breadcrumb"
+          />
 
           {/* Article Header - Horizontal layout with thumbnail */}
           <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start">
