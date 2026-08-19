@@ -35,6 +35,7 @@ import { categoryHubPath } from "@/lib/routes/category-hub-path";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
+import { discoverHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFeedbackFeatureEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
@@ -425,9 +426,10 @@ export default async function BusinessPage({ params }: Props) {
   const isVerified = Boolean(b.is_verified);
   const canFlagFields = feedbackEnabled && !isVerified;
 
+  const businessesHref = isDiscoveryEnabled(flags) ? discoverHref(flags) : "/businesses";
   const breadcrumbItems = [
     { name: "Home", href: "/" },
-    { name: "Businesses", href: "/businesses" },
+    { name: "Businesses", href: businessesHref },
     ...(town?.slug && town?.name ? [{ name: town.name, href: townPagePath(town.slug) }] : []),
     ...(breadcrumbCategoryLabel && category?.slug
       ? [{ name: breadcrumbCategoryLabel, href: categoryHubPath(category.slug) }]
