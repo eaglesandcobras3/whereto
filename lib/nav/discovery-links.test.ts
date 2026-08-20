@@ -28,6 +28,7 @@ const discoverOnly: FeatureFlags = {
   admin_business_direct_edit: false,
   business_maps: false,
   town_maps: false,
+  town_relationship: false,
   feedback: false,
   category_hub_seo: false,
 };

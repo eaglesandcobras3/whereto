@@ -11,6 +11,7 @@ import {
   isRentalPartnersEnabled,
   isAreaFactsEnabled,
   isTownMapsEnabled,
+  isTownRelationshipEnabled,
   type FeatureFlags,
 } from "@/lib/feature-flags-core";
 
@@ -108,6 +109,22 @@ export function isTownMapsFeatureEnabledClient(flags: FeatureFlags): boolean {
 export function useTownMapsFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isTownMapsFeatureEnabledClient(flags);
+}
+
+function townRelationshipDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_TOWN_RELATIONSHIP_ENABLED === "1"
+  );
+}
+
+export function isTownRelationshipFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isTownRelationshipEnabled(flags) || townRelationshipDevBypassEnabled();
+}
+
+export function useTownRelationshipFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isTownRelationshipFeatureEnabledClient(flags);
 }
 
 function discoverMapsDevBypassEnabled(): boolean {
