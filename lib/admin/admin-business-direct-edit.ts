@@ -8,7 +8,9 @@ function nullableText(max: number) {
     .max(max)
     .optional()
     .transform((s) => {
-      const t = (s ?? "").trim();
+      // Preserve omitted keys so partial patches do not clear untouched fields.
+      if (s === undefined) return undefined;
+      const t = s.trim();
       return t === "" ? null : t;
     });
 }
@@ -17,12 +19,18 @@ const optionalUrl = z
   .string()
   .max(500)
   .optional()
-  .transform((s) => (s ?? "").trim())
+  .transform((s) => {
+    if (s === undefined) return undefined;
+    return s.trim();
+  })
   .refine(
-    (s) => s === "" || /^https?:\/\/.+/i.test(s),
+    (s) => s === undefined || s === "" || /^https?:\/\/.+/i.test(s),
     "Use a full URL starting with http:// or https://",
   )
-  .transform((s) => (s === "" ? null : s));
+  .transform((s) => {
+    if (s === undefined) return undefined;
+    return s === "" ? null : s;
+  });
 
 export const adminBusinessPatchSchema = z.object({
   title: z.string().trim().min(2).max(200).optional(),
@@ -51,7 +59,11 @@ export const adminBusinessPatchSchema = z.object({
   regenerate_slug: z.boolean().optional(),
 });
 
-export type AdminBusinessPatchInput = z.infer<typeof adminBusinessPatchSchema>;
+export type AdminBusinessPatchInput = {
+  [K in keyof z.infer<typeof adminBusinessPatchSchema>]?: z.infer<
+    typeof adminBusinessPatchSchema
+  >[K];
+};
 
 export type AdminBusinessRow = {
   id: string;
