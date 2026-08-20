@@ -17,6 +17,7 @@ export const FEATURE_FLAG_KEYS = [
   "rentals",
   "rental_partners",
   "business_photos",
+  "admin_business_direct_edit",
   "business_maps",
   "town_maps",
   "feedback",
@@ -40,6 +41,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   rentals: false,
   rental_partners: false,
   business_photos: false,
+  admin_business_direct_edit: false,
   business_maps: false,
   town_maps: false,
   feedback: false,
@@ -137,6 +139,14 @@ export function isRentalPartnersEnabled(flags: FeatureFlags): boolean {
  */
 export function isBusinessPhotosEnabled(flags: FeatureFlags): boolean {
   return flags.business_photos === true;
+}
+
+/**
+ * Admin direct business field edits (bypass review queue). Portal owner edit
+ * proposals stay on `onboard` and are unaffected by this flag.
+ */
+export function isAdminBusinessDirectEditEnabled(flags: FeatureFlags): boolean {
+  return flags.admin_business_direct_edit === true;
 }
 
 /** OpenStreetMap embeds on business detail + storefront pins on town/area/category hubs. */

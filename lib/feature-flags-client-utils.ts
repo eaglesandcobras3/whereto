@@ -2,6 +2,7 @@
 
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import {
+  isAdminBusinessDirectEditEnabled,
   isBusinessMapsEnabled,
   isBusinessPhotosEnabled,
   isCommunityTipsEnabled,
@@ -59,6 +60,22 @@ export function isBusinessPhotosFeatureEnabledClient(flags: FeatureFlags): boole
 export function useBusinessPhotosFeatureEnabled(): boolean {
   const flags = useAppFeatureFlags();
   return isBusinessPhotosFeatureEnabledClient(flags);
+}
+
+function adminBusinessDirectEditDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_ADMIN_BUSINESS_DIRECT_EDIT_ENABLED === "1"
+  );
+}
+
+export function isAdminBusinessDirectEditFeatureEnabledClient(flags: FeatureFlags): boolean {
+  return isAdminBusinessDirectEditEnabled(flags) || adminBusinessDirectEditDevBypassEnabled();
+}
+
+export function useAdminBusinessDirectEditFeatureEnabled(): boolean {
+  const flags = useAppFeatureFlags();
+  return isAdminBusinessDirectEditFeatureEnabledClient(flags);
 }
 
 function businessMapsDevBypassEnabled(): boolean {

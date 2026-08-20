@@ -380,6 +380,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `rentals` | Vacation rentals marketplace (`/stays`, listing intake, admin rentals); code default **off** |
 | `rental_partners` | Company partner application at `/list-your-rentals/partner` (separate from `rentals`); code default **off** |
 | `business_photos` | Business main + gallery photos (admin main-image upload, portal additional uploads, public gallery modal); code default **off** |
+| `admin_business_direct_edit` | Admin `/admin/businesses` direct field edit (writes `businesses` table, bypasses review queue); does **not** change portal owner proposal flow; code default **off** |
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
 | `town_maps` | OpenStreetMap of place pins (`map_lat`/`map_lng`) on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
 | `discover_maps` | Map-first `/discover` UI for **storefront** only (pan/zoom + “Search this area” writes `bbox`/`zoom` URL params); requires `discover`; services stay list-only; code default **off** |
@@ -424,6 +425,13 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Smoke-test: admin sets main image via `/admin/review` photo item or free-intake admin upload; portal member uploads additional photo; public `/business/[slug]` shows Photos section + lightbox
 
 **Write path reminder:** always update `public.businesses.main_image_url` / `hero_image_url` (table). Do **not** write image URLs through `businesses_view` (view is read-only / historically aliased Directus resolves).
+
+### Admin direct business edit setup
+
+- [ ] PostHog: create boolean flag `admin_business_direct_edit` (default false); enable for internal admins
+- [ ] Local dev (optional): `ADMIN_BUSINESS_DIRECT_EDIT_ENABLED=1` and `NEXT_PUBLIC_ADMIN_BUSINESS_DIRECT_EDIT_ENABLED=1`
+- [ ] Smoke-test: with flag on — `/admin/businesses` search → open listing → save fields updates live page without review queue; portal owner edit still creates a proposal
+- [ ] With `business_photos` on — admin edit page can upload gallery photos (WebP, approved immediately) and set main image
 
 ### Town facts (fully ramped)
 
@@ -629,6 +637,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-20 | PostHog `admin_business_direct_edit` (default off): `/admin/businesses` search + direct field edit writes `businesses` table (bypasses review queue); portal owner proposals unchanged. Admin gallery upload (approved WebP) stays behind `business_photos`. Local bypass `ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` / `NEXT_PUBLIC_ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` |
 | 2026-08-18 | Town/area collapsible section links go to place-scoped intent pages (not `/businesses` rollup hubs); intent pages include the same business-map treatment as category hubs |
 | 2026-08-18 | Search Console rollout tightened: business pages can now enter the sitemap when listing-quality checks pass; town/area intent pages publish from populated hub rollups; no scheduled cron required |
 | 2026-08-16 | Soft-hide removed for businesses/rentals too — published (+ rental partner active) means public/SEO-ready; SQL clears businesses + rentals |

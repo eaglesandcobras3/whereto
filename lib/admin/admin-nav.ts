@@ -12,6 +12,8 @@ export type AdminNavItem = {
   requiresCommunityTips?: boolean;
   /** Hidden when the `rentals` feature flag is off */
   requiresRentals?: boolean;
+  /** Hidden when the `admin_business_direct_edit` feature flag is off */
+  requiresAdminBusinessDirectEdit?: boolean;
 };
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
@@ -19,6 +21,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/guides",
     title: "Guides",
     description: "Create, edit, enrich, and publish editorial guides (markdown).",
+  },
+  {
+    href: "/admin/businesses",
+    title: "Businesses",
+    description: "Search and edit directory listings directly (no review queue).",
+    requiresAdminBusinessDirectEdit: true,
   },
   {
     href: "/admin/irse",
@@ -67,6 +75,7 @@ export function adminNavItemsForSession(flags: {
   searchInspectorEnabled: boolean;
   communityTipsEnabled?: boolean;
   rentalsEnabled?: boolean;
+  adminBusinessDirectEditEnabled?: boolean;
 }): AdminNavItem[] {
   return ADMIN_NAV_ITEMS.filter((item) => {
     if (item.requiresReviewQueue) return true;
@@ -74,6 +83,9 @@ export function adminNavItemsForSession(flags: {
     if (item.requiresSearchInspector && !flags.searchInspectorEnabled) return false;
     if (item.requiresCommunityTips && flags.communityTipsEnabled !== true) return false;
     if (item.requiresRentals && flags.rentalsEnabled !== true) return false;
+    if (item.requiresAdminBusinessDirectEdit && flags.adminBusinessDirectEditEnabled !== true) {
+      return false;
+    }
     return true;
   });
 }

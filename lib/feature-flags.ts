@@ -16,6 +16,7 @@ import {
   isRentalsEnabled,
   isRentalPartnersEnabled,
   isBusinessPhotosEnabled,
+  isAdminBusinessDirectEditEnabled,
   isBusinessMapsEnabled,
   isTownMapsEnabled,
   isFeedbackEnabled,
@@ -40,6 +41,7 @@ export {
   isRentalsEnabled,
   isRentalPartnersEnabled,
   isBusinessPhotosEnabled,
+  isAdminBusinessDirectEditEnabled,
   isBusinessMapsEnabled,
   isTownMapsEnabled,
   isFeedbackEnabled,
@@ -137,6 +139,18 @@ export function businessPhotosDevBypassEnabled(): boolean {
 
 export function isBusinessPhotosFeatureEnabled(flags: FeatureFlags): boolean {
   return isBusinessPhotosEnabled(flags) || businessPhotosDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `admin_business_direct_edit` still required in production. */
+export function adminBusinessDirectEditDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.ADMIN_BUSINESS_DIRECT_EDIT_ENABLED === "1"
+  );
+}
+
+export function isAdminBusinessDirectEditFeatureEnabled(flags: FeatureFlags): boolean {
+  return isAdminBusinessDirectEditEnabled(flags) || adminBusinessDirectEditDevBypassEnabled();
 }
 
 /** Local dev escape hatch — PostHog `business_maps` flag still required in production. */
@@ -265,6 +279,14 @@ export async function rentalPartnersApiBlocked(): Promise<NextResponse | null> {
 /** For route handlers: returns a 404 when business photos are off. */
 export async function businessPhotosApiBlocked(): Promise<NextResponse | null> {
   if (!isBusinessPhotosFeatureEnabled(await getAllFeatureFlags())) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return null;
+}
+
+/** For route handlers: returns a 404 when admin direct business edit is off. */
+export async function adminBusinessDirectEditApiBlocked(): Promise<NextResponse | null> {
+  if (!isAdminBusinessDirectEditFeatureEnabled(await getAllFeatureFlags())) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return null;

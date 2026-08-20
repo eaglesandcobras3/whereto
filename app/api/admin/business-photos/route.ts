@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { businessListingImagePatch } from "@/lib/business/listing-image-patch";
+import { businessPhotosApiBlocked } from "@/lib/feature-flags";
+import { uploadPortalImage } from "@/lib/portal/storage-upload";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { businessListingImagePatch } from "@/lib/business/listing-image-patch";
+
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  const photosBlocked = await businessPhotosApiBlocked();
+  if (photosBlocked) return photosBlocked;
+
   const admin = await requireAdminUser();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -15,17 +22,93 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_photos")
     .select("id, public_url, is_hero, status, sort_order, created_at")
     .eq("business_id", businessId)
-    .eq("status", status)
     .order("is_hero", { ascending: false })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
+
+  if (status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ photos: data ?? [] });
+}
+
+/**
+ * Admin gallery upload: resize → WebP → insert as approved (no review queue).
+ * Optionally set as main listing image on `businesses` URL columns.
+ */
+export async function POST(request: NextRequest) {
+  const photosBlocked = await businessPhotosApiBlocked();
+  if (photosBlocked) return photosBlocked;
+
+  const admin = await requireAdminUser();
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const formData = await request.formData();
+  const businessId = String(formData.get("business_id") ?? "").trim();
+  const file = formData.get("file");
+  const isHero = String(formData.get("is_hero") ?? "") === "true";
+
+  if (!businessId) {
+    return NextResponse.json({ error: "business_id required" }, { status: 400 });
+  }
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "Missing file." }, { status: 400 });
+  }
+
+  const supabase = getServiceSupabase();
+  const { data: biz } = await supabase
+    .from("businesses")
+    .select("id")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!biz) return NextResponse.json({ error: "Business not found" }, { status: 404 });
+
+  let uploaded: { publicUrl: string; storagePath: string };
+  try {
+    uploaded = await uploadPortalImage(supabase, file, `admin/businesses/${businessId}`);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Upload failed";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  if (isHero) {
+    await supabase
+      .from("business_photos")
+      .update({ is_hero: false })
+      .eq("business_id", businessId);
+    const patch = businessListingImagePatch(uploaded.publicUrl);
+    if (patch) {
+      const { error: bizErr } = await supabase.from("businesses").update(patch).eq("id", businessId);
+      if (bizErr) return NextResponse.json({ error: bizErr.message }, { status: 500 });
+    }
+  }
+
+  const { data: photo, error: photoErr } = await supabase
+    .from("business_photos")
+    .insert({
+      business_id: businessId,
+      uploaded_by: admin.userId,
+      public_url: uploaded.publicUrl,
+      storage_path: uploaded.storagePath,
+      status: "approved",
+      is_hero: isHero,
+    })
+    .select("id, public_url, is_hero, status, sort_order, created_at")
+    .single();
+
+  if (photoErr || !photo) {
+    return NextResponse.json({ error: photoErr?.message ?? "Could not save photo" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, photo });
 }
 
 const patchSchema = z.object({
@@ -38,6 +121,9 @@ const patchSchema = z.object({
  * Include selected pending photos (approve) and exclude the rest (reject).
  */
 export async function PATCH(request: NextRequest) {
+  const photosBlocked = await businessPhotosApiBlocked();
+  if (photosBlocked) return photosBlocked;
+
   const admin = await requireAdminUser();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -101,4 +187,34 @@ export async function PATCH(request: NextRequest) {
     included: include_photo_ids.length,
     excluded: pending_photo_ids.filter((id) => !includeSet.has(id)).length,
   });
+}
+
+const deleteSchema = z.object({
+  business_id: z.string().uuid(),
+  photo_id: z.string().uuid(),
+});
+
+/** Soft-remove an approved gallery photo (mark rejected). */
+export async function DELETE(request: NextRequest) {
+  const photosBlocked = await businessPhotosApiBlocked();
+  if (photosBlocked) return photosBlocked;
+
+  const admin = await requireAdminUser();
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const json = await request.json().catch(() => null);
+  const parsed = deleteSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "business_id and photo_id required" }, { status: 400 });
+  }
+
+  const supabase = getServiceSupabase();
+  const { error } = await supabase
+    .from("business_photos")
+    .update({ status: "rejected", is_hero: false, updated_at: new Date().toISOString() })
+    .eq("id", parsed.data.photo_id)
+    .eq("business_id", parsed.data.business_id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }

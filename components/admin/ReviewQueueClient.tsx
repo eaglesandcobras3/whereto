@@ -13,7 +13,10 @@ import {
 import { AdminBusinessMainImageControl } from "@/components/admin/AdminBusinessMainImageControl";
 import { AdminBusinessPendingPhotosReview } from "@/components/admin/AdminBusinessPendingPhotosReview";
 import { AdminFreeOnboardPayloadPhotosReview } from "@/components/admin/AdminFreeOnboardPayloadPhotosReview";
-import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
+import {
+  useAdminBusinessDirectEditFeatureEnabled,
+  useBusinessPhotosFeatureEnabled,
+} from "@/lib/feature-flags-client-utils";
 import type { FreeOnboardPhotoPayload } from "@/lib/listing-requests/free-onboard-schema";
 import {
   isHubSuggestionField,
@@ -138,6 +141,7 @@ function buildTagActions(
 
 export function ReviewQueueClient() {
   const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
+  const adminDirectEditEnabled = useAdminBusinessDirectEditFeatureEnabled();
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -527,6 +531,14 @@ export function ReviewQueueClient() {
                       View listing
                     </a>
                   ) : null}
+                  {adminDirectEditEnabled && item.business_id ? (
+                    <a
+                      href={`/admin/businesses/${encodeURIComponent(item.business_id)}`}
+                      className="shrink-0 text-xs text-zinc-700 hover:underline"
+                    >
+                      Edit directly
+                    </a>
+                  ) : null}
                   {item.admin_notes ? (
                     <span
                       className="w-full text-xs text-zinc-500"
@@ -625,6 +637,14 @@ export function ReviewQueueClient() {
                         </a>
                       );
                     })()}
+                    {adminDirectEditEnabled && item.business_id ? (
+                      <a
+                        href={`/admin/businesses/${encodeURIComponent(item.business_id)}`}
+                        className="text-sm text-zinc-700 hover:underline"
+                      >
+                        Edit directly
+                      </a>
+                    ) : null}
                   </div>
                 </div>
 

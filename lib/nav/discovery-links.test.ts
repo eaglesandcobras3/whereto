@@ -25,6 +25,7 @@ const discoverOnly: FeatureFlags = {
   rentals: false,
   rental_partners: false,
   business_photos: false,
+  admin_business_direct_edit: false,
   business_maps: false,
   town_maps: false,
   feedback: false,
