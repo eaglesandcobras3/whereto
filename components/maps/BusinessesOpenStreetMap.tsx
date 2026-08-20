@@ -90,8 +90,8 @@ function markerPopupHtml(marker: BusinessMapMarker, dark: boolean): string {
 export function BusinessesOpenStreetMap({
   markers,
   className = "",
-  zoom = 18,
-  fitMaxZoom = 17,
+  zoom = 19,
+  fitMaxZoom = 18,
 }: Props) {
   const mapId = useId().replace(/:/g, "");
   const containerRef = useRef<HTMLDivElement | null>(null);

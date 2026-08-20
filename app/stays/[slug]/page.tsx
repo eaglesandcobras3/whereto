@@ -307,7 +307,7 @@ export default async function StayDetailPage({ params }: Props) {
                   <OpenStreetMap
                     lat={property.map_lat!}
                     lng={property.map_lng!}
-                    zoom={13}
+                    zoom={14}
                     className="h-full min-h-80 !rounded-none sm:min-h-[650px]"
                   />
                 </div>

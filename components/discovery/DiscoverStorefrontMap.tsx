@@ -35,7 +35,7 @@ const LIGHT_TILES =
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
-const DEFAULT_ZOOM = 12;
+const DEFAULT_ZOOM = 13;
 
 function readDarkMode(): boolean {
   if (typeof document === "undefined") return false;
@@ -213,7 +213,7 @@ export function DiscoverStorefrontMap({
             [initialBbox.south, initialBbox.west],
             [initialBbox.north, initialBbox.east],
           ),
-          { animate: false, maxZoom: 16 },
+          { animate: false, maxZoom: 17 },
         );
       }
 
@@ -266,7 +266,7 @@ export function DiscoverStorefrontMap({
             [initialBbox.south, initialBbox.west],
             [initialBbox.north, initialBbox.east],
           ),
-          { animate: false, maxZoom: 16 },
+          { animate: false, maxZoom: 17 },
         );
       } else if (initialZoom != null) {
         mapRef.current.setZoom(initialZoom, { animate: false });
@@ -334,7 +334,7 @@ export function DiscoverStorefrontMap({
           mappable.map((m) => [m.map_lat as number, m.map_lng as number] as [number, number]),
         );
         if (bounds.isValid()) {
-          map.fitBounds(bounds.pad(0.08), { maxZoom: 14, animate: false });
+          map.fitBounds(bounds.pad(0.08), { maxZoom: 15, animate: false });
           setAreaDirty(false);
         }
       }

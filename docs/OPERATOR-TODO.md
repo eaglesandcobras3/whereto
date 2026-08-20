@@ -383,7 +383,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `admin_business_direct_edit` | Admin `/admin/businesses` direct field edit (writes `businesses` table, bypasses review queue); does **not** change portal owner proposal flow; code default **off** |
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
 | `town_maps` | OpenStreetMap of place pins (`map_lat`/`map_lng`) on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
-| `town_relationship` | 30A corridor neighbor timeline on `/town/[slug]` below the hero; code default **off** |
+| `town_relationship` | 30A corridor neighbor timeline on `/town/[slug]` below the map (or below at-a-glance when maps are off); code default **off** |
 | `discover_maps` | Map-first `/discover` UI for **storefront** only (pan/zoom + “Search this area” writes `bbox`/`zoom` URL params); requires `discover`; services stay list-only; code default **off** |
 | `feedback` | Visitor “is this wrong?” field flags on unverified business / rental detail pages (admin review queue); code default **off** |
 
@@ -418,7 +418,7 @@ Directional neighbor distances for the corridor timeline on town detail pages (`
 - [ ] Apply [scripts/migrations/town-relationships-seed.sql](../scripts/migrations/town-relationships-seed.sql) (corridor towns + approximate Santa Rosa row)
 - [ ] PostHog: create boolean flag `town_relationship` (default false); enable for internal cohort then gradual rollout
 - [ ] Local dev (optional): `TOWN_RELATIONSHIP_ENABLED=1` and `NEXT_PUBLIC_TOWN_RELATIONSHIP_ENABLED=1`
-- [ ] Smoke-test: with flag on — `/town/rosemary-beach` shows **THE 30A CORRIDOR** below the hero; `/town/sandestin` shows edge (east-only) neighbors; `/town/santa-rosa-beach` hides the section
+- [ ] Smoke-test: with flag on — `/town/rosemary-beach` shows **THE 30A CORRIDOR** below the map (or below at-a-glance when `business_maps` is off); `/town/sandestin` shows edge (east-only) neighbors; `/town/santa-rosa-beach` hides the section
 
 ### Discover maps setup
 
@@ -654,7 +654,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
-| 2026-08-20 | PostHog `town_relationship` (default off): 30A corridor neighbor timeline on `/town/[slug]` below the hero; SQL [town-relationships.sql](../scripts/migrations/town-relationships.sql) + [town-relationships-seed.sql](../scripts/migrations/town-relationships-seed.sql); local bypass `TOWN_RELATIONSHIP_ENABLED` / `NEXT_PUBLIC_TOWN_RELATIONSHIP_ENABLED`. Santa Rosa Beach is off-corridor (section hidden). |
+| 2026-08-20 | PostHog `town_relationship` (default off): 30A corridor neighbor timeline on `/town/[slug]` below the map; SQL [town-relationships.sql](../scripts/migrations/town-relationships.sql) + [town-relationships-seed.sql](../scripts/migrations/town-relationships-seed.sql); local bypass `TOWN_RELATIONSHIP_ENABLED` / `NEXT_PUBLIC_TOWN_RELATIONSHIP_ENABLED`. Santa Rosa Beach is off-corridor (section hidden). |
 | 2026-08-20 | Admin `/admin/add-business`: queue new listings (title, town/area typeahead, storefront/service), Apply runs Gemini verify + Census + insert; unverified → Needs review (force apply / skip). SQL [admin-business-seed-queue.sql](../scripts/migrations/admin-business-seed-queue.sql) |
 | 2026-08-20 | PostHog `admin_business_direct_edit` (default off): `/admin/businesses` search + direct field edit writes `businesses` table (bypasses review queue); portal owner proposals unchanged. Admin gallery upload (approved WebP) stays behind `business_photos`. Local bypass `ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` / `NEXT_PUBLIC_ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` |
 | 2026-08-18 | Town/area collapsible section links go to place-scoped intent pages (not `/businesses` rollup hubs); intent pages include the same business-map treatment as category hubs |

@@ -37,8 +37,8 @@ export function BusinessMapSection({
   title = "Location",
   description,
   className = "",
-  zoom = 18,
-  fitMaxZoom = 17,
+  zoom = 19,
+  fitMaxZoom = 18,
   fieldFlagEntityId,
   fieldFlagEntity = "business",
 }: Props) {

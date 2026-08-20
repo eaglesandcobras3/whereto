@@ -149,8 +149,8 @@ export default async function AreasPage() {
             markers={mapMarkers}
             title="Map of districts & town centers"
             description="Areas with a mapped center along Scenic Highway 30A."
-            zoom={13}
-            fitMaxZoom={13}
+            zoom={14}
+            fitMaxZoom={14}
           />
         ) : null}
 

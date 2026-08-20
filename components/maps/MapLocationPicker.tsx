@@ -57,8 +57,8 @@ export function MapLocationPicker({
   lng,
   onChange,
   className = "",
-  zoom = 18,
-  emptyZoom = 11,
+  zoom = 19,
+  emptyZoom = 12,
   latInputName,
   lngInputName,
   helpText = "Click the map to drop a pin, or drag the pin to adjust.",
@@ -69,6 +69,8 @@ export function MapLocationPicker({
   const markerRef = useRef<import("leaflet").Marker | null>(null);
   const onChangeRef = useRef(onChange);
   const [dark, setDark] = useState(false);
+  /** Bumps when the Leaflet map instance is ready so pin sync can retry after async mount. */
+  const [mapVersion, setMapVersion] = useState(0);
   const hasPin = lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng);
 
   useEffect(() => {
@@ -110,6 +112,7 @@ export function MapLocationPicker({
       });
 
       mapRef.current = map;
+      setMapVersion((v) => v + 1);
       requestAnimationFrame(() => map.invalidateSize());
     }
 
@@ -120,13 +123,14 @@ export function MapLocationPicker({
       markerRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
+      setMapVersion(0);
     };
   }, [dark, mapId, emptyZoom]);
 
-  // Sync marker with controlled lat/lng.
+  // Sync marker with controlled lat/lng (re-runs when map finishes mounting).
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || mapVersion === 0) return;
 
     let cancelled = false;
     void (async () => {
@@ -157,16 +161,21 @@ export function MapLocationPicker({
         });
         markerRef.current = marker;
         map.setView(next, zoom);
+        requestAnimationFrame(() => map.invalidateSize());
       } else {
         markerRef.current.setLatLng(next);
         markerRef.current.setIcon(icon);
+        // Keep pin in view when coords arrive after mount (verify/update prefill).
+        if (!map.getBounds().contains(next)) {
+          map.setView(next, zoom);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [lat, lng, hasPin, dark, zoom, emptyZoom]);
+  }, [lat, lng, hasPin, dark, zoom, emptyZoom, mapVersion]);
 
   return (
     <div className={`space-y-2 ${className}`}>

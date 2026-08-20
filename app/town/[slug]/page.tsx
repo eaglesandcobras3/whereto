@@ -389,14 +389,6 @@ function BasicTownPage({
             }
           />
 
-          {corridor ? (
-            <TownCorridorSection
-              current={corridor.current}
-              west={corridor.west}
-              east={corridor.east}
-            />
-          ) : null}
-
           <div className="min-w-0 space-y-8 sm:space-y-10">
             {townFacts ? (
               <div>
@@ -414,6 +406,14 @@ function BasicTownPage({
                 description="Storefront businesses with a mapped location."
                 fieldFlagEntityId={feedbackEnabled ? town.id : null}
                 fieldFlagEntity="town"
+              />
+            ) : null}
+
+            {corridor ? (
+              <TownCorridorSection
+                current={corridor.current}
+                west={corridor.west}
+                east={corridor.east}
               />
             ) : null}
 

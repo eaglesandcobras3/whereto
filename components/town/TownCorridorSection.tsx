@@ -18,6 +18,10 @@ function formatMilesLabel(miles: number, direction: "west" | "east"): string {
   return `${miles.toFixed(1)} miles ${direction}`;
 }
 
+function formatMilesLabelCompact(miles: number, direction: "west" | "east"): string {
+  return `${miles.toFixed(1)} mi ${direction === "west" ? "W" : "E"}`;
+}
+
 function TownThumb({
   name,
   imageUrl,
@@ -71,13 +75,34 @@ type CorridorNode =
 
 /** Horizontal 30A corridor neighbor timeline for town detail pages. */
 export function TownCorridorSection({ current, west, east }: Props) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const scroller = scrollerRef.current;
     const node = currentRef.current;
-    if (!node) return;
-    // Center the current town on narrow viewports (scroll-snap strip).
-    node.scrollIntoView({ inline: "center", block: "nearest", behavior: "auto" });
+    if (!scroller || !node) return;
+
+    function centerCurrent() {
+      if (!scroller || !node) return;
+      // Only adjust when the strip actually overflows (mobile / narrow).
+      if (scroller.scrollWidth <= scroller.clientWidth + 1) {
+        scroller.scrollLeft = 0;
+        return;
+      }
+      const target =
+        node.offsetLeft - scroller.clientWidth / 2 + node.offsetWidth / 2;
+      scroller.scrollLeft = Math.max(0, target);
+    }
+
+    centerCurrent();
+
+    const ro = new ResizeObserver(() => {
+      centerCurrent();
+    });
+    ro.observe(scroller);
+    ro.observe(node);
+    return () => ro.disconnect();
   }, []);
 
   const nodes: CorridorNode[] = [
@@ -98,9 +123,11 @@ export function TownCorridorSection({ current, west, east }: Props) {
         The 30A Corridor
       </h2>
 
-      <div className="mt-5 -mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] snap-x snap-mandatory md:mx-0 md:overflow-visible md:px-0 md:snap-none [&::-webkit-scrollbar]:hidden">
+      <div
+        ref={scrollerRef}
+        className="mt-5 -mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] snap-x snap-mandatory md:mx-0 md:overflow-x-auto md:px-0 md:snap-none [&::-webkit-scrollbar]:hidden"
+      >
         <div className="relative mx-auto flex w-max min-w-full items-start justify-center gap-6 px-2 sm:gap-8 md:w-full md:justify-between md:gap-4 md:px-0">
-          {/* Spine through the shared circle row (names are min-h + mb-2 above) */}
           <div
             className="pointer-events-none absolute top-[calc(2.5rem+0.5rem+2rem)] right-6 left-6 h-px bg-zinc-300 sm:top-[calc(2.75rem+0.5rem+2.5rem)] md:right-10 md:left-10"
             aria-hidden
@@ -164,7 +191,12 @@ export function TownCorridorSection({ current, west, east }: Props) {
                 {nameEl}
                 {thumbEl}
                 <p className="mt-2.5 text-[0.65rem] leading-snug text-zinc-500 sm:text-xs">
-                  {formatMilesLabel(neighbor.miles, neighbor.direction)}
+                  <span className="md:hidden">
+                    {formatMilesLabelCompact(neighbor.miles, neighbor.direction)}
+                  </span>
+                  <span className="hidden md:inline">
+                    {formatMilesLabel(neighbor.miles, neighbor.direction)}
+                  </span>
                 </p>
               </Link>
             );

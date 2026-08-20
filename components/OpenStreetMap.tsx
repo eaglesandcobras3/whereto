@@ -10,9 +10,9 @@ type Props = {
  * Functional OpenStreetMap component using a standard iframe embed.
  * No API key required.
  */
-export function OpenStreetMap({ lat, lng, zoom = 15, className = "", title = "Map" }: Props) {
-  // OSM embed URL format
-  const bbox_delta = 0.005;
+export function OpenStreetMap({ lat, lng, zoom = 16, className = "", title = "Map" }: Props) {
+  // OSM embed URL format — tighter bbox ≈ one zoom level in from prior 0.005
+  const bbox_delta = 0.0025;
   const bbox = `${lng - bbox_delta},${lat - bbox_delta},${lng + bbox_delta},${lat + bbox_delta}`;
   const embedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
 

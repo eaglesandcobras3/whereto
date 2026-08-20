@@ -102,8 +102,8 @@ export default async function TownsPage() {
             markers={mapMarkers}
             title="Map of towns along 30A"
             description="The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen."
-            zoom={13}
-            fitMaxZoom={13}
+            zoom={14}
+            fitMaxZoom={14}
           />
         ) : null}
 

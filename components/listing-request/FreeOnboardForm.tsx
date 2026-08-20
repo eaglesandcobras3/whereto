@@ -1413,10 +1413,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       </p>
 
       {isUpdate ? (
-        <div
-          className={`${formErrorAlertClass} flex flex-wrap items-center gap-x-2 gap-y-1`}
-          role="note"
-        >
+        <p className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
           <span>Need this listing taken down instead?</span>
           <button
             type="button"
@@ -1424,11 +1421,11 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
               setRemovalErr(null);
               setRemovalOpen(true);
             }}
-            className="font-semibold underline underline-offset-2 hover:no-underline"
+            className="underline underline-offset-2 hover:text-[var(--color-primary)]"
           >
             Delete my listing
           </button>
-        </div>
+        </p>
       ) : null}
 
       {removalOpen ? (
