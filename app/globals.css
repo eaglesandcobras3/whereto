@@ -931,6 +931,22 @@ body {
   animation: fade-in-up 0.8s ease-out forwards;
 }
 
+@keyframes corridor-current-pop {
+  from {
+    opacity: 0.7;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.town-corridor-current {
+  animation: corridor-current-pop 0.55s ease-out both;
+  animation-delay: 120ms;
+}
+
 /* Staggered animation delays */
 .animate-delay-100 { animation-delay: 100ms; }
 .animate-delay-200 { animation-delay: 200ms; }
