@@ -33,13 +33,16 @@ import type { TownGuideCard } from "@/lib/data/town-hub";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForTown } from "@/lib/data/business-map-markers";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled, isTownRelationshipFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import {
   browseSectionsFromCategoryBusinesses,
   loadTownBrowseBusinessesForAreaIds,
 } from "@/lib/data/town-category-sections";
+import { getTownRelationshipCorridor } from "@/lib/data/town-relationships";
+import type { TownCorridorData } from "@/lib/data/town-relationships";
+import { TownCorridorSection } from "@/components/town/TownCorridorSection";
 
 type SidebarArea = {
   id: string;
@@ -266,12 +269,21 @@ export default async function TownDetailPage({ params }: Props) {
   ]);
   const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
   const feedbackEnabled = isFeedbackFeatureEnabled(flags);
+  const townRelationshipEnabled = isTownRelationshipFeatureEnabled(flags);
   let mapMarkers: BusinessMapMarker[] = [];
   if (businessMapsEnabled) {
     try {
       mapMarkers = await listStorefrontMapMarkersForTown(town.id);
     } catch {
       mapMarkers = [];
+    }
+  }
+  let corridor: TownCorridorData | null = null;
+  if (townRelationshipEnabled) {
+    try {
+      corridor = await getTownRelationshipCorridor(town.id);
+    } catch {
+      corridor = null;
     }
   }
   return (
@@ -282,6 +294,7 @@ export default async function TownDetailPage({ params }: Props) {
       townFacts={townFacts}
       mapMarkers={mapMarkers}
       feedbackEnabled={feedbackEnabled}
+      corridor={corridor}
     />
   );
 }
@@ -300,6 +313,7 @@ function BasicTownPage({
   townFacts,
   mapMarkers,
   feedbackEnabled,
+  corridor,
 }: {
   town: TownRecord;
   pageData: TownPageData;
@@ -307,6 +321,7 @@ function BasicTownPage({
   townFacts: TownFacts | null;
   mapMarkers: BusinessMapMarker[];
   feedbackEnabled: boolean;
+  corridor: TownCorridorData | null;
 }) {
   const descriptor = getTownDescriptor(town.slug);
   // Visible hero uses excerpt (at-a-glance / editorial intro). seo_description stays for metadata.
@@ -373,6 +388,14 @@ function BasicTownPage({
               ) : null
             }
           />
+
+          {corridor ? (
+            <TownCorridorSection
+              current={corridor.current}
+              west={corridor.west}
+              east={corridor.east}
+            />
+          ) : null}
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
             {townFacts ? (
