@@ -18,6 +18,12 @@ type Props = {
   /** Free-text suggested category (mutually exclusive with `value`). */
   suggestedValue?: string;
   onSuggestedChange?: (label: string) => void;
+  /**
+   * Label used when `value` is set but not yet present in `options`
+   * (e.g. verify/update prefill before options load, or unpublished leaf).
+   */
+  fallbackLabel?: string | null;
+  fallbackGroupTitle?: string | null;
   disabled?: boolean;
   placeholder?: string;
   inputClassName: string;
@@ -42,6 +48,8 @@ export function CategoryTypeahead({
   onChange,
   suggestedValue = "",
   onSuggestedChange,
+  fallbackLabel = null,
+  fallbackGroupTitle = null,
   disabled = false,
   placeholder = "Search categories…",
   inputClassName,
@@ -56,10 +64,20 @@ export function CategoryTypeahead({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const selected = useMemo(
-    () => options.find((o) => o.id === value) ?? null,
-    [options, value],
-  );
+  const selected = useMemo(() => {
+    const fromOptions = options.find((o) => o.id === value) ?? null;
+    if (fromOptions) return fromOptions;
+    if (!value) return null;
+    const label = fallbackLabel?.trim();
+    if (label) {
+      return {
+        id: value,
+        title: label,
+        groupTitle: fallbackGroupTitle?.trim() || null,
+      };
+    }
+    return null;
+  }, [options, value, fallbackLabel, fallbackGroupTitle]);
   const suggested = suggestedValue.trim();
   const hasSelection = Boolean(selected) || suggested.length > 0;
 

@@ -88,32 +88,36 @@ const optionalPhone = z
   .transform((s) => s || null);
 
 export const freeOnboardLocationSchema = z.object({
-  id: z.string().trim().min(1).max(64).optional(),
-  town_id: z.string().uuid(),
+  id: z.string().trim().min(1, { message: "Location id is required." }).max(64).optional(),
+  town_id: z.string().uuid({ message: "Choose a town for each location." }),
   address: z
     .string()
-    .max(500)
+    .max(500, { message: "Address is too long." })
     .optional()
     .transform((s) => (s ?? "").trim() || null),
   map_lat: z
     .number()
-    .min(-90)
-    .max(90)
+    .min(-90, { message: "Latitude must be between -90 and 90." })
+    .max(90, { message: "Latitude must be between -90 and 90." })
     .optional()
     .nullable()
     .transform((n) => (n == null || !Number.isFinite(n) ? null : n)),
   map_lng: z
     .number()
-    .min(-180)
-    .max(180)
+    .min(-180, { message: "Longitude must be between -180 and 180." })
+    .max(180, { message: "Longitude must be between -180 and 180." })
     .optional()
     .nullable()
     .transform((n) => (n == null || !Number.isFinite(n) ? null : n)),
 });
 
 export const freeOnboardPhotoSchema = z.object({
-  public_url: z.string().url().max(2000),
-  storage_path: z.string().trim().min(1).max(500),
+  public_url: z.string().url({ message: "Photo URL is invalid." }).max(2000),
+  storage_path: z
+    .string()
+    .trim()
+    .min(1, { message: "Photo storage path is required." })
+    .max(500),
   /** Admin include/exclude before approve; defaults to include. */
   include: z.boolean().optional().default(true),
 });
@@ -124,29 +128,52 @@ export const freeOnboardBodySchema = z
     submitter_name: z
       .string()
       .trim()
-      .max(120)
+      .max(120, { message: "Name is too long." })
       .optional()
       .default("")
       .transform((s) => s.trim()),
     submitter_email: z
       .string()
       .trim()
-      .max(320)
+      .max(320, { message: "Email is too long." })
       .optional()
       .default("")
       .transform((s) => s.trim()),
-    title: z.string().trim().min(2).max(FREE_ONBOARD_TITLE_MAX),
+    title: z
+      .string()
+      .trim()
+      .min(2, { message: "Enter a business name (at least 2 characters)." })
+      .max(FREE_ONBOARD_TITLE_MAX, {
+        message: `Business name must be ${FREE_ONBOARD_TITLE_MAX} characters or fewer.`,
+      }),
     is_storefront: z.boolean().optional().default(false),
     is_service_business: z.boolean().optional().default(false),
-    locations: z.array(freeOnboardLocationSchema).max(FREE_ONBOARD_LOCATIONS_MAX).default([]),
+    locations: z
+      .array(freeOnboardLocationSchema)
+      .max(FREE_ONBOARD_LOCATIONS_MAX, {
+        message: `You can add at most ${FREE_ONBOARD_LOCATIONS_MAX} locations.`,
+      })
+      .default([]),
     website: optionalWebsite,
     phone: optionalPhone,
-    excerpt: z.string().trim().min(10).max(FREE_ONBOARD_EXCERPT_MAX),
-    overview: z.string().trim().min(15).max(FREE_ONBOARD_OVERVIEW_MAX),
+    excerpt: z
+      .string()
+      .trim()
+      .min(10, { message: "Write a short headline (at least 10 characters)." })
+      .max(FREE_ONBOARD_EXCERPT_MAX, {
+        message: `Headline must be ${FREE_ONBOARD_EXCERPT_MAX} characters or fewer.`,
+      }),
+    overview: z
+      .string()
+      .trim()
+      .min(15, { message: "Write a short overview (at least 15 characters)." })
+      .max(FREE_ONBOARD_OVERVIEW_MAX, {
+        message: `Overview must be ${FREE_ONBOARD_OVERVIEW_MAX} characters or fewer.`,
+      }),
     /** Unified leaf category (`business_categories` with parent rollup). */
     category_id: z
       .string()
-      .uuid()
+      .uuid({ message: "Choose a category from the list." })
       .optional()
       .nullable()
       .transform((s) => s || null),
@@ -155,18 +182,34 @@ export const freeOnboardBodySchema = z
      */
     service_category_id: z
       .string()
-      .uuid()
+      .uuid({ message: "Choose a category from the list." })
       .optional()
       .nullable()
       .transform((s) => s || null),
     search_tags: z
-      .array(z.string().trim().min(1).max(64))
-      .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1, { message: "Tag cannot be empty." })
+          .max(64, { message: "Tag is too long." }),
+      )
+      .max(FREE_ONBOARD_SEARCH_TAGS_MAX, {
+        message: `Choose at most ${FREE_ONBOARD_SEARCH_TAGS_MAX} tags.`,
+      })
       .default([]),
     /** Freeform tag proposals for operators — share the 6-tag budget with search_tags. */
     suggested_tags: z
-      .array(z.string().trim().min(1).max(64))
-      .max(FREE_ONBOARD_SEARCH_TAGS_MAX)
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1, { message: "Suggested tag cannot be empty." })
+          .max(64, { message: "Suggested tag is too long." }),
+      )
+      .max(FREE_ONBOARD_SEARCH_TAGS_MAX, {
+        message: `Choose at most ${FREE_ONBOARD_SEARCH_TAGS_MAX} tags.`,
+      })
       .default([]),
     /**
      * Freeform category proposal when the list is missing a fit.
@@ -174,7 +217,9 @@ export const freeOnboardBodySchema = z
      */
     suggested_category: z
       .string()
-      .max(FREE_ONBOARD_SUGGESTED_CATEGORY_MAX)
+      .max(FREE_ONBOARD_SUGGESTED_CATEGORY_MAX, {
+        message: `Suggested category must be ${FREE_ONBOARD_SUGGESTED_CATEGORY_MAX} characters or fewer.`,
+      })
       .optional()
       .nullable()
       .transform((s) => {
@@ -188,11 +233,21 @@ export const freeOnboardBodySchema = z
      * Omit to leave the existing image unchanged on update; null clears; URL sets.
      * Ignored for non-admin submissions.
      */
-    main_image_url: z.union([z.string().url().max(2000), z.null()]).optional(),
+    main_image_url: z
+      .union([
+        z.string().url({ message: "Image URL is invalid." }).max(2000),
+        z.null(),
+      ])
+      .optional(),
     /** Gallery photos uploaded during free intake (pending admin include/exclude). */
-    photos: z.array(freeOnboardPhotoSchema).max(FREE_ONBOARD_PHOTOS_MAX).default([]),
+    photos: z
+      .array(freeOnboardPhotoSchema)
+      .max(FREE_ONBOARD_PHOTOS_MAX, {
+        message: `You can attach at most ${FREE_ONBOARD_PHOTOS_MAX} photos.`,
+      })
+      .default([]),
     marketing_opt_in: z.boolean().optional().default(false),
-    target_business_id: z.string().uuid().optional().nullable(),
+    target_business_id: z.string().uuid({ message: "Listing id is invalid." }).optional().nullable(),
     target_business_slug: z.string().trim().max(200).optional().nullable(),
   })
   .superRefine((data, ctx) => {
@@ -250,12 +305,71 @@ export const FREE_ONBOARD_REMOVAL_REASON_MAX = 500;
 export const freeOnboardRemovalBodySchema = z.object({
   intent: z.literal("removal"),
   _hp_company_website: z.string().max(200).optional(),
-  submitter_name: z.string().trim().min(1).max(120),
-  submitter_email: z.string().trim().email().max(320),
-  reason: z.string().trim().min(10).max(FREE_ONBOARD_REMOVAL_REASON_MAX),
-  target_business_id: z.string().uuid().optional().nullable(),
-  target_business_slug: z.string().trim().min(1).max(200),
+  submitter_name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name is required." })
+    .max(120, { message: "Name is too long." }),
+  submitter_email: z
+    .string()
+    .trim()
+    .email({ message: "Enter a valid email." })
+    .max(320, { message: "Email is too long." }),
+  reason: z
+    .string()
+    .trim()
+    .min(10, { message: "Please share a brief reason (at least 10 characters)." })
+    .max(FREE_ONBOARD_REMOVAL_REASON_MAX, {
+      message: `Reason must be ${FREE_ONBOARD_REMOVAL_REASON_MAX} characters or fewer.`,
+    }),
+  target_business_id: z.string().uuid({ message: "Listing id is invalid." }).optional().nullable(),
+  target_business_slug: z
+    .string()
+    .trim()
+    .min(1, { message: "Missing listing. Refresh the page and try again." })
+    .max(200),
 });
+
+/** Human labels for API fieldErrors — used on list-your-business / free intake. */
+export const FREE_ONBOARD_FIELD_LABELS: Record<string, string> = {
+  submitter_name: "Your name",
+  submitter_email: "Your email",
+  title: "Business name",
+  is_storefront: "How you operate",
+  is_service_business: "How you operate",
+  locations: "Locations",
+  website: "Website",
+  phone: "Phone",
+  excerpt: "Headline / summary",
+  overview: "Overview description",
+  category_id: "Category",
+  service_category_id: "Category",
+  suggested_category: "Category",
+  search_tags: "Search tags",
+  suggested_tags: "Search tags",
+  photos: "Photos",
+  main_image_url: "Main image",
+  reason: "Reason for removal",
+  target_business_slug: "Listing",
+  target_business_id: "Listing",
+};
+
+/**
+ * Turn Zod flatten fieldErrors into a user-facing message that names the field.
+ * Prefers the first non-empty message; prefixes with the field label when known.
+ */
+export function formatFreeOnboardFieldErrors(
+  fieldErrors: Record<string, string[] | undefined> | null | undefined,
+): string | null {
+  if (!fieldErrors) return null;
+  for (const [key, msgs] of Object.entries(fieldErrors)) {
+    const msg = msgs?.find((m) => typeof m === "string" && m.trim());
+    if (!msg) continue;
+    const label = FREE_ONBOARD_FIELD_LABELS[key];
+    return label ? `${label}: ${msg}` : msg;
+  }
+  return null;
+}
 
 export type FreeOnboardRemovalBody = z.infer<typeof freeOnboardRemovalBodySchema>;
 

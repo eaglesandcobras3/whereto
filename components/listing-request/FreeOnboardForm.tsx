@@ -22,6 +22,7 @@ import {
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_SUGGESTED_CATEGORY_MAX,
   FREE_ONBOARD_TITLE_MAX,
+  formatFreeOnboardFieldErrors,
 } from "@/lib/listing-requests/free-onboard-schema";
 import { useBusinessPhotosFeatureEnabled } from "@/lib/feature-flags-client-utils";
 import dynamic from "next/dynamic";
@@ -40,8 +41,38 @@ const MapLocationPickerClient = dynamic(
 
 const inputClass =
   "w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20";
+const inputInvalidClass =
+  "border-red-700 focus:border-red-700 focus:ring-red-700/20 dark:border-red-400 dark:focus:border-red-400";
 const labelClass = "block text-sm font-medium text-[var(--color-text-secondary)]";
 const helpClass = "mt-1 text-xs text-[var(--color-text-tertiary)]";
+const formErrorAlertClass =
+  "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-100";
+const fieldErrorClass = "mt-1.5 text-sm text-red-900 dark:text-red-100";
+
+function FieldError({ message }: { message?: string | null }) {
+  if (!message) return null;
+  return (
+    <p className={fieldErrorClass} role="alert">
+      {message}
+    </p>
+  );
+}
+
+function focusField(fieldKey: string) {
+  const id =
+    fieldKey === "is_storefront" || fieldKey === "is_service_business"
+      ? "operate-fieldset"
+      : fieldKey === "locations"
+        ? "locations-section"
+        : fieldKey === "search_tags" || fieldKey === "suggested_tags"
+          ? "search-tags"
+          : fieldKey;
+  const el = document.getElementById(id);
+  el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (el && "focus" in el && typeof (el as HTMLElement).focus === "function") {
+    (el as HTMLElement).focus({ preventScroll: true });
+  }
+}
 
 type UploadedIntakePhoto = {
   public_url: string;
@@ -84,7 +115,12 @@ type PrefillBusiness = {
   is_storefront: boolean;
   is_service_business: boolean;
   category_id: string | null;
-  service_category_id: string | null;
+  /** Display title for the prefilled leaf category. */
+  category_title?: string | null;
+  /** Rollup/group title for the prefilled category. */
+  category_group_title?: string | null;
+  /** @deprecated Not used for unified category prefill. */
+  service_category_id?: string | null;
   search_tags: string[];
   main_image_url?: string | null;
 };
@@ -144,6 +180,8 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState("");
+  const [prefillCategoryTitle, setPrefillCategoryTitle] = useState<string | null>(null);
+  const [prefillCategoryGroupTitle, setPrefillCategoryGroupTitle] = useState<string | null>(null);
   const [suggestedCategory, setSuggestedCategory] = useState("");
   const [isStorefront, setIsStorefront] = useState(false);
   const [isService, setIsService] = useState(false);
@@ -158,7 +196,30 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [galleryPhotos, setGalleryPhotos] = useState<UploadedIntakePhoto[]>([]);
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [galleryErr, setGalleryErr] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const businessPhotosEnabled = useBusinessPhotosFeatureEnabled();
+
+  function clearErrors() {
+    setErr(null);
+    setFieldErrors({});
+  }
+
+  function applyApiFieldErrors(
+    apiFieldErrors: Record<string, string[] | undefined> | undefined,
+    fallback?: string,
+  ) {
+    const next: Record<string, string> = {};
+    for (const [key, msgs] of Object.entries(apiFieldErrors ?? {})) {
+      const msg = msgs?.find((m) => typeof m === "string" && m.trim());
+      if (msg) next[key] = msg;
+    }
+    setFieldErrors(next);
+    setErr(formatFreeOnboardFieldErrors(apiFieldErrors) ?? fallback ?? "Something went wrong.");
+    const firstKey = Object.keys(next)[0];
+    if (firstKey) {
+      requestAnimationFrame(() => focusField(firstKey));
+    }
+  }
 
   const isUpdate = Boolean(prefill?.id);
   const showTypeahead = mode === "find" && findPhase === "searching";
@@ -171,7 +232,10 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setOverview((b.overview ?? "").slice(0, FREE_ONBOARD_OVERVIEW_MAX));
     setWebsite(b.website ?? "");
     setPhone(b.phone ?? "");
-    setCategoryId(b.category_id ?? b.service_category_id ?? "");
+    // Unified leaf only — never fall back to deprecated service_category_id.
+    setCategoryId(b.category_id ?? "");
+    setPrefillCategoryTitle(b.category_title?.trim() || null);
+    setPrefillCategoryGroupTitle(b.category_group_title?.trim() || null);
     setSelectedTags((b.search_tags ?? []).slice(0, FREE_ONBOARD_SEARCH_TAGS_MAX));
     setSuggestedTags([]);
     setSuggestedCategory("");
@@ -200,6 +264,8 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setWebsite("");
     setPhone("");
     setCategoryId("");
+    setPrefillCategoryTitle(null);
+    setPrefillCategoryGroupTitle(null);
     setSelectedTags([]);
     setSuggestedTags([]);
     setSuggestedCategory("");
@@ -207,7 +273,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setIsService(false);
     setLocations([{ key: newLocationKey(), town_id: "", address: "", map_lat: null, map_lng: null }]);
     setFindPhase("searching");
-    setErr(null);
+    clearErrors();
   }
 
   function blankForNewListing(name: string) {
@@ -218,6 +284,8 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setWebsite("");
     setPhone("");
     setCategoryId("");
+    setPrefillCategoryTitle(null);
+    setPrefillCategoryGroupTitle(null);
     setSelectedTags([]);
     setSuggestedTags([]);
     setSuggestedCategory("");
@@ -225,12 +293,12 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setIsService(false);
     setLocations([{ key: newLocationKey(), town_id: "", address: "", map_lat: null, map_lng: null }]);
     setFindPhase("creating-new");
-    setErr(null);
+    clearErrors();
   }
 
   async function loadPrefillBySlug(slug: string) {
     setPrefillLoading(true);
-    setErr(null);
+    clearErrors();
     try {
       const res = await fetch(
         `/api/listing-requests/prefill?slug=${encodeURIComponent(slug)}`,
@@ -331,21 +399,45 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   }, [categoryId, tagsByCategoryId, searchTagOptions]);
 
   const categoryTypeaheadOptions = useMemo(() => {
-    if (categoryGroups.length > 0) {
-      return categoryGroups.flatMap((g) =>
-        g.leaves.map((c) => ({
-          id: c.id,
-          title: c.title,
-          groupTitle: g.title,
-        })),
-      );
+    const fromGroups =
+      categoryGroups.length > 0
+        ? categoryGroups.flatMap((g) =>
+            g.leaves.map((c) => ({
+              id: c.id,
+              title: c.title,
+              groupTitle: g.title,
+            })),
+          )
+        : categories.map((c) => ({
+            id: c.id,
+            title: c.title,
+            groupTitle: c.rollupTitle ?? null,
+          }));
+
+    // Prefill may reference a leaf that is unpublished/missing from form-options —
+    // inject it so the typeahead can show the current category.
+    if (
+      categoryId &&
+      prefillCategoryTitle &&
+      !fromGroups.some((o) => o.id === categoryId)
+    ) {
+      return [
+        ...fromGroups,
+        {
+          id: categoryId,
+          title: prefillCategoryTitle,
+          groupTitle: prefillCategoryGroupTitle,
+        },
+      ];
     }
-    return categories.map((c) => ({
-      id: c.id,
-      title: c.title,
-      groupTitle: c.rollupTitle ?? null,
-    }));
-  }, [categoryGroups, categories]);
+    return fromGroups;
+  }, [
+    categoryGroups,
+    categories,
+    categoryId,
+    prefillCategoryTitle,
+    prefillCategoryGroupTitle,
+  ]);
 
   const tagSlotsUsed = selectedTags.length + suggestedTags.length;
   const atTagCap = tagSlotsUsed >= FREE_ONBOARD_SEARCH_TAGS_MAX;
@@ -373,7 +465,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
-    setErr(null);
+    clearErrors();
 
     if (findDecisionNeeded) {
       setPending(false);
@@ -383,14 +475,23 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
 
     if (!isStorefront && !isService) {
       setPending(false);
-      setErr("Select whether you have a physical location, operate as a service business, or both.");
+      setFieldErrors({
+        is_storefront:
+          "Select whether you have a physical location, operate as a service business, or both.",
+      });
+      setErr("How you operate: Select whether you have a physical location, operate as a service business, or both.");
+      requestAnimationFrame(() => focusField("is_storefront"));
       return;
     }
 
     const suggestedCategoryTrimmed = suggestedCategory.trim().slice(0, FREE_ONBOARD_SUGGESTED_CATEGORY_MAX);
     if (!categoryId && !suggestedCategoryTrimmed) {
       setPending(false);
-      setErr("Choose a category or suggest one that is missing from the list.");
+      setFieldErrors({
+        category_id: "Choose a category or suggest one that is missing from the list.",
+      });
+      setErr("Category: Choose a category or suggest one that is missing from the list.");
+      requestAnimationFrame(() => focusField("category_id"));
       return;
     }
     const locationPayload = isStorefront
@@ -404,7 +505,26 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
 
     if (isStorefront && locationPayload.some((l) => !l.town_id)) {
       setPending(false);
-      setErr("Choose a town for each location.");
+      setFieldErrors({ locations: "Choose a town for each location." });
+      setErr("Locations: Choose a town for each location.");
+      requestAnimationFrame(() => focusField("locations"));
+      return;
+    }
+
+    const excerptTrimmed = excerpt.trim();
+    const overviewTrimmed = overview.trim();
+    if (excerptTrimmed.length < 10) {
+      setPending(false);
+      setFieldErrors({ excerpt: "Write a short headline (at least 10 characters)." });
+      setErr("Headline / summary: Write a short headline (at least 10 characters).");
+      requestAnimationFrame(() => focusField("excerpt"));
+      return;
+    }
+    if (overviewTrimmed.length < 15) {
+      setPending(false);
+      setFieldErrors({ overview: "Write a short overview (at least 15 characters)." });
+      setErr("Overview description: Write a short overview (at least 15 characters).");
+      requestAnimationFrame(() => focusField("overview"));
       return;
     }
 
@@ -419,8 +539,8 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       locations: locationPayload,
       website: website.trim(),
       phone: phone.trim(),
-      excerpt: excerpt.trim(),
-      overview: overview.trim(),
+      excerpt: excerptTrimmed,
+      overview: overviewTrimmed,
       category_id: categoryId || null,
       service_category_id: null,
       suggested_category: suggestedCategoryTrimmed || null,
@@ -451,9 +571,13 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
 
     if (selectedTags.length + payload.suggested_tags.length > FREE_ONBOARD_SEARCH_TAGS_MAX) {
       setPending(false);
+      setFieldErrors({
+        suggested_tags: `Choose at most ${FREE_ONBOARD_SEARCH_TAGS_MAX} tags total across search tags and suggested tags.`,
+      });
       setErr(
-        `Choose at most ${FREE_ONBOARD_SEARCH_TAGS_MAX} tags total across search tags and suggested tags.`,
+        `Search tags: Choose at most ${FREE_ONBOARD_SEARCH_TAGS_MAX} tags total across search tags and suggested tags.`,
       );
+      requestAnimationFrame(() => focusField("suggested_tags"));
       return;
     }
 
@@ -470,12 +594,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setPending(false);
 
     if (!res.ok) {
-      if (j.fieldErrors) {
-        const first = Object.values(j.fieldErrors).flat()[0];
-        setErr(first ?? j.error ?? "Something went wrong.");
-      } else {
-        setErr(j.error ?? "Something went wrong.");
-      }
+      applyApiFieldErrors(j.fieldErrors, j.error ?? "Something went wrong.");
       return;
     }
 
@@ -527,12 +646,9 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
     setRemovalPending(false);
 
     if (!res.ok) {
-      if (j.fieldErrors) {
-        const first = Object.values(j.fieldErrors).flat()[0];
-        setRemovalErr(first ?? j.error ?? "Something went wrong.");
-      } else {
-        setRemovalErr(j.error ?? "Something went wrong.");
-      }
+      setRemovalErr(
+        formatFreeOnboardFieldErrors(j.fieldErrors) ?? j.error ?? "Something went wrong.",
+      );
       return;
     }
 
@@ -769,11 +885,19 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
             }}
           />
           {imageUploading ? <p className={helpClass}>Uploading…</p> : null}
-          {imageErr ? <p className="text-sm text-red-600">{imageErr}</p> : null}
+          {imageErr ? <p className={`${fieldErrorClass}`} role="alert">{imageErr}</p> : null}
         </div>
       ) : null}
 
-      <fieldset className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)]/40 p-4">
+      <fieldset
+        id="operate-fieldset"
+        tabIndex={-1}
+        className={`space-y-2 rounded-xl border bg-[var(--color-surface-secondary)]/40 p-4 outline-none ${
+          fieldErrors.is_storefront || fieldErrors.is_service_business
+            ? "border-red-700 dark:border-red-400"
+            : "border-[var(--color-border)]"
+        }`}
+      >
         <legend className={`${labelClass} px-1`}>How do customers work with you?</legend>
         <p className="text-xs text-[var(--color-text-tertiary)]">
           Select all that apply — some businesses are both a storefront and a service provider.
@@ -782,7 +906,15 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           <input
             type="checkbox"
             checked={isStorefront}
-            onChange={(e) => setStorefrontChecked(e.target.checked)}
+            onChange={(e) => {
+              setStorefrontChecked(e.target.checked);
+              setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.is_storefront;
+                delete next.is_service_business;
+                return next;
+              });
+            }}
             className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
           />
           <span>Customers visit our physical location (storefront)</span>
@@ -791,18 +923,28 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           <input
             type="checkbox"
             checked={isService}
-            onChange={(e) => setServiceChecked(e.target.checked)}
+            onChange={(e) => {
+              setServiceChecked(e.target.checked);
+              setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.is_storefront;
+                delete next.is_service_business;
+                return next;
+              });
+            }}
             className="mt-1 h-4 w-4 rounded border-[var(--color-border-strong)]"
           />
           <span>We provide services at customers&apos; locations or by appointment</span>
         </label>
+        <FieldError message={fieldErrors.is_storefront ?? fieldErrors.is_service_business} />
       </fieldset>
 
       {showLocations ? (
-        <div className="space-y-4">
+        <div id="locations-section" className="space-y-4" tabIndex={-1}>
           <div>
             <p className={labelClass}>Locations</p>
             <p className={helpClass}>Select town and provide address for each location</p>
+            <FieldError message={fieldErrors.locations} />
           </div>
 
           {locations.map((loc, index) => (
@@ -910,10 +1052,20 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
             inputMode="url"
             autoComplete="url"
             value={website}
-            onChange={(e) => setWebsite(e.target.value)}
+            onChange={(e) => {
+              setWebsite(e.target.value);
+              setFieldErrors((prev) => {
+                if (!prev.website) return prev;
+                const next = { ...prev };
+                delete next.website;
+                return next;
+              });
+            }}
             placeholder="example.com"
-            className={`${inputClass} mt-1.5`}
+            aria-invalid={Boolean(fieldErrors.website)}
+            className={`${inputClass} mt-1.5 ${fieldErrors.website ? inputInvalidClass : ""}`}
           />
+          <FieldError message={fieldErrors.website} />
         </div>
         <div>
           <label className={labelClass} htmlFor="phone">
@@ -924,9 +1076,19 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
             id="phone"
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className={`${inputClass} mt-1.5`}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              setFieldErrors((prev) => {
+                if (!prev.phone) return prev;
+                const next = { ...prev };
+                delete next.phone;
+                return next;
+              });
+            }}
+            aria-invalid={Boolean(fieldErrors.phone)}
+            className={`${inputClass} mt-1.5 ${fieldErrors.phone ? inputInvalidClass : ""}`}
           />
+          <FieldError message={fieldErrors.phone} />
         </div>
       </div>
 
@@ -938,13 +1100,28 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           id="excerpt"
           required
           rows={2}
+          minLength={10}
           maxLength={FREE_ONBOARD_EXCERPT_MAX}
           value={excerpt}
-          onChange={(e) => setExcerpt(e.target.value)}
-          className={`${inputClass} mt-1.5`}
+          onChange={(e) => {
+            setExcerpt(e.target.value);
+            setFieldErrors((prev) => {
+              if (!prev.excerpt) return prev;
+              const next = { ...prev };
+              delete next.excerpt;
+              return next;
+            });
+          }}
+          aria-invalid={Boolean(fieldErrors.excerpt)}
+          aria-describedby="excerpt-hint"
+          className={`${inputClass} mt-1.5 ${fieldErrors.excerpt ? inputInvalidClass : ""}`}
           placeholder="One short line that captures the business."
         />
+        <p id="excerpt-hint" className={helpClass}>
+          At least 10 characters.
+        </p>
         <CharCount value={excerpt} max={FREE_ONBOARD_EXCERPT_MAX} />
+        <FieldError message={fieldErrors.excerpt} />
       </div>
 
       <div>
@@ -955,13 +1132,28 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           id="overview"
           required
           rows={4}
+          minLength={15}
           maxLength={FREE_ONBOARD_OVERVIEW_MAX}
           value={overview}
-          onChange={(e) => setOverview(e.target.value)}
-          className={`${inputClass} mt-1.5`}
+          onChange={(e) => {
+            setOverview(e.target.value);
+            setFieldErrors((prev) => {
+              if (!prev.overview) return prev;
+              const next = { ...prev };
+              delete next.overview;
+              return next;
+            });
+          }}
+          aria-invalid={Boolean(fieldErrors.overview)}
+          aria-describedby="overview-hint"
+          className={`${inputClass} mt-1.5 ${fieldErrors.overview ? inputInvalidClass : ""}`}
           placeholder="A short overview visitors will read on the listing."
         />
+        <p id="overview-hint" className={helpClass}>
+          At least 15 characters.
+        </p>
         <CharCount value={overview} max={FREE_ONBOARD_OVERVIEW_MAX} />
+        <FieldError message={fieldErrors.overview} />
       </div>
 
       {businessPhotosEnabled ? (
@@ -1047,7 +1239,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
             <p className={helpClass}>Photo limit reached ({FREE_ONBOARD_PHOTOS_MAX}).</p>
           )}
           {galleryUploading ? <p className={helpClass}>Uploading…</p> : null}
-          {galleryErr ? <p className="text-sm text-red-600">{galleryErr}</p> : null}
+          {galleryErr ? <p className={fieldErrorClass} role="alert">{galleryErr}</p> : null}
         </div>
       ) : null}
 
@@ -1064,19 +1256,44 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           options={categoryTypeaheadOptions}
           value={categoryId}
           suggestedValue={suggestedCategory}
+          fallbackLabel={prefillCategoryTitle}
+          fallbackGroupTitle={prefillCategoryGroupTitle}
           disabled={!isStorefront && !isService}
-          inputClassName={inputClass}
+          inputClassName={`${inputClass}${
+            fieldErrors.category_id || fieldErrors.suggested_category ? ` ${inputInvalidClass}` : ""
+          }`}
           placeholder={
             isStorefront || isService
               ? "Search categories…"
               : "Select how customers work with you first"
           }
-          onChange={setCategoryId}
-          onSuggestedChange={setSuggestedCategory}
+          onChange={(id) => {
+            setCategoryId(id);
+            setPrefillCategoryTitle(null);
+            setPrefillCategoryGroupTitle(null);
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next.category_id;
+              delete next.suggested_category;
+              return next;
+            });
+          }}
+          onSuggestedChange={(value) => {
+            setSuggestedCategory(value);
+            setPrefillCategoryTitle(null);
+            setPrefillCategoryGroupTitle(null);
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next.category_id;
+              delete next.suggested_category;
+              return next;
+            });
+          }}
         />
+        <FieldError message={fieldErrors.category_id ?? fieldErrors.suggested_category} />
       </div>
 
-      <div>
+      <div id="search-tags" tabIndex={-1}>
         <p className={labelClass}>Search tags (up to {FREE_ONBOARD_SEARCH_TAGS_MAX})</p>
         <p className={helpClass}>
           Pick from our list — these power on-site discovery. Prefer specific tags like pizza,
@@ -1154,12 +1371,13 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
             ? ` (${selectedTags.length} from list, ${suggestedTags.length} suggested)`
             : null}
         </p>
+        <FieldError message={fieldErrors.search_tags ?? fieldErrors.suggested_tags} />
       </div>
 
       {err ? (
-        <p className="text-sm text-red-700 dark:text-red-300" role="alert">
+        <div className={formErrorAlertClass} role="alert">
           {err}
-        </p>
+        </div>
       ) : null}
 
       <button
@@ -1178,9 +1396,9 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       )}
 
       {err && findDecisionNeeded ? (
-        <p className="text-sm text-red-700 dark:text-red-300" role="alert">
+        <div className={formErrorAlertClass} role="alert">
           {err}
-        </p>
+        </div>
       ) : null}
 
       <p className="text-sm text-[var(--color-text-secondary)]">
@@ -1195,7 +1413,10 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       </p>
 
       {isUpdate ? (
-        <p className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+        <div
+          className={`${formErrorAlertClass} flex flex-wrap items-center gap-x-2 gap-y-1`}
+          role="note"
+        >
           <span>Need this listing taken down instead?</span>
           <button
             type="button"
@@ -1203,11 +1424,11 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
               setRemovalErr(null);
               setRemovalOpen(true);
             }}
-            className="underline underline-offset-2 hover:text-[var(--color-primary)]"
+            className="font-semibold underline underline-offset-2 hover:no-underline"
           >
             Delete my listing
           </button>
-        </p>
+        </div>
       ) : null}
 
       {removalOpen ? (
@@ -1295,9 +1516,9 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
               </div>
             </div>
             {removalErr ? (
-              <p className="mt-3 text-sm text-red-700 dark:text-red-300" role="alert">
+              <div className={`mt-3 ${formErrorAlertClass}`} role="alert">
                 {removalErr}
-              </p>
+              </div>
             ) : null}
             <div className="mt-5 flex flex-wrap gap-2">
               <button

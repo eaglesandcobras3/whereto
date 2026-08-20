@@ -11,6 +11,7 @@ import {
   FREE_ONBOARD_SEARCH_KEYWORDS_MAX,
   FREE_ONBOARD_SEARCH_TAGS_MAX,
   FREE_ONBOARD_TITLE_MAX,
+  formatFreeOnboardFieldErrors,
   freeOnboardBodySchema,
   freeOnboardRemovalBodySchema,
   parseSuggestedTagsInput,
@@ -154,6 +155,38 @@ describe("free onboard schema limits", () => {
         is_service_business: false,
       }).success,
     ).toBe(false);
+  });
+
+  it("returns user-facing messages for short excerpt and overview", () => {
+    const shortExcerpt = freeOnboardBodySchema.safeParse({
+      ...base,
+      excerpt: "too short",
+    });
+    expect(shortExcerpt.success).toBe(false);
+    if (!shortExcerpt.success) {
+      const msg = shortExcerpt.error.flatten().fieldErrors.excerpt?.[0];
+      expect(msg).toBe("Write a short headline (at least 10 characters).");
+      expect(msg).not.toMatch(/too small/i);
+    }
+
+    const shortOverview = freeOnboardBodySchema.safeParse({
+      ...base,
+      overview: "too short",
+    });
+    expect(shortOverview.success).toBe(false);
+    if (!shortOverview.success) {
+      expect(shortOverview.error.flatten().fieldErrors.overview?.[0]).toBe(
+        "Write a short overview (at least 15 characters).",
+      );
+    }
+  });
+
+  it("formatFreeOnboardFieldErrors names the field for users", () => {
+    expect(
+      formatFreeOnboardFieldErrors({
+        excerpt: ["Write a short headline (at least 10 characters)."],
+      }),
+    ).toBe("Headline / summary: Write a short headline (at least 10 characters).");
   });
 
   it("allows both storefront and service", () => {
@@ -342,5 +375,15 @@ describe("free onboard removal schema", () => {
         reason: "too short",
       }).success,
     ).toBe(false);
+    const shortReason = freeOnboardRemovalBodySchema.safeParse({
+      ...removalBase,
+      reason: "too short",
+    });
+    expect(shortReason.success).toBe(false);
+    if (!shortReason.success) {
+      expect(shortReason.error.flatten().fieldErrors.reason?.[0]).toBe(
+        "Please share a brief reason (at least 10 characters).",
+      );
+    }
   });
 });

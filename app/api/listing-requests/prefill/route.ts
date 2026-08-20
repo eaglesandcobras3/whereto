@@ -3,6 +3,7 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { FREE_ONBOARD_OVERVIEW_MAX } from "@/lib/listing-requests/free-onboard-schema";
+import { resolvePrefillCategory } from "@/lib/listing-requests/resolve-prefill-category";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 /** Prefill payload for update/claim free intake (`?business=slug`). */
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("businesses_view")
     .select(
-      "id, title, slug, town_id, address, map_lat, map_lng, website, phone, excerpt, overview, content, is_storefront, is_service_business, primary_category_id, service_category_id, search_tags, main_image_url, hero_image_url, towns ( title, slug )",
+      "id, title, slug, town_id, address, map_lat, map_lng, website, phone, excerpt, overview, content, is_storefront, is_service_business, primary_category_id, service_category_id, search_tags, main_image_url, hero_image_url, towns ( title, slug ), business_categories ( id, title, slug, parent_category_id )",
     )
     .eq("slug", slug)
     .is("archived_at", null)
@@ -36,6 +37,47 @@ export async function GET(request: NextRequest) {
 
   const townRel = data.towns as { title?: string; slug?: string } | { title?: string; slug?: string }[] | null;
   const town = Array.isArray(townRel) ? townRel[0] : townRel;
+
+  const categoryRel = data.business_categories as
+    | {
+        id?: string;
+        title?: string;
+        slug?: string;
+        parent_category_id?: string | null;
+      }
+    | {
+        id?: string;
+        title?: string;
+        slug?: string;
+        parent_category_id?: string | null;
+      }[]
+    | null;
+  const categoryRow = Array.isArray(categoryRel) ? categoryRel[0] : categoryRel;
+
+  let parentTitle: string | null = null;
+  const parentId = categoryRow?.parent_category_id
+    ? String(categoryRow.parent_category_id)
+    : null;
+  if (parentId) {
+    const { data: parent } = await supabase
+      .from("business_categories")
+      .select("title")
+      .eq("id", parentId)
+      .maybeSingle();
+    parentTitle = parent?.title ? String(parent.title) : null;
+  }
+
+  const resolved = resolvePrefillCategory({
+    primary_category_id: data.primary_category_id ? String(data.primary_category_id) : null,
+    category: categoryRow
+      ? {
+          id: categoryRow.id,
+          title: categoryRow.title,
+          parent_category_id: categoryRow.parent_category_id,
+          parent_title: parentTitle,
+        }
+      : null,
+  });
 
   return NextResponse.json({
     business: {
@@ -61,7 +103,10 @@ export async function GET(request: NextRequest) {
         (typeof data.content === "string" ? data.content.slice(0, FREE_ONBOARD_OVERVIEW_MAX) : null),
       is_storefront: Boolean(data.is_storefront),
       is_service_business: Boolean(data.is_service_business),
-      category_id: data.primary_category_id ? String(data.primary_category_id) : null,
+      category_id: resolved.category_id,
+      category_title: resolved.category_title,
+      category_group_title: resolved.category_group_title,
+      /** @deprecated Not used for unified intake prefill. */
       service_category_id: data.service_category_id ? String(data.service_category_id) : null,
       search_tags: Array.isArray(data.search_tags)
         ? (data.search_tags as string[]).slice(0, 6)

@@ -40,7 +40,11 @@ export function ListYourBusinessClient() {
   }
 
   if (error) {
-    return <p className="text-sm text-red-600">{error}</p>;
+    return (
+      <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-100">
+        {error}
+      </p>
+    );
   }
 
   if (towns.length === 0) {
