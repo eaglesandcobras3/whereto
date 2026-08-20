@@ -184,23 +184,14 @@ export function AtAGlanceSection({
         })}
       </div>
 
-      <aside
-        className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--tg-border)] bg-[linear-gradient(145deg,#ffffff,var(--tg-soft))] px-4 py-3.5 sm:mt-5"
-        aria-label="Information disclaimer"
+      <p
+        className="mt-4 text-[0.6875rem] leading-relaxed text-[var(--color-text-tertiary)] sm:mt-5 sm:text-xs"
+        role="note"
       >
-        <div
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-[var(--tg-navy)] text-[var(--tg-navy)]"
-          aria-hidden
-        >
-          <MsIcon name="info" className="!text-base" />
-        </div>
-        <p className="m-0 text-sm leading-relaxed">
-          <strong className="text-[var(--tg-navy)]">Disclaimer:</strong> Information
-          provided is for general guidance only and may change. Always verify details
-          directly with your rental property, local city, government, property
-          association, or other official sources before making plans.
-        </p>
-      </aside>
+        Disclaimer: Information provided is for general guidance only and may change.
+        Always verify details directly with your rental property, local city, government,
+        property association, or other official sources before making plans.
+      </p>
     </section>
   );
 }

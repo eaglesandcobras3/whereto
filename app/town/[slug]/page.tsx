@@ -399,6 +399,14 @@ function BasicTownPage({
               </div>
             ) : null}
 
+            {corridor ? (
+              <TownCorridorSection
+                current={corridor.current}
+                west={corridor.west}
+                east={corridor.east}
+              />
+            ) : null}
+
             {mapMarkers.length > 0 ? (
               <BusinessMapSection
                 markers={mapMarkers}
@@ -406,14 +414,6 @@ function BasicTownPage({
                 description="Storefront businesses with a mapped location."
                 fieldFlagEntityId={feedbackEnabled ? town.id : null}
                 fieldFlagEntity="town"
-              />
-            ) : null}
-
-            {corridor ? (
-              <TownCorridorSection
-                current={corridor.current}
-                west={corridor.west}
-                east={corridor.east}
               />
             ) : null}
 
