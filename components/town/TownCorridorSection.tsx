@@ -108,7 +108,11 @@ export function TownCorridorSection({ current, west, east }: Props) {
     const node = currentRef.current;
     if (!scroller || !node) return;
 
-    centerCurrent();
+    // Defer so scroll-hint setState is not synchronous in the effect body
+    // (react-hooks/set-state-in-effect). ResizeObserver / scroll stay async.
+    const frame = requestAnimationFrame(() => {
+      centerCurrent();
+    });
 
     const ro = new ResizeObserver(() => {
       centerCurrent();
@@ -118,6 +122,7 @@ export function TownCorridorSection({ current, west, east }: Props) {
 
     scroller.addEventListener("scroll", updateScrollHints, { passive: true });
     return () => {
+      cancelAnimationFrame(frame);
       ro.disconnect();
       scroller.removeEventListener("scroll", updateScrollHints);
     };
