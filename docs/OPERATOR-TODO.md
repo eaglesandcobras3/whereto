@@ -433,6 +433,12 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Smoke-test: with flag on — `/admin/businesses` search → open listing → save fields updates live page without review queue; portal owner edit still creates a proposal
 - [ ] With `business_photos` on — admin edit page can upload gallery photos (WebP, approved immediately) and set main image
 
+### Admin add-business Gemini queue
+
+- [x] Apply [scripts/migrations/admin-business-seed-queue.sql](../scripts/migrations/admin-business-seed-queue.sql) (`admin_business_seed_queue` table + RLS deny for anon/authenticated)
+- [ ] Confirm `GEMINI_API_KEY` is set in the environment that serves `/admin/add-business` (Vercel / local `.env.local`)
+- [ ] Smoke-test: `/admin/add-business` → enqueue storefront + service-only rows → **Apply queue** imports verified rows; unverified land in Needs review → Force apply or Skip
+
 ### Town facts (fully ramped)
 
 Town “at a glance” is always on when DB facts exist (no PostHog flag).
@@ -637,6 +643,7 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 | Date | Change |
 |------|--------|
+| 2026-08-20 | Admin `/admin/add-business`: queue new listings (title, town/area typeahead, storefront/service), Apply runs Gemini verify + Census + insert; unverified → Needs review (force apply / skip). SQL [admin-business-seed-queue.sql](../scripts/migrations/admin-business-seed-queue.sql) |
 | 2026-08-20 | PostHog `admin_business_direct_edit` (default off): `/admin/businesses` search + direct field edit writes `businesses` table (bypasses review queue); portal owner proposals unchanged. Admin gallery upload (approved WebP) stays behind `business_photos`. Local bypass `ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` / `NEXT_PUBLIC_ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` |
 | 2026-08-18 | Town/area collapsible section links go to place-scoped intent pages (not `/businesses` rollup hubs); intent pages include the same business-map treatment as category hubs |
 | 2026-08-18 | Search Console rollout tightened: business pages can now enter the sitemap when listing-quality checks pass; town/area intent pages publish from populated hub rollups; no scheduled cron required |

@@ -29,6 +29,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     requiresAdminBusinessDirectEdit: true,
   },
   {
+    href: "/admin/add-business",
+    title: "Add business",
+    description: "Queue new listings, then Apply Gemini verify + import.",
+  },
+  {
     href: "/admin/irse",
     title: "Index readiness",
     description: "Score pages for Google index readiness; optional GSC inspection + calibration.",
