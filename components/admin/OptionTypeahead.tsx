@@ -63,6 +63,8 @@ export function OptionTypeahead({
       .slice(0, 40);
   }, [options, query]);
 
+  const safeActiveIndex = Math.min(activeIndex, Math.max(filtered.length - 1, 0));
+
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
@@ -71,20 +73,18 @@ export function OptionTypeahead({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query, open]);
-
   function selectOption(option: OptionTypeaheadItem) {
     onChange(option.id);
     setQuery("");
     setOpen(false);
+    setActiveIndex(0);
   }
 
   function clear() {
     onChange("");
     setQuery("");
     setOpen(false);
+    setActiveIndex(0);
   }
 
   return (
@@ -102,16 +102,19 @@ export function OptionTypeahead({
           value={open ? query : selected?.title ?? query}
           onChange={(e) => {
             setQuery(e.target.value);
+            setActiveIndex(0);
             setOpen(true);
             if (value) onChange("");
           }}
           onFocus={() => {
             setOpen(true);
             setQuery("");
+            setActiveIndex(0);
           }}
           onKeyDown={(e) => {
             if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
               setOpen(true);
+              setActiveIndex(0);
               return;
             }
             if (e.key === "Escape") {
@@ -124,9 +127,9 @@ export function OptionTypeahead({
             } else if (e.key === "ArrowUp") {
               e.preventDefault();
               setActiveIndex((i) => Math.max(i - 1, 0));
-            } else if (e.key === "Enter" && open && filtered[activeIndex]) {
+            } else if (e.key === "Enter" && open && filtered[safeActiveIndex]) {
               e.preventDefault();
-              selectOption(filtered[activeIndex]);
+              selectOption(filtered[safeActiveIndex]);
             } else if (e.key === "Backspace" && !query && value && allowClear) {
               clear();
             }
@@ -157,11 +160,11 @@ export function OptionTypeahead({
             <li className="px-3 py-2 text-sm text-zinc-500">{emptyMessage}</li>
           ) : (
             filtered.map((option, index) => (
-              <li key={option.id} role="option" aria-selected={index === activeIndex}>
+              <li key={option.id} role="option" aria-selected={index === safeActiveIndex}>
                 <button
                   type="button"
                   className={`flex w-full flex-col px-3 py-2 text-left text-sm ${
-                    index === activeIndex ? "bg-zinc-100" : "hover:bg-zinc-50"
+                    index === safeActiveIndex ? "bg-zinc-100" : "hover:bg-zinc-50"
                   }`}
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => selectOption(option)}
