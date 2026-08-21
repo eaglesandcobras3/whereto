@@ -7,6 +7,9 @@ import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups
 import { FooterCompanyLinks } from "@/components/home/FooterCompanyLinks";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPagePath } from "@/lib/routes/town-page-path";
+import { getAllFeatureFlags } from "@/lib/feature-flags";
+import { isDiscoverEnabled } from "@/lib/feature-flags-core";
+import { discoverHref } from "@/lib/nav/discovery-links";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
 const FOOTER_BROWSE_LIMIT = 500;
@@ -96,10 +99,19 @@ async function getFooterAreas(): Promise<FooterBrowseLink[]> {
     .sort((a, b) => b._count - a._count || a.name.localeCompare(b.name));
 }
 
-async function getFooterBusinessBrowseGroups(): Promise<FooterBrowseLink[]> {
+async function getFooterBusinessBrowseGroups(opts: {
+  discoverOn: boolean;
+  discoverHref: string;
+}): Promise<FooterBrowseLink[]> {
   const groups = await getListedBusinessBrowseGroups();
+  const head: FooterBrowseLink[] = opts.discoverOn
+    ? [
+        { name: "Discover", slug: "discover", href: opts.discoverHref },
+        { name: "Categories", slug: "categories", href: "/businesses" },
+      ]
+    : [{ name: "All businesses", slug: "all", href: "/businesses" }];
   return [
-    { name: "All businesses", slug: "all", href: "/businesses" },
+    ...head,
     ...groups.map((g) => ({
       name: g.title,
       slug: g.slug,
@@ -214,22 +226,28 @@ function FooterBrowseColumn({
 }
 
 const getCachedFooterBrowseData = unstable_cache(
-  async () => {
+  async (discoverOn: boolean, discoverPath: string) => {
     const [townLinks, areaLinks, businessGroupLinks] = await Promise.all([
       getFooterTowns(),
       getFooterAreas(),
-      getFooterBusinessBrowseGroups(),
+      getFooterBusinessBrowseGroups({
+        discoverOn,
+        discoverHref: discoverPath,
+      }),
     ]);
     return { townLinks, areaLinks, businessGroupLinks };
   },
-  ["site-footer-browse-data-v4"],
+  ["site-footer-browse-data-v5"],
   { revalidate: 3600 },
 );
 
 export async function SiteFooter() {
+  const flags = await getAllFeatureFlags();
+  const discoverOn = isDiscoverEnabled(flags);
+  const discoverPath = discoverOn ? discoverHref(flags) : "/discover";
   const [{ townLinks, areaLinks, businessGroupLinks }, instagramUrl, tiktokUrl] =
     await Promise.all([
-    getCachedFooterBrowseData(),
+    getCachedFooterBrowseData(discoverOn, discoverPath),
     Promise.resolve(getSiteInstagramUrl()),
     Promise.resolve(getSiteTikTokUrl()),
   ]);

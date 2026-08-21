@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
-import { isRentalsEnabled } from "@/lib/feature-flags-core";
+import { isDiscoverEnabled, isRentalsEnabled } from "@/lib/feature-flags-core";
+import { discoverHref } from "@/lib/nav/discovery-links";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 const footerLinkClass =
@@ -11,6 +12,7 @@ const footerLinkClass =
 export function FooterCompanyLinks() {
   const flags = useAppFeatureFlags();
   const rentalsEnabled = isRentalsEnabled(flags);
+  const discoverOn = isDiscoverEnabled(flags);
 
   const companyLinks = [
     {
@@ -25,9 +27,22 @@ export function FooterCompanyLinks() {
     },
     {
       name: "Businesses",
-      href: "/businesses",
+      href: discoverOn ? discoverHref(flags) : "/businesses",
       ...gaClickProps({ event: "nav_click", category: "footer_company", label: "businesses" }),
     },
+    ...(discoverOn
+      ? [
+          {
+            name: "Categories",
+            href: "/businesses",
+            ...gaClickProps({
+              event: "nav_click",
+              category: "footer_company",
+              label: "categories",
+            }),
+          },
+        ]
+      : []),
     {
       name: "List your business",
       href: "/list-your-business",

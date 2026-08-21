@@ -56,13 +56,24 @@ describe("applyDiscoveryBrowseNav", () => {
     const businesses = items.find((i) => i.label === "Businesses");
     expect(businesses?.href).toBe("/discover");
     expect(businesses?.activePaths).toContain("/discover");
-    expect(businesses?.activePaths).toContain("/businesses");
+    expect(businesses?.activePaths).not.toContain("/businesses");
+  });
+
+  it("inserts Categories pointing at /businesses when discover is on", () => {
+    const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, discoverOnly);
+    const categories = items.find((i) => i.label === "Categories");
+    expect(categories?.href).toBe("/businesses");
+    expect(categories?.activePaths).toContain("/businesses");
+    const businessesIdx = items.findIndex((i) => i.label === "Businesses");
+    const categoriesIdx = items.findIndex((i) => i.label === "Categories");
+    expect(categoriesIdx).toBe(businessesIdx + 1);
   });
 
   it("keeps Businesses on /businesses when discover is off", () => {
     const items = applyDiscoveryBrowseNav(BROWSE_NAV_ITEMS, allOff);
     const businesses = items.find((i) => i.label === "Businesses");
     expect(businesses?.href).toBe("/businesses");
+    expect(items.some((i) => i.label === "Categories")).toBe(false);
   });
 });
 

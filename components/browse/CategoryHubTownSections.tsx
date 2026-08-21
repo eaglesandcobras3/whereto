@@ -8,7 +8,7 @@ import { CollapsibleBrowseSection } from "@/components/ui/collapsible-browse-sec
 import type { CategoryBusinessRow, CategoryTownGroup } from "@/lib/data/category-hub";
 import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expanded-section-ids";
 import { ADD_BUSINESS_HREF } from "@/lib/listing-requests/listing-field-flag";
-import { browseSectionBySlug } from "@/lib/categories/unified-browse";
+import { isTownIntentCategorySlug } from "@/lib/business-categories/group-browse-sections";
 import { townIntentPath } from "@/lib/routes/town-intent-path";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
@@ -105,7 +105,7 @@ export function CategoryHubTownSections({
     defaultExpandedCount: sectionIds.length,
     desktopOnlyDefaults: false,
   });
-  const hasTownIntentPage = Boolean(browseSectionBySlug(categorySlug));
+  const hasTownIntentPage = isTownIntentCategorySlug(categorySlug);
 
   if (townGroups.length === 0 && regional.length === 0) {
     return (
