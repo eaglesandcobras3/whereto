@@ -3,9 +3,14 @@ stages:
 
 # MR / main gate: same essentials as .github/workflows/ci.yml (lint, unit tests, production build).
 # Search quality eval (npm run eval:search) is a manual/local tool — not a deploy gate.
+#
+# allow_failure: GitLab shared-runner minutes are currently exhausted (jobs fail with
+# ci_quota_exceeded before script runs). Vercel still builds/previews the branch.
+# Remove allow_failure once CI minutes are restored (see docs/OPERATOR-TODO.md).
 check:
   stage: check
   image: node:20
+  allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
