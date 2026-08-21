@@ -222,7 +222,7 @@ const getCachedFooterBrowseData = unstable_cache(
     ]);
     return { townLinks, areaLinks, businessGroupLinks };
   },
-  ["site-footer-browse-data-v3"],
+  ["site-footer-browse-data-v4"],
   { revalidate: 3600 },
 );
 
