@@ -7,21 +7,26 @@ import {
 import {
   browseSectionForCategorySlug,
   browseSectionIcon,
+  isUnifiedRollupSlug,
   listUnifiedRollupOrder,
+  unifiedRollupHubPath,
 } from "@/lib/categories/unified-browse";
 import {
   BUSINESS_CATEGORY_GROUP_SLUGS,
   type BusinessCategoryGroupSlug,
 } from "@/lib/business-categories/groups";
-import type { BusinessBrowseGroupNavItem } from "@/lib/business-categories/browse-group-nav";
+import {
+  businessBrowseGroupHubPath,
+  type BusinessBrowseGroupNavItem,
+} from "@/lib/business-categories/browse-group-nav";
 
 export type ListedBusinessBrowseGroup = BusinessBrowseGroupNavItem & {
   listingCount: number;
 };
 
 function hrefForSection(id: string): string {
-  // Combined directory hub — hash expands the matching rollup section.
-  return `/businesses#${id}`;
+  if (isUnifiedRollupSlug(id)) return unifiedRollupHubPath(id);
+  return businessBrowseGroupHubPath(id as BusinessCategoryGroupSlug);
 }
 
 /** Browse groups that have at least one listing (hub / footer). Storefront + service. */
