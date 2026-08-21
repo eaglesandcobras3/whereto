@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import type {
@@ -77,17 +77,6 @@ type CorridorNode =
 export function TownCorridorSection({ current, west, east }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const updateScrollHints = useCallback(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    const max = scroller.scrollWidth - scroller.clientWidth;
-    const overflowing = max > 1;
-    setCanScrollLeft(overflowing && scroller.scrollLeft > 2);
-    setCanScrollRight(overflowing && scroller.scrollLeft < max - 2);
-  }, []);
 
   const centerCurrent = useCallback(() => {
     const scroller = scrollerRef.current;
@@ -95,21 +84,17 @@ export function TownCorridorSection({ current, west, east }: Props) {
     if (!scroller || !node) return;
     if (scroller.scrollWidth <= scroller.clientWidth + 1) {
       scroller.scrollLeft = 0;
-      updateScrollHints();
       return;
     }
     const target = node.offsetLeft - scroller.clientWidth / 2 + node.offsetWidth / 2;
     scroller.scrollLeft = Math.max(0, target);
-    updateScrollHints();
-  }, [updateScrollHints]);
+  }, []);
 
   useEffect(() => {
     const scroller = scrollerRef.current;
     const node = currentRef.current;
     if (!scroller || !node) return;
 
-    // Defer so scroll-hint setState is not synchronous in the effect body
-    // (react-hooks/set-state-in-effect). ResizeObserver / scroll stay async.
     const frame = requestAnimationFrame(() => {
       centerCurrent();
     });
@@ -120,13 +105,11 @@ export function TownCorridorSection({ current, west, east }: Props) {
     ro.observe(scroller);
     ro.observe(node);
 
-    scroller.addEventListener("scroll", updateScrollHints, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
       ro.disconnect();
-      scroller.removeEventListener("scroll", updateScrollHints);
     };
-  }, [centerCurrent, updateScrollHints]);
+  }, [centerCurrent]);
 
   // Trackpads scroll horizontally; mouse wheels are vertical — map vertical wheel to x when overflowing.
   useEffect(() => {
@@ -136,24 +119,15 @@ export function TownCorridorSection({ current, west, east }: Props) {
     function onWheel(e: WheelEvent) {
       if (!scroller) return;
       if (scroller.scrollWidth <= scroller.clientWidth + 1) return;
-      // Prefer native horizontal deltas (shift+wheel / trackpad).
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       if (e.deltaY === 0) return;
       e.preventDefault();
       scroller.scrollLeft += e.deltaY;
-      updateScrollHints();
     }
 
     scroller.addEventListener("wheel", onWheel, { passive: false });
     return () => scroller.removeEventListener("wheel", onWheel);
-  }, [updateScrollHints]);
-
-  function scrollByPage(direction: -1 | 1) {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    const amount = Math.max(160, Math.round(scroller.clientWidth * 0.55));
-    scroller.scrollBy({ left: direction * amount, behavior: "smooth" });
-  }
+  }, []);
 
   const nodes: CorridorNode[] = [
     ...west.map((town) => ({ kind: "neighbor" as const, town })),
@@ -173,112 +147,84 @@ export function TownCorridorSection({ current, west, east }: Props) {
         The 30A Corridor
       </h2>
 
-      <div className="relative mt-5">
-        {canScrollLeft ? (
-          <button
-            type="button"
-            aria-label="Scroll to western towns"
-            onClick={() => scrollByPage(-1)}
-            className="absolute top-1/2 left-0 z-10 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm hover:bg-[var(--color-surface-secondary)] md:flex"
-          >
-            <span className="material-symbols-outlined !text-xl" aria-hidden>
-              chevron_left
-            </span>
-          </button>
-        ) : null}
-        {canScrollRight ? (
-          <button
-            type="button"
-            aria-label="Scroll to eastern towns"
-            onClick={() => scrollByPage(1)}
-            className="absolute top-1/2 right-0 z-10 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm hover:bg-[var(--color-surface-secondary)] md:flex"
-          >
-            <span className="material-symbols-outlined !text-xl" aria-hidden>
-              chevron_right
-            </span>
-          </button>
-        ) : null}
+      <div
+        ref={scrollerRef}
+        className="mt-5 overflow-x-auto overscroll-x-contain px-1 pb-2 [-ms-overflow-style:auto] [scrollbar-gutter:stable] [scrollbar-width:thin] snap-x snap-mandatory"
+      >
+        <div className="relative mx-auto flex w-max items-start justify-center gap-6 px-2 sm:gap-8 md:gap-6">
+          <div
+            className="pointer-events-none absolute top-[calc(2.5rem+0.5rem+2rem)] right-6 left-6 h-px bg-zinc-300 sm:top-[calc(2.75rem+0.5rem+2.5rem)]"
+            aria-hidden
+          />
 
-        <div
-          ref={scrollerRef}
-          className="overflow-x-auto overscroll-x-contain px-1 pb-2 [-ms-overflow-style:auto] [scrollbar-gutter:stable] [scrollbar-width:thin] snap-x snap-mandatory md:px-10"
-        >
-          {/* Fixed column widths at all sizes so the strip overflows and can scroll on small desktops. */}
-          <div className="relative mx-auto flex w-max items-start justify-center gap-6 px-2 sm:gap-8 md:gap-6">
-            <div
-              className="pointer-events-none absolute top-[calc(2.5rem+0.5rem+2rem)] right-6 left-6 h-px bg-zinc-300 sm:top-[calc(2.75rem+0.5rem+2.5rem)]"
-              aria-hidden
-            />
+          {nodes.map((node) => {
+            const isCurrent = node.kind === "current";
+            const town = node.town;
+            const columnClass =
+              "relative z-[1] flex w-24 shrink-0 snap-center scroll-mx-6 flex-col items-center text-center sm:w-28 md:w-32";
 
-            {nodes.map((node) => {
-              const isCurrent = node.kind === "current";
-              const town = node.town;
-              const columnClass =
-                "relative z-[1] flex w-24 shrink-0 snap-center scroll-mx-6 flex-col items-center text-center sm:w-28 md:w-32";
+            const nameEl = (
+              <p
+                className={`mb-2 line-clamp-2 min-h-[2.5rem] text-sm sm:min-h-[2.75rem] sm:text-base ${
+                  isCurrent
+                    ? "font-bold text-[var(--color-primary)]"
+                    : "font-medium text-[var(--color-primary)]"
+                }`}
+              >
+                {town.name}
+              </p>
+            );
 
-              const nameEl = (
-                <p
-                  className={`mb-2 line-clamp-2 min-h-[2.5rem] text-sm sm:min-h-[2.75rem] sm:text-base ${
-                    isCurrent
-                      ? "font-bold text-[var(--color-primary)]"
-                      : "font-medium text-[var(--color-primary)]"
-                  }`}
-                >
-                  {town.name}
-                </p>
-              );
-
-              const thumbEl = (
-                <div className="flex h-16 items-center justify-center sm:h-20">
-                  {isCurrent ? (
-                    <div className="town-corridor-current">
-                      <TownThumb
-                        name={town.name}
-                        imageUrl={town.imageUrl}
-                        size="lg"
-                        bordered
-                        showPin
-                      />
-                    </div>
-                  ) : (
-                    <TownThumb name={town.name} imageUrl={town.imageUrl} size="sm" />
-                  )}
-                </div>
-              );
-
-              if (isCurrent) {
-                return (
-                  <div key={`current-${town.id}`} ref={currentRef} className={columnClass}>
-                    {nameEl}
-                    {thumbEl}
-                    <p className="mt-2.5 text-[0.65rem] font-bold uppercase tracking-wider text-[var(--color-primary)] sm:text-xs">
-                      You are here
-                    </p>
+            const thumbEl = (
+              <div className="flex h-16 items-center justify-center sm:h-20">
+                {isCurrent ? (
+                  <div className="town-corridor-current">
+                    <TownThumb
+                      name={town.name}
+                      imageUrl={town.imageUrl}
+                      size="lg"
+                      bordered
+                      showPin
+                    />
                   </div>
-                );
-              }
+                ) : (
+                  <TownThumb name={town.name} imageUrl={town.imageUrl} size="sm" />
+                )}
+              </div>
+            );
 
-              const neighbor = town as TownCorridorNeighbor;
+            if (isCurrent) {
               return (
-                <Link
-                  key={`${neighbor.direction}-${neighbor.id}`}
-                  href={townPagePath(neighbor.slug)}
-                  className={`${columnClass} transition-opacity hover:opacity-80`}
-                >
+                <div key={`current-${town.id}`} ref={currentRef} className={columnClass}>
                   {nameEl}
                   {thumbEl}
-                  <p className="mt-2.5 text-[0.65rem] leading-snug text-zinc-500 sm:text-xs">
-                    <span className="md:hidden">
-                      {formatMilesLabelCompact(neighbor.miles, neighbor.direction)}
-                    </span>
-                    <span className="hidden md:inline">
-                      {formatMilesLabel(neighbor.miles, neighbor.direction)}
-                    </span>
+                  <p className="mt-2.5 text-[0.65rem] font-bold uppercase tracking-wider text-[var(--color-primary)] sm:text-xs">
+                    You are here
                   </p>
-                </Link>
+                </div>
               );
-            })}
-          </div>
+            }
+
+            const neighbor = town as TownCorridorNeighbor;
+            return (
+              <Link
+                key={`${neighbor.direction}-${neighbor.id}`}
+                href={townPagePath(neighbor.slug)}
+                className={`${columnClass} transition-opacity hover:opacity-80`}
+              >
+                {nameEl}
+                {thumbEl}
+                <p className="mt-2.5 text-[0.65rem] leading-snug text-zinc-500 sm:text-xs">
+                  <span className="md:hidden">
+                    {formatMilesLabelCompact(neighbor.miles, neighbor.direction)}
+                  </span>
+                  <span className="hidden md:inline">
+                    {formatMilesLabel(neighbor.miles, neighbor.direction)}
+                  </span>
+                </p>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
