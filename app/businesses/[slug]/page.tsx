@@ -33,6 +33,7 @@ import {
   isBusinessMapsFeatureEnabled,
   isCategoryHubSeoFeatureEnabled,
 } from "@/lib/feature-flags";
+import { discoverHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 import { getGuidesForCategoryHub } from "@/lib/data/town-hub";
@@ -111,6 +112,7 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
 
   const flags = await getAllFeatureFlags();
   const seoSubstanceEnabled = isCategoryHubSeoFeatureEnabled(flags);
+  const businessesHref = isDiscoveryEnabled(flags) ? discoverHref(flags) : "/businesses";
 
   const rollupSlug = unifiedRollupFromPublicSegment(segment);
   if (rollupSlug) {
@@ -128,6 +130,7 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
         mapMarkers={mapMarkers}
         leafLinks={leafLinks}
         seoSubstanceEnabled={seoSubstanceEnabled}
+        businessesHref={businessesHref}
       />
     );
   }
@@ -150,6 +153,7 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
         mapMarkers={mapMarkers}
         leafLinks={leafLinks}
         seoSubstanceEnabled={seoSubstanceEnabled}
+        businessesHref={businessesHref}
       />
     );
   }
@@ -179,6 +183,7 @@ export default async function BusinessesCategoryOrBrowseGroupPage({ params }: Pr
         mapMarkers={mapMarkers}
         guides={guides}
         seoSubstanceEnabled={seoSubstanceEnabled}
+        businessesHref={businessesHref}
       />
     );
   }
