@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { resolveIntentBrowseSection } from "@/lib/business-categories/group-browse-sections";
+import {
+  groupBusinessesIntoLeafSections,
+  isTownIntentCategorySlug,
+  normalizeIntentSlug,
+  resolveIntentBrowseSection,
+  resolveTownIntentSection,
+} from "@/lib/business-categories/group-browse-sections";
 import {
   browseSectionBySlug,
   browseSectionForCategorySlug,
@@ -65,5 +71,71 @@ describe("resolveIntentBrowseSection", () => {
       }),
     );
     expect(resolveIntentBrowseSection([], "not-a-section")).toBeNull();
+  });
+});
+
+describe("town leaf intents", () => {
+  it("normalizes hyphenated intent segments", () => {
+    expect(normalizeIntentSlug("food-and-drink")).toBe("food_and_drink");
+    expect(normalizeIntentSlug("coffee-shops")).toBe("coffee_shops");
+  });
+
+  it("groups businesses into populated leaf sections only", () => {
+    const sections = groupBusinessesIntoLeafSections([
+      {
+        id: "1",
+        name: "Cafe",
+        slug: "cafe",
+        hero_image_url: null,
+        ai_one_liner: null,
+        ai_summary: null,
+        categorySlug: "coffee_shops",
+        categoryTitle: "Coffee Shops",
+      },
+      {
+        id: "2",
+        name: "Bistro",
+        slug: "bistro",
+        hero_image_url: null,
+        ai_one_liner: null,
+        ai_summary: null,
+        categorySlug: "restaurants",
+        categoryTitle: "Restaurants",
+      },
+    ]);
+    expect(sections.map((s) => s.slug).sort()).toEqual(["coffee_shops", "restaurants"]);
+    expect(sections.find((s) => s.slug === "restaurants")?.totalCount).toBe(1);
+  });
+
+  it("resolves populated leaf intents and 404s empty leaves", () => {
+    const leafSections = groupBusinessesIntoLeafSections([
+      {
+        id: "1",
+        name: "Cafe",
+        slug: "cafe",
+        hero_image_url: null,
+        ai_one_liner: null,
+        ai_summary: null,
+        categorySlug: "coffee_shops",
+        categoryTitle: "Coffee Shops",
+      },
+    ]);
+    expect(resolveTownIntentSection([], leafSections, "coffee-shops")?.slug).toBe(
+      "coffee_shops",
+    );
+    expect(resolveTownIntentSection([], leafSections, "restaurants")).toBeNull();
+  });
+
+  it("prefers rollup resolution over leaf when the slug is a rollup", () => {
+    const rollup = resolveTownIntentSection([], [], "food_and_drink");
+    expect(rollup).toEqual(
+      expect.objectContaining({ slug: "food_and_drink", businesses: [] }),
+    );
+  });
+
+  it("marks rollup and leaf hub slugs as town-intent linkable", () => {
+    expect(isTownIntentCategorySlug("food_and_drink")).toBe(true);
+    expect(isTownIntentCategorySlug("restaurants")).toBe(true);
+    expect(isTownIntentCategorySlug("coffee-shops")).toBe(true);
   });
 });

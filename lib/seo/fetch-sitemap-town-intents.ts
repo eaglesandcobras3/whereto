@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getCategorySectionsForTown } from "@/lib/data/town-category-sections";
+import { getTownIntentSectionsForTown } from "@/lib/data/town-category-sections";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 
 export async function fetchSitemapTownIntentRows(
@@ -20,9 +20,13 @@ export async function fetchSitemapTownIntentRows(
     const townSlug = String(row.slug ?? "").trim();
     if (!townId || !townSlug) continue;
 
-    const sections = await getCategorySectionsForTown(townId);
-    for (const section of sections) {
+    const { rollupSections, leafSections } = await getTownIntentSectionsForTown(townId);
+    const seen = new Set<string>();
+
+    for (const section of [...rollupSections, ...leafSections]) {
       if (!section.slug || section.businesses.length === 0) continue;
+      if (seen.has(section.slug)) continue;
+      seen.add(section.slug);
       out.push({
         town_slug: townSlug,
         seo_slug: section.slug,

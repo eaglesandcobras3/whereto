@@ -650,10 +650,22 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 ---
 
+## GitLab CI minutes
+
+MR `check` job (lint / unit tests / `next build`) runs on GitLab shared runners.
+
+- [ ] Restore GitLab CI minutes (or switch to own runners) — jobs currently fail immediately with `ci_quota_exceeded`
+- [ ] After minutes are restored, remove `allow_failure: true` from `.gitlab-ci.yml` `check` job
+
+Until then, treat **Vercel** preview/build as the production-build gate for MRs.
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-08-21 | GitLab CI shared-runner minutes exhausted — MR `check` set `allow_failure: true` so quota failures do not block; restore minutes then remove allow_failure. Vercel remains the build gate. |
 | 2026-08-20 | PostHog `town_relationship` (default off): 30A corridor neighbor timeline on `/town/[slug]` above the map; SQL [town-relationships.sql](../scripts/migrations/town-relationships.sql) + [town-relationships-seed.sql](../scripts/migrations/town-relationships-seed.sql); local bypass `TOWN_RELATIONSHIP_ENABLED` / `NEXT_PUBLIC_TOWN_RELATIONSHIP_ENABLED`. Santa Rosa Beach is off-corridor (section hidden). |
 | 2026-08-20 | Admin `/admin/add-business`: queue new listings (title, town/area typeahead, storefront/service), Apply runs Gemini verify + Census + insert; unverified → Needs review (force apply / skip). SQL [admin-business-seed-queue.sql](../scripts/migrations/admin-business-seed-queue.sql) |
 | 2026-08-20 | PostHog `admin_business_direct_edit` (default off): `/admin/businesses` search + direct field edit writes `businesses` table (bypasses review queue); portal owner proposals unchanged. Admin gallery upload (approved WebP) stays behind `business_photos`. Local bypass `ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` / `NEXT_PUBLIC_ADMIN_BUSINESS_DIRECT_EDIT_ENABLED` |

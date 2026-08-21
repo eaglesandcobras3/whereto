@@ -131,29 +131,49 @@ export function applyDiscoveryBrowseNav(
 
   if (!discoverOn && !askOn) return items;
 
-  return items.map((item) => {
+  const next: BrowseNavItem[] = [];
+
+  for (const item of items) {
     if (discoverOn && item.href === "/businesses") {
-      return {
+      next.push({
         ...item,
         href: discoverHref(flags as FeatureFlags),
         activePaths: Array.from(
-          new Set([...(item.activePaths ?? []), "/discover"]),
+          new Set([
+            ...(item.activePaths ?? []).filter(
+              (path) => path !== "/businesses" && path !== "/categories" && path !== "/services",
+            ),
+            "/discover",
+          ]),
         ),
-      };
+      });
+      if (!items.some((i) => i.label === "Categories") && !next.some((i) => i.label === "Categories")) {
+        next.push({
+          label: "Categories",
+          href: "/businesses",
+          activePaths: ["/businesses", "/services", "/categories"],
+        });
+      }
+      continue;
     }
 
-    if (!askOn || !item.href.startsWith("/search")) return item;
+    if (!askOn || !item.href.startsWith("/search")) {
+      next.push(item);
+      continue;
+    }
     try {
       const url = new URL(item.href, "http://local");
       const type = url.searchParams.get("type") ?? undefined;
-      return {
+      next.push({
         ...item,
         href: discoveryHref(flags, { type }),
-      };
+      });
     } catch {
-      return { ...item, href: "/ask" };
+      next.push({ ...item, href: "/ask" });
     }
-  });
+  }
+
+  return next;
 }
 
 /** Insert Stays browse link when rentals marketplace flag is on. */

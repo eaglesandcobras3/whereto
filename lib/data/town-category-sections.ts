@@ -10,6 +10,7 @@ import {
 } from "@/lib/data/place-category-sections";
 import {
   groupBusinessesIntoBrowseSections,
+  groupBusinessesIntoLeafSections,
   type BrowseGroupSection,
 } from "@/lib/business-categories/group-browse-sections";
 
@@ -24,6 +25,19 @@ function mergeCategoryBusinessRows(
     const id = String(row.id);
     if (!into.has(id)) into.set(id, rowToCategoryBusiness(row));
   }
+}
+
+function toBrowseBusinessInput(business: CategoryBusiness) {
+  return {
+    id: business.id,
+    name: business.name,
+    slug: business.slug,
+    hero_image_url: business.hero_image_url,
+    ai_one_liner: business.ai_one_liner,
+    ai_summary: business.ai_summary,
+    categorySlug: business.categorySlug,
+    categoryTitle: business.categoryTitle,
+  };
 }
 
 /** Same storefront set the town hub groups into collapsible rollup sections. */
@@ -80,20 +94,28 @@ export async function loadTownBrowseBusinesses(townId: string): Promise<Category
 export function browseSectionsFromCategoryBusinesses(
   businesses: CategoryBusiness[],
 ): BrowseGroupSection[] {
-  return groupBusinessesIntoBrowseSections(
-    businesses.map((business) => ({
-      id: business.id,
-      name: business.name,
-      slug: business.slug,
-      hero_image_url: business.hero_image_url,
-      ai_one_liner: business.ai_one_liner,
-      ai_summary: business.ai_summary,
-      categorySlug: business.categorySlug,
-    })),
-  );
+  return groupBusinessesIntoBrowseSections(businesses.map(toBrowseBusinessInput));
+}
+
+export function leafSectionsFromCategoryBusinesses(
+  businesses: CategoryBusiness[],
+): BrowseGroupSection[] {
+  return groupBusinessesIntoLeafSections(businesses.map(toBrowseBusinessInput));
 }
 
 export async function getCategorySectionsForTown(townId: string): Promise<BrowseGroupSection[]> {
   const businesses = await loadTownBrowseBusinesses(townId);
   return browseSectionsFromCategoryBusinesses(businesses);
+}
+
+/** Rollup + populated leaf sections for town intent pages and sitemap. */
+export async function getTownIntentSectionsForTown(townId: string): Promise<{
+  rollupSections: BrowseGroupSection[];
+  leafSections: BrowseGroupSection[];
+}> {
+  const businesses = await loadTownBrowseBusinesses(townId);
+  return {
+    rollupSections: browseSectionsFromCategoryBusinesses(businesses),
+    leafSections: leafSectionsFromCategoryBusinesses(businesses),
+  };
 }

@@ -6,8 +6,13 @@ import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getTownBySlug, getGuidesForTown } from "@/lib/data/town-hub";
-import { getCategorySectionsForTown } from "@/lib/data/town-category-sections";
-import { resolveIntentBrowseSection } from "@/lib/business-categories/group-browse-sections";
+import { getTownIntentSectionsForTown } from "@/lib/data/town-category-sections";
+import {
+  normalizeIntentSlug,
+  resolveTownIntentSection,
+  type BrowseGroupSection,
+} from "@/lib/business-categories/group-browse-sections";
+import { browseSectionBySlug } from "@/lib/categories/unified-browse";
 import {
   generateCollectionPageSchema,
   generateItemListSchema,
@@ -27,20 +32,36 @@ export const dynamicParams = true;
 
 type Props = { params: Promise<{ slug: string; intentSlug: string }> };
 
+function relatedIntentSections(
+  active: BrowseGroupSection,
+  rollupSections: BrowseGroupSection[],
+  leafSections: BrowseGroupSection[],
+): BrowseGroupSection[] {
+  const isRollup = Boolean(browseSectionBySlug(active.slug));
+  const pool = isRollup ? rollupSections : leafSections;
+  return pool.filter(
+    (section) => section.slug !== active.slug && section.businesses.length > 0,
+  );
+}
+
 async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
   const normalizedTownSlug = normalizeUrlSegment(townSlug);
-  const normalizedIntentSlug = normalizeUrlSegment(intentSlug);
+  const normalizedIntentSlug = normalizeIntentSlug(normalizeUrlSegment(intentSlug));
   if (!normalizedTownSlug || !normalizedIntentSlug) return null;
 
   const town = await getTownBySlug(normalizedTownSlug);
   if (!town) return null;
 
-  const [sections, guides, flags] = await Promise.all([
-    getCategorySectionsForTown(String(town.id)),
+  const [{ rollupSections, leafSections }, guides, flags] = await Promise.all([
+    getTownIntentSectionsForTown(String(town.id)),
     getGuidesForTown(String(town.id)),
     getAllFeatureFlags(),
   ]);
-  const activeSection = resolveIntentBrowseSection(sections, normalizedIntentSlug);
+  const activeSection = resolveTownIntentSection(
+    rollupSections,
+    leafSections,
+    normalizedIntentSlug,
+  );
   if (!activeSection) return null;
 
   const mapMarkers = await listIntentSectionMapMarkers(
@@ -51,12 +72,15 @@ async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
   return {
     town,
     activeSection,
-    relatedSections: sections.filter(
-      (section) => section.slug !== normalizedIntentSlug && section.businesses.length > 0,
+    relatedSections: relatedIntentSections(
+      activeSection,
+      rollupSections,
+      leafSections,
     ),
     guides: guides.slice(0, 6),
     mapMarkers,
     feedbackEnabled: isFeedbackFeatureEnabled(flags),
+    isRollupIntent: Boolean(browseSectionBySlug(activeSection.slug)),
   };
 }
 
@@ -206,7 +230,11 @@ export default async function TownIntentPage({ params }: Props) {
             <div className="mt-10">
               <PlaceRelatedSection
                 title={`More categories in ${page.town.name}`}
-                description="Open the other rollup-category pages connected to this town."
+                description={
+                  page.isRollupIntent
+                    ? "Open the other rollup-category pages connected to this town."
+                    : "Open other category pages connected to this town."
+                }
               >
                 {page.relatedSections.map((section) => (
                   <Link
