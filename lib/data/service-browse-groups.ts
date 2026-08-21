@@ -35,7 +35,7 @@ export async function getListedServiceBrowseGroups(): Promise<ListedServiceBrows
 
   const { data, error } = await supabase
     .from("businesses_view")
-    .select("id, business_categories ( slug ), service_categories ( slug )")
+    .select("id, business_categories!primary_category_id ( slug ), service_categories ( slug )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .eq("is_service_business", true)

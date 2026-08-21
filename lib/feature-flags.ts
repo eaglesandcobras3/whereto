@@ -20,6 +20,7 @@ import {
   isBusinessMapsEnabled,
   isTownMapsEnabled,
   isTownRelationshipEnabled,
+  isMultipleCategoryEnabled,
   isFeedbackEnabled,
   isCategoryHubSeoEnabled,
   type FeatureFlags,
@@ -46,6 +47,7 @@ export {
   isBusinessMapsEnabled,
   isTownMapsEnabled,
   isTownRelationshipEnabled,
+  isMultipleCategoryEnabled,
   isFeedbackEnabled,
   isCategoryHubSeoEnabled,
   resolveFeatureFlags,
@@ -182,6 +184,17 @@ export function townRelationshipDevBypassEnabled(): boolean {
 
 export function isTownRelationshipFeatureEnabled(flags: FeatureFlags): boolean {
   return isTownRelationshipEnabled(flags) || townRelationshipDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `multiple_category` flag still required in production. */
+export function multipleCategoryDevBypassEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" && process.env.MULTIPLE_CATEGORY_ENABLED === "1"
+  );
+}
+
+export function isMultipleCategoryFeatureEnabled(flags: FeatureFlags): boolean {
+  return isMultipleCategoryEnabled(flags) || multipleCategoryDevBypassEnabled();
 }
 
 /** Local dev escape hatch — PostHog `discover_maps` flag still required in production. */

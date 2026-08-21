@@ -852,6 +852,20 @@ async function main() {
       const batch = ready.slice(i, i + batchSize).map((candidate) => candidate.insertRow!);
       const { error } = await supabase.from("businesses").insert(batch);
       if (error) throw new Error(`Insert batch ${i}: ${error.message}`);
+      const { syncMembershipsToPrimary } = await import(
+        "../lib/categories/business-category-memberships"
+      );
+      for (const row of batch) {
+        const id = String(row.id ?? "");
+        const primary = (row.primary_category_id as string | null) ?? null;
+        if (id) {
+          try {
+            await syncMembershipsToPrimary(id, primary, supabase);
+          } catch (e) {
+            console.warn(`membership sync failed for ${id}:`, e);
+          }
+        }
+      }
       inserted += batch.length;
       console.log(`  inserted ${inserted} / ${ready.length}`);
     }

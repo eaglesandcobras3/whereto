@@ -20,18 +20,38 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   const { businessId } = await context.params;
   const supabase = getServiceSupabase();
+  const { getAllFeatureFlags, isMultipleCategoryFeatureEnabled } = await import(
+    "@/lib/feature-flags"
+  );
+  const flags = await getAllFeatureFlags();
+  const multipleCategory = isMultipleCategoryFeatureEnabled(flags);
 
-  const [{ data: business, error }, { data: towns }, { data: areas }, { data: categories }] =
-    await Promise.all([
-      supabase.from("businesses").select(ADMIN_BUSINESS_SELECT).eq("id", businessId).maybeSingle(),
-      supabase.from("towns").select("id, title, slug").order("title", { ascending: true }),
-      supabase.from("areas").select("id, title, slug, town_id").order("title", { ascending: true }),
-      supabase
-        .from("business_categories")
-        .select("id, title, slug, parent_category_id")
-        .is("archived_at", null)
-        .order("title", { ascending: true }),
-    ]);
+  const [
+    { data: business, error },
+    { data: towns },
+    { data: areas },
+    { data: categories },
+    membershipIds,
+  ] = await Promise.all([
+    supabase.from("businesses").select(ADMIN_BUSINESS_SELECT).eq("id", businessId).maybeSingle(),
+    supabase.from("towns").select("id, title, slug").order("title", { ascending: true }),
+    supabase.from("areas").select("id, title, slug, town_id").order("title", { ascending: true }),
+    supabase
+      .from("business_categories")
+      .select("id, title, slug, parent_category_id")
+      .is("archived_at", null)
+      .order("title", { ascending: true }),
+    (async () => {
+      try {
+        const { listMembershipCategoryIds } = await import(
+          "@/lib/categories/business-category-memberships"
+        );
+        return await listMembershipCategoryIds(businessId, supabase);
+      } catch {
+        return [] as string[];
+      }
+    })(),
+  ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!business) return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -40,6 +60,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   return NextResponse.json({
     business: business as AdminBusinessRow,
+    category_ids: membershipIds,
+    multiple_category: multipleCategory,
     options: {
       towns: towns ?? [],
       areas: areas ?? [],
@@ -88,25 +110,66 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   const built = buildAdminBusinessPatch(existing as AdminBusinessRow, parsed.data, { takenSlugs });
-  if (!built) {
+  const membershipOnly =
+    built == null &&
+    (parsed.data.category_ids !== undefined || parsed.data.primary_category_id !== undefined);
+
+  if (!built && !membershipOnly) {
     return NextResponse.json({ error: "No changes to save." }, { status: 400 });
   }
 
   // Always write the base table — never businesses_view.
-  const { data: updated, error: updateErr } = await supabase
-    .from("businesses")
-    .update(built.patch)
-    .eq("id", businessId)
-    .select(ADMIN_BUSINESS_SELECT)
-    .single();
+  let updated = existing as AdminBusinessRow;
+  let changes: string[] = [];
+  if (built) {
+    const { data, error: updateErr } = await supabase
+      .from("businesses")
+      .update(built.patch)
+      .eq("id", businessId)
+      .select(ADMIN_BUSINESS_SELECT)
+      .single();
 
-  if (updateErr || !updated) {
-    return NextResponse.json({ error: updateErr?.message ?? "Update failed" }, { status: 500 });
+    if (updateErr || !data) {
+      return NextResponse.json({ error: updateErr?.message ?? "Update failed" }, { status: 500 });
+    }
+    updated = data as AdminBusinessRow;
+    changes = built.changes;
+  }
+
+  const { getAllFeatureFlags, isMultipleCategoryFeatureEnabled } = await import(
+    "@/lib/feature-flags"
+  );
+  const { replaceMemberships, syncMembershipsToPrimary } = await import(
+    "@/lib/categories/business-category-memberships"
+  );
+  const flags = await getAllFeatureFlags();
+  const multipleCategory = isMultipleCategoryFeatureEnabled(flags);
+  const nextPrimary =
+    parsed.data.primary_category_id !== undefined
+      ? parsed.data.primary_category_id
+      : updated.primary_category_id;
+
+  try {
+    if (multipleCategory && parsed.data.category_ids !== undefined) {
+      await replaceMemberships(
+        businessId,
+        { primaryId: nextPrimary, categoryIds: parsed.data.category_ids },
+        supabase,
+      );
+      if (!changes.includes("category_ids")) changes.push("category_ids");
+    } else if (parsed.data.primary_category_id !== undefined) {
+      await syncMembershipsToPrimary(businessId, nextPrimary, supabase);
+    }
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to update category memberships" },
+      { status: 400 },
+    );
   }
 
   return NextResponse.json({
     ok: true,
-    business: updated as AdminBusinessRow,
-    changes: built.changes,
+    business: updated,
+    changes,
   });
 }

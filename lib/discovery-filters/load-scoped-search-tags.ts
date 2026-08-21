@@ -65,7 +65,7 @@ export async function loadScopedSearchTags(scope: DiscoverTagScope): Promise<Dis
 
   let query = supabase
     .from("businesses_view")
-    .select("id, search_tags, business_categories ( slug ), service_categories ( slug )")
+    .select("id, search_tags, business_categories!primary_category_id ( slug ), service_categories ( slug )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .limit(SCOPED_TAG_POOL_LIMIT);

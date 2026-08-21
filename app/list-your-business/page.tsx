@@ -9,6 +9,10 @@ import {
 } from "@/lib/listing-requests/list-business-mode";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
+import {
+  getAllFeatureFlags,
+  isMultipleCategoryFeatureEnabled,
+} from "@/lib/feature-flags";
 
 export const revalidate = 21600;
 
@@ -60,6 +64,8 @@ export default async function ListYourBusinessPage({ searchParams }: PageProps) 
   const sp = await searchParams;
   const mode = resolveListBusinessMode({ business: sp.business, new: sp.new });
   const { title, description } = copyForMode(mode);
+  const flags = await getAllFeatureFlags();
+  const multipleCategoryEnabled = isMultipleCategoryFeatureEnabled(flags);
 
   return (
     <SiteDocument
@@ -103,7 +109,7 @@ export default async function ListYourBusinessPage({ searchParams }: PageProps) 
       contentClassName="mt-6"
     >
       <Suspense fallback={<p className="text-sm text-[var(--color-text-secondary)]">Loading form…</p>}>
-        <ListYourBusinessClient />
+        <ListYourBusinessClient multipleCategoryEnabled={multipleCategoryEnabled} />
       </Suspense>
       <p className="not-prose mt-10 text-xs leading-relaxed text-[var(--color-text-tertiary)]">
         By submitting you represent you are authorized to request the listing and that operational

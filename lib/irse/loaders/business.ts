@@ -51,7 +51,7 @@ export async function loadBusinessIrseInput(
       claim_status, status, is_hidden_from_search, date_updated, published_at,
       towns ( title, slug ),
       areas ( slug ),
-      business_categories ( slug )
+      business_categories!primary_category_id ( slug )
     `,
     )
     .eq("slug", key)

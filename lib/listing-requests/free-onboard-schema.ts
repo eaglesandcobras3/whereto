@@ -178,6 +178,15 @@ export const freeOnboardBodySchema = z
       .nullable()
       .transform((s) => s || null),
     /**
+     * Additional leaf categories (includes or implies primary). Max 5 total.
+     * Used when `multiple_category` feature flag is on; ignored otherwise.
+     */
+    category_ids: z
+      .array(z.string().uuid({ message: "Choose categories from the list." }))
+      .max(5, { message: "Choose at most 5 categories." })
+      .optional()
+      .default([]),
+    /**
      * @deprecated Use category_id (unified taxonomy). Kept for older payloads.
      */
     service_category_id: z
@@ -419,6 +428,8 @@ export type FreeOnboardPayload = {
   overview: string;
   /** Unified leaf category id. */
   category_id: string | null;
+  /** Extra leaf ids when multiple_category is enabled (may include primary). */
+  category_ids?: string[];
   category_title?: string | null;
   /** @deprecated Cleared on approve after unified migration. */
   service_category_id?: string | null;

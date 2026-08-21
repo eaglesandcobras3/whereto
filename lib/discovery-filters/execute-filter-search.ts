@@ -27,7 +27,7 @@ import { trackDiscoverLowResults } from "@/lib/discovery-filters/track-discover-
 const DISCOVER_POOL_LIMIT = 2000;
 
 const VIEW_LISTING_SELECT =
-  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, is_storefront, is_service_business, map_lat, map_lng, business_categories ( slug ), service_categories ( slug ), towns ( title, slug )";
+  "id, slug, title, excerpt, business_type, main_image, hero_image, main_image_url, hero_image_url, search_keywords, search_tags, town_id, featured, is_storefront, is_service_business, map_lat, map_lng, business_categories!primary_category_id ( slug ), service_categories ( slug ), towns ( title, slug )";
 
 type PoolRow = Record<string, unknown>;
 
@@ -135,6 +135,63 @@ function emitDiscoverLowResultsTelemetry(
   void trackDiscoverLowResults({ state, result }).catch((err) => {
     console.error("trackDiscoverLowResults", err);
   });
+}
+
+/** When multiple_category is on, attach membership leaf slugs for group matching. */
+async function attachMembershipCategorySlugs(
+  pool: PoolRow[],
+  supabase: ReturnType<typeof getServiceSupabase>,
+): Promise<void> {
+  if (pool.length === 0) return;
+  try {
+    const { getAllFeatureFlags, isMultipleCategoryFeatureEnabled } = await import(
+      "@/lib/feature-flags"
+    );
+    const flags = await getAllFeatureFlags();
+    if (!isMultipleCategoryFeatureEnabled(flags)) return;
+  } catch {
+    return;
+  }
+
+  const ids = pool.map((r) => String(r.id)).filter(Boolean);
+  if (ids.length === 0) return;
+
+  const byBusiness = new Map<string, string[]>();
+  const chunk = 200;
+  const slugByCatId = new Map<string, string>();
+  {
+    const { data: catRows } = await supabase
+      .from("business_categories")
+      .select("id, slug")
+      .not("parent_category_id", "is", null);
+    for (const c of catRows ?? []) {
+      slugByCatId.set(String(c.id), String(c.slug));
+    }
+  }
+  for (let i = 0; i < ids.length; i += chunk) {
+    const slice = ids.slice(i, i + chunk);
+    const { data, error } = await supabase
+      .from("business_category_memberships")
+      .select("business_id, category_id")
+      .in("business_id", slice);
+    if (error) {
+      console.error("attachMembershipCategorySlugs", error);
+      return;
+    }
+    for (const row of data ?? []) {
+      const bid = String(row.business_id);
+      const slug = slugByCatId.get(String(row.category_id));
+      if (!slug) continue;
+      const list = byBusiness.get(bid) ?? [];
+      list.push(slug);
+      byBusiness.set(bid, list);
+    }
+  }
+
+  for (const row of pool) {
+    const slugs = byBusiness.get(String(row.id));
+    if (slugs?.length) row.membership_category_slugs = slugs;
+  }
 }
 
 export async function executeFilterSearch(
@@ -258,6 +315,7 @@ export async function executeFilterSearch(
   }
 
   const pool = (data ?? []) as PoolRow[];
+  await attachMembershipCategorySlugs(pool, supabase);
 
   if (!hasTags && !storefrontGroup && !serviceGroup) {
     const scored = sortScoredRows(scorePoolRows(pool, state, storefrontGroup, serviceGroup));

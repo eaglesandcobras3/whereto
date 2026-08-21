@@ -93,7 +93,7 @@ async function main() {
 
     const { data: biz } = await supabase
       .from("businesses")
-      .select("id, title, primary_category_id, business_categories ( slug )")
+      .select("id, title, primary_category_id, business_categories!primary_category_id ( slug )")
       .eq("slug", businessSlug)
       .maybeSingle();
 

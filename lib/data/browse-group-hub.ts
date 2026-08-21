@@ -33,7 +33,7 @@ import {
 const BROWSE_GROUP_BUSINESS_POOL_LIMIT = 2000;
 
 const BROWSE_GROUP_BUSINESS_SELECT =
-  "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, featured, price_level, is_storefront, is_service_business, towns ( id, title, slug ), business_categories ( slug )";
+  "id, slug, title, excerpt, main_image, hero_image, main_image_url, hero_image_url, featured, price_level, is_storefront, is_service_business, towns ( id, title, slug ), business_categories!primary_category_id ( slug )";
 
 export type BrowseGroupHubPage = {
   slug: string;
@@ -144,7 +144,7 @@ export async function listLeafLinksForBrowseGroup(
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("businesses_view")
-    .select("primary_category_id, business_categories ( slug )")
+    .select("primary_category_id, business_categories!primary_category_id ( slug )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .limit(BROWSE_GROUP_BUSINESS_POOL_LIMIT);

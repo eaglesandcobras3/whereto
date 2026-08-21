@@ -35,7 +35,7 @@ export async function getListedBusinessBrowseGroups(): Promise<ListedBusinessBro
 
   const { data, error } = await supabase
     .from("businesses_view")
-    .select("id, business_categories ( slug )")
+    .select("id, business_categories!primary_category_id ( slug )")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .limit(5000);

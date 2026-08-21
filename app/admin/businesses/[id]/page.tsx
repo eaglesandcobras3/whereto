@@ -5,6 +5,7 @@ import {
   getAllFeatureFlags,
   isAdminBusinessDirectEditFeatureEnabled,
   isBusinessPhotosFeatureEnabled,
+  isMultipleCategoryFeatureEnabled,
 } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 
@@ -43,6 +44,7 @@ export default async function AdminBusinessEditPage({ params }: PageProps) {
         <AdminBusinessEditClient
           businessId={id}
           photosEnabled={isBusinessPhotosFeatureEnabled(flags)}
+          multipleCategoryEnabled={isMultipleCategoryFeatureEnabled(flags)}
         />
       </div>
     </div>

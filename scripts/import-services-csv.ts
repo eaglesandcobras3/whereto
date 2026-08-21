@@ -269,7 +269,7 @@ async function main() {
       supabase
         .from("businesses")
         .select(
-          "id, title, slug, phone, website, is_storefront, is_service_business, business_categories ( slug )",
+          "id, title, slug, phone, website, is_storefront, is_service_business, business_categories!primary_category_id ( slug )",
         )
         .is("archived_at", null),
       supabase.from("towns").select("id, title, slug"),

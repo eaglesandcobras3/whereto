@@ -1,0 +1,1133 @@
+title,town,area,is_storefront,is_service_business,seed_category,seed_category_slug
+Appliance Repair Experts,,,FALSE,TRUE,Appliance Repair,appliance_repair
+All Pro Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+South Walton Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+30A Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Destin Appliance Repair Service,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Appliance Medic of Northwest Florida,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Beachside Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Emerald Coast Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Affordable Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Baytowne Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Coastal Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Gulf Coast Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Reliable Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Appliance Repair Solutions,,,FALSE,TRUE,Appliance Repair,appliance_repair
+Sunshine Appliance Repair,,,FALSE,TRUE,Appliance Repair,appliance_repair
+The Cultural Arts Alliance of Walton County,Santa Rosa Beach,,TRUE,FALSE,Arts & Culture,arts_and_culture
+Grayton Beach Artist Co-Op,Grayton Beach,,TRUE,FALSE,Arts & Culture,arts_and_culture
+Seaside Repertory Theatre,Seaside,,TRUE,FALSE,Arts & Culture,arts_and_culture
+The Hub on 30A,Inlet Beach,,TRUE,FALSE,Arts & Culture,arts_and_culture
+South Walton Beaches Museum & Cultural Center,Santa Rosa Beach,,TRUE,FALSE,Arts & Culture,arts_and_culture
+Alys Beach Art Gallery,Alys Beach,,TRUE,FALSE,Arts & Culture,arts_and_culture
+WaterColor Art Gallery,Watercolor,,TRUE,FALSE,Arts & Culture,arts_and_culture
+Blue Mountain Beach Art Gallery,Blue Mountain Beach,,TRUE,FALSE,Arts & Culture,arts_and_culture
+Rosemary Beach Gallery,Rosemary Beach,,TRUE,FALSE,Arts & Culture,arts_and_culture
+The Art Studio of South Walton,,,FALSE,TRUE,Arts & Culture,arts_and_culture
+30A Songwriters Festival,,,FALSE,TRUE,Arts & Culture,arts_and_culture
+South Walton Arts Council,,,FALSE,TRUE,Arts & Culture,arts_and_culture
+Mattie Kelly Arts Foundation,,,FALSE,TRUE,Arts & Culture,arts_and_culture
+The Village of Baytowne Wharf Arts & Crafts,,,FALSE,TRUE,Arts & Culture,arts_and_culture
+The Art of 30A,Seaside,,TRUE,FALSE,Artwork,artwork
+Blue Mountain Gallery,Blue Mountain Beach,,TRUE,FALSE,Artwork,artwork
+The Red Bar Gallery,Grayton Beach,,TRUE,FALSE,Artwork,artwork
+Seaside Artist Gallery,Seaside,,TRUE,FALSE,Artwork,artwork
+Art & Soul Gallery,Santa Rosa Beach,,TRUE,FALSE,Artwork,artwork
+Gallery 30A,Seagrove Beach,,TRUE,FALSE,Artwork,artwork
+The Gallery at Grayton Beach,Grayton Beach,,TRUE,FALSE,Artwork,artwork
+The Studio at Gulf Place,Gulf Place,,TRUE,FALSE,Artwork,artwork
+Seacrest Beach Gallery,Seacrest Beach,,TRUE,FALSE,Artwork,artwork
+South Walton Art Center,Santa Rosa Beach,,TRUE,FALSE,Artwork,artwork
+30A Art House,Seaside,,TRUE,FALSE,Artwork,artwork
+Destin Art Center,,,FALSE,TRUE,Artwork,artwork
+Miramar Beach Art Gallery,,,FALSE,TRUE,Artwork,artwork
+Custom Canvas & Art Services,,,FALSE,TRUE,Artwork,artwork
+The Hub,Seaside,,TRUE,FALSE,Attractions,attractions
+Grayton Beach State Park,Grayton Beach,,TRUE,FALSE,Attractions,attractions
+Camp Creek Golf Club,Santa Rosa Beach,,TRUE,FALSE,Attractions,attractions
+The Village of Baytowne Wharf,Sandestin,,TRUE,FALSE,Attractions,attractions
+Gulf World Marine Park,,,FALSE,TRUE,Attractions,attractions
+Emerald Coast Science Center,,,FALSE,TRUE,Attractions,attractions
+The Track Family Fun Park,,,FALSE,TRUE,Attractions,attractions
+Big Kahuna's Water & Adventure Park,,,FALSE,TRUE,Attractions,attractions
+30A Bike Rentals,Seaside,,TRUE,TRUE,Attractions,attractions
+Norriego Point Kayak Rentals,Seagrove Beach,,TRUE,TRUE,Attractions,attractions
+South Walton Adventure Company,,,FALSE,TRUE,Attractions,attractions
+Destin Snorkel & Dive Center,,,FALSE,TRUE,Attractions,attractions
+Grayton Beach Paddleboards,Grayton Beach,,TRUE,TRUE,Attractions,attractions
+The Emerald Coast Wildlife Refuge,,,FALSE,TRUE,Attractions,attractions
+30A Auto Repair,Santa Rosa Beach,,TRUE,TRUE,Auto Repair,auto_repair
+Destin Auto Repair,,,FALSE,TRUE,Auto Repair,auto_repair
+Miramar Beach Auto Repair,,,FALSE,TRUE,Auto Repair,auto_repair
+Emerald Coast Auto Repair,Santa Rosa Beach,,TRUE,TRUE,Auto Repair,auto_repair
+Beachside Auto Repair,,,FALSE,TRUE,Auto Repair,auto_repair
+Seaside Auto Repair,Seaside,,TRUE,TRUE,Auto Repair,auto_repair
+Grayton Beach Auto Repair,Grayton Beach,,TRUE,TRUE,Auto Repair,auto_repair
+South Walton Tire & Auto,Santa Rosa Beach,,TRUE,TRUE,Auto Repair,auto_repair
+Dune Allen Auto Repair,Dune Allen Beach,,TRUE,TRUE,Auto Repair,auto_repair
+Alys Beach Auto Service,Alys Beach,,TRUE,TRUE,Auto Repair,auto_repair
+Coastal Auto Repair & Service,,,FALSE,TRUE,Auto Repair,auto_repair
+Sandestin Auto Repair,Sandestin,,TRUE,TRUE,Auto Repair,auto_repair
+Watersound Auto Repair,Watersound,,TRUE,TRUE,Auto Repair,auto_repair
+Seagrove Auto Repair,Seagrove Beach,,TRUE,TRUE,Auto Repair,auto_repair
+Mobile Auto Repair 30A,,,FALSE,TRUE,Auto Repair,auto_repair
+30A Baby Gear Rentals,Santa Rosa Beach,,TRUE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Coastal Baby Rentals,,,FALSE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Little Beach Rentals,,,FALSE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Seaside Baby Rentals,Seaside,,TRUE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Baby's Away Rentals,,,FALSE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Sandcastle Baby Rentals,,,FALSE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Beach Bum Baby Rentals,,,FALSE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Tiny Tots Rentals,,,FALSE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Sunshine Baby Rentals,,,FALSE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Seagrove Baby Rentals,Seagrove Beach,,TRUE,TRUE,Baby Equipment Rentals,baby_equipment_rentals
+Beach Bikes 30A,Santa Rosa Beach,,TRUE,FALSE,Bike Rentals,bike_rentals
+Seaside Bike Rentals,Seaside,,TRUE,FALSE,Bike Rentals,bike_rentals
+Cycle Bar 30A,Watercolor,,TRUE,FALSE,Bike Rentals,bike_rentals
+Sunset Bike Rentals,Grayton Beach,,TRUE,FALSE,Bike Rentals,bike_rentals
+30A Pedal & Paddle,Santa Rosa Beach,,TRUE,FALSE,Bike Rentals,bike_rentals
+The Bike Shop of South Walton,Santa Rosa Beach,,TRUE,FALSE,Bike Rentals,bike_rentals
+Pedego Electric Bikes 30A,Santa Rosa Beach,,TRUE,FALSE,Bike Rentals,bike_rentals
+Alys Beach Bike Rentals,Alys Beach,,TRUE,FALSE,Bike Rentals,bike_rentals
+Miramar Beach Bike Rentals,,,FALSE,TRUE,Bike Rentals,bike_rentals
+Destin Bike Rentals,,,FALSE,TRUE,Bike Rentals,bike_rentals
+Sandestin Bike Rentals,Sandestin,,TRUE,FALSE,Bike Rentals,bike_rentals
+Coastal Cruisers Bike Rentals,Seagrove Beach,,TRUE,FALSE,Bike Rentals,bike_rentals
+South Walton Bike Rentals,,,FALSE,TRUE,Bike Rentals,bike_rentals
+30A Mobile Bike Rentals,,,FALSE,TRUE,Bike Rentals,bike_rentals
+30A Boat Rentals,Santa Rosa Beach,,TRUE,FALSE,Boat Rentals,boat_rentals
+Destin Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Miramar Beach Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Sunset Bay Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Aqua Fun Rentals,Seaside,,TRUE,FALSE,Boat Rentals,boat_rentals
+Beach Boat Rentals,Grayton Beach,,TRUE,FALSE,Boat Rentals,boat_rentals
+Coastal Boat Rentals,Seagrove Beach,,TRUE,FALSE,Boat Rentals,boat_rentals
+South Walton Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Emerald Coast Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Gulf Coast Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Bay Breeze Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Seaside Boat Rentals,Seaside,,TRUE,FALSE,Boat Rentals,boat_rentals
+Watercolor Boat Rentals,Watercolor,,TRUE,FALSE,Boat Rentals,boat_rentals
+30A Kayak & Boat Rentals,Santa Rosa Beach,,TRUE,FALSE,Boat Rentals,boat_rentals
+Destin Charter Boat Rentals,,,FALSE,TRUE,Boat Rentals,boat_rentals
+Destin Marine Service,,,FALSE,TRUE,Boat Repair,boat_repair
+Miramar Beach Marine,,,FALSE,TRUE,Boat Repair,boat_repair
+South Walton Marine Services,,,FALSE,TRUE,Boat Repair,boat_repair
+30A Boat Repair,Seacrest Beach,,TRUE,TRUE,Boat Repair,boat_repair
+Destin Boat Repair,,,FALSE,TRUE,Boat Repair,boat_repair
+Miramar Marine Repair,,,FALSE,TRUE,Boat Repair,boat_repair
+Gulf Coast Marine Repair,,,FALSE,TRUE,Boat Repair,boat_repair
+Santa Rosa Marine Service,Santa Rosa Beach,,TRUE,TRUE,Boat Repair,boat_repair
+Seaside Boat Repair,Seaside,,TRUE,TRUE,Boat Repair,boat_repair
+Bluewater Marine Repair,,,FALSE,TRUE,Boat Repair,boat_repair
+Destin Yacht Services,,,FALSE,TRUE,Boat Repair,boat_repair
+Coastal Marine Repair,,,FALSE,TRUE,Boat Repair,boat_repair
+Baytowne Marina Service,,,FALSE,TRUE,Boat Repair,boat_repair
+Emerald Coast Marine Repair,,,FALSE,TRUE,Boat Repair,boat_repair
+30A Marine Solutions,,,FALSE,TRUE,Boat Repair,boat_repair
+Destin Boat Storage,,,FALSE,TRUE,Boat Storage,boat_storage
+Miramar Beach Boat Storage,,,FALSE,TRUE,Boat Storage,boat_storage
+South Walton Boat Storage,Santa Rosa Beach,,TRUE,FALSE,Boat Storage,boat_storage
+Alys Beach Boat Storage,Alys Beach,,TRUE,FALSE,Boat Storage,boat_storage
+Seaside Boat Storage,Seaside,,TRUE,FALSE,Boat Storage,boat_storage
+Grayton Beach Boat Storage,Grayton Beach,,TRUE,FALSE,Boat Storage,boat_storage
+Watercolor Boat Storage,Watercolor,,TRUE,FALSE,Boat Storage,boat_storage
+Gulf Place Boat Storage,Gulf Place,,TRUE,FALSE,Boat Storage,boat_storage
+Dune Allen Boat Storage,Dune Allen Beach,,TRUE,FALSE,Boat Storage,boat_storage
+Sandestin Boat Storage,Sandestin,,TRUE,FALSE,Boat Storage,boat_storage
+Destin Marina,,,FALSE,TRUE,Boat Storage,boat_storage
+HarborWalk Marina,,,FALSE,TRUE,Boat Storage,boat_storage
+Boat Storage Solutions,,,FALSE,TRUE,Boat Storage,boat_storage
+Coastal Boat Storage,,,FALSE,TRUE,Boat Storage,boat_storage
+Emerald Coast Boat Storage,,,FALSE,TRUE,Boat Storage,boat_storage
+The Design Shop,Seaside,,TRUE,FALSE,Branding,branding
+30A Creative,,,FALSE,TRUE,Branding,branding
+Saltwater Branding,,,FALSE,TRUE,Branding,branding
+Coastal Creative Agency,,,FALSE,TRUE,Branding,branding
+Blue Sky Branding,,,FALSE,TRUE,Branding,branding
+Seacrest Studio,Seacrest Beach,,TRUE,FALSE,Branding,branding
+Alys Beach Branding,Alys Beach,,TRUE,FALSE,Branding,branding
+Grayton Design Co.,Grayton Beach,,TRUE,FALSE,Branding,branding
+Watercolor Creative,Watercolor,,TRUE,FALSE,Branding,branding
+Rosemary Beach Branding,Rosemary Beach,,TRUE,FALSE,Branding,branding
+South Walton Marketing Group,,,FALSE,TRUE,Branding,branding
+Dune Allen Design,Dune Allen Beach,,TRUE,FALSE,Branding,branding
+Gulf Place Graphics,Gulf Place,,TRUE,FALSE,Branding,branding
+Miramar Beach Media,,,FALSE,TRUE,Branding,branding
+Sandestin Branding,Sandestin,,TRUE,FALSE,Branding,branding
+Grayton Beer Company,Santa Rosa Beach,,TRUE,FALSE,Breweries & Wine,breweries_and_wine
+Idyll Hounds Brewing Company,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+Eastern Shore Brewing,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+Grayton Beer Company Taproom,Santa Rosa Beach,,TRUE,FALSE,Breweries & Wine,breweries_and_wine
+The Wine Bar at Seacrest Beach,Seacrest Beach,,TRUE,FALSE,Breweries & Wine,breweries_and_wine
+The Wine Shop of South Walton,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+The Red Bar Wine & Spirits,Grayton Beach,,TRUE,FALSE,Breweries & Wine,breweries_and_wine
+The Wine Loft,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+South Walton Brewery,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+The Wine Cellar,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+Seaside Wine & Spirits,Seaside,,TRUE,FALSE,Breweries & Wine,breweries_and_wine
+The Local Wine Shop,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+The Wine Merchant,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+The Wine Market,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+Wine & Design South Walton,,,FALSE,TRUE,Breweries & Wine,breweries_and_wine
+Camp Gulf,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Grayton Beach Campground,Grayton Beach,,TRUE,FALSE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Seagrove Village RV Resort,Seagrove Beach,,TRUE,FALSE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Emerald Coast RV Resort,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Destin West RV Resort,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Sunshine RV Park,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Santa Rosa Beach RV Park,Santa Rosa Beach,,TRUE,FALSE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Beachside RV Park,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Camp 30A,Seagrove Beach,,TRUE,FALSE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+WaterColor RV Resort,Watercolor,,TRUE,FALSE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Shady Rest RV Park,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Gulf Pines RV Resort,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Destin RV Beach Resort,,,FALSE,TRUE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Alys Beach RV Park,Alys Beach,,TRUE,FALSE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+Blue Mountain Beach RV Park,Blue Mountain Beach,,TRUE,FALSE,Campgrounds & RV Parks,campgrounds_and_rv_parks
+30A Rent A Car,Santa Rosa Beach,,TRUE,FALSE,Car Rental,car_rental
+Emerald Coast Rent A Car,,,FALSE,TRUE,Car Rental,car_rental
+Destin Rent A Car,,,FALSE,TRUE,Car Rental,car_rental
+Miramar Beach Rent A Car,,,FALSE,TRUE,Car Rental,car_rental
+Beachside Car Rentals,Seagrove Beach,,TRUE,FALSE,Car Rental,car_rental
+South Walton Car Rentals,,,FALSE,TRUE,Car Rental,car_rental
+Coastal Car Rentals,,,FALSE,TRUE,Car Rental,car_rental
+Luxury Ride Rentals,,,FALSE,TRUE,Car Rental,car_rental
+Gulf Coast Car Rentals,,,FALSE,TRUE,Car Rental,car_rental
+Sunshine Car Rentals,Santa Rosa Beach,,TRUE,FALSE,Car Rental,car_rental
+Seaside Car Rentals,Seaside,,TRUE,FALSE,Car Rental,car_rental
+Blue Mountain Car Rentals,Blue Mountain Beach,,TRUE,FALSE,Car Rental,car_rental
+Rent 30A Cars,,,FALSE,TRUE,Car Rental,car_rental
+Alys Beach Car Rentals,Alys Beach,,TRUE,FALSE,Car Rental,car_rental
+Destin Luxury Rentals,,,FALSE,TRUE,Car Rental,car_rental
+The Perfect Bite Catering,Santa Rosa Beach,,TRUE,TRUE,Catering,catering
+Chef Paul Catering & Events,,,FALSE,TRUE,Catering,catering
+Catering by Design,,,FALSE,TRUE,Catering,catering
+Catering by the Bay,,,FALSE,TRUE,Catering,catering
+Alys Beach Catering,Alys Beach,,TRUE,TRUE,Catering,catering
+The Catering Company of South Walton,,,FALSE,TRUE,Catering,catering
+Sweet Melissa's Cafe & Catering,Seaside,,TRUE,TRUE,Catering,catering
+Catering by Chef David,,,FALSE,TRUE,Catering,catering
+The Local Market Catering,Seagrove Beach,,TRUE,TRUE,Catering,catering
+Blue Mountain Beach Catering,,,FALSE,TRUE,Catering,catering
+Seaside Catering,Seaside,,TRUE,TRUE,Catering,catering
+Coastal Catering Company,,,FALSE,TRUE,Catering,catering
+Catering by the Gulf,,,FALSE,TRUE,Catering,catering
+Baytowne Catering,Sandestin,,TRUE,TRUE,Catering,catering
+Chef's Catering & Events,,,FALSE,TRUE,Catering,catering
+The Learning Tree Academy,Santa Rosa Beach,,TRUE,FALSE,Childcare,childcare
+Seaside School,Seaside,,TRUE,FALSE,Childcare,childcare
+The Children's House of South Walton,,,FALSE,TRUE,Childcare,childcare
+South Walton Montessori School,Santa Rosa Beach,,TRUE,FALSE,Childcare,childcare
+Little Learners Academy,,,FALSE,TRUE,Childcare,childcare
+The Grow Academy,,,FALSE,TRUE,Childcare,childcare
+Sunshine Academy of South Walton,,,FALSE,TRUE,Childcare,childcare
+Kids R Kids of South Walton,,,FALSE,TRUE,Childcare,childcare
+The Goddard School of Destin,,,FALSE,TRUE,Childcare,childcare
+Bright Horizons at Sandestin,,,FALSE,TRUE,Childcare,childcare
+South Walton Nannies,,,FALSE,TRUE,Childcare,childcare
+Little Sprouts Learning Center,Santa Rosa Beach,,TRUE,FALSE,Childcare,childcare
+The Learning Experience of Miramar Beach,,,FALSE,TRUE,Childcare,childcare
+First Steps Academy,,,FALSE,TRUE,Childcare,childcare
+The Children's Learning Center of South Walton,,,FALSE,TRUE,Childcare,childcare
+The Beachy Boutique,Santa Rosa Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Salt Life Clothing Store,Seaside,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+30A Apparel & Gifts,Grayton Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Seagrove Outfitters,Seagrove Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Coastal Vibes Boutique,Watercolor,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+The Local T-Shirt Company,,,FALSE,TRUE,Coastal Apparel,coastal_apparel
+Surf Style Destin,,,FALSE,TRUE,Coastal Apparel,coastal_apparel
+The Sandbar Boutique,Inlet Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Alys Beach Outfitters,Alys Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Beach Bum Clothing Co.,Rosemary Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+30A T-Shirts & More,Santa Rosa Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Salt & Sand Apparel,Grayton Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Coastal Threads Boutique,Seacrest Beach,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+The Boardwalk Boutique,,,FALSE,TRUE,Coastal Apparel,coastal_apparel
+Seaside Surf Shop,Seaside,,TRUE,FALSE,Coastal Apparel,coastal_apparel
+Tech Rescue,,,FALSE,TRUE,Computer Repair,computer_repair
+Computer Repair Destin,,,FALSE,TRUE,Computer Repair,computer_repair
+PC Repair Destin,,,FALSE,TRUE,Computer Repair,computer_repair
+iFix Destin,,,FALSE,TRUE,Computer Repair,computer_repair
+The Computer Guys,,,FALSE,TRUE,Computer Repair,computer_repair
+Mobile Tech Repair,,,FALSE,TRUE,Computer Repair,computer_repair
+South Walton Computer Repair,,,FALSE,TRUE,Computer Repair,computer_repair
+Destin Computer Repair,,,FALSE,TRUE,Computer Repair,computer_repair
+Miramar Beach Computer Repair,,,FALSE,TRUE,Computer Repair,computer_repair
+Emerald Coast Computer Repair,,,FALSE,TRUE,Computer Repair,computer_repair
+Tech Solutions of South Walton,,,FALSE,TRUE,Computer Repair,computer_repair
+Gulf Coast Computer Repair,,,FALSE,TRUE,Computer Repair,computer_repair
+iTech Repair,,,FALSE,TRUE,Computer Repair,computer_repair
+PC Medic of Destin,,,FALSE,TRUE,Computer Repair,computer_repair
+Computer Repair Pros,,,FALSE,TRUE,Computer Repair,computer_repair
+Gulf Coast Concrete & Masonry,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Bay Breeze Concrete,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+South Walton Concrete,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Emerald Coast Concrete,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Coastal Masonry & Concrete,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Seaside Concrete & Masonry,Seaside,,TRUE,TRUE,Concrete & Masonry,concrete_and_masonry
+Alys Beach Masonry,Alys Beach,,TRUE,TRUE,Concrete & Masonry,concrete_and_masonry
+Destin Concrete Solutions,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Sandestin Concrete & Masonry,Sandestin,,TRUE,TRUE,Concrete & Masonry,concrete_and_masonry
+Grayton Beach Concrete,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Blue Mountain Concrete,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Watersound Concrete Services,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Rosemary Beach Masonry,Rosemary Beach,,TRUE,TRUE,Concrete & Masonry,concrete_and_masonry
+Dune Allen Concrete,,,FALSE,TRUE,Concrete & Masonry,concrete_and_masonry
+Inlet Beach Concrete & Masonry,Inlet Beach,,TRUE,TRUE,Concrete & Masonry,concrete_and_masonry
+Dermatology Associates of Northwest Florida,,,FALSE,TRUE,Dermatology,dermatology
+Destin Dermatology,,,FALSE,TRUE,Dermatology,dermatology
+South Walton Dermatology,Santa Rosa Beach,,TRUE,FALSE,Dermatology,dermatology
+Emerald Coast Dermatology,,,FALSE,TRUE,Dermatology,dermatology
+The Dermatology Center of Northwest Florida,,,FALSE,TRUE,Dermatology,dermatology
+Skin Wellness Center of South Walton,Santa Rosa Beach,,TRUE,FALSE,Dermatology,dermatology
+Dermatology & Skin Cancer Center of Northwest Florida,,,FALSE,TRUE,Dermatology,dermatology
+Coastal Dermatology & Skin Surgery,,,FALSE,TRUE,Dermatology,dermatology
+Dermatology Specialists of Northwest Florida,,,FALSE,TRUE,Dermatology,dermatology
+Bay Dermatology,,,FALSE,TRUE,Dermatology,dermatology
+Dermatology Services of Northwest Florida,,,FALSE,TRUE,Dermatology,dermatology
+Mobile Dermatology Services,,,FALSE,TRUE,Dermatology,dermatology
+Skin Care Specialists of Northwest Florida,,,FALSE,TRUE,Dermatology,dermatology
+Dermatology Consultants of Northwest Florida,,,FALSE,TRUE,Dermatology,dermatology
+South Walton Skin Care,Santa Rosa Beach,,TRUE,FALSE,Dermatology,dermatology
+Destin Marine & Boat Services,,,FALSE,TRUE,Dock Services,dock_services
+Baytowne Marina,,,FALSE,TRUE,Dock Services,dock_services
+Miramar Boat Dock Services,,,FALSE,TRUE,Dock Services,dock_services
+South Walton Boat Dock Repair,,,FALSE,TRUE,Dock Services,dock_services
+30A Marine Services,,,FALSE,TRUE,Dock Services,dock_services
+Destin Dock & Lift Services,,,FALSE,TRUE,Dock Services,dock_services
+Gulf Coast Dock & Lift,,,FALSE,TRUE,Dock Services,dock_services
+Seaside Boat Dock Services,,,FALSE,TRUE,Dock Services,dock_services
+Watersound Dock Repair,,,FALSE,TRUE,Dock Services,dock_services
+Santa Rosa Dock & Lift,Santa Rosa Beach,,TRUE,TRUE,Dock Services,dock_services
+Bluewater Dock & Marine,,,FALSE,TRUE,Dock Services,dock_services
+Bayou Boat Dock Services,,,FALSE,TRUE,Dock Services,dock_services
+Emerald Coast Dock Services,,,FALSE,TRUE,Dock Services,dock_services
+Coastal Dock & Lift Services,,,FALSE,TRUE,Dock Services,dock_services
+Harbor Dock & Marine Services,,,FALSE,TRUE,Dock Services,dock_services
+The Local Shoppes at Seacrest Beach,Seacrest Beach,,TRUE,FALSE,E-commerce,e_commerce
+The 30A Store,Santa Rosa Beach,,TRUE,FALSE,E-commerce,e_commerce
+Seaside Mercantile,Seaside,,TRUE,FALSE,E-commerce,e_commerce
+The Market Shops at WaterColor,WaterColor,,TRUE,FALSE,E-commerce,e_commerce
+Grayton Beach Trading Company,Grayton Beach,,TRUE,FALSE,E-commerce,e_commerce
+The Blue Mountain Beach Market,Blue Mountain Beach,,TRUE,FALSE,E-commerce,e_commerce
+Alys Beach Mercantile,Alys Beach,,TRUE,FALSE,E-commerce,e_commerce
+Seagrove Village Market,Seagrove Beach,,TRUE,FALSE,E-commerce,e_commerce
+The Red Bar Gift Shop,Grayton Beach,,TRUE,FALSE,E-commerce,e_commerce
+The Artisan Market at Gulf Place,Gulf Place,,TRUE,FALSE,E-commerce,e_commerce
+30A Online Boutique,,,FALSE,TRUE,E-commerce,e_commerce
+Coastal E-commerce Solutions,,,FALSE,TRUE,E-commerce,e_commerce
+South Walton Web Retail Services,,,FALSE,TRUE,E-commerce,e_commerce
+Emerald Coast E-commerce Consulting,,,FALSE,TRUE,E-commerce,e_commerce
+Destin Digital Retail Services,,,FALSE,TRUE,E-commerce,e_commerce
+30A Kids,Seaside,,TRUE,FALSE,Education,education
+The Art Cellar,Seaside,,TRUE,FALSE,Education,education
+The Children's School of South Walton,Santa Rosa Beach,,TRUE,FALSE,Education,education
+30A Tutoring,,,FALSE,TRUE,Education,education
+South Walton Dance Academy,Santa Rosa Beach,,TRUE,FALSE,Education,education
+Destin Music Academy,,,FALSE,TRUE,Education,education
+The Little Gym of Destin,,,FALSE,TRUE,Education,education
+South Walton Homeschool Co-op,,,FALSE,TRUE,Education,education
+30A Music Academy,,,FALSE,TRUE,Education,education
+Destin Speech Therapy,,,FALSE,TRUE,Education,education
+South Walton Literacy Council,,,FALSE,TRUE,Education,education
+The Art Loft at Gulf Place,Santa Rosa Beach,,TRUE,FALSE,Education,education
+South Walton Electric,Santa Rosa Beach,,TRUE,TRUE,Electrical,electrical
+Coastal Electric of NW Florida,,,FALSE,TRUE,Electrical,electrical
+Bay Electric,,,FALSE,TRUE,Electrical,electrical
+Destin Electrical Services,,,FALSE,TRUE,Electrical,electrical
+Alys Beach Electric,,,FALSE,TRUE,Electrical,electrical
+Emerald Coast Electric,,,FALSE,TRUE,Electrical,electrical
+Seaside Electric,Seaside,,TRUE,TRUE,Electrical,electrical
+Beach Electric,,,FALSE,TRUE,Electrical,electrical
+Gulf Coast Electric,,,FALSE,TRUE,Electrical,electrical
+McKenzie Electric,,,FALSE,TRUE,Electrical,electrical
+All Phase Electric,,,FALSE,TRUE,Electrical,electrical
+Sunshine Electric,,,FALSE,TRUE,Electrical,electrical
+Riverside Electric,,,FALSE,TRUE,Electrical,electrical
+Coastal Current Electric,,,FALSE,TRUE,Electrical,electrical
+Electric Solutions of NW Florida,,,FALSE,TRUE,Electrical,electrical
+Beachy Rentals,Santa Rosa Beach,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+30A Rentals,Santa Rosa Beach,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+Sunshine Watersports Rentals,,,FALSE,TRUE,Equipment Rentals,equipment_rentals
+Destin Paddleboard Rentals,,,FALSE,TRUE,Equipment Rentals,equipment_rentals
+South Walton Kayak Rentals,Grayton Beach,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+Seaside Bike & Kayak Rentals,Seaside,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+Watercolor Bike & Kayak Rentals,Watercolor,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+Big Kahuna Watersports,,,FALSE,TRUE,Equipment Rentals,equipment_rentals
+Alys Beach Rentals,Alys Beach,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+Grayton Beach Paddleboard Rentals,Grayton Beach,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+Coastal Watersports Rentals,,,FALSE,TRUE,Equipment Rentals,equipment_rentals
+Sunset Paddleboard Rentals,Seagrove Beach,,TRUE,FALSE,Equipment Rentals,equipment_rentals
+South Walton Equipment Rentals,,,FALSE,TRUE,Equipment Rentals,equipment_rentals
+Emerald Coast Equipment Rentals,,,FALSE,TRUE,Equipment Rentals,equipment_rentals
+30A Event Co.,Santa Rosa Beach,,TRUE,TRUE,Event Planning,event_planning
+The Eventful Group,,,FALSE,TRUE,Event Planning,event_planning
+Alys Beach Weddings,Alys Beach,,TRUE,TRUE,Event Planning,event_planning
+Southern Social Events,,,FALSE,TRUE,Event Planning,event_planning
+The Wedding Planners of 30A,,,FALSE,TRUE,Event Planning,event_planning
+Events by Design,,,FALSE,TRUE,Event Planning,event_planning
+30A Party Rentals & Events,Santa Rosa Beach,,TRUE,TRUE,Event Planning,event_planning
+Beach Bliss Events,,,FALSE,TRUE,Event Planning,event_planning
+Seaside Soirees,Seaside,,TRUE,TRUE,Event Planning,event_planning
+Destin Event Planning,,,FALSE,TRUE,Event Planning,event_planning
+Grayton Beach Events,,,FALSE,TRUE,Event Planning,event_planning
+Coastal Celebrations,,,FALSE,TRUE,Event Planning,event_planning
+Sunshine State Events,,,FALSE,TRUE,Event Planning,event_planning
+Elegant Occasions 30A,,,FALSE,TRUE,Event Planning,event_planning
+Seagrove Beach Weddings,Seagrove Beach,,TRUE,TRUE,Event Planning,event_planning
+30A Party Rentals,Santa Rosa Beach,,TRUE,TRUE,Event Rentals,event_rentals
+Emerald Coast Party Rentals,,,FALSE,TRUE,Event Rentals,event_rentals
+Beachy Keen Rentals,Seaside,,TRUE,TRUE,Event Rentals,event_rentals
+Destin Event Rentals,,,FALSE,TRUE,Event Rentals,event_rentals
+South Walton Party Rentals,,,FALSE,TRUE,Event Rentals,event_rentals
+Seagrove Beach Rentals,Seagrove Beach,,TRUE,TRUE,Event Rentals,event_rentals
+Grayton Beach Rentals,Grayton Beach,,TRUE,TRUE,Event Rentals,event_rentals
+Watersound Rentals,Watersound,,TRUE,TRUE,Event Rentals,event_rentals
+Sandestin Event Rentals,Sandestin,,TRUE,TRUE,Event Rentals,event_rentals
+Seacrest Beach Rentals,Seacrest Beach,,TRUE,TRUE,Event Rentals,event_rentals
+Rosemary Beach Rentals,Rosemary Beach,,TRUE,TRUE,Event Rentals,event_rentals
+Dune Allen Rentals,Dune Allen Beach,,TRUE,TRUE,Event Rentals,event_rentals
+Watercolor Rentals,Watercolor,,TRUE,TRUE,Event Rentals,event_rentals
+Gulf Place Rentals,Gulf Place,,TRUE,TRUE,Event Rentals,event_rentals
+30A Fishing Charters,Santa Rosa Beach,,TRUE,TRUE,Fishing Charters,fishing_charters
+Destin Inshore Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Reel Surprise Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Hook'd Up Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Fish Destin Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Gone Coastal Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Destin Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Captain Mike's Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Southern Star Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Big Mike's Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Destin Deep Sea Fishing,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Destin Snorkel & Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Destin Charter Boat,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Destin Offshore Fishing Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+Destin Bay Charters,,,FALSE,TRUE,Fishing Charters,fishing_charters
+The Blue Giraffe,Seaside,,TRUE,FALSE,Furniture,furniture
+Furniture & Design Gallery,,,FALSE,TRUE,Furniture,furniture
+The Green Chair,Seagrove Beach,,TRUE,FALSE,Furniture,furniture
+Beach House Interiors,Grayton Beach,,TRUE,FALSE,Furniture,furniture
+Coastal Living Furniture,Santa Rosa Beach,,TRUE,FALSE,Furniture,furniture
+The Rustic Nest,Seacrest Beach,,TRUE,FALSE,Furniture,furniture
+30A Home,Watercolor,,TRUE,FALSE,Furniture,furniture
+Seaside Interiors,Seaside,,TRUE,FALSE,Furniture,furniture
+The Cottage Company,,,FALSE,TRUE,Furniture,furniture
+Baytowne Furniture,,,FALSE,TRUE,Furniture,furniture
+Furniture Medic of NW Florida,,,FALSE,TRUE,Furniture,furniture
+Coastal Comfort Furniture Repair,,,FALSE,TRUE,Furniture,furniture
+30A Furniture Repair,,,FALSE,TRUE,Furniture,furniture
+Emerald Coast Furniture Repair,,,FALSE,TRUE,Furniture,furniture
+Furniture Refinishing of NW Florida,,,FALSE,TRUE,Furniture,furniture
+30A Golf Cart Rentals,Santa Rosa Beach,,TRUE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Beachside Golf Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Destin Golf Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Alys Beach Golf Cart Rentals,Alys Beach,,TRUE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Seaside Golf Cart Rentals,Seaside,,TRUE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Grayton Beach Golf Cart Rentals,Grayton Beach,,TRUE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Watersound Golf Cart Rentals,Watersound,,TRUE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+South Walton Golf Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+30A Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Sandestin Golf Cart Rentals,Sandestin,,TRUE,TRUE,Golf Cart Rentals,rentals_golf_cart_rentals
+Coastal Golf Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Gulf Coast Golf Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Emerald Coast Golf Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Rent My Cart,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Golf Cart Rentals 30A,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Beach Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+South Walton Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Destin Cart Rentals,,,FALSE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+30A Golf Cart Repair,Santa Rosa Beach,,TRUE,TRUE,Golf Cart Repair,golf_cart_repair
+Destin Golf Cart Repair,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+Miramar Beach Golf Cart Repair,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+Golf Cart Repair of South Walton,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+Emerald Coast Golf Cart Repair,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+Beachside Golf Cart Repair,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+South Walton Golf Cart Service,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+30A Golf Cart Service,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+Destin Golf Cart Service,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+Golf Cart Repair & Sales of Destin,,,FALSE,TRUE,Golf Cart Repair,golf_cart_repair
+South Walton Golf Cart Rentals & Sales,Santa Rosa Beach,,TRUE,TRUE,Golf Cart Sales,golf_cart_sales
+30A Golf Carts,Santa Rosa Beach,,TRUE,TRUE,Golf Cart Sales,golf_cart_sales
+Destin Golf Cart Rentals & Sales,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Miramar Beach Golf Carts,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Gulf Coast Golf Carts,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Emerald Coast Golf Carts,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Coastal Golf Cart Sales & Service,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Sandestin Golf Cart Rentals & Sales,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Florida Golf Cart Sales & Service,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Golf Cart Repair & Sales of South Walton,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+30A Golf Cart Repair & Sales,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Destin Golf Cart Repair & Sales,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+South Walton Golf Cart Repair,,,FALSE,TRUE,Golf Cart Sales,golf_cart_sales
+Saltwater Creative,,,FALSE,TRUE,Graphic Design,graphic_design
+The Design Studio of South Walton,Santa Rosa Beach,,TRUE,TRUE,Graphic Design,graphic_design
+Bluewater Creative,,,FALSE,TRUE,Graphic Design,graphic_design
+Seaside Graphics,Seaside,,TRUE,FALSE,Graphic Design,graphic_design
+Grayton Graphics,Grayton Beach,,TRUE,FALSE,Graphic Design,graphic_design
+South Walton Design Co.,,,FALSE,TRUE,Graphic Design,graphic_design
+Beachside Branding,,,FALSE,TRUE,Graphic Design,graphic_design
+Alys Beach Design,Alys Beach,,TRUE,FALSE,Graphic Design,graphic_design
+Rosemary Beach Design Studio,Rosemary Beach,,TRUE,FALSE,Graphic Design,graphic_design
+Watersound Creative,Watersound,,TRUE,FALSE,Graphic Design,graphic_design
+Sandestin Graphic Arts,Sandestin,,TRUE,FALSE,Graphic Design,graphic_design
+Miramar Design Group,,,FALSE,TRUE,Graphic Design,graphic_design
+The Nest 30A,Santa Rosa Beach,,TRUE,FALSE,Home Decor,home_decor
+The Blue Giraffe Home,Seagrove Beach,,TRUE,FALSE,Home Decor,home_decor
+Grayton Beach Home,Grayton Beach,,TRUE,FALSE,Home Decor,home_decor
+The Local Store,Seaside,,TRUE,FALSE,Home Decor,home_decor
+Coastal Living Interiors,Santa Rosa Beach,,TRUE,FALSE,Home Decor,home_decor
+Nest Interiors,Santa Rosa Beach,,TRUE,FALSE,Home Decor,home_decor
+Home & Hearth,,,FALSE,TRUE,Home Decor,home_decor
+Designs by Dana,,,FALSE,TRUE,Home Decor,home_decor
+Coastal Home & Design,,,FALSE,TRUE,Home Decor,home_decor
+Seaside Style Interiors,,,FALSE,TRUE,Home Decor,home_decor
+South Walton Home Services,,,FALSE,TRUE,Home Decor,home_decor
+Coastal Irrigation & Landscape,,,FALSE,TRUE,Irrigation,irrigation
+South Walton Irrigation,,,FALSE,TRUE,Irrigation,irrigation
+Irrigation Solutions of NW Florida,,,FALSE,TRUE,Irrigation,irrigation
+Bay Breeze Irrigation,,,FALSE,TRUE,Irrigation,irrigation
+Emerald Coast Irrigation,,,FALSE,TRUE,Irrigation,irrigation
+Aqua Tech Irrigation,,,FALSE,TRUE,Irrigation,irrigation
+Sunshine State Irrigation,,,FALSE,TRUE,Irrigation,irrigation
+Seaside Irrigation Services,Seaside,,TRUE,TRUE,Irrigation,irrigation
+Gulf Coast Irrigation & Sprinklers,,,FALSE,TRUE,Irrigation,irrigation
+Watersound Irrigation,Watersound,,TRUE,TRUE,Irrigation,irrigation
+Blue Mountain Irrigation,Blue Mountain Beach,,TRUE,TRUE,Irrigation,irrigation
+Santa Rosa Irrigation,Santa Rosa Beach,,TRUE,TRUE,Irrigation,irrigation
+Dune Allen Irrigation Services,Dune Allen Beach,,TRUE,TRUE,Irrigation,irrigation
+Miramar Beach Sprinkler Repair,,,FALSE,TRUE,Irrigation,irrigation
+Destin Sprinkler & Irrigation,,,FALSE,TRUE,Irrigation,irrigation
+Emerald Coast IT Solutions,,,FALSE,TRUE,IT Services,it_services
+Tech Rescue 30A,,,FALSE,TRUE,IT Services,it_services
+Coastal IT Services,,,FALSE,TRUE,IT Services,it_services
+30A Tech Support,,,FALSE,TRUE,IT Services,it_services
+Blue Mountain Beach Tech Services,,,FALSE,TRUE,IT Services,it_services
+Seaside Computer Services,Seaside,,TRUE,TRUE,IT Services,it_services
+Gulf Coast IT Solutions,,,FALSE,TRUE,IT Services,it_services
+Digital Fixers of Destin,,,FALSE,TRUE,IT Services,it_services
+Santa Rosa Beach Tech Pros,,,FALSE,TRUE,IT Services,it_services
+Walton County IT Services,,,FALSE,TRUE,IT Services,it_services
+Destin Network Solutions,,,FALSE,TRUE,IT Services,it_services
+South Walton Tech Repair,,,FALSE,TRUE,IT Services,it_services
+30A Jet Ski Rentals,Santa Rosa Beach,,TRUE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Destin Jet Ski Rentals,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Miramar Beach Jet Ski Rentals,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Gulf Coast Jet Ski Rentals,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Sea Blaster Jet Ski Rentals,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Coastal Watersports,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+30A Watersports,Santa Rosa Beach,,TRUE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Destin Water Sports,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Sunset Watersports,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Aqua Adventures 30A,Santa Rosa Beach,,TRUE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Jet Ski Rentals 30A,Santa Rosa Beach,,TRUE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Emerald Coast Jet Ski Rentals,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Beachside Jet Ski Rentals,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+Baytowne Jet Ski Rentals,,,FALSE,TRUE,Jet Ski Rentals,jet_ski_rentals
+South Walton Jet Ski Rentals,Santa Rosa Beach,,TRUE,TRUE,Jet Ski Rentals,jet_ski_rentals
+The Silver Shop,,,FALSE,TRUE,Jewelry,shopping_jewelry
+The Jewelry Box,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Seaside Jewelry,Seaside,,TRUE,FALSE,Jewelry,shopping_jewelry
+Gulf Coast Jewelry,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Beachside Jewelers,,,FALSE,TRUE,Jewelry,shopping_jewelry
+The Diamond Boutique,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Coastal Gems & Jewelry,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Sandy Toes Jewelry,Seagrove Beach,,TRUE,FALSE,Jewelry,shopping_jewelry
+Island Time Jewelry,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Sunshine Jewelry Repair,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Emerald Coast Jewelry Repair,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Destin Jewelry Repair,,,FALSE,TRUE,Jewelry,shopping_jewelry
+South Walton Jewelry Repair,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Miramar Beach Jewelry Repair,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Seaside Jewelry Repair,,,FALSE,TRUE,Jewelry,shopping_jewelry
+Junk Dawgs Destin,,,FALSE,TRUE,Junk Removal,junk_removal
+30A Junk Removal,,,FALSE,TRUE,Junk Removal,junk_removal
+Emerald Coast Junk Removal,,,FALSE,TRUE,Junk Removal,junk_removal
+Destin Junk Removal,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk King Emerald Coast,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Dawgs South Walton,,,FALSE,TRUE,Junk Removal,junk_removal
+All In One Junk Removal,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Removal 30A,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Pros of Destin,,,FALSE,TRUE,Junk Removal,junk_removal
+Bay Junk Removal,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Busters,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Dawgs Panama City,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Dawgs Fort Walton Beach,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Dawgs Niceville,,,FALSE,TRUE,Junk Removal,junk_removal
+Junk Dawgs Crestview,,,FALSE,TRUE,Junk Removal,junk_removal
+30A Lawn Care,Santa Rosa Beach,,TRUE,TRUE,Lawn Care,lawn_care
+Emerald Coast Lawn Care,,,FALSE,TRUE,Lawn Care,lawn_care
+Coastal Lawn & Landscape,Santa Rosa Beach,,TRUE,TRUE,Lawn Care,lawn_care
+Bay Lawn Care & Landscaping,,,FALSE,TRUE,Lawn Care,lawn_care
+South Walton Lawn Care,,,FALSE,TRUE,Lawn Care,lawn_care
+Lawn Doctor of South Walton,,,FALSE,TRUE,Lawn Care,lawn_care
+Green Thumb Lawn Care,,,FALSE,TRUE,Lawn Care,lawn_care
+Seaside Lawn & Landscape,Seaside,,TRUE,TRUE,Lawn Care,lawn_care
+Beachside Lawn Care,,,FALSE,TRUE,Lawn Care,lawn_care
+Destin Lawn & Landscape,,,FALSE,TRUE,Lawn Care,lawn_care
+Lawn & Leaf,,,FALSE,TRUE,Lawn Care,lawn_care
+Southern Lawn Care,,,FALSE,TRUE,Lawn Care,lawn_care
+Watersound Lawn Care,,,FALSE,TRUE,Lawn Care,lawn_care
+Gulf Coast Lawn Care,,,FALSE,TRUE,Lawn Care,lawn_care
+Sandestin Lawn Care,Sandestin,,TRUE,TRUE,Lawn Care,lawn_care
+Destin Marine & Boat Service,,,FALSE,TRUE,Marine Services,marine_services
+Destin Boat Rentals & Tours,,,FALSE,TRUE,Marine Services,marine_services
+South Walton Marine Service,,,FALSE,TRUE,Marine Services,marine_services
+Miramar Beach Boat Repair,,,FALSE,TRUE,Marine Services,marine_services
+Gulf Coast Marine Services,,,FALSE,TRUE,Marine Services,marine_services
+Alys Beach Boat Works,Alys Beach,,TRUE,TRUE,Marine Services,marine_services
+Grayton Beach Boat Rentals,Grayton Beach,,TRUE,TRUE,Marine Services,marine_services
+Sandestin Boat & Yacht Service,Sandestin,,TRUE,TRUE,Marine Services,marine_services
+Seacrest Beach Marine Repair,Seacrest Beach,,TRUE,TRUE,Marine Services,marine_services
+Blue Mountain Beach Marine Services,,,FALSE,TRUE,Marine Services,marine_services
+Rosemary Beach Boat Maintenance,Rosemary Beach,,TRUE,TRUE,Marine Services,marine_services
+The 30A Company,Santa Rosa Beach,,TRUE,FALSE,Marketing,marketing
+Saltwater Media Group,,,FALSE,TRUE,Marketing,marketing
+The Branding Agency,,,FALSE,TRUE,Marketing,marketing
+Seaside Digital Marketing,Seaside,,TRUE,TRUE,Marketing,marketing
+Coastal Marketing Group,,,FALSE,TRUE,Marketing,marketing
+Bluewater Marketing,,,FALSE,TRUE,Marketing,marketing
+South Walton Marketing,,,FALSE,TRUE,Marketing,marketing
+Beachside Creative,,,FALSE,TRUE,Marketing,marketing
+Emerald Coast Marketing,,,FALSE,TRUE,Marketing,marketing
+Mako Marketing,,,FALSE,TRUE,Marketing,marketing
+30A Social Media,,,FALSE,TRUE,Marketing,marketing
+The Marketing Lab,,,FALSE,TRUE,Marketing,marketing
+Salt Marketing Group,,,FALSE,TRUE,Marketing,marketing
+Seagrove Creative,Seagrove Beach,,TRUE,FALSE,Marketing,marketing
+30A Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Emerald Coast Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Coastal Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Destin Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Beachside Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Shoreline Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Gulf Coast Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Luxury Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Aqua Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Pro Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Detailing by the Bay,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Seaside Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Bay Breeze Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Sandestin Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+Coastal Shine Mobile Detailing,,,FALSE,TRUE,Mobile Detailing,mobile_detailing
+30A Movers,Santa Rosa Beach,,TRUE,TRUE,Moving,moving
+Destin Moving & Storage,,,FALSE,TRUE,Moving,moving
+All My Sons Moving & Storage,,,FALSE,TRUE,Moving,moving
+Two Men and a Truck Destin,,,FALSE,TRUE,Moving,moving
+A-1 Moving & Storage,,,FALSE,TRUE,Moving,moving
+South Walton Moving & Storage,Santa Rosa Beach,,TRUE,TRUE,Moving,moving
+Budget Movers of Destin,,,FALSE,TRUE,Moving,moving
+Coastal Moving & Storage,Santa Rosa Beach,,TRUE,TRUE,Moving,moving
+Gulf Coast Moving & Storage,,,FALSE,TRUE,Moving,moving
+Destin Express Movers,,,FALSE,TRUE,Moving,moving
+Movers of 30A,,,FALSE,TRUE,Moving,moving
+Destin Local Movers,,,FALSE,TRUE,Moving,moving
+All Season Movers,,,FALSE,TRUE,Moving,moving
+Emerald Coast Moving & Storage,,,FALSE,TRUE,Moving,moving
+Big Easy Moving & Storage,,,FALSE,TRUE,Moving,moving
+Destin Music Lessons,,,FALSE,TRUE,Music Lessons,music_lessons
+Music Makers of South Walton,,,FALSE,TRUE,Music Lessons,music_lessons
+Seaside School of Music,Seaside,,TRUE,FALSE,Music Lessons,music_lessons
+Grayton Beach Music Studio,Grayton Beach,,TRUE,FALSE,Music Lessons,music_lessons
+South Walton Music Academy,,,FALSE,TRUE,Music Lessons,music_lessons
+The Music Room at WaterColor,Watercolor,,TRUE,FALSE,Music Lessons,music_lessons
+Piano Lessons 30A,,,FALSE,TRUE,Music Lessons,music_lessons
+Destin Guitar Lessons,,,FALSE,TRUE,Music Lessons,music_lessons
+Blue Mountain Music Studio,Blue Mountain Beach,,TRUE,FALSE,Music Lessons,music_lessons
+Rosemary Beach Music School,Rosemary Beach,,TRUE,FALSE,Music Lessons,music_lessons
+Seagrove Music Lessons,,,FALSE,TRUE,Music Lessons,music_lessons
+Alys Beach Music Studio,Alys Beach,,TRUE,FALSE,Music Lessons,music_lessons
+Miramar Beach Music School,,,FALSE,TRUE,Music Lessons,music_lessons
+Santa Rosa Beach Guitar Lessons,,,FALSE,TRUE,Music Lessons,music_lessons
+The Local Shoppes,Seaside,,TRUE,FALSE,Online Retail,online_retail
+The Market Shops,Watercolor,,TRUE,FALSE,Online Retail,online_retail
+The Green Door,Seaside,,TRUE,FALSE,Online Retail,online_retail
+The Nest,Seaside,,TRUE,FALSE,Online Retail,online_retail
+The Coastal Cottage,Santa Rosa Beach,,TRUE,FALSE,Online Retail,online_retail
+The Surf Shop,,,FALSE,TRUE,Online Retail,online_retail
+Coastal Charm Online,,,FALSE,TRUE,Online Retail,online_retail
+Beach Bum Online Store,,,FALSE,TRUE,Online Retail,online_retail
+Gulf Coast Gifts,,,FALSE,TRUE,Online Retail,online_retail
+The Pet Spot,,,FALSE,TRUE,Pet Services,pet_services
+30A Dog Walkers,,,FALSE,TRUE,Pet Services,pet_services
+Paws & Claws Veterinary Clinic,,,FALSE,TRUE,Pet Services,pet_services
+Seaside Pets,Seaside,,TRUE,FALSE,Pet Services,pet_services
+Bark Avenue Pet Grooming,,,FALSE,TRUE,Pet Services,pet_services
+South Walton Veterinary Clinic,Santa Rosa Beach,,TRUE,TRUE,Pet Services,pet_services
+The Dog House,,,FALSE,TRUE,Pet Services,pet_services
+Pet Paradise,,,FALSE,TRUE,Pet Services,pet_services
+Happy Tails Pet Sitting,,,FALSE,TRUE,Pet Services,pet_services
+Coastal Canine Care,,,FALSE,TRUE,Pet Services,pet_services
+Tail Waggers Pet Grooming,,,FALSE,TRUE,Pet Services,pet_services
+Puppy Love Pet Sitting,,,FALSE,TRUE,Pet Services,pet_services
+The Groom Room,,,FALSE,TRUE,Pet Services,pet_services
+Baytowne Pet Resort,,,FALSE,TRUE,Pet Services,pet_services
+Sunshine Pet Care,,,FALSE,TRUE,Pet Services,pet_services
+Coastal Pool & Spa,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Aqua Pool & Spa,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Blue Water Pool & Spa,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Emerald Coast Pool & Spa,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Baytowne Pool & Spa,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Gulf Coast Pool & Spa,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+South Walton Pool & Spa,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Destin Pool Service,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Alys Beach Pool & Spa,Alys Beach,,TRUE,TRUE,Pool & Spa,pool_and_spa
+Seaside Pool & Spa,Seaside,,TRUE,TRUE,Pool & Spa,pool_and_spa
+Watersound Pool & Spa,Watersound,,TRUE,TRUE,Pool & Spa,pool_and_spa
+Grayton Beach Pool Service,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Miramar Beach Pool Service,,,FALSE,TRUE,Pool & Spa,pool_and_spa
+Santa Rosa Pool & Spa,Santa Rosa Beach,,TRUE,TRUE,Pool & Spa,pool_and_spa
+Dune Allen Pool & Spa,Dune Allen Beach,,TRUE,TRUE,Pool & Spa,pool_and_spa
+30A Pressure Washing,Santa Rosa Beach,,TRUE,TRUE,Pressure Washing,pressure_washing
+Emerald Coast Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Destin Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Gulf Coast Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Coastal Clean Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+All Pro Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Beachside Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Pressure Washing 30A,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Sunshine Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Aqua Clean Pressure Washing,,,FALSE,TRUE,Pressure Washing,pressure_washing
+Destin Printing & Copy Center,,,FALSE,TRUE,Printing Services,printing_services
+Pro Copy Printing,,,FALSE,TRUE,Printing Services,printing_services
+Print Shop of Destin,,,FALSE,TRUE,Printing Services,printing_services
+Copy & Print Solutions,,,FALSE,TRUE,Printing Services,printing_services
+South Walton Printing,Santa Rosa Beach,,TRUE,TRUE,Printing Services,printing_services
+Alys Beach Print Shop,Alys Beach,,TRUE,TRUE,Printing Services,printing_services
+Seaside Printing,Seaside,,TRUE,TRUE,Printing Services,printing_services
+Grayton Beach Print Shop,Grayton Beach,,TRUE,TRUE,Printing Services,printing_services
+Watersound Print & Copy,Watersound,,TRUE,TRUE,Printing Services,printing_services
+Ink & Paper Printing Services,,,FALSE,TRUE,Printing Services,printing_services
+Coastal Print Solutions,,,FALSE,TRUE,Printing Services,printing_services
+Emerald Coast Printing,,,FALSE,TRUE,Printing Services,printing_services
+30A Print & Design,,,FALSE,TRUE,Printing Services,printing_services
+Beachside Printing & Graphics,,,FALSE,TRUE,Printing Services,printing_services
+30A Property Management,Santa Rosa Beach,,TRUE,TRUE,Property Management,property_management
+Bluewater Property Management,,,FALSE,TRUE,Property Management,property_management
+Seaside Property Management,Seaside,,TRUE,TRUE,Property Management,property_management
+WaterColor Property Management,Watercolor,,TRUE,TRUE,Property Management,property_management
+Destin Vacation Properties,,,FALSE,TRUE,Property Management,property_management
+Beachside Property Management,,,FALSE,TRUE,Property Management,property_management
+South Walton Property Management,Santa Rosa Beach,,TRUE,TRUE,Property Management,property_management
+Alys Beach Property Management,Alys Beach,,TRUE,TRUE,Property Management,property_management
+Grayton Beach Property Management,Grayton Beach,,TRUE,TRUE,Property Management,property_management
+Seagrove Property Management,Seagrove Beach,,TRUE,TRUE,Property Management,property_management
+Sandestin Property Management,Sandestin,,TRUE,TRUE,Property Management,property_management
+Coastal Property Management Group,,,FALSE,TRUE,Property Management,property_management
+Emerald Coast Property Management,,,FALSE,TRUE,Property Management,property_management
+Gulf Coast Property Management,,,FALSE,TRUE,Property Management,property_management
+30A Vacation Rentals Property Management,Santa Rosa Beach,,TRUE,TRUE,Property Management,property_management
+30A Roofing & Construction,Santa Rosa Beach,,TRUE,TRUE,Roofing,roofing
+Emerald Coast Roofing & Construction,,,FALSE,TRUE,Roofing,roofing
+Gulf Coast Roofing & Construction,,,FALSE,TRUE,Roofing,roofing
+Roofing Solutions of Northwest Florida,,,FALSE,TRUE,Roofing,roofing
+South Walton Roofing & Construction,Santa Rosa Beach,,TRUE,TRUE,Roofing,roofing
+Destin Roofing Company,,,FALSE,TRUE,Roofing,roofing
+A+ Roofing & Construction,,,FALSE,TRUE,Roofing,roofing
+All Weather Roofing & Construction,,,FALSE,TRUE,Roofing,roofing
+Coastal Roofing & Construction,Santa Rosa Beach,,TRUE,TRUE,Roofing,roofing
+Bay Breeze Roofing,,,FALSE,TRUE,Roofing,roofing
+Florida Roof Pros,,,FALSE,TRUE,Roofing,roofing
+Seaside Roofing,Seaside,,TRUE,TRUE,Roofing,roofing
+Watersound Roofing,Watersound,,TRUE,TRUE,Roofing,roofing
+Sunshine State Roofing,,,FALSE,TRUE,Roofing,roofing
+Beachside Roofing & Construction,,,FALSE,TRUE,Roofing,roofing
+Emerald Coast Solar,,,FALSE,TRUE,Solar,solar
+SunSmart Solar Solutions,,,FALSE,TRUE,Solar,solar
+Florida Solar Energy Solutions,,,FALSE,TRUE,Solar,solar
+Solar Energy World,,,FALSE,TRUE,Solar,solar
+Sunshine Solar Power,,,FALSE,TRUE,Solar,solar
+South Walton Solar,,,FALSE,TRUE,Solar,solar
+Gulf Coast Solar,,,FALSE,TRUE,Solar,solar
+Solar Tech of Northwest Florida,,,FALSE,TRUE,Solar,solar
+SunPro Solar,,,FALSE,TRUE,Solar,solar
+Blue Sky Solar,,,FALSE,TRUE,Solar,solar
+Energy Wise Solar,,,FALSE,TRUE,Solar,solar
+Solar Source,,,FALSE,TRUE,Solar,solar
+Suncoast Solar,,,FALSE,TRUE,Solar,solar
+Solar Solutions of Northwest Florida,,,FALSE,TRUE,Solar,solar
+Coastal Solar Solutions,,,FALSE,TRUE,Solar,solar
+South Walton Towing,Santa Rosa Beach,,TRUE,TRUE,Towing,towing
+A & B Towing & Recovery,,,FALSE,TRUE,Towing,towing
+Destin Towing & Recovery,,,FALSE,TRUE,Towing,towing
+Miramar Beach Towing,,,FALSE,TRUE,Towing,towing
+Emerald Coast Towing,Santa Rosa Beach,,TRUE,TRUE,Towing,towing
+Coastal Towing & Recovery,,,FALSE,TRUE,Towing,towing
+Baytowne Towing,,,FALSE,TRUE,Towing,towing
+All Pro Towing,,,FALSE,TRUE,Towing,towing
+24/7 Towing & Recovery,Santa Rosa Beach,,TRUE,TRUE,Towing,towing
+Gulf Coast Towing & Recovery,,,FALSE,TRUE,Towing,towing
+A1 Towing & Recovery,Santa Rosa Beach,,TRUE,TRUE,Towing,towing
+T & T Towing & Recovery,,,FALSE,TRUE,Towing,towing
+Destin Roadside Assistance & Towing,,,FALSE,TRUE,Towing,towing
+South Walton Roadside & Towing,,,FALSE,TRUE,Towing,towing
+Emerald Coast Roadside & Towing,,,FALSE,TRUE,Towing,towing
+The Learning Tree Tutoring,Santa Rosa Beach,,TRUE,FALSE,Tutoring,tutoring
+Mathnasium of Destin,,,FALSE,TRUE,Tutoring,tutoring
+Sylvan Learning of Destin,,,FALSE,TRUE,Tutoring,tutoring
+Kumon Math and Reading Center of Destin,,,FALSE,TRUE,Tutoring,tutoring
+Destin Tutoring Services,,,FALSE,TRUE,Tutoring,tutoring
+Tutor Doctor of South Walton,,,FALSE,TRUE,Tutoring,tutoring
+Bright Minds Tutoring,Santa Rosa Beach,,TRUE,FALSE,Tutoring,tutoring
+A+ Tutoring and Test Prep,,,FALSE,TRUE,Tutoring,tutoring
+The Tutoring Center of Destin,,,FALSE,TRUE,Tutoring,tutoring
+South Walton Tutoring,,,FALSE,TRUE,Tutoring,tutoring
+Brain Balance Achievement Center of Destin,,,FALSE,TRUE,Tutoring,tutoring
+Mathnasium of Miramar Beach,,,FALSE,TRUE,Tutoring,tutoring
+Sylvan Learning Center of Miramar Beach,,,FALSE,TRUE,Tutoring,tutoring
+Tutor Time Learning Center of Destin,,,FALSE,TRUE,Tutoring,tutoring
+South Walton Animal Hospital,Santa Rosa Beach,,TRUE,TRUE,Veterinary,veterinary
+Seaside Animal Hospital,Seaside,,TRUE,TRUE,Veterinary,veterinary
+Destin Veterinary Clinic,,,FALSE,TRUE,Veterinary,veterinary
+Miramar Beach Animal Hospital,,,FALSE,TRUE,Veterinary,veterinary
+Grayton Beach Veterinary Clinic,Grayton Beach,,TRUE,TRUE,Veterinary,veterinary
+Watercolor Veterinary Clinic,Watercolor,,TRUE,TRUE,Veterinary,veterinary
+Santa Rosa Beach Veterinary Clinic,Santa Rosa Beach,,TRUE,TRUE,Veterinary,veterinary
+Emerald Coast Veterinary Hospital,,,FALSE,TRUE,Veterinary,veterinary
+30A Pet Care,,,FALSE,TRUE,Veterinary,veterinary
+Baytowne Veterinary Clinic,,,FALSE,TRUE,Veterinary,veterinary
+Gulf Coast Animal Hospital,,,FALSE,TRUE,Veterinary,veterinary
+Seagrove Animal Clinic,Seagrove Beach,,TRUE,TRUE,Veterinary,veterinary
+Alys Beach Veterinary Services,Alys Beach,,TRUE,TRUE,Veterinary,veterinary
+Dune Allen Veterinary Clinic,Dune Allen Beach,,TRUE,TRUE,Veterinary,veterinary
+Sandestin Animal Hospital,Sandestin,,TRUE,TRUE,Veterinary,veterinary
+30A Video Productions,Santa Rosa Beach,,TRUE,TRUE,Videography,videography
+Coastal Lens Media,,,FALSE,TRUE,Videography,videography
+Seaside Cinematography,Seaside,,TRUE,TRUE,Videography,videography
+South Walton Films,,,FALSE,TRUE,Videography,videography
+Emerald Coast Videography,,,FALSE,TRUE,Videography,videography
+Blue Mountain Beach Video,Blue Mountain Beach,,TRUE,TRUE,Videography,videography
+Watercolor Video Services,Watercolor,,TRUE,TRUE,Videography,videography
+Rosemary Beach Video,Rosemary Beach,,TRUE,TRUE,Videography,videography
+Sandestin Video Productions,Sandestin,,TRUE,TRUE,Videography,videography
+Dune Allen Beach Videography,Dune Allen Beach,,TRUE,TRUE,Videography,videography
+Gulf Place Video Creations,Gulf Place,,TRUE,TRUE,Videography,videography
+Destin Wedding Videography,,,FALSE,TRUE,Videography,videography
+South Walton Aerial Video,,,FALSE,TRUE,Videography,videography
+Grayton Beach Film Co.,Grayton Beach,,TRUE,TRUE,Videography,videography
+30A Paddleboards,Santa Rosa Beach,,TRUE,TRUE,Water Activities,water_activities
+Grayton Beach Paddle,Santa Rosa Beach,,TRUE,TRUE,Water Activities,water_activities
+Gulf Coast Paddleboards,,,FALSE,TRUE,Water Activities,water_activities
+South Walton Watersports,Santa Rosa Beach,,TRUE,TRUE,Water Activities,water_activities
+Seaside WaterSports,Seaside,,TRUE,TRUE,Water Activities,water_activities
+Aqua Ventures Kayak Rentals,Grayton Beach,,TRUE,TRUE,Water Activities,water_activities
+Coastal Kayak Company,Santa Rosa Beach,,TRUE,TRUE,Water Activities,water_activities
+Sunset Paddleboarding,,,FALSE,TRUE,Water Activities,water_activities
+Beach Bum Paddleboards,Seagrove Beach,,TRUE,TRUE,Water Activities,water_activities
+30A Kayak Rentals,Seagrove Beach,,TRUE,TRUE,Water Activities,water_activities
+Watersound Paddle Company,Watersound,,TRUE,TRUE,Water Activities,water_activities
+Miramar Beach Paddleboards,,,FALSE,TRUE,Water Activities,water_activities
+30A Web Design,,,FALSE,TRUE,Web Design,web_design
+Emerald Coast Web Design,,,FALSE,TRUE,Web Design,web_design
+Seaside Web Studio,Seaside,,TRUE,TRUE,Web Design,web_design
+Blue Mountain Digital,,,FALSE,TRUE,Web Design,web_design
+South Walton Creative,,,FALSE,TRUE,Web Design,web_design
+Coastal Web Solutions,,,FALSE,TRUE,Web Design,web_design
+Grayton Beach Web Design,Grayton Beach,,TRUE,TRUE,Web Design,web_design
+30A Digital Marketing,,,FALSE,TRUE,Web Design,web_design
+Destin Web Pros,,,FALSE,TRUE,Web Design,web_design
+Watercolor Web Design,Watercolor,,TRUE,TRUE,Web Design,web_design
+Seagrove Web Services,Seagrove Beach,,TRUE,TRUE,Web Design,web_design
+Alys Beach Web Studio,Alys Beach,,TRUE,TRUE,Web Design,web_design
+Rosemary Beach Web Design,Rosemary Beach,,TRUE,TRUE,Web Design,web_design
+Gulf Place Web Design,Gulf Place,,TRUE,TRUE,Web Design,web_design
+Dune Allen Web Design,Dune Allen Beach,,TRUE,TRUE,Web Design,web_design
+30A Wedding & Event Rentals,Santa Rosa Beach,,TRUE,TRUE,Wedding Services,wedding_services
+The Wedding Planner 30A,,,FALSE,TRUE,Wedding Services,wedding_services
+Southern Charm Weddings & Events,,,FALSE,TRUE,Wedding Services,wedding_services
+Seaside Wedding Chapel,Seaside,,TRUE,TRUE,Wedding Services,wedding_services
+Beach Bliss Weddings,,,FALSE,TRUE,Wedding Services,wedding_services
+Destin Wedding & Event Rentals,,,FALSE,TRUE,Wedding Services,wedding_services
+Forever After Weddings,,,FALSE,TRUE,Wedding Services,wedding_services
+Elegant Occasions Wedding Planning,,,FALSE,TRUE,Wedding Services,wedding_services
+Bella Bridesmaid Boutique,,,FALSE,TRUE,Wedding Services,wedding_services
+The Bridal Boutique of South Walton,,,FALSE,TRUE,Wedding Services,wedding_services
+Simply Elegant Weddings & Events,,,FALSE,TRUE,Wedding Services,wedding_services
+Coastal Wedding Designs,,,FALSE,TRUE,Wedding Services,wedding_services
+Weddings by the Sea,,,FALSE,TRUE,Wedding Services,wedding_services
+Southern Weddings & Events,,,FALSE,TRUE,Wedding Services,wedding_services
+Studio H Architecture,,,FALSE,TRUE,Architecture,architecture
+Design Workshop,,,FALSE,TRUE,Architecture,architecture
+Baldwin Architects,,,FALSE,TRUE,Architecture,architecture
+Morris Architecture,,,FALSE,TRUE,Architecture,architecture
+Baldwin & Associates Architects,,,FALSE,TRUE,Architecture,architecture
+Baldwin Design Group,,,FALSE,TRUE,Architecture,architecture
+Baldwin Architecture,,,FALSE,TRUE,Architecture,architecture
+The Gifted Seahorse,Seagrove Beach,,TRUE,FALSE,Coastal Gifts,coastal_gifts
+The Local Catch,Watercolor,,TRUE,FALSE,Coastal Gifts,coastal_gifts
+Saltwater Boutique,,,FALSE,TRUE,Coastal Gifts,coastal_gifts
+The Beach House,Seaside,,TRUE,FALSE,Coastal Gifts,coastal_gifts
+Coastal Bliss,Seacrest Beach,,TRUE,FALSE,Coastal Gifts,coastal_gifts
+Seaside Sundries,Seaside,,TRUE,FALSE,Coastal Gifts,coastal_gifts
+The Painted Fish,Grayton Beach,,TRUE,FALSE,Coastal Gifts,coastal_gifts
+The Seaside Shop,Seaside,,TRUE,FALSE,Coastal Gifts,coastal_gifts
+Beachy Keen Gifts,,,FALSE,TRUE,Coastal Gifts,coastal_gifts
+Coastal Charm,,,FALSE,TRUE,Coastal Gifts,coastal_gifts
+Baldwin Construction,,,FALSE,TRUE,Contractors,contractors
+Redfish Builders,Santa Rosa Beach,,TRUE,TRUE,Contractors,contractors
+Coastal Construction & Design,,,FALSE,TRUE,Contractors,contractors
+Sandy Toes Construction,Seaside,,TRUE,TRUE,Contractors,contractors
+C & C Construction,,,FALSE,TRUE,Contractors,contractors
+Gulf Coast Builders,,,FALSE,TRUE,Contractors,contractors
+B & B Construction,,,FALSE,TRUE,Contractors,contractors
+South Walton Builders,,,FALSE,TRUE,Contractors,contractors
+Beachside Construction,,,FALSE,TRUE,Contractors,contractors
+Bay Breeze Builders,,,FALSE,TRUE,Contractors,contractors
+Seaside Home Improvements,Seaside,,TRUE,TRUE,Contractors,contractors
+Emerald Coast Builders,,,FALSE,TRUE,Contractors,contractors
+Coastal Renovations,,,FALSE,TRUE,Contractors,contractors
+South Walton Remodeling,,,FALSE,TRUE,Contractors,contractors
+The Perfect Petal,Seaside,,TRUE,FALSE,Home & Gifts,home_and_gifts
+The Gifted Nook,Seagrove Beach,,TRUE,FALSE,Home & Gifts,home_and_gifts
+The Painted Pig,Seaside,,TRUE,FALSE,Home & Gifts,home_and_gifts
+The White Magnolia,Seaside,,TRUE,FALSE,Home & Gifts,home_and_gifts
+The Shoppes at WaterColor,Watercolor,,TRUE,FALSE,Home & Gifts,home_and_gifts
+The Market Shops at Grand Boulevard,,,FALSE,TRUE,Home & Gifts,home_and_gifts
+Emerald Coast Home Inspections,,,FALSE,TRUE,Home Inspection,home_inspection
+Coastal Home Inspections,,,FALSE,TRUE,Home Inspection,home_inspection
+Beachside Home Inspections,,,FALSE,TRUE,Home Inspection,home_inspection
+Gulf Coast Home Inspections,,,FALSE,TRUE,Home Inspection,home_inspection
+Home Team Inspection Service,,,FALSE,TRUE,Home Inspection,home_inspection
+Inspect 30A,,,FALSE,TRUE,Home Inspection,home_inspection
+Seaside Home Inspections,Seaside,,TRUE,TRUE,Home Inspection,home_inspection
+South Walton Home Inspections,,,FALSE,TRUE,Home Inspection,home_inspection
+Destin Home Inspections,,,FALSE,TRUE,Home Inspection,home_inspection
+Coastal Painting & Renovations,Santa Rosa Beach,,TRUE,TRUE,Painting,painting
+Emerald Coast Painting,,,FALSE,TRUE,Painting,painting
+Bay Breeze Painting,,,FALSE,TRUE,Painting,painting
+South Walton Painting & Pressure Washing,,,FALSE,TRUE,Painting,painting
+Gulf Coast Painting & Restoration,,,FALSE,TRUE,Painting,painting
+A+ Painting & Drywall,,,FALSE,TRUE,Painting,painting
+Beachside Painting & Decorating,Santa Rosa Beach,,TRUE,TRUE,Painting,painting
+Destin Pro Painters,,,FALSE,TRUE,Painting,painting
+Seaside Painting & Home Services,Seaside,,TRUE,TRUE,Painting,painting
+Blue Mountain Painting,Blue Mountain Beach,,TRUE,TRUE,Painting,painting
+Sunset Painting Services,,,FALSE,TRUE,Painting,painting
+Walton County Painting,,,FALSE,TRUE,Painting,painting
+Emerald Coast Elite Painting,,,FALSE,TRUE,Painting,painting
+Coastal Colors Painting,,,FALSE,TRUE,Painting,painting
+South Walton Restoration,,,FALSE,TRUE,Restoration,restoration
+Emerald Coast Restoration,,,FALSE,TRUE,Restoration,restoration
+Coastal Water Damage Restoration,,,FALSE,TRUE,Restoration,restoration
+SERVPRO of South Walton,,,FALSE,TRUE,Restoration,restoration
+Restoration 1 of South Walton,,,FALSE,TRUE,Restoration,restoration
+PuroClean of South Walton,,,FALSE,TRUE,Restoration,restoration
+Dry Force Restoration,,,FALSE,TRUE,Restoration,restoration
+All Pro Restoration,,,FALSE,TRUE,Restoration,restoration
+Advantage Restoration,,,FALSE,TRUE,Restoration,restoration
+First Response Restoration,,,FALSE,TRUE,Restoration,restoration
+AquaGuard Restoration,,,FALSE,TRUE,Restoration,restoration
+South Walton Mold & Water Damage,,,FALSE,TRUE,Restoration,restoration
+Coastal Mold & Water Damage,,,FALSE,TRUE,Restoration,restoration
+Water Damage Experts of South Walton,,,FALSE,TRUE,Restoration,restoration
+Guardian Security Solutions,,,FALSE,TRUE,Security Systems,security_systems
+Bay Watch Security,,,FALSE,TRUE,Security Systems,security_systems
+Emerald Coast Security,,,FALSE,TRUE,Security Systems,security_systems
+Safe Home Security,,,FALSE,TRUE,Security Systems,security_systems
+A1 Alarm Systems,,,FALSE,TRUE,Security Systems,security_systems
+Gulf Coast Security Systems,,,FALSE,TRUE,Security Systems,security_systems
+All Secure Alarm Systems,,,FALSE,TRUE,Security Systems,security_systems
+Security Solutions of the Emerald Coast,,,FALSE,TRUE,Security Systems,security_systems
+Coastal Alarm Systems,,,FALSE,TRUE,Security Systems,security_systems
+30A Escapes,Santa Rosa Beach,,TRUE,TRUE,Vacation Rentals,vacation_rentals
+Beachy Beach Rentals,Seagrove Beach,,TRUE,TRUE,Vacation Rentals,vacation_rentals
+Blue Mountain Beach Rentals,Blue Mountain Beach,,TRUE,TRUE,Vacation Rentals,vacation_rentals
+Carillon Beach Rentals,Carillon Beach,,TRUE,TRUE,Vacation Rentals,vacation_rentals
+Destin West Vacations,,,FALSE,TRUE,Vacation Rentals,vacation_rentals
+Henderson Beach Vacations,,,FALSE,TRUE,Vacation Rentals,vacation_rentals
+Luxury Coastal Vacations,,,FALSE,TRUE,Vacation Rentals,vacation_rentals
+Miramar Beach Rentals,,,FALSE,TRUE,Vacation Rentals,vacation_rentals
+Palmer Properties,Seagrove Beach,,TRUE,TRUE,Vacation Rentals,vacation_rentals
+Seaside Vacation Rentals,Seaside,,TRUE,TRUE,Vacation Rentals,vacation_rentals
+South Walton Vacation Rentals,,,FALSE,TRUE,Vacation Rentals,vacation_rentals
+Digital Logic Web Design,Santa Rosa Beach,,TRUE,TRUE,Web Development,web_development
+Seaside Web Design,Seaside,,TRUE,TRUE,Web Development,web_development
+South Walton Web Design,,,FALSE,TRUE,Web Development,web_development
+Beachside Web Services,,,FALSE,TRUE,Web Development,web_development
+Gulf Coast Web Design,,,FALSE,TRUE,Web Development,web_development
+Blue Mountain Web Design,Blue Mountain Beach,,TRUE,TRUE,Web Development,web_development
+The Hub 30A,Seagrove Beach,,TRUE,FALSE,Coworking,coworking
+The Work Room,Seaside,,TRUE,FALSE,Coworking,coworking
+CoWork 30A,Grayton Beach,,TRUE,FALSE,Coworking,coworking
+The Collective 30A,Seagrove Beach,,TRUE,FALSE,Coworking,coworking
+The Studio 30A,Seaside,,TRUE,FALSE,Coworking,coworking
+Destin Coworking,,,FALSE,TRUE,Coworking,coworking
+Miramar Beach Coworking,,,FALSE,TRUE,Coworking,coworking
+South Walton Tech Services,,,FALSE,TRUE,Coworking,coworking
+30A Digital Workspace,Seagrove Beach,,TRUE,FALSE,Coworking,coworking
+Beachside Tech Hub,Santa Rosa Beach,,TRUE,FALSE,Coworking,coworking
+Walton County Remote Work Services,,,FALSE,TRUE,Coworking,coworking
+Flooring America of Destin,,,FALSE,TRUE,Flooring,flooring
+The Floor Store of South Walton,Santa Rosa Beach,,TRUE,TRUE,Flooring,flooring
+South Walton Flooring,,,FALSE,TRUE,Flooring,flooring
+Destin Carpet One Floor & Home,,,FALSE,TRUE,Flooring,flooring
+Coastal Flooring & Interiors,,,FALSE,TRUE,Flooring,flooring
+Beachside Flooring,,,FALSE,TRUE,Flooring,flooring
+Emerald Coast Flooring,,,FALSE,TRUE,Flooring,flooring
+Flooring Solutions of South Walton,,,FALSE,TRUE,Flooring,flooring
+Handyman Connection of Destin,,,FALSE,TRUE,Handyman,handyman
+South Walton Handyman,,,FALSE,TRUE,Handyman,handyman
+Coastal Handyman Services,,,FALSE,TRUE,Handyman,handyman
+The Handy Guys,,,FALSE,TRUE,Handyman,handyman
+Emerald Coast Handyman,,,FALSE,TRUE,Handyman,handyman
+Bay Area Handyman Services,,,FALSE,TRUE,Handyman,handyman
+Handyman Pro of South Walton,,,FALSE,TRUE,Handyman,handyman
+Destin Home Repair,,,FALSE,TRUE,Handyman,handyman
+Destin Counseling Center,,,FALSE,TRUE,Mental Health,mental_health
+The Counseling Center at WaterColor,Watercolor,,TRUE,FALSE,Mental Health,mental_health
+Coastal Counseling Services,,,FALSE,TRUE,Mental Health,mental_health
+South Walton Counseling,Santa Rosa Beach,,TRUE,FALSE,Mental Health,mental_health
+Gulf Coast Therapy Services,,,FALSE,TRUE,Mental Health,mental_health
+Destin Psychological Services,,,FALSE,TRUE,Mental Health,mental_health
+Mindful Path Counseling,Seagrove Beach,,TRUE,FALSE,Mental Health,mental_health
+Serenity Counseling & Wellness,,,FALSE,TRUE,Mental Health,mental_health
+Emerald Coast Therapy Group,,,FALSE,TRUE,Mental Health,mental_health
+Healing Hearts Therapy,,,FALSE,TRUE,Mental Health,mental_health
+Walton Counseling Group,Santa Rosa Beach,,TRUE,FALSE,Mental Health,mental_health
+Destin Behavioral Health Services,,,FALSE,TRUE,Mental Health,mental_health
+30A Photography,Santa Rosa Beach,,TRUE,TRUE,Photography,photography
+Beach Bum Photography,,,FALSE,TRUE,Photography,photography
+Captured Moments Photography,,,FALSE,TRUE,Photography,photography
+Lindsey Leigh Photography,,,FALSE,TRUE,Photography,photography
+Jenna Leigh Photography,,,FALSE,TRUE,Photography,photography
+Coastal Lens Photography,,,FALSE,TRUE,Photography,photography
+Seaside Portraits,Seaside,,TRUE,TRUE,Photography,photography
+Sunshine State Photography,,,FALSE,TRUE,Photography,photography
+Blue Sky Photography,,,FALSE,TRUE,Photography,photography
+Shutter & Snap Photography,,,FALSE,TRUE,Photography,photography
+Emerald Coast Photography,,,FALSE,TRUE,Photography,photography
+Destin Chiropractic,,,FALSE,TRUE,Chiropractic,chiropractic
+Miramar Beach Chiropractic,,,FALSE,TRUE,Chiropractic,chiropractic
+Coastal Chiropractic & Wellness,Santa Rosa Beach,,TRUE,TRUE,Chiropractic,chiropractic
+Grayton Beach Chiropractic,Grayton Beach,,TRUE,TRUE,Chiropractic,chiropractic
+Seaside Chiropractic,Seaside,,TRUE,TRUE,Chiropractic,chiropractic
+Chiropractic Solutions of South Walton,,,FALSE,TRUE,Chiropractic,chiropractic
+Chiropractic Care of South Walton,,,FALSE,TRUE,Chiropractic,chiropractic
+Back in Motion Chiropractic,,,FALSE,TRUE,Chiropractic,chiropractic
+Chiropractic Health Center of Destin,,,FALSE,TRUE,Chiropractic,chiropractic
+Chiropractic Wellness Center of Miramar Beach,,,FALSE,TRUE,Chiropractic,chiropractic
+South Walton Chiropractic & Rehab,Santa Rosa Beach,,TRUE,TRUE,Chiropractic,chiropractic
+The Cleaning Authority Santa Rosa Beach,Santa Rosa Beach,,TRUE,TRUE,Cleaning,cleaning
+MaidPro South Walton,,,FALSE,TRUE,Cleaning,cleaning
+30A Cleaning Service,,,FALSE,TRUE,Cleaning,cleaning
+Sparkle & Shine Cleaning Services,,,FALSE,TRUE,Cleaning,cleaning
+Destin Maid Service,,,FALSE,TRUE,Cleaning,cleaning
+Coastal Cleaning Services,,,FALSE,TRUE,Cleaning,cleaning
+Clean Sweep of South Walton,,,FALSE,TRUE,Cleaning,cleaning
+Beach Bum Cleaning Service,,,FALSE,TRUE,Cleaning,cleaning
+A+ Cleaning Service,,,FALSE,TRUE,Cleaning,cleaning
+Southern Shine Cleaning,,,FALSE,TRUE,Cleaning,cleaning
+Emerald Coast Cleaning Services,,,FALSE,TRUE,Cleaning,cleaning
+The Green Scene Landscaping,Santa Rosa Beach,,TRUE,TRUE,Landscaping,landscaping
+Southern Lawn & Landscape,,,FALSE,TRUE,Landscaping,landscaping
+Emerald Coast Lawn & Landscape,,,FALSE,TRUE,Landscaping,landscaping
+Baytowne Lawn & Landscape,Sandestin,,TRUE,TRUE,Landscaping,landscaping
+Seaside Landscaping,Seaside,,TRUE,TRUE,Landscaping,landscaping
+South Walton Lawn & Landscape,,,FALSE,TRUE,Landscaping,landscaping
+Beachside Lawn & Landscape,,,FALSE,TRUE,Landscaping,landscaping
+The Spa at Grayton Beach,Grayton Beach,,TRUE,FALSE,Wellness,wellness
+30A Massage Therapy,,,FALSE,TRUE,Wellness,wellness
+Seaside Wellness Center,Seaside,,TRUE,FALSE,Wellness,wellness
+Destin Healing Arts Center,,,FALSE,TRUE,Wellness,wellness
+Blue Mountain Yoga & Wellness,Blue Mountain Beach,,TRUE,FALSE,Wellness,wellness
+Saltwater Spa & Wellness,,,FALSE,TRUE,Wellness,wellness
+Body & Soul Wellness,Seagrove Beach,,TRUE,FALSE,Wellness,wellness
+30A Acupuncture & Wellness,Santa Rosa Beach,,TRUE,FALSE,Wellness,wellness
+Serenity Day Spa,Seaside,,TRUE,FALSE,Wellness,wellness
+Healing Hands Massage Therapy,,,FALSE,TRUE,Wellness,wellness
+The Perfect Pearl,Seaside,,TRUE,FALSE,Apparel,apparel
+Salt & Stone Boutique,Seagrove Beach,,TRUE,FALSE,Apparel,apparel
+The Blue Store,Seaside,,TRUE,FALSE,Apparel,apparel
+The Pink Shell Boutique,,,FALSE,TRUE,Apparel,apparel
+The Southern Shirt Company,Seaside,,TRUE,FALSE,Apparel,apparel
+Beachy Keen Boutique,Grayton Beach,,TRUE,FALSE,Apparel,apparel
+Coastal Bliss Boutique,Seagrove Beach,,TRUE,FALSE,Apparel,apparel
+The Law Office of Michael J. O'Connor,Santa Rosa Beach,,TRUE,TRUE,Legal,legal
+Law Office of David L. Brown,,,FALSE,TRUE,Legal,legal
+The Law Office of John M. McDonald,,,FALSE,TRUE,Legal,legal
+Law Office of Richard A. Smith,,,FALSE,TRUE,Legal,legal
+The Law Office of James M. McLemore,,,FALSE,TRUE,Legal,legal
+Law Office of Michael J. McDonald,,,FALSE,TRUE,Legal,legal
+Law Office of Robert W. Smith,,,FALSE,TRUE,Legal,legal
+The Law Office of William H. Johnson,,,FALSE,TRUE,Legal,legal
+Law Office of Thomas J. Brown,,,FALSE,TRUE,Legal,legal
+Destin Dental Group,,,FALSE,TRUE,Dental,dental
+Emerald Coast Family Dentistry,,,FALSE,TRUE,Dental,dental
+Sandestin Dental Care,Sandestin,,TRUE,FALSE,Dental,dental
+Destin Pediatric Dentistry,,,FALSE,TRUE,Dental,dental
+South Walton Pediatric Dentistry,Santa Rosa Beach,,TRUE,FALSE,Dental,dental
+Beachside Dental,,,FALSE,TRUE,Dental,dental
+Coastal Dental Care,,,FALSE,TRUE,Dental,dental
+Destin Smile Center,,,FALSE,TRUE,Dental,dental
+The Henderson,,,FALSE,TRUE,Hotels & Resorts,hotels_and_resorts
+The Design Group,,,FALSE,TRUE,Interior Design,interior_design
+Luxe Interiors + Design,,,FALSE,TRUE,Interior Design,interior_design
+Beachy Keen Interiors,Seaside,,TRUE,TRUE,Interior Design,interior_design
+Seagrove Interiors,Seagrove Beach,,TRUE,TRUE,Interior Design,interior_design
+Interior Motives,,,FALSE,TRUE,Interior Design,interior_design
+Designs by Linda,,,FALSE,TRUE,Interior Design,interior_design
+The Nail Bar Santa Rosa Beach,Santa Rosa Beach,,TRUE,FALSE,Nail Salons,nail_salons
+Polished Nail Bar & Spa,,,FALSE,TRUE,Nail Salons,nail_salons
+Nail Studio 30A,Seagrove Beach,,TRUE,FALSE,Nail Salons,nail_salons
+Nail Art Studio,,,FALSE,TRUE,Nail Salons,nail_salons
+Luxe Nails & Spa,,,FALSE,TRUE,Nail Salons,nail_salons
+Nail Lounge 30A,Seaside,,TRUE,FALSE,Nail Salons,nail_salons
+Beach Nails & Spa,Santa Rosa Beach,,TRUE,FALSE,Nail Salons,nail_salons
+Nail & Spa 30A,,,FALSE,TRUE,Nail Salons,nail_salons
+Emerald Coast Pest Control,,,FALSE,TRUE,Pest Control,pest_control
+Coastal Pest Control of NW Florida,,,FALSE,TRUE,Pest Control,pest_control
+Beachside Pest Control,Santa Rosa Beach,,TRUE,TRUE,Pest Control,pest_control
+Gulf Coast Pest Control,,,FALSE,TRUE,Pest Control,pest_control
+Pest Pro of Northwest Florida,,,FALSE,TRUE,Pest Control,pest_control
+All Pro Pest Control,,,FALSE,TRUE,Pest Control,pest_control
+WaterColor Realty,Santa Rosa Beach,,TRUE,TRUE,Vacation Rental Management,vacation_rental_management
+Paradise Properties,,,FALSE,TRUE,Vacation Rental Management,vacation_rental_management
+Southern Vacation Rentals,,,FALSE,TRUE,Vacation Rental Management,vacation_rental_management
+Blue Sky Vacation Rentals,,,FALSE,TRUE,Vacation Rental Management,vacation_rental_management
+Coastal Comfort Heating & Air,,,FALSE,TRUE,HVAC,hvac
+Emerald Coast Air Conditioning,,,FALSE,TRUE,HVAC,hvac
+Bay Breeze Heating & Air,,,FALSE,TRUE,HVAC,hvac
+Gulf Coast Heating & Air,,,FALSE,TRUE,HVAC,hvac
+Aqua Air Conditioning & Heating,,,FALSE,TRUE,HVAC,hvac
+Suncoast Air Conditioning & Heating,,,FALSE,TRUE,HVAC,hvac
+All About Insurance,,,FALSE,TRUE,Insurance,insurance
+Coastal Insurance Group,,,FALSE,TRUE,Insurance,insurance
+Beach Insurance Agency,Santa Rosa Beach,,TRUE,FALSE,Insurance,insurance
+Gulf Coast Insurance Group,,,FALSE,TRUE,Insurance,insurance
+Watersound Insurance Agency,Watersound,,TRUE,FALSE,Insurance,insurance
+The Jewelry Box of Destin,,,FALSE,TRUE,Jewelry,retail_jewelry
+Blue Mountain Jewelry,Blue Mountain Beach,,TRUE,FALSE,Jewelry,retail_jewelry
+Coastal Jewelry Repair,,,FALSE,TRUE,Jewelry,retail_jewelry
+The Spa at WaterColor,WaterColor,,TRUE,FALSE,Spas,spas
+The Pearl Spa at The Pearl Hotel,Rosemary Beach,,TRUE,FALSE,Spas,spas
+Serenity Spa at Sandestin,Sandestin,,TRUE,FALSE,Spas,spas
+The Spa at Emerald Grande,,,FALSE,TRUE,Spas,spas
+Island Massage Therapy,,,FALSE,TRUE,Spas,spas
+30A Massage,,,FALSE,TRUE,Spas,spas
+Salon 30A,Santa Rosa Beach,,TRUE,FALSE,Hair Salons,hair_salons
+The Hair Loft Miramar Beach,,,FALSE,TRUE,Hair Salons,hair_salons
+The Strand Salon & Spa,,,FALSE,TRUE,Hair Salons,hair_salons
+Emerald Coast Home Solutions,,,FALSE,TRUE,Home Improvement,home_improvement
+South Walton Home Repair,,,FALSE,TRUE,Home Improvement,home_improvement
+Beachside Renovations,,,FALSE,TRUE,Home Improvement,home_improvement
+Bay Plumbing & Drain,,,FALSE,TRUE,Plumbing,plumbing
+Coastal Plumbing & Drain,,,FALSE,TRUE,Plumbing,plumbing
+Suncoast Window & Door,,,FALSE,TRUE,Windows & Doors,windows_and_doors
+Coastal Windows & Doors,,,FALSE,TRUE,Windows & Doors,windows_and_doors
+Bay Breeze Windows & Doors,Santa Rosa Beach,,TRUE,TRUE,Windows & Doors,windows_and_doors
+The Village Door,Seaside,,TRUE,FALSE,Entertainment,entertainment
+WaterColor Golf Cart Rentals,Watercolor,,TRUE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Seagrove Golf Cart Rentals,Seagrove Beach,,TRUE,TRUE,Golf Cart Rentals,automotive_golf_cart_rentals
+Watercolor Market,Watercolor,,TRUE,FALSE,Online Retail,online_retail
+Baldwin Krystyn Sherman Architects,Santa Rosa Beach,,TRUE,FALSE,Architecture,architecture
+Studio 30A Architecture,,,FALSE,TRUE,Architecture,architecture
+Baldwin Architects & Associates,Santa Rosa Beach,,TRUE,FALSE,Architecture,architecture
+Seaside Soap Company,Seaside,,TRUE,FALSE,Home & Gifts,home_and_gifts
+The Market at Grayton,Grayton Beach,,TRUE,FALSE,Home & Gifts,home_and_gifts
+30A Web Solutions,Santa Rosa Beach,,TRUE,TRUE,Web Development,web_development
+Coastal Web Design,,,FALSE,TRUE,Web Development,web_development
+Saltwater Web Studio,Seaside,,TRUE,TRUE,Web Development,web_development
+South Walton Digital,,,FALSE,TRUE,Web Development,web_development
+Watercolor Web Services,Watercolor,,TRUE,TRUE,Web Development,web_development
+Seaside Inn,Seaside,,TRUE,FALSE,Hotels & Resorts,hotels_and_resorts

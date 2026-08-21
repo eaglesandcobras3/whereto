@@ -21,6 +21,7 @@ export const FEATURE_FLAG_KEYS = [
   "business_maps",
   "town_maps",
   "town_relationship",
+  "multiple_category",
   "feedback",
   "category_hub_seo",
 ] as const;
@@ -46,6 +47,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   business_maps: false,
   town_maps: false,
   town_relationship: false,
+  multiple_category: false,
   feedback: false,
   category_hub_seo: false,
 };
@@ -164,6 +166,14 @@ export function isTownMapsEnabled(flags: FeatureFlags): boolean {
 /** 30A corridor neighbor timeline on town detail pages. */
 export function isTownRelationshipEnabled(flags: FeatureFlags): boolean {
   return flags.town_relationship === true;
+}
+
+/**
+ * Multi-leaf category memberships (primary + extras).
+ * Flag off: primary-only UX and browse filters. Schema/backfill can exist either way.
+ */
+export function isMultipleCategoryEnabled(flags: FeatureFlags): boolean {
+  return flags.multiple_category === true;
 }
 
 /** Visitor “is this wrong?” field flags on unverified business / rental detail pages. */

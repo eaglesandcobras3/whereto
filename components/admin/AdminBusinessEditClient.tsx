@@ -13,13 +13,18 @@ type OptionCategory = { id: string; title: string; slug: string; parent_category
 type Props = {
   businessId: string;
   photosEnabled: boolean;
+  multipleCategoryEnabled?: boolean;
 };
 
 const inputClass =
   "mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10";
 const labelClass = "block text-sm font-medium text-zinc-700";
 
-export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
+export function AdminBusinessEditClient({
+  businessId,
+  photosEnabled,
+  multipleCategoryEnabled = false,
+}: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -43,6 +48,7 @@ export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
   const [townId, setTownId] = useState("");
   const [areaId, setAreaId] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [isStorefront, setIsStorefront] = useState(true);
   const [isService, setIsService] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -60,6 +66,8 @@ export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
       .then(async (res) => {
         const j = (await res.json()) as {
           business?: AdminBusinessRow;
+          category_ids?: string[];
+          multiple_category?: boolean;
           options?: {
             towns?: OptionTown[];
             areas?: OptionArea[];
@@ -87,6 +95,12 @@ export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
         setTownId(b.town_id ?? "");
         setAreaId(b.area_id ?? "");
         setCategoryId(b.primary_category_id ?? "");
+        const memberships = j.category_ids?.length
+          ? j.category_ids
+          : b.primary_category_id
+            ? [b.primary_category_id]
+            : [];
+        setCategoryIds(memberships);
         setIsStorefront(Boolean(b.is_storefront));
         setIsService(Boolean(b.is_service_business));
         setIsVerified(Boolean(b.is_verified));
@@ -127,7 +141,7 @@ export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const body = {
+    const body: Record<string, unknown> = {
       title,
       phone,
       email,
@@ -151,6 +165,15 @@ export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
       search_tags: tags,
       regenerate_slug: regenerateSlug,
     };
+    if (multipleCategoryEnabled) {
+      const ids = categoryIds.includes(categoryId) || !categoryId
+        ? categoryIds
+        : [categoryId, ...categoryIds.filter((id) => id !== categoryId)];
+      body.category_ids = ids.slice(0, 5);
+      if (categoryId && !ids.includes(categoryId)) {
+        body.primary_category_id = categoryId;
+      }
+    }
 
     try {
       const res = await fetch(`/api/admin/businesses/${encodeURIComponent(businessId)}`, {
@@ -272,11 +295,19 @@ export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
         </div>
 
         <label className={labelClass}>
-          Category
+          {multipleCategoryEnabled ? "Primary category" : "Category"}
           <select
             className={inputClass}
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setCategoryId(next);
+              if (multipleCategoryEnabled && next) {
+                setCategoryIds((prev) =>
+                  prev.includes(next) ? prev : [next, ...prev].slice(0, 5),
+                );
+              }
+            }}
           >
             <option value="">—</option>
             {categories.map((c) => (
@@ -286,6 +317,46 @@ export function AdminBusinessEditClient({ businessId, photosEnabled }: Props) {
             ))}
           </select>
         </label>
+
+        {multipleCategoryEnabled ? (
+          <fieldset className="space-y-2 rounded-xl border border-zinc-200 p-3">
+            <legend className="px-1 text-sm font-medium text-zinc-700">
+              Additional categories (max 5 total)
+            </legend>
+            <p className="text-xs text-zinc-500">
+              Primary is always included. Check other leaves this business should appear under.
+            </p>
+            <div className="max-h-48 space-y-1 overflow-y-auto text-sm">
+              {categories.map((c) => {
+                const checked = categoryIds.includes(c.id);
+                const isPrimary = c.id === categoryId;
+                return (
+                  <label key={c.id} className="flex items-center gap-2 text-zinc-700">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={isPrimary}
+                      onChange={(e) => {
+                        if (isPrimary) return;
+                        setCategoryIds((prev) => {
+                          if (e.target.checked) {
+                            if (prev.length >= 5) return prev;
+                            return [...prev, c.id];
+                          }
+                          return prev.filter((id) => id !== c.id);
+                        });
+                      }}
+                    />
+                    <span>
+                      {c.title}
+                      {isPrimary ? " (primary)" : ""}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        ) : null}
 
         <div className="flex flex-wrap gap-4 text-sm text-zinc-700">
           <label className="flex items-center gap-2">

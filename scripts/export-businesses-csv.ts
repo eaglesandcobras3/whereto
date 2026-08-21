@@ -78,7 +78,7 @@ const SELECT = `
   map_lat, map_lng,
   towns ( title ),
   areas ( title ),
-  business_categories ( title, slug ),
+  business_categories!primary_category_id ( title, slug ),
   service_categories ( title, slug )
 `;
 

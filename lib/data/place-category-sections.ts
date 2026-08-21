@@ -26,7 +26,7 @@ export {
 export type { PlaceCategorySection };
 
 export const BIZ_CATEGORY_SELECT =
-  "id, title, slug, area_id, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories ( id, title, slug )";
+  "id, title, slug, area_id, excerpt, primary_category_id, main_image, hero_image, main_image_url, hero_image_url, business_categories!primary_category_id ( id, title, slug )";
 
 export type CategoryBusiness = BrowseBusinessCard & {
   categoryId: string | null;

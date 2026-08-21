@@ -30,7 +30,7 @@ export type HubPresenceFilter = "all" | "storefront" | "service";
 
 /** Batch load for hubs — category slug for grouping. */
 const CATEGORY_HUB_BUSINESS_SELECT =
-  "id, slug, title, excerpt, primary_category_id, is_storefront, is_service_business, main_image, hero_image, main_image_url, hero_image_url, business_categories ( slug )";
+  "id, slug, title, excerpt, primary_category_id, is_storefront, is_service_business, main_image, hero_image, main_image_url, hero_image_url, business_categories!primary_category_id ( slug )";
 
 export type CategoryRow = {
   id: string;
@@ -127,6 +127,7 @@ export async function resolveCategorySlugFromPublicPath(
 export async function loadBusinessesForCategory(
   categoryId: string,
   presence: HubPresenceFilter = "all",
+  opts?: { useMemberships?: boolean },
 ): Promise<CategoryBusinessRow[]> {
   const supabase = getServiceSupabase();
   let query = supabase
@@ -136,10 +137,21 @@ export async function loadBusinessesForCategory(
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .eq("primary_category_id", categoryId)
     .order("featured", { ascending: false })
     .order("title", { ascending: true })
     .limit(500);
+
+  if (opts?.useMemberships) {
+    const { businessIdsForCategoryMembership } = await import(
+      "@/lib/categories/business-category-memberships"
+    );
+    const ids = await businessIdsForCategoryMembership(categoryId, supabase);
+    if (ids.length === 0) return [];
+    query = query.in("id", ids);
+  } else {
+    query = query.eq("primary_category_id", categoryId);
+  }
+
   query = applyPresenceFilter(query, presence);
 
   const { data } = await query;
@@ -300,7 +312,12 @@ export async function loadCategoryHubPage(slug: string) {
   const cat = await loadCategory(slug);
   if (!cat) return null;
 
-  const businesses = await loadBusinessesForCategory(cat.id, "all");
+  const { getAllFeatureFlags, isMultipleCategoryFeatureEnabled } = await import(
+    "@/lib/feature-flags"
+  );
+  const flags = await getAllFeatureFlags();
+  const useMemberships = isMultipleCategoryFeatureEnabled(flags);
+  const businesses = await loadBusinessesForCategory(cat.id, "all", { useMemberships });
 
   return {
     cat,

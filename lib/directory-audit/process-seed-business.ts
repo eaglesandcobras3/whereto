@@ -714,6 +714,19 @@ export async function processSeedBusiness(
     };
   }
 
+  try {
+    const { syncMembershipsToPrimary } = await import(
+      "@/lib/categories/business-category-memberships"
+    );
+    await syncMembershipsToPrimary(
+      String(built.insertRow.id),
+      (built.insertRow.primary_category_id as string | null) ?? null,
+      supabase,
+    );
+  } catch (e) {
+    console.error("seed memberships", e);
+  }
+
   return {
     outcome: force && !verified ? "force_imported" : "imported",
     reason: force && !verified ? "Force-imported without verified exists status" : "Inserted",

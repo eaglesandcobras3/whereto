@@ -73,7 +73,7 @@ async function fetchAll(): Promise<Row[]> {
     const { data, error } = await supabase
       .from("businesses")
       .select(
-        "id, title, slug, business_type, is_service_business, is_storefront, service_category_id, service_categories ( slug, title ), business_categories ( slug, title )",
+        "id, title, slug, business_type, is_service_business, is_storefront, service_category_id, service_categories ( slug, title ), business_categories!primary_category_id ( slug, title )",
       )
       .is("archived_at", null)
       .eq("status", "published")

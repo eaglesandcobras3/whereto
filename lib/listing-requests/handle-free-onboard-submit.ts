@@ -239,6 +239,7 @@ export async function handleFreeOnboardListingRequest(
     excerpt: d.excerpt,
     overview: d.overview,
     category_id: d.category_id,
+    category_ids: d.category_ids?.length ? d.category_ids : undefined,
     category_title: categoryTitle,
     service_category_id: null,
     service_category_title: null,

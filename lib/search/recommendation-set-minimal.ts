@@ -468,7 +468,7 @@ export async function buildMinimalSearchResult(
   let query = supabase
     .from("businesses_view")
     .select(
-      `id, town_id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, price_level, main_image, hero_image, main_image_url, hero_image_url, status, featured, date_updated, business_categories ( title, slug ), towns ( title, slug )`,
+      `id, town_id, slug, title, address, phone, website, content, excerpt, map_lat, map_lng, review_rating_cached, review_count_cached, price_level, main_image, hero_image, main_image_url, hero_image_url, status, featured, date_updated, business_categories!primary_category_id ( title, slug ), towns ( title, slug )`,
       { count: "exact" },
     )
     .is("archived_at", null)

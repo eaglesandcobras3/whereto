@@ -131,6 +131,8 @@ type Props = {
   mode?: ListBusinessMode;
   /** Prefill from existing listing slug (update/claim). */
   businessSlug?: string | null;
+  /** When true, allow selecting additional leaf categories (max 5). */
+  multipleCategoryEnabled?: boolean;
 };
 
 function newLocationKey() {
@@ -147,7 +149,12 @@ function CharCount({ value, max }: { value: string; max: number }) {
 
 type FindPhase = "searching" | "selected" | "creating-new";
 
-export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
+export function FreeOnboardForm({
+  towns,
+  mode = "find",
+  businessSlug,
+  multipleCategoryEnabled = false,
+}: Props) {
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -180,6 +187,7 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState("");
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [prefillCategoryTitle, setPrefillCategoryTitle] = useState<string | null>(null);
   const [prefillCategoryGroupTitle, setPrefillCategoryGroupTitle] = useState<string | null>(null);
   const [suggestedCategory, setSuggestedCategory] = useState("");
@@ -542,6 +550,15 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
       excerpt: excerptTrimmed,
       overview: overviewTrimmed,
       category_id: categoryId || null,
+      category_ids:
+        multipleCategoryEnabled && categoryId
+          ? Array.from(
+              new Set([
+                categoryId,
+                ...categoryIds.filter((id) => id && id !== categoryId),
+              ]),
+            ).slice(0, 5)
+          : undefined,
       service_category_id: null,
       suggested_category: suggestedCategoryTrimmed || null,
       search_tags: selectedTags,
@@ -1271,6 +1288,11 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
             setCategoryId(id);
             setPrefillCategoryTitle(null);
             setPrefillCategoryGroupTitle(null);
+            if (multipleCategoryEnabled && id) {
+              setCategoryIds((prev) =>
+                prev.includes(id) ? prev : [id, ...prev].slice(0, 5),
+              );
+            }
             setFieldErrors((prev) => {
               const next = { ...prev };
               delete next.category_id;
@@ -1291,6 +1313,45 @@ export function FreeOnboardForm({ towns, mode = "find", businessSlug }: Props) {
           }}
         />
         <FieldError message={fieldErrors.category_id ?? fieldErrors.suggested_category} />
+        {multipleCategoryEnabled && categoryId && !suggestedCategory.trim() ? (
+          <fieldset className="mt-3 space-y-2 rounded-xl border border-[var(--color-border)] p-3">
+            <legend className="px-1 text-sm font-medium text-[var(--color-text-primary)]">
+              Additional categories (optional)
+            </legend>
+            <p className={helpClass}>
+              Primary is set above. Add up to {5 - 1} more if the business clearly fits.
+            </p>
+            <div className="max-h-40 space-y-1 overflow-y-auto text-sm">
+              {categories
+                .filter((c) => c.id !== categoryId)
+                .map((c) => {
+                  const checked = categoryIds.includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setCategoryIds((prev) => {
+                            const base = prev.includes(categoryId) ? prev : [categoryId, ...prev];
+                            if (e.target.checked) {
+                              if (base.length >= 5) return base;
+                              return base.includes(c.id) ? base : [...base, c.id];
+                            }
+                            return base.filter((id) => id !== c.id);
+                          });
+                        }}
+                      />
+                      <span>
+                        {c.rollupTitle ? `${c.rollupTitle} · ` : ""}
+                        {c.title}
+                      </span>
+                    </label>
+                  );
+                })}
+            </div>
+          </fieldset>
+        ) : null}
       </div>
 
       <div id="search-tags" tabIndex={-1}>

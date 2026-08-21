@@ -26,7 +26,7 @@ export type BusinessMapMarker = {
 };
 
 const MARKER_SELECT =
-  "id, title, slug, map_lat, map_lng, main_image, hero_image, main_image_url, hero_image_url, business_categories ( slug, title )";
+  "id, title, slug, map_lat, map_lng, main_image, hero_image, main_image_url, hero_image_url, business_categories!primary_category_id ( slug, title )";
 const MARKER_CAP = 500;
 
 function categoryFromRow(row: Record<string, unknown>): {

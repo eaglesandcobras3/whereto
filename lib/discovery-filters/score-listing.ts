@@ -43,7 +43,14 @@ export function rowMatchesEntityType(
 
 export function rowMatchesStorefrontGroup(row: PoolRow, groupSlug: string): boolean {
   const cat = row.business_categories as { slug?: string } | null;
-  return businessCategoryGroupForSlug(cat?.slug ?? null) === groupSlug;
+  if (businessCategoryGroupForSlug(cat?.slug ?? null) === groupSlug) return true;
+  const extras = row.membership_category_slugs;
+  if (Array.isArray(extras)) {
+    for (const slug of extras) {
+      if (businessCategoryGroupForSlug(String(slug)) === groupSlug) return true;
+    }
+  }
+  return false;
 }
 
 export function rowMatchesServiceGroup(row: PoolRow, groupSlug: string): boolean {
@@ -83,6 +90,17 @@ export function listingKeywordMatchSlugs(row: PoolRow): string[] {
     slugs.add(catSlug);
     const group = businessCategoryGroupForSlug(catSlug);
     if (group) slugs.add(group);
+  }
+
+  const extras = row.membership_category_slugs;
+  if (Array.isArray(extras)) {
+    for (const raw of extras) {
+      const s = String(raw).trim().toLowerCase();
+      if (!s) continue;
+      slugs.add(s);
+      const group = businessCategoryGroupForSlug(s);
+      if (group) slugs.add(group);
+    }
   }
 
   const svc = row.service_categories as { slug?: string } | null;

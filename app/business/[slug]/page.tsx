@@ -101,7 +101,7 @@ async function loadBusiness(slug: string) {
         claim_status, search_tags, status, published_at, price_level, is_verified, is_storefront,
         towns ( title, slug ),
         areas ( title, slug ),
-        business_categories ( title, slug )
+        business_categories!primary_category_id ( title, slug )
       `;
 
     const { data: business, error: bizErr } = isUuid

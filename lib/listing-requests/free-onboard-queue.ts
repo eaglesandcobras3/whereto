@@ -308,6 +308,28 @@ export async function createFreeListingForLocation(
     .single();
   if (createErr || !created) throw new Error(createErr?.message ?? "Could not create business");
 
+  try {
+    const { replaceMemberships, syncMembershipsToPrimary } = await import(
+      "@/lib/categories/business-category-memberships"
+    );
+    const extras = Array.isArray(payload.category_ids) ? payload.category_ids : [];
+    if (extras.length > 0 && payload.category_id) {
+      await replaceMemberships(
+        created.id as string,
+        { primaryId: payload.category_id, categoryIds: extras },
+        supabase,
+      );
+    } else {
+      await syncMembershipsToPrimary(
+        created.id as string,
+        payload.category_id ?? null,
+        supabase,
+      );
+    }
+  } catch (e) {
+    console.error("free-onboard memberships", e);
+  }
+
   loc.status = "created";
   loc.resulting_business_id = created.id as string;
   loc.resulting_business_slug = created.slug as string;
@@ -533,6 +555,28 @@ async function createFreeServiceListingWithoutTown(
     .single();
   if (createErr || !createdBiz) throw new Error(createErr?.message ?? "Could not create business");
 
+  try {
+    const { replaceMemberships, syncMembershipsToPrimary } = await import(
+      "@/lib/categories/business-category-memberships"
+    );
+    const extras = Array.isArray(payload.category_ids) ? payload.category_ids : [];
+    if (extras.length > 0 && payload.category_id) {
+      await replaceMemberships(
+        createdBiz.id as string,
+        { primaryId: payload.category_id, categoryIds: extras },
+        supabase,
+      );
+    } else {
+      await syncMembershipsToPrimary(
+        createdBiz.id as string,
+        payload.category_id ?? null,
+        supabase,
+      );
+    }
+  } catch (e) {
+    console.error("free-onboard memberships", e);
+  }
+
   // Synthetic resolved location so finalize/email link paths stay consistent.
   payload.locations = [
     {
@@ -653,6 +697,24 @@ export async function approveFreeUpdate(
 
   const { error: updateErr } = await supabase.from("businesses").update(updates).eq("id", businessId);
   if (updateErr) throw new Error(updateErr.message);
+
+  try {
+    const { replaceMemberships, syncMembershipsToPrimary } = await import(
+      "@/lib/categories/business-category-memberships"
+    );
+    const extras = Array.isArray(payload.category_ids) ? payload.category_ids : [];
+    if (extras.length > 0 && payload.category_id) {
+      await replaceMemberships(
+        businessId,
+        { primaryId: payload.category_id, categoryIds: extras },
+        supabase,
+      );
+    } else {
+      await syncMembershipsToPrimary(businessId, payload.category_id ?? null, supabase);
+    }
+  } catch (e) {
+    console.error("free-onboard memberships", e);
+  }
 
   // First location updates the existing listing; any extra rows are skipped (no new listings).
   if (primaryLoc) {

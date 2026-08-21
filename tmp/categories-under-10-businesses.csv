@@ -1,0 +1,98 @@
+business_count,category_title,category_slug,rollup_title,rollup_slug,category_status,category_id
+0,Appliance Repair,appliance_repair,Home Services,home_services,published,be27a982-94a8-4792-82d9-d7f3adcbf4e7
+0,Arts & Culture,arts_and_culture,Things To Do,things_to_do,published,9232c6d6-ab4c-417b-981e-a6c0de8313ca
+0,Artwork,artwork,Retail Services,retail_services,published,1e97d8a4-7b61-492f-902b-56ec5b6118ed
+0,Attractions,attractions,Things To Do,things_to_do,published,39a3fce2-d5c6-404f-9f13-04b1e5c41707
+0,Auto Repair,auto_repair,Automotive,automotive,published,f73e15f9-cc94-4321-b43c-fa6a40e3e0b1
+0,Baby Equipment Rentals,baby_equipment_rentals,Rentals,rentals,published,ea2c313f-858b-4256-810a-f7a88b66a147
+0,Bike Rentals,bike_rentals,Rentals,rentals,published,6467ec18-8908-43b8-8d94-c20b8315f5a9
+0,Boat Rentals,boat_rentals,Marine,marine,published,ca90f07d-28c5-4592-b181-d85d54dc90a1
+0,Boat Repair,boat_repair,Marine,marine,published,848fa1b3-800b-41a5-bb80-18201d2d72b2
+0,Boat Storage,boat_storage,Marine,marine,published,c5b7a176-dad4-4d14-bea1-d2063bc46c9c
+0,Branding,branding,Creative Services,creative_services,published,251f4273-8937-4c0b-907e-308e808b24ad
+0,Breweries & Wine,breweries_and_wine,Food & Drink,food_and_drink,published,ee1653ca-3699-4881-9be3-bba541d0fb7e
+0,Campgrounds & RV Parks,campgrounds_and_rv_parks,Places to Stay,places_to_stay,published,13e074e5-5045-4a83-919b-f9edf9906646
+0,Car Rental,car_rental,Automotive,automotive,published,5c8c5a9e-5903-4950-a684-6e2869eb20dc
+0,Catering,catering,Creative Services,creative_services,published,4009d237-f798-4d60-ae1b-82083a1a95c4
+0,Childcare,childcare,Family & Education,family_and_education,published,bdca8d62-40e1-4fbc-88fd-7c614d84e2c8
+0,Coastal Apparel,coastal_apparel,Retail Services,retail_services,published,5afb1456-0033-487e-909d-3ba84b17d57b
+0,Computer Repair,computer_repair,Technology,technology,published,4660ce63-4b63-4537-a946-a56d0c450034
+0,Concrete & Masonry,concrete_and_masonry,Home Services,home_services,published,0386dc62-5de2-4202-b168-dcdc36e23030
+0,Dermatology,dermatology,Medical,medical,published,9e62081c-25f7-4fb9-90d2-ff6ed1da6de3
+0,Dock Services,dock_services,Marine,marine,published,012dbe2e-6aee-4e7f-bd24-4783505bde51
+0,E-commerce,e_commerce,Retail Services,retail_services,published,10c1bfdd-5ff7-41bf-971c-4aa24e6d3353
+0,Education,education,Family & Education,family_and_education,published,ecb4f53e-27b3-4b7e-8312-f2585688f944
+0,Electrical,electrical,Home Services,home_services,published,e206ae85-698b-4891-a262-e2287dddaffd
+0,Equipment Rentals,equipment_rentals,Rentals,rentals,published,1bf61f65-7417-4917-a903-c5e775f5012c
+0,Event Planning,event_planning,Creative Services,creative_services,published,8646c489-6e2c-4137-8866-2d8ec81d85b0
+0,Event Rentals,event_rentals,Rentals,rentals,published,91184265-74c8-4955-8c05-110365901911
+0,Fishing Charters,fishing_charters,Marine,marine,published,11648ce4-44a9-4643-84e4-43f151ccf1a7
+0,Furniture,furniture,Retail Services,retail_services,published,3d4ce40f-52ca-4b16-99df-dbfe74c0a51a
+0,Golf Cart Rentals,rentals_golf_cart_rentals,Rentals,rentals,published,1bafc417-ea42-42ff-b9ae-6546f3c6d88d
+0,Golf Cart Rentals,automotive_golf_cart_rentals,Automotive,automotive,published,27712662-5b91-40cb-a1f4-b1b09f071037
+0,Golf Cart Repair,golf_cart_repair,Automotive,automotive,published,f3b6addd-8779-4b9f-8987-047049a215b9
+0,Golf Cart Sales,golf_cart_sales,Automotive,automotive,published,177d58e8-ad21-47f4-a4b9-580be8a726a2
+0,Graphic Design,graphic_design,Creative Services,creative_services,published,fb439d79-8d58-447e-84f4-311a9bcb1aeb
+0,Home Decor,home_decor,Retail Services,retail_services,published,b4e78468-e622-4e26-93ef-73a121f50024
+0,Irrigation,irrigation,Home Services,home_services,published,67b1d168-cdb5-4692-9ac5-401fd0b8af5d
+0,IT Services,it_services,Technology,technology,published,fc9d33ca-270f-4548-aef4-f59fa0476f05
+0,Jet Ski Rentals,jet_ski_rentals,Marine,marine,published,2d3078f8-0961-488c-b8ac-f43884ac25bf
+0,Jewelry,shopping_jewelry,Shopping,shopping,published,e1a127f0-ed29-4256-8529-9a9175be077a
+0,Junk Removal,junk_removal,Home Services,home_services,published,af5b0e93-5ee9-4380-b7c3-21a78ff8940d
+0,Lawn Care,lawn_care,Home Services,home_services,published,e1e9d309-e8d9-41ed-a0b3-6c333c6ec242
+0,Marine Services,marine_services,Marine,marine,published,64b2f130-faa0-4880-84f8-bd09db8f2924
+0,Marketing,marketing,Creative Services,creative_services,published,c95fc6ea-a9f0-4ec4-97a6-8731a8d61292
+0,Mobile Detailing,mobile_detailing,Automotive,automotive,published,8cf41b50-1464-42fd-a700-81e71bac4e53
+0,Moving,moving,Home Services,home_services,published,9a33fa48-1dec-4b2b-a920-a703ebf72c7d
+0,Music Lessons,music_lessons,Family & Education,family_and_education,published,e4170112-2149-430e-aac7-b8e09d60cfa0
+0,Online Retail,online_retail,Retail Services,retail_services,published,f1404b1f-2cea-49ba-b0f1-0e97073c5847
+0,Pet Services,pet_services,Family & Education,family_and_education,published,49f1762a-7e40-4cb6-b842-d497688ec6c3
+0,Pool & Spa,pool_and_spa,Home Services,home_services,published,eac86778-2b30-46b0-b4cb-f244c7771915
+0,Pressure Washing,pressure_washing,Home Services,home_services,published,903800d6-adc7-4b2e-b3f8-ae5a7ba6cd45
+0,Printing Services,printing_services,Technology,technology,published,999c16d1-4ab4-4eec-974f-f7d414af245c
+0,Property Management,property_management,Home Services,home_services,published,cab23580-5356-4802-af09-c00ae974f5bd
+0,Roofing,roofing,Home Services,home_services,published,303ba0f1-ed13-4be5-96b3-e32152c193dc
+0,Solar,solar,Home Services,home_services,published,2490db8d-7b1d-41cf-8560-15e46e271141
+0,Towing,towing,Automotive,automotive,published,ca5f919d-b1f2-46a4-9bff-7dc1259d677f
+0,Tutoring,tutoring,Family & Education,family_and_education,published,cdb57cf6-4029-430c-95b9-ca7c066e5da7
+0,Veterinary,veterinary,Medical,medical,published,5a43cc1c-af2b-4bf6-bf20-559c050648f0
+0,Videography,videography,Creative Services,creative_services,published,9075ef0b-c6a9-4264-b823-538768adb8e3
+0,Water Activities,water_activities,Things To Do,things_to_do,published,6179c321-d9c6-4da2-bd42-59c83d7eceaf
+0,Web Design,web_design,Creative Services,creative_services,published,1b753592-2689-46f0-9b9c-1f0bf4b6af38
+0,Wedding Services,wedding_services,Creative Services,creative_services,published,031b3b98-7703-4453-91ea-523511767ec7
+1,Architecture,architecture,Creative Services,creative_services,published,6e1adefc-3290-43b5-a876-3d0a7f8c37f1
+1,Coastal Gifts,coastal_gifts,Retail Services,retail_services,published,23d49123-37d0-4ba9-85eb-b289eaf64ec6
+1,Contractors,contractors,Home Services,home_services,published,9bd0033f-da14-4fff-8d5b-791546f3ef19
+1,Home & Gifts,home_and_gifts,Shopping,shopping,published,55778fc2-f8e6-49c2-ac91-056b18fc8ac1
+1,Home Inspection,home_inspection,Home Services,home_services,published,a53ecb11-76b8-4a8f-a821-732a2e38bb00
+1,Painting,painting,Home Services,home_services,published,e540bc5d-91f7-432b-9f41-d158a0c3b1f2
+1,Restoration,restoration,Home Services,home_services,published,c95c04df-b2d5-4fd1-8125-795566c37a32
+1,Security Systems,security_systems,Home Services,home_services,published,a788c00e-3811-497d-90b2-566639656273
+1,Vacation Rentals,vacation_rentals,Places to Stay,places_to_stay,published,2dffbe12-1b6a-41c8-8742-18be43440e60
+1,Web Development,web_development,Technology,technology,published,e1182dab-884a-4c9a-9fca-3dd07fa3275a
+2,Coworking,coworking,Technology,technology,published,7f99a297-7bbd-444e-8398-ebc6e242f35b
+2,Flooring,flooring,Home Services,home_services,published,9a971ea6-d6b9-484c-bf7a-dee86bf7762b
+2,Handyman,handyman,Home Services,home_services,published,88924b74-7dfa-40ec-a93e-f1ba42206184
+2,Mental Health,mental_health,Medical,medical,published,880c8d07-e034-404d-8e0d-76e0b93932c1
+2,Photography,photography,Creative Services,creative_services,published,887c530a-209d-4a28-8230-45d4ffdc8c4b
+3,Chiropractic,chiropractic,Medical,medical,published,f3ee6cc4-1c7a-4c53-83cd-26767e5b7221
+3,Cleaning,cleaning,Home Services,home_services,published,d1bb0918-0e83-429a-bbb0-ef5a23fd4e2b
+3,Landscaping,landscaping,Home Services,home_services,published,4a458877-73a6-49e9-8961-4c4b0bf45abe
+3,Wellness,wellness,Beauty & Wellness,beauty_and_wellness,published,412e245b-08d8-4471-b350-ff0a19903ea5
+4,Apparel,apparel,Retail Services,retail_services,published,7841baea-4c03-4431-bd96-3722dd48ac10
+4,Legal,legal,Professional,professional,published,7c482411-4bc5-4feb-9784-34bd6e36c49f
+5,Dental,dental,Medical,medical,published,d0bcd8d4-a490-4580-a477-49b2d6ce2106
+5,Hotels & Resorts,hotels_and_resorts,Places to Stay,places_to_stay,published,e3fb4fa1-7a05-4792-bc0d-b2ce26b01c79
+5,Interior Design,interior_design,Creative Services,creative_services,published,fd24813d-370a-4c3d-a338-c6d1eb94023c
+5,Nail Salons,nail_salons,Beauty & Wellness,beauty_and_wellness,published,eb96e246-8e03-40d4-8de4-2d76e888e7cf
+5,Pest Control,pest_control,Home Services,home_services,published,a38bb4d1-1f7f-4dad-8fa9-cc5245f1584e
+5,Vacation Rental Management,vacation_rental_management,Rentals,rentals,published,da9ee80b-63e1-4c51-af26-493080646198
+6,HVAC,hvac,Home Services,home_services,published,c7d5e595-1224-4ec0-8082-f991e92e0299
+6,Insurance,insurance,Professional,professional,published,7b1b5fbf-ddb3-44cf-8e87-74ebf7d52d70
+6,Jewelry,retail_jewelry,Retail Services,retail_services,published,d51683d1-b910-4c6b-9569-49a7f77cad18
+6,Spas,spas,Beauty & Wellness,beauty_and_wellness,published,b0f21277-cf91-44a3-8416-f33306f1fbca
+8,Hair Salons,hair_salons,Beauty & Wellness,beauty_and_wellness,published,dce318d2-f66f-4979-9ff2-b871bb98ad9a
+8,Home Improvement,home_improvement,Home Services,home_services,published,5c3e6406-1a2f-415e-95a4-b2b1c05190d9
+8,Plumbing,plumbing,Home Services,home_services,published,f4b3033e-ba77-4f10-8c1e-cb4fb0f71a6e
+8,Windows & Doors,windows_and_doors,Home Services,home_services,published,b4dd3d30-3eed-4e0b-8327-5dddc9ab4b07
+9,Entertainment,entertainment,Things To Do,things_to_do,published,f0d9bdea-74c0-4e82-a64c-82f4684b54e7

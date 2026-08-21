@@ -384,6 +384,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
 | `town_maps` | OpenStreetMap of place pins (`map_lat`/`map_lng`) on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
 | `town_relationship` | 30A corridor neighbor timeline on `/town/[slug]` above the map (after at-a-glance when present); code default **off** |
+| `multiple_category` | Primary + extra leaf memberships (max 5); leaf hubs + discover when on; breakdowns stay primary-only; code default **off** |
 | `discover_maps` | Map-first `/discover` UI for **storefront** only (pan/zoom + “Search this area” writes `bbox`/`zoom` URL params); requires `discover`; services stay list-only; code default **off** |
 | `feedback` | Visitor “is this wrong?” field flags on unverified business / rental detail pages (admin review queue); code default **off** |
 
@@ -650,6 +651,18 @@ npx tsx scripts/import-businesses-audit-csv.ts --file docs/businesses-audit-gemi
 
 ---
 
+## Multi-category memberships
+
+Businesses keep one **primary** leaf (`primary_category_id`) and may belong to additional leaves via `business_category_memberships` (max 5 total).
+
+- [ ] Apply [scripts/migrations/business-category-memberships.sql](../scripts/migrations/business-category-memberships.sql) (table + RLS + backfill from primary)
+- [ ] PostHog: create boolean flag `multiple_category` (default **false**); enable for internal cohort then gradual rollout
+- [ ] Dev bypass (optional): `MULTIPLE_CATEGORY_ENABLED=1` when `NODE_ENV=development`
+- [ ] After flag on: admin edit + list-your-business can set extras; leaf hubs + discover/map use memberships; multi-bucket breakdowns stay primary-only
+- [ ] Optional audit: `npx tsx scripts/suggest-business-extra-categories.ts` → review CSV (`apply=yes`) → `npx tsx scripts/apply-business-extra-categories.ts --file … --apply`
+
+---
+
 ## GitLab CI minutes
 
 MR `check` job (lint / unit tests / `next build`) runs on GitLab shared runners.
@@ -665,6 +678,7 @@ Until then, treat **Vercel** preview/build as the production-build gate for MRs.
 
 | Date | Change |
 |------|--------|
+| 2026-08-21 | Multi-category: SQL [business-category-memberships.sql](../scripts/migrations/business-category-memberships.sql); PostHog `multiple_category` (default off); leaf hubs + discover use memberships when on; admin/intake multi-select; suggest/apply scripts for extras |
 | 2026-08-21 | GitLab CI shared-runner minutes exhausted — MR `check` set `allow_failure: true` so quota failures do not block; restore minutes then remove allow_failure. Vercel remains the build gate. |
 | 2026-08-20 | PostHog `town_relationship` (default off): 30A corridor neighbor timeline on `/town/[slug]` above the map; SQL [town-relationships.sql](../scripts/migrations/town-relationships.sql) + [town-relationships-seed.sql](../scripts/migrations/town-relationships-seed.sql); local bypass `TOWN_RELATIONSHIP_ENABLED` / `NEXT_PUBLIC_TOWN_RELATIONSHIP_ENABLED`. Santa Rosa Beach is off-corridor (section hidden). |
 | 2026-08-20 | Admin `/admin/add-business`: queue new listings (title, town/area typeahead, storefront/service), Apply runs Gemini verify + Census + insert; unverified → Needs review (force apply / skip). SQL [admin-business-seed-queue.sql](../scripts/migrations/admin-business-seed-queue.sql) |

@@ -48,6 +48,8 @@ export const adminBusinessPatchSchema = z.object({
   town_id: z.union([z.string().uuid(), z.null()]).optional(),
   area_id: z.union([z.string().uuid(), z.null()]).optional(),
   primary_category_id: z.union([z.string().uuid(), z.null()]).optional(),
+  /** Extra leaf categories (primary must be included or is added). Max 5 total. */
+  category_ids: z.array(z.string().uuid()).max(5).optional(),
   is_storefront: z.boolean().optional(),
   is_service_business: z.boolean().optional(),
   is_verified: z.boolean().optional(),

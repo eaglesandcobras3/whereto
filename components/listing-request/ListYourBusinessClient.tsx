@@ -9,7 +9,11 @@ import { FreeOnboardForm } from "@/components/listing-request/FreeOnboardForm";
 import { resolveListBusinessMode } from "@/lib/listing-requests/list-business-mode";
 import { fetchPublicTowns } from "@/lib/public/fetch-public-towns-client";
 
-export function ListYourBusinessClient() {
+export function ListYourBusinessClient({
+  multipleCategoryEnabled = false,
+}: {
+  multipleCategoryEnabled?: boolean;
+}) {
   const searchParams = useSearchParams();
   const businessSlug = searchParams.get("business")?.trim() || null;
   const mode = resolveListBusinessMode({
@@ -62,5 +66,12 @@ export function ListYourBusinessClient() {
     );
   }
 
-  return <FreeOnboardForm towns={towns} mode={mode} businessSlug={businessSlug} />;
+  return (
+    <FreeOnboardForm
+      towns={towns}
+      mode={mode}
+      businessSlug={businessSlug}
+      multipleCategoryEnabled={multipleCategoryEnabled}
+    />
+  );
 }

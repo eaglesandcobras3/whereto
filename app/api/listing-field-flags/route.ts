@@ -405,7 +405,7 @@ export async function POST(request: NextRequest) {
   const { data: biz, error: bizErr } = await supabase
     .from("businesses_view")
     .select(
-      "id, title, slug, address, phone, website, overview, excerpt, map_lat, map_lng, search_tags, is_verified, town_id, area_id, primary_category_id, towns ( title ), areas ( title ), business_categories ( title )",
+      "id, title, slug, address, phone, website, overview, excerpt, map_lat, map_lng, search_tags, is_verified, town_id, area_id, primary_category_id, towns ( title ), areas ( title ), business_categories!primary_category_id ( title )",
     )
     .eq("id", entityId)
     .is("archived_at", null)
