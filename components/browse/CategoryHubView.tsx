@@ -36,6 +36,8 @@ type Props = {
   guides?: TownGuideCard[];
   /** PostHog `category_hub_seo` — inventory editorial + guides. */
   seoSubstanceEnabled?: boolean;
+  /** Parent crumb for Businesses — Discover when enabled, else categories hub. */
+  businessesHref?: string;
 };
 
 export function CategoryHubView({
@@ -45,6 +47,7 @@ export function CategoryHubView({
   mapMarkers = [],
   guides = [],
   seoSubstanceEnabled = false,
+  businessesHref = "/discover",
 }: Props) {
   const hubPath = categoryHubPath(cat.slug);
   const { townGroups, regional } = partitionCategoryBusinessesByTown(businesses);
@@ -117,7 +120,7 @@ export function CategoryHubView({
             <HubBreadcrumbs
               items={[
                 { name: "Home", href: "/" },
-                { name: "Businesses", href: "/businesses" },
+                { name: "Businesses", href: businessesHref },
                 { name: cat.title, href: hubPath, current: true },
               ]}
               analyticsCategory="category_hub_breadcrumb"
