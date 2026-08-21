@@ -10,7 +10,6 @@ import { usePersistedExpandedSectionIds } from "@/lib/hooks/use-persisted-expand
 import { ADD_BUSINESS_HREF } from "@/lib/listing-requests/listing-field-flag";
 import { browseSectionBySlug } from "@/lib/categories/unified-browse";
 import { townIntentPath } from "@/lib/routes/town-intent-path";
-import { townPagePath } from "@/lib/routes/town-page-path";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 
 type Props = {
@@ -132,15 +131,14 @@ export function CategoryHubTownSections({
               By town
             </h2>
             <p className="mt-1.5 text-left text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
-              Places with a location along 30A. Open a town page for this category, or the town
-              guide for beach access and local context.
+              Places with a location along 30A. Open a town page for the full list in that
+              category.
             </p>
           </div>
 
           {townGroups.map((group) => {
             const id = groupKey(group);
             const isOpen = expandedIds.has(id);
-            const townHref = group.slug ? townPagePath(group.slug) : null;
             const townIntentHref =
               group.slug && hasTownIntentPage
                 ? townIntentPath(group.slug, categorySlug)
@@ -159,35 +157,18 @@ export function CategoryHubTownSections({
                 open={isOpen}
                 onToggle={() => toggle(id)}
                 action={
-                  townIntentHref || townHref ? (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      {townIntentHref ? (
-                        <Link
-                          href={townIntentHref}
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "category_hub_town_intent_link",
-                            label: `${group.slug}:${categorySlug}`,
-                          })}
-                          className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
-                        >
-                          View all in {group.name}
-                        </Link>
-                      ) : null}
-                      {townHref ? (
-                        <Link
-                          href={townHref}
-                          {...gaClickProps({
-                            event: "nav_click",
-                            category: "category_hub_town_link",
-                            label: group.slug,
-                          })}
-                          className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
-                        >
-                          {group.name} guide
-                        </Link>
-                      ) : null}
-                    </div>
+                  townIntentHref ? (
+                    <Link
+                      href={townIntentHref}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "category_hub_town_intent_link",
+                        label: `${group.slug}:${categorySlug}`,
+                      })}
+                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                    >
+                      View all in {group.name}
+                    </Link>
                   ) : null
                 }
               >
