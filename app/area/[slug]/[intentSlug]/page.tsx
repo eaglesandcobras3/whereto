@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { BrowseHubHero } from "@/components/browse/BrowseHubHero";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
@@ -101,6 +102,8 @@ export default async function AreaIntentPage({ params }: Props) {
 
   const pagePath = areaIntentPath(page.area.slug, page.activeSection.slug);
   const areaPath = `/area/${page.area.slug}`;
+  const listingCount = page.activeSection.businesses.length;
+  const heroDescription = `Local ${page.activeSection.title.toLowerCase()} in ${page.area.title} along Scenic Highway 30A.`;
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -110,14 +113,14 @@ export default async function AreaIntentPage({ params }: Props) {
       })),
     ),
     name: `${page.activeSection.title} in ${page.area.title}`,
-    description: `Local picks for ${page.activeSection.title.toLowerCase()} in ${page.area.title}.`,
-    numberOfItems: page.activeSection.businesses.length,
+    description: heroDescription,
+    numberOfItems: listingCount,
   };
 
   const collectionSchema = generateCollectionPageSchema({
     name: `${page.activeSection.title} in ${page.area.title}`,
     path: pagePath,
-    description: `Local picks for ${page.activeSection.title.toLowerCase()} in ${page.area.title}.`,
+    description: heroDescription,
   });
 
   return (
@@ -132,63 +135,72 @@ export default async function AreaIntentPage({ params }: Props) {
       />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 md:px-10 md:py-12">
-          <HubBreadcrumbs
-            items={[
-              { name: "Home", href: "/" },
-              { name: "Areas", href: "/areas" },
-              { name: page.area.title, href: areaPath },
-              {
-                name: page.activeSection.title,
-                href: pagePath,
-                current: true,
-              },
-            ]}
-            analyticsCategory="area_intent_breadcrumb"
-          />
+        <BrowseHubHero
+          title={`${page.activeSection.title} in ${page.area.title}`}
+          description={heroDescription}
+          eyebrow={`${page.area.title} · 30A`}
+          meta={
+            <>
+              {listingCount} {listingCount === 1 ? "listing" : "listings"}
+            </>
+          }
+          breadcrumbs={
+            <HubBreadcrumbs
+              items={[
+                { name: "Home", href: "/" },
+                { name: "Areas", href: "/areas" },
+                { name: page.area.title, href: areaPath },
+                {
+                  name: page.activeSection.title,
+                  href: pagePath,
+                  current: true,
+                },
+              ]}
+              analyticsCategory="area_intent_breadcrumb"
+            />
+          }
+        />
 
-          <header className="mt-4 max-w-3xl space-y-4 sm:mt-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-primary)]">
-              Area guide
-            </p>
-            <h1 className="font-headline text-3xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-4xl">
-              {page.activeSection.title} in {page.area.title}
-            </h1>
-            <p className="text-base leading-relaxed text-[var(--color-text-secondary)]">
-              Browse the {page.activeSection.title.toLowerCase()} section from {page.area.title}
-              {"’"}s
-              local guide on its own page.
-            </p>
-          </header>
-
+        <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
           {page.mapMarkers.length > 0 ? (
-            <div className="mt-8 sm:mt-10">
-              <BusinessMapSection
-                markers={page.mapMarkers}
-                title={`Map of ${page.activeSection.title} in ${page.area.title}`}
-                description="Storefront businesses with a mapped location."
-                fieldFlagEntityId={page.feedbackEnabled ? page.area.id : null}
-                fieldFlagEntity="area"
-              />
-            </div>
+            <BusinessMapSection
+              markers={page.mapMarkers}
+              title={`Map of ${page.activeSection.title} in ${page.area.title}`}
+              description="Storefront businesses with a mapped location."
+              fieldFlagEntityId={page.feedbackEnabled ? page.area.id : null}
+              fieldFlagEntity="area"
+            />
           ) : null}
 
-          <section className="mt-8 space-y-4 sm:mt-10">
-            {page.activeSection.businesses.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <section className="space-y-4" aria-labelledby="area-intent-listings-heading">
+            <div>
+              <h2
+                id="area-intent-listings-heading"
+                className="font-headline text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl"
+              >
+                {page.activeSection.title} in {page.area.title}
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)] sm:mt-2">
+                Browse listings in this area section.
+              </p>
+            </div>
+            {listingCount > 0 ? (
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {page.activeSection.businesses.map((business) => (
-                  <BusinessPreviewCard
-                    key={business.id}
-                    name={business.name}
-                    slug={business.slug}
-                    excerpt={business.ai_summary || business.ai_one_liner || undefined}
-                    heroImageUrl={business.hero_image_url}
-                    analyticsCategory="area_intent_results"
-                    analyticsLabel={`${page.area.slug}:${page.activeSection.slug}:${business.slug}`}
-                    ctaLabel="Open listing"
-                  />
+                  <li key={business.id} className="h-full">
+                    <BusinessPreviewCard
+                      name={business.name}
+                      slug={business.slug}
+                      excerpt={business.ai_summary || business.ai_one_liner || undefined}
+                      heroImageUrl={business.hero_image_url}
+                      meta={page.area.title}
+                      analyticsCategory="area_intent_results"
+                      analyticsLabel={`${page.area.slug}:${page.activeSection.slug}:${business.slug}`}
+                      ctaLabel="Open listing"
+                    />
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
               <p className="text-base leading-relaxed text-[var(--color-text-secondary)]">
                 No {page.activeSection.title.toLowerCase()} listings in {page.area.title} yet.
@@ -197,41 +209,37 @@ export default async function AreaIntentPage({ params }: Props) {
           </section>
 
           {page.relatedSections.length > 0 ? (
-            <div className="mt-10">
-              <PlaceRelatedSection
-                title={`More categories in ${page.area.title}`}
-                description="Open the other rollup-category pages connected to this area."
-              >
-                {page.relatedSections.map((section) => (
-                  <Link
-                    key={section.slug}
-                    href={areaIntentPath(page.area.slug, section.slug)}
-                    className="editorial-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
-                  >
-                    <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
-                      {section.title}
-                    </h2>
-                    <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                      See the dedicated page for this area section.
-                    </p>
-                  </Link>
-                ))}
-              </PlaceRelatedSection>
-            </div>
+            <PlaceRelatedSection
+              title={`More categories in ${page.area.title}`}
+              description="Open the other rollup-category pages connected to this area."
+            >
+              {page.relatedSections.map((section) => (
+                <Link
+                  key={section.slug}
+                  href={areaIntentPath(page.area.slug, section.slug)}
+                  className="editorial-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
+                >
+                  <h2 className="font-headline text-lg font-bold text-[var(--color-text-primary)]">
+                    {section.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    See the dedicated page for this area section.
+                  </p>
+                </Link>
+              ))}
+            </PlaceRelatedSection>
           ) : null}
 
-          <div className="mt-10">
-            <PlaceGuidesSection
-              title={`Guides for ${page.area.title}`}
-              description={`Planning guides related to ${page.area.title}.`}
-              guides={page.guides}
-              analyticsCategory="area_intent_guides"
-              flagEntity="area"
-              flagEntityId={page.area.id}
-              placeName={page.area.title}
-              placeSlug={page.area.slug}
-            />
-          </div>
+          <PlaceGuidesSection
+            title={`Guides for ${page.area.title}`}
+            description={`Planning guides related to ${page.area.title}.`}
+            guides={page.guides}
+            analyticsCategory="area_intent_guides"
+            flagEntity="area"
+            flagEntityId={page.area.id}
+            placeName={page.area.title}
+            placeSlug={page.area.slug}
+          />
         </div>
       </main>
     </div>

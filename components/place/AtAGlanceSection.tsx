@@ -118,13 +118,15 @@ export function AtAGlanceSection({
                 <MsIcon name={metric.icon} />
               </IconCircle>
               <div className="min-w-0">
-                <dt className="m-0 text-sm text-[var(--tg-navy)]">{metric.label}</dt>
+                <dt className="m-0 text-xs text-[var(--tg-navy)] sm:text-sm">{metric.label}</dt>
                 <dd className="m-0 mt-0.5">
-                  <p className="font-headline m-0 text-base font-semibold leading-snug text-[var(--tg-navy)] sm:text-lg">
+                  <p className="font-headline m-0 text-sm font-semibold leading-snug text-[var(--tg-navy)] sm:text-base md:text-lg">
                     {metric.value}
                   </p>
                   {metric.subtext ? (
-                    <p className="mt-1.5 text-sm leading-relaxed">{metric.subtext}</p>
+                    <p className="mt-1.5 text-xs leading-relaxed sm:text-sm sm:leading-relaxed">
+                      {metric.subtext}
+                    </p>
                   ) : null}
                 </dd>
               </div>
@@ -144,7 +146,7 @@ export function AtAGlanceSection({
             </IconCircle>
             <h3
               id={highlightsId}
-              className="font-headline m-0 text-base font-semibold text-[var(--tg-navy)] sm:text-lg"
+              className="font-headline m-0 text-sm font-semibold text-[var(--tg-navy)] sm:text-base md:text-lg"
             >
               Highlights
             </h3>
@@ -153,7 +155,7 @@ export function AtAGlanceSection({
             {facts.highlights.map((label) => (
               <li
                 key={label}
-                className="inline-flex min-h-8 items-center rounded-full border border-[var(--tg-tag-border)] bg-[#fffdfa] px-3.5 py-1.5 text-sm text-[var(--tg-navy)]"
+                className="inline-flex min-h-7 items-center rounded-full border border-[var(--tg-tag-border)] bg-[#fffdfa] px-3 py-1 text-xs text-[var(--tg-navy)] sm:min-h-8 sm:px-3.5 sm:py-1.5 sm:text-sm"
               >
                 {label}
               </li>
@@ -174,11 +176,13 @@ export function AtAGlanceSection({
                 <IconCircle tone={tone} size="sm">
                   <MsIcon name={detail.icon} />
                 </IconCircle>
-                <h3 className="font-headline m-0 text-base font-semibold text-[var(--tg-navy)] sm:text-lg">
+                <h3 className="font-headline m-0 text-sm font-semibold text-[var(--tg-navy)] sm:text-base md:text-lg">
                   {detail.title}
                 </h3>
               </div>
-              <p className="mt-3 text-sm leading-relaxed">{detail.body}</p>
+              <p className="mt-3 text-sm leading-relaxed sm:text-[0.9375rem] md:text-base">
+                {detail.body}
+              </p>
             </article>
           );
         })}
