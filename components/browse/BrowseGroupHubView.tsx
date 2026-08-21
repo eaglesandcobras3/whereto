@@ -22,6 +22,8 @@ type Props = {
   leafLinks?: BrowseGroupLeafLink[];
   /** PostHog `category_hub_seo` — leaf type links + sample grid. */
   seoSubstanceEnabled?: boolean;
+  /** Parent crumb for Businesses — Discover when enabled, else categories hub. */
+  businessesHref?: string;
 };
 
 function hubPathFor(slug: string): string {
@@ -34,6 +36,7 @@ export function BrowseGroupHubView({
   mapMarkers = [],
   leafLinks = [],
   seoSubstanceEnabled = false,
+  businessesHref = "/discover",
 }: Props) {
   const hubPath = hubPathFor(hub.slug);
   const listingPool = seoSubstanceEnabled
@@ -101,7 +104,7 @@ export function BrowseGroupHubView({
             <HubBreadcrumbs
               items={[
                 { name: "Home", href: "/" },
-                { name: "Businesses", href: "/businesses" },
+                { name: "Businesses", href: businessesHref },
                 { name: hub.title, href: hubPath, current: true },
               ]}
               analyticsCategory="browse_group_hub_breadcrumb"
