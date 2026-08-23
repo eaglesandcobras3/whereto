@@ -1,5 +1,8 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
-import { AREAS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
+import {
+  AREAS_HUB_INCLUDE_OR_FILTER,
+  TOWNS_HUB_INCLUDE_OR_FILTER,
+} from "@/lib/places/hub-browse-visibility";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
   DIRECTUS_PUBLISHED_STATUS,
@@ -48,15 +51,26 @@ export async function getTownBySlug(slug: string) {
   if (!key) return null;
 
   const supabase = getServiceSupabase();
-  // Town hub: published + not archived. Soft-hide is ignored sitewide.
+  // Published + not archived + browsable on site (include_on_towns_hub !== false).
   // `towns_view` adds `main_image_url` / `hero_image_url` via `resolve_directus_file_url` → Supabase Storage
-  const { data: rows, error } = await supabase
+  let query = supabase
     .from("towns_view")
     .select("id, title, slug, region, excerpt, content, main_image, hero_image, status, main_image_url, hero_image_url, seo_title, seo_description")
     .eq("slug", key)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(TOWNS_HUB_INCLUDE_OR_FILTER)
     .limit(1);
+  let { data: rows, error } = await query;
+  if (error?.message.includes("include_on_towns_hub")) {
+    ({ data: rows, error } = await supabase
+      .from("towns_view")
+      .select("id, title, slug, region, excerpt, content, main_image, hero_image, status, main_image_url, hero_image_url, seo_title, seo_description")
+      .eq("slug", key)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .limit(1));
+  }
 
   if (error) {
      
@@ -501,13 +515,23 @@ export async function getTownHubExpandedSections(townSlug: string, townName: str
 export async function getTownsInRegion(regionId: string) {
   const supabase = getServiceSupabase();
   // `towns.region_id` (uuid FK) is the source of truth; legacy `region` is a string field.
-  const { data } = await supabase
+  let { data, error } = await supabase
     .from("towns")
     .select("title, slug, status")
     .eq("region_id", regionId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(TOWNS_HUB_INCLUDE_OR_FILTER)
     .order("title");
+  if (error?.message.includes("include_on_towns_hub")) {
+    ({ data } = await supabase
+      .from("towns")
+      .select("title, slug, status")
+      .eq("region_id", regionId)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .order("title"));
+  }
   return (data ?? []).map((t) => ({
     name: (t as { title: string }).title,
     slug: t.slug,

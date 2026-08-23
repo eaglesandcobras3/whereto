@@ -8,15 +8,18 @@ type Props = {
   text: string;
   /** Skip linking the current town (avoids self-links on town detail pages). */
   excludeSlug?: string;
+  /** When set, only slugs in this set become links (hides out-of-hub towns like Destin). */
+  linkableSlugs?: ReadonlySet<string>;
   analyticsCategory?: string;
 };
 
 export function LinkifiedTownText({
   text,
   excludeSlug,
+  linkableSlugs,
   analyticsCategory = "town_name_inline_link",
 }: Props): ReactNode {
-  const matches = findTownNameMatches(text, { excludeSlug });
+  const matches = findTownNameMatches(text, { excludeSlug, linkableSlugs });
   if (matches.length === 0) return text;
 
   const nodes: ReactNode[] = [];

@@ -1,6 +1,7 @@
 import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import Link from "next/link";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
+import { listAreasForAreasHub } from "@/lib/data/areas-hub-list";
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -19,7 +20,6 @@ import {
 } from "@/lib/seo/metadata-snippets";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
 import { generateAreaSchema } from "@/lib/seo/breadcrumb-schema";
-import { townPagePath } from "@/lib/routes/town-page-path";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getAreaFactsBySlug } from "@/lib/data/area-facts-queries";
 import { AreaAtAGlanceSection } from "@/components/area/AreaAtAGlanceSection";
@@ -37,14 +37,16 @@ import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote
 export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const areas = await listAreasForAreasHub();
+  const slugs = new Set(areas.map((a) => a.slug));
   const { getServiceSupabase } = await import("@/lib/supabase/service-role");
   const supabase = getServiceSupabase();
-  const [areas, pois] = await Promise.all([
-    supabase.from("areas").select("slug").is("archived_at", null).eq("status", "published"),
-    supabase.from("points_of_interest").select("slug").is("archived_at", null).eq("status", "published"),
-  ]);
-  const slugs = new Set<string>();
-  for (const r of [...(areas.data ?? []), ...(pois.data ?? [])]) {
+  const { data: pois } = await supabase
+    .from("points_of_interest")
+    .select("slug")
+    .is("archived_at", null)
+    .eq("status", "published");
+  for (const r of pois ?? []) {
     const s = String((r as { slug: string }).slug);
     if (s) slugs.add(s);
   }
@@ -175,18 +177,25 @@ export default async function AreaPage({ params }: Props) {
             meta={
               area.town_name && area.town_slug ? (
                 <div className="mt-2 text-sm text-zinc-500 sm:mt-3">
-                  <Link
-                    href={townPagePath(area.town_slug)}
-                    {...gaClickProps({
-                      event: "nav_click",
-                      category: "area_header",
-                      label: area.town_slug,
-                    })}
-                    className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
-                  >
-                    <span className="material-symbols-outlined !text-base">place</span>
-                    {area.town_name}
-                  </Link>
+                  {area.town_public_href ? (
+                    <Link
+                      href={area.town_public_href}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "area_header",
+                        label: area.town_slug,
+                      })}
+                      className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
+                    >
+                      <span className="material-symbols-outlined !text-base">place</span>
+                      {area.town_name}
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined !text-base">place</span>
+                      {area.town_name}
+                    </span>
+                  )}
                 </div>
               ) : undefined
             }

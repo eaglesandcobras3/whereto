@@ -3,6 +3,11 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
+import {
+  AREAS_HUB_INCLUDE_OR_FILTER,
+  TOWNS_HUB_INCLUDE_OR_FILTER,
+  townPublicPath,
+} from "@/lib/places/hub-browse-visibility";
 
 /**
  * A browsable "place" for `/area/[slug]`: an `areas` row and/or a `points_of_interest` row
@@ -23,6 +28,8 @@ export type PublicPlacePage = {
   town_id: string | null;
   town_name: string | null;
   town_slug: string | null;
+  /** When false, public UI should show town label without linking. */
+  town_public_href: string | null;
   hero_image_url: string | null;
 };
 
@@ -40,23 +47,38 @@ export async function getPublicPlaceBySlug(
   const { data: areaRows, error: areaErr } = await supabase
     .from("areas_view")
     .select(
-      "id, title, slug, excerpt, seo_description, content, main_image, hero_image, main_image_url, hero_image_url, area_type, town_id, towns(title, slug)",
+      "id, title, slug, excerpt, seo_description, content, main_image, hero_image, main_image_url, hero_image_url, area_type, town_id, include_in_site_browse, towns(title, slug, include_on_towns_hub)",
     )
     .eq("slug", key)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(AREAS_HUB_INCLUDE_OR_FILTER)
     .limit(1);
 
-  const area = areaRows?.[0];
+  let area: Record<string, unknown> | undefined = areaRows?.[0] as
+    | Record<string, unknown>
+    | undefined;
+  if (areaErr?.message.includes("include_in_site_browse")) {
+    const retry = await supabase
+      .from("areas_view")
+      .select(
+        "id, title, slug, excerpt, seo_description, content, main_image, hero_image, main_image_url, hero_image_url, area_type, town_id, towns(title, slug)",
+      )
+      .eq("slug", key)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .limit(1);
+    area = retry.data?.[0] as Record<string, unknown> | undefined;
+  }
 
-  if (areaErr) {
+  if (areaErr && !area) {
      
     console.error("getPublicPlaceBySlug areas", { slug: key, areaErr });
   } else if (area) {
     const a = area as Record<string, unknown>;
     const rawT = a.towns as
-      | { title: string; slug: string }
-      | { title: string; slug: string }[]
+      | { title: string; slug: string; include_on_towns_hub?: boolean | null }
+      | { title: string; slug: string; include_on_towns_hub?: boolean | null }[]
       | null
       | undefined;
     const to = Array.isArray(rawT) ? rawT[0] : rawT;
@@ -73,6 +95,9 @@ export async function getPublicPlaceBySlug(
       town_id: (a.town_id as string | null) ?? null,
       town_name: to?.title ?? null,
       town_slug: to?.slug ?? null,
+      town_public_href: to?.slug
+        ? townPublicPath(to.slug, to.include_on_towns_hub)
+        : null,
       hero_image_url: getPublicImageUrlWithView(
         a.main_image_url as string | null,
         a.hero_image_url as string | null,
@@ -102,8 +127,8 @@ export async function getPublicPlaceBySlug(
 
   const p = poi as Record<string, unknown>;
   const rawT = p.towns as
-    | { title: string; slug: string }
-    | { title: string; slug: string }[]
+    | { title: string; slug: string; include_on_towns_hub?: boolean | null }
+    | { title: string; slug: string; include_on_towns_hub?: boolean | null }[]
     | null
     | undefined;
   const to = Array.isArray(rawT) ? rawT[0] : rawT;
@@ -120,6 +145,7 @@ export async function getPublicPlaceBySlug(
     town_id: (p.town_id as string | null) ?? null,
     town_name: to?.title ?? null,
     town_slug: to?.slug ?? null,
+    town_public_href: to?.slug ? townPublicPath(to.slug, to.include_on_towns_hub) : null,
     hero_image_url: getPublicImageUrlWithView(
       p.main_image_url as string | null,
       p.hero_image_url as string | null,

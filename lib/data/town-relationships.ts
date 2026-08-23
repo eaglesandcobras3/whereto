@@ -1,6 +1,9 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { businessListingImageUrl } from "@/lib/media/place-photo";
+import {
+  includedOnHubBrowse,
+} from "@/lib/places/hub-browse-visibility";
 
 export type TownCorridorDirection = "west" | "east";
 
@@ -47,6 +50,7 @@ type TownViewRow = {
   hero_image: string | null;
   main_image_url: string | null;
   hero_image_url: string | null;
+  include_on_towns_hub?: boolean | null;
 };
 
 function parseMiles(value: number | string | null | undefined): number | null {
@@ -105,10 +109,22 @@ export async function getTownRelationshipCorridor(
   ].filter((id): id is string => Boolean(id));
 
   const uniqueIds = [...new Set(neighborIds)];
-  const { data: townRows, error: townsError } = await supabase
+  let townsQuery = supabase
     .from("towns_view")
-    .select("id, title, slug, main_image, hero_image, main_image_url, hero_image_url")
+    .select(
+      "id, title, slug, main_image, hero_image, main_image_url, hero_image_url, include_on_towns_hub",
+    )
     .in("id", uniqueIds);
+  let { data: townRowsRaw, error: townsError } = await townsQuery;
+  let townRows = (townRowsRaw ?? []) as TownViewRow[];
+  if (townsError?.message.includes("include_on_towns_hub")) {
+    const retry = await supabase
+      .from("towns_view")
+      .select("id, title, slug, main_image, hero_image, main_image_url, hero_image_url")
+      .in("id", uniqueIds);
+    townRows = (retry.data ?? []) as TownViewRow[];
+    townsError = retry.error;
+  }
 
   if (townsError) {
     console.error("getTownRelationshipCorridor towns", { townId, error: townsError });
@@ -133,7 +149,7 @@ export async function getTownRelationshipCorridor(
     const miles = parseMiles(milesRaw);
     if (miles == null) return null;
     const town = byId.get(id);
-    if (!town?.slug) return null;
+    if (!town?.slug || !includedOnHubBrowse(town.include_on_towns_hub)) return null;
     return {
       id: String(town.id),
       name: town.title,
