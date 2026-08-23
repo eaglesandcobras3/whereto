@@ -7,6 +7,7 @@ import {
   type BusinessSearchHit,
 } from "@/components/listing-request/BusinessNameTypeahead";
 import { CategoryTypeahead } from "@/components/listing-request/CategoryTypeahead";
+import { AdditionalCategoriesPicker } from "@/components/categories/AdditionalCategoriesPicker";
 import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
@@ -164,6 +165,9 @@ export function FreeOnboardForm({
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [searchTagOptions, setSearchTagOptions] = useState<DiscoverSearchTagOption[]>([]);
   const [tagsByCategoryId, setTagsByCategoryId] = useState<Record<string, string[]>>({});
+  const [relatedCategoriesByCategoryId, setRelatedCategoriesByCategoryId] = useState<
+    Record<string, string[]>
+  >({});
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
   const [findPhase, setFindPhase] = useState<FindPhase>(
     mode === "find" ? "searching" : mode === "slug" ? "selected" : "creating-new",
@@ -336,6 +340,7 @@ export function FreeOnboardForm({
           searchTags?: string[];
           searchTagOptions?: DiscoverSearchTagOption[];
           tagsByCategoryId?: Record<string, string[]>;
+          relatedCategoriesByCategoryId?: Record<string, string[]>;
           isAdmin?: boolean;
           adminName?: string | null;
           adminEmail?: string | null;
@@ -353,6 +358,7 @@ export function FreeOnboardForm({
               })),
         );
         setTagsByCategoryId(j.tagsByCategoryId ?? {});
+        setRelatedCategoriesByCategoryId(j.relatedCategoriesByCategoryId ?? {});
         setIsAdmin(Boolean(j.isAdmin));
         setAdminName((j.adminName ?? "").trim());
         setAdminEmail((j.adminEmail ?? "").trim());
@@ -388,6 +394,16 @@ export function FreeOnboardForm({
     })();
     return () => controller.abort();
   }, [businessSlug, mode]);
+
+  const categoryLeafOptions = useMemo(
+    () =>
+      categoryTypeaheadOptions.map((c) => ({
+        id: c.id,
+        title: c.title,
+        groupTitle: c.groupTitle ?? null,
+      })),
+    [categoryTypeaheadOptions],
+  );
 
   const tagOptions: DiscoverSearchTagOption[] = useMemo(() => {
     const bySlug = new Map(searchTagOptions.map((t) => [t.slug, t]));
@@ -1314,43 +1330,15 @@ export function FreeOnboardForm({
         />
         <FieldError message={fieldErrors.category_id ?? fieldErrors.suggested_category} />
         {multipleCategoryEnabled && categoryId && !suggestedCategory.trim() ? (
-          <fieldset className="mt-3 space-y-2 rounded-xl border border-[var(--color-border)] p-3">
-            <legend className="px-1 text-sm font-medium text-[var(--color-text-primary)]">
-              Additional categories (optional)
-            </legend>
-            <p className={helpClass}>
-              Primary is set above. Add up to {5 - 1} more if the business clearly fits.
-            </p>
-            <div className="max-h-40 space-y-1 overflow-y-auto text-sm">
-              {categories
-                .filter((c) => c.id !== categoryId)
-                .map((c) => {
-                  const checked = categoryIds.includes(c.id);
-                  return (
-                    <label key={c.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => {
-                          setCategoryIds((prev) => {
-                            const base = prev.includes(categoryId) ? prev : [categoryId, ...prev];
-                            if (e.target.checked) {
-                              if (base.length >= 5) return base;
-                              return base.includes(c.id) ? base : [...base, c.id];
-                            }
-                            return base.filter((id) => id !== c.id);
-                          });
-                        }}
-                      />
-                      <span>
-                        {c.rollupTitle ? `${c.rollupTitle} · ` : ""}
-                        {c.title}
-                      </span>
-                    </label>
-                  );
-                })}
-            </div>
-          </fieldset>
+          <AdditionalCategoriesPicker
+            primaryCategoryId={categoryId}
+            membershipIds={categoryIds}
+            onMembershipIdsChange={setCategoryIds}
+            leafOptions={categoryLeafOptions}
+            relatedByCategoryId={relatedCategoriesByCategoryId}
+            loading={optionsLoading}
+            tone="intake"
+          />
         ) : null}
       </div>
 

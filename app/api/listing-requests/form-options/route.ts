@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadUnifiedCategoryOptions } from "@/lib/categories/load-unified-categories";
+import { loadRelatedCategoriesByCategoryId } from "@/lib/categories/load-related-categories-by-id";
 import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
@@ -37,7 +38,8 @@ export async function GET() {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   }
 
-  const [admin, tagsResult, linksResult, categoryGroups] = await Promise.all([
+  const [admin, tagsResult, linksResult, relatedCategoriesByCategoryId, categoryGroups] =
+    await Promise.all([
     requireAdminUser(),
     fetchAllRows<{ tag: string; description: string | null }>(
       supabase,
@@ -50,6 +52,7 @@ export async function GET() {
       "search_tag_categories",
       "tag, category_id",
     ),
+    loadRelatedCategoriesByCategoryId(supabase),
     loadUnifiedCategoryOptions(),
   ]);
 
@@ -101,6 +104,8 @@ export async function GET() {
     searchTagOptions,
     /** Leaf category UUID → suggested search tag slugs. */
     tagsByCategoryId,
+    /** Leaf category UUID → suggested additional leaf category UUIDs. */
+    relatedCategoriesByCategoryId,
     isAdmin: Boolean(admin),
     adminName: admin?.name ?? null,
     adminEmail: admin?.email ?? null,

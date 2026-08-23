@@ -6,6 +6,8 @@ import {
   type AdminBusinessRow,
 } from "@/lib/admin/admin-business-direct-edit";
 import { adminBusinessDirectEditApiBlocked } from "@/lib/feature-flags";
+import { loadRelatedCategoriesByCategoryId } from "@/lib/categories/load-related-categories-by-id";
+import { loadUnifiedCategoryOptions } from "@/lib/categories/load-unified-categories";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
@@ -32,6 +34,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     { data: areas },
     { data: categories },
     membershipIds,
+    relatedCategoriesByCategoryId,
+    categoryGroups,
   ] = await Promise.all([
     supabase.from("businesses").select(ADMIN_BUSINESS_SELECT).eq("id", businessId).maybeSingle(),
     supabase.from("towns").select("id, title, slug").order("title", { ascending: true }),
@@ -51,21 +55,32 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         return [] as string[];
       }
     })(),
+    loadRelatedCategoriesByCategoryId(supabase),
+    loadUnifiedCategoryOptions(),
   ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!business) return NextResponse.json({ error: "Business not found" }, { status: 404 });
 
   const leafCategories = (categories ?? []).filter((c) => c.parent_category_id != null);
+  const categoryLeaves = categoryGroups.flatMap((g) =>
+    g.leaves.map((l) => ({
+      id: l.id,
+      title: l.title,
+      groupTitle: g.title,
+    })),
+  );
 
   return NextResponse.json({
     business: business as AdminBusinessRow,
     category_ids: membershipIds,
     multiple_category: multipleCategory,
+    relatedCategoriesByCategoryId,
     options: {
       towns: towns ?? [],
       areas: areas ?? [],
       categories: leafCategories,
+      categoryLeaves,
     },
   });
 }

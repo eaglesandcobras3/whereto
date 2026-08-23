@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import type { AdminBusinessRow } from "@/lib/admin/admin-business-direct-edit";
+import { AdditionalCategoriesPicker } from "@/components/categories/AdditionalCategoriesPicker";
 import { AdminBusinessMainImageControl } from "@/components/admin/AdminBusinessMainImageControl";
 import { AdminBusinessPhotosManager } from "@/components/admin/AdminBusinessPhotosManager";
 import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
@@ -12,6 +13,7 @@ import {
   formatSearchTagLabel,
   normalizeSearchTagSlug,
 } from "@/lib/discovery-filters/search-tag-label";
+import type { CategoryLeafOption } from "@/lib/categories/suggested-extra-categories";
 
 const MapLocationPickerClient = dynamic(
   () => import("@/components/maps/MapLocationPicker").then((m) => m.MapLocationPicker),
@@ -60,6 +62,10 @@ export function AdminBusinessEditClient({
   const [towns, setTowns] = useState<OptionTown[]>([]);
   const [areas, setAreas] = useState<OptionArea[]>([]);
   const [categories, setCategories] = useState<OptionCategory[]>([]);
+  const [categoryLeafOptions, setCategoryLeafOptions] = useState<CategoryLeafOption[]>([]);
+  const [relatedCategoriesByCategoryId, setRelatedCategoriesByCategoryId] = useState<
+    Record<string, string[]>
+  >({});
 
   const [title, setTitle] = useState("");
   const [phone, setPhone] = useState("");
@@ -99,10 +105,12 @@ export function AdminBusinessEditClient({
           business?: AdminBusinessRow;
           category_ids?: string[];
           multiple_category?: boolean;
+          relatedCategoriesByCategoryId?: Record<string, string[]>;
           options?: {
             towns?: OptionTown[];
             areas?: OptionArea[];
             categories?: OptionCategory[];
+            categoryLeaves?: CategoryLeafOption[];
           };
           error?: string;
         };
@@ -112,6 +120,15 @@ export function AdminBusinessEditClient({
         setTowns(j.options?.towns ?? []);
         setAreas(j.options?.areas ?? []);
         setCategories(j.options?.categories ?? []);
+        setCategoryLeafOptions(
+          j.options?.categoryLeaves?.length
+            ? j.options.categoryLeaves
+            : (j.options?.categories ?? []).map((c) => ({
+                id: c.id,
+                title: c.title,
+              })),
+        );
+        setRelatedCategoriesByCategoryId(j.relatedCategoriesByCategoryId ?? {});
         setTitle(b.title ?? "");
         setPhone(b.phone ?? "");
         setEmail(b.email ?? "");
@@ -417,44 +434,16 @@ export function AdminBusinessEditClient({
           </select>
         </label>
 
-        {multipleCategoryEnabled ? (
-          <fieldset className="space-y-2 rounded-xl border border-zinc-200 p-3">
-            <legend className="px-1 text-sm font-medium text-zinc-700">
-              Additional categories (max 5 total)
-            </legend>
-            <p className="text-xs text-zinc-500">
-              Primary is always included. Check other leaves this business should appear under.
-            </p>
-            <div className="max-h-48 space-y-1 overflow-y-auto text-sm">
-              {categories.map((c) => {
-                const checked = categoryIds.includes(c.id);
-                const isPrimary = c.id === categoryId;
-                return (
-                  <label key={c.id} className="flex items-center gap-2 text-zinc-700">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={isPrimary}
-                      onChange={(e) => {
-                        if (isPrimary) return;
-                        setCategoryIds((prev) => {
-                          if (e.target.checked) {
-                            if (prev.length >= 5) return prev;
-                            return [...prev, c.id];
-                          }
-                          return prev.filter((id) => id !== c.id);
-                        });
-                      }}
-                    />
-                    <span>
-                      {c.title}
-                      {isPrimary ? " (primary)" : ""}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+        {multipleCategoryEnabled && categoryId ? (
+          <AdditionalCategoriesPicker
+            primaryCategoryId={categoryId}
+            membershipIds={categoryIds}
+            onMembershipIdsChange={setCategoryIds}
+            leafOptions={categoryLeafOptions}
+            relatedByCategoryId={relatedCategoriesByCategoryId}
+            loading={loading}
+            tone="admin"
+          />
         ) : null}
 
         <div className="flex flex-wrap gap-4 text-sm text-zinc-700">
