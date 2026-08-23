@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { GuidesAdminClient } from "@/components/admin/GuidesAdminClient";
+import { isGuideAdminStatusFilter } from "@/lib/admin/place-constants";
 import { resolveGuideIdForAdmin } from "@/lib/admin/guides";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
@@ -34,8 +35,7 @@ export default async function AdminGuidesPage({ searchParams }: PageProps) {
 
   const initialQuery = typeof params.q === "string" ? params.q.trim() : "";
   const initialStatus =
-    typeof params.status === "string" &&
-    ["active", "draft", "published", "archived"].includes(params.status)
+    typeof params.status === "string" && isGuideAdminStatusFilter(params.status)
       ? params.status
       : "active";
 

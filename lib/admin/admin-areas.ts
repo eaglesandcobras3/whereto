@@ -5,16 +5,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { AT_A_GLANCE_FACTS_SELECT } from "@/lib/data/at-a-glance-facts";
 import { mainImagePatch } from "@/lib/admin/guides";
 import { slugifyBusinessTitle, uniqueSlug } from "@/lib/portal/slug";
-import { PLACE_STATUSES } from "@/lib/admin/admin-towns";
+import { AREA_TYPES, PLACE_STATUSES } from "@/lib/admin/place-constants";
 
-export const AREA_TYPES = [
-  "shopping_area",
-  "district",
-  "square",
-  "development",
-  "neighborhood",
-  "point_of_interest",
-] as const;
+export { AREA_TYPES, PLACE_STATUSES };
 
 function nullableText(max: number) {
   return z
@@ -186,7 +179,7 @@ export async function createAdminArea(
   const { data: taken } = await supabase.from("areas").select("slug").is("archived_at", null);
   const slug = uniqueSlug(
     baseSlug,
-    (taken ?? []).map((r) => String((r as { slug: string }).slug)),
+    new Set((taken ?? []).map((r) => String((r as { slug: string }).slug))),
   );
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -204,7 +197,7 @@ export async function createAdminArea(
     .select(ADMIN_AREA_SELECT)
     .single();
   if (error) throw error;
-  return data as AdminAreaRow;
+  return data as unknown as AdminAreaRow;
 }
 
 export function buildAdminAreaPatch(
@@ -239,5 +232,5 @@ export async function updateAdminArea(
     .select(ADMIN_AREA_SELECT)
     .single();
   if (error) throw error;
-  return data as AdminAreaRow;
+  return data as unknown as AdminAreaRow;
 }

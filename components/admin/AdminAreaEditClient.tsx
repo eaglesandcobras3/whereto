@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { AREA_TYPES } from "@/lib/admin/admin-areas";
-import { PLACE_STATUSES } from "@/lib/admin/admin-towns";
+import { AREA_TYPES, PLACE_STATUSES } from "@/lib/admin/place-constants";
 
 type TownOption = { id: string; title: string; slug: string };
 

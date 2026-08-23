@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { PLACE_STATUSES } from "@/lib/admin/admin-towns";
+import { PLACE_STATUSES } from "@/lib/admin/place-constants";
 
 type TownRow = Record<string, unknown> & {
   id: string;

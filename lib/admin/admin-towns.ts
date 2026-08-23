@@ -7,7 +7,9 @@ import { mainImagePatch } from "@/lib/admin/guides";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { slugifyBusinessTitle, uniqueSlug } from "@/lib/portal/slug";
 
-export const PLACE_STATUSES = ["draft", "published", "archived"] as const;
+import { PLACE_STATUSES } from "@/lib/admin/place-constants";
+
+export { PLACE_STATUSES };
 
 function nullableText(max: number) {
   return z
@@ -161,7 +163,7 @@ export async function createAdminTown(
   const { data: taken } = await supabase.from("towns").select("slug").is("archived_at", null);
   const slug = uniqueSlug(
     baseSlug,
-    (taken ?? []).map((r) => String((r as { slug: string }).slug)),
+    new Set((taken ?? []).map((r) => String((r as { slug: string }).slug))),
   );
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -176,7 +178,7 @@ export async function createAdminTown(
     .select(ADMIN_TOWN_SELECT)
     .single();
   if (error) throw error;
-  return data as AdminTownRow;
+  return data as unknown as AdminTownRow;
 }
 
 export function buildAdminTownPatch(
@@ -211,7 +213,7 @@ export async function updateAdminTown(
     .select(ADMIN_TOWN_SELECT)
     .single();
   if (error) throw error;
-  return data as AdminTownRow;
+  return data as unknown as AdminTownRow;
 }
 
 export async function listRecentTownsForAdmin(

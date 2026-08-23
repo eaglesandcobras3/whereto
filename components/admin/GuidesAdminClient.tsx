@@ -57,7 +57,6 @@ function statusBadge(status: string, enriched: boolean) {
 
 export function GuidesAdminClient({ initialQuery = "", initialStatus = "active" }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [guides, setGuides] = useState<GuideRow[]>([]);
   const [filter, setFilter] = useState<StatusFilter>(initialStatus);
   const [query, setQuery] = useState(initialQuery);
