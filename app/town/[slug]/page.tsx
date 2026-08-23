@@ -30,6 +30,7 @@ import { resolvePlaceIntro } from "@/lib/seo/place-intro";
 import { TownEmptyDiscoveryMessage } from "@/components/feature-flags/TownEmptyDiscoveryMessage";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import type { TownGuideCard } from "@/lib/data/town-hub";
+import { AdminEntityEditLinks } from "@/components/admin/AdminEntityEditLinks";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForTown } from "@/lib/data/business-map-markers";
@@ -350,6 +351,7 @@ function BasicTownPage({
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <IrseAdminBadge kind="town" slug={town.slug} />
+      <AdminEntityEditLinks kind="town" entityId={town.id} />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 md:px-10 md:py-12">
           <script

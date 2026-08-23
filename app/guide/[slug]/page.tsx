@@ -21,6 +21,7 @@ import { PRIMARY_EDITORIAL_GUIDE_SLUG } from "@/lib/seo/sitemap-strategy";
 import { generateGuideSchema } from "@/lib/seo/breadcrumb-schema";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
+import { AdminEntityEditLinks } from "@/components/admin/AdminEntityEditLinks";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
@@ -204,6 +205,7 @@ export default async function GuidePage({ params }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <IrseAdminBadge kind="guide" slug={slug} />
+      {guidePageId ? <AdminEntityEditLinks kind="guide" entityId={guidePageId} /> : null}
       <main className="flex-1">
         {!hasHeroImage ? (
           <div className="coastal-hero border-b border-[var(--color-border)]">

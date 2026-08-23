@@ -8,15 +8,25 @@ type Hit = {
   id: string;
   title: string;
   slug: string;
-  town_title: string | null;
   status: string | null;
+  town_title?: string | null;
 };
 
 type Props = {
+  entity: "town" | "area";
   initialQuery?: string;
+  listPath: string;
+  editPathPrefix: string;
+  searchApiPath: string;
 };
 
-export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
+export function AdminPlaceSearchClient({
+  entity,
+  initialQuery = "",
+  listPath,
+  editPathPrefix,
+  searchApiPath,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [q, setQ] = useState(initialQuery);
@@ -37,42 +47,45 @@ export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
       params.delete("slug");
       params.delete("id");
       const next = params.toString();
-      router.replace(next ? `/admin/businesses?${next}` : "/admin/businesses", { scroll: false });
+      router.replace(next ? `${listPath}?${next}` : listPath, { scroll: false });
     },
-    [router, searchParams],
+    [router, searchParams, listPath],
   );
 
-  const search = useCallback(async (query: string) => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
-    setErr(null);
-    try {
-      const res = await fetch(
-        `/api/admin/businesses/search?q=${encodeURIComponent(query.trim())}&limit=16`,
-      );
-      const j = (await res.json()) as { results?: Hit[]; error?: string };
-      if (!res.ok) throw new Error(j.error ?? "Search failed");
-      setResults(j.results ?? []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Search failed");
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const search = useCallback(
+    async (query: string) => {
+      if (query.trim().length < 2) {
+        setResults([]);
+        return;
+      }
+      setLoading(true);
+      setErr(null);
+      try {
+        const res = await fetch(
+          `${searchApiPath}?q=${encodeURIComponent(query.trim())}&limit=20`,
+        );
+        const j = (await res.json()) as { results?: Hit[]; error?: string };
+        if (!res.ok) throw new Error(j.error ?? "Search failed");
+        setResults(j.results ?? []);
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : "Search failed");
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchApiPath],
+  );
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
       void search(q);
-      if (q.trim().length >= 2 || q.trim().length === 0) {
-        syncUrl(q);
-      }
+      if (q.trim().length >= 2 || q.trim().length === 0) syncUrl(q);
     }, 250);
     return () => window.clearTimeout(handle);
   }, [q, search, syncUrl]);
+
+  const label = entity === "town" ? "town" : "area";
 
   return (
     <div className="space-y-4">
@@ -82,7 +95,7 @@ export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="e.g. IV Bar or iv-bar"
+          placeholder={`e.g. Seaside or seaside`}
           className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
         />
       </label>
@@ -93,7 +106,7 @@ export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
           {results.map((hit) => (
             <li key={hit.id}>
               <Link
-                href={`/admin/businesses/${encodeURIComponent(hit.id)}`}
+                href={`${editPathPrefix}/${encodeURIComponent(hit.id)}`}
                 className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-zinc-50"
               >
                 <span>
@@ -113,7 +126,7 @@ export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
           ))}
         </ul>
       ) : q.trim().length >= 2 && !loading ? (
-        <p className="text-sm text-zinc-500">No matches.</p>
+        <p className="text-sm text-zinc-500">No {label} matches.</p>
       ) : null}
     </div>
   );
