@@ -118,34 +118,19 @@ async function auditOne(row: CsvRow, allowed: AllowedVocab, allowedLists: {
 }): Promise<CsvRow> {
   if (row.is_verified === "true") return skippedVerifiedRow(row);
 
-  const basePrompt = buildGeminiAuditPrompt(row, allowedLists);
-  let lastError = "unknown error";
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const prompt =
-      attempt === 1
-        ? basePrompt
-        : `${basePrompt}\n\nAttempt ${attempt}: You MUST use Google Search again. Write research bullets, then the JSON code block.`;
-    try {
-      const payload = await generateContent(prompt);
-      if (!hadGoogleSearch(payload)) {
-        lastError = "Gemini did not run Google Search";
-        continue;
-      }
-      const text = firstCandidateText(payload);
-      const proposal = parseGeminiAuditProposal(text);
-      return mergeAuditRow(row, proposal, allowed, groundingSourceUrls(payload));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      lastError = message;
-      const status = (err as { status?: number }).status;
-      if (status === 429 || status === 503) {
-        await sleep(2000 * attempt);
-      }
+  const prompt = buildGeminiAuditPrompt(row, allowedLists);
+  try {
+    const payload = await generateContent(prompt);
+    if (!hadGoogleSearch(payload)) {
+      return errorAuditRow(row, "Gemini did not run Google Search");
     }
+    const text = firstCandidateText(payload);
+    const proposal = parseGeminiAuditProposal(text);
+    return mergeAuditRow(row, proposal, allowed, groundingSourceUrls(payload));
+  } catch (err) {
+    const lastError = err instanceof Error ? err.message : String(err);
+    return errorAuditRow(row, lastError);
   }
-
-  return errorAuditRow(row, lastError);
 }
 
 async function main() {
