@@ -663,6 +663,32 @@ Businesses keep one **primary** leaf (`primary_category_id`) and may belong to a
 
 ---
 
+## Towns & areas hub visibility
+
+Published towns and areas can be hidden from public hub listings when `include_on_towns_hub` / `include_in_site_browse` is explicitly `false`. NULL and `true` show on `/towns`, `/areas`, the home town grid, and town-page area sections.
+
+- [ ] Apply [scripts/migrations/town-include-on-towns-hub.sql](../scripts/migrations/town-include-on-towns-hub.sql)
+- [ ] Apply [scripts/migrations/area-include-in-site-browse.sql](../scripts/migrations/area-include-in-site-browse.sql)
+- [ ] If hubs were empty after the Aug 2026 admin visibility rollout, confirm published rows are not stuck at `false`:
+
+```sql
+SELECT slug, status, include_on_towns_hub FROM towns WHERE archived_at IS NULL;
+SELECT slug, status, include_in_site_browse FROM areas WHERE archived_at IS NULL;
+```
+
+To restore visibility for published rows that were accidentally hidden:
+
+```sql
+UPDATE towns SET include_on_towns_hub = true
+  WHERE include_on_towns_hub = false AND status = 'published' AND archived_at IS NULL;
+UPDATE areas SET include_in_site_browse = true
+  WHERE include_in_site_browse = false AND status = 'published' AND archived_at IS NULL;
+```
+
+Until migrations run, hub list queries degrade gracefully (all published rows) but admin toggles for hub visibility will not persist.
+
+---
+
 ## GitLab CI minutes
 
 MR `check` job (lint / unit tests / `next build`) runs on GitLab shared runners.
@@ -678,6 +704,7 @@ Until then, treat **Vercel** preview/build as the production-build gate for MRs.
 
 | Date | Change |
 |------|--------|
+| 2026-08-23 | Towns/areas hub visibility: apply [town-include-on-towns-hub.sql](../scripts/migrations/town-include-on-towns-hub.sql) + [area-include-in-site-browse.sql](../scripts/migrations/area-include-in-site-browse.sql); hub list queries now fall back when columns are missing (fixes empty `/towns` and `/areas`) |
 | 2026-08-21 | Multi-category: SQL [business-category-memberships.sql](../scripts/migrations/business-category-memberships.sql); PostHog `multiple_category` (default off); leaf hubs + discover use memberships when on; admin/intake multi-select; suggest/apply scripts for extras |
 | 2026-08-21 | GitLab CI shared-runner minutes exhausted — MR `check` set `allow_failure: true` so quota failures do not block; restore minutes then remove allow_failure. Vercel remains the build gate. |
 | 2026-08-20 | PostHog `town_relationship` (default off): 30A corridor neighbor timeline on `/town/[slug]` above the map; SQL [town-relationships.sql](../scripts/migrations/town-relationships.sql) + [town-relationships-seed.sql](../scripts/migrations/town-relationships-seed.sql); local bypass `TOWN_RELATIONSHIP_ENABLED` / `NEXT_PUBLIC_TOWN_RELATIONSHIP_ENABLED`. Santa Rosa Beach is off-corridor (section hidden). |
