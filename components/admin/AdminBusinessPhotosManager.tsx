@@ -20,7 +20,6 @@ export function AdminBusinessPhotosManager({ businessId }: Props) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [asMain, setAsMain] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
@@ -54,12 +53,11 @@ export function AdminBusinessPhotosManager({ businessId }: Props) {
       const fd = new FormData();
       fd.set("business_id", businessId);
       fd.set("file", file);
-      fd.set("is_hero", asMain ? "true" : "false");
+      fd.set("is_hero", "false");
       const res = await fetch("/api/admin/business-photos", { method: "POST", body: fd });
       const j = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(j.error ?? "Upload failed");
       if (fileRef.current) fileRef.current.value = "";
-      setAsMain(false);
       load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Upload failed");
@@ -103,15 +101,6 @@ export function AdminBusinessPhotosManager({ businessId }: Props) {
           disabled={busy}
           className="block w-full text-xs"
         />
-        <label className="flex items-center gap-2 text-xs text-zinc-700">
-          <input
-            type="checkbox"
-            checked={asMain}
-            onChange={(e) => setAsMain(e.target.checked)}
-            disabled={busy}
-          />
-          Also set as main listing image
-        </label>
         <button
           type="submit"
           disabled={busy}
