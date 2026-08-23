@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isRentalIndexReady } from "@/lib/stays/eligibility";
 import { RENTAL_TOWN_HUB_MIN_PROPERTIES } from "@/lib/stays/constants";
+import { TOWNS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 const PAGE_SIZE = 1000;
 
@@ -64,5 +65,27 @@ export async function fetchSitemapRentals(
       date_updated: t.date_updated,
     }));
 
-  return { rentals, rentalTownHubs };
+  let browsableTownSlugs: Set<string> | null = null;
+  try {
+    const { data: townRows } = await supabase
+      .from("towns")
+      .select("slug")
+      .is("archived_at", null)
+      .eq("status", "published")
+      .or(TOWNS_HUB_INCLUDE_OR_FILTER);
+    browsableTownSlugs = new Set(
+      (townRows ?? [])
+        .map((r) => String((r as { slug: string }).slug ?? "").trim())
+        .filter(Boolean),
+    );
+  } catch {
+    browsableTownSlugs = null;
+  }
+
+  const filteredRentalTownHubs =
+    browsableTownSlugs && browsableTownSlugs.size > 0
+      ? rentalTownHubs.filter((t) => browsableTownSlugs!.has(String(t.slug)))
+      : rentalTownHubs;
+
+  return { rentals, rentalTownHubs: filteredRentalTownHubs };
 }

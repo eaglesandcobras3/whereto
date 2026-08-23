@@ -4,16 +4,26 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { AREAS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 export async function fetchSitemapAreaIntentRows(
   supabase: SupabaseClient,
 ): Promise<Record<string, unknown>[]> {
-  const [areas, pois] = await Promise.all([
-    supabase
+  let areasRes = await supabase
+    .from("areas")
+    .select("slug, date_updated, published_at, date_created")
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(AREAS_HUB_INCLUDE_OR_FILTER);
+  if (areasRes.error?.message.includes("include_in_site_browse")) {
+    areasRes = await supabase
       .from("areas")
       .select("slug, date_updated, published_at, date_created")
       .is("archived_at", null)
-      .eq("status", DIRECTUS_PUBLISHED_STATUS),
+      .eq("status", DIRECTUS_PUBLISHED_STATUS);
+  }
+  const [areas, pois] = await Promise.all([
+    Promise.resolve(areasRes),
     supabase
       .from("points_of_interest")
       .select("slug, date_updated, published_at, date_created")

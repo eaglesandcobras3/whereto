@@ -9,13 +9,15 @@ export async function editorialTextSearch<T>(opts: {
   query: string;
   limit: number;
   ilikeColumns: string[];
+  /** PostgREST `.or()` filter — e.g. hub browse visibility for towns/areas. */
+  hubBrowseOrFilter?: string;
   mapRow: (row: Record<string, unknown>) => T;
 }): Promise<T[]> {
   const q = opts.query.trim();
   if (!q) return [];
   const limit = Math.min(opts.limit, 12);
 
-  const { data, error } = await opts.supabase
+  let textQuery = opts.supabase
     .from(opts.table)
     .select(opts.select)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -25,6 +27,21 @@ export async function editorialTextSearch<T>(opts: {
       config: "english",
     })
     .limit(limit);
+  if (opts.hubBrowseOrFilter) textQuery = textQuery.or(opts.hubBrowseOrFilter);
+  let { data, error } = await textQuery;
+
+  if (error && opts.hubBrowseOrFilter && error.message.includes("include_")) {
+    ({ data, error } = await opts.supabase
+      .from(opts.table)
+      .select(opts.select)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .is("archived_at", null)
+      .textSearch("search_vector", q.split(/\s+/).join(" & "), {
+        type: "websearch",
+        config: "english",
+      })
+      .limit(limit));
+  }
 
   if (!error && data?.length) {
     return data.map((row) => opts.mapRow(row as unknown as Record<string, unknown>));
@@ -32,13 +49,24 @@ export async function editorialTextSearch<T>(opts: {
 
   const pattern = `%${q.replace(/%/g, "").replace(/,/g, "")}%`;
   const orParts = opts.ilikeColumns.map((col) => `${col}.ilike.${pattern}`);
-  const { data: fallback } = await opts.supabase
+  let fallbackQuery = opts.supabase
     .from(opts.table)
     .select(opts.select)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .is("archived_at", null)
     .or(orParts.join(","))
     .limit(limit);
+  if (opts.hubBrowseOrFilter) fallbackQuery = fallbackQuery.or(opts.hubBrowseOrFilter);
+  let { data: fallback, error: fallbackErr } = await fallbackQuery;
+  if (fallbackErr && opts.hubBrowseOrFilter && fallbackErr.message.includes("include_")) {
+    ({ data: fallback } = await opts.supabase
+      .from(opts.table)
+      .select(opts.select)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .is("archived_at", null)
+      .or(orParts.join(","))
+      .limit(limit));
+  }
 
   return (fallback ?? []).map((row) =>
     opts.mapRow(row as unknown as Record<string, unknown>),

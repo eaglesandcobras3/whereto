@@ -11,6 +11,7 @@ import {
   SERVICE_CATEGORY_GROUP_SLUGS,
 } from "@/lib/service-categories/groups";
 import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
+import { TOWNS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 export type DiscoverTownOption = {
   id: string;
@@ -45,12 +46,21 @@ export async function loadDiscoverFilterOptions(): Promise<{
 }> {
   const supabase = getServiceSupabase();
 
-  const townsRes = await supabase
+  let townsRes = await supabase
     .from("towns")
     .select("id, title, slug, map_lat, map_lng")
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(TOWNS_HUB_INCLUDE_OR_FILTER)
     .order("title", { ascending: true });
+  if (townsRes.error?.message.includes("include_on_towns_hub")) {
+    townsRes = await supabase
+      .from("towns")
+      .select("id, title, slug, map_lat, map_lng")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .order("title", { ascending: true });
+  }
 
   const vocabRes = await supabase
     .from("search_tags_vocabulary")

@@ -32,7 +32,10 @@ import { BusinessPhotoGallery } from "@/components/business/BusinessPhotoGallery
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { categoryHubPath } from "@/lib/routes/category-hub-path";
-import { townPagePath } from "@/lib/routes/town-page-path";
+import {
+  areaPublicPath,
+  townPublicPath,
+} from "@/lib/places/hub-browse-visibility";
 import { displayStorefrontCategoryTitle } from "@/lib/routes/storefront-category-labels";
 import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { discoverHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
@@ -99,8 +102,8 @@ async function loadBusiness(slug: string) {
         excerpt, content, overview, main_image, hero_image, main_image_url, hero_image_url,
         review_rating_cached, review_count_cached,
         claim_status, search_tags, status, published_at, price_level, is_verified, is_storefront,
-        towns ( title, slug ),
-        areas ( title, slug ),
+        towns ( title, slug, include_on_towns_hub ),
+        areas ( title, slug, include_in_site_browse ),
         business_categories!primary_category_id ( title, slug )
       `;
 
@@ -132,35 +135,46 @@ async function loadBusiness(slug: string) {
       row.main_image as string,
       row.hero_image as string,
     );
-    const towns = row.towns as { title?: string; name?: string; slug?: string } | null;
+    const towns = row.towns as {
+      title?: string;
+      name?: string;
+      slug?: string;
+      include_on_towns_hub?: boolean | null;
+    } | null;
     const category = row.business_categories as { title?: string; slug?: string } | null;
 
     const areasEmbed = row.areas as
-      | { title?: string; slug?: string }
-      | { title?: string; slug?: string }[]
+      | { title?: string; slug?: string; include_in_site_browse?: boolean | null }
+      | { title?: string; slug?: string; include_in_site_browse?: boolean | null }[]
       | null;
     const areasOne = areasEmbed && Array.isArray(areasEmbed) ? areasEmbed[0] : areasEmbed;
-    let primary_area: { name: string; slug: string } | null =
+    let primary_area: { name: string; slug: string; public_href: string | null } | null =
       areasOne?.slug != null && String(areasOne.slug).trim()
         ? {
             name: (areasOne.title ?? "Area").trim() || "Area",
             slug: String(areasOne.slug).trim(),
+            public_href: areaPublicPath(
+              String(areasOne.slug).trim(),
+              areasOne.include_in_site_browse,
+            ),
           }
         : null;
     const rawAreaId = row.area_id as string | null | undefined;
     if (!primary_area && rawAreaId) {
       const { data: ar } = await supabase
         .from("areas_view")
-        .select("title, slug")
+        .select("title, slug, include_in_site_browse")
         .eq("id", rawAreaId)
         .is("archived_at", null)
         .eq("status", DIRECTUS_PUBLISHED_STATUS)
         .maybeSingle();
-      const a = ar as { title?: string; slug?: string } | null;
+      const a = ar as { title?: string; slug?: string; include_in_site_browse?: boolean | null } | null;
       if (a?.slug != null && String(a.slug).trim()) {
+        const slug = String(a.slug).trim();
         primary_area = {
           name: (a.title ?? "Area").trim() || "Area",
-          slug: String(a.slug).trim(),
+          slug,
+          public_href: areaPublicPath(slug, a.include_in_site_browse),
         };
       }
     }
@@ -176,16 +190,18 @@ async function loadBusiness(slug: string) {
       if (jid) {
         const { data: ar } = await supabase
           .from("areas_view")
-          .select("title, slug")
+          .select("title, slug, include_in_site_browse")
           .eq("id", jid)
           .is("archived_at", null)
           .eq("status", DIRECTUS_PUBLISHED_STATUS)
           .maybeSingle();
-        const a = ar as { title?: string; slug?: string } | null;
+        const a = ar as { title?: string; slug?: string; include_in_site_browse?: boolean | null } | null;
         if (a?.slug != null && String(a.slug).trim()) {
+          const slug = String(a.slug).trim();
           primary_area = {
             name: (a.title ?? "Area").trim() || "Area",
-            slug: String(a.slug).trim(),
+            slug,
+            public_href: areaPublicPath(slug, a.include_in_site_browse),
           };
         }
       }
@@ -201,7 +217,15 @@ async function loadBusiness(slug: string) {
       ai_summary: (row.excerpt as string) ?? (typeof row.content === "string" ? row.content.slice(0, 500) : null),
       listing_rating: row.review_rating_cached,
       listing_review_count: row.review_count_cached,
-      towns: towns ? { name: (towns as { title?: string }).title ?? towns.name, slug: towns.slug } : null,
+      towns: towns
+        ? {
+            name: (towns as { title?: string }).title ?? towns.name,
+            slug: towns.slug,
+            public_href: towns.slug
+              ? townPublicPath(towns.slug, towns.include_on_towns_hub)
+              : null,
+          }
+        : null,
       primary_area,
       categories: category
         ? {
@@ -364,8 +388,10 @@ export default async function BusinessPage({ params }: Props) {
     }
   }
 
-  const town = b.towns as { name?: string; slug?: string } | null;
-  const primaryArea = b.primary_area as { name: string; slug: string } | null;
+  const town = b.towns as { name?: string; slug?: string; public_href?: string | null } | null;
+  const primaryArea = b.primary_area as { name: string; slug: string; public_href?: string | null } | null;
+  const townHref = town?.public_href ?? null;
+  const areaHref = primaryArea?.public_href ?? null;
   const category = b.categories as { name?: string; slug?: string } | null;
   const hasPhysicalLocation = Boolean(b.has_physical_location);
   const normalizedCategoryName = (category?.name ?? "").trim().toLowerCase();
@@ -431,7 +457,7 @@ export default async function BusinessPage({ params }: Props) {
   const breadcrumbItems = [
     { name: "Home", href: "/" },
     { name: "Businesses", href: businessesHref },
-    ...(town?.slug && town?.name ? [{ name: town.name, href: townPagePath(town.slug) }] : []),
+    ...(town?.name && townHref ? [{ name: town.name, href: townHref }] : []),
     ...(breadcrumbCategoryLabel && category?.slug
       ? [{ name: breadcrumbCategoryLabel, href: categoryHubPath(category.slug) }]
       : []),
@@ -531,20 +557,27 @@ export default async function BusinessPage({ params }: Props) {
 
               {/* Quick meta row */}
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-zinc-500">
-                {town?.name && town?.slug && (
-                  <Link
-                    href={townPagePath(town.slug)}
-                    {...gaClickProps({
-                      event: "nav_click",
-                      category: "business_detail_meta",
-                      label: `${gaBiz}_town_pin`,
-                    })}
-                    className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
-                  >
-                    <span className="material-symbols-outlined !text-base">place</span>
-                    {town.name}
-                  </Link>
-                )}
+                {town?.name ? (
+                  townHref ? (
+                    <Link
+                      href={townHref}
+                      {...gaClickProps({
+                        event: "nav_click",
+                        category: "business_detail_meta",
+                        label: `${gaBiz}_town_pin`,
+                      })}
+                      className="flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
+                    >
+                      <span className="material-symbols-outlined !text-base">place</span>
+                      {town.name}
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined !text-base">place</span>
+                      {town.name}
+                    </span>
+                  )
+                ) : null}
                 {category?.name && (
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined !text-base">category</span>
@@ -718,40 +751,58 @@ export default async function BusinessPage({ params }: Props) {
                   <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <h2 className="text-eyebrow mb-4">Town &amp; area</h2>
                     <ul className="space-y-2">
-                      {town?.slug && town?.name ? (
+                      {town?.name ? (
                         <li>
-                          <Link
-                            href={townPagePath(town.slug)}
-                            {...gaClickProps({
-                              event: "nav_click",
-                              category: "business_detail_sidebar",
-                              label: `${gaBiz}_town_link`,
-                            })}
-                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                          >
-                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                              place
+                          {townHref ? (
+                            <Link
+                              href={townHref}
+                              {...gaClickProps({
+                                event: "nav_click",
+                                category: "business_detail_sidebar",
+                                label: `${gaBiz}_town_link`,
+                              })}
+                              className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                            >
+                              <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                                place
+                              </span>
+                              {town.name}
+                            </Link>
+                          ) : (
+                            <span className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                              <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)]">
+                                place
+                              </span>
+                              {town.name}
                             </span>
-                            {town.name}
-                          </Link>
+                          )}
                         </li>
                       ) : null}
                       {primaryArea ? (
                         <li>
-                          <Link
-                            href={`/area/${primaryArea.slug}`}
-                            {...gaClickProps({
-                              event: "nav_click",
-                              category: "business_detail_sidebar",
-                              label: `${gaBiz}_area_${primaryArea.slug}`,
-                            })}
-                            className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
-                          >
-                            <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
-                              explore
+                          {areaHref ? (
+                            <Link
+                              href={areaHref}
+                              {...gaClickProps({
+                                event: "nav_click",
+                                category: "business_detail_sidebar",
+                                label: `${gaBiz}_area_${primaryArea.slug}`,
+                              })}
+                              className="group flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-primary)]"
+                            >
+                              <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)] group-hover:text-[var(--color-primary)]">
+                                explore
+                              </span>
+                              {primaryArea.name}
+                            </Link>
+                          ) : (
+                            <span className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                              <span className="material-symbols-outlined !text-base text-[var(--color-text-tertiary)]">
+                                explore
+                              </span>
+                              {primaryArea.name}
                             </span>
-                            {primaryArea.name}
-                          </Link>
+                          )}
                         </li>
                       ) : null}
                     </ul>
