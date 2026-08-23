@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { listRecentBusinessesForAdmin } from "@/lib/admin/list-recent-businesses";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { validateSeedBusinessInput } from "@/lib/directory-audit/process-seed-business";
@@ -63,9 +64,18 @@ export async function GET() {
   if (areasErr) return NextResponse.json({ error: areasErr.message }, { status: 500 });
 
   const items = (queue ?? []) as SeedQueueItem[];
+
+  let recentBusinesses: Awaited<ReturnType<typeof listRecentBusinessesForAdmin>> = [];
+  try {
+    recentBusinesses = await listRecentBusinessesForAdmin(supabase, { days: 30 });
+  } catch (e) {
+    console.error("recent businesses", e);
+  }
+
   return NextResponse.json({
     pending: items.filter((item) => item.status === "pending" || item.status === "processing"),
     needsReview: items.filter((item) => item.status === "needs_review"),
+    recentBusinesses,
     options: {
       towns: towns ?? [],
       areas: areas ?? [],
