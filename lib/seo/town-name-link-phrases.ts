@@ -49,13 +49,14 @@ export type TownNameMatch = {
 /** Non-overlapping town name matches in display text (case-insensitive). */
 export function findTownNameMatches(
   text: string,
-  options?: { excludeSlug?: string },
+  options?: { excludeSlug?: string; linkableSlugs?: ReadonlySet<string> },
 ): TownNameMatch[] {
   const matches: TownNameMatch[] = [];
   const lower = text.toLowerCase();
 
   for (const { phrase, slug } of TOWN_NAME_LINK_PHRASES_SORTED) {
     if (options?.excludeSlug && slug === options.excludeSlug) continue;
+    if (options?.linkableSlugs && !options.linkableSlugs.has(slug)) continue;
     const phraseLower = phrase.toLowerCase();
     let searchFrom = 0;
 

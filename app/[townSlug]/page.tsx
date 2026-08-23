@@ -23,22 +23,9 @@ type Props = { params: Promise<{ townSlug: string }> };
 export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
-  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
-  const supabase = getServiceSupabase();
-  const { data } = await supabase
-    .from("towns")
-    .select("slug")
-    .is("archived_at", null)
-    .order("slug");
-
-  const segments = new Set<string>();
-  for (const row of data ?? []) {
-    const slug = String((row as { slug: string }).slug);
-    if (!slug || isReservedRootSlug(slug)) continue;
-    segments.add(slug);
-  }
-
-  return [...segments].map((townSlug) => ({ townSlug }));
+  const { listTownsForTownsHub } = await import("@/lib/data/towns-hub-list");
+  const towns = await listTownsForTownsHub();
+  return towns.map((t) => ({ townSlug: t.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

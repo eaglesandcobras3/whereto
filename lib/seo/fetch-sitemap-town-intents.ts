@@ -3,15 +3,25 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getTownIntentSectionsForTown } from "@/lib/data/town-category-sections";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
+import { TOWNS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 export async function fetchSitemapTownIntentRows(
   supabase: SupabaseClient,
 ): Promise<Record<string, unknown>[]> {
-  const { data: towns } = await supabase
+  let townsRes = await supabase
     .from("towns")
     .select("id, slug, date_updated, published_at, date_created")
     .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS);
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(TOWNS_HUB_INCLUDE_OR_FILTER);
+  if (townsRes.error?.message.includes("include_on_towns_hub")) {
+    townsRes = await supabase
+      .from("towns")
+      .select("id, slug, date_updated, published_at, date_created")
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS);
+  }
+  const towns = townsRes.data;
 
   const out: Record<string, unknown>[] = [];
 

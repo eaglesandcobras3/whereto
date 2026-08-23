@@ -7,6 +7,10 @@ import { getSiteUrl } from "@/lib/site-url";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { buildSitemapEntries, staticFallbackSitemap } from "@/lib/seo/sitemap-strategy";
 import {
+  AREAS_HUB_INCLUDE_OR_FILTER,
+  TOWNS_HUB_INCLUDE_OR_FILTER,
+} from "@/lib/places/hub-browse-visibility";
+import {
   fetchSitemapCategories,
   listNonEmptySitemapBrowseGroupPaths,
 } from "@/lib/seo/sitemap-categories";
@@ -23,11 +27,12 @@ async function fetchPublishedRows(
   supabase: SupabaseClient,
   table: string,
   select: string,
+  hubBrowseOrFilter?: string,
 ): Promise<Record<string, unknown>[]> {
   const out: Record<string, unknown>[] = [];
   let from = 0;
   for (;;) {
-    const { data, error } = await supabase
+    let query = supabase
       .from(table)
       .select(select)
       .is("archived_at", null)
@@ -36,6 +41,19 @@ async function fetchPublishedRows(
       .not("status", "eq", "draft")
       .order("id", { ascending: true })
       .range(from, from + SITEMAP_PAGE_SIZE - 1);
+    if (hubBrowseOrFilter) query = query.or(hubBrowseOrFilter);
+    let { data, error } = await query;
+    if (error && hubBrowseOrFilter && error.message.includes("include_")) {
+      ({ data, error } = await supabase
+        .from(table)
+        .select(select)
+        .is("archived_at", null)
+        .eq("status", DIRECTUS_PUBLISHED_STATUS)
+        .not("status", "eq", "archived")
+        .not("status", "eq", "draft")
+        .order("id", { ascending: true })
+        .range(from, from + SITEMAP_PAGE_SIZE - 1));
+    }
     if (error) {
       console.error(`sitemap: ${table}`, error);
       break;
@@ -75,9 +93,19 @@ export async function fetchSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       areaIntents,
     ] =
       await Promise.all([
-        fetchPublishedRows(supabase, "towns", "slug, date_updated, published_at, date_created"),
+        fetchPublishedRows(
+          supabase,
+          "towns",
+          "slug, date_updated, published_at, date_created",
+          TOWNS_HUB_INCLUDE_OR_FILTER,
+        ),
         fetchSitemapGuides(supabase),
-        fetchPublishedRows(supabase, "areas", "slug, date_updated, published_at, date_created"),
+        fetchPublishedRows(
+          supabase,
+          "areas",
+          "slug, date_updated, published_at, date_created",
+          AREAS_HUB_INCLUDE_OR_FILTER,
+        ),
         fetchPublishedRows(
           supabase,
           "points_of_interest",

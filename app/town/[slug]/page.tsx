@@ -44,6 +44,7 @@ import {
 import { getTownRelationshipCorridor } from "@/lib/data/town-relationships";
 import type { TownCorridorData } from "@/lib/data/town-relationships";
 import { TownCorridorSection } from "@/components/town/TownCorridorSection";
+import { AREAS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 type SidebarArea = {
   id: string;
@@ -84,6 +85,7 @@ async function getTownPageData(townId: string) {
     .eq("town_id", townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(AREAS_HUB_INCLUDE_OR_FILTER)
     .order("title")
     .limit(TOWN_AREAS_CANDIDATE_CAP);
 
@@ -219,16 +221,9 @@ type Props = { params: Promise<{ slug: string }> };
 export const revalidate = 21600;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const { getServiceSupabase } = await import("@/lib/supabase/service-role");
-  const supabase = getServiceSupabase();
-  const { data } = await supabase
-    .from("towns")
-    .select("slug")
-    .is("archived_at", null)
-    .order("slug");
-  return (data ?? [])
-    .map((row) => ({ slug: String((row as { slug: string }).slug) }))
-    .filter((r) => r.slug);
+  const { listTownsForTownsHub } = await import("@/lib/data/towns-hub-list");
+  const towns = await listTownsForTownsHub();
+  return towns.map((t) => ({ slug: t.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
