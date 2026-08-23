@@ -1,4 +1,5 @@
 import { getServiceSupabase } from "@/lib/supabase/service-role";
+import { AREAS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import {
   DIRECTUS_PUBLISHED_STATUS,
@@ -421,6 +422,7 @@ export async function getTownAreasForLocalGuide(
     .eq("town_id", townId)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(AREAS_HUB_INCLUDE_OR_FILTER)
     .order("title");
 
   const districts: TownAreaBrowseRow[] = (areaData ?? []).map((r) => {

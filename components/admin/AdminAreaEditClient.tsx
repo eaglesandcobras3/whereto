@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AREA_TYPES, PLACE_STATUSES } from "@/lib/admin/place-constants";
+import { includedOnHubBrowse } from "@/lib/places/hub-browse-visibility";
 
 type TownOption = { id: string; title: string; slug: string };
 
@@ -72,7 +73,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
         setContent(String(a.content ?? ""));
         setSeoDescription(String(a.seo_description ?? ""));
         setParkingNotes(String(a.parking_notes ?? ""));
-        setIncludeBrowse(a.include_in_site_browse !== false);
+        setIncludeBrowse(includedOnHubBrowse(a.include_in_site_browse));
         setMapLat(a.map_lat != null ? String(a.map_lat) : "");
         setMapLng(a.map_lng != null ? String(a.map_lng) : "");
         setMainImageUrl(String(a.main_image_url ?? ""));
@@ -174,9 +175,20 @@ export function AdminAreaEditClient({ areaId }: Props) {
         </select>
       </label>
 
-      <label className="flex items-center gap-2 text-sm text-zinc-800">
-        <input type="checkbox" checked={includeBrowse} onChange={(e) => setIncludeBrowse(e.target.checked)} />
-        Include in site browse
+      <label className="flex items-start gap-3 text-sm text-zinc-800">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={includeBrowse}
+          onChange={(e) => setIncludeBrowse(e.target.checked)}
+        />
+        <span>
+          Show on <code className="rounded bg-zinc-100 px-1 text-xs">/areas</code> hub
+          <span className="mt-0.5 block text-xs text-zinc-500">
+            Uncheck to keep the area page live but hide it from the areas listing. Existing areas
+            default to shown unless explicitly hidden.
+          </span>
+        </span>
       </label>
 
       <label className={labelClass}>

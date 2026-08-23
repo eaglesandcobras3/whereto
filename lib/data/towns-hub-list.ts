@@ -4,7 +4,7 @@ import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
-import { TOWNS_HUB_INCLUDE_OR_FILTER } from "@/lib/towns/towns-hub-visibility";
+import { TOWNS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 export type TownsHubListRow = {
   id: string;

@@ -189,7 +189,7 @@ export async function createAdminArea(
       slug,
       town_id: input.town_id ?? null,
       area_type: "neighborhood",
-      include_in_site_browse: true,
+      include_in_site_browse: false,
       status: "draft",
       date_created: now,
       date_updated: now,

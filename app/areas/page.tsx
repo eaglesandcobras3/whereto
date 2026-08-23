@@ -1,15 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { AreaCard } from "@/components/discovery/AreaCard";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
+import { listAreasForAreasHub } from "@/lib/data/areas-hub-list";
 import { listAreaHubMapMarkers } from "@/lib/data/place-map-markers";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import { openGraphForPage } from "@/lib/seo/social-metadata";
-import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { hubAreasIntro } from "@/lib/seo/page-intro-copy";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
-import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 
@@ -38,77 +36,8 @@ export const metadata: Metadata = {
   }),
 };
 
-const AREA_TYPE_LABELS: Record<string, string> = {
-  shopping_district: "Shopping district",
-  town_center: "Town center",
-  neighborhood: "Neighborhood",
-  landmark: "Landmark",
-  waterfront: "Waterfront",
-  market: "Market",
-};
-
-type AreaRow = {
-  id: string;
-  name: string;
-  slug: string;
-  subtitle: string | null;
-  hero_image_url: string | null;
-};
-
-function areaSubtitle(
-  excerpt: string | null,
-  areaType: string | null,
-  townName: string | null,
-): string | null {
-  if (excerpt?.trim()) return excerpt.trim();
-  const typeLabel = areaType
-    ? (AREA_TYPE_LABELS[areaType] ?? areaType.replace(/_/g, " "))
-    : null;
-  if (typeLabel && townName) return `${typeLabel} · ${townName}`;
-  return typeLabel ?? townName;
-}
-
-async function getAreas(): Promise<AreaRow[]> {
-  const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("areas_view")
-    .select(
-      "id, title, slug, area_type, excerpt, main_image, hero_image, main_image_url, hero_image_url, towns ( title, slug )",
-    )
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .order("title");
-
-  if (error) {
-    console.error("areas hub: areas query", error);
-    return [];
-  }
-
-  return (data ?? []).map((row) => {
-    const r = row as Record<string, unknown>;
-    const town = r.towns as { title?: string } | null;
-    const heroUrl = getPublicImageUrlWithView(
-      r.main_image_url as string | null,
-      r.hero_image_url as string | null,
-      r.main_image as string | null,
-      r.hero_image as string | null,
-    );
-    return {
-      id: String(r.id),
-      name: String((r as { title: string }).title),
-      slug: String(r.slug),
-      subtitle: areaSubtitle(
-        (r.excerpt as string | null) ?? null,
-        (r.area_type as string | null) ?? null,
-        town?.title ?? null,
-      ),
-      hero_image_url: heroUrl,
-    };
-  });
-}
-
 export default async function AreasPage() {
-  const areas = await getAreas();
+  const areas = await listAreasForAreasHub();
   const flags = await getAllFeatureFlags();
   const townMapsEnabled = isTownMapsFeatureEnabled(flags);
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PLACE_STATUSES } from "@/lib/admin/place-constants";
-import { townIncludedOnTownsHub } from "@/lib/towns/towns-hub-visibility";
+import { includedOnHubBrowse } from "@/lib/places/hub-browse-visibility";
 
 type TownRow = Record<string, unknown> & {
   id: string;
@@ -69,7 +69,7 @@ export function AdminTownEditClient({ townId }: Props) {
         setTitle(String(t.title ?? ""));
         setSlug(String(t.slug ?? ""));
         setStatus(String(t.status ?? "draft"));
-        setIncludeOnTownsHub(townIncludedOnTownsHub(t.include_on_towns_hub as boolean | null));
+        setIncludeOnTownsHub(includedOnHubBrowse(t.include_on_towns_hub as boolean | null));
         setExcerpt(String(t.excerpt ?? ""));
         setContent(String(t.content ?? ""));
         setSeoTitle(String(t.seo_title ?? ""));
