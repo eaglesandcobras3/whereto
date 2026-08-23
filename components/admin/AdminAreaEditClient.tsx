@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AdminPlaceMainImageControl } from "@/components/admin/AdminPlaceMainImageControl";
 import { AREA_TYPES, PLACE_STATUSES } from "@/lib/admin/place-constants";
 import { includedOnHubBrowse } from "@/lib/places/hub-browse-visibility";
 
@@ -22,6 +23,7 @@ type AreaRow = Record<string, unknown> & {
   map_lat: number | null;
   map_lng: number | null;
   main_image_url: string | null;
+  hero_image_url?: string | null;
 };
 
 const inputClass =
@@ -49,7 +51,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
   const [includeBrowse, setIncludeBrowse] = useState(true);
   const [mapLat, setMapLat] = useState("");
   const [mapLng, setMapLng] = useState("");
-  const [mainImageUrl, setMainImageUrl] = useState("");
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -76,7 +78,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
         setIncludeBrowse(includedOnHubBrowse(a.include_in_site_browse));
         setMapLat(a.map_lat != null ? String(a.map_lat) : "");
         setMapLng(a.map_lng != null ? String(a.map_lng) : "");
-        setMainImageUrl(String(a.main_image_url ?? ""));
+        setMainImageUrl(a.main_image_url ?? a.hero_image_url ?? null);
       })
       .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
@@ -108,7 +110,6 @@ export function AdminAreaEditClient({ areaId }: Props) {
           include_in_site_browse: includeBrowse,
           map_lat: mapLat.trim() ? Number(mapLat) : null,
           map_lng: mapLng.trim() ? Number(mapLng) : null,
-          main_image_url: mainImageUrl.trim() || null,
         }),
       });
       const j = (await res.json()) as { error?: string };
@@ -211,10 +212,12 @@ export function AdminAreaEditClient({ areaId }: Props) {
         <textarea className={inputClass} rows={2} value={parkingNotes} onChange={(e) => setParkingNotes(e.target.value)} />
       </label>
 
-      <label className={labelClass}>
-        Main image URL
-        <input className={inputClass} value={mainImageUrl} onChange={(e) => setMainImageUrl(e.target.value)} />
-      </label>
+      <AdminPlaceMainImageControl
+        entity="area"
+        entityId={areaId}
+        currentImageUrl={mainImageUrl}
+        onUpdated={(url) => setMainImageUrl(url)}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={labelClass}>

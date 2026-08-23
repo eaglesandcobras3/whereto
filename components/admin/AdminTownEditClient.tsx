@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AdminPlaceMainImageControl } from "@/components/admin/AdminPlaceMainImageControl";
 import { PLACE_STATUSES } from "@/lib/admin/place-constants";
 import { includedOnHubBrowse } from "@/lib/places/hub-browse-visibility";
 
@@ -18,6 +19,7 @@ type TownRow = Record<string, unknown> & {
   map_lat: number | null;
   map_lng: number | null;
   main_image_url: string | null;
+  hero_image_url?: string | null;
   at_a_glance_description?: string | null;
   walkability_rating?: string | null;
   beach_type?: string | null;
@@ -49,7 +51,7 @@ export function AdminTownEditClient({ townId }: Props) {
   const [seoDescription, setSeoDescription] = useState("");
   const [mapLat, setMapLat] = useState("");
   const [mapLng, setMapLng] = useState("");
-  const [mainImageUrl, setMainImageUrl] = useState("");
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [atAGlance, setAtAGlance] = useState("");
   const [walkability, setWalkability] = useState("");
   const [beachType, setBeachType] = useState("");
@@ -76,7 +78,7 @@ export function AdminTownEditClient({ townId }: Props) {
         setSeoDescription(String(t.seo_description ?? ""));
         setMapLat(t.map_lat != null ? String(t.map_lat) : "");
         setMapLng(t.map_lng != null ? String(t.map_lng) : "");
-        setMainImageUrl(String(t.main_image_url ?? ""));
+        setMainImageUrl(t.main_image_url ?? (t.hero_image_url as string | null) ?? null);
         setAtAGlance(String(t.at_a_glance_description ?? ""));
         setWalkability(String(t.walkability_rating ?? ""));
         setBeachType(String(t.beach_type ?? ""));
@@ -108,7 +110,6 @@ export function AdminTownEditClient({ townId }: Props) {
       seo_description: seoDescription,
       map_lat: mapLat.trim() ? Number(mapLat) : null,
       map_lng: mapLng.trim() ? Number(mapLng) : null,
-      main_image_url: mainImageUrl.trim() || null,
       at_a_glance_description: atAGlance,
       walkability_rating: walkability,
       beach_type: beachType,
@@ -204,10 +205,12 @@ export function AdminTownEditClient({ townId }: Props) {
         </label>
       </div>
 
-      <label className={labelClass}>
-        Main image URL
-        <input className={inputClass} value={mainImageUrl} onChange={(e) => setMainImageUrl(e.target.value)} />
-      </label>
+      <AdminPlaceMainImageControl
+        entity="town"
+        entityId={townId}
+        currentImageUrl={mainImageUrl}
+        onUpdated={(url) => setMainImageUrl(url)}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={labelClass}>
