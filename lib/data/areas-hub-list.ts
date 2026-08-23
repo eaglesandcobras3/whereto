@@ -46,7 +46,7 @@ const AREAS_HUB_SELECT =
 /** Published areas for /areas hub (excludes include_in_site_browse = false). */
 export async function listAreasForAreasHub(): Promise<AreasHubListRow[]> {
   const supabase = getServiceSupabase();
-  let { data, error } = await supabase
+  const primary = await supabase
     .from("areas_view")
     .select(`${AREAS_HUB_SELECT}, include_in_site_browse`)
     .is("archived_at", null)
@@ -54,25 +54,30 @@ export async function listAreasForAreasHub(): Promise<AreasHubListRow[]> {
     .or(AREAS_HUB_INCLUDE_OR_FILTER)
     .order("title");
 
-  if (error?.message.includes("include_in_site_browse")) {
+  let rows = (primary.data ?? null) as Record<string, unknown>[] | null;
+  let queryError = primary.error;
+
+  if (queryError?.message.includes("include_in_site_browse")) {
     console.warn(
       "listAreasForAreasHub: include_in_site_browse missing — apply scripts/migrations/area-include-in-site-browse.sql; listing all published areas",
     );
-    ({ data, error } = await supabase
+    const fallback = await supabase
       .from("areas_view")
       .select(AREAS_HUB_SELECT)
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .order("title"));
+      .order("title");
+    rows = (fallback.data ?? null) as Record<string, unknown>[] | null;
+    queryError = fallback.error;
   }
 
-  if (error) {
-    console.error("listAreasForAreasHub", error);
+  if (queryError) {
+    console.error("listAreasForAreasHub", queryError);
     return [];
   }
 
-  return (data ?? []).map((row) => {
-    const r = row as Record<string, unknown>;
+  return (rows ?? []).map((row) => {
+    const r = row;
     const town = r.towns as { title?: string } | null;
     const heroUrl = getPublicImageUrlWithView(
       r.main_image_url as string | null,
