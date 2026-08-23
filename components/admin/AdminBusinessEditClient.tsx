@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import type { AdminBusinessRow } from "@/lib/admin/admin-business-direct-edit";
@@ -11,6 +12,18 @@ import {
   formatSearchTagLabel,
   normalizeSearchTagSlug,
 } from "@/lib/discovery-filters/search-tag-label";
+
+const MapLocationPickerClient = dynamic(
+  () => import("@/components/maps/MapLocationPicker").then((m) => m.MapLocationPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-56 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-xs text-zinc-500 sm:h-64">
+        Loading map…
+      </div>
+    ),
+  },
+);
 
 type OptionTown = { id: string; title: string; slug: string };
 type OptionArea = { id: string; title: string; slug: string | null; town_id: string | null };
@@ -26,6 +39,13 @@ const inputClass =
   "mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10";
 const labelClass = "block text-sm font-medium text-zinc-700";
 const ADMIN_SEARCH_TAGS_MAX = 12;
+
+function parseCoord(raw: string): number | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
 
 export function AdminBusinessEditClient({
   businessId,
@@ -196,6 +216,9 @@ export function AdminBusinessEditClient({
     setSelectedTags([...selectedTags, slug]);
   }
 
+  const mapLatNum = useMemo(() => parseCoord(mapLat), [mapLat]);
+  const mapLngNum = useMemo(() => parseCoord(mapLng), [mapLng]);
+
   const areasForTown = useMemo(() => {
     if (!townId) return areas;
     return areas.filter((a) => !a.town_id || a.town_id === townId);
@@ -206,13 +229,6 @@ export function AdminBusinessEditClient({
     setSaving(true);
     setErr(null);
     setOk(null);
-
-    const parseCoord = (raw: string): number | null => {
-      const t = raw.trim();
-      if (!t) return null;
-      const n = Number(t);
-      return Number.isFinite(n) ? n : null;
-    };
 
     const normalizedSuggested = suggestedTags
       .map((label) => normalizeSearchTagSlug(label))
@@ -473,15 +489,39 @@ export function AdminBusinessEditClient({
           </label>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={labelClass}>
-            Map lat
-            <input className={inputClass} value={mapLat} onChange={(e) => setMapLat(e.target.value)} />
-          </label>
-          <label className={labelClass}>
-            Map lng
-            <input className={inputClass} value={mapLng} onChange={(e) => setMapLng(e.target.value)} />
-          </label>
+        <div className="space-y-3">
+          <p className={labelClass}>Map location</p>
+          <MapLocationPickerClient
+            lat={mapLatNum}
+            lng={mapLngNum}
+            onChange={(lat, lng) => {
+              setMapLat(lat != null ? String(lat) : "");
+              setMapLng(lng != null ? String(lng) : "");
+            }}
+            helpText="Click the map to drop a pin, drag to adjust, or edit latitude and longitude below."
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className={labelClass}>
+              Map lat
+              <input
+                className={inputClass}
+                value={mapLat}
+                inputMode="decimal"
+                onChange={(e) => setMapLat(e.target.value)}
+                placeholder="30.32"
+              />
+            </label>
+            <label className={labelClass}>
+              Map lng
+              <input
+                className={inputClass}
+                value={mapLng}
+                inputMode="decimal"
+                onChange={(e) => setMapLng(e.target.value)}
+                placeholder="-86.13"
+              />
+            </label>
+          </div>
         </div>
 
         <label className={labelClass}>
