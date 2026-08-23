@@ -90,9 +90,15 @@ export async function listAdminTags(
     })
     .filter((row) => {
       if (!needle) return true;
+      const tagLabel = row.tag.replace(/_/g, " ");
       return (
         row.tag.includes(needle) ||
-        (row.description?.toLowerCase().includes(needle) ?? false)
+        tagLabel.includes(needle) ||
+        (row.description?.toLowerCase().includes(needle) ?? false) ||
+        row.category_slugs.some(
+          (slug) =>
+            slug.includes(needle) || slug.replace(/_/g, " ").includes(needle),
+        )
       );
     });
 }
