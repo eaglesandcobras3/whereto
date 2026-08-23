@@ -77,7 +77,7 @@ const TOWN_AREAS_CANDIDATE_CAP = 50;
 async function getTownPageData(townId: string) {
   const supabase = getServiceSupabase();
 
-  const areasRes = await supabase
+  let areasRes = await supabase
     .from("areas_view")
     .select(
       "id, title, slug, excerpt, seo_description, main_image, hero_image, main_image_url, hero_image_url",
@@ -88,6 +88,21 @@ async function getTownPageData(townId: string) {
     .or(AREAS_HUB_INCLUDE_OR_FILTER)
     .order("title")
     .limit(TOWN_AREAS_CANDIDATE_CAP);
+
+  if (areasRes.error?.message.includes("include_in_site_browse")) {
+    areasRes = await supabase
+      .from("areas_view")
+      .select(
+        "id, title, slug, excerpt, seo_description, main_image, hero_image, main_image_url, hero_image_url",
+      )
+      .eq("town_id", townId)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .order("title")
+      .limit(TOWN_AREAS_CANDIDATE_CAP);
+  } else if (areasRes.error) {
+    console.error("getTownPageData areas", areasRes.error);
+  }
 
   const townAreaRows = (areasRes.data ?? []).map((row) => {
     const r = row as Record<string, unknown>;
