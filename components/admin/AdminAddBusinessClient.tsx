@@ -191,6 +191,26 @@ export function AdminAddBusinessClient() {
     }
   }
 
+  async function tryAgain(id: string) {
+    setActionId(id);
+    setErr(null);
+    try {
+      const res = await fetch("/api/admin/business-seed-queue/retry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const j = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Try again failed");
+      setOk("Moved back to pending queue");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Try again failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
   async function skip(id: string) {
     setActionId(id);
     setErr(null);
@@ -355,8 +375,8 @@ export function AdminAddBusinessClient() {
           Needs review ({needsReview.length})
         </h2>
         <p className="text-sm text-zinc-600">
-          Gemini could not confirm these. Force apply inserts with available enrichment; skip removes them from
-          the queue.
+          Gemini could not confirm these. Try again moves the row back to the pending queue for a fresh apply;
+          force apply inserts with available enrichment; skip removes them from the queue.
         </p>
         {needsReview.length === 0 ? (
           <p className="text-sm text-zinc-500">Nothing awaiting review.</p>
@@ -377,7 +397,15 @@ export function AdminAddBusinessClient() {
                       </p>
                     ) : null}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
+                      disabled={actionId === item.id || applying}
+                      onClick={() => void tryAgain(item.id)}
+                    >
+                      Try again
+                    </button>
                     <button
                       type="button"
                       className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
