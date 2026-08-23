@@ -23,6 +23,28 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description: "Create, edit, enrich, and publish editorial guides (markdown).",
   },
   {
+    href: "/admin/towns",
+    title: "Towns",
+    description: "Search and edit town destination pages.",
+    requiresAdminBusinessDirectEdit: true,
+  },
+  {
+    href: "/admin/areas",
+    title: "Areas",
+    description: "Search and edit neighborhoods, districts, and POIs.",
+    requiresAdminBusinessDirectEdit: true,
+  },
+  {
+    href: "/admin/categories",
+    title: "Categories",
+    description: "Browse unified business category taxonomy (read-only).",
+  },
+  {
+    href: "/admin/tags",
+    title: "Search tags",
+    description: "Manage business search tag vocabulary and descriptions.",
+  },
+  {
     href: "/admin/businesses",
     title: "Businesses",
     description: "Search and edit directory listings directly (no review queue).",

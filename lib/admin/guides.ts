@@ -115,6 +115,24 @@ export function mainImagePatch(
   return { main_image_url: null, main_image: null };
 }
 
+export async function resolveGuideIdForAdmin(
+  supabase: SupabaseClient,
+  ref: string,
+): Promise<string | null> {
+  const trimmed = ref.trim();
+  if (!trimmed) return null;
+  const uuidLike =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmed);
+  const col = uuidLike ? "id" : "slug";
+  const { data } = await supabase
+    .from("guides")
+    .select("id")
+    .eq(col, trimmed)
+    .is("archived_at", null)
+    .maybeSingle();
+  return data?.id ? String(data.id) : null;
+}
+
 export async function listAdminGuides(
   supabase: SupabaseClient,
   opts?: { status?: string; q?: string; limit?: number },

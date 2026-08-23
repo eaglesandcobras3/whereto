@@ -1,18 +1,25 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { AdminBusinessSearchClient } from "@/components/admin/AdminBusinessSearchClient";
 import {
   getAllFeatureFlags,
   isAdminBusinessDirectEditFeatureEnabled,
 } from "@/lib/feature-flags";
+import { resolveBusinessIdForAdminEdit } from "@/lib/admin/search-businesses-for-edit";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
+import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
 export const metadata = {
   title: "Admin businesses",
   robots: { index: false, follow: false },
 };
 
-export default async function AdminBusinessesPage() {
+type PageProps = {
+  searchParams: Promise<{ q?: string; slug?: string; id?: string }>;
+};
+
+export default async function AdminBusinessesPage({ searchParams }: PageProps) {
   const admin = await requireAdminUser();
   if (!admin) redirect("/");
 
@@ -36,6 +43,23 @@ export default async function AdminBusinessesPage() {
     );
   }
 
+  const params = await searchParams;
+  const slugRef = typeof params.slug === "string" ? params.slug.trim() : "";
+  const idRef = typeof params.id === "string" ? params.id.trim() : "";
+  const deepRef = slugRef || idRef;
+
+  if (deepRef) {
+    const supabase = getServiceSupabaseOrNull();
+    if (supabase) {
+      const businessId = await resolveBusinessIdForAdminEdit(supabase, deepRef);
+      if (businessId) {
+        redirect(`/admin/businesses/${encodeURIComponent(businessId)}`);
+      }
+    }
+  }
+
+  const initialQuery = typeof params.q === "string" ? params.q.trim() : "";
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <p className="text-sm">
@@ -47,11 +71,20 @@ export default async function AdminBusinessesPage() {
         Edit businesses
       </h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Search a listing and edit it directly. Changes publish immediately — no review queue.
+        Search by name or slug and edit directly. Changes publish immediately — no review queue.
+        Deep link with <code className="rounded bg-zinc-100 px-1 text-xs">?slug=</code> or{" "}
+        <code className="rounded bg-zinc-100 px-1 text-xs">?id=</code>.
       </p>
       <div className="mt-8">
-        <AdminBusinessSearchClient />
+        <Suspense fallback={<p className="text-sm text-zinc-500">Loading search…</p>}>
+          <AdminBusinessSearchClient initialQuery={initialQuery} />
+        </Suspense>
       </div>
+      {deepRef && !initialQuery ? (
+        <p className="mt-4 text-sm text-amber-800">
+          No business found for <code className="rounded bg-amber-50 px-1">{deepRef}</code>.
+        </p>
+      ) : null}
     </div>
   );
 }
