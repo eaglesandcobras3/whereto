@@ -26,6 +26,15 @@ type QueueItem = {
   created_at: string;
 };
 
+type RecentBusiness = {
+  id: string;
+  title: string;
+  slug: string;
+  date_created: string;
+  town_title: string | null;
+  has_photo: boolean;
+};
+
 const inputClass =
   "w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10";
 const labelClass = "block text-sm font-medium text-zinc-700";
@@ -36,6 +45,7 @@ export function AdminAddBusinessClient() {
   const [ok, setOk] = useState<string | null>(null);
   const [pending, setPending] = useState<QueueItem[]>([]);
   const [needsReview, setNeedsReview] = useState<QueueItem[]>([]);
+  const [recentBusinesses, setRecentBusinesses] = useState<RecentBusiness[]>([]);
   const [towns, setTowns] = useState<TownOption[]>([]);
   const [areas, setAreas] = useState<AreaOption[]>([]);
 
@@ -57,12 +67,14 @@ export function AdminAddBusinessClient() {
       const j = (await res.json()) as {
         pending?: QueueItem[];
         needsReview?: QueueItem[];
+        recentBusinesses?: RecentBusiness[];
         options?: { towns?: TownOption[]; areas?: AreaOption[] };
         error?: string;
       };
       if (!res.ok) throw new Error(j.error ?? "Failed to load queue");
       setPending(j.pending ?? []);
       setNeedsReview(j.needsReview ?? []);
+      setRecentBusinesses(j.recentBusinesses ?? []);
       setTowns(j.options?.towns ?? []);
       setAreas(j.options?.areas ?? []);
     } catch (e) {
@@ -424,6 +436,54 @@ export function AdminAddBusinessClient() {
                     </button>
                   </div>
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-headline text-lg font-semibold text-zinc-900">
+          Recently added ({recentBusinesses.length})
+        </h2>
+        <p className="text-sm text-zinc-600">
+          Listings created in the last 30 days. Open a row to add photos and finish the listing on the
+          direct edit page.
+        </p>
+        {loading ? (
+          <p className="text-sm text-zinc-500">Loading…</p>
+        ) : recentBusinesses.length === 0 ? (
+          <p className="text-sm text-zinc-500">No businesses added in the last 30 days.</p>
+        ) : (
+          <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white">
+            {recentBusinesses.map((biz) => (
+              <li key={biz.id}>
+                <Link
+                  href={`/admin/businesses/${encodeURIComponent(biz.id)}`}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-zinc-50"
+                >
+                  <span>
+                    <span className="font-medium text-zinc-900">{biz.title}</span>
+                    {biz.town_title ? (
+                      <span className="ml-2 text-zinc-500">{biz.town_title}</span>
+                    ) : null}
+                  </span>
+                  <span className="flex shrink-0 flex-wrap items-center gap-2 text-xs">
+                    {!biz.has_photo ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-900">
+                        Needs photo
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-medium text-emerald-800">
+                        Has photo
+                      </span>
+                    )}
+                    <span className="font-mono text-zinc-400">{biz.slug}</span>
+                    <span className="text-zinc-500">
+                      {new Date(biz.date_created).toLocaleDateString()}
+                    </span>
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

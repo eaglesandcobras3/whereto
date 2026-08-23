@@ -238,8 +238,7 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith("/portal/") ||
       pathname.startsWith("/api/portal/") ||
       pathname === "/admin/subscriptions" ||
-      pathname.startsWith("/api/admin/subscriptions") ||
-      pathname.startsWith("/api/admin/businesses"))
+      pathname.startsWith("/api/admin/subscriptions"))
   ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
