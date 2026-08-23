@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PLACE_STATUSES } from "@/lib/admin/place-constants";
+import { townIncludedOnTownsHub } from "@/lib/towns/towns-hub-visibility";
 
 type TownRow = Record<string, unknown> & {
   id: string;
@@ -13,6 +14,7 @@ type TownRow = Record<string, unknown> & {
   seo_title: string | null;
   seo_description: string | null;
   status: string | null;
+  include_on_towns_hub: boolean | null;
   map_lat: number | null;
   map_lng: number | null;
   main_image_url: string | null;
@@ -40,6 +42,7 @@ export function AdminTownEditClient({ townId }: Props) {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [status, setStatus] = useState("draft");
+  const [includeOnTownsHub, setIncludeOnTownsHub] = useState(true);
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
@@ -66,6 +69,7 @@ export function AdminTownEditClient({ townId }: Props) {
         setTitle(String(t.title ?? ""));
         setSlug(String(t.slug ?? ""));
         setStatus(String(t.status ?? "draft"));
+        setIncludeOnTownsHub(townIncludedOnTownsHub(t.include_on_towns_hub as boolean | null));
         setExcerpt(String(t.excerpt ?? ""));
         setContent(String(t.content ?? ""));
         setSeoTitle(String(t.seo_title ?? ""));
@@ -97,6 +101,7 @@ export function AdminTownEditClient({ townId }: Props) {
       title: title.trim(),
       slug: slug.trim(),
       status,
+      include_on_towns_hub: includeOnTownsHub,
       excerpt,
       content,
       seo_title: seoTitle,
@@ -156,6 +161,22 @@ export function AdminTownEditClient({ townId }: Props) {
             </option>
           ))}
         </select>
+      </label>
+
+      <label className="flex items-start gap-3 text-sm text-zinc-800">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={includeOnTownsHub}
+          onChange={(e) => setIncludeOnTownsHub(e.target.checked)}
+        />
+        <span>
+          Show on <code className="rounded bg-zinc-100 px-1 text-xs">/towns</code> hub
+          <span className="mt-0.5 block text-xs text-zinc-500">
+            Uncheck to keep the town page live but hide it from the towns listing. Existing towns
+            default to shown unless explicitly hidden.
+          </span>
+        </span>
       </label>
 
       <label className={labelClass}>

@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
-import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { TownCard } from "@/components/discovery/TownCard";
 import { getTownDescriptor } from "@/lib/data/town-descriptors";
+import { listTownsForTownsHub } from "@/lib/data/towns-hub-list";
 import { listTownHubMapMarkers } from "@/lib/data/place-map-markers";
-import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
-import { isReservedRootSlug } from "@/lib/routes/reserved-slugs";
-import { getPublicImageUrlWithView } from "@/lib/media/public-image-url";
 import { hubTownsIntro } from "@/lib/seo/page-intro-copy";
 import { townsHubMetadata } from "@/lib/seo/hub-metadata";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
@@ -18,58 +15,22 @@ export const revalidate = 21600;
 
 export const metadata: Metadata = townsHubMetadata();
 
-type TownRow = {
-  id: string;
-  name: string;
-  slug: string;
-  hero_image_url: string | null;
-};
-
-async function getTowns(): Promise<TownRow[]> {
-  const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from("towns_view")
-    .select("id, title, slug, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort")
-    .is("archived_at", null)
-    .eq("status", DIRECTUS_PUBLISHED_STATUS)
-    .order("is_featured_destination", { ascending: false, nullsFirst: true })
-    .order("featured", { ascending: false, nullsFirst: true })
-    .order("sort", { ascending: true, nullsFirst: false })
-    .order("title", { ascending: true });
-
-  if (error) {
-    console.error("towns hub: towns query", error);
-    return [];
-  }
-
-  return (data ?? [])
-    .map((row) => {
-      const r = row as Record<string, unknown>;
-      const heroUrl = getPublicImageUrlWithView(
-        r.main_image_url as string | null,
-        r.hero_image_url as string | null,
-        r.main_image as string | null,
-        r.hero_image as string | null,
-      );
-      return {
-        id: String(r.id),
-        name: String((r as { title: string }).title),
-        slug: String(r.slug),
-        hero_image_url: heroUrl,
-      };
-    })
-    .filter((t) => t.slug && !isReservedRootSlug(t.slug));
-}
-
 export default async function TownsPage() {
-  const towns = await getTowns();
+  const towns = await listTownsForTownsHub();
   const flags = await getAllFeatureFlags();
   const townMapsEnabled = isTownMapsFeatureEnabled(flags);
 
   let mapMarkers: BusinessMapMarker[] = [];
   if (townMapsEnabled && towns.length > 0) {
     try {
-      mapMarkers = await listTownHubMapMarkers(towns);
+      mapMarkers = await listTownHubMapMarkers(
+        towns.map((t) => ({
+          id: t.id,
+          name: t.name,
+          slug: t.slug,
+          hero_image_url: t.hero_image_url,
+        })),
+      );
     } catch (err) {
       console.error("towns hub map markers", err);
     }

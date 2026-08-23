@@ -48,6 +48,8 @@ export const adminTownPatchSchema = z.object({
   seo_title: nullableText(60),
   seo_description: nullableText(160),
   status: z.enum(PLACE_STATUSES).optional(),
+  /** When false, omit from /towns hub. Null/true show. */
+  include_on_towns_hub: z.boolean().optional(),
   map_lat: z.union([z.number().finite(), z.null()]).optional(),
   map_lng: z.union([z.number().finite(), z.null()]).optional(),
   main_image_url: z.union([z.string().max(500), z.null()]).optional(),
@@ -63,6 +65,7 @@ export type AdminTownRow = {
   seo_title: string | null;
   seo_description: string | null;
   status: string | null;
+  include_on_towns_hub: boolean | null;
   map_lat: number | null;
   map_lng: number | null;
   main_image_url: string | null;
@@ -80,6 +83,7 @@ export const ADMIN_TOWN_SELECT = [
   "seo_title",
   "seo_description",
   "status",
+  "include_on_towns_hub",
   "map_lat",
   "map_lng",
   "main_image_url",
@@ -172,6 +176,7 @@ export async function createAdminTown(
       title,
       slug,
       status: "draft",
+      include_on_towns_hub: false,
       date_created: now,
       date_updated: now,
     })
