@@ -65,7 +65,7 @@ export function AdminTownEditClient({ townId }: Props) {
     fetch(`/api/admin/towns/${encodeURIComponent(townId)}`)
       .then(async (res) => {
         const j = (await res.json()) as { town?: TownRow; error?: string };
-        if (!res.ok) throw new Error(j.error ?? "Failed to load");
+        if (!res.ok) throw new Error(typeof j.error === "string" ? j.error : "Failed to load");
         const t = j.town!;
         setTown(t);
         setTitle(String(t.title ?? ""));
@@ -135,7 +135,16 @@ export function AdminTownEditClient({ townId }: Props) {
   }
 
   if (loading) return <p className="text-sm text-zinc-500">Loading town…</p>;
-  if (!town) return <p className="text-sm text-red-600">Town not found.</p>;
+  if (!town) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-red-600">{err ?? "Town not found."}</p>
+        <Link href="/admin/towns" className="text-sm font-medium text-zinc-600 underline">
+          Back to search
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={(e) => void save(e)} className="space-y-6">

@@ -37,6 +37,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [area, setArea] = useState<AreaRow | null>(null);
   const [towns, setTowns] = useState<TownOption[]>([]);
 
   const [title, setTitle] = useState("");
@@ -63,8 +64,9 @@ export function AdminAreaEditClient({ areaId }: Props) {
           options?: { towns?: TownOption[] };
           error?: string;
         };
-        if (!res.ok) throw new Error(j.error ?? "Failed to load");
+        if (!res.ok) throw new Error(typeof j.error === "string" ? j.error : "Failed to load");
         const a = j.area!;
+        setArea(a);
         setTowns(j.options?.towns ?? []);
         setTitle(String(a.title ?? ""));
         setSlug(String(a.slug ?? ""));
@@ -124,6 +126,16 @@ export function AdminAreaEditClient({ areaId }: Props) {
   }
 
   if (loading) return <p className="text-sm text-zinc-500">Loading area…</p>;
+  if (!area) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-red-600">{err ?? "Area not found."}</p>
+        <Link href="/admin/areas" className="text-sm font-medium text-zinc-600 underline">
+          Back to search
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={(e) => void save(e)} className="space-y-6">

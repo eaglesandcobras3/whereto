@@ -8,6 +8,7 @@ import { DIRECTUS_PUBLISHED_STATUS } from "@/lib/shop/public-listing-filters";
 import { slugifyBusinessTitle, uniqueSlug } from "@/lib/portal/slug";
 
 import { PLACE_STATUSES } from "@/lib/admin/place-constants";
+import { queryRowWithSelectFallback, isOptionalSchemaColumnError } from "@/lib/admin/admin-place-query";
 
 export { PLACE_STATUSES };
 
@@ -93,6 +94,24 @@ export const ADMIN_TOWN_SELECT = [
   AT_A_GLANCE_FACTS_SELECT,
 ].join(", ");
 
+/** Without hub flag or at-a-glance facts (older DBs). */
+export const ADMIN_TOWN_SELECT_LEGACY = [
+  "id",
+  "title",
+  "slug",
+  "excerpt",
+  "content",
+  "seo_title",
+  "seo_description",
+  "status",
+  "map_lat",
+  "map_lng",
+  "main_image_url",
+  "hero_image_url",
+  "date_created",
+  "date_updated",
+].join(", ");
+
 export type AdminTownListItem = {
   id: string;
   title: string;
@@ -146,16 +165,18 @@ export async function resolveTownIdForAdmin(
 
 export async function getAdminTownById(
   supabase: SupabaseClient,
-  id: string,
+  ref: string,
 ): Promise<AdminTownRow | null> {
-  const { data, error } = await supabase
-    .from("towns")
-    .select(ADMIN_TOWN_SELECT)
-    .eq("id", id)
-    .is("archived_at", null)
-    .maybeSingle();
+  const id = await resolveTownIdForAdmin(supabase, ref);
+  if (!id) return null;
+
+  const { data, error } = await queryRowWithSelectFallback<AdminTownRow>({
+    selectVariants: [ADMIN_TOWN_SELECT, ADMIN_TOWN_SELECT_LEGACY],
+    run: (select) =>
+      supabase.from("towns").select(select).eq("id", id).is("archived_at", null).maybeSingle(),
+  });
   if (error) throw error;
-  return (data as AdminTownRow | null) ?? null;
+  return data ?? null;
 }
 
 export async function createAdminTown(
@@ -207,9 +228,12 @@ export function buildAdminTownPatch(
 
 export async function updateAdminTown(
   supabase: SupabaseClient,
-  id: string,
+  ref: string,
   input: z.infer<typeof adminTownPatchSchema>,
 ): Promise<AdminTownRow> {
+  const id = await resolveTownIdForAdmin(supabase, ref);
+  if (!id) throw new Error("Town not found");
+
   const patch = buildAdminTownPatch(input);
   const { data, error } = await supabase
     .from("towns")
@@ -217,6 +241,25 @@ export async function updateAdminTown(
     .eq("id", id)
     .select(ADMIN_TOWN_SELECT)
     .single();
+
+  if (error?.message && isOptionalSchemaColumnError(error.message)) {
+    const legacyPatch = { ...patch };
+    delete legacyPatch.include_on_towns_hub;
+    for (const key of Object.keys(legacyPatch)) {
+      if (key.startsWith("at_a_glance_") || key.endsWith("_details") || key === "highlights") {
+        delete legacyPatch[key];
+      }
+    }
+    const retry = await supabase
+      .from("towns")
+      .update(legacyPatch)
+      .eq("id", id)
+      .select(ADMIN_TOWN_SELECT_LEGACY)
+      .single();
+    if (retry.error) throw retry.error;
+    return retry.data as unknown as AdminTownRow;
+  }
+
   if (error) throw error;
   return data as unknown as AdminTownRow;
 }
