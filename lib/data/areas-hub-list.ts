@@ -40,27 +40,34 @@ export type AreasHubListRow = {
   hero_image_url: string | null;
 };
 
+const AREAS_HUB_SELECT =
+  "id, title, slug, area_type, excerpt, main_image, hero_image, main_image_url, hero_image_url, towns ( title, slug )" as const;
+
 /** Published areas for /areas hub (excludes include_in_site_browse = false). */
 export async function listAreasForAreasHub(): Promise<AreasHubListRow[]> {
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("areas_view")
-    .select(
-      "id, title, slug, area_type, excerpt, main_image, hero_image, main_image_url, hero_image_url, include_in_site_browse, towns ( title, slug )",
-    )
+    .select(`${AREAS_HUB_SELECT}, include_in_site_browse`)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(AREAS_HUB_INCLUDE_OR_FILTER)
     .order("title");
 
+  if (error?.message.includes("include_in_site_browse")) {
+    console.warn(
+      "listAreasForAreasHub: include_in_site_browse missing — apply scripts/migrations/area-include-in-site-browse.sql; listing all published areas",
+    );
+    ({ data, error } = await supabase
+      .from("areas_view")
+      .select(AREAS_HUB_SELECT)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .order("title"));
+  }
+
   if (error) {
-    if (error.message.includes("include_in_site_browse")) {
-      console.error(
-        "listAreasForAreasHub: apply scripts/migrations/area-include-in-site-browse.sql",
-      );
-    } else {
-      console.error("listAreasForAreasHub", error);
-    }
+    console.error("listAreasForAreasHub", error);
     return [];
   }
 

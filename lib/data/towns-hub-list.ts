@@ -15,14 +15,15 @@ export type TownsHubListRow = {
   content: string | null;
 };
 
+const TOWNS_HUB_SELECT =
+  "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort" as const;
+
 /** Published towns for /towns hub and home town grid (excludes include_on_towns_hub = false). */
 export async function listTownsForTownsHub(): Promise<TownsHubListRow[]> {
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("towns_view")
-    .select(
-      "id, title, slug, excerpt, content, main_image, hero_image, main_image_url, hero_image_url, is_featured_destination, featured, sort, include_on_towns_hub",
-    )
+    .select(`${TOWNS_HUB_SELECT}, include_on_towns_hub`)
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
     .or(TOWNS_HUB_INCLUDE_OR_FILTER)
@@ -31,14 +32,23 @@ export async function listTownsForTownsHub(): Promise<TownsHubListRow[]> {
     .order("sort", { ascending: true, nullsFirst: false })
     .order("title", { ascending: true });
 
+  if (error?.message.includes("include_on_towns_hub")) {
+    console.warn(
+      "listTownsForTownsHub: include_on_towns_hub missing — apply scripts/migrations/town-include-on-towns-hub.sql; listing all published towns",
+    );
+    ({ data, error } = await supabase
+      .from("towns_view")
+      .select(TOWNS_HUB_SELECT)
+      .is("archived_at", null)
+      .eq("status", DIRECTUS_PUBLISHED_STATUS)
+      .order("is_featured_destination", { ascending: false, nullsFirst: true })
+      .order("featured", { ascending: false, nullsFirst: true })
+      .order("sort", { ascending: true, nullsFirst: false })
+      .order("title", { ascending: true }));
+  }
+
   if (error) {
-    if (error.message.includes("include_on_towns_hub")) {
-      console.error(
-        "listTownsForTownsHub: apply scripts/migrations/town-include-on-towns-hub.sql",
-      );
-    } else {
-      console.error("listTownsForTownsHub", error);
-    }
+    console.error("listTownsForTownsHub", error);
     return [];
   }
 
