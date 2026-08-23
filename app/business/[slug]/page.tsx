@@ -38,7 +38,7 @@ import { DiscoveryNavLink } from "@/components/feature-flags/DiscoveryNavLink";
 import { discoverHref, isDiscoveryEnabled } from "@/lib/nav/discovery-links";
 import { CommunityTipsSection } from "@/components/community-tips/CommunityTipsSection";
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isBusinessPhotosFeatureEnabled, isFeedbackFeatureEnabled, isRentalsFeatureEnabled } from "@/lib/feature-flags";
-import { AdminBusinessDirectEditLink } from "@/components/admin/AdminBusinessDirectEditLink";
+import { AdminEntityEditLinks } from "@/components/admin/AdminEntityEditLinks";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { PageShareButton } from "@/components/share/PageShareButton";
 import { BusinessRentalPortfolio } from "@/components/business/BusinessRentalPortfolio";
@@ -481,7 +481,7 @@ export default async function BusinessPage({ params }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <IrseAdminBadge kind="business" slug={gaBiz} />
-      <AdminBusinessDirectEditLink businessId={businessId} />
+      <AdminEntityEditLinks kind="business" entityId={businessId} />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12 md:px-10">
           <script

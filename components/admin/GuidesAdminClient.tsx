@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 type GuideRow = {
@@ -17,6 +18,11 @@ type GuideRow = {
 
 const STATUS_FILTERS = ["active", "draft", "published", "archived"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+type Props = {
+  initialQuery?: string;
+  initialStatus?: StatusFilter;
+};
 
 function filterLabel(filter: StatusFilter): string {
   if (filter === "active") return "All";
@@ -49,12 +55,35 @@ function statusBadge(status: string, enriched: boolean) {
   );
 }
 
-export function GuidesAdminClient() {
+export function GuidesAdminClient({ initialQuery = "", initialStatus = "active" }: Props) {
+  const router = useRouter();
   const [guides, setGuides] = useState<GuideRow[]>([]);
-  const [filter, setFilter] = useState<StatusFilter>("active");
-  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<StatusFilter>(initialStatus);
+  const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
+    setFilter(initialStatus);
+  }, [initialStatus]);
+
+  const syncUrl = useCallback(
+    (nextFilter: StatusFilter, nextQuery: string) => {
+      const params = new URLSearchParams();
+      if (nextFilter !== "active") params.set("status", nextFilter);
+      const trimmed = nextQuery.trim();
+      if (trimmed) params.set("q", trimmed);
+      params.delete("slug");
+      params.delete("id");
+      const qs = params.toString();
+      router.replace(qs ? `/admin/guides?${qs}` : "/admin/guides", { scroll: false });
+    },
+    [router],
+  );
 
   const load = useCallback(() => {
     setLoading(true);
@@ -73,9 +102,10 @@ export function GuidesAdminClient() {
   useEffect(() => {
     const t = setTimeout(() => {
       queueMicrotask(() => load());
+      syncUrl(filter, query);
     }, query ? 250 : 0);
     return () => clearTimeout(t);
-  }, [load, query]);
+  }, [load, query, filter, syncUrl]);
 
   if (loading && guides.length === 0) return <p className="text-sm text-zinc-500">Loading guides…</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;

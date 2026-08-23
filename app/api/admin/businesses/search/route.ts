@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchBusinessesForIntake } from "@/lib/listing-requests/search-businesses-for-intake";
+import { searchBusinessesForAdminEdit } from "@/lib/admin/search-businesses-for-edit";
 import { adminBusinessDirectEditApiBlocked } from "@/lib/feature-flags";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
-/** Admin business picker search (title match). */
+/** Admin business picker search (title or slug). */
 export async function GET(request: NextRequest) {
   const blocked = await adminBusinessDirectEditApiBlocked();
   if (blocked) return blocked;
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = getServiceSupabase();
   try {
-    const hits = await searchBusinessesForIntake(supabase, q, limit);
+    const hits = await searchBusinessesForAdminEdit(supabase, q, limit);
     return NextResponse.json({ results: hits });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Search failed";
