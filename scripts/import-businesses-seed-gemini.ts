@@ -359,52 +359,45 @@ async function auditSeedRow(
   allowed: AllowedVocab,
   allowedLists: { towns: string[]; areas: string[]; categories: string[] },
 ): Promise<CsvRow> {
-  const basePrompt = buildGeminiAuditPrompt(row, allowedLists);
-  let lastError = "unknown error";
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const prompt =
-      attempt === 1
-        ? basePrompt
-        : `${basePrompt}\n\nAttempt ${attempt}: You MUST use Google Search again. Write research bullets, then the JSON code block.`;
-    try {
-      const payload = await generateContent(prompt);
-      if (!hadGoogleSearch(payload)) {
-        lastError = "Gemini did not run Google Search";
-        continue;
-      }
-      const text = firstCandidateText(payload);
-      const proposal = parseGeminiAuditProposal(text);
-      const merged = mergeAuditRow(row, proposal, allowed, groundingSourceUrls(payload));
-      if (merged.audit_status === "exists") {
-        const tags = assignTagsFromListingText({
-          title: merged.title,
-          category: merged.category,
-          excerpt: merged.excerpt,
-          overview: merged.overview,
-          search_keywords: merged.search_keywords,
-          suggested_tags: merged.audit_suggested_tags,
-        });
-        merged.search_tags = formatAuditTags(tags);
-      }
-      return merged;
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err);
-      const status = (err as { status?: number }).status;
-      if (status === 429 || status === 503) {
-        await sleep(2000 * attempt);
-      }
+  const prompt = buildGeminiAuditPrompt(row, allowedLists);
+  try {
+    const payload = await generateContent(prompt);
+    if (!hadGoogleSearch(payload)) {
+      return {
+        ...row,
+        audit_status: "error",
+        audit_confidence: "",
+        audit_sources: "",
+        audit_notes: "Gemini did not run Google Search",
+        audit_suggested_tags: "",
+      };
     }
+    const text = firstCandidateText(payload);
+    const proposal = parseGeminiAuditProposal(text);
+    const merged = mergeAuditRow(row, proposal, allowed, groundingSourceUrls(payload));
+    if (merged.audit_status === "exists") {
+      const tags = assignTagsFromListingText({
+        title: merged.title,
+        category: merged.category,
+        excerpt: merged.excerpt,
+        overview: merged.overview,
+        search_keywords: merged.search_keywords,
+        suggested_tags: merged.audit_suggested_tags,
+      });
+      merged.search_tags = formatAuditTags(tags);
+    }
+    return merged;
+  } catch (err) {
+    const lastError = err instanceof Error ? err.message : String(err);
+    return {
+      ...row,
+      audit_status: "error",
+      audit_confidence: "",
+      audit_sources: "",
+      audit_notes: lastError.slice(0, 500),
+      audit_suggested_tags: "",
+    };
   }
-
-  return {
-    ...row,
-    audit_status: "error",
-    audit_confidence: "",
-    audit_sources: "",
-    audit_notes: lastError.slice(0, 500),
-    audit_suggested_tags: "",
-  };
 }
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {

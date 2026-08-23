@@ -257,46 +257,41 @@ async function auditSeedRow(
   allowed: AllowedVocab,
   allowedLists: { towns: string[]; areas: string[]; categories: string[] },
 ): Promise<CsvRow> {
-  const basePrompt = buildGeminiAuditPrompt(row, allowedLists);
-  let lastError = "unknown error";
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const prompt =
-      attempt === 1
-        ? basePrompt
-        : `${basePrompt}\n\nAttempt ${attempt}: You MUST use Google Search again. Write research bullets, then the JSON code block.`;
-    try {
-      const payload = await generateContent(prompt);
-      if (!hadGoogleSearch(payload)) {
-        lastError = "Gemini did not run Google Search";
-        continue;
-      }
-      const text = firstCandidateText(payload);
-      const proposal = parseGeminiAuditProposal(text);
-      const merged = mergeAuditRow(row, proposal, allowed, groundingSourceUrls(payload));
-      if (merged.audit_status === "exists") {
-        const tags = assignTagsFromListingText({
-          title: merged.title,
-          category: merged.category,
-          excerpt: merged.excerpt,
-          overview: merged.overview,
-          search_keywords: merged.search_keywords,
-          suggested_tags: merged.audit_suggested_tags,
-        });
-        merged.search_tags = formatAuditTags(tags);
-      }
-      return merged;
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err);
+  const prompt = buildGeminiAuditPrompt(row, allowedLists);
+  try {
+    const payload = await generateContent(prompt);
+    if (!hadGoogleSearch(payload)) {
+      return {
+        ...row,
+        audit_status: "error",
+        audit_confidence: "low",
+        audit_notes: "Gemini did not run Google Search",
+      };
     }
+    const text = firstCandidateText(payload);
+    const proposal = parseGeminiAuditProposal(text);
+    const merged = mergeAuditRow(row, proposal, allowed, groundingSourceUrls(payload));
+    if (merged.audit_status === "exists") {
+      const tags = assignTagsFromListingText({
+        title: merged.title,
+        category: merged.category,
+        excerpt: merged.excerpt,
+        overview: merged.overview,
+        search_keywords: merged.search_keywords,
+        suggested_tags: merged.audit_suggested_tags,
+      });
+      merged.search_tags = formatAuditTags(tags);
+    }
+    return merged;
+  } catch (err) {
+    const lastError = err instanceof Error ? err.message : String(err);
+    return {
+      ...row,
+      audit_status: "error",
+      audit_confidence: "low",
+      audit_notes: lastError,
+    };
   }
-
-  return {
-    ...row,
-    audit_status: "error",
-    audit_confidence: "low",
-    audit_notes: lastError,
-  };
 }
 
 async function geocodeIfNeeded(row: CsvRow): Promise<CsvRow> {
