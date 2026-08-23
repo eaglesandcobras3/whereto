@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadUnifiedCategoryOptions } from "@/lib/categories/load-unified-categories";
 import { loadRelatedCategoriesByCategoryId } from "@/lib/categories/load-related-categories-by-id";
 import { labelForSearchTag } from "@/lib/discovery-filters/search-tag-label";
+import type { ListingFormOptionsResponse } from "@/lib/listing-requests/listing-form-options-types";
 import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 
@@ -109,5 +110,8 @@ export async function GET() {
     isAdmin: Boolean(admin),
     adminName: admin?.name ?? null,
     adminEmail: admin?.email ?? null,
+  } satisfies ListingFormOptionsResponse & {
+    serviceCategories: [];
+    tagsByCategoryId: Record<string, string[]>;
   });
 }

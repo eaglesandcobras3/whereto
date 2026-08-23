@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import type { AdminBusinessRow } from "@/lib/admin/admin-business-direct-edit";
+import type { AdminBusinessGetResponse } from "@/lib/admin/admin-business-get-response";
 import { AdditionalCategoriesPicker } from "@/components/categories/AdditionalCategoriesPicker";
 import { AdminBusinessMainImageControl } from "@/components/admin/AdminBusinessMainImageControl";
 import { AdminBusinessPhotosManager } from "@/components/admin/AdminBusinessPhotosManager";
@@ -101,19 +102,7 @@ export function AdminBusinessEditClient({
     setErr(null);
     fetch(`/api/admin/businesses/${encodeURIComponent(businessId)}`)
       .then(async (res) => {
-        const j = (await res.json()) as {
-          business?: AdminBusinessRow;
-          category_ids?: string[];
-          multiple_category?: boolean;
-          relatedCategoriesByCategoryId?: Record<string, string[]>;
-          options?: {
-            towns?: OptionTown[];
-            areas?: OptionArea[];
-            categories?: OptionCategory[];
-            categoryLeaves?: CategoryLeafOption[];
-          };
-          error?: string;
-        };
+        const j = (await res.json()) as AdminBusinessGetResponse & { error?: string };
         if (!res.ok) throw new Error(j.error ?? "Failed to load");
         const b = j.business!;
         setBusiness(b);

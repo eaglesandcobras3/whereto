@@ -13,6 +13,7 @@ import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeahead
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
+import type { ListingFormOptionsResponse } from "@/lib/listing-requests/listing-form-options-types";
 import type { ListBusinessMode } from "@/lib/listing-requests/list-business-mode";
 import {
   FREE_ONBOARD_EXCERPT_MAX,
@@ -84,8 +85,8 @@ type CategoryOption = {
   id: string;
   title: string;
   slug: string;
-  rollupTitle?: string;
-  rollupSlug?: string;
+  rollupTitle?: string | null;
+  rollupSlug?: string | null;
 };
 type CategoryGroup = {
   id: string;
@@ -334,18 +335,7 @@ export function FreeOnboardForm({
         const res = await fetch("/api/listing-requests/form-options", {
           signal: controller.signal,
         });
-        const j = (await res.json()) as {
-          categories?: CategoryOption[];
-          categoryGroups?: CategoryGroup[];
-          searchTags?: string[];
-          searchTagOptions?: DiscoverSearchTagOption[];
-          tagsByCategoryId?: Record<string, string[]>;
-          relatedCategoriesByCategoryId?: Record<string, string[]>;
-          isAdmin?: boolean;
-          adminName?: string | null;
-          adminEmail?: string | null;
-          error?: string;
-        };
+        const j = (await res.json()) as Partial<ListingFormOptionsResponse> & { error?: string };
         if (!res.ok) throw new Error(j.error ?? "Could not load form options");
         setCategories(j.categories ?? []);
         setCategoryGroups(j.categoryGroups ?? []);
@@ -394,16 +384,6 @@ export function FreeOnboardForm({
     })();
     return () => controller.abort();
   }, [businessSlug, mode]);
-
-  const categoryLeafOptions = useMemo(
-    () =>
-      categoryTypeaheadOptions.map((c) => ({
-        id: c.id,
-        title: c.title,
-        groupTitle: c.groupTitle ?? null,
-      })),
-    [categoryTypeaheadOptions],
-  );
 
   const tagOptions: DiscoverSearchTagOption[] = useMemo(() => {
     const bySlug = new Map(searchTagOptions.map((t) => [t.slug, t]));
@@ -462,6 +442,16 @@ export function FreeOnboardForm({
     prefillCategoryTitle,
     prefillCategoryGroupTitle,
   ]);
+
+  const categoryLeafOptions = useMemo(
+    () =>
+      categoryTypeaheadOptions.map((c) => ({
+        id: c.id,
+        title: c.title,
+        groupTitle: c.groupTitle ?? null,
+      })),
+    [categoryTypeaheadOptions],
+  );
 
   const tagSlotsUsed = selectedTags.length + suggestedTags.length;
   const atTagCap = tagSlotsUsed >= FREE_ONBOARD_SEARCH_TAGS_MAX;

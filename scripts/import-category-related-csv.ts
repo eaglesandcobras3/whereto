@@ -18,6 +18,8 @@ import { readFileSync } from "fs";
 
 dotenv.config({ path: ".env.local" });
 
+import type { CategoryRelatedLinkRow } from "@/lib/categories/category-related-types";
+
 const DEFAULT_FILE = "docs/category-related.csv";
 const PAGE = 1000;
 
@@ -28,7 +30,7 @@ type CsvLink = {
   relatedSubcategory: string;
 };
 
-type LinkRow = { category_id: string; related_category_id: string };
+type LinkRow = CategoryRelatedLinkRow;
 
 function parseArgs(argv: string[]) {
   let file = DEFAULT_FILE;

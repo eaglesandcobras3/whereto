@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { CategoryRelatedLinkRow } from "@/lib/categories/category-related-types";
 
 const PAGE = 1000;
 
-type LinkRow = { category_id: string; related_category_id: string };
+type LinkRow = CategoryRelatedLinkRow;
 
 function isMissingRelatedTable(message: string): boolean {
   const lower = message.toLowerCase();

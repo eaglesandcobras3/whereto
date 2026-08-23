@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { AdminBusinessGetResponse } from "@/lib/admin/admin-business-get-response";
 import {
   ADMIN_BUSINESS_SELECT,
   adminBusinessPatchSchema,
@@ -82,7 +83,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       categories: leafCategories,
       categoryLeaves,
     },
-  });
+  } satisfies AdminBusinessGetResponse);
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {

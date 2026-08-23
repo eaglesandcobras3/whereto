@@ -672,6 +672,66 @@ export type Database = {
           },
         ]
       }
+      category_related_categories: {
+        Row: {
+          category_id: string
+          related_category_id: string
+        }
+        Insert: {
+          category_id: string
+          related_category_id: string
+        }
+        Update: {
+          category_id?: string
+          related_category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_related_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_related_categories_related_category_id_fkey"
+            columns: ["related_category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      search_tag_categories: {
+        Row: {
+          tag: string
+          category_id: string
+        }
+        Insert: {
+          tag: string
+          category_id: string
+        }
+        Update: {
+          tag?: string
+          category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_tag_categories_tag_fkey"
+            columns: ["tag"]
+            isOneToOne: false
+            referencedRelation: "search_tags_vocabulary"
+            referencedColumns: ["tag"]
+          },
+          {
+            foreignKeyName: "search_tag_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "business_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_images: {
         Row: {
           alt_text: string | null
