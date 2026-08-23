@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AdminAtAGlanceFields } from "@/components/admin/AdminAtAGlanceFields";
 import { AdminPlaceMainImageControl } from "@/components/admin/AdminPlaceMainImageControl";
+import {
+  atAGlancePatchFromValues,
+  atAGlanceValuesFromRow,
+  EMPTY_ADMIN_AT_A_GLANCE,
+  type AdminAtAGlanceValues,
+} from "@/lib/admin/admin-at-a-glance-form";
 import { PLACE_STATUSES } from "@/lib/admin/place-constants";
 import { includedOnHubBrowse } from "@/lib/places/hub-browse-visibility";
 
@@ -20,12 +27,6 @@ type TownRow = Record<string, unknown> & {
   map_lng: number | null;
   main_image_url: string | null;
   hero_image_url?: string | null;
-  at_a_glance_description?: string | null;
-  walkability_rating?: string | null;
-  beach_type?: string | null;
-  getting_around_summary?: string | null;
-  dining_town_center_details?: string | null;
-  parking_details?: string | null;
 };
 
 const inputClass =
@@ -52,12 +53,7 @@ export function AdminTownEditClient({ townId }: Props) {
   const [mapLat, setMapLat] = useState("");
   const [mapLng, setMapLng] = useState("");
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
-  const [atAGlance, setAtAGlance] = useState("");
-  const [walkability, setWalkability] = useState("");
-  const [beachType, setBeachType] = useState("");
-  const [gettingAround, setGettingAround] = useState("");
-  const [diningDetails, setDiningDetails] = useState("");
-  const [parkingDetails, setParkingDetails] = useState("");
+  const [atAGlance, setAtAGlance] = useState<AdminAtAGlanceValues>(EMPTY_ADMIN_AT_A_GLANCE);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -79,12 +75,7 @@ export function AdminTownEditClient({ townId }: Props) {
         setMapLat(t.map_lat != null ? String(t.map_lat) : "");
         setMapLng(t.map_lng != null ? String(t.map_lng) : "");
         setMainImageUrl(t.main_image_url ?? (t.hero_image_url as string | null) ?? null);
-        setAtAGlance(String(t.at_a_glance_description ?? ""));
-        setWalkability(String(t.walkability_rating ?? ""));
-        setBeachType(String(t.beach_type ?? ""));
-        setGettingAround(String(t.getting_around_summary ?? ""));
-        setDiningDetails(String(t.dining_town_center_details ?? ""));
-        setParkingDetails(String(t.parking_details ?? ""));
+        setAtAGlance(atAGlanceValuesFromRow(t));
       })
       .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
@@ -110,12 +101,7 @@ export function AdminTownEditClient({ townId }: Props) {
       seo_description: seoDescription,
       map_lat: mapLat.trim() ? Number(mapLat) : null,
       map_lng: mapLng.trim() ? Number(mapLng) : null,
-      at_a_glance_description: atAGlance,
-      walkability_rating: walkability,
-      beach_type: beachType,
-      getting_around_summary: gettingAround,
-      dining_town_center_details: diningDetails,
-      parking_details: parkingDetails,
+      ...atAGlancePatchFromValues(atAGlance),
     };
     try {
       const res = await fetch(`/api/admin/towns/${encodeURIComponent(townId)}`, {
@@ -233,35 +219,7 @@ export function AdminTownEditClient({ townId }: Props) {
         </label>
       </div>
 
-      <fieldset className="space-y-3 rounded-xl border border-zinc-200 p-4">
-        <legend className="text-sm font-semibold text-zinc-900">At a glance (MVP)</legend>
-        <label className={labelClass}>
-          Description
-          <textarea className={inputClass} rows={2} value={atAGlance} onChange={(e) => setAtAGlance(e.target.value)} />
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={labelClass}>
-            Walkability
-            <input className={inputClass} value={walkability} onChange={(e) => setWalkability(e.target.value)} />
-          </label>
-          <label className={labelClass}>
-            Beach type
-            <input className={inputClass} value={beachType} onChange={(e) => setBeachType(e.target.value)} />
-          </label>
-        </div>
-        <label className={labelClass}>
-          Getting around
-          <input className={inputClass} value={gettingAround} onChange={(e) => setGettingAround(e.target.value)} />
-        </label>
-        <label className={labelClass}>
-          Dining & town center
-          <textarea className={inputClass} rows={2} value={diningDetails} onChange={(e) => setDiningDetails(e.target.value)} />
-        </label>
-        <label className={labelClass}>
-          Parking
-          <textarea className={inputClass} rows={2} value={parkingDetails} onChange={(e) => setParkingDetails(e.target.value)} />
-        </label>
-      </fieldset>
+      <AdminAtAGlanceFields values={atAGlance} onChange={setAtAGlance} placeLabel="town" />
 
       <div className="flex flex-wrap gap-3">
         <button
