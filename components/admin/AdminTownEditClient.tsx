@@ -174,8 +174,9 @@ export function AdminTownEditClient({ townId }: Props) {
         <span>
           Show on <code className="rounded bg-zinc-100 px-1 text-xs">/towns</code> hub
           <span className="mt-0.5 block text-xs text-zinc-500">
-            Uncheck to keep the town page live but hide it from the towns listing. Existing towns
-            default to shown unless explicitly hidden.
+            Null or checked = linked on the public site. Only explicit off hides footer, sitemap, and
+            town pages (Discover/search still work). Use off for outlier towns you only tie to
+            businesses.
           </span>
         </span>
       </label>

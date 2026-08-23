@@ -1,7 +1,7 @@
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { normalizeUrlSegment } from "@/lib/routes/url-slug";
 
-/** Whether a row should appear on a public hub listing (towns, areas, etc.). */
+/** Whether a row should appear on the public site. Null/undefined/true = yes; only false hides. */
 export function includedOnHubBrowse(value: boolean | null | undefined): boolean {
   return value !== false;
 }
