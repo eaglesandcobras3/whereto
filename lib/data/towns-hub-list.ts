@@ -21,7 +21,7 @@ const TOWNS_HUB_SELECT =
 /** Published towns for /towns hub and home town grid (excludes include_on_towns_hub = false). */
 export async function listTownsForTownsHub(): Promise<TownsHubListRow[]> {
   const supabase = getServiceSupabase();
-  let { data, error } = await supabase
+  const primary = await supabase
     .from("towns_view")
     .select(`${TOWNS_HUB_SELECT}, include_on_towns_hub`)
     .is("archived_at", null)
@@ -32,11 +32,14 @@ export async function listTownsForTownsHub(): Promise<TownsHubListRow[]> {
     .order("sort", { ascending: true, nullsFirst: false })
     .order("title", { ascending: true });
 
-  if (error?.message.includes("include_on_towns_hub")) {
+  let rows = (primary.data ?? null) as Record<string, unknown>[] | null;
+  let queryError = primary.error;
+
+  if (queryError?.message.includes("include_on_towns_hub")) {
     console.warn(
       "listTownsForTownsHub: include_on_towns_hub missing — apply scripts/migrations/town-include-on-towns-hub.sql; listing all published towns",
     );
-    ({ data, error } = await supabase
+    const fallback = await supabase
       .from("towns_view")
       .select(TOWNS_HUB_SELECT)
       .is("archived_at", null)
@@ -44,17 +47,19 @@ export async function listTownsForTownsHub(): Promise<TownsHubListRow[]> {
       .order("is_featured_destination", { ascending: false, nullsFirst: true })
       .order("featured", { ascending: false, nullsFirst: true })
       .order("sort", { ascending: true, nullsFirst: false })
-      .order("title", { ascending: true }));
+      .order("title", { ascending: true });
+    rows = (fallback.data ?? null) as Record<string, unknown>[] | null;
+    queryError = fallback.error;
   }
 
-  if (error) {
-    console.error("listTownsForTownsHub", error);
+  if (queryError) {
+    console.error("listTownsForTownsHub", queryError);
     return [];
   }
 
-  return (data ?? [])
+  return (rows ?? [])
     .map((row) => {
-      const r = row as Record<string, unknown>;
+      const r = row;
       const heroUrl = getPublicImageUrlWithView(
         r.main_image_url as string | null,
         r.hero_image_url as string | null,
