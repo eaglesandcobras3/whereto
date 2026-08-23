@@ -7,6 +7,10 @@ import { getListedBusinessBrowseGroups } from "@/lib/data/business-browse-groups
 import { FooterCompanyLinks } from "@/components/home/FooterCompanyLinks";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { townPagePath } from "@/lib/routes/town-page-path";
+import {
+  AREAS_HUB_INCLUDE_OR_FILTER,
+  TOWNS_HUB_INCLUDE_OR_FILTER,
+} from "@/lib/places/hub-browse-visibility";
 import { getAllFeatureFlags } from "@/lib/feature-flags";
 import { isDiscoverEnabled } from "@/lib/feature-flags-core";
 import { discoverHref } from "@/lib/nav/discovery-links";
@@ -34,13 +38,23 @@ async function getBusinessCountsByColumn(column: "town_id" | "area_id" | "primar
 
 async function getFooterTowns(): Promise<FooterBrowseLink[]> {
   const supabase = getServiceSupabase();
-  const [{ data, error }, bizCounts] = await Promise.all([
-    supabase
+  let townsRes = await supabase
+    .from("towns")
+    .select("id, title, slug")
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(TOWNS_HUB_INCLUDE_OR_FILTER)
+    .limit(FOOTER_BROWSE_LIMIT);
+  if (townsRes.error?.message.includes("include_on_towns_hub")) {
+    townsRes = await supabase
       .from("towns")
       .select("id, title, slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .limit(FOOTER_BROWSE_LIMIT),
+      .limit(FOOTER_BROWSE_LIMIT);
+  }
+  const [{ data, error }, bizCounts] = await Promise.all([
+    Promise.resolve(townsRes),
     getBusinessCountsByColumn("town_id"),
   ]);
   if (error) {
@@ -76,13 +90,23 @@ async function getFooterTowns(): Promise<FooterBrowseLink[]> {
 
 async function getFooterAreas(): Promise<FooterBrowseLink[]> {
   const supabase = getServiceSupabase();
-  const [{ data, error }, bizCounts] = await Promise.all([
-    supabase
+  let areasRes = await supabase
+    .from("areas_view")
+    .select("id, title, slug")
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .or(AREAS_HUB_INCLUDE_OR_FILTER)
+    .limit(FOOTER_BROWSE_LIMIT);
+  if (areasRes.error?.message.includes("include_in_site_browse")) {
+    areasRes = await supabase
       .from("areas_view")
       .select("id, title, slug")
       .is("archived_at", null)
       .eq("status", DIRECTUS_PUBLISHED_STATUS)
-      .limit(FOOTER_BROWSE_LIMIT),
+      .limit(FOOTER_BROWSE_LIMIT);
+  }
+  const [{ data, error }, bizCounts] = await Promise.all([
+    Promise.resolve(areasRes),
     getBusinessCountsByColumn("area_id"),
   ]);
   if (error) {
@@ -237,7 +261,7 @@ const getCachedFooterBrowseData = unstable_cache(
     ]);
     return { townLinks, areaLinks, businessGroupLinks };
   },
-  ["site-footer-browse-data-v5"],
+  ["site-footer-browse-data-v6"],
   { revalidate: 3600 },
 );
 

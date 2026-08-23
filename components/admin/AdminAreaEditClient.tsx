@@ -186,8 +186,9 @@ export function AdminAreaEditClient({ areaId }: Props) {
         <span>
           Show on <code className="rounded bg-zinc-100 px-1 text-xs">/areas</code> hub
           <span className="mt-0.5 block text-xs text-zinc-500">
-            Uncheck to keep the area page live but hide it from the areas listing. Existing areas
-            default to shown unless explicitly hidden.
+            Null or checked = linked on the public site. Only explicit off hides footer, sitemap, and
+            area pages (Discover/search still work). Use off for outliers you only tie to
+            businesses.
           </span>
         </span>
       </label>

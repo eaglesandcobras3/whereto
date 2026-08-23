@@ -7,6 +7,7 @@ import { RENTAL_TOWN_HUB_MIN_PROPERTIES, STAYS_HUB_PATH } from "@/lib/stays/cons
 import { listPublishedRentalsForTownSlug } from "@/lib/stays/execute-search";
 import { staysTownMetadata } from "@/lib/stays/seo";
 import { getServiceSupabase, getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
+import { TOWNS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 /** ISR — same cadence as business listings. */
 export const revalidate = 21600;
@@ -15,21 +16,9 @@ export const dynamicParams = true;
 type Props = { params: Promise<{ townSlug: string }> };
 
 export async function generateStaticParams(): Promise<{ townSlug: string }[]> {
-  const supabase = getServiceSupabaseOrNull();
-  if (!supabase) return [];
-  try {
-    const { data } = await supabase
-      .from("towns")
-      .select("slug")
-      .eq("status", "published")
-      .limit(200);
-    return ((data ?? []) as { slug: string }[])
-      .map((t) => t.slug?.trim())
-      .filter(Boolean)
-      .map((townSlug) => ({ townSlug: townSlug as string }));
-  } catch {
-    return [];
-  }
+  const { listTownsForTownsHub } = await import("@/lib/data/towns-hub-list");
+  const towns = await listTownsForTownsHub();
+  return towns.map((t) => ({ townSlug: t.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -41,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .select("title, slug")
     .eq("slug", townSlug)
     .eq("status", "published")
+    .or(TOWNS_HUB_INCLUDE_OR_FILTER)
     .maybeSingle();
   if (!town) return { title: "Stays", robots: { index: false } };
   const t = town as { title: string; slug: string };
@@ -58,6 +48,7 @@ export default async function StaysTownPage({ params }: Props) {
     .select("id, title, slug, excerpt")
     .eq("slug", townSlug)
     .eq("status", "published")
+    .or(TOWNS_HUB_INCLUDE_OR_FILTER)
     .maybeSingle();
   if (!town) notFound();
 
