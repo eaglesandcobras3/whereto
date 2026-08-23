@@ -2,7 +2,6 @@ import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { editorialTextSearch } from "@/lib/ask/editorial-search";
 import type { AreaResultCard } from "@/lib/ask/types";
-import { AREAS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 export async function searchAreasInDb(opts: {
   query: string;
@@ -16,7 +15,6 @@ export async function searchAreasInDb(opts: {
     query: opts.query,
     limit: opts.limit ?? 6,
     ilikeColumns: ["title", "excerpt", "search_keywords", "area_type"],
-    hubBrowseOrFilter: AREAS_HUB_INCLUDE_OR_FILTER,
     mapRow: mapAreaRow,
   });
 }

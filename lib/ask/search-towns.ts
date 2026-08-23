@@ -2,7 +2,6 @@ import "server-only";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 import { editorialTextSearch } from "@/lib/ask/editorial-search";
 import type { TownResultCard } from "@/lib/ask/types";
-import { TOWNS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
 
 export async function searchTownsInDb(opts: {
   query: string;
@@ -16,7 +15,6 @@ export async function searchTownsInDb(opts: {
     query: opts.query,
     limit: opts.limit ?? 6,
     ilikeColumns: ["title", "excerpt", "search_keywords", "region"],
-    hubBrowseOrFilter: TOWNS_HUB_INCLUDE_OR_FILTER,
     mapRow: mapTownRow,
   });
 }
