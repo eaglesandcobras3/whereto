@@ -11,9 +11,6 @@ import {
   AREAS_HUB_INCLUDE_OR_FILTER,
   TOWNS_HUB_INCLUDE_OR_FILTER,
 } from "@/lib/places/hub-browse-visibility";
-import { getAllFeatureFlags } from "@/lib/feature-flags";
-import { isDiscoverEnabled } from "@/lib/feature-flags-core";
-import { discoverHref } from "@/lib/nav/discovery-links";
 
 /** Footer browse lists generous cap — Supabase REST defaults elsewhere; avoids silent truncation surprises. */
 const FOOTER_BROWSE_LIMIT = 500;
@@ -123,25 +120,13 @@ async function getFooterAreas(): Promise<FooterBrowseLink[]> {
     .sort((a, b) => b._count - a._count || a.name.localeCompare(b.name));
 }
 
-async function getFooterBusinessBrowseGroups(opts: {
-  discoverOn: boolean;
-  discoverHref: string;
-}): Promise<FooterBrowseLink[]> {
+async function getFooterBusinessBrowseGroups(): Promise<FooterBrowseLink[]> {
   const groups = await getListedBusinessBrowseGroups();
-  const head: FooterBrowseLink[] = opts.discoverOn
-    ? [
-        { name: "Discover", slug: "discover", href: opts.discoverHref },
-        { name: "Categories", slug: "categories", href: "/businesses" },
-      ]
-    : [{ name: "All businesses", slug: "all", href: "/businesses" }];
-  return [
-    ...head,
-    ...groups.map((g) => ({
-      name: g.title,
-      slug: g.slug,
-      href: g.href,
-    })),
-  ];
+  return groups.map((g) => ({
+    name: g.title,
+    slug: g.slug,
+    href: g.href,
+  }));
 }
 
 const footerLinkClass =
@@ -250,14 +235,11 @@ function FooterBrowseColumn({
 }
 
 const getCachedFooterBrowseData = unstable_cache(
-  async (discoverOn: boolean, discoverPath: string) => {
+  async () => {
     const [townLinks, areaLinks, businessGroupLinks] = await Promise.all([
       getFooterTowns(),
       getFooterAreas(),
-      getFooterBusinessBrowseGroups({
-        discoverOn,
-        discoverHref: discoverPath,
-      }),
+      getFooterBusinessBrowseGroups(),
     ]);
     return { townLinks, areaLinks, businessGroupLinks };
   },
@@ -266,12 +248,9 @@ const getCachedFooterBrowseData = unstable_cache(
 );
 
 export async function SiteFooter() {
-  const flags = await getAllFeatureFlags();
-  const discoverOn = isDiscoverEnabled(flags);
-  const discoverPath = discoverOn ? discoverHref(flags) : "/discover";
   const [{ townLinks, areaLinks, businessGroupLinks }, instagramUrl, tiktokUrl] =
     await Promise.all([
-    getCachedFooterBrowseData(discoverOn, discoverPath),
+    getCachedFooterBrowseData(),
     Promise.resolve(getSiteInstagramUrl()),
     Promise.resolve(getSiteTikTokUrl()),
   ]);
