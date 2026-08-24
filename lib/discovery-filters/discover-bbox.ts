@@ -63,6 +63,40 @@ export const TOWN_JUMP_ZOOM_MULTI = 14;
 /** Padding around town centers when converting a jump into a search bbox (km). */
 export const TOWN_JUMP_PADDING_KM = 1.1;
 
+/**
+ * Coastal envelope from Destin west through Panama City Beach east (includes 30A).
+ * Used to warn before locate when the device is far from the local catalog.
+ */
+export const DISCOVER_LOCATE_ENVELOPE: DiscoverBbox = {
+  south: 30.1,
+  west: -86.6,
+  north: 30.45,
+  east: -85.65,
+};
+
+export function pointInDiscoverLocateEnvelope(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+): boolean {
+  return listingInDiscoverBbox(lat, lng, DISCOVER_LOCATE_ENVELOPE);
+}
+
+export type DiscoverLocateViewport = {
+  bbox: DiscoverBbox;
+  zoom: number;
+};
+
+/** Build a search viewport around a device position (same zoom as single-town jump). */
+export function locateViewportFromPoint(
+  lat: number,
+  lng: number,
+  paddingKm: number = TOWN_JUMP_PADDING_KM,
+): DiscoverLocateViewport | null {
+  const bbox = bboxAroundMapPoints([{ lat, lng }], paddingKm);
+  if (!bbox) return null;
+  return { bbox, zoom: TOWN_JUMP_ZOOM_SINGLE };
+}
+
 const EARTH_RADIUS_KM = 6371;
 
 function kmToLatDegrees(km: number): number {
