@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AdminAtAGlanceFields } from "@/components/admin/AdminAtAGlanceFields";
 import { AdminPlaceMainImageControl } from "@/components/admin/AdminPlaceMainImageControl";
+import {
+  atAGlancePatchFromValues,
+  atAGlanceValuesFromRow,
+  EMPTY_ADMIN_AT_A_GLANCE,
+  type AdminAtAGlanceValues,
+} from "@/lib/admin/admin-at-a-glance-form";
 import { AREA_TYPES, PLACE_STATUSES } from "@/lib/admin/place-constants";
 import { includedOnHubBrowse } from "@/lib/places/hub-browse-visibility";
 
@@ -37,6 +44,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [area, setArea] = useState<AreaRow | null>(null);
   const [towns, setTowns] = useState<TownOption[]>([]);
 
   const [title, setTitle] = useState("");
@@ -52,6 +60,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
   const [mapLat, setMapLat] = useState("");
   const [mapLng, setMapLng] = useState("");
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  const [atAGlance, setAtAGlance] = useState<AdminAtAGlanceValues>(EMPTY_ADMIN_AT_A_GLANCE);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -63,8 +72,9 @@ export function AdminAreaEditClient({ areaId }: Props) {
           options?: { towns?: TownOption[] };
           error?: string;
         };
-        if (!res.ok) throw new Error(j.error ?? "Failed to load");
+        if (!res.ok) throw new Error(typeof j.error === "string" ? j.error : "Failed to load");
         const a = j.area!;
+        setArea(a);
         setTowns(j.options?.towns ?? []);
         setTitle(String(a.title ?? ""));
         setSlug(String(a.slug ?? ""));
@@ -79,6 +89,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
         setMapLat(a.map_lat != null ? String(a.map_lat) : "");
         setMapLng(a.map_lng != null ? String(a.map_lng) : "");
         setMainImageUrl(a.main_image_url ?? a.hero_image_url ?? null);
+        setAtAGlance(atAGlanceValuesFromRow(a));
       })
       .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
@@ -110,6 +121,7 @@ export function AdminAreaEditClient({ areaId }: Props) {
           include_in_site_browse: includeBrowse,
           map_lat: mapLat.trim() ? Number(mapLat) : null,
           map_lng: mapLng.trim() ? Number(mapLng) : null,
+          ...atAGlancePatchFromValues(atAGlance),
         }),
       });
       const j = (await res.json()) as { error?: string };
@@ -124,6 +136,16 @@ export function AdminAreaEditClient({ areaId }: Props) {
   }
 
   if (loading) return <p className="text-sm text-zinc-500">Loading area…</p>;
+  if (!area) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-red-600">{err ?? "Area not found."}</p>
+        <Link href="/admin/areas" className="text-sm font-medium text-zinc-600 underline">
+          Back to search
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={(e) => void save(e)} className="space-y-6">
@@ -230,6 +252,8 @@ export function AdminAreaEditClient({ areaId }: Props) {
           <input className={inputClass} value={mapLng} onChange={(e) => setMapLng(e.target.value)} />
         </label>
       </div>
+
+      <AdminAtAGlanceFields values={atAGlance} onChange={setAtAGlance} placeLabel="area" />
 
       <div className="flex flex-wrap gap-3">
         <button
