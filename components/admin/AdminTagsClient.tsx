@@ -122,19 +122,24 @@ export function AdminTagsClient() {
       </form>
 
       <label className="block">
-        <span className="text-sm font-medium text-zinc-700">Filter tags</span>
+        <span className="text-sm font-medium text-zinc-700">Search tags</span>
         <input
           type="search"
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search tag or description"
+          placeholder="Tag slug, label, description, or linked category slug"
         />
       </label>
 
       {err ? <p className="text-sm text-red-600">{err}</p> : null}
       {loading ? <p className="text-sm text-zinc-500">Loading tags…</p> : null}
 
+      {!loading && query.trim() && tags.length === 0 ? (
+        <p className="text-sm text-zinc-500">No tags match your search.</p>
+      ) : null}
+
+      {tags.length > 0 ? (
       <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
         {tags.map((row) => (
           <li key={row.tag} className="space-y-2 px-4 py-3">
@@ -160,6 +165,7 @@ export function AdminTagsClient() {
           </li>
         ))}
       </ul>
+      ) : null}
     </div>
   );
 }
