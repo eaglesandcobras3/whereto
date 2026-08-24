@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   bboxAroundMapPoints,
   listingInDiscoverBbox,
+  locateViewportFromPoint,
   parseDiscoverBbox,
   parseDiscoverZoom,
+  pointInDiscoverLocateEnvelope,
   serializeDiscoverBbox,
   townJumpZoom,
+  TOWN_JUMP_ZOOM_SINGLE,
 } from "@/lib/discovery-filters/discover-bbox";
 
 describe("parseDiscoverBbox", () => {
@@ -97,5 +100,26 @@ describe("townJumpZoom", () => {
   it("zooms in for a single town and out for many", () => {
     expect(townJumpZoom(1)).toBe(16);
     expect(townJumpZoom(3)).toBe(14);
+  });
+});
+
+describe("pointInDiscoverLocateEnvelope", () => {
+  it("includes 30A, Destin, and Panama City Beach", () => {
+    expect(pointInDiscoverLocateEnvelope(30.321, -86.141)).toBe(true);
+    expect(pointInDiscoverLocateEnvelope(30.393, -86.495)).toBe(true);
+    expect(pointInDiscoverLocateEnvelope(30.176, -85.805)).toBe(true);
+  });
+
+  it("excludes far-off points", () => {
+    expect(pointInDiscoverLocateEnvelope(33.749, -84.388)).toBe(false);
+  });
+});
+
+describe("locateViewportFromPoint", () => {
+  it("uses single-town jump zoom and a padded bbox", () => {
+    const viewport = locateViewportFromPoint(30.32, -86.13);
+    expect(viewport).not.toBeNull();
+    expect(viewport!.zoom).toBe(TOWN_JUMP_ZOOM_SINGLE);
+    expect(listingInDiscoverBbox(30.32, -86.13, viewport!.bbox)).toBe(true);
   });
 });

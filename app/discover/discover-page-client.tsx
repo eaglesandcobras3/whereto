@@ -10,6 +10,7 @@ import {
 } from "@/components/discovery/DiscoverFilterInterpretation";
 import { DiscoverPageLoading } from "@/components/discovery/DiscoverPageLoading";
 import { DiscoverResultsList } from "@/components/discovery/DiscoverResultsList";
+import { DiscoverLocateControl } from "@/components/discovery/DiscoverLocateControl";
 import { DiscoverTownJumpOverlay } from "@/components/discovery/DiscoverTownJumpOverlay";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import type { DiscoverMapViewport } from "@/components/discovery/DiscoverStorefrontMap";
@@ -20,6 +21,7 @@ import {
   parseDiscoverZoom,
   serializeDiscoverBbox,
   bboxAroundMapPoints,
+  locateViewportFromPoint,
   townJumpZoom,
 } from "@/lib/discovery-filters/discover-bbox";
 import {
@@ -398,6 +400,21 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
 
   const searchMapArea = useCallback(
     (viewport: DiscoverMapViewport) => {
+      navigate({
+        type: "storefront",
+        townSlugs: [],
+        bbox: serializeDiscoverBbox(viewport.bbox),
+        zoom: viewport.zoom,
+        page: 1,
+      });
+    },
+    [navigate],
+  );
+
+  const locateToPoint = useCallback(
+    (lat: number, lng: number) => {
+      const viewport = locateViewportFromPoint(lat, lng);
+      if (!viewport) return;
       navigate({
         type: "storefront",
         townSlugs: [],
@@ -806,6 +823,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
                   onJump={jumpToTown}
                   onClear={clearTownJump}
                 />
+                <DiscoverLocateControl onLocate={locateToPoint} />
               </DiscoverStorefrontMap>
               <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
                 Jump to a town to frame the map, or pan and zoom then search this area.
