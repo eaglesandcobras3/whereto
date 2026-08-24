@@ -7,11 +7,13 @@ import {
   type BusinessSearchHit,
 } from "@/components/listing-request/BusinessNameTypeahead";
 import { CategoryTypeahead } from "@/components/listing-request/CategoryTypeahead";
+import { AdditionalCategoriesPicker } from "@/components/categories/AdditionalCategoriesPicker";
 import { SubmissionThankYou } from "@/components/listing-request/SubmissionThankYou";
 import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import { captureEvent } from "@/lib/analytics/gtag-runner";
 import { formatSearchTagLabel } from "@/lib/discovery-filters/search-tag-label";
 import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
+import type { ListingFormOptionsResponse } from "@/lib/listing-requests/listing-form-options-types";
 import type { ListBusinessMode } from "@/lib/listing-requests/list-business-mode";
 import {
   FREE_ONBOARD_EXCERPT_MAX,
@@ -83,8 +85,8 @@ type CategoryOption = {
   id: string;
   title: string;
   slug: string;
-  rollupTitle?: string;
-  rollupSlug?: string;
+  rollupTitle?: string | null;
+  rollupSlug?: string | null;
 };
 type CategoryGroup = {
   id: string;
@@ -164,6 +166,9 @@ export function FreeOnboardForm({
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [searchTagOptions, setSearchTagOptions] = useState<DiscoverSearchTagOption[]>([]);
   const [tagsByCategoryId, setTagsByCategoryId] = useState<Record<string, string[]>>({});
+  const [relatedCategoriesByCategoryId, setRelatedCategoriesByCategoryId] = useState<
+    Record<string, string[]>
+  >({});
   const [prefill, setPrefill] = useState<PrefillBusiness | null>(null);
   const [findPhase, setFindPhase] = useState<FindPhase>(
     mode === "find" ? "searching" : mode === "slug" ? "selected" : "creating-new",
@@ -330,17 +335,7 @@ export function FreeOnboardForm({
         const res = await fetch("/api/listing-requests/form-options", {
           signal: controller.signal,
         });
-        const j = (await res.json()) as {
-          categories?: CategoryOption[];
-          categoryGroups?: CategoryGroup[];
-          searchTags?: string[];
-          searchTagOptions?: DiscoverSearchTagOption[];
-          tagsByCategoryId?: Record<string, string[]>;
-          isAdmin?: boolean;
-          adminName?: string | null;
-          adminEmail?: string | null;
-          error?: string;
-        };
+        const j = (await res.json()) as Partial<ListingFormOptionsResponse> & { error?: string };
         if (!res.ok) throw new Error(j.error ?? "Could not load form options");
         setCategories(j.categories ?? []);
         setCategoryGroups(j.categoryGroups ?? []);
@@ -353,6 +348,7 @@ export function FreeOnboardForm({
               })),
         );
         setTagsByCategoryId(j.tagsByCategoryId ?? {});
+        setRelatedCategoriesByCategoryId(j.relatedCategoriesByCategoryId ?? {});
         setIsAdmin(Boolean(j.isAdmin));
         setAdminName((j.adminName ?? "").trim());
         setAdminEmail((j.adminEmail ?? "").trim());
@@ -446,6 +442,16 @@ export function FreeOnboardForm({
     prefillCategoryTitle,
     prefillCategoryGroupTitle,
   ]);
+
+  const categoryLeafOptions = useMemo(
+    () =>
+      categoryTypeaheadOptions.map((c) => ({
+        id: c.id,
+        title: c.title,
+        groupTitle: c.groupTitle ?? null,
+      })),
+    [categoryTypeaheadOptions],
+  );
 
   const tagSlotsUsed = selectedTags.length + suggestedTags.length;
   const atTagCap = tagSlotsUsed >= FREE_ONBOARD_SEARCH_TAGS_MAX;
@@ -1314,43 +1320,15 @@ export function FreeOnboardForm({
         />
         <FieldError message={fieldErrors.category_id ?? fieldErrors.suggested_category} />
         {multipleCategoryEnabled && categoryId && !suggestedCategory.trim() ? (
-          <fieldset className="mt-3 space-y-2 rounded-xl border border-[var(--color-border)] p-3">
-            <legend className="px-1 text-sm font-medium text-[var(--color-text-primary)]">
-              Additional categories (optional)
-            </legend>
-            <p className={helpClass}>
-              Primary is set above. Add up to {5 - 1} more if the business clearly fits.
-            </p>
-            <div className="max-h-40 space-y-1 overflow-y-auto text-sm">
-              {categories
-                .filter((c) => c.id !== categoryId)
-                .map((c) => {
-                  const checked = categoryIds.includes(c.id);
-                  return (
-                    <label key={c.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => {
-                          setCategoryIds((prev) => {
-                            const base = prev.includes(categoryId) ? prev : [categoryId, ...prev];
-                            if (e.target.checked) {
-                              if (base.length >= 5) return base;
-                              return base.includes(c.id) ? base : [...base, c.id];
-                            }
-                            return base.filter((id) => id !== c.id);
-                          });
-                        }}
-                      />
-                      <span>
-                        {c.rollupTitle ? `${c.rollupTitle} · ` : ""}
-                        {c.title}
-                      </span>
-                    </label>
-                  );
-                })}
-            </div>
-          </fieldset>
+          <AdditionalCategoriesPicker
+            primaryCategoryId={categoryId}
+            membershipIds={categoryIds}
+            onMembershipIdsChange={setCategoryIds}
+            leafOptions={categoryLeafOptions}
+            relatedByCategoryId={relatedCategoriesByCategoryId}
+            loading={optionsLoading}
+            tone="intake"
+          />
         ) : null}
       </div>
 
