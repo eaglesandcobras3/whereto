@@ -1,10 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FacetTypeaheadMultiSelect } from "@/components/discovery/FacetTypeaheadMultiSelect";
 import type { AdminBusinessRow } from "@/lib/admin/admin-business-direct-edit";
 import { AdminBusinessMainImageControl } from "@/components/admin/AdminBusinessMainImageControl";
 import { AdminBusinessPhotosManager } from "@/components/admin/AdminBusinessPhotosManager";
+import type { DiscoverSearchTagOption } from "@/lib/discovery-filters/load-discover-options";
+import {
+  formatSearchTagLabel,
+  normalizeSearchTagSlug,
+} from "@/lib/discovery-filters/search-tag-label";
+
+const MapLocationPickerClient = dynamic(
+  () => import("@/components/maps/MapLocationPicker").then((m) => m.MapLocationPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-56 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-xs text-zinc-500 sm:h-64">
+        Loading map…
+      </div>
+    ),
+  },
+);
 
 type OptionTown = { id: string; title: string; slug: string };
 type OptionArea = { id: string; title: string; slug: string | null; town_id: string | null };
@@ -19,6 +38,14 @@ type Props = {
 const inputClass =
   "mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10";
 const labelClass = "block text-sm font-medium text-zinc-700";
+const ADMIN_SEARCH_TAGS_MAX = 12;
+
+function parseCoord(raw: string): number | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
 
 export function AdminBusinessEditClient({
   businessId,
@@ -55,7 +82,11 @@ export function AdminBusinessEditClient({
   const [isExplorable, setIsExplorable] = useState(false);
   const [mapLat, setMapLat] = useState("");
   const [mapLng, setMapLng] = useState("");
-  const [searchTags, setSearchTags] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [searchTagOptions, setSearchTagOptions] = useState<DiscoverSearchTagOption[]>([]);
+  const [tagsByCategoryId, setTagsByCategoryId] = useState<Record<string, string[]>>({});
+  const [tagOptionsLoading, setTagOptionsLoading] = useState(true);
   const [regenerateSlug, setRegenerateSlug] = useState(false);
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
 
@@ -107,7 +138,8 @@ export function AdminBusinessEditClient({
         setIsExplorable(Boolean(b.is_explorable));
         setMapLat(b.map_lat != null ? String(b.map_lat) : "");
         setMapLng(b.map_lng != null ? String(b.map_lng) : "");
-        setSearchTags((b.search_tags ?? []).join(" | "));
+        setSelectedTags((b.search_tags ?? []).slice(0, ADMIN_SEARCH_TAGS_MAX));
+        setSuggestedTags([]);
         setMainImageUrl(b.main_image_url ?? b.hero_image_url ?? null);
       })
       .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"))
@@ -117,6 +149,75 @@ export function AdminBusinessEditClient({
   useEffect(() => {
     queueMicrotask(() => load());
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setTagOptionsLoading(true);
+    void fetch("/api/listing-requests/form-options")
+      .then(async (res) => {
+        const j = (await res.json()) as {
+          searchTagOptions?: DiscoverSearchTagOption[];
+          searchTags?: string[];
+          tagsByCategoryId?: Record<string, string[]>;
+          error?: string;
+        };
+        if (!res.ok) throw new Error(j.error ?? "Failed to load tag options");
+        if (cancelled) return;
+        setSearchTagOptions(
+          j.searchTagOptions?.length
+            ? j.searchTagOptions
+            : (j.searchTags ?? []).map((slug) => ({
+                slug,
+                label: formatSearchTagLabel(slug),
+              })),
+        );
+        setTagsByCategoryId(j.tagsByCategoryId ?? {});
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSearchTagOptions([]);
+          setTagsByCategoryId({});
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setTagOptionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const tagOptions: DiscoverSearchTagOption[] = useMemo(() => {
+    const bySlug = new Map(searchTagOptions.map((t) => [t.slug, t]));
+    for (const slug of selectedTags) {
+      if (!bySlug.has(slug)) bySlug.set(slug, { slug, label: formatSearchTagLabel(slug) });
+    }
+    return Array.from(bySlug.values()).sort((a, b) => a.slug.localeCompare(b.slug));
+  }, [searchTagOptions, selectedTags]);
+
+  const categorySuggestedTags = useMemo(() => {
+    if (!categoryId) return [];
+    const slugs = tagsByCategoryId[categoryId] ?? [];
+    const bySlug = new Map(searchTagOptions.map((t) => [t.slug, t]));
+    return slugs
+      .map((slug) => bySlug.get(slug) ?? { slug, label: formatSearchTagLabel(slug) })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [categoryId, tagsByCategoryId, searchTagOptions]);
+
+  const tagSlotsUsed = selectedTags.length + suggestedTags.length;
+  const atTagCap = tagSlotsUsed >= ADMIN_SEARCH_TAGS_MAX;
+
+  function toggleCategorySuggestedTag(slug: string) {
+    if (selectedTags.includes(slug)) {
+      setSelectedTags(selectedTags.filter((t) => t !== slug));
+      return;
+    }
+    if (atTagCap) return;
+    setSelectedTags([...selectedTags, slug]);
+  }
+
+  const mapLatNum = useMemo(() => parseCoord(mapLat), [mapLat]);
+  const mapLngNum = useMemo(() => parseCoord(mapLng), [mapLng]);
 
   const areasForTown = useMemo(() => {
     if (!townId) return areas;
@@ -129,17 +230,13 @@ export function AdminBusinessEditClient({
     setErr(null);
     setOk(null);
 
-    const parseCoord = (raw: string): number | null => {
-      const t = raw.trim();
-      if (!t) return null;
-      const n = Number(t);
-      return Number.isFinite(n) ? n : null;
-    };
-
-    const tags = searchTags
-      .split(/\s*\|\s*|\s*,\s*/)
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const normalizedSuggested = suggestedTags
+      .map((label) => normalizeSearchTagSlug(label))
+      .filter((slug): slug is string => Boolean(slug));
+    const tags = [...new Set([...selectedTags, ...normalizedSuggested])].slice(
+      0,
+      ADMIN_SEARCH_TAGS_MAX,
+    );
 
     const body: Record<string, unknown> = {
       title,
@@ -189,6 +286,8 @@ export function AdminBusinessEditClient({
       if (!res.ok) throw new Error(j.error ?? "Save failed");
       if (j.business) {
         setBusiness(j.business);
+        setSelectedTags((j.business.search_tags ?? []).slice(0, ADMIN_SEARCH_TAGS_MAX));
+        setSuggestedTags([]);
         setRegenerateSlug(false);
       }
       setOk(`Saved: ${(j.changes ?? []).join(", ") || "ok"}`);
@@ -390,15 +489,39 @@ export function AdminBusinessEditClient({
           </label>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={labelClass}>
-            Map lat
-            <input className={inputClass} value={mapLat} onChange={(e) => setMapLat(e.target.value)} />
-          </label>
-          <label className={labelClass}>
-            Map lng
-            <input className={inputClass} value={mapLng} onChange={(e) => setMapLng(e.target.value)} />
-          </label>
+        <div className="space-y-3">
+          <p className={labelClass}>Map location</p>
+          <MapLocationPickerClient
+            lat={mapLatNum}
+            lng={mapLngNum}
+            onChange={(lat, lng) => {
+              setMapLat(lat != null ? String(lat) : "");
+              setMapLng(lng != null ? String(lng) : "");
+            }}
+            helpText="Click the map to drop a pin, drag to adjust, or edit latitude and longitude below."
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className={labelClass}>
+              Map lat
+              <input
+                className={inputClass}
+                value={mapLat}
+                inputMode="decimal"
+                onChange={(e) => setMapLat(e.target.value)}
+                placeholder="30.32"
+              />
+            </label>
+            <label className={labelClass}>
+              Map lng
+              <input
+                className={inputClass}
+                value={mapLng}
+                inputMode="decimal"
+                onChange={(e) => setMapLng(e.target.value)}
+                placeholder="-86.13"
+              />
+            </label>
+          </div>
         </div>
 
         <label className={labelClass}>
@@ -448,15 +571,83 @@ export function AdminBusinessEditClient({
             onChange={(e) => setServiceArea(e.target.value)}
           />
         </label>
-        <label className={labelClass}>
-          Search tags <span className="font-normal text-zinc-500">(pipe-separated)</span>
-          <input
-            className={inputClass}
-            value={searchTags}
-            onChange={(e) => setSearchTags(e.target.value)}
-            placeholder="coffee | outdoor_seating"
-          />
-        </label>
+        <div>
+          <p className={labelClass}>Search tags (up to {ADMIN_SEARCH_TAGS_MAX})</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Pick from the vocabulary — these power on-site discovery. Prefer specific tags like pizza
+            or waterfront instead of broad ones like restaurant.
+          </p>
+          {categorySuggestedTags.length > 0 ? (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-zinc-600">Suggested for this category</p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {categorySuggestedTags.map((tag) => {
+                  const selected = selectedTags.includes(tag.slug);
+                  const addDisabled = !selected && atTagCap;
+                  return (
+                    <li key={tag.slug}>
+                      <button
+                        type="button"
+                        disabled={addDisabled}
+                        onClick={() => toggleCategorySuggestedTag(tag.slug)}
+                        aria-pressed={selected}
+                        title={
+                          selected
+                            ? `Remove ${tag.label}`
+                            : addDisabled
+                              ? `Tag limit reached (${ADMIN_SEARCH_TAGS_MAX})`
+                              : `Add ${tag.label}`
+                        }
+                        className={
+                          selected
+                            ? "inline-flex items-center gap-1 rounded-full bg-zinc-900/10 py-1 pl-2.5 pr-2 text-xs font-medium text-zinc-900"
+                            : "inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white py-1 pl-2.5 pr-2 text-xs font-medium text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                        }
+                      >
+                        <span>{tag.label}</span>
+                        <span aria-hidden className="text-[0.7rem] leading-none">
+                          {selected ? "✓" : "+"}
+                        </span>
+                        <span className="sr-only">
+                          {selected ? "Selected — click to remove" : "Add tag"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+          <div className="mt-2">
+            <FacetTypeaheadMultiSelect
+              options={tagOptions}
+              selectedSlugs={selectedTags}
+              suggestedLabels={suggestedTags}
+              maxSelected={ADMIN_SEARCH_TAGS_MAX}
+              loading={tagOptionsLoading}
+              onChange={(slugs) => {
+                if (slugs.length + suggestedTags.length > ADMIN_SEARCH_TAGS_MAX) return;
+                setSelectedTags(slugs);
+              }}
+              onSuggestedChange={(labels) => {
+                if (selectedTags.length + labels.length > ADMIN_SEARCH_TAGS_MAX) return;
+                setSuggestedTags(labels);
+              }}
+              placeholder="Search tags…"
+              emptyMessage="No matching tags"
+            />
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            Can&apos;t find a tag? Type it and choose Suggest — it will be saved as a slug on this
+            listing.
+          </p>
+          <p className="mt-1 text-xs text-zinc-400">
+            {tagSlotsUsed}/{ADMIN_SEARCH_TAGS_MAX} tags used
+            {suggestedTags.length > 0
+              ? ` (${selectedTags.length} from list, ${suggestedTags.length} suggested)`
+              : null}
+          </p>
+        </div>
 
         {err ? <p className="text-sm text-red-600">{err}</p> : null}
         {ok ? <p className="text-sm text-emerald-700">{ok}</p> : null}
