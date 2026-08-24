@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { ADMIN_SEARCH_DEBOUNCE_MS } from "@/lib/admin/admin-search-debounce";
 
 type TagRow = {
   tag: string;
@@ -32,7 +33,10 @@ export function AdminTagsClient() {
   }, [query]);
 
   useEffect(() => {
-    const t = setTimeout(() => queueMicrotask(() => load()), query ? 250 : 0);
+    const t = setTimeout(
+      () => queueMicrotask(() => load()),
+      query.trim() ? ADMIN_SEARCH_DEBOUNCE_MS : 0,
+    );
     return () => clearTimeout(t);
   }, [load, query]);
 
