@@ -147,13 +147,6 @@ export function applyDiscoveryBrowseNav(
           ]),
         ),
       });
-      if (!items.some((i) => i.label === "Categories") && !next.some((i) => i.label === "Categories")) {
-        next.push({
-          label: "Categories",
-          href: "/businesses",
-          activePaths: ["/businesses", "/services", "/categories"],
-        });
-      }
       continue;
     }
 
