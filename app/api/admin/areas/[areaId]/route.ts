@@ -19,14 +19,19 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   const { areaId } = await context.params;
   const supabase = getServiceSupabase();
-  const [area, { data: towns }] = await Promise.all([
-    getAdminAreaById(supabase, areaId),
-    supabase.from("towns").select("id, title, slug").is("archived_at", null).order("title"),
-  ]);
+  try {
+    const [area, { data: towns }] = await Promise.all([
+      getAdminAreaById(supabase, areaId),
+      supabase.from("towns").select("id, title, slug").is("archived_at", null).order("title"),
+    ]);
 
-  if (!area) return NextResponse.json({ error: "Area not found" }, { status: 404 });
+    if (!area) return NextResponse.json({ error: "Area not found" }, { status: 404 });
 
-  return NextResponse.json({ area, options: { towns: towns ?? [] } });
+    return NextResponse.json({ area, options: { towns: towns ?? [] } });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Load failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {

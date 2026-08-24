@@ -6,6 +6,7 @@ import { AT_A_GLANCE_FACTS_SELECT } from "@/lib/data/at-a-glance-facts";
 import { mainImagePatch } from "@/lib/admin/guides";
 import { slugifyBusinessTitle, uniqueSlug } from "@/lib/portal/slug";
 import { AREA_TYPES, PLACE_STATUSES } from "@/lib/admin/place-constants";
+import { queryRowWithSelectFallback, isOptionalSchemaColumnError } from "@/lib/admin/admin-place-query";
 
 export { AREA_TYPES, PLACE_STATUSES };
 
@@ -96,6 +97,26 @@ export const ADMIN_AREA_SELECT = [
   AT_A_GLANCE_FACTS_SELECT,
 ].join(", ");
 
+/** Without hub flag or at-a-glance facts (older DBs). */
+export const ADMIN_AREA_SELECT_LEGACY = [
+  "id",
+  "title",
+  "slug",
+  "town_id",
+  "area_type",
+  "excerpt",
+  "content",
+  "seo_description",
+  "parking_notes",
+  "status",
+  "map_lat",
+  "map_lng",
+  "main_image_url",
+  "hero_image_url",
+  "date_created",
+  "date_updated",
+].join(", ");
+
 export type AdminAreaListItem = {
   id: string;
   title: string;
@@ -158,16 +179,18 @@ export async function resolveAreaIdForAdmin(
 
 export async function getAdminAreaById(
   supabase: SupabaseClient,
-  id: string,
+  ref: string,
 ): Promise<AdminAreaRow | null> {
-  const { data, error } = await supabase
-    .from("areas")
-    .select(ADMIN_AREA_SELECT)
-    .eq("id", id)
-    .is("archived_at", null)
-    .maybeSingle();
+  const id = await resolveAreaIdForAdmin(supabase, ref);
+  if (!id) return null;
+
+  const { data, error } = await queryRowWithSelectFallback<AdminAreaRow>({
+    selectVariants: [ADMIN_AREA_SELECT, ADMIN_AREA_SELECT_LEGACY],
+    run: (select) =>
+      supabase.from("areas").select(select).eq("id", id).is("archived_at", null).maybeSingle(),
+  });
   if (error) throw error;
-  return (data as AdminAreaRow | null) ?? null;
+  return data ?? null;
 }
 
 export async function createAdminArea(
@@ -221,9 +244,12 @@ export function buildAdminAreaPatch(
 
 export async function updateAdminArea(
   supabase: SupabaseClient,
-  id: string,
+  ref: string,
   input: z.infer<typeof adminAreaPatchSchema>,
 ): Promise<AdminAreaRow> {
+  const id = await resolveAreaIdForAdmin(supabase, ref);
+  if (!id) throw new Error("Area not found");
+
   const patch = buildAdminAreaPatch(input);
   const { data, error } = await supabase
     .from("areas")
@@ -231,6 +257,25 @@ export async function updateAdminArea(
     .eq("id", id)
     .select(ADMIN_AREA_SELECT)
     .single();
+
+  if (error?.message && isOptionalSchemaColumnError(error.message)) {
+    const legacyPatch = { ...patch };
+    delete legacyPatch.include_in_site_browse;
+    for (const key of Object.keys(legacyPatch)) {
+      if (key.startsWith("at_a_glance_") || key.endsWith("_details") || key === "highlights") {
+        delete legacyPatch[key];
+      }
+    }
+    const retry = await supabase
+      .from("areas")
+      .update(legacyPatch)
+      .eq("id", id)
+      .select(ADMIN_AREA_SELECT_LEGACY)
+      .single();
+    if (retry.error) throw retry.error;
+    return retry.data as unknown as AdminAreaRow;
+  }
+
   if (error) throw error;
   return data as unknown as AdminAreaRow;
 }
