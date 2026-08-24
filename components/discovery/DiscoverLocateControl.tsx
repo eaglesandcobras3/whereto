@@ -121,20 +121,20 @@ export function DiscoverLocateControl({ onLocate }: Props) {
               Your location looks outside Destin through Panama City Beach. Most storefront pins
               sit along 30A, so this view may have few results.
             </p>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={confirmOutsideLocate}
+                className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] sm:mr-auto"
+              >
+                Go to my location
+              </button>
               <button
                 type="button"
                 onClick={() => setOutsideModal(null)}
                 className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
               >
                 Close
-              </button>
-              <button
-                type="button"
-                onClick={confirmOutsideLocate}
-                className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
-              >
-                Go to my location
               </button>
             </div>
           </div>
