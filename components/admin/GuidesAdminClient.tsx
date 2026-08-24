@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { ADMIN_SEARCH_DEBOUNCE_MS } from "@/lib/admin/admin-search-debounce";
 
 type GuideRow = {
   id: string;
@@ -103,7 +104,7 @@ export function GuidesAdminClient({ initialQuery = "", initialStatus = "active" 
     const t = setTimeout(() => {
       queueMicrotask(() => load());
       syncUrl(filter, query);
-    }, query ? 250 : 0);
+    }, query.trim() ? ADMIN_SEARCH_DEBOUNCE_MS : 0);
     return () => clearTimeout(t);
   }, [load, query, filter, syncUrl]);
 

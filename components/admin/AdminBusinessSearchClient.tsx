@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useAdminDebouncedSearch } from "@/lib/admin/use-admin-debounced-search";
 
 type Hit = {
   id: string;
@@ -21,7 +22,6 @@ export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
   const searchParams = useSearchParams();
   const [q, setQ] = useState(initialQuery);
   const [results, setResults] = useState<Hit[]>([]);
-  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,37 +42,42 @@ export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
     [router, searchParams],
   );
 
-  const search = useCallback(async (query: string) => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
+  const onDebouncedQuery = useCallback(
+    (query: string) => {
+      if (query.length >= 2 || query.length === 0) syncUrl(query);
+    },
+    [syncUrl],
+  );
+
+  const onSearch = useCallback(async (query: string, signal: AbortSignal) => {
     setErr(null);
     try {
       const res = await fetch(
-        `/api/admin/businesses/search?q=${encodeURIComponent(query.trim())}&limit=16`,
+        `/api/admin/businesses/search?q=${encodeURIComponent(query)}&limit=16`,
+        { signal },
       );
       const j = (await res.json()) as { results?: Hit[]; error?: string };
       if (!res.ok) throw new Error(j.error ?? "Search failed");
+      if (signal.aborted) return;
       setResults(j.results ?? []);
     } catch (e) {
+      if (signal.aborted || (e instanceof DOMException && e.name === "AbortError")) return;
       setErr(e instanceof Error ? e.message : "Search failed");
       setResults([]);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    const handle = window.setTimeout(() => {
-      void search(q);
-      if (q.trim().length >= 2 || q.trim().length === 0) {
-        syncUrl(q);
-      }
-    }, 250);
-    return () => window.clearTimeout(handle);
-  }, [q, search, syncUrl]);
+  const onClear = useCallback(() => {
+    setResults([]);
+    setErr(null);
+  }, []);
+
+  const { loading, debouncedQuery } = useAdminDebouncedSearch({
+    query: q,
+    onSearch,
+    onClear,
+    onDebouncedQuery,
+  });
 
   return (
     <div className="space-y-4">
@@ -112,7 +117,7 @@ export function AdminBusinessSearchClient({ initialQuery = "" }: Props) {
             </li>
           ))}
         </ul>
-      ) : q.trim().length >= 2 && !loading ? (
+      ) : debouncedQuery.length >= 2 && !loading ? (
         <p className="text-sm text-zinc-500">No matches.</p>
       ) : null}
     </div>
