@@ -14,6 +14,7 @@ export type AdminCategoryRow = {
 /** Read-only category browser for operators. */
 export async function listAdminCategories(
   supabase: SupabaseClient,
+  query?: string,
 ): Promise<AdminCategoryRow[]> {
   const { data: categories, error } = await supabase
     .from("business_categories")
@@ -40,7 +41,8 @@ export async function listAdminCategories(
     (categories ?? []).map((c) => [String((c as { id: string }).id), c as { id: string; title: string; slug: string; parent_category_id: string | null }]),
   );
 
-  return (categories ?? []).map((c) => {
+  return (categories ?? [])
+    .map((c) => {
     const row = c as {
       id: string;
       title: string;
@@ -56,5 +58,18 @@ export async function listAdminCategories(
       parent_title: parent?.title ?? null,
       business_count: countByCategory.get(row.id) ?? 0,
     };
-  });
+  })
+    .filter((row) => {
+      const needle = query?.trim().toLowerCase() ?? "";
+      if (!needle) return true;
+      const hay = [
+        row.title,
+        row.slug,
+        row.parent_title ?? "",
+        row.slug.replace(/_/g, " "),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(needle);
+    });
 }
