@@ -122,15 +122,11 @@ async function getFooterAreas(): Promise<FooterBrowseLink[]> {
 
 async function getFooterBusinessBrowseGroups(): Promise<FooterBrowseLink[]> {
   const groups = await getListedBusinessBrowseGroups();
-  const head: FooterBrowseLink[] = [{ name: "All businesses", slug: "all", href: "/businesses" }];
-  return [
-    ...head,
-    ...groups.map((g) => ({
-      name: g.title,
-      slug: g.slug,
-      href: g.href,
-    })),
-  ];
+  return groups.map((g) => ({
+    name: g.title,
+    slug: g.slug,
+    href: g.href,
+  }));
 }
 
 const footerLinkClass =
