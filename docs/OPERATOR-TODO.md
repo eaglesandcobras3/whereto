@@ -269,6 +269,26 @@ Expect ~1855 rows after import. Free onboard form shows “Suggested for this ca
 
 ---
 
+## Related category links (multi-category intake + admin)
+
+When `multiple_category` is on, intake and admin business edit suggest additional leaf categories from `category_related_categories`, seeded from [category-related.csv](category-related.csv).
+
+### Apply (Supabase SQL editor)
+
+- [ ] Run [scripts/migrations/category-related-categories.sql](../scripts/migrations/category-related-categories.sql)
+- [ ] Populate [category-related.csv](category-related.csv) (columns: Top Level Category, Subcategory, Related Top Level Category, Related Subcategory)
+- [ ] Seed / resync: `npx tsx scripts/import-category-related-csv.ts` (optional `--dry-run`)
+
+### Verify
+
+```sql
+SELECT count(*) FROM public.category_related_categories;
+```
+
+After import, free onboard and admin business edit show “Suggested for this category” chips under additional categories when a primary leaf is selected.
+
+---
+
 ## Backfill: business search enrichment
 
 Published businesses need **category**, **search profile** (tags + `search_profile` + `qa_document`), **derived search document** (`search_tags`, `search_terms`, `embedding_summary`), and an **embedding** vector to show on town pages and rank in search.
@@ -743,6 +763,7 @@ Until then, treat **Vercel** preview/build as the production-build gate for MRs.
 | 2026-08-04 | Security hardening: `/api/ask/inspect/*` now requires env-based admin identity + rate limiting; `/api/ask/share` now requires authenticated, server-bound artifact sessions; `community-tips.sql` now blocks `profiles.is_admin` client escalation and enforces pending-only user writes |
 | 2026-08-04 | PostHog `town_facts`: town “at a glance” section below hero (metrics, highlights, detail cards); SQL [town-facts.sql](../scripts/migrations/town-facts.sql) + [town-facts-seed.sql](../scripts/migrations/town-facts-seed.sql) |
 | 2026-08-01 | Page sharing: Share button on town/area/business/guide pages (Web Share API + Copy Link / Email fallback); PostHog `share_button_clicked` / `share_completed` / `share_cancelled`; provision with `npm run posthog:setup-page-sharing` |
+| 2026-08-23 | Related category links: `category_related_categories` + import from [category-related.csv](category-related.csv); intake + admin suggest additional leaf categories when multi-category is on. SQL [category-related-categories.sql](../scripts/migrations/category-related-categories.sql) |
 | 2026-07-30 | Tag↔subcategory links: `search_tag_categories` + import from [tags-cats.csv](tags-cats.csv); free intake suggests mapped tags (+/check) toward the 6-tag cap. SQL [search-tag-categories.sql](../scripts/migrations/search-tag-categories.sql) |
 | 2026-07-29 | IRSE town calibration: penalize templated Stay/Eat/Explore SEO titles and near-duplicate hub copy; require guides/areas for discovery; removed free template points. `/town/watersound` no longer labeled indexed via root `/watersound` alias. |
 | 2026-07-29 | IRSE: removed GitHub `calibrate-irse` job — CLI only. Use `npm run calibrate:irse -- --score-all` to snapshot every published page for admin badges. |
