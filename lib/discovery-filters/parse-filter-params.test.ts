@@ -41,6 +41,12 @@ describe("normalizeServiceCategoryGroupSlug", () => {
 });
 
 describe("parseDiscoveryFilterState", () => {
+  it("defaults to a smaller list page size", () => {
+    const state = parseDiscoveryFilterState({ type: "storefront" });
+    expect(state.page_size).toBe(12);
+    expect(state.page).toBe(1);
+  });
+
   it("parses storefront scope with rollup category and tags", () => {
     const state = parseDiscoveryFilterState({
       type: "storefront",
