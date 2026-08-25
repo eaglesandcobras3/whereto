@@ -32,10 +32,11 @@ export const discoveryFilterStateSchema = z.object({
   /** Map zoom for restoring the viewport (storefront map mode). */
   zoom: z.number().int().min(8).max(20).optional(),
   page: z.number().int().min(1).default(1),
-  page_size: z.number().int().min(1).max(48).default(24),
+  page_size: z.number().int().min(1).max(48).default(25),
 });
 
 export type DiscoveryFilterState = z.infer<typeof discoveryFilterStateSchema>;
 
-export const DEFAULT_PAGE_SIZE = 24;
-export const DISCOVER_MAP_PAGE_SIZE = 48;
+export const DEFAULT_PAGE_SIZE = 25;
+/** Storefront map mode uses the same page size as list mode. */
+export const DISCOVER_MAP_PAGE_SIZE = 25;
