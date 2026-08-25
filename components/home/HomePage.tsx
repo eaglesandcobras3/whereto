@@ -135,7 +135,7 @@ export function HomePage({
 }: Props) {
   const featureFlags = useAppFeatureFlags();
   const discoverOn = isDiscoverEnabled(featureFlags);
-  const viewMoreHref = discoverOn ? discoverHref(featureFlags) : "/businesses";
+  const browseBusinessesHref = discoverOn ? discoverHref(featureFlags) : "/businesses";
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface antialiased">
@@ -179,8 +179,12 @@ export function HomePage({
                   Browse towns
                 </Link>
                 <Link
-                  href="/businesses"
-                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_businesses" })}
+                  href={browseBusinessesHref}
+                  {...gaClickProps({
+                    event: "cta_click",
+                    category: "home_hero",
+                    label: discoverOn ? "browse_discover" : "browse_businesses",
+                  })}
                   className="home-hero-cta"
                 >
                   <MsIcon name="storefront" className="!text-xl" />
@@ -206,7 +210,7 @@ export function HomePage({
               <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
               <div className="mt-10 flex justify-center md:mt-12">
                 <Link
-                  href={viewMoreHref}
+                  href={browseBusinessesHref}
                   {...gaClickProps({
                     event: "nav_click",
                     category: "home_featured",
