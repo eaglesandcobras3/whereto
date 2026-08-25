@@ -4,9 +4,20 @@ import { validateFilterContract } from "@/lib/discovery-filters/filter-contract"
 import { parseDiscoveryFilterState, parseEntityType, constrainTagsToScope } from "@/lib/discovery-filters/parse-filter-params";
 import { parseTagSlugsFromParam } from "@/lib/discovery-filters/parse-tag-params";
 import {
+  DEFAULT_PAGE_SIZE,
+  DISCOVER_MAP_PAGE_SIZE,
+} from "@/lib/discovery-filters/filter-state";
+import {
   normalizeServiceCategoryGroupSlug,
   normalizeStorefrontCategoryGroupSlug,
 } from "@/lib/discovery-filters/category-group-slugs";
+
+describe("discover page sizes", () => {
+  it("uses 25 for both list and map mode", () => {
+    expect(DEFAULT_PAGE_SIZE).toBe(25);
+    expect(DISCOVER_MAP_PAGE_SIZE).toBe(25);
+  });
+});
 
 describe("parseEntityType", () => {
   it("maps services to service entity type", () => {
