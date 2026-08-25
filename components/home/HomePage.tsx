@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { isAskEnabled } from "@/lib/feature-flags-core";
+import { isDiscoverEnabled } from "@/lib/feature-flags-core";
 import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
@@ -10,6 +10,7 @@ import { FeaturedRentalsSection } from "@/components/home/FeaturedRentalsSection
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { ListRentalsHomeCta } from "@/components/stays/ListRentalsHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
+import { discoverHref } from "@/lib/nav/discovery-links";
 import { townPagePath } from "@/lib/routes/town-page-path";
 import { HOME_HERO_IMAGE_PATH } from "@/lib/home/hero-image";
 import type { RentalPropertyView } from "@/lib/stays/types";
@@ -133,6 +134,8 @@ export function HomePage({
   },
 }: Props) {
   const featureFlags = useAppFeatureFlags();
+  const discoverOn = isDiscoverEnabled(featureFlags);
+  const browseBusinessesHref = discoverOn ? discoverHref(featureFlags) : "/businesses";
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface antialiased">
@@ -168,31 +171,25 @@ export function HomePage({
 
               <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                 <Link
-                  href="/guides"
-                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "explore_guides" })}
+                  href="/towns"
+                  {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
                   className="home-hero-cta-secondary"
                 >
-                  <MsIcon name="menu_book" className="!text-xl" />
-                  Browse travel guides
+                  <MsIcon name="location_city" className="!text-xl" />
+                  Browse towns
                 </Link>
-                {isAskEnabled(featureFlags) ? (
-                  <Link
-                    href="/ask"
-                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "ask_concierge" })}
-                    className="home-hero-cta"
-                  >
-                    <MsIcon name="chat" className="!text-xl" />
-                    Ask WhereTo30A
-                  </Link>
-                ) : (
-                  <Link
-                    href="/towns"
-                    {...gaClickProps({ event: "cta_click", category: "home_hero", label: "browse_towns" })}
-                    className="home-hero-cta"
-                  >
-                    Browse towns
-                  </Link>
-                )}
+                <Link
+                  href={browseBusinessesHref}
+                  {...gaClickProps({
+                    event: "cta_click",
+                    category: "home_hero",
+                    label: discoverOn ? "browse_discover" : "browse_businesses",
+                  })}
+                  className="home-hero-cta"
+                >
+                  <MsIcon name="storefront" className="!text-xl" />
+                  Browse businesses
+                </Link>
               </div>
             </div>
           </div>
@@ -213,8 +210,12 @@ export function HomePage({
               <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
               <div className="mt-10 flex justify-center md:mt-12">
                 <Link
-                  href="/businesses"
-                  {...gaClickProps({ event: "nav_click", category: "home_featured", label: "view_more_businesses" })}
+                  href={browseBusinessesHref}
+                  {...gaClickProps({
+                    event: "nav_click",
+                    category: "home_featured",
+                    label: discoverOn ? "view_more_discover" : "view_more_businesses",
+                  })}
                   className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-8 py-3.5 text-base font-semibold text-[var(--color-primary)] shadow-sm transition-all hover:border-[var(--color-primary)] hover:shadow-md"
                 >
                   View more
