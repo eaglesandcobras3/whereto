@@ -387,7 +387,8 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
   );
 
   const clearTownJump = useCallback(() => {
-    navigate({ townSlugs: [], clearMap: true, page: 1 });
+    // Drop the town label only — keep bbox/zoom so the map does not jump.
+    navigate({ townSlugs: [], page: 1 });
   }, [navigate]);
 
   const setTownSlugs = (slugs: string[]) => {
