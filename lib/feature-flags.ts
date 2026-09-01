@@ -19,6 +19,7 @@ import {
   isAdminBusinessDirectEditEnabled,
   isBusinessMapsEnabled,
   isTownMapsEnabled,
+  isTownNavEnabled,
   isTownRelationshipEnabled,
   isMultipleCategoryEnabled,
   isFeedbackEnabled,
@@ -46,6 +47,7 @@ export {
   isAdminBusinessDirectEditEnabled,
   isBusinessMapsEnabled,
   isTownMapsEnabled,
+  isTownNavEnabled,
   isTownRelationshipEnabled,
   isMultipleCategoryEnabled,
   isFeedbackEnabled,
@@ -173,6 +175,15 @@ export function townMapsDevBypassEnabled(): boolean {
 
 export function isTownMapsFeatureEnabled(flags: FeatureFlags): boolean {
   return isTownMapsEnabled(flags) || townMapsDevBypassEnabled();
+}
+
+/** Local dev escape hatch — PostHog `town_nav` flag still required in production. */
+export function townNavDevBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.TOWN_NAV_ENABLED === "1";
+}
+
+export function isTownNavFeatureEnabled(flags: FeatureFlags): boolean {
+  return isTownNavEnabled(flags) || townNavDevBypassEnabled();
 }
 
 /** Local dev escape hatch — PostHog `town_relationship` flag still required in production. */

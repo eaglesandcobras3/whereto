@@ -8,8 +8,10 @@ import { listTownHubMapMarkers } from "@/lib/data/place-map-markers";
 import { hubTownsIntro } from "@/lib/seo/page-intro-copy";
 import { townsHubMetadata } from "@/lib/seo/hub-metadata";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
-import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isTownMapsFeatureEnabled, isTownNavFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildTaxonomyPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
 
 export const revalidate = 21600;
 
@@ -19,6 +21,7 @@ export default async function TownsPage() {
   const towns = await listTownsForTownsHub();
   const flags = await getAllFeatureFlags();
   const townMapsEnabled = isTownMapsFeatureEnabled(flags);
+  const townNavEnabled = isTownNavFeatureEnabled(flags);
 
   let mapMarkers: BusinessMapMarker[] = [];
   if (townMapsEnabled && towns.length > 0) {
@@ -36,28 +39,41 @@ export default async function TownsPage() {
     }
   }
 
+  const navPlaces = towns.map((town) => ({ slug: town.slug, label: town.name }));
+  const navOptions = buildTaxonomyPlaceIntentNavOptions();
+  const placeNav = (
+    <PlaceIntentNavSection
+      mode="town"
+      places={navPlaces}
+      categories={navOptions.categories}
+      subcategories={navOptions.subcategories}
+      overlay={mapMarkers.length > 0}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      {/* Hero */}
-      <div className="coastal-hero border-b border-[var(--color-border)]">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
-          <header className="max-w-3xl space-y-3">
-            <p className="text-eyebrow">30A · South Walton, Florida</p>
-            <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
-              Beach towns along 30A
-            </h1>
-            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
-              Each community on Scenic Highway 30A has its own feel. Pick the one that matches how you want the week to go.
-            </p>
-            <CollapsibleText
-              text={hubTownsIntro()}
-              className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]"
-            />
-          </header>
+      {!townNavEnabled ? (
+        <div className="coastal-hero border-b border-[var(--color-border)]">
+          <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
+            <header className="max-w-3xl space-y-3">
+              <p className="text-eyebrow">30A · South Walton, Florida</p>
+              <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl md:text-4xl">
+                Beach towns along 30A
+              </h1>
+              <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]">
+                Each community on Scenic Highway 30A has its own feel. Pick the one that matches how you want the week to go.
+              </p>
+              <CollapsibleText
+                text={hubTownsIntro()}
+                className="text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-[0.9375rem]"
+              />
+            </header>
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+      <div className={`mx-auto max-w-6xl space-y-10 px-4 md:px-10 ${townNavEnabled ? "py-6 sm:py-8" : "py-12"}`}>
         {mapMarkers.length > 0 ? (
           <BusinessMapSection
             markers={mapMarkers}
@@ -65,8 +81,12 @@ export default async function TownsPage() {
             description="The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen."
             zoom={14}
             fitMaxZoom={14}
-          />
-        ) : null}
+          >
+            {placeNav}
+          </BusinessMapSection>
+        ) : (
+          placeNav
+        )}
 
         {towns.length === 0 ? (
           <p className="text-center text-[var(--color-text-secondary)]">

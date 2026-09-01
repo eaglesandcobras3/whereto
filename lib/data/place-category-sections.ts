@@ -15,7 +15,7 @@ import {
   sortBrowseBusinesses,
   type PlaceCategorySection,
 } from "@/lib/data/place-category-shared";
-import { groupBusinessesIntoBrowseSections, type BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
+import { groupBusinessesIntoBrowseSections, groupBusinessesIntoLeafSections, type BrowseGroupSection } from "@/lib/business-categories/group-browse-sections";
 
 export {
   PLACE_CATEGORY_SLUG_ORDER,
@@ -125,9 +125,9 @@ function mergeCategoryBusinessRows(
 }
 
 /** Businesses linked to an area hub or POI (column + `area_businesses` join). */
-export async function getCategorySectionsForPublicPlace(
+async function loadCategoryBusinessesForPublicPlace(
   place: PublicPlacePage,
-): Promise<BrowseGroupSection[]> {
+): Promise<CategoryBusiness[]> {
   const supabase = getServiceSupabase();
   const byId = new Map<string, CategoryBusiness>();
   const cap = 500;
@@ -185,15 +185,39 @@ export async function getCategorySectionsForPublicPlace(
     }
   }
 
-  return groupBusinessesIntoBrowseSections(
-    [...byId.values()].map((b) => ({
-      id: b.id,
-      name: b.name,
-      slug: b.slug,
-      hero_image_url: b.hero_image_url,
-      ai_one_liner: b.ai_one_liner,
-      ai_summary: b.ai_summary,
-      categorySlug: b.categorySlug,
-    })),
-  );
+  return [...byId.values()];
+}
+
+function toBrowseBusinessInputFromCategory(business: CategoryBusiness) {
+  return {
+    id: business.id,
+    name: business.name,
+    slug: business.slug,
+    hero_image_url: business.hero_image_url,
+    ai_one_liner: business.ai_one_liner,
+    ai_summary: business.ai_summary,
+    categorySlug: business.categorySlug,
+    categoryTitle: business.categoryTitle,
+  };
+}
+
+export async function getCategorySectionsForPublicPlace(
+  place: PublicPlacePage,
+): Promise<BrowseGroupSection[]> {
+  const businesses = await loadCategoryBusinessesForPublicPlace(place);
+  return groupBusinessesIntoBrowseSections(businesses.map(toBrowseBusinessInputFromCategory));
+}
+
+export async function getIntentSectionsForPublicPlace(
+  place: PublicPlacePage,
+): Promise<{
+  rollupSections: BrowseGroupSection[];
+  leafSections: BrowseGroupSection[];
+}> {
+  const businesses = await loadCategoryBusinessesForPublicPlace(place);
+  const input = businesses.map(toBrowseBusinessInputFromCategory);
+  return {
+    rollupSections: groupBusinessesIntoBrowseSections(input),
+    leafSections: groupBusinessesIntoLeafSections(input),
+  };
 }

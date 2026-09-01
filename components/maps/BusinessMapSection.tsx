@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { ReactNode } from "react";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 
@@ -27,6 +28,7 @@ type Props = {
   /** Unverified listings / places: allow visitors to flag a wrong map. */
   fieldFlagEntityId?: string | null;
   fieldFlagEntity?: "business" | "rental" | "town" | "area";
+  children?: ReactNode;
 };
 
 /**
@@ -41,6 +43,7 @@ export function BusinessMapSection({
   fitMaxZoom = 18,
   fieldFlagEntityId,
   fieldFlagEntity = "business",
+  children,
 }: Props) {
   if (markers.length === 0) return null;
 
@@ -55,6 +58,7 @@ export function BusinessMapSection({
           fitMaxZoom={fitMaxZoom}
           className="!rounded-none"
         />
+        {children}
       </div>
       {fieldFlagEntityId ? (
         <ListingFieldFlagNote

@@ -2,7 +2,7 @@ import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import Link from "next/link";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { listAreasForAreasHub } from "@/lib/data/areas-hub-list";
-import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
+import { getIntentSectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro } from "@/lib/seo/page-intro-copy";
@@ -31,8 +31,10 @@ import { AdminEntityEditLinks } from "@/components/admin/AdminEntityEditLinks";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForPlace } from "@/lib/data/business-map-markers";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled, isTownNavFeatureEnabled } from "@/lib/feature-flags";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildPopulatedPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
 
 export const revalidate = 21600;
 
@@ -94,13 +96,16 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) redirectToSectionHub("areas");
 
-  const [categorySections, guides, flags, areaFacts] = await Promise.all([
-    getCategorySectionsForPublicPlace(area),
+  const [intentSections, guides, flags, areaFacts, hubAreas] = await Promise.all([
+    getIntentSectionsForPublicPlace(area),
     getGuidesForArea(area.id, area.town_id),
     getAllFeatureFlags(),
     area.source === "area" ? getAreaFactsBySlug(area.slug) : Promise.resolve(null),
+    listAreasForAreasHub(),
   ]);
+  const categorySections = intentSections.rollupSections;
   const feedbackEnabled = isFeedbackFeatureEnabled(flags);
+  const townNavEnabled = isTownNavFeatureEnabled(flags);
 
   let mapMarkers: Awaited<ReturnType<typeof listStorefrontMapMarkersForPlace>> = [];
   if (isBusinessMapsFeatureEnabled(flags)) {
@@ -141,6 +146,21 @@ export default async function AreaPage({ params }: Props) {
     townName: area.town_name,
     townSlug: area.town_slug,
   });
+  const navOptions = buildPopulatedPlaceIntentNavOptions(
+    intentSections.rollupSections,
+    intentSections.leafSections,
+  );
+  const navPlaces = hubAreas.map((row) => ({ slug: row.slug, label: row.name }));
+  const placeNav = (
+    <PlaceIntentNavSection
+      mode="area"
+      places={navPlaces}
+      categories={navOptions.categories}
+      subcategories={navOptions.subcategories}
+      currentPlaceSlug={area.slug}
+      overlay={mapMarkers.length > 0}
+    />
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -153,58 +173,66 @@ export default async function AreaPage({ params }: Props) {
             dangerouslySetInnerHTML={{ __html: JSON.stringify(areaSchema) }}
           />
 
-          <HubBreadcrumbs
-            items={breadcrumbItems}
-            analyticsCategory="area_breadcrumb"
-          />
-
-          <PlacePageHeader
-            eyebrow={typeLabel}
-            title={area.title}
-            intro={intro}
-            portraitUrl={portraitUrl}
-            portraitAlt={area.title}
-            fallbackIcon="explore"
-            actions={
-              <PageShareButton
-                pageType="area"
-                pageName={area.title}
-                pageSlug={area.slug}
-                pageId={area.id}
-                path={areaPath}
+          {!townNavEnabled ? (
+            <>
+              <HubBreadcrumbs
+                items={breadcrumbItems}
+                analyticsCategory="area_breadcrumb"
               />
-            }
-            meta={
-              area.town_name && area.town_slug ? (
-                <div className="mt-2 text-sm text-zinc-500 sm:mt-3">
-                  {area.town_public_href ? (
-                    <Link
-                      href={area.town_public_href}
-                      {...gaClickProps({
-                        event: "nav_click",
-                        category: "area_header",
-                        label: area.town_slug,
-                      })}
-                      className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
-                    >
-                      <span className="material-symbols-outlined !text-base">place</span>
-                      {area.town_name}
-                    </Link>
-                  ) : (
-                    <span className="inline-flex items-center gap-1">
-                      <span className="material-symbols-outlined !text-base">place</span>
-                      {area.town_name}
-                    </span>
-                  )}
-                </div>
-              ) : undefined
-            }
-            footer={
-              feedbackEnabled ? (
-                <ListingFieldFlagNote entity="area" entityId={area.id} field="header" />
-              ) : null
-            }
-          />
+
+              <PlacePageHeader
+                eyebrow={typeLabel}
+                title={area.title}
+                intro={intro}
+                portraitUrl={portraitUrl}
+                portraitAlt={area.title}
+                fallbackIcon="explore"
+                actions={
+                  <PageShareButton
+                    pageType="area"
+                    pageName={area.title}
+                    pageSlug={area.slug}
+                    pageId={area.id}
+                    path={areaPath}
+                  />
+                }
+                meta={
+                  area.town_name && area.town_slug ? (
+                    <div className="mt-2 text-sm text-zinc-500 sm:mt-3">
+                      {area.town_public_href ? (
+                        <Link
+                          href={area.town_public_href}
+                          {...gaClickProps({
+                            event: "nav_click",
+                            category: "area_header",
+                            label: area.town_slug,
+                          })}
+                          className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-primary)]"
+                        >
+                          <span className="material-symbols-outlined !text-base">place</span>
+                          {area.town_name}
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="material-symbols-outlined !text-base">place</span>
+                          {area.town_name}
+                        </span>
+                      )}
+                    </div>
+                  ) : undefined
+                }
+                footer={
+                  feedbackEnabled ? (
+                    <ListingFieldFlagNote entity="area" entityId={area.id} field="header" />
+                  ) : null
+                }
+              />
+            </>
+          ) : null}
+
+          {mapMarkers.length === 0 ? (
+            <div className={townNavEnabled ? undefined : "mt-4"}>{placeNav}</div>
+          ) : null}
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
             {areaFacts ? (
@@ -225,7 +253,9 @@ export default async function AreaPage({ params }: Props) {
                 description="Storefront businesses with a mapped location."
                 fieldFlagEntityId={feedbackEnabled ? area.id : null}
                 fieldFlagEntity="area"
-              />
+              >
+                {placeNav}
+              </BusinessMapSection>
             ) : null}
 
             <PlaceCategoryBusinessSections
