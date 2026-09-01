@@ -7,7 +7,7 @@ import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
 import { HubBreadcrumbs } from "@/components/seo/HubBreadcrumbs";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
-import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
+import { getIntentSectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { resolveIntentBrowseSection } from "@/lib/business-categories/group-browse-sections";
 import { getGuidesForArea } from "@/lib/data/town-hub";
 import {
@@ -22,6 +22,10 @@ import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listIntentSectionMapMarkers } from "@/lib/data/intent-section-map";
 import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildPopulatedPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
+import { resolvePlaceIntentNavFromIntentSlug } from "@/lib/nav/place-intent-nav";
+import { listAreasForAreasHub } from "@/lib/data/areas-hub-list";
 
 export const revalidate = 21600;
 export const dynamicParams = true;
@@ -36,11 +40,13 @@ async function loadAreaIntentPageData(areaSlug: string, intentSlug: string) {
   const area = await getPublicPlaceBySlug(normalizedAreaSlug);
   if (!area) return null;
 
-  const [sections, guides, flags] = await Promise.all([
-    getCategorySectionsForPublicPlace(area),
+  const [intentSections, guides, flags, hubAreas] = await Promise.all([
+    getIntentSectionsForPublicPlace(area),
     getGuidesForArea(area.id, area.town_id),
     getAllFeatureFlags(),
+    listAreasForAreasHub(),
   ]);
+  const sections = intentSections.rollupSections;
   const activeSection = resolveIntentBrowseSection(sections, normalizedIntentSlug);
   if (!activeSection) return null;
 
@@ -58,6 +64,12 @@ async function loadAreaIntentPageData(areaSlug: string, intentSlug: string) {
     guides: guides.slice(0, 6),
     mapMarkers,
     feedbackEnabled: isFeedbackFeatureEnabled(flags),
+    navPlaces: hubAreas.map((row) => ({ slug: row.slug, label: row.name })),
+    navOptions: buildPopulatedPlaceIntentNavOptions(
+      intentSections.rollupSections,
+      intentSections.leafSections,
+    ),
+    navSelection: resolvePlaceIntentNavFromIntentSlug(normalizedIntentSlug),
   };
 }
 
@@ -104,6 +116,18 @@ export default async function AreaIntentPage({ params }: Props) {
   const areaPath = `/area/${page.area.slug}`;
   const listingCount = page.activeSection.businesses.length;
   const heroDescription = `Local ${page.activeSection.title.toLowerCase()} in ${page.area.title} along Scenic Highway 30A.`;
+  const placeNav = (
+    <PlaceIntentNavSection
+      mode="area"
+      places={page.navPlaces}
+      categories={page.navOptions.categories}
+      subcategories={page.navOptions.subcategories}
+      currentPlaceSlug={page.area.slug}
+      currentCategorySlug={page.navSelection.categorySlug}
+      currentSubcategorySlug={page.navSelection.subcategorySlug}
+      overlay={page.mapMarkers.length > 0}
+    />
+  );
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -162,6 +186,8 @@ export default async function AreaIntentPage({ params }: Props) {
         />
 
         <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+          {page.mapMarkers.length === 0 ? placeNav : null}
+
           {page.mapMarkers.length > 0 ? (
             <BusinessMapSection
               markers={page.mapMarkers}
@@ -169,7 +195,9 @@ export default async function AreaIntentPage({ params }: Props) {
               description="Storefront businesses with a mapped location."
               fieldFlagEntityId={page.feedbackEnabled ? page.area.id : null}
               fieldFlagEntity="area"
-            />
+            >
+              {placeNav}
+            </BusinessMapSection>
           ) : null}
 
           <section className="space-y-4" aria-labelledby="area-intent-listings-heading">

@@ -20,6 +20,7 @@ export const FEATURE_FLAG_KEYS = [
   "admin_business_direct_edit",
   "business_maps",
   "town_maps",
+  "town_nav",
   "town_relationship",
   "multiple_category",
   "feedback",
@@ -46,6 +47,7 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   admin_business_direct_edit: false,
   business_maps: false,
   town_maps: false,
+  town_nav: false,
   town_relationship: false,
   multiple_category: false,
   feedback: false,
@@ -161,6 +163,11 @@ export function isBusinessMapsEnabled(flags: FeatureFlags): boolean {
 /** OpenStreetMap of towns/areas on `/towns` and `/areas` hubs (place centers, not businesses). */
 export function isTownMapsEnabled(flags: FeatureFlags): boolean {
   return flags.town_maps === true;
+}
+
+/** Breadcrumb place → category → subcategory nav on town/area pages. */
+export function isTownNavEnabled(flags: FeatureFlags): boolean {
+  return flags.town_nav === true;
 }
 
 /** 30A corridor neighbor timeline on town detail pages. */

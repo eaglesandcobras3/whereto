@@ -10,6 +10,8 @@ import { townsHubMetadata } from "@/lib/seo/hub-metadata";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildTaxonomyPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
 
 export const revalidate = 21600;
 
@@ -35,6 +37,18 @@ export default async function TownsPage() {
       console.error("towns hub map markers", err);
     }
   }
+
+  const navPlaces = towns.map((town) => ({ slug: town.slug, label: town.name }));
+  const navOptions = buildTaxonomyPlaceIntentNavOptions();
+  const placeNav = (
+    <PlaceIntentNavSection
+      mode="town"
+      places={navPlaces}
+      categories={navOptions.categories}
+      subcategories={navOptions.subcategories}
+      overlay={mapMarkers.length > 0}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
@@ -65,8 +79,12 @@ export default async function TownsPage() {
             description="The communities run east to west along Scenic Highway 30A between Inlet Beach and Dune Allen."
             zoom={14}
             fitMaxZoom={14}
-          />
-        ) : null}
+          >
+            {placeNav}
+          </BusinessMapSection>
+        ) : (
+          placeNav
+        )}
 
         {towns.length === 0 ? (
           <p className="text-center text-[var(--color-text-secondary)]">

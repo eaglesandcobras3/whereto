@@ -10,6 +10,8 @@ import { hubAreasIntro } from "@/lib/seo/page-intro-copy";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { getAllFeatureFlags, isTownMapsFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildTaxonomyPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
 
 export const revalidate = 21600;
 
@@ -50,6 +52,18 @@ export default async function AreasPage() {
     }
   }
 
+  const navPlaces = areas.map((area) => ({ slug: area.slug, label: area.name }));
+  const navOptions = buildTaxonomyPlaceIntentNavOptions();
+  const placeNav = (
+    <PlaceIntentNavSection
+      mode="area"
+      places={navPlaces}
+      categories={navOptions.categories}
+      subcategories={navOptions.subcategories}
+      overlay={mapMarkers.length > 0}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* Hero — matches /towns */}
@@ -80,8 +94,12 @@ export default async function AreasPage() {
             description="Areas with a mapped center along Scenic Highway 30A."
             zoom={14}
             fitMaxZoom={14}
-          />
-        ) : null}
+          >
+            {placeNav}
+          </BusinessMapSection>
+        ) : (
+          placeNav
+        )}
 
         {areas.length === 0 ? (
           <p className="text-center text-[var(--color-text-secondary)]">No areas found.</p>

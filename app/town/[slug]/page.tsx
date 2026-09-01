@@ -39,12 +39,16 @@ import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import {
   browseSectionsFromCategoryBusinesses,
+  leafSectionsFromCategoryBusinesses,
   loadTownBrowseBusinessesForAreaIds,
 } from "@/lib/data/town-category-sections";
 import { getTownRelationshipCorridor } from "@/lib/data/town-relationships";
 import type { TownCorridorData } from "@/lib/data/town-relationships";
 import { TownCorridorSection } from "@/components/town/TownCorridorSection";
 import { AREAS_HUB_INCLUDE_OR_FILTER } from "@/lib/places/hub-browse-visibility";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildPopulatedPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
+import { listTownsForTownsHub } from "@/lib/data/towns-hub-list";
 
 type SidebarArea = {
   id: string;
@@ -156,6 +160,7 @@ async function getTownPageData(townId: string) {
 
   const hasTownBusinesses = townBusinesses.length > 0;
   const categorySections = browseSectionsFromCategoryBusinesses(townBusinesses);
+  const leafSections = leafSectionsFromCategoryBusinesses(townBusinesses);
 
   const areaIdsWithBusiness = new Set<string>();
   for (const row of daTownRes.data ?? []) {
@@ -224,7 +229,7 @@ async function getTownPageData(townId: string) {
     })),
   ).slice(0, SIDEBAR_AREAS_LIMIT);
 
-  return { areas, categorySections };
+  return { areas, categorySections, leafSections };
 }
 
 type Props = { params: Promise<{ slug: string }> };
@@ -272,11 +277,12 @@ export default async function TownDetailPage({ params }: Props) {
   const town = await getTownBySlug(slug);
   if (!town) notFound();
 
-  const [pageData, guides, townFacts, flags] = await Promise.all([
+  const [pageData, guides, townFacts, flags, hubTowns] = await Promise.all([
     getTownPageData(town.id),
     getGuidesForTown(town.id),
     getTownFactsBySlug(town.slug),
     getAllFeatureFlags(),
+    listTownsForTownsHub(),
   ]);
   const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
   const feedbackEnabled = isFeedbackFeatureEnabled(flags);
@@ -306,6 +312,7 @@ export default async function TownDetailPage({ params }: Props) {
       mapMarkers={mapMarkers}
       feedbackEnabled={feedbackEnabled}
       corridor={corridor}
+      navPlaces={hubTowns.map((row) => ({ slug: row.slug, label: row.name }))}
     />
   );
 }
@@ -315,6 +322,7 @@ type TownRecord = NonNullable<Awaited<ReturnType<typeof getTownBySlug>>>;
 type TownPageData = {
   areas: SidebarArea[];
   categorySections: BrowseGroupSection[];
+  leafSections: BrowseGroupSection[];
 };
 
 function BasicTownPage({
@@ -325,6 +333,7 @@ function BasicTownPage({
   mapMarkers,
   feedbackEnabled,
   corridor,
+  navPlaces,
 }: {
   town: TownRecord;
   pageData: TownPageData;
@@ -333,6 +342,7 @@ function BasicTownPage({
   mapMarkers: BusinessMapMarker[];
   feedbackEnabled: boolean;
   corridor: TownCorridorData | null;
+  navPlaces: Array<{ slug: string; label: string }>;
 }) {
   const descriptor = getTownDescriptor(town.slug);
   // Visible hero uses excerpt (at-a-glance / editorial intro). seo_description stays for metadata.
@@ -357,6 +367,10 @@ function BasicTownPage({
     description: intro,
     imageUrl: portraitUrl,
   });
+  const navOptions = buildPopulatedPlaceIntentNavOptions(
+    pageData.categorySections,
+    pageData.leafSections,
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -377,6 +391,18 @@ function BasicTownPage({
             ]}
             analyticsCategory="town_guide_breadcrumb"
           />
+
+          {mapMarkers.length === 0 ? (
+            <div className="mt-4">
+              <PlaceIntentNavSection
+                mode="town"
+                places={navPlaces}
+                categories={navOptions.categories}
+                subcategories={navOptions.subcategories}
+                currentPlaceSlug={town.slug}
+              />
+            </div>
+          ) : null}
 
           <PlacePageHeader
             eyebrow="Town"
@@ -426,7 +452,16 @@ function BasicTownPage({
                 description="Storefront businesses with a mapped location."
                 fieldFlagEntityId={feedbackEnabled ? town.id : null}
                 fieldFlagEntity="town"
-              />
+              >
+                <PlaceIntentNavSection
+                  mode="town"
+                  places={navPlaces}
+                  categories={navOptions.categories}
+                  subcategories={navOptions.subcategories}
+                  currentPlaceSlug={town.slug}
+                  overlay
+                />
+              </BusinessMapSection>
             ) : null}
 
             <PlaceCategoryBusinessSections

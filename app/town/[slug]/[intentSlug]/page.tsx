@@ -27,6 +27,10 @@ import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listIntentSectionMapMarkers } from "@/lib/data/intent-section-map";
 import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildPopulatedPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
+import { resolvePlaceIntentNavFromIntentSlug } from "@/lib/nav/place-intent-nav";
+import { listTownsForTownsHub } from "@/lib/data/towns-hub-list";
 
 export const revalidate = 21600;
 export const dynamicParams = true;
@@ -53,10 +57,11 @@ async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
   const town = await getTownBySlug(normalizedTownSlug);
   if (!town) return null;
 
-  const [{ rollupSections, leafSections }, guides, flags] = await Promise.all([
+  const [{ rollupSections, leafSections }, guides, flags, hubTowns] = await Promise.all([
     getTownIntentSectionsForTown(String(town.id)),
     getGuidesForTown(String(town.id)),
     getAllFeatureFlags(),
+    listTownsForTownsHub(),
   ]);
   const activeSection = resolveTownIntentSection(
     rollupSections,
@@ -82,6 +87,9 @@ async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
     mapMarkers,
     feedbackEnabled: isFeedbackFeatureEnabled(flags),
     isRollupIntent: Boolean(browseSectionBySlug(activeSection.slug)),
+    navPlaces: hubTowns.map((row) => ({ slug: row.slug, label: row.name })),
+    navOptions: buildPopulatedPlaceIntentNavOptions(rollupSections, leafSections),
+    navSelection: resolvePlaceIntentNavFromIntentSlug(normalizedIntentSlug),
   };
 }
 
@@ -134,6 +142,18 @@ export default async function TownIntentPage({ params }: Props) {
   const townPath = townPagePath(page.town.slug);
   const listingCount = page.activeSection.businesses.length;
   const heroDescription = `Local ${page.activeSection.title.toLowerCase()} in ${page.town.name} along Scenic Highway 30A.`;
+  const placeNav = (
+    <PlaceIntentNavSection
+      mode="town"
+      places={page.navPlaces}
+      categories={page.navOptions.categories}
+      subcategories={page.navOptions.subcategories}
+      currentPlaceSlug={page.town.slug}
+      currentCategorySlug={page.navSelection.categorySlug}
+      currentSubcategorySlug={page.navSelection.subcategorySlug}
+      overlay={page.mapMarkers.length > 0}
+    />
+  );
 
   const itemListSchema = {
     ...generateItemListSchema(
@@ -192,6 +212,8 @@ export default async function TownIntentPage({ params }: Props) {
         />
 
         <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+          {page.mapMarkers.length === 0 ? placeNav : null}
+
           {page.mapMarkers.length > 0 ? (
             <BusinessMapSection
               markers={page.mapMarkers}
@@ -199,7 +221,9 @@ export default async function TownIntentPage({ params }: Props) {
               description="Storefront businesses with a mapped location."
               fieldFlagEntityId={page.feedbackEnabled ? page.town.id : null}
               fieldFlagEntity="town"
-            />
+            >
+              {placeNav}
+            </BusinessMapSection>
           ) : null}
 
           <section className="space-y-4" aria-labelledby="town-intent-listings-heading">

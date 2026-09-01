@@ -2,7 +2,7 @@ import { redirectToSectionHub } from "@/lib/routes/section-hubs";
 import Link from "next/link";
 import { getPublicPlaceBySlug } from "@/lib/data/public-place-by-slug";
 import { listAreasForAreasHub } from "@/lib/data/areas-hub-list";
-import { getCategorySectionsForPublicPlace } from "@/lib/data/place-category-sections";
+import { getIntentSectionsForPublicPlace } from "@/lib/data/place-category-sections";
 import { PlaceCategoryBusinessSections } from "@/components/discovery/PlaceCategoryBusinessSections";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
 import { areaPageIntro } from "@/lib/seo/page-intro-copy";
@@ -33,6 +33,8 @@ import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForPlace } from "@/lib/data/business-map-markers";
 import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
+import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
+import { buildPopulatedPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
 
 export const revalidate = 21600;
 
@@ -94,12 +96,14 @@ export default async function AreaPage({ params }: Props) {
 
   if (!area) redirectToSectionHub("areas");
 
-  const [categorySections, guides, flags, areaFacts] = await Promise.all([
-    getCategorySectionsForPublicPlace(area),
+  const [intentSections, guides, flags, areaFacts, hubAreas] = await Promise.all([
+    getIntentSectionsForPublicPlace(area),
     getGuidesForArea(area.id, area.town_id),
     getAllFeatureFlags(),
     area.source === "area" ? getAreaFactsBySlug(area.slug) : Promise.resolve(null),
+    listAreasForAreasHub(),
   ]);
+  const categorySections = intentSections.rollupSections;
   const feedbackEnabled = isFeedbackFeatureEnabled(flags);
 
   let mapMarkers: Awaited<ReturnType<typeof listStorefrontMapMarkersForPlace>> = [];
@@ -141,6 +145,21 @@ export default async function AreaPage({ params }: Props) {
     townName: area.town_name,
     townSlug: area.town_slug,
   });
+  const navOptions = buildPopulatedPlaceIntentNavOptions(
+    intentSections.rollupSections,
+    intentSections.leafSections,
+  );
+  const navPlaces = hubAreas.map((row) => ({ slug: row.slug, label: row.name }));
+  const placeNav = (
+    <PlaceIntentNavSection
+      mode="area"
+      places={navPlaces}
+      categories={navOptions.categories}
+      subcategories={navOptions.subcategories}
+      currentPlaceSlug={area.slug}
+      overlay={mapMarkers.length > 0}
+    />
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-background)]">
@@ -157,6 +176,8 @@ export default async function AreaPage({ params }: Props) {
             items={breadcrumbItems}
             analyticsCategory="area_breadcrumb"
           />
+
+          {mapMarkers.length === 0 ? <div className="mt-4">{placeNav}</div> : null}
 
           <PlacePageHeader
             eyebrow={typeLabel}
@@ -225,7 +246,9 @@ export default async function AreaPage({ params }: Props) {
                 description="Storefront businesses with a mapped location."
                 fieldFlagEntityId={feedbackEnabled ? area.id : null}
                 fieldFlagEntity="area"
-              />
+              >
+                {placeNav}
+              </BusinessMapSection>
             ) : null}
 
             <PlaceCategoryBusinessSections

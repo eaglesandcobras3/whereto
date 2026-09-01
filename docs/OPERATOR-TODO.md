@@ -403,6 +403,7 @@ Product visibility flags are boolean keys in PostHog. Code defaults are **off** 
 | `admin_business_direct_edit` | Admin `/admin/businesses` direct field edit (writes `businesses` table, bypasses review queue); does **not** change portal owner proposal flow; code default **off** |
 | `business_maps` | OpenStreetMap on business detail + storefront pins on town/area/category hubs; code default **off** |
 | `town_maps` | OpenStreetMap of place pins (`map_lat`/`map_lng`) on `/towns` and `/areas` hubs; code default **off** (separate from `business_maps`) |
+| `town_nav` | Breadcrumb place → category → subcategory picker on town/area hub, detail, and intent pages (Search button navigates; crumb back/clear jumps); code default **off** |
 | `town_relationship` | 30A corridor neighbor timeline on `/town/[slug]` above the map (after at-a-glance when present); code default **off** |
 | `multiple_category` | Primary + extra leaf memberships (max 5); leaf hubs + discover when on; breakdowns stay primary-only; code default **off** |
 | `discover_maps` | Map-first `/discover` UI for **storefront** only (pan/zoom + “Search this area” writes `bbox`/`zoom` URL params); requires `discover`; services stay list-only; code default **off** |
@@ -430,6 +431,12 @@ Local dev bypass: set `SEO_IMPROVEMENTS_ENABLED=1` in `.env.local` (development 
 - [ ] Local dev (optional): `TOWN_MAPS_ENABLED=1` and `NEXT_PUBLIC_TOWN_MAPS_ENABLED=1`
 - [ ] Fill remaining town/area pins in Directus/admin via **`map_lat` / `map_lng`** (same fields as businesses/rentals) — do not use legacy `center_lat` / `latitude_center`
 - [ ] Smoke-test: `/towns` and `/areas` show interactive maps above cards when `town_maps` is on; pin popups link to town/area pages
+
+### Town nav (place → category → subcategory) setup
+
+- [ ] PostHog: create boolean flag `town_nav` (default false); enable for internal cohort then gradual rollout
+- [ ] Local dev (optional): `TOWN_NAV_ENABLED=1` and `NEXT_PUBLIC_TOWN_NAV_ENABLED=1`
+- [ ] Smoke-test: `/towns`, `/areas`, `/town/[slug]`, `/area/[slug]`, and intent pages show collapsed “Browse by town/area” control; expanded panel steps through place → category → subcategory; **Search** navigates; crumb **back/clear** jumps to that level
 
 ### Town relationship (30A corridor) setup
 
@@ -749,6 +756,7 @@ Until then, treat **Vercel** preview/build as the production-build gate for MRs.
 | 2026-08-13 | Listing field feedback: hub suggestions — missing business (town/area/category sections + add link), missing category on `/businesses` rollups, missing guide on `/guides` |
 | 2026-08-13 | Listing field feedback: widen `portal_review_items.type` CHECK for `listing_field_flag` — SQL [portal-review-items-listing-field-flag.sql](../scripts/migrations/portal-review-items-listing-field-flag.sql) (drops existing type check, including Postgres `= ANY` form). Without it, visitor reports 500 with “Could not save your report.” |
 | 2026-08-12 | PostHog `rental_partners`: partner application at `/list-your-rentals/partner` (+ API) split from `rentals`; local bypass `RENTAL_PARTNERS_ENABLED` / `NEXT_PUBLIC_RENTAL_PARTNERS_ENABLED` |
+| 2026-09-01 | PostHog `town_nav`: breadcrumb place → category → subcategory picker on town/area hub, detail, and intent pages; local bypass `TOWN_NAV_ENABLED` / `NEXT_PUBLIC_TOWN_NAV_ENABLED` |
 | 2026-08-12 | PostHog `town_maps`: interactive OSM place pins on `/towns` + `/areas` hubs (separate from `business_maps`); SQL [town-area-map-centers.sql](../scripts/migrations/town-area-map-centers.sql); local bypass `TOWN_MAPS_ENABLED` / `NEXT_PUBLIC_TOWN_MAPS_ENABLED` |
 | 2026-08-12 | PostHog `feedback`: visitor section reports on unverified business/rental + town/area/guide pages → admin review (`listing_field_flag`); local bypass `FEEDBACK_ENABLED` / `NEXT_PUBLIC_FEEDBACK_ENABLED` |
 | 2026-08-12 | PostHog `business_maps`: OpenStreetMap on storefront business detail + multi-pin maps on town/area/category hubs (storefronts with coordinates only); Leaflet for multi-pin; local bypass `BUSINESS_MAPS_ENABLED` / `NEXT_PUBLIC_BUSINESS_MAPS_ENABLED` |
