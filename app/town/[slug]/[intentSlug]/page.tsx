@@ -26,7 +26,7 @@ import { fetchSitemapTownIntentRows } from "@/lib/seo/fetch-sitemap-town-intents
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listIntentSectionMapMarkers } from "@/lib/data/intent-section-map";
-import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isFeedbackFeatureEnabled, isTownNavFeatureEnabled } from "@/lib/feature-flags";
 import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
 import { buildPopulatedPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
 import { resolvePlaceIntentNavFromIntentSlug } from "@/lib/nav/place-intent-nav";
@@ -90,6 +90,7 @@ async function loadTownIntentPageData(townSlug: string, intentSlug: string) {
     navPlaces: hubTowns.map((row) => ({ slug: row.slug, label: row.name })),
     navOptions: buildPopulatedPlaceIntentNavOptions(rollupSections, leafSections),
     navSelection: resolvePlaceIntentNavFromIntentSlug(normalizedIntentSlug),
+    townNavEnabled: isTownNavFeatureEnabled(flags),
   };
 }
 
@@ -185,33 +186,35 @@ export default async function TownIntentPage({ params }: Props) {
       />
 
       <main className="flex-1">
-        <BrowseHubHero
-          title={`${page.activeSection.title} in ${page.town.name}`}
-          description={heroDescription}
-          eyebrow={`${page.town.name} · 30A`}
-          meta={
-            <>
-              {listingCount} {listingCount === 1 ? "listing" : "listings"}
-            </>
-          }
-          breadcrumbs={
-            <HubBreadcrumbs
-              items={[
-                { name: "Home", href: "/" },
-                { name: "Towns", href: "/towns" },
-                { name: page.town.name, href: townPath },
-                {
-                  name: page.activeSection.title,
-                  href: pagePath,
-                  current: true,
-                },
-              ]}
-              analyticsCategory="town_intent_breadcrumb"
-            />
-          }
-        />
+        {!page.townNavEnabled ? (
+          <BrowseHubHero
+            title={`${page.activeSection.title} in ${page.town.name}`}
+            description={heroDescription}
+            eyebrow={`${page.town.name} · 30A`}
+            meta={
+              <>
+                {listingCount} {listingCount === 1 ? "listing" : "listings"}
+              </>
+            }
+            breadcrumbs={
+              <HubBreadcrumbs
+                items={[
+                  { name: "Home", href: "/" },
+                  { name: "Towns", href: "/towns" },
+                  { name: page.town.name, href: townPath },
+                  {
+                    name: page.activeSection.title,
+                    href: pagePath,
+                    current: true,
+                  },
+                ]}
+                analyticsCategory="town_intent_breadcrumb"
+              />
+            }
+          />
+        ) : null}
 
-        <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+        <div className={`mx-auto max-w-6xl space-y-10 px-4 md:px-10 ${page.townNavEnabled ? "py-6 sm:py-8" : "py-12"}`}>
           {page.mapMarkers.length === 0 ? placeNav : null}
 
           {page.mapMarkers.length > 0 ? (

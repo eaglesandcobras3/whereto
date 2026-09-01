@@ -21,7 +21,7 @@ import { fetchSitemapAreaIntentRows } from "@/lib/seo/fetch-sitemap-area-intents
 import { getServiceSupabaseOrNull } from "@/lib/supabase/service-role";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listIntentSectionMapMarkers } from "@/lib/data/intent-section-map";
-import { getAllFeatureFlags, isFeedbackFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isFeedbackFeatureEnabled, isTownNavFeatureEnabled } from "@/lib/feature-flags";
 import { PlaceIntentNavSection } from "@/components/place/PlaceIntentNavSection";
 import { buildPopulatedPlaceIntentNavOptions } from "@/lib/nav/build-place-intent-nav-options";
 import { resolvePlaceIntentNavFromIntentSlug } from "@/lib/nav/place-intent-nav";
@@ -70,6 +70,7 @@ async function loadAreaIntentPageData(areaSlug: string, intentSlug: string) {
       intentSections.leafSections,
     ),
     navSelection: resolvePlaceIntentNavFromIntentSlug(normalizedIntentSlug),
+    townNavEnabled: isTownNavFeatureEnabled(flags),
   };
 }
 
@@ -159,33 +160,35 @@ export default async function AreaIntentPage({ params }: Props) {
       />
 
       <main className="flex-1">
-        <BrowseHubHero
-          title={`${page.activeSection.title} in ${page.area.title}`}
-          description={heroDescription}
-          eyebrow={`${page.area.title} · 30A`}
-          meta={
-            <>
-              {listingCount} {listingCount === 1 ? "listing" : "listings"}
-            </>
-          }
-          breadcrumbs={
-            <HubBreadcrumbs
-              items={[
-                { name: "Home", href: "/" },
-                { name: "Areas", href: "/areas" },
-                { name: page.area.title, href: areaPath },
-                {
-                  name: page.activeSection.title,
-                  href: pagePath,
-                  current: true,
-                },
-              ]}
-              analyticsCategory="area_intent_breadcrumb"
-            />
-          }
-        />
+        {!page.townNavEnabled ? (
+          <BrowseHubHero
+            title={`${page.activeSection.title} in ${page.area.title}`}
+            description={heroDescription}
+            eyebrow={`${page.area.title} · 30A`}
+            meta={
+              <>
+                {listingCount} {listingCount === 1 ? "listing" : "listings"}
+              </>
+            }
+            breadcrumbs={
+              <HubBreadcrumbs
+                items={[
+                  { name: "Home", href: "/" },
+                  { name: "Areas", href: "/areas" },
+                  { name: page.area.title, href: areaPath },
+                  {
+                    name: page.activeSection.title,
+                    href: pagePath,
+                    current: true,
+                  },
+                ]}
+                analyticsCategory="area_intent_breadcrumb"
+              />
+            }
+          />
+        ) : null}
 
-        <div className="mx-auto max-w-6xl space-y-10 px-4 py-12 md:px-10">
+        <div className={`mx-auto max-w-6xl space-y-10 px-4 md:px-10 ${page.townNavEnabled ? "py-6 sm:py-8" : "py-12"}`}>
           {page.mapMarkers.length === 0 ? placeNav : null}
 
           {page.mapMarkers.length > 0 ? (

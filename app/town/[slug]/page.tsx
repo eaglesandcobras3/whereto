@@ -34,7 +34,7 @@ import { AdminEntityEditLinks } from "@/components/admin/AdminEntityEditLinks";
 import { IrseAdminBadge } from "@/components/irse/IrseAdminBadge";
 import { BusinessMapSection } from "@/components/maps/BusinessMapSection";
 import { listStorefrontMapMarkersForTown } from "@/lib/data/business-map-markers";
-import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled, isTownRelationshipFeatureEnabled } from "@/lib/feature-flags";
+import { getAllFeatureFlags, isBusinessMapsFeatureEnabled, isFeedbackFeatureEnabled, isTownNavFeatureEnabled, isTownRelationshipFeatureEnabled } from "@/lib/feature-flags";
 import type { BusinessMapMarker } from "@/lib/data/business-map-markers";
 import { ListingFieldFlagNote } from "@/components/business/ListingFieldFlagNote";
 import {
@@ -287,6 +287,7 @@ export default async function TownDetailPage({ params }: Props) {
   const businessMapsEnabled = isBusinessMapsFeatureEnabled(flags);
   const feedbackEnabled = isFeedbackFeatureEnabled(flags);
   const townRelationshipEnabled = isTownRelationshipFeatureEnabled(flags);
+  const townNavEnabled = isTownNavFeatureEnabled(flags);
   let mapMarkers: BusinessMapMarker[] = [];
   if (businessMapsEnabled) {
     try {
@@ -313,6 +314,7 @@ export default async function TownDetailPage({ params }: Props) {
       feedbackEnabled={feedbackEnabled}
       corridor={corridor}
       navPlaces={hubTowns.map((row) => ({ slug: row.slug, label: row.name }))}
+      townNavEnabled={townNavEnabled}
     />
   );
 }
@@ -334,6 +336,7 @@ function BasicTownPage({
   feedbackEnabled,
   corridor,
   navPlaces,
+  townNavEnabled,
 }: {
   town: TownRecord;
   pageData: TownPageData;
@@ -343,6 +346,7 @@ function BasicTownPage({
   feedbackEnabled: boolean;
   corridor: TownCorridorData | null;
   navPlaces: Array<{ slug: string; label: string }>;
+  townNavEnabled: boolean;
 }) {
   const descriptor = getTownDescriptor(town.slug);
   // Visible hero uses excerpt (at-a-glance / editorial intro). seo_description stays for metadata.
@@ -383,17 +387,44 @@ function BasicTownPage({
             dangerouslySetInnerHTML={{ __html: JSON.stringify(townSchema) }}
           />
 
-          <HubBreadcrumbs
-            items={[
-              { name: "Home", href: "/" },
-              { name: "Towns", href: "/towns" },
-              { name: town.name, href: townPath, current: true },
-            ]}
-            analyticsCategory="town_guide_breadcrumb"
-          />
+          {!townNavEnabled ? (
+            <>
+              <HubBreadcrumbs
+                items={[
+                  { name: "Home", href: "/" },
+                  { name: "Towns", href: "/towns" },
+                  { name: town.name, href: townPath, current: true },
+                ]}
+                analyticsCategory="town_guide_breadcrumb"
+              />
+
+              <PlacePageHeader
+                eyebrow="Town"
+                title={town.name}
+                intro={intro}
+                portraitUrl={portraitUrl}
+                portraitAlt={town.name}
+                fallbackIcon="location_city"
+                actions={
+                  <PageShareButton
+                    pageType="town"
+                    pageName={town.name}
+                    pageSlug={town.slug}
+                    pageId={town.id}
+                    path={townPath}
+                  />
+                }
+                footer={
+                  feedbackEnabled ? (
+                    <ListingFieldFlagNote entity="town" entityId={town.id} field="header" />
+                  ) : null
+                }
+              />
+            </>
+          ) : null}
 
           {mapMarkers.length === 0 ? (
-            <div className="mt-4">
+            <div className={townNavEnabled ? undefined : "mt-4"}>
               <PlaceIntentNavSection
                 mode="town"
                 places={navPlaces}
@@ -403,29 +434,6 @@ function BasicTownPage({
               />
             </div>
           ) : null}
-
-          <PlacePageHeader
-            eyebrow="Town"
-            title={town.name}
-            intro={intro}
-            portraitUrl={portraitUrl}
-            portraitAlt={town.name}
-            fallbackIcon="location_city"
-            actions={
-              <PageShareButton
-                pageType="town"
-                pageName={town.name}
-                pageSlug={town.slug}
-                pageId={town.id}
-                path={townPath}
-              />
-            }
-            footer={
-              feedbackEnabled ? (
-                <ListingFieldFlagNote entity="town" entityId={town.id} field="header" />
-              ) : null
-            }
-          />
 
           <div className="min-w-0 space-y-8 sm:space-y-10">
             {townFacts ? (
