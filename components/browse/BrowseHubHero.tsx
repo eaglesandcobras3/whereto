@@ -25,7 +25,7 @@ export function BrowseHubHero({
   className,
 }: Props) {
   return (
-    <div className={cn("coastal-hero border-b border-[var(--color-border)]", className)}>
+    <div className={cn("border-b border-[var(--color-border)]", className)}>
       <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
         {breadcrumbs}
         <header className="max-w-3xl space-y-3">

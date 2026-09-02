@@ -785,7 +785,7 @@ export function DiscoverPageClient({ towns, categories, serviceCategories }: Pro
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      <div className="coastal-hero border-b border-[var(--color-border)]">
+      <div className="border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">
           <p className="text-eyebrow">Discover · 30A</p>
           <h1 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">

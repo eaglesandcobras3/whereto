@@ -16,7 +16,7 @@ export function RegionHubView({
 }) {
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      <div className="coastal-hero border-b border-[var(--color-border)]">
+      <div className="border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <header className="space-y-4 text-center">
             <p className="text-eyebrow">Region</p>
