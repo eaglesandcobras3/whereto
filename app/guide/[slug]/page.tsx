@@ -208,7 +208,7 @@ export default async function GuidePage({ params }: Props) {
       {guidePageId ? <AdminEntityEditLinks kind="guide" entityId={guidePageId} /> : null}
       <main className="flex-1">
         {!hasHeroImage ? (
-          <div className="coastal-hero border-b border-[var(--color-border)]">
+          <div className="border-b border-[var(--color-border)]">
             <div className="mx-auto max-w-3xl px-5 py-10 sm:px-6 md:py-14">
               <HubBreadcrumbs
                 items={breadcrumbItems}

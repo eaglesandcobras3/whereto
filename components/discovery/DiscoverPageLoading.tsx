@@ -110,7 +110,7 @@ function PageChrome({ children }: { children: ReactNode }) {
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="coastal-hero border-b border-[var(--color-border)]">
+      <div className="border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">
           <div className="skeleton mb-2 h-3 w-24" />
           <div className="skeleton h-8 w-56 max-w-full sm:h-9" />

@@ -38,8 +38,7 @@ export default async function TownsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
-      {/* Hero */}
-      <div className="coastal-hero border-b border-[var(--color-border)]">
+      <div className="border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14 md:px-10">
           <header className="max-w-3xl space-y-3">
             <p className="text-eyebrow">30A · South Walton, Florida</p>

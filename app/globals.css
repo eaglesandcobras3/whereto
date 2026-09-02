@@ -760,48 +760,7 @@ body {
   border-radius: 0.5rem;
 }
 
-/* --------------------------------------------------------------------------
-   Hero Gradient Animation (coastal theme)
-   -------------------------------------------------------------------------- */
-@keyframes coastal-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.coastal-hero {
-  background: linear-gradient(
-    125deg,
-    #f5f2ed 0%,
-    #eef8f7 28%,
-    #faf6f0 52%,
-    #edf6f5 100%
-  );
-  background-size: 220% 220%;
-  animation: coastal-shift 22s ease-in-out infinite;
-}
-
-:root.dark .coastal-hero {
-  background: linear-gradient(
-    125deg,
-    #0a0a0a 0%,
-    #0c1a1a 32%,
-    #1a1510 58%,
-    #0a1515 100%
-  );
-  background-size: 220% 220%;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .coastal-hero {
-    animation: none;
-    background-size: 100% 100%;
-  }
-
   .skeleton {
     animation: none;
   }
