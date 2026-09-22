@@ -9,6 +9,8 @@ import {
   resetCommunityTipsRateLimitForTests,
 } from "@/lib/community-tips/rate-limit";
 import {
+  communityTipAdminActionSchema,
+  communityTipPlantSchema,
   communityTipUpsertSchema,
   COMMUNITY_TIP_BODY_MIN,
 } from "@/lib/community-tips/schema";
@@ -78,6 +80,40 @@ describe("community tip schema", () => {
       rating: 6,
     });
     expect(parsed.success).toBe(false);
+  });
+
+  it("accepts an admin plant with a random future window", () => {
+    const parsed = communityTipPlantSchema.safeParse({
+      action: "plant",
+      entity_type: "business",
+      entity_id: entityId,
+      body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
+      attribution_city: "Birmingham",
+      schedule: "random_future",
+      window_days: 14,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects an invalid plant window", () => {
+    const parsed = communityTipPlantSchema.safeParse({
+      action: "plant",
+      entity_type: "business",
+      entity_id: entityId,
+      body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
+      window_days: 2,
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("accepts publish-later on the moderation action", () => {
+    const parsed = communityTipAdminActionSchema.safeParse({
+      id: entityId,
+      action: "publish",
+      schedule: "random_future",
+      window_days: 7,
+    });
+    expect(parsed.success).toBe(true);
   });
 });
 

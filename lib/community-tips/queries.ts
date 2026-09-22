@@ -44,6 +44,7 @@ export async function listPublishedTipsForEntity(
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
     .eq("status", "published")
+    .lte("created_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {
@@ -57,13 +58,23 @@ export async function listOwnTips(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<OwnCommunityTip[]> {
-  const { data, error } = await supabase
+  const select =
+    "id, entity_type, entity_id, body, rating, attribution_city, status, created_at, updated_at";
+  let { data, error } = await supabase
     .from("community_tips")
-    .select(
-      "id, entity_type, entity_id, body, rating, attribution_city, status, created_at, updated_at",
-    )
+    .select(select)
     .eq("user_id", userId)
+    .eq("is_planted", false)
     .order("updated_at", { ascending: false });
+  if (error) {
+    const retry = await supabase
+      .from("community_tips")
+      .select(select)
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) {
     console.error("listOwnTips", error);
     return [];

@@ -494,11 +494,12 @@ Town “at a glance” is always on when DB facts exist (no PostHog flag).
 - [ ] Create PostHog boolean flag `community_tips` (default off).
 - [ ] Apply [scripts/migrations/community-tips.sql](../scripts/migrations/community-tips.sql) (`profiles.attribution_city` + `community_tips` table + RLS).
 - [ ] Re-apply [scripts/migrations/community-tips.sql](../scripts/migrations/community-tips.sql) in existing environments to enforce `profiles.is_admin` anti-escalation and `community_tips.status='pending'` write checks.
+- [ ] Apply [scripts/migrations/community-tips-planted.sql](../scripts/migrations/community-tips-planted.sql) (`is_planted` + planted-tip unique index) so admin planting and future stamps work.
 - [ ] Confirm signup requires **City you’re from** (no age) for semi-anonymous attribution.
 - [ ] Confirm `/admin/community-tips` is reachable for admins when the flag is on.
 - [ ] Local dev: `COMMUNITY_TIPS_ENABLED=1` and `NEXT_PUBLIC_COMMUNITY_TIPS_ENABLED=1`.
 
-Tips stay **pending** until an admin publishes them. Public copy uses “Someone from {city} said…” — never usernames. Default write rate limit: 5 tips / 24h / user (`COMMUNITY_TIPS_RATE_LIMIT_*`).
+Tips stay **pending** until an admin publishes them. Admins can also **plant** a tip and stamp a random time in the next 1–30 days; public pages hide published tips until `created_at` — no cron. Public copy uses “Someone from {city} said…” — never usernames. Default write rate limit: 5 tips / 24h / user (`COMMUNITY_TIPS_RATE_LIMIT_*`).
 
 ### Free onboard (fully ramped)
 
@@ -724,6 +725,7 @@ Until then, treat **Vercel** preview/build as the production-build gate for MRs.
 
 | Date | Change |
 |------|--------|
+| 2026-09-22 | Admin community tips: plant form + random future stamp (1–30 days). Public list hides `published` rows until `created_at`. SQL [community-tips-planted.sql](../scripts/migrations/community-tips-planted.sql) (`is_planted`). |
 | 2026-08-23 | Towns/areas hub visibility: apply [town-include-on-towns-hub.sql](../scripts/migrations/town-include-on-towns-hub.sql) + [area-include-in-site-browse.sql](../scripts/migrations/area-include-in-site-browse.sql); hub list queries now fall back when columns are missing (fixes empty `/towns` and `/areas`) |
 | 2026-08-21 | Multi-category: SQL [business-category-memberships.sql](../scripts/migrations/business-category-memberships.sql); PostHog `multiple_category` (default off); leaf hubs + discover use memberships when on; admin/intake multi-select; suggest/apply scripts for extras |
 | 2026-08-21 | GitLab CI shared-runner minutes exhausted — MR `check` set `allow_failure: true` so quota failures do not block; restore minutes then remove allow_failure. Vercel remains the build gate. |
