@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PLANT_WINDOW_DAYS } from "@/lib/community-tips/schedule";
 
 export const COMMUNITY_TIP_ENTITY_TYPES = ["business", "town", "area", "guide"] as const;
 export type CommunityTipEntityType = (typeof COMMUNITY_TIP_ENTITY_TYPES)[number];
@@ -6,9 +7,31 @@ export type CommunityTipEntityType = (typeof COMMUNITY_TIP_ENTITY_TYPES)[number]
 export const COMMUNITY_TIP_STATUSES = ["pending", "published", "rejected", "hidden"] as const;
 export type CommunityTipStatus = (typeof COMMUNITY_TIP_STATUSES)[number];
 
+/** Admin list filter. `scheduled` is published with a future created_at. */
+export const COMMUNITY_TIP_ADMIN_LIST_STATUSES = [
+  ...COMMUNITY_TIP_STATUSES,
+  "scheduled",
+] as const;
+export type CommunityTipAdminListStatus = (typeof COMMUNITY_TIP_ADMIN_LIST_STATUSES)[number];
+
+export const communityTipScheduleSchema = z.enum(["now", "random_future"]);
+export const communityTipWindowDaysSchema = z.number().int().refine(
+  (n): n is (typeof PLANT_WINDOW_DAYS)[number] =>
+    (PLANT_WINDOW_DAYS as readonly number[]).includes(n),
+  { message: "Invalid window." },
+);
+
 export const COMMUNITY_TIP_BODY_MIN = 15;
 export const COMMUNITY_TIP_BODY_MAX = 2000;
 export const COMMUNITY_TIP_CITY_MAX = 80;
+export const COMMUNITY_TIP_NAME_MAX = 40;
+
+const attributionNameField = z
+  .string()
+  .trim()
+  .min(1, "Add a first name for the initials placeholder.")
+  .max(COMMUNITY_TIP_NAME_MAX)
+  .regex(/^[A-Za-z][A-Za-z\s'.-]*$/, "Use a first name (letters only).");
 
 /** Max tip creates/updates per user per rolling window (default 24h). */
 export const COMMUNITY_TIPS_USER_RATE_MAX = 5;
@@ -88,6 +111,7 @@ export type PublicCommunityTip = {
   body: string;
   rating: number | null;
   attribution_city: string | null;
+  attribution_name: string | null;
   created_at: string;
 };
 
@@ -104,4 +128,22 @@ export type AdminCommunityTip = OwnCommunityTip & {
   user_id: string;
   admin_notes: string | null;
   reviewed_at: string | null;
+  is_planted?: boolean;
 };
+
+export const communityTipPlantSchema = communityTipUpsertSchema.extend({
+  action: z.literal("plant"),
+  attribution_name: attributionNameField,
+  schedule: communityTipScheduleSchema.optional(),
+  window_days: communityTipWindowDaysSchema.optional(),
+});
+
+export type CommunityTipPlantInput = z.infer<typeof communityTipPlantSchema>;
+
+export const communityTipAdminActionSchema = z.object({
+  id: z.string().uuid(),
+  action: z.enum(["publish", "reject", "hide", "delete"]),
+  admin_notes: z.string().trim().max(2000).optional().nullable(),
+  schedule: communityTipScheduleSchema.optional(),
+  window_days: communityTipWindowDaysSchema.optional(),
+});

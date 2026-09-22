@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { tipAttributionSaid } from "@/lib/community-tips/attribution";
+import { TipInitialsAvatar } from "@/components/community-tips/TipInitialsAvatar";
 import type {
   CommunityTipEntityType,
   PublicCommunityTip,
@@ -224,17 +225,20 @@ function CommunityTipsSectionInner({
       {tips.length > 0 ? (
         <ul className="mt-6 space-y-5">
           {tips.map((tip) => (
-            <li key={tip.id} className="border-b border-zinc-100 pb-5 last:border-0">
-              <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-                {tipAttributionSaid(tip.attribution_city)}
-                {tip.rating != null ? (
-                  <>
-                    {" · "}
-                    <TipStars rating={tip.rating} />
-                  </>
-                ) : null}
-              </p>
-              <p className="mt-2 text-[var(--color-text)]">{tip.body}</p>
+            <li key={tip.id} className="flex gap-3 border-b border-zinc-100 pb-5 last:border-0">
+              <TipInitialsAvatar name={tip.attribution_name} city={tip.attribution_city} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+                  {tipAttributionSaid(tip.attribution_city, tip.attribution_name)}
+                  {tip.rating != null ? (
+                    <>
+                      {" · "}
+                      <TipStars rating={tip.rating} />
+                    </>
+                  ) : null}
+                </p>
+                <p className="mt-2 text-[var(--color-text)]">{tip.body}</p>
+              </div>
             </li>
           ))}
         </ul>

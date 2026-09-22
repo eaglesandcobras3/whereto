@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import {
   formatTipAttribution,
   tipAttributionSaid,
+  tipInitials,
   entityPublicPath,
 } from "@/lib/community-tips/attribution";
 import {
@@ -9,6 +10,8 @@ import {
   resetCommunityTipsRateLimitForTests,
 } from "@/lib/community-tips/rate-limit";
 import {
+  communityTipAdminActionSchema,
+  communityTipPlantSchema,
   communityTipUpsertSchema,
   COMMUNITY_TIP_BODY_MIN,
 } from "@/lib/community-tips/schema";
@@ -36,6 +39,18 @@ describe("tip attribution", () => {
   it("falls back without city", () => {
     expect(formatTipAttribution(null)).toBe("A visitor");
     expect(formatTipAttribution("  ")).toBe("A visitor");
+  });
+
+  it("uses a planted first name without exposing an account", () => {
+    expect(formatTipAttribution("Birmingham", "Sarah")).toBe("Sarah from Birmingham");
+    expect(tipAttributionSaid("Birmingham", "Sarah")).toBe("Sarah from Birmingham said");
+  });
+
+  it("builds initials placeholders instead of photos", () => {
+    expect(tipInitials("Sarah", "Birmingham")).toBe("S");
+    expect(tipInitials("Mary Ann", "Atlanta")).toBe("MA");
+    expect(tipInitials(null, "Santa Rosa Beach")).toBe("SR");
+    expect(tipInitials(null, null)).toBe("V");
   });
 
   it("builds entity paths", () => {
@@ -78,6 +93,52 @@ describe("community tip schema", () => {
       rating: 6,
     });
     expect(parsed.success).toBe(false);
+  });
+
+  it("accepts an admin plant with a random future window", () => {
+    const parsed = communityTipPlantSchema.safeParse({
+      action: "plant",
+      entity_type: "business",
+      entity_id: entityId,
+      body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
+      attribution_name: "Sarah",
+      attribution_city: "Birmingham",
+      schedule: "random_future",
+      window_days: 14,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("requires a first name so planted tips can use initials", () => {
+    const parsed = communityTipPlantSchema.safeParse({
+      action: "plant",
+      entity_type: "business",
+      entity_id: entityId,
+      body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
+      attribution_city: "Birmingham",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("rejects an invalid plant window", () => {
+    const parsed = communityTipPlantSchema.safeParse({
+      action: "plant",
+      entity_type: "business",
+      entity_id: entityId,
+      body: "x".repeat(COMMUNITY_TIP_BODY_MIN),
+      window_days: 2,
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("accepts publish-later on the moderation action", () => {
+    const parsed = communityTipAdminActionSchema.safeParse({
+      id: entityId,
+      action: "publish",
+      schedule: "random_future",
+      window_days: 7,
+    });
+    expect(parsed.success).toBe(true);
   });
 });
 

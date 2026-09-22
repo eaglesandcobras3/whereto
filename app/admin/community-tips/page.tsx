@@ -22,7 +22,7 @@ export default async function AdminCommunityTipsPage() {
     <div className="mx-auto max-w-3xl px-4 py-12">
       <AdminPageHeader
         title="Community tips"
-        description="Approve text tips before they appear publicly. Stars are optional. Publish, reject, hide, or delete."
+        description="Plant tips with a random future stamp, or approve visitor tips. Stars are optional. Scheduled tips stay hidden until their stamp."
       />
       <div className="mt-8">
         <CommunityTipsAdminClient />
