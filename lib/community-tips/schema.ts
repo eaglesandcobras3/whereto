@@ -24,6 +24,14 @@ export const communityTipWindowDaysSchema = z.number().int().refine(
 export const COMMUNITY_TIP_BODY_MIN = 15;
 export const COMMUNITY_TIP_BODY_MAX = 2000;
 export const COMMUNITY_TIP_CITY_MAX = 80;
+export const COMMUNITY_TIP_NAME_MAX = 40;
+
+const attributionNameField = z
+  .string()
+  .trim()
+  .min(1, "Add a first name for the initials placeholder.")
+  .max(COMMUNITY_TIP_NAME_MAX)
+  .regex(/^[A-Za-z][A-Za-z\s'.-]*$/, "Use a first name (letters only).");
 
 /** Max tip creates/updates per user per rolling window (default 24h). */
 export const COMMUNITY_TIPS_USER_RATE_MAX = 5;
@@ -103,6 +111,7 @@ export type PublicCommunityTip = {
   body: string;
   rating: number | null;
   attribution_city: string | null;
+  attribution_name: string | null;
   created_at: string;
 };
 
@@ -124,6 +133,7 @@ export type AdminCommunityTip = OwnCommunityTip & {
 
 export const communityTipPlantSchema = communityTipUpsertSchema.extend({
   action: z.literal("plant"),
+  attribution_name: attributionNameField,
   schedule: communityTipScheduleSchema.optional(),
   window_days: communityTipWindowDaysSchema.optional(),
 });

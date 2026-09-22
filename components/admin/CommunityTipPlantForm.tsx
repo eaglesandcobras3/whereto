@@ -10,9 +10,11 @@ import {
   COMMUNITY_TIP_BODY_MAX,
   COMMUNITY_TIP_BODY_MIN,
   COMMUNITY_TIP_ENTITY_TYPES,
+  COMMUNITY_TIP_NAME_MAX,
   type CommunityTipEntityType,
 } from "@/lib/community-tips/schema";
 import { entityTypeLabel } from "@/lib/community-tips/attribution";
+import { TipInitialsAvatar } from "@/components/community-tips/TipInitialsAvatar";
 
 type EntityHit = {
   id: string;
@@ -31,6 +33,7 @@ export function CommunityTipPlantForm({ onPlanted }: Props) {
   const [hits, setHits] = useState<EntityHit[]>([]);
   const [selected, setSelected] = useState<EntityHit | null>(null);
   const [body, setBody] = useState("");
+  const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [rating, setRating] = useState("");
   const [schedule, setSchedule] = useState<"now" | "random_future">("random_future");
@@ -81,6 +84,7 @@ export function CommunityTipPlantForm({ onPlanted }: Props) {
         entity_type: entityType,
         entity_id: selected.id,
         body,
+        attribution_name: name,
         attribution_city: city,
         rating: rating === "" ? null : Number(rating),
         schedule,
@@ -106,6 +110,7 @@ export function CommunityTipPlantForm({ onPlanted }: Props) {
         : "Planted.",
     );
     setBody("");
+    setName("");
     setRating("");
     onPlanted({ schedule });
   }
@@ -213,6 +218,23 @@ export function CommunityTipPlantForm({ onPlanted }: Props) {
       </label>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm text-zinc-600">
+          First name
+          <span className="mt-1 flex items-center gap-2">
+            <TipInitialsAvatar name={name} city={city} />
+            <input
+              required
+              maxLength={COMMUNITY_TIP_NAME_MAX}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Sarah"
+              className="block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
+            />
+          </span>
+          <span className="mt-1 block text-xs text-zinc-500">
+            Initials placeholder only — no photo.
+          </span>
+        </label>
         <label className="block text-sm text-zinc-600">
           City they’re from
           <input

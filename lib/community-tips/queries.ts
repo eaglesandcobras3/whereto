@@ -15,6 +15,7 @@ type TipRow = {
   body: string;
   rating: number | null;
   attribution_city: string | null;
+  attribution_name?: string | null;
   status: OwnCommunityTip["status"];
   created_at: string;
   updated_at: string;
@@ -28,6 +29,7 @@ function toPublic(row: TipRow): PublicCommunityTip {
     body: row.body,
     rating: row.rating,
     attribution_city: row.attribution_city,
+    attribution_name: row.attribution_name ?? null,
     created_at: row.created_at,
   };
 }
@@ -40,7 +42,9 @@ export async function listPublishedTipsForEntity(
 ): Promise<PublicCommunityTip[]> {
   const { data, error } = await supabase
     .from("community_tips")
-    .select("id, body, rating, attribution_city, created_at, entity_type, entity_id, status, updated_at")
+    .select(
+      "id, body, rating, attribution_city, attribution_name, created_at, entity_type, entity_id, status, updated_at",
+    )
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
     .eq("status", "published")
@@ -48,8 +52,20 @@ export async function listPublishedTipsForEntity(
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {
-    console.error("listPublishedTipsForEntity", error);
-    return [];
+    const retry = await supabase
+      .from("community_tips")
+      .select("id, body, rating, attribution_city, created_at, entity_type, entity_id, status, updated_at")
+      .eq("entity_type", entityType)
+      .eq("entity_id", entityId)
+      .eq("status", "published")
+      .lte("created_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (retry.error) {
+      console.error("listPublishedTipsForEntity", retry.error);
+      return [];
+    }
+    return (retry.data as TipRow[] | null)?.map(toPublic) ?? [];
   }
   return (data as TipRow[] | null)?.map(toPublic) ?? [];
 }
@@ -59,6 +75,8 @@ export async function listOwnTips(
   userId: string,
 ): Promise<OwnCommunityTip[]> {
   const select =
+    "id, entity_type, entity_id, body, rating, attribution_city, attribution_name, status, created_at, updated_at";
+  const selectFallback =
     "id, entity_type, entity_id, body, rating, attribution_city, status, created_at, updated_at";
   let { data, error } = await supabase
     .from("community_tips")
@@ -69,7 +87,7 @@ export async function listOwnTips(
   if (error) {
     const retry = await supabase
       .from("community_tips")
-      .select(select)
+      .select(selectFallback)
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
     data = retry.data;
@@ -150,6 +168,7 @@ async function enrichEntityMeta(
       body: row.body,
       rating: row.rating,
       attribution_city: row.attribution_city,
+      attribution_name: row.attribution_name ?? null,
       status: row.status,
       created_at: row.created_at,
       updated_at: row.updated_at,

@@ -16,7 +16,9 @@ import { requireAdminUser } from "@/lib/security/requireAdmin";
 import { getServiceSupabase } from "@/lib/supabase/service-role";
 
 const ADMIN_TIP_SELECT =
-  "id, user_id, entity_type, entity_id, body, rating, attribution_city, status, admin_notes, created_at, updated_at, reviewed_at, is_planted";
+  "id, user_id, entity_type, entity_id, body, rating, attribution_city, attribution_name, status, admin_notes, created_at, updated_at, reviewed_at, is_planted";
+const ADMIN_TIP_SELECT_FALLBACK =
+  "id, user_id, entity_type, entity_id, body, rating, attribution_city, status, admin_notes, created_at, updated_at, reviewed_at";
 
 export async function GET(request: NextRequest) {
   const blocked = await communityTipsApiBlocked();
@@ -51,9 +53,7 @@ export async function GET(request: NextRequest) {
 
   let { data, error } = await listQuery(ADMIN_TIP_SELECT);
   if (error) {
-    const retry = await listQuery(
-      "id, user_id, entity_type, entity_id, body, rating, attribution_city, status, admin_notes, created_at, updated_at, reviewed_at",
-    );
+    const retry = await listQuery(ADMIN_TIP_SELECT_FALLBACK);
     data = retry.data;
     error = retry.error;
   }
@@ -226,6 +226,7 @@ async function plantTip(json: unknown, adminUserId: string) {
       body: d.body,
       rating: d.rating ?? null,
       attribution_city: city,
+      attribution_name: d.attribution_name,
       status: "published",
       is_planted: true,
       reviewed_by: adminUserId,

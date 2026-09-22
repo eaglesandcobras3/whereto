@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { CommunityTipPlantForm } from "@/components/admin/CommunityTipPlantForm";
+import { TipInitialsAvatar } from "@/components/community-tips/TipInitialsAvatar";
 import { tipAttributionSaid } from "@/lib/community-tips/attribution";
 import { DEFAULT_PLANT_WINDOW_DAYS } from "@/lib/community-tips/schedule";
 import type { CommunityTipAdminListStatus } from "@/lib/community-tips/schema";
@@ -14,6 +15,7 @@ type AdminTip = {
   body: string;
   rating: number | null;
   attribution_city: string | null;
+  attribution_name?: string | null;
   status: string;
   created_at: string;
   entity_title: string | null;
@@ -133,24 +135,29 @@ export function CommunityTipsAdminClient() {
         <ul className="mt-6 space-y-4">
           {items.map((item) => (
             <li key={item.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-                {item.is_planted ? "Planted · " : "Tip · "}
-                {tipAttributionSaid(item.attribution_city)}
-                {item.rating != null ? ` · ${item.rating}★` : ""}
-              </p>
-              {item.entity_href && item.entity_title ? (
-                <Link
-                  href={item.entity_href}
-                  className="mt-1 inline-block font-medium text-teal-800 hover:underline"
-                >
-                  {item.entity_title}
-                </Link>
-              ) : (
-                <p className="mt-1 font-medium text-zinc-800">
-                  {item.entity_title || `${item.entity_type} ${item.entity_id.slice(0, 8)}…`}
-                </p>
-              )}
-              <p className="mt-2 text-sm text-zinc-700">{item.body}</p>
+              <div className="flex gap-3">
+                <TipInitialsAvatar name={item.attribution_name} city={item.attribution_city} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+                    {item.is_planted ? "Planted · " : "Tip · "}
+                    {tipAttributionSaid(item.attribution_city, item.attribution_name)}
+                    {item.rating != null ? ` · ${item.rating}★` : ""}
+                  </p>
+                  {item.entity_href && item.entity_title ? (
+                    <Link
+                      href={item.entity_href}
+                      className="mt-1 inline-block font-medium text-teal-800 hover:underline"
+                    >
+                      {item.entity_title}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 font-medium text-zinc-800">
+                      {item.entity_title || `${item.entity_type} ${item.entity_id.slice(0, 8)}…`}
+                    </p>
+                  )}
+                  <p className="mt-2 text-sm text-zinc-700">{item.body}</p>
+                </div>
+              </div>
               <p className="mt-2 text-xs text-zinc-400">
                 {status === "scheduled" ? "Goes live " : "Stamped "}
                 {new Date(item.created_at).toLocaleString()}

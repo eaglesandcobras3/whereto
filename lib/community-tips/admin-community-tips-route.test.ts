@@ -88,6 +88,7 @@ describe("POST /api/admin/community-tips", () => {
       entity_type: "business",
       entity_id: ENTITY_ID,
       body: "Great patio for sunset drinks.",
+      attribution_name: "Jordan",
       attribution_city: "Atlanta",
       schedule: "random_future",
       window_days: 7,
@@ -99,11 +100,13 @@ describe("POST /api/admin/community-tips", () => {
     expect(insert).toHaveBeenCalled();
     const row = insert.mock.calls[0][0] as {
       is_planted: boolean;
+      attribution_name: string;
       status: string;
       created_at: string;
       user_id: string;
     };
     expect(row.is_planted).toBe(true);
+    expect(row.attribution_name).toBe("Jordan");
     expect(row.status).toBe("published");
     expect(row.user_id).toBe("admin-1");
     expect(Date.parse(row.created_at)).toBeGreaterThan(Date.now());
