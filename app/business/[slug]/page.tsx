@@ -14,8 +14,10 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { getSimilarBusinesses } from "@/lib/data/business-browse-cards";
+import { getGuidesForBusiness } from "@/lib/data/town-hub";
 import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
 import { PlaceRelatedSection } from "@/components/place/PlaceRelatedSection";
+import { PlaceGuidesSection } from "@/components/place/PlaceGuidesSection";
 import { canonicalAlternates } from "@/lib/seo/canonical-metadata";
 import {
   businessListingTitleSegment,
@@ -338,12 +340,15 @@ export default async function BusinessPage({ params }: Props) {
   const townId = b.town_id as string | null;
   const businessId = b.id as string;
 
-  const relatedBusinesses = await getSimilarBusinesses({
-    businessId,
-    townId,
-    primaryCategoryId: (b.primary_category_id as string | null) ?? null,
-    limit: 6,
-  });
+  const [relatedBusinesses, relatedGuides] = await Promise.all([
+    getSimilarBusinesses({
+      businessId,
+      townId,
+      primaryCategoryId: (b.primary_category_id as string | null) ?? null,
+      limit: 6,
+    }),
+    getGuidesForBusiness(businessId, townId),
+  ]);
 
   let galleryPhotos: Array<{ id: string; public_url: string; is_hero: boolean }> = [];
   if (businessPhotosEnabled) {
@@ -877,6 +882,21 @@ export default async function BusinessPage({ params }: Props) {
                   View more
                 </DiscoveryNavLink>
               ) : null}
+            </div>
+          ) : null}
+
+          {relatedGuides.length > 0 ? (
+            <div className="mt-12 sm:mt-16">
+              <PlaceGuidesSection
+                title="Related guides"
+                description={
+                  town?.name
+                    ? `Guides for planning your time in ${town.name}.`
+                    : "Guides for planning your time along 30A."
+                }
+                guides={relatedGuides.slice(0, 6)}
+                analyticsCategory="business_related_guides"
+              />
             </div>
           ) : null}
 
