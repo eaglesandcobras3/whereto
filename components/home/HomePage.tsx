@@ -7,6 +7,7 @@ import { useAppFeatureFlags } from "@/lib/feature-flags-client";
 import { BusinessPayload } from "@/lib/search/types";
 import { FeaturedBusinessesMasonry } from "@/components/home/FeaturedBusinessesMasonry";
 import { FeaturedRentalsSection } from "@/components/home/FeaturedRentalsSection";
+import { HomeGuidesSection, type HomeGuideCard } from "@/components/home/HomeGuidesSection";
 import { ListBusinessHomeCta } from "@/components/home/ListBusinessHomeCta";
 import { ListRentalsHomeCta } from "@/components/stays/ListRentalsHomeCta";
 import { gaClickProps } from "@/lib/analytics/ga-click-props";
@@ -114,6 +115,7 @@ type Props = {
     badge?: string | null;
   })[];
   featuredRentals?: RentalPropertyView[];
+  featuredGuides?: HomeGuideCard[];
   towns?: TownPayload[];
   heroSettings?: {
     imageUrl: string;
@@ -125,6 +127,7 @@ type Props = {
 export function HomePage({
   featuredBusinesses = [],
   featuredRentals = [],
+  featuredGuides = [],
   towns = [],
   heroSettings = {
     imageUrl: HOME_HERO_IMAGE_PATH,
@@ -200,14 +203,20 @@ export function HomePage({
             <div className="mx-auto max-w-[1280px] px-5 sm:px-6 lg:px-8">
               <div className="mb-12 md:mb-16">
                 <p className="text-eyebrow mb-3">Editor&apos;s Picks</p>
-                <h2 className="text-editorial-headline text-4xl text-primary sm:text-5xl">
+                <h2
+                  id="home-featured-heading"
+                  className="text-editorial-headline text-4xl text-primary sm:text-5xl"
+                >
                   Featured Today
                 </h2>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)] md:text-lg">
                   Restaurants, shops, and local spots we are highlighting across 30A.
                 </p>
               </div>
-              <FeaturedBusinessesMasonry businesses={featuredBusinesses} />
+              <FeaturedBusinessesMasonry
+                businesses={featuredBusinesses}
+                labelledBy="home-featured-heading"
+              />
               <div className="mt-10 flex justify-center md:mt-12">
                 <Link
                   href={browseBusinessesHref}
@@ -296,6 +305,8 @@ export function HomePage({
             </div>
           </section>
         )}
+
+        <HomeGuidesSection guides={featuredGuides} />
 
         <ListBusinessHomeCta />
         <ListRentalsHomeCta />
