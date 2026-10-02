@@ -13,10 +13,18 @@ import {
   DIRECTUS_PUBLISHED_STATUS,
 } from "@/lib/shop/public-listing-filters";
 import { pickDailySubset } from "@/lib/home/daily-featured-pick";
+import {
+  categoryEyebrowFromEmbed,
+  guideTypeEyebrow,
+} from "@/lib/home/homepage-portrait";
+import type { HomeGuideCard } from "@/components/home/HomeGuidesSection";
 import { homePageMetadata } from "@/lib/seo/hub-metadata";
 import { getAllFeatureFlags, isRentalsFeatureEnabled } from "@/lib/feature-flags";
 import { listHomepageFeaturedRentals } from "@/lib/stays/execute-search";
 import type { RentalPropertyView } from "@/lib/stays/types";
+
+const HOME_STRIP_LIMIT = 8;
+const GUIDE_POOL_LIMIT = 100;
 
 // Daily featured picks use a calendar-date seed (America/Chicago) — they don't change within a day.
 // ISR at 1 hour is sufficient; picks rotate at midnight Central regardless of cache timing.
@@ -68,7 +76,7 @@ export default async function Home() {
   const { data: businessRows, error: bizErr } = await supabase
     .from("businesses_view")
     .select(
-      "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated",
+      "id, title, slug, excerpt, main_image, hero_image, main_image_url, hero_image_url, content, featured, sort, date_updated, business_categories!primary_category_id ( title, slug )",
     )
     .is("archived_at", null)
     .eq("status", DIRECTUS_PUBLISHED_STATUS)
@@ -83,35 +91,83 @@ export default async function Home() {
     console.error("home: businesses query", bizErr);
   }
 
-  const dailyPicks = pickDailySubset(filterFeaturedListingPool(businessRows ?? []), 8);
+  const dailyPicks = pickDailySubset(
+    filterFeaturedListingPool(businessRows ?? []),
+    HOME_STRIP_LIMIT,
+  );
 
   featuredBusinesses = dailyPicks.map((b) => {
-      const row = b as {
-        id: string;
-        title: string;
-        slug: string;
-        excerpt?: string | null;
-        main_image?: string | null;
-        hero_image?: string | null;
-        main_image_url?: string | null;
-        hero_image_url?: string | null;
-        content?: string | null;
-      };
-      const img = getPublicImageUrlWithView(
-        row.main_image_url,
-        row.hero_image_url,
-        row.main_image,
-        row.hero_image,
+    const row = b as {
+      id: string;
+      title: string;
+      slug: string;
+      excerpt?: string | null;
+      main_image?: string | null;
+      hero_image?: string | null;
+      main_image_url?: string | null;
+      hero_image_url?: string | null;
+      content?: string | null;
+      business_categories?:
+        | { slug?: string | null; title?: string | null }
+        | { slug?: string | null; title?: string | null }[]
+        | null;
+    };
+    const img = getPublicImageUrlWithView(
+      row.main_image_url,
+      row.hero_image_url,
+      row.main_image,
+      row.hero_image,
+    );
+    return {
+      id: row.id,
+      name: row.title,
+      slug: row.slug,
+      ai_summary: row.excerpt ?? row.content?.slice(0, 500) ?? null,
+      hero_image_url: img,
+      image_url: img,
+      badge: categoryEyebrowFromEmbed(row.business_categories),
+    };
+  });
+
+  let featuredGuides: HomeGuideCard[] = [];
+  const { data: guideRows, error: guideErr } = await supabase
+    .from("guides")
+    .select(
+      "slug, title, excerpt, seo_description, guide_type, main_image, hero_image, main_image_url, hero_image_url",
+    )
+    .is("archived_at", null)
+    .eq("status", DIRECTUS_PUBLISHED_STATUS)
+    .order("title")
+    .limit(GUIDE_POOL_LIMIT);
+
+  if (guideErr) {
+    console.error("home: guides query", guideErr);
+  } else {
+    const mapped: HomeGuideCard[] = (guideRows ?? []).map((row) => {
+      const r = row as Record<string, unknown>;
+      const heroUrl = getPublicImageUrlWithView(
+        r.main_image_url as string | null,
+        r.hero_image_url as string | null,
+        r.main_image as string | null,
+        r.hero_image as string | null,
       );
+      const excerpt =
+        (r.excerpt as string | null)?.trim() ||
+        (r.seo_description as string | null)?.trim() ||
+        null;
       return {
-        id: row.id,
-        name: row.title,
-        slug: row.slug,
-        ai_summary: row.excerpt ?? row.content?.slice(0, 500) ?? null,
-        hero_image_url: img,
-        image_url: img,
+        slug: String(r.slug),
+        title: String((r as { title: string }).title),
+        excerpt,
+        hero_image_url: heroUrl,
+        eyebrow: guideTypeEyebrow((r.guide_type as string | null) ?? null),
       };
     });
+    featuredGuides = pickDailySubset(
+      mapped.filter((g) => Boolean(g.hero_image_url)),
+      HOME_STRIP_LIMIT,
+    );
+  }
 
   let featuredRentals: RentalPropertyView[] = [];
   const flags = await getAllFeatureFlags();
@@ -132,6 +188,7 @@ export default async function Home() {
       <HomePage
         featuredBusinesses={featuredBusinesses}
         featuredRentals={featuredRentals}
+        featuredGuides={featuredGuides}
         towns={townList}
         heroSettings={heroSettings}
       />

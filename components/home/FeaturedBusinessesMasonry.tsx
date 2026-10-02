@@ -1,7 +1,8 @@
 "use client";
 
 import type { BusinessPayload } from "@/lib/search/types";
-import { BusinessPreviewCard } from "@/components/discovery/BusinessPreviewCard";
+import { HomePortraitScroll } from "@/components/home/HomePortraitScroll";
+import type { HomePortraitItem } from "@/lib/home/homepage-portrait";
 
 export type FeaturedBusiness = BusinessPayload & {
   featured_title?: string | null;
@@ -11,32 +12,28 @@ export type FeaturedBusiness = BusinessPayload & {
 
 type Props = {
   businesses: FeaturedBusiness[];
+  labelledBy?: string;
 };
 
-export function FeaturedBusinessesMasonry({ businesses }: Props) {
+export function FeaturedBusinessesMasonry({ businesses, labelledBy }: Props) {
   if (businesses.length === 0) return null;
 
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-      {businesses.map((b) => {
-        const slug = b.slug ?? b.id;
-        return (
-          <BusinessPreviewCard
-            key={b.id}
-            name={b.name}
-            slug={slug}
-            excerpt={
-              b.featured_description ||
-              b.ai_summary ||
-              "Explore more about this local favorite."
-            }
-            heroImageUrl={b.hero_image_url}
-            badge={b.badge}
-            analyticsCategory="businesses_hub_featured"
-            analyticsLabel={slug}
-          />
-        );
-      })}
-    </div>
-  );
+  const items: HomePortraitItem[] = businesses.map((b) => {
+    const slug = b.slug ?? b.id;
+    return {
+      href: `/business/${slug}`,
+      title: b.name,
+      excerpt:
+        b.featured_description ||
+        b.ai_summary ||
+        "Explore more about this local favorite.",
+      imageUrl: b.hero_image_url ?? b.image_url ?? null,
+      eyebrow: b.badge ?? null,
+      ctaLabel: "Explore",
+      analyticsCategory: "home_featured",
+      analyticsLabel: slug,
+    };
+  });
+
+  return <HomePortraitScroll items={items} labelledBy={labelledBy} />;
 }
